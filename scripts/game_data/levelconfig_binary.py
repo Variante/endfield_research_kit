@@ -1,10 +1,19 @@
-"""Exact current-format reader for JsonData ``LevelConfig`` payloads."""
+"""Exact current-format reader for JsonData ``LevelConfig`` payloads.
+
+Two string encodings share one member order. Older builds inline each string
+as ``i32`` length + UTF-8; builds that ship ``Json/StringPool/`` store an
+``i32`` global pool index instead (``-1`` empty, ``-2`` null), resolved through
+``scripts.game_data.string_pool``. The caller selects the encoding by passing
+the export's pool (``export_string_pool``); the reader never guesses it.
+"""
 
 from __future__ import annotations
 
 import math
 import struct
 from typing import Any
+
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
 
 
 ROOT_MEMBER_COUNT = 18
@@ -39,7 +48,15 @@ def _read_bool(data: bytes, offset: int, field: str) -> tuple[bool, int]:
     return bool(data[offset]), offset + 1
 
 
-def _read_string(data: bytes, offset: int, field: str) -> tuple[str | None, int]:
+def _read_string(
+    data: bytes, offset: int, field: str, strings: StringPool | None = None
+) -> tuple[str | None, int]:
+    if strings is not None:
+        index, offset = _read_i32(data, offset, f"{field}.poolIndex")
+        try:
+            return strings.resolve(index), offset
+        except StringPoolDecodeError as exc:
+            raise LevelConfigDecodeError(f"{field}: {exc}") from exc
     length, offset = _read_i32(data, offset, f"{field}.length")
     if length == -1:
         return None, offset
@@ -71,8 +88,12 @@ def _read_floats(data: bytes, offset: int, count: int, field: str) -> tuple[list
     return values, offset + size
 
 
-def decode_level_config(data: bytes) -> dict[str, Any]:
-    """Decode all 18 ordered members and require physical EOF."""
+def decode_level_config(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
+    """Decode all 18 ordered members and require physical EOF.
+
+    Pass ``strings`` when the export ships a StringPool; string members are
+    then pool indices rather than inline bytes.
+    """
     if not data or data[0] != ROOT_MEMBER_COUNT:
         actual = data[0] if data else None
         raise LevelConfigDecodeError(
@@ -86,13 +107,13 @@ def decode_level_config(data: bytes) -> dict[str, Any]:
         )
     offset += 1
     exported_scene_config_path, offset = _read_string(
-        data, offset, "defaultState.exportedSceneConfigPath"
+        data, offset, "defaultState.exportedSceneConfigPath", strings
     )
-    state_name, offset = _read_string(data, offset, "defaultState.name")
-    source_scene_name, offset = _read_string(data, offset, "defaultState.sourceSceneName")
-    dimension_source_level_id, offset = _read_string(data, offset, "dimensionSourceLevelId")
+    state_name, offset = _read_string(data, offset, "defaultState.name", strings)
+    source_scene_name, offset = _read_string(data, offset, "defaultState.sourceSceneName", strings)
+    dimension_source_level_id, offset = _read_string(data, offset, "dimensionSourceLevelId", strings)
     enable_snow, offset = _read_bool(data, offset, "enableFactoryBuildingSnowCoverage")
-    level_id, offset = _read_string(data, offset, "id")
+    level_id, offset = _read_string(data, offset, "id", strings)
     if not level_id:
         raise LevelConfigDecodeError("id: empty or null")
     level_id_num, offset = _read_i32(data, offset, "idNum")
@@ -116,15 +137,15 @@ def decode_level_config(data: bytes) -> dict[str, Any]:
             y, offset = _read_i32(data, offset, f"levelGrids[{index}].y")
             level_grids.append([x, y])
 
-    map_id, offset = _read_string(data, offset, "mapIdStr")
+    map_id, offset = _read_string(data, offset, "mapIdStr", strings)
     player_init_pos, offset = _read_floats(data, offset, 3, "playerInitPos")
     player_init_rot, offset = _read_floats(data, offset, 3, "playerInitRot")
     rect_left_bottom, offset = _read_floats(data, offset, 2, "rectLeftBottom")
     rect_right_top, offset = _read_floats(data, offset, 2, "rectRightTop")
     scope, offset = _read_i32(data, offset, "scope")
     start_pos, offset = _read_floats(data, offset, 3, "startPos")
-    water_start_audio, offset = _read_string(data, offset, "waterStartAudio")
-    water_stop_audio, offset = _read_string(data, offset, "waterStopAudio")
+    water_start_audio, offset = _read_string(data, offset, "waterStartAudio", strings)
+    water_stop_audio, offset = _read_string(data, offset, "waterStopAudio", strings)
     if offset != len(data):
         raise LevelConfigDecodeError(
             f"LevelConfig trailing bytes: cursor={offset} length={len(data)}"
@@ -133,6 +154,7 @@ def decode_level_config(data: bytes) -> dict[str, Any]:
         "status": "exact_current_schema",
         "schemaStatus": "exact",
         "serializedMemberCount": ROOT_MEMBER_COUNT,
+        "stringEncoding": "inline" if strings is None else "string_pool",
         "bytesConsumed": offset,
         "defaultState": {
             "exportedSceneConfigPath": exported_scene_config_path,

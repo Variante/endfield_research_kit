@@ -1,0 +1,1904 @@
+{
+  "schema": "endfield.wwise-mixer-frame-observer.v5",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "witnesses": [
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteAdmission",
+      "windowIndex": 0,
+      "bodyOffset": 587,
+      "instructionHex": "4c89742420",
+      "role": "fifth argument is the route gain-pair array"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteAdmission",
+      "windowIndex": 0,
+      "bodyOffset": 581,
+      "instructionHex": "4d8bcf",
+      "role": "fourth argument is the collected row array"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteAdmission",
+      "windowIndex": 0,
+      "bodyOffset": 584,
+      "instructionHex": "448bc6",
+      "role": "third argument is the collected row count"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteAdmission",
+      "windowIndex": 0,
+      "bodyOffset": 577,
+      "instructionHex": "88442428",
+      "role": "sixth argument is the low byte of the caller mode input"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 658,
+      "instructionHex": "0fb685d8000000",
+      "role": "callee reads the sixth stack byte"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 737,
+      "instructionHex": "488bc6",
+      "role": "callee returns its caller-supplied result-storage pointer"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 55,
+      "instructionHex": "4c8ba9c0000000",
+      "role": "first output descriptor comes from the bus input array when present"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busFrameReset",
+      "windowIndex": 1,
+      "bodyOffset": 434,
+      "instructionHex": "4c892430",
+      "role": "clear retained descriptor PCM pointer"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busFrameReset",
+      "windowIndex": 1,
+      "bodyOffset": 438,
+      "instructionHex": "664489643012",
+      "role": "clear retained descriptor valid frames"
+    },
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "routingPublication",
+      "windowIndex": 0,
+      "bodyOffset": 44,
+      "instructionHex": "498d8a18010000",
+      "role": "context PCM descriptor address"
+    },
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "routingPublication",
+      "windowIndex": 0,
+      "bodyOffset": 51,
+      "instructionHex": "48894818",
+      "role": "publish that address into each original route row"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 549,
+      "instructionHex": "f30f104270",
+      "role": "load first row previous gain"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 554,
+      "instructionHex": "f30f5946fc",
+      "role": "multiply incoming previous gain in float32"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 569,
+      "instructionHex": "f30f1146fc",
+      "role": "write effective previous gain back into the gain-pair array"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 574,
+      "instructionHex": "f30f104a74",
+      "role": "load first row target gain"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 579,
+      "instructionHex": "f30f590e",
+      "role": "multiply incoming target gain in float32"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
+      "bodyOffset": 583,
+      "instructionHex": "f30f110e",
+      "role": "write effective target gain back into the gain-pair array"
+    },
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkFrameEnd",
+      "windowIndex": 0,
+      "bodyOffset": 411,
+      "instructionHex": "488d5760",
+      "role": "direct submission uses the sink descriptor"
+    },
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkFrameEnd",
+      "windowIndex": 0,
+      "bodyOffset": 420,
+      "instructionHex": "e827080000",
+      "role": "direct submission calls the owned sink submit body"
+    },
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkFrameEnd",
+      "windowIndex": 0,
+      "bodyOffset": 753,
+      "instructionHex": "806500fe",
+      "role": "frame end clears only the input-present bit"
+    }
+  ],
+  "hookEdits": [
+    {
+      "ownerGroup": "busRouteMix",
+      "abiId": "win64.pointer_integer6_result.v1",
+      "resultMemory": [
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        },
+        {
+          "name": "busFirstDescriptor",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer",
+          "requireMemory": {
+            "name": "busInputCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busSamplePointer",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "pointer",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busFormat",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "u32",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busStatus",
+          "argIndex": 0,
+          "offset": 12,
+          "kind": "u32",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busCapacity",
+          "argIndex": 0,
+          "offset": 16,
+          "kind": "u16",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busValidFrames",
+          "argIndex": 0,
+          "offset": 18,
+          "kind": "u16",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busSamplePrefix",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            192,
+            0
+          ],
+          "countField": "busValidFrames",
+          "stride": 4,
+          "maxBytes": 256
+        },
+        {
+          "name": "resultStorageWord0",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "u32"
+        },
+        {
+          "name": "resultStorageWord8",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u64"
+        }
+      ],
+      "memory": [
+        {
+          "name": "busInputs",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer"
+        },
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        },
+        {
+          "name": "mixRowCount",
+          "argIndex": 2,
+          "offset": 0,
+          "kind": "argumentU32"
+        },
+        {
+          "name": "mixRowPointerPrefix",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [],
+          "countField": "mixRowCount",
+          "stride": 8,
+          "maxBytes": 128
+        },
+        {
+          "name": "firstMixRow",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "pointer",
+          "requireMemory": {
+            "name": "mixRowCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowDescriptor",
+          "argIndex": 3,
+          "offset": 24,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowSamplePointer",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowFormat",
+          "argIndex": 3,
+          "offset": 8,
+          "kind": "u32",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowCapacity",
+          "argIndex": 3,
+          "offset": 16,
+          "kind": "u16",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowValidFrames",
+          "argIndex": 3,
+          "offset": 18,
+          "kind": "u16",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowPreviousGainBits",
+          "argIndex": 3,
+          "offset": 112,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowTargetGainBits",
+          "argIndex": 3,
+          "offset": 116,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowMatrix",
+          "argIndex": 3,
+          "offset": 224,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "resultStorageWord0",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "u32"
+        },
+        {
+          "name": "resultStorageWord8",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u64"
+        },
+        {
+          "name": "incomingPreviousGainBits",
+          "argIndex": 6,
+          "offset": 0,
+          "kind": "u32"
+        },
+        {
+          "name": "incomingTargetGainBits",
+          "argIndex": 6,
+          "offset": 4,
+          "kind": "u32"
+        },
+        {
+          "name": "firstPreviousMatrixPointer",
+          "argIndex": 3,
+          "offset": 240,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstPreviousMatrixWord0",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "u32",
+          "pointerOffsets": [
+            0,
+            240
+          ],
+          "requireMemory": {
+            "name": "firstPreviousMatrixPointer",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstPreviousMatrixWord1",
+          "argIndex": 3,
+          "offset": 4,
+          "kind": "u32",
+          "pointerOffsets": [
+            0,
+            240
+          ],
+          "requireMemory": {
+            "name": "firstPreviousMatrixPointer",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstTargetMatrixPointer",
+          "argIndex": 3,
+          "offset": 248,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstTargetMatrixWord0",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "u32",
+          "pointerOffsets": [
+            0,
+            248
+          ],
+          "requireMemory": {
+            "name": "firstTargetMatrixPointer",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstTargetMatrixWord1",
+          "argIndex": 3,
+          "offset": 4,
+          "kind": "u32",
+          "pointerOffsets": [
+            0,
+            248
+          ],
+          "requireMemory": {
+            "name": "firstTargetMatrixPointer",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstLowPassTargetBits",
+          "argIndex": 3,
+          "offset": 192,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        }
+      ]
+    },
+    {
+      "ownerGroup": "contextSourceSampleBuffer",
+      "appendResultMemory": [
+        {
+          "name": "stereoDescriptor",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "argument",
+          "requireMemory": {
+            "name": "channelConfiguration",
+            "equals": 12546
+          }
+        },
+        {
+          "name": "stereoCapacity",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16",
+          "requireMemory": {
+            "name": "stereoDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "stereoValidFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16",
+          "requireMemory": {
+            "name": "stereoCapacity",
+            "equals": 512
+          }
+        },
+        {
+          "name": "secondPlaneWord0",
+          "argIndex": 1,
+          "offset": 2048,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "stereoValidFrames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "secondPlaneWord1",
+          "argIndex": 1,
+          "offset": 2052,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "stereoValidFrames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "secondPlaneWord2",
+          "argIndex": 1,
+          "offset": 2056,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "stereoValidFrames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "secondPlaneWord3",
+          "argIndex": 1,
+          "offset": 2060,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "stereoValidFrames",
+            "equals": 512
+          }
+        }
+      ]
+    }
+  ],
+  "addedHooks": [
+    {
+      "index": 35,
+      "name": "AkSoundEngine.busFrameReset",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busFrameReset",
+      "abiId": "win64.pointer1_result.v1",
+      "memory": [
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        },
+        {
+          "name": "busFirstDescriptor",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer",
+          "requireMemory": {
+            "name": "busInputCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busSamplePointer",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "pointer",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busFormat",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "u32",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busStatus",
+          "argIndex": 0,
+          "offset": 12,
+          "kind": "u32",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busCapacity",
+          "argIndex": 0,
+          "offset": 16,
+          "kind": "u16",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busValidFrames",
+          "argIndex": 0,
+          "offset": 18,
+          "kind": "u16",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        },
+        {
+          "name": "busFirstDescriptor",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer",
+          "requireMemory": {
+            "name": "busInputCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busSamplePointer",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "pointer",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busFormat",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "u32",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busStatus",
+          "argIndex": 0,
+          "offset": 12,
+          "kind": "u32",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busCapacity",
+          "argIndex": 0,
+          "offset": 16,
+          "kind": "u16",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busValidFrames",
+          "argIndex": 0,
+          "offset": 18,
+          "kind": "u16",
+          "pointerOffsets": [
+            192
+          ],
+          "requireMemory": {
+            "name": "busFirstDescriptor",
+            "nonzero": true
+          }
+        }
+      ]
+    },
+    {
+      "index": 36,
+      "name": "AkSoundEngine.routingPublication",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "routingPublication",
+      "abiId": "win64.pointer1_result.v1",
+      "memory": [
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "ownerPlaybackSerial",
+          "argIndex": 0,
+          "offset": 616,
+          "kind": "u32",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "ownerExternalAllocation",
+          "argIndex": 0,
+          "offset": 596,
+          "kind": "pointer",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "ownerStoredSource",
+          "argIndex": 0,
+          "offset": 648,
+          "kind": "pointer",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "routeRows",
+          "argIndex": 0,
+          "offset": 296,
+          "kind": "pointer",
+          "pointerOffsets": [
+            56
+          ],
+          "requireMemory": {
+            "name": "routeHead",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "routeRowCount",
+          "argIndex": 0,
+          "offset": 304,
+          "kind": "u32",
+          "pointerOffsets": [
+            56
+          ],
+          "requireMemory": {
+            "name": "routeHead",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "publishedFirstDescriptor",
+          "argIndex": 0,
+          "offset": 24,
+          "kind": "pointer",
+          "pointerOffsets": [
+            56,
+            296
+          ],
+          "requireMemory": {
+            "name": "routeRowCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "routeBus",
+          "argIndex": 0,
+          "offset": 320,
+          "kind": "pointer",
+          "pointerOffsets": [
+            56
+          ],
+          "requireMemory": {
+            "name": "routeHead",
+            "nonzero": true
+          }
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "ownerPlaybackSerial",
+          "argIndex": 0,
+          "offset": 616,
+          "kind": "u32",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "ownerExternalAllocation",
+          "argIndex": 0,
+          "offset": 596,
+          "kind": "pointer",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "ownerStoredSource",
+          "argIndex": 0,
+          "offset": 648,
+          "kind": "pointer",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "routeRows",
+          "argIndex": 0,
+          "offset": 296,
+          "kind": "pointer",
+          "pointerOffsets": [
+            56
+          ],
+          "requireMemory": {
+            "name": "routeHead",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "routeRowCount",
+          "argIndex": 0,
+          "offset": 304,
+          "kind": "u32",
+          "pointerOffsets": [
+            56
+          ],
+          "requireMemory": {
+            "name": "routeHead",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "publishedFirstDescriptor",
+          "argIndex": 0,
+          "offset": 24,
+          "kind": "pointer",
+          "pointerOffsets": [
+            56,
+            296
+          ],
+          "requireMemory": {
+            "name": "routeRowCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "routeBus",
+          "argIndex": 0,
+          "offset": 320,
+          "kind": "pointer",
+          "pointerOffsets": [
+            56
+          ],
+          "requireMemory": {
+            "name": "routeHead",
+            "nonzero": true
+          }
+        }
+      ]
+    }
+  ],
+  "unsampledHookKinds": [
+    "contextSourceSampleBuffer",
+    "contextFrameRelease",
+    "busFrameReset",
+    "routingPublication"
+  ],
+  "contextDescriptorOffset": 280,
+  "evidenceBoundary": {
+    "exact": "Borrowed selected body windows authenticate the six integer/pointer bus-mix arguments and caller result-storage return, existing bus input/reset storage and native context descriptor publication.",
+    "direct": "Paired sampled bus mix retains actual input rows and completed bus descriptor/prefix. All source sample/release, route publication and bus reset invocations are retained while the recorder is active; each field is a bounded non-atomic read. Current numeric extension reads the incoming gain pair, first previous/target matrix pointer/words and guarded stereo right-plane words beside the original first-plane prefix. Return storage is anonymous word0/word8 data, not a proved task/dependency identity.",
+    "conditional": "First rows only. Reset and source-write intervals exclude observed intervening reuse only when the loss-free stream and zero intentional skips for those endpoints hold; other writers, lifetimes and asynchronous dispatch remain conditions.",
+    "unresolved": "Complete allocation generations, all route rows, bus/effect hierarchy, full matrix/filter history, unrecorded planar samples and complete buffers, final Event contribution to device output and audibility.",
+    "structuralOnly": "First matrix words and filter target are bounded stored values; complete matrix layout, filter history and effective processing are separate. Anonymous result-storage initialization/move does not establish asynchronous work."
+  },
+  "resultStorageLeaves": [
+    {
+      "key": "initializeAnonymousResultStorage",
+      "rva": "0xef700",
+      "bodyLength": 18,
+      "bodySha256": "cbef0e41a1a5ee7c4fff84d5be867638c6f8da9bdfec3e37d8be8c0c97407834",
+      "bodyHex": "c70100000000488bc148c74108ffffffffc3",
+      "readOrder": "Initialize word0 to zero and word8 to the all-one sentinel; return the supplied storage."
+    },
+    {
+      "key": "moveAnonymousResultStorage",
+      "rva": "0xef5b0",
+      "bodyLength": 38,
+      "bodySha256": "37b88195feaa75a65752c272c8d10a851f63dc568d048a9a6ec04cd3afea7421",
+      "bodyHex": "48c74108ffffffff488b4208488941088b028901488bc148c74208ffffffffc70200000000c3",
+      "readOrder": "Move word0 and word8 into supplied destination storage, clear the source and return the destination. No scheduling or waiting is performed."
+    }
+  ],
+  "stereoPrefixSelection": {
+    "channelConfiguration": 12546,
+    "capacityFrames": 512,
+    "validFrames": 512,
+    "planeStrideBytes": 2048,
+    "samplesPerSecondPlane": 4,
+    "evidenceBoundary": "conditional",
+    "scope": "First four second-plane float32 words only when all three recorded layout/frame guards hold. No other stereo layout or whole second plane is inferred."
+  },
+  "sinkHandoffLayout": {
+    "renderClientOffset": 88,
+    "descriptorOffset": 96,
+    "formatOffset": 8,
+    "capacityOffset": 16,
+    "validFramesOffset": 18,
+    "inputFlagsOffset": 615,
+    "resamplerCapacityOffset": 280,
+    "inputPresentMask": 1,
+    "excludedModesMask": 2
+  },
+  "sinkHandoffBindings": [
+    {
+      "ownerGroup": "sinkInput",
+      "windowIndex": 3,
+      "bodyOffset": 307,
+      "field": "descriptorOffset",
+      "prefixHex": "488d73",
+      "width": 1,
+      "suffixHex": ""
+    },
+    {
+      "ownerGroup": "sinkInput",
+      "windowIndex": 3,
+      "bodyOffset": 356,
+      "field": "inputFlagsOffset",
+      "prefixHex": "488dbb",
+      "width": 4,
+      "suffixHex": ""
+    },
+    {
+      "ownerGroup": "sinkInput",
+      "windowIndex": 3,
+      "bodyOffset": 363,
+      "field": "inputPresentMask",
+      "prefixHex": "800f",
+      "width": 1,
+      "suffixHex": ""
+    },
+    {
+      "ownerGroup": "sinkFrameEnd",
+      "windowIndex": 0,
+      "bodyOffset": 219,
+      "field": "resamplerCapacityOffset",
+      "prefixHex": "664439b7",
+      "width": 4,
+      "suffixHex": ""
+    },
+    {
+      "ownerGroup": "sinkInput",
+      "windowIndex": 2,
+      "bodyOffset": 215,
+      "field": "excludedModesMask",
+      "prefixHex": "a8",
+      "width": 1,
+      "suffixHex": ""
+    },
+    {
+      "ownerGroup": "sinkFrameEnd",
+      "windowIndex": 0,
+      "bodyOffset": 443,
+      "sumFields": [
+        "descriptorOffset",
+        "capacityOffset"
+      ],
+      "prefixHex": "0fb757",
+      "width": 1,
+      "suffixHex": ""
+    },
+    {
+      "ownerGroup": "sinkFrameEnd",
+      "windowIndex": 0,
+      "bodyOffset": 406,
+      "sumFields": [
+        "descriptorOffset",
+        "validFramesOffset"
+      ],
+      "prefixHex": "66443977",
+      "width": 1,
+      "suffixHex": ""
+    }
+  ],
+  "sinkHandoffBoundary": {
+    "direct": "Sink conversion stores the converted descriptor and sets input-present. Non-resampling frame-end uses that same inline descriptor for native submission and clears input-present.",
+    "conditional": "A write/consume join additionally requires every sink-input and frame-end endpoint in a loss-free scope, matching current descriptor fields, direct non-ring/non-resampled selection, original submit nesting and successful returns.",
+    "unresolved": "Accepted handoff windows establish conditional saved prefixes only. Complete buffers, resampled/ring/silent branches, bus-output generations, individual Event contribution and audibility remain open."
+  },
+  "consumerBodies": [
+    {
+      "key": "unfilteredMatrixConsumer",
+      "rva": "0x181d60",
+      "bodyLength": 1018,
+      "bodySha256": "85d651be5ad153fd911c658557d8c00ebbf44594e9d9e151c44959b7d838baae",
+      "readOrder": "Cohort source indices select the filter and descriptor arrays; save the last two source samples into filter history, expand each planar input channel into a gain/matrix row, then dispatch accumulation without a filter recurrence.",
+      "evidenceBoundary": "exact"
+    },
+    {
+      "key": "matrixGainDispatch",
+      "rva": "0x19ccc0",
+      "bodyLength": 1235,
+      "bodySha256": "2d731ea263458361664e75bc4d6b0cd84c1dea144ee5bfd45ea38d2a50ae82e6",
+      "readOrder": "Multiply previous and target matrix coefficients by the respective gains, classify nonzero constant or ramp coefficients, then multiply source samples and add into existing planar output.",
+      "evidenceBoundary": "exact"
+    }
+  ],
+  "consumerDesign": {
+    "inputBoundary": "unfilteredMatrixConsumerEntry",
+    "returnKind": "void",
+    "argumentCount": 8,
+    "arguments": [
+      "cohort",
+      "filterPointerArray",
+      "frameCapacity",
+      "sourceDescriptorPointerArray",
+      "outputDescriptorPointerReference",
+      "effectiveGainPairArray",
+      "targetMatrixPointerArray",
+      "previousMatrixPointerArray"
+    ],
+    "cohortSelection": {
+      "count": 1,
+      "firstIndex": 0
+    },
+    "matrixRowAlignmentFloats": 8,
+    "witnesses": [
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 369,
+        "instructionHex": "418d7607",
+        "role": "roundOutputChannelsUp"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 380,
+        "instructionHex": "83e6f8",
+        "role": "paddedMatrixRowStride"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 464,
+        "instructionHex": "410fafc0",
+        "role": "strideTimesInputChannel"
+      },
+      {
+        "body": "matrixGainDispatch",
+        "offset": 1038,
+        "instructionHex": "0f59cd",
+        "role": "constantMultiply"
+      },
+      {
+        "body": "matrixGainDispatch",
+        "offset": 1041,
+        "instructionHex": "0f58c8",
+        "role": "accumulateExistingOutput"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 33,
+        "instructionHex": "448b6908",
+        "role": "cohortCount"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 85,
+        "instructionHex": "488b85c0000000",
+        "role": "fifthStackOutputReference"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 103,
+        "instructionHex": "448b7008",
+        "role": "outputChannelCount"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 275,
+        "instructionHex": "0fb708",
+        "role": "cohortIndexWidth"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 278,
+        "instructionHex": "4c8b85d8000000",
+        "role": "eighthStackPreviousMatrix"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 300,
+        "instructionHex": "498b04c9",
+        "role": "fourthRegisterSourceArray"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 304,
+        "instructionHex": "440fb66008",
+        "role": "sourceChannelCount"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 309,
+        "instructionHex": "488b00",
+        "role": "planarSourcePointer"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 316,
+        "instructionHex": "488b85c8000000",
+        "role": "sixthStackGainPairs"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 323,
+        "instructionHex": "f30f100cc8",
+        "role": "firstGainWord"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 328,
+        "instructionHex": "f30f1054c804",
+        "role": "secondGainWord"
+      },
+      {
+        "body": "unfilteredMatrixConsumer",
+        "offset": 334,
+        "instructionHex": "488b85d0000000",
+        "role": "seventhStackTargetMatrix"
+      }
+    ],
+    "evidenceBoundary": {
+      "direct": "Selected native bodies establish the unfiltered consumer input boundary, eight argument forwarding, padded matrix rows and accumulation into existing output.",
+      "conditional": "The bounded first-output equation requires one first-row source, constant gain/matrix, one nonzero channel contribution, zero initial output and observed nearest MXCSR rounding; unsupported branches are withheld.",
+      "unresolved": "Native consumer observations are prepared but not captured. Filters, ramps, unsupported layouts, complete bus generations and Event-to-device attribution remain open."
+    },
+    "captureRequestReady": true
+  },
+  "consumerHook": {
+    "index": 38,
+    "name": "AkSoundEngine.unfilteredMatrixConsumer",
+    "sourceKind": "unfilteredMatrixConsumer",
+    "bodyKey": "unfilteredMatrixConsumer",
+    "abiId": "win64.void_integer8_result.v1",
+    "memory": [
+      {
+        "name": "cohortCount",
+        "argIndex": 0,
+        "kind": "u32",
+        "offset": 8
+      },
+      {
+        "name": "cohortFirstIndex",
+        "argIndex": 0,
+        "kind": "u16",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "cohortCount",
+          "equals": 1
+        }
+      },
+      {
+        "name": "frameCapacity",
+        "argIndex": 2,
+        "kind": "argumentU32",
+        "offset": 0,
+        "requireMemory": {
+          "name": "cohortFirstIndex",
+          "equals": 0
+        }
+      },
+      {
+        "name": "sourceDescriptor",
+        "argIndex": 3,
+        "kind": "pointer",
+        "offset": 0,
+        "requireMemory": {
+          "name": "frameCapacity",
+          "equals": 512
+        }
+      },
+      {
+        "name": "sourceCapacity",
+        "argIndex": 3,
+        "kind": "u16",
+        "offset": 16,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceDescriptor",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "sourceValidFrames",
+        "argIndex": 3,
+        "kind": "u16",
+        "offset": 18,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceCapacity",
+          "equals": 512
+        }
+      },
+      {
+        "name": "sourceFormat",
+        "argIndex": 3,
+        "kind": "u32",
+        "offset": 8,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceValidFrames",
+          "equals": 512
+        }
+      },
+      {
+        "name": "sourceSamplePointer",
+        "argIndex": 3,
+        "kind": "pointer",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "sourcePrefix",
+        "argIndex": 3,
+        "kind": "bytes",
+        "offset": 0,
+        "countField": "sourceValidFrames",
+        "stride": 4,
+        "maxBytes": 16,
+        "pointerOffsets": [
+          0,
+          0
+        ]
+      },
+      {
+        "name": "sourceSecondWord0",
+        "argIndex": 3,
+        "kind": "u32",
+        "offset": 2048,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "sourceSecondWord1",
+        "argIndex": 3,
+        "kind": "u32",
+        "offset": 2052,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "sourceSecondWord2",
+        "argIndex": 3,
+        "kind": "u32",
+        "offset": 2056,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "sourceSecondWord3",
+        "argIndex": 3,
+        "kind": "u32",
+        "offset": 2060,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "outputDescriptor",
+        "argIndex": 6,
+        "kind": "pointer",
+        "offset": 0,
+        "requireMemory": {
+          "name": "sourceValidFrames",
+          "equals": 512
+        }
+      },
+      {
+        "name": "outputCapacity",
+        "argIndex": 6,
+        "kind": "u16",
+        "offset": 16,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputDescriptor",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "outputValidFrames",
+        "argIndex": 6,
+        "kind": "u16",
+        "offset": 18,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputCapacity",
+          "equals": 512
+        }
+      },
+      {
+        "name": "outputFormat",
+        "argIndex": 6,
+        "kind": "u32",
+        "offset": 8,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputValidFrames",
+          "equals": 512
+        }
+      },
+      {
+        "name": "outputSamplePointer",
+        "argIndex": 6,
+        "kind": "pointer",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "initialOutputWord0",
+        "argIndex": 6,
+        "kind": "u32",
+        "offset": 0,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "initialOutputWord1",
+        "argIndex": 6,
+        "kind": "u32",
+        "offset": 4,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "initialOutputWord2",
+        "argIndex": 6,
+        "kind": "u32",
+        "offset": 8,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "initialOutputWord3",
+        "argIndex": 6,
+        "kind": "u32",
+        "offset": 12,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "previousGainBits",
+        "argIndex": 7,
+        "kind": "u32",
+        "offset": 0,
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "targetGainBits",
+        "argIndex": 7,
+        "kind": "u32",
+        "offset": 4,
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "targetMatrixWord0",
+        "argIndex": 8,
+        "kind": "u32",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "targetMatrixWord1",
+        "argIndex": 8,
+        "kind": "u32",
+        "offset": 4,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "targetMatrixWord8",
+        "argIndex": 8,
+        "kind": "u32",
+        "offset": 32,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "targetMatrixWord9",
+        "argIndex": 8,
+        "kind": "u32",
+        "offset": 36,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "previousMatrixWord0",
+        "argIndex": 9,
+        "kind": "u32",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "previousMatrixWord1",
+        "argIndex": 9,
+        "kind": "u32",
+        "offset": 4,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputSamplePointer",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "previousMatrixWord8",
+        "argIndex": 9,
+        "kind": "u32",
+        "offset": 32,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "previousMatrixWord9",
+        "argIndex": 9,
+        "kind": "u32",
+        "offset": 36,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "equals": 12546
+        }
+      }
+    ],
+    "resultMemory": [
+      {
+        "name": "cohortCount",
+        "argIndex": 0,
+        "kind": "u32",
+        "offset": 8
+      },
+      {
+        "name": "cohortFirstIndex",
+        "argIndex": 0,
+        "kind": "u16",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "cohortCount",
+          "equals": 1
+        }
+      },
+      {
+        "name": "frameCapacity",
+        "argIndex": 2,
+        "kind": "argumentU32",
+        "offset": 0,
+        "requireMemory": {
+          "name": "cohortFirstIndex",
+          "equals": 0
+        }
+      },
+      {
+        "name": "sourceDescriptor",
+        "argIndex": 3,
+        "kind": "pointer",
+        "offset": 0,
+        "requireMemory": {
+          "name": "frameCapacity",
+          "equals": 512
+        }
+      },
+      {
+        "name": "sourceCapacity",
+        "argIndex": 3,
+        "kind": "u16",
+        "offset": 16,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceDescriptor",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "sourceValidFrames",
+        "argIndex": 3,
+        "kind": "u16",
+        "offset": 18,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceCapacity",
+          "equals": 512
+        }
+      },
+      {
+        "name": "sourceFormat",
+        "argIndex": 3,
+        "kind": "u32",
+        "offset": 8,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceValidFrames",
+          "equals": 512
+        }
+      },
+      {
+        "name": "sourceSamplePointer",
+        "argIndex": 3,
+        "kind": "pointer",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "sourceFormat",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "outputDescriptor",
+        "argIndex": 6,
+        "kind": "pointer",
+        "offset": 0,
+        "requireMemory": {
+          "name": "sourceValidFrames",
+          "equals": 512
+        }
+      },
+      {
+        "name": "outputCapacity",
+        "argIndex": 6,
+        "kind": "u16",
+        "offset": 16,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputDescriptor",
+          "nonzero": true
+        }
+      },
+      {
+        "name": "outputValidFrames",
+        "argIndex": 6,
+        "kind": "u16",
+        "offset": 18,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputCapacity",
+          "equals": 512
+        }
+      },
+      {
+        "name": "outputFormat",
+        "argIndex": 6,
+        "kind": "u32",
+        "offset": 8,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputValidFrames",
+          "equals": 512
+        }
+      },
+      {
+        "name": "outputSamplePointer",
+        "argIndex": 6,
+        "kind": "pointer",
+        "offset": 0,
+        "pointerOffsets": [
+          0
+        ],
+        "requireMemory": {
+          "name": "outputFormat",
+          "equals": 12546
+        }
+      },
+      {
+        "name": "outputPrefix",
+        "argIndex": 6,
+        "kind": "bytes",
+        "offset": 0,
+        "pointerOffsets": [
+          0,
+          0
+        ],
+        "countField": "outputValidFrames",
+        "stride": 4,
+        "maxBytes": 16
+      }
+    ],
+    "selection": {
+      "frameCapacity": 512,
+      "sourceCapacity": 512,
+      "sourceValidFrames": 512,
+      "outputCapacity": 512,
+      "outputValidFrames": 512,
+      "outputFormat": 12546,
+      "sourceFormats": [
+        16641,
+        12546
+      ],
+      "secondPlaneStrideBytes": 2048,
+      "prefixFrames": 4
+    },
+    "evidenceBoundary": "Sampled same-call original unfiltered consumer entry/return only. Single first-row cohort, full bounded frames and explicit layouts permit four first-output samples; source release/allocation lifetime, filters, ramps, other contributions and Event-to-device attribution remain separate."
+  }
+}

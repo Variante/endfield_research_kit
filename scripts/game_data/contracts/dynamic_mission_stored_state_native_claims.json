@@ -1,0 +1,104 @@
+{
+  "schema": "endfield.dynamic-mission-stored-state-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_state_cache_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-cache-native-claims.v1",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "getter": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "GetMissionState",
+      "callAbi": "instance",
+      "returnType": "Beyond.Gameplay.MissionSystem+MissionState",
+      "parameters": [
+        "String"
+      ]
+    },
+    "lookup": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "GetMissionData",
+      "callAbi": "instance",
+      "returnType": "Beyond.Gameplay.MissionSystem+MissionData",
+      "parameters": [
+        "String",
+        "Boolean"
+      ]
+    }
+  },
+  "returnedField": {
+    "name": "missionState",
+    "offset": 24
+  },
+  "programs": {
+    "primary": [
+      "mov [rsp+0x8], rbx",
+      "push rdi",
+      "sub rsp, 0x20",
+      "mov rbx, rdx",
+      "mov rdi, rcx",
+      "xor edx, edx",
+      "mov ecx, 0x2281",
+      "call *",
+      "test al, al",
+      "jcc *",
+      "xor r9d, r9d",
+      "xor r8d, r8d",
+      "mov rdx, rbx",
+      "mov rcx, rdi",
+      "call *",
+      "test rax, rax",
+      "je *",
+      "mov eax, [rax+0x18]",
+      "mov rbx, [rsp+0x30]",
+      "add rsp, 0x20",
+      "pop rdi",
+      "ret",
+      "mov rbx, [rsp+0x30]",
+      "add rsp, 0x20",
+      "pop rdi",
+      "ret"
+    ],
+    "cold": [
+      "xor edx, edx",
+      "mov ecx, 0x2281",
+      "call *",
+      "test rax, rax",
+      "jne *",
+      "call *",
+      "int3",
+      "xor r9d, r9d",
+      "mov r8, rbx",
+      "mov rdx, rdi",
+      "mov rcx, rax",
+      "call *",
+      "nop",
+      "jmp *"
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "normal returned MissionData reference missionState ordinary Int32 enum field read, or null lookup return default zero bits",
+    "conditional": [
+      "actual IFix returns false",
+      "actual lookup returns normally with valid typed reference or null",
+      "opaque returning Win64 callee preserves nonvolatile saved original receiver/string and caller frame",
+      "nonnull returned reference valid for field read"
+    ],
+    "unresolved": [
+      "GetMissionData selection/implementation",
+      "runtime mission state or transitions",
+      "live key/source/entity ownership",
+      "enum-member runtime classification"
+    ]
+  }
+}

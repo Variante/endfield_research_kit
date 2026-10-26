@@ -1,0 +1,644 @@
+{
+  "schema": "endfield.buff-move-to-formatter-routes-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "parent": "buff_move_to_source_native.json",
+    "subSpeed": "buff_move_to_subspeed_source_native.json",
+    "lifecycle": "buff_move_to_lifecycle_native.json"
+  },
+  "records": {
+    "moveTo": {
+      "wrapperTypeDefinition": 16261,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack",
+      "formatterTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack+Beyond_Gameplay_Core_MoveToAction_DataForMemoryPackFormatter",
+      "initializerMethod": [
+        121364,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack",
+        ".cctor",
+        73406560
+      ],
+      "registrarMethod": [
+        121365,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack",
+        "RegisterFormatter",
+        73406592
+      ],
+      "constructorMethod": [
+        121368,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack+Beyond_Gameplay_Core_MoveToAction_DataForMemoryPackFormatter",
+        ".ctor",
+        73407648
+      ],
+      "deserializeMethod": [
+        121367,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack+Beyond_Gameplay_Core_MoveToAction_DataForMemoryPackFormatter",
+        "Deserialize",
+        54744464
+      ],
+      "readerMethod": [
+        121366,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack",
+        "Deserialize",
+        54739888
+      ],
+      "registerDefinition": [
+        428385,
+        "MemoryPack.MemoryPackFormatterProvider",
+        "Register"
+      ],
+      "calls": {
+        "allocation": 155744,
+        "formatterConstructor": 73407648,
+        "register": 58721808
+      },
+      "typedUsages": [
+        {
+          "instructionRva": 73406870,
+          "instructionHex": "488B0D8B4FA008",
+          "cellRva": 218130728,
+          "usageRawHex": "2DC6042000000000",
+          "tag": 1,
+          "index": 156438,
+          "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack+Beyond_Gameplay_Core_MoveToAction_DataForMemoryPackFormatter"
+        },
+        {
+          "instructionRva": 73406904,
+          "instructionHex": "488B0D31DCAE08",
+          "cellRva": 219084272,
+          "usageRawHex": "FDFE032000000000",
+          "tag": 1,
+          "index": 130942,
+          "typeName": "MemoryPack.MemoryPackFormatterProvider"
+        },
+        {
+          "instructionRva": 73406925,
+          "instructionHex": "488B15444EA008",
+          "cellRva": 218130456,
+          "usageRawHex": "3B9612C000000000",
+          "tag": 6,
+          "index": 609053,
+          "methodSpec": [
+            428385,
+            -1,
+            24801
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatterProvider",
+          "methodName": "Register",
+          "classArguments": [],
+          "methodArguments": [
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack"
+          ]
+        },
+        {
+          "instructionRva": 54744489,
+          "instructionHex": "488B0DE812BD09",
+          "cellRva": 218130584,
+          "usageRawHex": "E342032000000000",
+          "tag": 1,
+          "index": 106865,
+          "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack"
+        }
+      ],
+      "proofs": {
+        "initializer": {
+          "program": [
+            [
+              73406560,
+              "33C9"
+            ],
+            [
+              73406562,
+              "E919000000"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73406560,
+              "endRva": 73406576,
+              "sha256": "B2269FAD7BD72F57C41FFC91AB53162DCCF0534C5D2E3F029AD7ED71DFD0299E",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        },
+        "firstRegistration": {
+          "program": [
+            [
+              73406592,
+              "4053"
+            ],
+            [
+              73406594,
+              "4883EC20"
+            ],
+            [
+              73406598,
+              "803D937C8A0900"
+            ],
+            [
+              73406605,
+              "0F8503010000"
+            ],
+            [
+              73406870,
+              "488B0D8B4FA008"
+            ],
+            [
+              73406877,
+              "E8BE46A2FB"
+            ],
+            [
+              73406882,
+              "488BD8"
+            ],
+            [
+              73406885,
+              "4885C0"
+            ],
+            [
+              73406888,
+              "0F846F010000"
+            ],
+            [
+              73406894,
+              "33D2"
+            ],
+            [
+              73406896,
+              "488BC8"
+            ],
+            [
+              73406899,
+              "E8E8020000"
+            ],
+            [
+              73406904,
+              "488B0D31DCAE08"
+            ],
+            [
+              73406911,
+              "83B9E000000000"
+            ],
+            [
+              73406918,
+              "7505"
+            ],
+            [
+              73406925,
+              "488B15444EA008"
+            ],
+            [
+              73406932,
+              "488BCB"
+            ],
+            [
+              73406935,
+              "E834EC1FFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73406592,
+              "endRva": 73407267,
+              "sha256": "B3D402D4085816414EA1778F29376CF0D4F569A533D93E1A1D6A3C82BCC3E339",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        },
+        "constructorReady": {
+          "program": [
+            [
+              73407648,
+              "4883EC28"
+            ],
+            [
+              73407652,
+              "803D78788A0900"
+            ],
+            [
+              73407659,
+              "7513"
+            ],
+            [
+              73407680,
+              "4883C428"
+            ],
+            [
+              73407684,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73407648,
+              "endRva": 73407685,
+              "sha256": "7BF8786AE5BB01BEA887F60A5701E67CD7DB8273FC91819FD253FF8EB0E10026",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        },
+        "deserialize": {
+          "program": [
+            [
+              54744464,
+              "48895C2408"
+            ],
+            [
+              54744469,
+              "57"
+            ],
+            [
+              54744470,
+              "4883EC20"
+            ],
+            [
+              54744474,
+              "803D813FA70A00"
+            ],
+            [
+              54744481,
+              "498BD8"
+            ],
+            [
+              54744484,
+              "488BFA"
+            ],
+            [
+              54744487,
+              "7428"
+            ],
+            [
+              54744489,
+              "488B0DE812BD09"
+            ],
+            [
+              54744496,
+              "83B9E000000000"
+            ],
+            [
+              54744503,
+              "742D"
+            ],
+            [
+              54744505,
+              "4533C0"
+            ],
+            [
+              54744508,
+              "488BD3"
+            ],
+            [
+              54744511,
+              "488BCF"
+            ],
+            [
+              54744514,
+              "488B5C2430"
+            ],
+            [
+              54744519,
+              "4883C420"
+            ],
+            [
+              54744523,
+              "5F"
+            ],
+            [
+              54744524,
+              "E9DFEDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 54744464,
+              "endRva": 54744557,
+              "sha256": "76A71B6E05B106177A077787E71F6D100B50F66448EC57FC4D98E78697C6162B",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        }
+      }
+    },
+    "subSpeed": {
+      "wrapperTypeDefinition": 22451,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+      "formatterTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack+Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPackFormatter",
+      "initializerMethod": [
+        163006,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+        ".cctor",
+        73406576
+      ],
+      "registrarMethod": [
+        163007,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+        "RegisterFormatter",
+        73407280
+      ],
+      "constructorMethod": [
+        163010,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack+Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPackFormatter",
+        ".ctor",
+        73407600
+      ],
+      "deserializeMethod": [
+        163009,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack+Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPackFormatter",
+        "Deserialize",
+        54731248
+      ],
+      "readerMethod": [
+        163008,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+        "Deserialize",
+        54731344
+      ],
+      "registerDefinition": [
+        428385,
+        "MemoryPack.MemoryPackFormatterProvider",
+        "Register"
+      ],
+      "calls": {
+        "allocation": 155744,
+        "formatterConstructor": 73407600,
+        "register": 58721808
+      },
+      "typedUsages": [
+        {
+          "instructionRva": 73407410,
+          "instructionHex": "488B0D1F379E08",
+          "cellRva": 217993944,
+          "usageRawHex": "2FC6042000000000",
+          "tag": 1,
+          "index": 156439,
+          "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack+Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPackFormatter"
+        },
+        {
+          "instructionRva": 73407444,
+          "instructionHex": "488B0D15DAAE08",
+          "cellRva": 219084272,
+          "usageRawHex": "FDFE032000000000",
+          "tag": 1,
+          "index": 130942,
+          "typeName": "MemoryPack.MemoryPackFormatterProvider"
+        },
+        {
+          "instructionRva": 73407465,
+          "instructionHex": "488B15F8369E08",
+          "cellRva": 217993960,
+          "usageRawHex": "3D9612C000000000",
+          "tag": 6,
+          "index": 609054,
+          "methodSpec": [
+            428385,
+            -1,
+            24802
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatterProvider",
+          "methodName": "Register",
+          "classArguments": [],
+          "methodArguments": [
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack"
+          ]
+        },
+        {
+          "instructionRva": 54731273,
+          "instructionHex": "488B0D1831BB09",
+          "cellRva": 217994024,
+          "usageRawHex": "E542032000000000",
+          "tag": 1,
+          "index": 106866,
+          "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack"
+        }
+      ],
+      "proofs": {
+        "initializer": {
+          "program": [
+            [
+              73406576,
+              "33C9"
+            ],
+            [
+              73406578,
+              "E9B9020000"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73406576,
+              "endRva": 73406592,
+              "sha256": "76C857C11F09FC17CD557E9C0FC42948C6F989947EE554C07B490852A3CC15D6",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        },
+        "firstRegistration": {
+          "program": [
+            [
+              73407280,
+              "4053"
+            ],
+            [
+              73407282,
+              "4883EC20"
+            ],
+            [
+              73407286,
+              "803D99A18A0900"
+            ],
+            [
+              73407293,
+              "7573"
+            ],
+            [
+              73407410,
+              "488B0D1F379E08"
+            ],
+            [
+              73407417,
+              "E8A244A2FB"
+            ],
+            [
+              73407422,
+              "488BD8"
+            ],
+            [
+              73407425,
+              "4885C0"
+            ],
+            [
+              73407428,
+              "0F8497000000"
+            ],
+            [
+              73407434,
+              "33D2"
+            ],
+            [
+              73407436,
+              "488BC8"
+            ],
+            [
+              73407439,
+              "E89C000000"
+            ],
+            [
+              73407444,
+              "488B0D15DAAE08"
+            ],
+            [
+              73407451,
+              "83B9E000000000"
+            ],
+            [
+              73407458,
+              "7505"
+            ],
+            [
+              73407465,
+              "488B15F8369E08"
+            ],
+            [
+              73407472,
+              "488BCB"
+            ],
+            [
+              73407475,
+              "E818EA1FFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73407280,
+              "endRva": 73407591,
+              "sha256": "E05812A4D7958D3218AF98502C21B34304A2FFC7A8B33CA554FDE402034C99FC",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        },
+        "constructorReady": {
+          "program": [
+            [
+              73407600,
+              "4883EC28"
+            ],
+            [
+              73407604,
+              "803D5EA08A0900"
+            ],
+            [
+              73407611,
+              "7513"
+            ],
+            [
+              73407632,
+              "4883C428"
+            ],
+            [
+              73407636,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73407600,
+              "endRva": 73407637,
+              "sha256": "C7ECD46EC43AFC3A5D9F6D1BD00B818AB1EB7732999114F89964BFB4AF54C97F",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        },
+        "deserialize": {
+          "program": [
+            [
+              54731248,
+              "48895C2408"
+            ],
+            [
+              54731253,
+              "57"
+            ],
+            [
+              54731254,
+              "4883EC20"
+            ],
+            [
+              54731258,
+              "803DD79AA70A00"
+            ],
+            [
+              54731265,
+              "498BD8"
+            ],
+            [
+              54731268,
+              "488BFA"
+            ],
+            [
+              54731271,
+              "7428"
+            ],
+            [
+              54731273,
+              "488B0D1831BB09"
+            ],
+            [
+              54731280,
+              "83B9E000000000"
+            ],
+            [
+              54731287,
+              "742D"
+            ],
+            [
+              54731289,
+              "4533C0"
+            ],
+            [
+              54731292,
+              "488BD3"
+            ],
+            [
+              54731295,
+              "488BCF"
+            ],
+            [
+              54731298,
+              "488B5C2430"
+            ],
+            [
+              54731303,
+              "4883C420"
+            ],
+            [
+              54731307,
+              "5F"
+            ],
+            [
+              54731308,
+              "E91F000000"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 54731248,
+              "endRva": 54731341,
+              "sha256": "2AFE7414EBB64A2DD9BA4BCAAC0F102DC4C93B6BDF3BE78789D4A661900D9D22",
+              "boundary": "actual selected named method inventory; effects and selection unproved"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current module method identities, wrapper-owned byrefs, closed formatter base, static Register declaration and actual source windows/operands.",
+    "direct": "Initializer tail, entry-to-first-wrapper-Register arguments, ready constructor return and complete formatter Deserialize caller restoration/tail to the current reader.",
+    "conditional": "Ready metadata/class flags, typed normal allocation, ordinary call ABI and ordinary first Register return; reader control/returns remain in the current reader owners.",
+    "unresolved": "Remaining registrar calls and dictionary effects, runtime-original adapter/provider selection, initialization slow paths, recursive action/root admission and actual execution."
+  }
+}

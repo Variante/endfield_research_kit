@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from scripts.game_data.codecs.levelscript.record_hints import LEVELSCRIPT_ACTIONBASE_FORMATTER_TABLE_MAPPING_ID
 from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs, rel_path as export_rel_path
 from scripts.game_data.story_native_consumers_native import validated_group
 """Build-locked declarations used by source Story gap evidence.
@@ -31,9 +32,7 @@ KNOWN_NON_PLAYBACK_ACTIONS = {
     ("0x0389", "0x0a"): ("RemoveNPCDialog", "remove_dialog"),
     ("0x04b5", "0x09"): ("StopRadio", "stop_radio"),
 }
-KNOWN_NON_PLAYBACK_MAPPING_ID = (
-    "gameassembly-2026-07-11-cr-0x18b9217d0-actionbase-formatter-table"
-)
+KNOWN_NON_PLAYBACK_MAPPING_ID = LEVELSCRIPT_ACTIONBASE_FORMATTER_TABLE_MAPPING_ID
 NPC_PROXY_DIALOG_SELECTION_MAPPING_ID = (
     "npc-proxy-dialog-selection-native-v1"
 )

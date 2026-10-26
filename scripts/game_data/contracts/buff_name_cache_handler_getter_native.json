@@ -1,0 +1,242 @@
+{
+  "schema": "endfield.buff-name-cache-handler-getter-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-handler-word-decoding-and-file-cfg-dispatch-joins",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "handlerGetter": {
+      "entryRva": 1819936,
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1819936,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1819936,
+              1819991,
+              214471372
+            ],
+            "tableRowRva": 251824952,
+            "runtimeTripleRawHex": "20C51B0057C51B00CC92C80C",
+            "codeBytes": 55,
+            "unwindRawHex": "1106020006320230CC561900",
+            "unwindVersion": 1,
+            "unwindFlags": 2,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "ownershipKind": "exceptionFamily",
+      "codeWindows": [
+        {
+          "startRva": 1819936,
+          "endRva": 1819991,
+          "sha256": "C86EA3540E5BD4B4B3809C54DABBDD264852AEF23C64F0B281C243220D4DB646"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1819869,
+        "targetRva": 1819936,
+        "instructionHex": "E83E000000"
+      }
+    },
+    "callbackDispatch": {
+      "entryRva": 3009760,
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 3009760,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              3009760,
+              3009766,
+              214466440
+            ],
+            "tableRowRva": 251915384,
+            "runtimeTripleRawHex": "E0EC2D00E6EC2D00887FC80C",
+            "codeBytes": 6,
+            "unwindRawHex": "0100000000000000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "ownershipKind": "exceptionFamily",
+      "codeWindows": [
+        {
+          "startRva": 3009760,
+          "endRva": 3009766,
+          "sha256": "9BE4BEE6931B0CAA9EFC859EB65A0453FAAE2497F254C348060D340797DE65B9"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1819884,
+        "targetRva": 3009760,
+        "instructionHex": "E8EF271200"
+      }
+    },
+    "fileDefaultDispatch": {
+      "entryRva": 3009264,
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 3009264,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              3009264,
+              3009266,
+              214466296
+            ],
+            "tableRowRva": 251915336,
+            "runtimeTripleRawHex": "F0EA2D00F2EA2D00F87EC80C",
+            "codeBytes": 2,
+            "unwindRawHex": "0100000000000000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "ownershipKind": "exceptionFamily",
+      "codeWindows": [
+        {
+          "startRva": 3009264,
+          "endRva": 3009266,
+          "sha256": "B5916D40205265465CCE91E2CD0704BF6E1E36263ACFE53C729A06F296E9F353"
+        }
+      ]
+    }
+  },
+  "globals": {
+    "cookie": 217652352,
+    "encodedHandler": 230665096,
+    "dispatchSlot": 176355472
+  },
+  "externalCalls": {
+    "guardEnter": 1806444,
+    "guardLeave": 1806528
+  },
+  "externalCallSites": {
+    "guardEnter": {
+      "siteRva": 1819944,
+      "targetRva": 1806444,
+      "instructionHex": "E83FCBFFFF"
+    },
+    "guardLeave": {
+      "siteRva": 1819977,
+      "targetRva": 1806528,
+      "instructionHex": "E872CBFFFF"
+    }
+  },
+  "loadConfigDeclaration": {
+    "loadConfigDirectoryRva": 176957984,
+    "directoryBytes": 320,
+    "structureBytes": 320,
+    "directoryHeader": {
+      "fileOffset": 528,
+      "rawHex": "20 2a 8c 0a 40 01 00 00"
+    },
+    "consumedPrefixBytes": 128,
+    "consumedPrefixHex": "40 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 1c f9 8c 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 80 f8 82 8a 01 00 00 00 90 f8 82 8a 01 00 00 00",
+    "consumedPrefixSha256": "139EAE70AE3A316C2C26125FD4933FFCEA7257E82A4264EA96E04B7E44927FB1",
+    "selectedPointerSlots": [
+      {
+        "slotRva": 176355472,
+        "fieldName": "GuardCFDispatchFunctionPointer",
+        "fieldOffset": 120,
+        "fieldRva": 176958104,
+        "fieldHex": "90 f8 82 8a 01 00 00 00",
+        "declaredStorageVa": 6618806416,
+        "onDiskSlotHex": "f0 ea 2d 80 01 00 00 00",
+        "onDiskStoredWord": 6445460208,
+        "declaredPointerStorageOwnershipProved": true,
+        "liveStoredWordOrTargetProved": false,
+        "loadedCallbackInvocationProved": false
+      },
+      {
+        "slotRva": 217652352,
+        "fieldName": "SecurityCookie",
+        "fieldOffset": 88,
+        "fieldRva": 176958072,
+        "fieldHex": "80 1c f9 8c 01 00 00 00",
+        "declaredStorageVa": 6660103296,
+        "onDiskSlotHex": "32 a2 df 2d 99 2b 00 00",
+        "onDiskStoredWord": 47936899621426,
+        "declaredPointerStorageOwnershipProved": true,
+        "liveStoredWordOrTargetProved": false,
+        "loadedCallbackInvocationProved": false
+      }
+    ],
+    "completeLoadConfigOrGuardTablesProved": false,
+    "liveStoredWordOrTargetProved": false
+  },
+  "conditionalDomain": {
+    "getter": "Valid selected global reads, frame storage and normal ABI-compatible guard helper completion preserving nonvolatile RBX. The formula uses the actual cookie and encoded-word read at their distinct consumption phases; no common publication epoch or lock effect is assumed.",
+    "fileDefault": "Only if the loaded/rebased CFG dispatch slot still selects the recorded file-default entry does that entry tail-jump through RAX with register arguments and return stack preserved. Loader replacement/live selection is not proved.",
+    "callback": "The decoded word is not proved a valid callable target. Callback/guard-helper effects, cache isolation and client execution remain open."
+  },
+  "formatReference": "https://learn.microsoft.com/en-us/windows/win32/debug/pe-format",
+  "evidenceBoundary": {
+    "exact": "Whole getter/dispatcher/file-default exception-owned bytes, getter local CFG/frame, actual helper calls and selected PE load-config field/storage joins.",
+    "direct": "Getter returns ROR64(encoded read XOR cookie read, cookie read AND 63) under normal guard-helper ABI completion. Cookie and dispatcher storage match SecurityCookie and GuardCFDispatchFunctionPointer declarations. Recorded on-disk dispatch word selects a JMP RAX entry.",
+    "conditional": "Getter formula uses read values without proving same-epoch state. Under file-default live selection and a valid callable RAX target, the dispatch tails preserve argument/return-stack forwarding; no such live selection is observed.",
+    "structuralOnly": "Preferred-image on-disk words are not runtime cookie/encoded state, loader-updated CFG pointer, decoded callback identity or imported execution.",
+    "unresolved": "Guard helper locking/memory effects, live cookie/encoded/CFG/callback values and cache isolation, error-context child effects, insertion/count/duplicate history, named class identity and positive stored parent/root integration."
+  }
+}

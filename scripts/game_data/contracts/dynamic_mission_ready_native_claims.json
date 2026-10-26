@@ -1,0 +1,59 @@
+{
+  "schema": "endfield.dynamic-mission-ready-native-claims.v1",
+  "status": "reviewed",
+  "methods": {
+    "ready": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "method": "_CheckMissionSystemReady",
+      "returnType": "System.Boolean",
+      "parameters": [],
+      "callAbi": "instance",
+      "image": "Gameplay.Beyond.dll"
+    },
+    "getter": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "get_missionSystemReady",
+      "returnType": "System.Boolean",
+      "parameters": [],
+      "callAbi": "instance",
+      "image": "Gameplay.Beyond.dll"
+    },
+    "player": {
+      "type": "Beyond.Gameplay.GameInstance",
+      "method": "get_player",
+      "returnType": "Beyond.Gameplay.GamePlayer",
+      "parameters": [],
+      "callAbi": "static",
+      "image": "Gameplay.Beyond.dll"
+    },
+    "patch": {
+      "type": "IFix.WrappersManagerImpl",
+      "method": "IsPatched",
+      "returnType": "System.Boolean",
+      "parameters": [
+        "System.Int32"
+      ],
+      "callAbi": "static",
+      "image": "Gameplay.Beyond.dll"
+    }
+  },
+  "receiverField": {
+    "owner": "Beyond.Gameplay.GamePlayer",
+    "field": "mission",
+    "type": "Beyond.Gameplay.MissionSystem"
+  },
+  "getterClaims": [
+    {
+      "returnsAfterFalseCall": {
+        "call": "IFix.WrappersManagerImpl.IsPatched",
+        "value": 1
+      }
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected method identities, ordinary raw ABI and typed native receiver field; complete owned instruction partitions.",
+    "direct": "The admitted DynamicScene ready entry requests the Boolean getter on the selected GamePlayer.mission receiver; the getter's non-replacement return is constant true and does not read a readiness field.",
+    "conditional": "Both named IsPatched checks return false, named get_player and mission receiver are valid nonnull references, opaque initialization helpers return normally, and normal Win64 frame/call rules hold.",
+    "unresolved": "Actual invocation, player/mission instance selection, patch replacement behavior and live readiness remain unresolved. No stored readiness state is established."
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schema": "endfield.buff-camera-descriptor-composition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_method_spec_descriptor_native.json",
+  "function": {
+    "entryRva": 166496,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 166496,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            166496,
+            166905,
+            211676936
+          ],
+          "tableRowRva": 251735492,
+          "runtimeTripleRawHex": "608A0200F98B020008EF9D0C",
+          "codeBytes": 409,
+          "unwindRawHex": "11180A0018641500185414001834130018D214F012E01070AC541900",
+          "unwindVersion": 1,
+          "unwindFlags": 2,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 166496,
+        "endRva": 166905,
+        "sha256": "856CA2D7C745075CBD7FC10B2F4DF04629BDB8C94002D2D0A2B750A4B9364C90"
+      }
+    ],
+    "checkedInstructionCount": 105
+  },
+  "segments": {
+    "savedInputs": [
+      166520,
+      166541
+    ],
+    "newDescriptor": [
+      166696,
+      166731
+    ],
+    "cachedDescriptor": [
+      166690,
+      166696
+    ],
+    "return": [
+      166876,
+      166905
+    ]
+  },
+  "calls": {
+    "allocator": 413344
+  },
+  "globals": {
+    "allocatorContext": 233439168
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, complete exception family and body bytes",
+    "direct": "CFG-joined entry arguments stored at three QWORD offsets; saved pointer returned from hit/allocation paths",
+    "conditional": "Valid disjoint writable allocation and normal Win64 nonvolatile/stack-preserving callees",
+    "unresolved": "Cache lookup key equality, insertion/allocator/synchronization effects, later pointee stability, runtime selection and positive camera list grammar"
+  }
+}

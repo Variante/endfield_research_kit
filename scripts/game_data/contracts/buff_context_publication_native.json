@@ -1,0 +1,254 @@
+{
+  "schema": "endfield.buff-context-publication-native-contract.v2",
+  "status": "exact-current-build",
+  "scope": "complete-second-context-physical-field-call-and-publication-program",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContracts": {
+    "setup": "buff_formatter_context_setup_native.json",
+    "creation": "buff_formatter_class_creation_native.json",
+    "dispatch": "buff_formatter_dispatch_fallback_native.json",
+    "adapter": "buff_condition_context_adapter_native.json"
+  },
+  "layout": {
+    "selfPointer": 120,
+    "metadataRecordPointer": 104,
+    "interfaceCount": 304,
+    "vtableCount": 300,
+    "interfaceArray": 176,
+    "recordStride": 16,
+    "recordOffsetDword": 8,
+    "pairBias": 20,
+    "pairStride": 16,
+    "linkedPointer": 96,
+    "specialByte": 308,
+    "selectorDword": 284
+  },
+  "metadataColumns": {
+    "recordBytes": 92,
+    "vtableCountWordOffset": 78,
+    "interfaceOffsetsCountWordOffset": 82,
+    "rowsChecked": 58110,
+    "runtimeSourcePointerIdentityProved": false,
+    "vtableStartDwordOffset": 56,
+    "interfaceOffsetsStartDwordOffset": 60,
+    "headerSections": {
+      "vtableMethods": {
+        "offsetField": 144,
+        "storedOffset": 43365336,
+        "storedBytes": 2696364,
+        "recordBytes": 4
+      },
+      "interfaceOffsets": {
+        "offsetField": 152,
+        "storedOffset": 46061700,
+        "storedBytes": 732328,
+        "recordBytes": 8
+      }
+    },
+    "allStoredTypeRangeStartsAndBoundsChecked": true,
+    "actualRuntimeHeaderBaseOrRecordIdentityProved": false
+  },
+  "program": {
+    "entryRva": 2919920,
+    "windows": {
+      "prefix": {
+        "startRva": 2919920,
+        "endRva": 2919991
+      },
+      "selector": {
+        "startRva": 2920885,
+        "endRva": 2920898
+      },
+      "linkedArray": {
+        "startRva": 2919991,
+        "endRva": 2920263
+      },
+      "ordinary": {
+        "startRva": 2921039,
+        "endRva": 2921453
+      },
+      "flags": {
+        "startRva": 2920840,
+        "endRva": 2920878
+      },
+      "linkedMethods": {
+        "startRva": 2920263,
+        "endRva": 2920840,
+        "entryRvas": [
+          2920263,
+          2920271
+        ]
+      },
+      "special": {
+        "startRva": 2920898,
+        "endRva": 2921039
+      },
+      "restore": {
+        "startRva": 2920878,
+        "endRva": 2920885
+      }
+    },
+    "labels": {
+      "restore": 2920878,
+      "ordinarySelector": 2920885,
+      "ordinary": 2921039,
+      "linkedArrayDone": 2920263,
+      "linkedArraySkip": 2920271,
+      "flagUpdate": 2920840
+    },
+    "savedHomes": {
+      "rsi": 96,
+      "r13": 80,
+      "r15": 64
+    },
+    "linkedSavedHomes": {
+      "r12": 88,
+      "r14": 72
+    },
+    "globals": {
+      "headerPointerCellRva": 233439216,
+      "metadataBaseCellRva": 233439208,
+      "registrationCellRva": 233507288,
+      "allocatorContextCellRva": 233439184,
+      "fallbackTargetAddressRva": 2979216,
+      "fallbackSecondWordAddressRva": 176374784,
+      "alternateTargetGateCellRva": 233437008
+    },
+    "calls": {
+      "linkedLookup": 59968,
+      "allocation": 413344,
+      "inflate": 38448,
+      "typeLookup": 27392,
+      "methodLookup": 2985232,
+      "methodCarrierInflate": 37280,
+      "methodCarrierLookup": 36128,
+      "incomingAddress": 45072,
+      "missingMethodTarget": 73152,
+      "selectorRepairFirst": 645840,
+      "selectorRepairSecond": 646272,
+      "specialLookup": 69344,
+      "specialFirst": 2938928,
+      "specialSecond": 2937872
+    },
+    "registrationTypesOffset": 56,
+    "interfaceNullIndex": -1,
+    "inflationContextOffset": 8,
+    "typeLookupFlag": 1,
+    "methodDirectTargetOffset": 8,
+    "methodFlagByte": 84,
+    "methodAlternateMask": 2,
+    "methodAlternateTargetOffset": 88,
+    "linkedMethods": {
+      "methodClassPointer": 32,
+      "methodCarrierPointer": 64,
+      "classTupleFlagByte": 312,
+      "classTupleFlagMask": 16,
+      "tupleHomeOffset": 32,
+      "classPrepareFlagByte": 276,
+      "classPrepareFlagMask": 32,
+      "classKindByte": 42,
+      "classPrepareKinds": [
+        19,
+        30
+      ],
+      "classPreparedFlagByte": 313,
+      "classPreparedFlagMask": 16,
+      "methodMissingTargetExcludedMask": 1,
+      "carrierExclusionPointer": 16,
+      "selectorSentinel": -1,
+      "selectorLinkedArgumentOffset": 8,
+      "selectorRepairContextOffset": 32,
+      "selectorRepairNestedPointer": 24
+    },
+    "special": {
+      "receiverSourcePointer": 64,
+      "receiverLookupResult": 72,
+      "sourceTypeAddressOffset": 32,
+      "sourceTypeKindByte": 10,
+      "directSetKinds": [
+        14,
+        29,
+        18,
+        28,
+        20
+      ],
+      "queryKind": 21,
+      "queryDwordOffset": 40,
+      "queryShift": 31,
+      "flagByte": 312,
+      "flagMask": 32
+    }
+  },
+  "conditions": [
+    "Selected direct callees return normally under the Microsoft x64 ABI, preserving nonvolatile registers and restoring the caller stack",
+    "Every accessed pointer names compatible readable/writable storage with the capacities required by the actual byte count and indexed stores",
+    "Receiver/linked/global/array storage and callee effects are disjoint from protected frame/home cells; saved address and selected fields remain stable when relied on",
+    "Recursive calls terminate for the selected execution; this contract does not establish termination or absence of cycles",
+    "The runtime metadata/header/base/registration cells and class record pointer are compatible with the selected stored metadata when interpreting record identities",
+    "Fresh count and array-pointer reads may differ after children or concurrent writes; allocation arguments alone do not establish capacity or stable contents",
+    "Normal ABI child returns and compatible stable/disjoint storage are necessary for physical field/argument interpretation; recursion, child meaning, byref contents, capacity and visibility remain unproved"
+  ],
+  "evidenceBoundary": {
+    "exact": "Full current second owned CFG/store inventory and complete original-byte grammar partition, named stored metadata range starts/header sections and creation source copies.",
+    "direct": "Both interface array writers, ordinary and linked method-pair candidate/target/substitute writes, the guarded post-creation anonymous selector copy, special lookup/flag writes and every actual outgoing argument/call site.",
+    "conditional": "Normal ABI returns and compatible storage. Unsigned WORD loops have bounded continuation; reused register/home values require noninterference. Metadata identities additionally need coherent runtime header/base/record cells.",
+    "structuralOnly": "Anonymous candidate/class/carrier/kind fields, lookup results and substitute addresses have no proved runtime identity or live meaning.",
+    "unresolved": "Runtime field/cell/class/interface/getter identity, lookup/inflation/special child effects and termination, byref contents, recursion, allocation capacity, concurrent visibility, condition evaluation and whole-root execution."
+  },
+  "creationPublicationSources": {
+    "inheritedDispatchSources": {
+      "allocationCallRva": 2979969,
+      "selfPointer": {
+        "siteRva": 2979989,
+        "allocationByteOffset": 120,
+        "freshAllocationRaxStoredIntoItsOwnQwordProved": true,
+        "directStoreUnique": true,
+        "actualPreparedReceiverPointerEqualityProved": false
+      },
+      "interfaceRecordCount": {
+        "loadRva": 2980597,
+        "storeRva": 2980601,
+        "sourceRecordWordOffset": 82,
+        "allocationWordOffset": 304,
+        "namedInterfaceOffsetsCountCopiedToAllocationProved": true,
+        "bits": 16,
+        "directStoreUnique": true,
+        "unchangedByChildrenOrAliasesProved": false
+      },
+      "storesDominateEveryNormalLocalReturn": true,
+      "allocationRequest": {
+        "source": "current stored metadata vtable_count WORD",
+        "sourceRecordWordOffset": 78,
+        "bias": 20,
+        "shift": 4,
+        "formula": "(zero_extend_64(stored vtable_count WORD) + bias) << shift",
+        "actualAllocationCapacityOrOutcomeProved": false
+      },
+      "runtimeMetadataClassOrArrayIdentityProved": false,
+      "wholeRootAdmitted": false
+    },
+    "metadataRecordPointer": {
+      "storeRva": 2980124,
+      "allocationByteOffset": 104,
+      "source": "saved current metadata record pointer RDI",
+      "directStoreUnique": true,
+      "dominatesEveryNormalLocalReturn": true,
+      "unchangedByChildrenAliasesOrConcurrentWritesProved": false
+    },
+    "vtableCount": {
+      "storeRva": 2980579,
+      "allocationByteOffset": 300,
+      "source": "current named metadata vtable_count WORD",
+      "loadRva": 2980575,
+      "sourceRecordWordOffset": 78,
+      "directStoreUnique": true,
+      "dominatesEveryNormalLocalReturn": true,
+      "unchangedByChildrenAliasesOrConcurrentWritesProved": false
+    },
+    "actualRuntimeMetadataClassOrPreparedPointerIdentityProved": false
+  }
+}

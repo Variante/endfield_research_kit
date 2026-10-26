@@ -1,0 +1,59 @@
+{
+  "schema": "endfield.ecs-collision-ownership.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional: named bodies contain source-field reads and decode/identity-recording calls on available branches. This proves a factory creation route, not its retail execution, general streaming selection, the native internal-call registration or a captured hit-to-source join.",
+  "methods": {
+    "Factory.CreateBusRender": {
+      "type": "Beyond.Gameplay.RemoteFactory.RemoteFactoryVisual",
+      "method": "CreateBusRender",
+      "contract": "reads authored collider bytes and ordered meshes, decodes an actor, obtains its physics identity and records an owning entity",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Factory.FactoryUnitConfigAsset::colliderData"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Factory.FactoryUnitConfigAsset::colliderMeshes"
+        },
+        {
+          "calls": [
+            "UnityEngine.ECSCollider.Decode",
+            "UnityEngine.ECSCollider.GetId",
+            "UnityEngine.ECSCollider.GetVersion",
+            "UnityEngine.ECSCollider.RecordEntity"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "Proxy.GetOwningEntity": {
+      "type": "UnityEngine.ECSColliderResultProxy",
+      "method": "get_colliderEntity",
+      "contract": "passes the separate physics ID/version lanes to the entity resolver",
+      "claims": [
+        {
+          "matches": "mov edx, \\[rcx\\+0xc\\]"
+        },
+        {
+          "matches": "mov ecx, \\[rcx\\+0x8\\]"
+        },
+        {
+          "calls": [
+            "UnityEngine.ECSCollider.GetEntity"
+          ]
+        }
+      ]
+    },
+    "ECS.RecordEntity": {
+      "type": "UnityEngine.ECSCollider",
+      "method": "RecordEntity",
+      "contract": "forwards the actor and packed Entity value through the injected entry",
+      "claims": [
+        {
+          "calls": [
+            "UnityEngine.ECSCollider.RecordEntity_Injected"
+          ]
+        }
+      ]
+    }
+  }
+}

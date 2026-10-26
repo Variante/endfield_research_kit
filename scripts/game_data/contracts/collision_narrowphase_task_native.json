@@ -1,0 +1,41 @@
+{
+  "schema": "endfield.collision-narrowphase-task-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "sharedContract": "collision_pair_step_native.json",
+  "sceneField": 6520,
+  "vtableRva": 25982504,
+  "runSlot": 7,
+  "name": "ScScene.rigidBodyNarrowPhase",
+  "nameRva": 25984720,
+  "nameGetterRva": 5803712,
+  "constructor": {
+    "windowRole": "scene_constructor",
+    "vtableLea": 3328,
+    "vtableStore": 3335,
+    "ownerStore": 3407,
+    "nameLea": 3356,
+    "nameStore": 3363
+  },
+  "evidenceBoundary": {
+    "direct": "Constructor stores the named embedded task and Scene owner; its concrete run tail-calls dependency wiring with original owner and continuation.",
+    "unresolved": "The saved worker producer does not include this task header, original enqueue or a simulation-generation source; no pair-to-step join."
+  },
+  "codeWindows": [
+    {
+      "role": "run",
+      "rva": 8038688,
+      "bytes": 13,
+      "sha256": "b1c35d11b958ba22b9c62765c98ec4075787533626d45ee905c152d971bd6574",
+      "boundary": "Complete thirteen-byte leaf tail thunk; no unwind frame."
+    }
+  ],
+  "probes": [],
+  "fieldOperands": [],
+  "targetOperands": [],
+  "layout": {}
+}

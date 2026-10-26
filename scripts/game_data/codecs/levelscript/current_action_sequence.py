@@ -57,6 +57,10 @@ Stored-shape facts this module owns:
 - a positive ``ParamListForGraph`` count is read only while
   ``levelscript_param_list_native`` validates the selected owner contract; it
   then reuses the exact ``List<ParamKeyValue>`` codec.
+- ``PreloadCutsceneAction`` reads the reviewed v5 seventeen-member layout,
+  including the option controls inserted among the preload parameters. The
+  selected union gate, catalog count, reviewed count and serialized count
+  must agree; a refusal retains its validator and expected/actual counts.
 
 Evidence tier: ``exact`` stored layout for the selected build.  It does not
 prove runtime graph execution, event dispatch or handler ownership, and
@@ -121,7 +125,7 @@ _CURRENT_SEQUENTIAL_ACTION_MEMBERS = {
     "PlayRadio": 0x0D,
     "PlayRadioAndWait": 0x0D,
     "PlayRemoteComm": 0x11,
-    "PreloadCutsceneAction": 0x0C,
+    "PreloadCutsceneAction": 0x11,
     "RaiseCustomLevelEvent": 0x0A,
     "RemoveCameraControlState": 0x0E,
     "SetEnablePlayerAction": 0x0B,
@@ -135,6 +139,50 @@ _CURRENT_SEQUENTIAL_ACTION_MEMBERS = {
     "WaitForNpcProxyReady": 0x09,
     "WaitForSeconds": 0x09,
 }
+
+
+def _preload_cutscene_layout(member_count: int = 17) -> dict[str, Any]:
+    """Require the name-keyed v5 layout and selected-build union gate.
+
+    The generated reader inserts option controls among the older preload
+    fields. Reading the former twelve-member body would lose the cursor.
+    """
+    validator = "levelscriptPreloadCutscene"
+    audit = union_tags.union_tags_audit()
+
+    def refuse(gate: str, expected: Any, actual: Any) -> None:
+        error = LevelScriptTopLevelFramingError(
+            f"validator={validator},gate={gate},action=PreloadCutsceneAction,"
+            f"expected={expected},actual={actual},memberCount={member_count},"
+            f"source={levelscript_action_map.CONTRACT_PATH}"
+        )
+        error.diagnostics = {
+            "validator": validator, "gate": gate, "action": "PreloadCutsceneAction",
+            "expected": expected, "actual": actual, "memberCount": member_count,
+            "source": str(levelscript_action_map.CONTRACT_PATH),
+        }
+        raise error
+
+    if audit.get("status") != "validated":
+        refuse("installed-native-inputs", "validated", audit.get("status"))
+    pair = union_tags.pair("ActionBase", "PreloadCutsceneAction")
+    if not isinstance(pair[0], int) or pair[1] != 17:
+        refuse("catalog-member-count", 17, pair[1:] if not isinstance(pair[0], int) else pair[1])
+    if member_count != 17:
+        refuse("serialized-member-count", 17, member_count)
+    try:
+        layouts = levelscript_action_map._contract()["layouts"]
+    except (ValueError, KeyError, OSError) as error:
+        refuse("reviewed-layout-contract", levelscript_action_map.LAYOUT_SCHEMA, str(error)[:240])
+    rows = [row for row in layouts if row.get("family") == "ActionBase"
+            and union_tags.short_name(row.get("wrapperName", "")) == "PreloadCutsceneAction"]
+    if len(rows) != 1:
+        refuse("reviewed-layout-row", 1, len(rows))
+    row = rows[0]
+    if row.get("memberCount") != 17 or len(row.get("fields", [])) != 17:
+        refuse("reviewed-member-count", 17,
+               [row.get("memberCount"), len(row.get("fields", []))])
+    return row
 
 
 def _read_current_action_envelope(
@@ -158,6 +206,8 @@ def _read_current_action_envelope(
         tag = data[cursor]
         member_count = data[cursor + 1]
         uid_offset = cursor + 12
+    if union_tags.type_name_for_tag("ActionBase", tag) == "PreloadCutsceneAction":
+        _preload_cutscene_layout(member_count)
     action = union_tags.routes("ActionBase", _CURRENT_SEQUENTIAL_ACTION_MEMBERS).get(
         (tag, member_count)
     )
@@ -682,25 +732,15 @@ def _read_current_action_fields(
             "consumedBytes": cursor - start,
         }, cursor
     if action == "PreloadCutsceneAction":
-        fields: dict[str, Any] = {}
-        decoded = _decode_string_param(data, cursor)
-        if decoded is None:
-            raise LevelScriptTopLevelFramingError(
-                f"PreloadCutsceneAction.cutsceneId did not decode at offset={cursor}"
-            )
-        fields["cutsceneId"], cursor = decoded
-        fields["isMultiplePreload"], cursor = _read_current_bool_param(
-            data, cursor, "PreloadCutsceneAction.isMultiplePreload"
-        )
-        fields["multiCutsceneId"], cursor = _read_nullable_levelscript_param(
-            data, cursor, _decode_string_collection_param,
-            "PreloadCutsceneAction.multiCutsceneId",
-        )
-        fields["showAfterPreloadFinish"], cursor = _read_current_bool_param(
-            data, cursor, "PreloadCutsceneAction.showAfterPreloadFinish"
-        )
-        fields["consumedBytes"] = cursor - start
-        return fields, cursor
+        layout = _preload_cutscene_layout()
+        reader = levelscript_action_map._Cursor(data, cursor)
+        try:
+            fields = {name: reader.value(kind, f"PreloadCutsceneAction.{name}")
+                      for name, kind in layout["fields"][8:]}
+        except levelscript_action_map.ActionMapCodecError as error:
+            raise LevelScriptTopLevelFramingError(str(error)) from error
+        fields["consumedBytes"] = reader.offset - start
+        return fields, reader.offset
     if action == "RaiseCustomLevelEvent":
         event_args = _decode_current_event_args_ptr_param(data, cursor)
         if event_args is None:
@@ -1100,7 +1140,9 @@ def _read_reviewed_map_node(
     try:
         return levelscript_action_map.decode_reviewed_node(data, cursor, family)
     except levelscript_action_map.ActionMapCodecError as error:
-        if getattr(error, "diagnostics", {}).get("validator") == "levelscriptOnSquadMemberUspNative":
+        if getattr(error, "diagnostics", {}).get("validator") in (
+            "levelscriptOnSquadMemberUspNative", "levelscriptPreloadCutscene",
+        ):
             refusal = LevelScriptTopLevelFramingError(
                 f"reviewed {family} at offset={cursor}: {error}"
             )
@@ -1129,6 +1171,8 @@ def frame_levelscript_current_action_sequence_leader_enter(
                 data, fields_start, str(envelope["action"])
             )
         except LevelScriptTopLevelFramingError as error:
+            if getattr(error, "diagnostics", {}).get("validator") == "levelscriptPreloadCutscene":
+                raise
             action, cursor = _read_reviewed_map_node(
                 data, cursor, "ActionBase", error
             )

@@ -44,7 +44,7 @@ class GenericEntries:
                  for arg in inst.arguments]
         return names, inst.as_dict()
 
-    def resolve(self, method_index: int, class_arguments: list[str], method_arguments: list[str]) -> dict[str, Any]:
+    def _matching_registrations(self, method_index: int, class_arguments: list[str], method_arguments: list[str]) -> list[dict[str, Any]]:
         selected = {i for i, row in enumerate(self.specs) if row[0] == method_index}
         rows = generic_method_candidates(
             self.table, self.meta["genericMethodTableCount"], len(self.specs), selected,
@@ -60,6 +60,28 @@ class GenericEntries:
                 pointer = struct.unpack_from("<Q", self.pointers, slot * 8)[0]
                 matches.append({"pointer": pointer, "methodSpecIndex": row["methodSpecIndex"],
                                 "registration": row, "classInstantiation": cp, "methodInstantiation": mp})
+        return matches
+
+    def observe(self, method_index: int, class_arguments: list[str], method_arguments: list[str]) -> list[dict[str, Any]]:
+        """Observe matching rows, preserving aliases without granting admission.
+
+        Null pointers and multiple rows remain observations. Consumers needing
+        a unique method-definition entry must continue to use ``resolve``.
+        """
+        result = []
+        for row in self._matching_registrations(method_index, class_arguments, method_arguments):
+            pointer = row['pointer']
+            aliases = sorted({self.specs[spec][0] for spec, slot, _invoker, _adjustor
+                in struct.iter_unpack('<iiii', self.table)
+                if pointer and struct.unpack_from('<Q', self.pointers, slot * 8)[0] == pointer})
+            result.append({**row, 'methodDefinitionIndices': aliases,
+                'uniqueMethodDefinitionForPointer': bool(pointer) and aliases == [method_index],
+                'runtimeSelectionObserved': False,
+                'boundary': 'Matching registration rows and physical pointers only; folded aliases, null pointers and duplicate rows remain explicit. No unique body identity, runtime context selection or callee effects follow.'})
+        return result
+
+    def resolve(self, method_index: int, class_arguments: list[str], method_arguments: list[str]) -> dict[str, Any]:
+        matches = self._matching_registrations(method_index, class_arguments, method_arguments)
         if len(matches) != 1 or not matches[0]["pointer"]:
             raise ValueError(f"generic entry: expected one non-null registered instantiation, matched {len(matches)}")
         result = matches[0]

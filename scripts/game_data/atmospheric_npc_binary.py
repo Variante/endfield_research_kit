@@ -10,6 +10,12 @@ counts and supported polymorphic routes advance a real cursor through the
 bounded value. An unsupported positive nested variant stays fail-closed at
 exact framing or at a named entity prefix; it is never promoted to a
 complete schema. These are authored placements, not observed spawning.
+
+``strings`` selects pooled storage: builds that ship ``Json/StringPool/``
+store each key and string as an ``i32`` global pool index. The caller passes
+the export's pool; the reader never guesses the encoding. A first entry
+whose value member count differs from the proven 118 is reported as schema
+drift rather than as an anchor-count mismatch.
 """
 
 from __future__ import annotations
@@ -18,6 +24,8 @@ import re
 import math
 import struct
 from typing import Any
+
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
 
 
 ROOT_MEMBER_COUNT = 1
@@ -53,7 +61,9 @@ def _read_i32(data: bytes, offset: int) -> int:
     return struct.unpack_from("<i", data, offset)[0]
 
 
-def decode_level_entity_data(data: bytes, start: int, end: int) -> dict[str, Any]:
+def decode_level_entity_data(
+    data: bytes, start: int, end: int, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode the inherited 14-field ``LevelEntityData`` prefix."""
     cursor = start
 
@@ -80,6 +90,12 @@ def decode_level_entity_data(data: bytes, start: int, end: int) -> dict[str, Any
         return bool(value)
 
     def string(field: str) -> str | None:
+        if strings is not None:
+            index = i32(f"{field}.poolIndex")
+            try:
+                return strings.resolve(index)
+            except StringPoolDecodeError as exc:
+                raise AtmosphericNpcFramingError(f"{field}:{exc}") from exc
         length = i32(f"{field}.length")
         if length == -1:
             return None
@@ -122,7 +138,27 @@ def decode_level_entity_data(data: bytes, start: int, end: int) -> dict[str, Any
     }
 
 
-def frame_atmospheric_npc_table(data: bytes) -> dict[str, Any]:
+def _pooled_key_anchor(
+    data: bytes, key_offset: int, strings: StringPool
+) -> dict[str, Any] | None:
+    try:
+        key = strings.resolve(_read_i32(data, key_offset))
+    except StringPoolDecodeError:
+        return None
+    value_offset = key_offset + 4
+    if key is None or KEY_RE.fullmatch(key) is None or value_offset >= len(data):
+        return None
+    return {
+        "key": key,
+        "keyOffset": key_offset,
+        "keyEndOffset": value_offset,
+        "valueOffset": value_offset,
+    }
+
+
+def frame_atmospheric_npc_table(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode the counted string/proxy dictionary through physical EOF."""
     if not data or data[0] != ROOT_MEMBER_COUNT:
         actual = data[0] if data else None
@@ -147,8 +183,26 @@ def frame_atmospheric_npc_table(data: bytes) -> dict[str, Any]:
             "evidenceBoundary": "The one-member root and empty dictionary count close at physical EOF.",
         }
 
+    if strings is not None:
+        first = _pooled_key_anchor(data, 5, strings)
+    else:
+        length = _read_i32(data, 5)
+        first = {"valueOffset": 9 + length} if 0 < length <= MAX_KEY_BYTES else None
+    if first is not None and first["valueOffset"] < len(data):
+        actual = data[first["valueOffset"]]
+        if actual != PROXY_MEMBER_COUNT:
+            raise AtmosphericNpcFramingError(
+                "entry 0 proxy member count mismatch (schema drift): "
+                f"expected={PROXY_MEMBER_COUNT} actual={actual}"
+            )
+
     anchors: list[dict[str, Any]] = []
     for key_offset in range(5, max(5, len(data) - 5)):
+        if strings is not None:
+            anchor = _pooled_key_anchor(data, key_offset, strings)
+            if anchor is not None and data[anchor["valueOffset"]] == PROXY_MEMBER_COUNT:
+                anchors.append(anchor)
+            continue
         length = _read_i32(data, key_offset)
         if length <= 0 or length > MAX_KEY_BYTES:
             continue
@@ -194,7 +248,7 @@ def frame_atmospheric_npc_table(data: bytes) -> dict[str, Any]:
         }
         try:
             level_entity = decode_level_entity_data(
-                data, value_offset + 1, value_end
+                data, value_offset + 1, value_end, strings=strings
             )
         except AtmosphericNpcFramingError as exc:
             entry["levelEntityPrefixDiagnostic"] = str(exc)

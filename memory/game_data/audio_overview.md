@@ -252,14 +252,24 @@ complete source-to-mixed-frame attribution and allocation generations still need
 the targeted evidence described in
 [`runtime_capture_requirements.md`](../runtime_capture_requirements.md#audio-event-owner-listener-and-output-selection).
 Caller review now excludes an incorrectly declared historical mixer-row array:
-those recipes read task-state bytes, while independent route source/bus fields
+those recipes read result-storage bytes, while independent route source/bus fields
 remain valid. Mixer capture now supplies the actual row array and completed
 output conversion; recorded constant gain reproduces the saved first-channel
 output prefix. The initial current-serial read used a neighboring word and is
-excluded. A corrected repeat is prepared, with its serial load now bound to the
-owned selector-blob field. Other current owner/source reads remain usable with
-partial identity. Another voice prefix independently matches original native
-decoding from its matching physical WEM.
+excluded. The corrected repeat now observes nonzero stored serials beside PCM,
+with unique managed Event candidates and complete local source/owner transport
+tuples for a subset. Another voice prefix independently matches original native
+decoding from its matching physical WEM. Observed source-buffer reuse leaves
+multiple Event candidates for some mixer storage. Frame capture now retains
+paired bus input/output, descriptor publication and unsampled source/reset
+endpoints. A subset connects current source identity to native published mixer
+inputs within observed intervals. Actual gain/matrix/filter processing and
+device-frame identity remain open. Numeric reads are captured, but queue loss
+withholds that session's source/write/reset joins. Completed numeric pairs remain
+local observations. Attribution/address bugs are patched and both saved sessions
+replayed; numerical operands, frame handoff and bounded recording scope still
+block further capture requests. No global frame
+or whole Event contribution is inferred from storage.
 Live package/provider choice, pointer generations, inherited owner/route/effect
 state, varying pitch/rate, complete device negotiation/processing history and
 audibility remain open. Details stay in

@@ -1,0 +1,196 @@
+{
+  "schema": "endfield.buff-camera-descriptor-temporary-cleanup-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_descriptor_cache_rebuild_request_native.json",
+  "publicationContract": "buff_camera_descriptor_cache_publication_native.json",
+  "cleanup": {
+    "entryRva": 472352,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 472352,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            472352,
+            472378,
+            211660312
+          ],
+          "tableRowRva": 251751932,
+          "runtimeTripleRawHex": "203507003A35070018AE9D0C",
+          "codeBytes": 26,
+          "unwindRawHex": "1904010004420000AC541900",
+          "unwindVersion": 1,
+          "unwindFlags": 3,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 472352,
+        "endRva": 472378,
+        "sha256": "1C83550832A6CA201D252C423344ECD46A285AD82F1EB01EE25400BB12E19C69"
+      }
+    ],
+    "checkedInstructionCount": 8
+  },
+  "releaseBody": {
+    "entryRva": 1821040,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 1821040,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            1821040,
+            1821100,
+            214471480
+          ],
+          "tableRowRva": 251825084,
+          "runtimeTripleRawHex": "70C91B00ACC91B003893C80C",
+          "codeBytes": 60,
+          "unwindRawHex": "010A02000A320630",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 1821040,
+        "endRva": 1821100,
+        "sha256": "8B2EBDB171416E06678284890E2CA8EEA26D88BC182577A4103F7F63F30A3F2A"
+      }
+    ],
+    "checkedInstructionCount": 19
+  },
+  "releaseTail": {
+    "entryRva": 1708640,
+    "targetRva": 1821040,
+    "codeWindow": {
+      "startRva": 1708640,
+      "endRva": 1708645,
+      "sha256": "F4303F5003E04EC9CEB9F7839B7D0FCD6B4C2B85D2F93B28BC30FF5D947A7E42"
+    },
+    "boundary": "exact entry tail transfer only; physical function extent unresolved"
+  },
+  "labels": {
+    "restore": 1821094,
+    "nullReturn": 1821099
+  },
+  "globals": {
+    "heapHandle": 230666768
+  },
+  "calls": {
+    "errorConversionCandidate": 1678896,
+    "errorSlotCandidate": 1679216
+  },
+  "imports": {
+    "heapOperation": {
+      "iatCellRva": 176354552,
+      "dll": "KERNEL32.dll",
+      "name": "HeapFree",
+      "callSiteRva": 1821062,
+      "declaration": {
+        "slotRva": 176354552,
+        "descriptorRva": 217639872,
+        "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+        "libraryNameRva": 217644624,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 217640168,
+        "firstThunkRva": 176353352,
+        "thunkIndex": 150,
+        "actualThunkCount": 181,
+        "terminatedLookupBytes": 1456,
+        "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+        "lookupEntryRva": 217641368,
+        "lookupEntryHex": "9e 08 f9 0c 00 00 00 00",
+        "iatEntryHex": "9e 08 f9 0c 00 00 00 00",
+        "hintNameRva": 217647262,
+        "hint": 896,
+        "hintHex": "80 03",
+        "symbolName": "HeapFree",
+        "symbolNameHex": "48 65 61 70 46 72 65 65 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    },
+    "lastError": {
+      "iatCellRva": 176353384,
+      "dll": "KERNEL32.dll",
+      "name": "GetLastError",
+      "callSiteRva": 1821072,
+      "declaration": {
+        "slotRva": 176353384,
+        "descriptorRva": 217639872,
+        "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+        "libraryNameRva": 217644624,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 217640168,
+        "firstThunkRva": 176353352,
+        "thunkIndex": 4,
+        "actualThunkCount": 181,
+        "terminatedLookupBytes": 1456,
+        "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+        "lookupEntryRva": 217640200,
+        "lookupEntryHex": "68 f6 f8 0c 00 00 00 00",
+        "iatEntryHex": "68 f6 f8 0c 00 00 00 00",
+        "hintNameRva": 217642600,
+        "hint": 653,
+        "hintHex": "8d 02",
+        "symbolName": "GetLastError",
+        "symbolNameHex": "47 65 74 4c 61 73 74 45 72 72 6f 72 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, cleanup/release complete exception families, five-byte tail and declared IAT name joins",
+    "direct": "Separate field guard/reload, unchanged-pointer tail transfer, heap-call arguments, low-DWORD success branch and error-slot store",
+    "conditional": "Valid coherent record/global/frame storage, trusted ordinary import binding, heap/pointer ownership and normal writable-slot helpers",
+    "unresolved": "Actual IAT binding, successful free, input ownership, error conversion/slot algorithms, concurrent field changes and runtime selection"
+  }
+}

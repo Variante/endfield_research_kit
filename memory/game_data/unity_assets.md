@@ -77,6 +77,225 @@ ownership. The scene gate checks the prefix against JSON and protects both
 raw and JSON bytes in its extraction receipt. This closes stored triangle and
 convex prefab bindings without claiming to decode unrelated Bundle tail fields.
 
+The scene gate's receipt API recomputes these joins from an admitted saved
+extraction without launching AnimeStudio. It checks canonical ledger locations
+so equivalent relative and absolute paths can reuse one receipt, while retaining
+all source/content/selection gates. Consumption snapshots cover the selected
+VFS inputs, exporter closure, raw/typed objects and receipt. The Assets projection
+publishes exact per-collider prefab ownership through this API; unknown live
+instances and placement remain separate from the stored hierarchy.
+
+[`unity_scene_meshes.py`](../../scripts/game_data/unity_scene_meshes.py) can close
+external Mesh targets missing from a saved scene extraction by composing it with
+an independently admitted cooked-Mesh corpus from the same current input set.
+The raw referring PPtr, its exact exported external-table slot and unique
+physical target CAB remain mandatory. Target raw/cooked bytes are rejoined and
+complete format readers run before admitting geometry. Ambiguous or absent
+targets remain unresolved. The result uses a separate stored-collider Mesh-join
+schema and retains both selections; it does not widen the scene-body census or
+require another export or runtime capture.
+
+Those admitted surfaces and reciprocal Transform chains are sufficient for a
+stored collision assembly. Keep each collider reference as a separate part,
+compose the root's stored TRS as well as its descendants, and group only by the
+physical root GameObject identity. Such a projection establishes authored
+relative geometry, including disabled definitions, rather than runtime physics
+or world placement. Selected coverage also leaves primitive bodies other than
+separately admitted boxes, custom and unselected colliders outside the reconstruction. The Assets owner
+documents preview/publication behavior in its page recovery guide.
+
+[`unity_box_corpus.py`](../../scripts/game_data/unity_box_corpus.py) owns the
+supplemental stored BoxCollider scope. Its producer selects only physical
+AssetBundle spans in an admitted scene receipt, exports BoxCollider and
+AssetBundle raw/typed bodies with the same current exporter, and checks exact
+raw/JSON coverage and the original Bundle hashes. The serialized field-path
+sequence and an independent EOF reader prove GameObject/material PPtrs,
+options/tag words, the surface byte and boolean flags, full size and local
+center. A reciprocal GameObject component declaration and complete stored
+Transform chain are mandatory. Only an actual AssetBundle container GameObject
+PPtr establishes a prefab root; preloads and names do not. Saved derived rows
+are recomputed after source/producer/selection/log/raw hashes and consumption
+snapshots pass. This does not widen the original scene or cooked-Mesh receipt,
+prove other primitive layouts or make missing exports evidence of absence.
+Stored box corners can be projected through the authored Transform chain; this
+is not a claim about live nonuniform-scale/shear handling or PhysX attachment.
+
+[`unity_render_corpus.py`](../../scripts/game_data/unity_render_corpus.py) adds
+a separate selected MeshFilter/MeshRenderer supplement, using the shared
+[`unity_scene_supplement.py`](../../scripts/game_data/unity_scene_supplement.py)
+producer/source/census gates also used by boxes. The original scene receipt's
+scope stays unchanged. The reviewed
+[`unity_render_layouts.json`](../../scripts/game_data/contracts/unity_render_layouts.json)
+field-path sequences and [`unity_render.py`](../../scripts/game_data/unity_render.py)
+independent EOF reader establish the stored component header, material PPtr
+order, static-batch fields and additional vertex-stream pointers. Renderer and
+MeshFilter must declare the same reciprocal GameObject, and the complete
+Transform chain must reach an actual declared physical prefab root. A missing
+MeshFilter remains a gap, not an invented Mesh selection.
+
+The current dedicated AnimeStudio JSON branch supplies no PPtr-reference
+witnesses for these typed classes, and its MeshRenderer constructor omits the
+final Endfield Enlighten vertex-stream PPtr. The independent raw reader retains
+that tail; absence from typed JSON is not evidence of a null pointer. External
+file slots can reuse an authenticated MeshCollider slot witness from the same
+physical serialized file. Each witness's referring raw pointer, CAB/path and
+source hashes are checked; another file's equally numbered slot cannot bind.
+Unwitnessed slots, excluded target bodies and ambiguous physical CABs remain
+distinct gaps. An exact admitted Mesh target identity proves a stored resource
+reference, not decoded render geometry, material appearance or runtime drawing.
+Other Renderer classes remain outside this supplement. Its Assets projection
+joins collision and render components only through that physical prefab root;
+names, dimensions and preload adjacency never establish ownership.
+
+[`unity_source_directory_corpus.py`](../../scripts/game_data/unity_source_directory_corpus.py)
+can now extend that selection with complete serialized directories and resource
+bodies. Its offline sidecar references the admitted AnimeStudio libraries without
+rebuilding the CLI. Each physical Bundle is loaded separately, with explicit
+filter offsets; metadata, selected-class bodies and owner-archive resource spans
+are retained. [`unity_serialized_directory.py`](../../scripts/game_data/unity_serialized_directory.py)
+independently closes the v22 header/metadata region, object spans and ordered
+external table. [`unity_type_tree.py`](../../scripts/game_data/unity_type_tree.py)
+independently decodes declared fields through body EOF and checks complete generic
+JSON, preserving primitive float widths. Byte-buffer bounds are distinct from
+compound-item budgets. Unknown layouts and invalid spans fail closed.
+
+The generic stored Material view retains texture UV-set indices, double-sided
+GI and trailing fields absent from the dedicated constructor's JSON. These are
+stored definitions, not selected runtime shader features. The Endfield Mesh
+branch omits CompressedMesh only when its preceding raw baked-collision boolean
+selects that branch. [`unity_mesh.py`](../../scripts/game_data/unity_mesh.py)
+reads selected uncompressed vertex streams and complete triangle submesh ranges;
+the packed normal selector admits signed-10 octahedral directions, while runtime
+tangent frames remain outside the projection. Mesh stream bytes must be the exact
+declared range of its own CAB archive resource. Filesystem-search fallback cannot
+admit a resource. UV0 and UV1 remain separate stored channels.
+
+[`unity_texture.py`](../../scripts/game_data/unity_texture.py) independently
+closes selected unstripped, single-image Texture2D block-compressed mip chains.
+Every mip has its declared dimensions and block footprint; the complete byte
+census must agree with the exact owner-archive range and stored image size.
+Unsupported platform layouts, stripped mips and other texture dimensions remain
+unavailable. [`unity_texture_decode.py`](../../scripts/game_data/unity_texture_decode.py)
+supplies only the admitted top mip to the existing AnimeStudio codec through a
+separate managed sidecar. Managed and native codec libraries come from the same
+admitted CLI closure; no filesystem codec fallback or CLI rebuild is used.
+Decoded pixel lengths/hashes and the complete output census are checked before
+PNG projection. The PNG retains decoded channels and flips rows for exported
+image coordinates, with no gamma conversion or normal reconstruction. Stored
+UV-set, tiling, offset, sampler and colour-space fields are definitions; they
+do not establish active shader roles, runtime sampling or material overrides.
+
+The admitted Shader body also retains its parsed-form name and property
+declarations, even when the root object's name is empty. Compare each non-null
+stored Material texture key against that exact Shader's declared property list;
+this is a `structuralOnly` declaration match, not a compiled sampler binding or
+runtime keyword-selection claim. The same complete generic body reader makes
+this check independent of filename conventions or texture suffixes.
+
+The maintained [`shader/`](../../scripts/game_data/shader/) readers extend this
+join into baked compiled programs. Plain LZ4 segments are consumed exactly;
+segment zero owns the program directory and each record names its actual data
+segment. Complete compressed and decoded range censuses precede interpretation.
+For D3D, native code-envelope ranges close against complete DXBC containers,
+whose token headers establish executable stages. A serialized vertex-program
+carrier can contain both vertex and fragment executables; its field name must
+not substitute for token evidence.
+
+Stored LOD/pass/player indices join code, keyword names and parameter records.
+Parameter framing admits a unique complete resource/descriptor suffix only
+after whole constant-buffer rows, including nested structs. Descriptor-set IDs
+are stored keys and can be sparse; requiring an ID to equal its row ordinal was
+an AnimeStudio parser defect. Duplicate IDs, out-of-range IDs and malformed
+binding maxima still fail closed. Unknown header and packed descriptor words
+remain explicit, and unsupported non-D3D records retain an opaque boundary.
+This does not prove GPU upload slots, runtime constants or sampler application.
+The sparse-ID source correction was checked with isolated compiled parser
+fixtures; the production CLI was not rebuilt for this correction. The offline
+reader supplies these parameter tables independently. Deploying the exporter
+correction requires a new exporter-run audit before reusing its admission.
+
+The selected corpus gate authenticates current source bodies and compares every
+compressed segment and D3D code record with the admitted CLI through a separate
+managed checker. A rebuilt CLI changes exporter-run provenance even when game
+bytes are unchanged: fresh Shader-only admission can support an independent
+projection without renewing an older renderer/collision publication. The WebUI
+projection binds that current Shader analysis to an existing Material artifact
+only when physical identity, Shader raw hash and Material artifact hash agree.
+Its keyword-superset candidates allow additional engine/global keywords and
+remain `conditional`; unknown stored valid keywords prevent a shortlist.
+Runtime variant selection, pass execution and effective resource bindings remain
+`unresolved`, so these declarations do not justify game-equivalent shading.
+
+[`shader/materials.py`](../../scripts/game_data/shader/materials.py) preserves
+explicit numeric Material overrides separately from Shader declaration defaults.
+It counts matching resource names and named constant-buffer fields within each
+conditional LOD/pass cohort, retaining every stored field-offset alternative.
+Repeated named tables do not establish instruction use or effective upload;
+missing parameter layouts stay counted, and unrecognized keywords still prevent
+candidate selection. Texture fallback names remain declarations, not fabricated
+decoded images. This is the same separation between source transport and native
+application used by the reconstruction lab's material schemas and unavailable
+shader paths; those actor-specific conclusions do not transfer to these prefabs.
+
+[`shader/instruction_corpus.py`](../../scripts/game_data/shader/instruction_corpus.py)
+adds token-framed native DXBC disassembly through the explicitly selected Windows
+system compiler. The checked stored packed-slot lanes are the high byte for VS
+and the next byte for PS. An unused stage slot remains unused. Structured-buffer
+descriptors additionally distinguish SRV/UAV slots with the stored writable bit;
+their executable declarations must have the corresponding structured shape.
+These joins prove compiled register references, not the native engine's binding
+calls. Scalar/vector field references, anonymous static byte offsets and dynamic
+indices stay separate. Complete register joins do not mean complete field names.
+Supported operand forms respect destination masks and source swizzles; other
+forms retain conservative possible field references instead of proving a read.
+The independent lane-aware output reader is conservative and limited to supported
+straight-line instructions; control flow and unsupported operations fail closed.
+Disassembly preserves the other instructions for later analysis.
+
+For the minimal stored keyword-superset Lit candidate used to study the lifter,
+the RGB target reads base, normal, detail and mask textures. Its mask colour
+operations blend B, then G, then R, using separate authored colours/weights;
+UV0 and UV1 enter separately. Detail colour includes camera-dependent falloff.
+Conditionally substituting the stored `_DetailMode` value of one cancels that
+colour weight for finite operands, but does not remove detail normal/PBR use.
+This is an instruction/source-value observation, not a proof of the live upload,
+selected variant, sampled mip, colour transport or deferred lighting. It does
+not justify a game-faithful base-texture/tint preview.
+
+[`shader/capture_corpus.py`](../../scripts/game_data/shader/capture_corpus.py)
+re-admits stored Shader bodies before comparing saved shader archive bytes and
+observed draw identities. Creation/registration is distinct from a draw. Captured
+constant prefixes must cover the declared span and fit the bound range;
+program equality cannot identify a source Material. The separate compressed
+texture comparer uses immutable, hash-checked stored preview inputs and exact
+complete mip tails. A same-draw payload additionally requires matching copy
+phase, call/Present and bound object/view; a frame-wide draw-local flag alone is
+insufficient. The retained reconstruction-lab packets provide shared-program
+examples but no texture-content join for this preview selection. The studied
+lifter candidate cohort has no retained draw. Effective variant, constants,
+SRV formats/mip ranges, samplers and source ownership therefore still require
+one selected asset's graphics draw operands before advancing appearance claims.
+
+Fresh selected Mesh-body admission also supports an independent UV1 projection:
+the page publisher first reproduces the existing neutral UV0 OBJ byte-for-byte
+from those admitted buffers, then changes only texture coordinates. This proves
+a stored-channel view against an immutable published artifact without promoting
+stored UV-set indices to a live shader route or renewing older renderer gates.
+
+[`unity_render_resources.py`](../../scripts/game_data/unity_render_resources.py)
+uses the referring directory's actual ordered external table to join raw
+MeshFilter and material slot pointers to a unique physical CAB/object in the
+admitted source selection. CABMaps only locate additional candidate Bundle spans:
+current VFS hashes, actual parsed CAB names, complete object directories and raw
+body checks still precede ownership. Missing directories, objects absent from a
+complete selected directory, unselected bodies and physical ambiguity remain
+distinct. LOD memberships use actual LODGroup renderer PPtrs and reciprocal
+prefab hierarchies; filename suffixes cannot select a level. Mathematical stored
+LOD assemblies are useful recovery views but do not prove camera-selected LOD,
+additional vertex-stream application, deformation, material appearance or world
+instances. Static-batch parts whose transform/range route is unproved remain
+counted as excluded instead of receiving a guessed transform.
+
 The stored model-to-collider join also requires the native-gated Model path
 hash, the manifest's unique asset path and logical Bundle, the active physical
 Bundle identity, and that declared prefab root. It preserves Model placement
@@ -84,6 +303,17 @@ and prefab-local collider matrix separately. Runtime registration matrices,
 instantiated GameObjects, parenting, animation and enabled state need the
 bounded capture described in the DynamicStreaming topic; more static owner
 coverage cannot establish those live facts.
+
+For this selected prefab lane, complete directory/body admission closes the
+stored Mesh, material, shader and texture reference chain without a live capture.
+The remaining placement witness must connect the source Model identity to its
+registration id and selected grid matrix, instantiated root, parent, and later
+world transform in the same observed lifetime. Existing physics/query evidence
+cannot substitute for an unobserved selected instantiation route. Choose a
+scene-loading target and check this route's coverage before requesting gameplay;
+an additional solver or crate-breaking sample alone cannot close it. Stored
+texture decoding and shader interpretation can still improve offline appearance,
+but neither can establish runtime material overrides or camera-selected LOD.
 
 Asset extraction and discovery are strong: the project indexes every asset
 kind, resolves many PathID-backed dependencies, and connects authored gameplay
@@ -196,6 +426,69 @@ object identity. Node ends must advance within their parent and property blocks
 must consume their declared bounds. Unsupported, truncated or malformed trees
 return their original bytes, so a corrupt offset cannot hang normalization or
 produce a partially normalized comparison.
+
+An apparent missing FBX part requires a geometry comparison before an export
+repair. The Ardelia sheep prefab's renderer and LOD pointers account for all
+exported LOD meshes, and an independent complete type-tree/body decode of the
+referenced Mesh objects matched their FBX vertex coordinates and triangle
+indices exactly after X reflection and winding reversal. The horns are part
+of those meshes. A weapon-style mesh name is not evidence of an unrelated
+mesh or absent body. Its bright emission obscures horn detail in the Assets
+preview; the owning display policy is in `memory/webui/assets.md`. This
+selected result proves neither other Animator exports complete nor the
+game's final shader/lighting appearance.
+
+The broader Animator audit compares complete generic source GameObject,
+Transform, MeshFilter and renderer declarations with exported FBX geometry
+attachments. Hierarchy joins require reciprocal PPtrs, and external Mesh
+identity retains the referring CAB, external slot and target PathID. A non-null
+unresolved Mesh reference is an export gap, not proof that the prefab is empty.
+`animator_coverage.py` owns that comparison; `fbx_inventory.py` inventories
+stored FBX nodes without inflating geometry arrays. Count equality proves only
+attachment coverage, not vertex, skin, material or runtime equivalence.
+
+Three exporter failure modes are independently established. Dependencies can
+live in the other installed VFS layer, in another bundle offset of the same
+physical chunk, or in the selected player's loose built-in Resources files.
+The selected-layer CAB map remains authoritative; the other map supplies only
+absent names. Model conversion explicitly loads available built-in resource
+files and binds their bytes into model cache signatures and auxiliary input
+freshness. Explicit dependencies bypass source-object filters but do not become
+independent export targets. Root-offset filtering narrows initial selection,
+never the transitive dependency closure.
+
+Separately, sibling Transform names need not be unique. Matching a renderer's
+mesh to an FBX frame by its string hierarchy path can replace one sibling's
+geometry or attach a ghost mesh to an unrendered sibling. Converted meshes now
+retain their exact ImportedFrame identity; legacy producers without that identity
+retain path lookup. This corrects renderer attachment and does not establish a
+new animation, morph or bone binding rule. Missing parsed Mesh targets warn with
+their referring source and exact pointer identity. Remaining door definitions
+reference a CAB not located in either current layer index; preserve their
+partial/empty exports rather than manufacture geometry from similar names.
+The saved previous export also lacks that CAB in its layer indexes and lacks
+the referenced Mesh PathIDs, so it supplies no archived target for this gap.
+
+The same reader supplies Assets' separate `fbx_content_fingerprint`: a
+conditional comparison excluding document URLs naming the current export and
+a root Model connected to scene id zero whose label matches the export stem.
+The Assets grouping policy also excludes non-bone Null instance labels,
+Model local/geometric transforms and pivots, preferred joint angles, PoseNode
+matrices and Cluster Transform/TransformLink/TransformAssociateModel matrices.
+Cluster-linked Null bones retain their labels. Matrix dimensions and graph
+connections remain checked; geometry, material/texture records, mesh/bone
+names, hierarchy, skin indices/weights, animation and remaining properties
+participate. Strict framing failures withhold the fingerprint. Bind matrices
+encode the mesh/bone relationship at skin attachment and can affect
+deformation; ignoring them is an explicit pose-insensitive grouping policy,
+not a proof of equivalent deformation. No original file or full hash is
+rewritten, and grouping establishes neither Unity identity nor runtime use.
+The reader returns a second, pose-preserving fingerprint for Assets' `fv`:
+it excludes the same export/instance labels but retains transform, pose and
+bind values. Matrix arrays are decoded and checked for exact typed dimensions
+before hashing, so compressed and uncompressed representations of the same
+matrix agree. This distinguishes pose/bind variants within one `fc` resource
+group without calling name/path aliases different models.
 
 ## Evidence order
 

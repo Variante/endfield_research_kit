@@ -14,6 +14,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.memorypack import skill_timeline_shared_sequence as shared
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
@@ -159,7 +160,7 @@ def verify_selected_perfect_dodge(*, selection_path: Path = SELECTION) -> dict[s
              "native-group-drift")
     claimed_actions = selection.get("selectedActions")
     _require(isinstance(claimed_actions, list) and len(claimed_actions) == 3
-             and all(row.get("tag") == "0x0049"
+             and all(row.get("tag") == _AT("Core_CheckPerfectDodgeDirection_Data")
                      and type(row.get("start")) is int
                      and type(row.get("end")) is int
                      and row["start"] < row["end"] < children[1]["cursorAfter"]
@@ -202,7 +203,7 @@ def verify_selected_perfect_dodge(*, selection_path: Path = SELECTION) -> dict[s
         },
         "evidenceBoundary": (
             "Only the perfect-dodge copied source is replayed. Three selected native "
-            "0x0049 readers close their actions; the complete ActionGroup and static "
+            "CheckPerfectDodgeDirection readers close their actions; the complete ActionGroup and static "
             "fields 0-42 match the saved executed cursor, whose selected terminal "
             "reaches EOF. This diagnostic does not publish a complete SkillData family."
         ),

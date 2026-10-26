@@ -1,0 +1,218 @@
+{
+  "schema": "endfield.memorypack-blackboard-key-comparison-native-contract.v1",
+  "status": "exact-current-build",
+  "mode": "utf16-unit-ascii-uppercase-fold-comparison",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "method": [
+    450282,
+    "Beyond.StringUtils",
+    "_EqualsIgnoreCase$BurstManaged",
+    90872736
+  ],
+  "leaf": {
+    "codeWindow": {
+      "startRva": 90872736,
+      "endRva": 90872832,
+      "sha256": "1C90F1CA720CD8120FAB088C973155C93FD3A80468438B48FE6F9FF734B877CC",
+      "boundary": "Entire registered leaf instruction CFG through both RET instructions; exact instructions and all loop/return edges independently checked."
+    },
+    "instructions": [
+      [
+        90872736,
+        "4D63D8"
+      ],
+      [
+        90872739,
+        "4C8BCA"
+      ],
+      [
+        90872742,
+        "4533C0"
+      ],
+      [
+        90872745,
+        "4C8BD1"
+      ],
+      [
+        90872748,
+        "4D85DB"
+      ],
+      [
+        90872751,
+        "7E49"
+      ],
+      [
+        90872753,
+        "4C2BD2"
+      ],
+      [
+        90872756,
+        "430FB7040A"
+      ],
+      [
+        90872761,
+        "430FB7140A"
+      ],
+      [
+        90872766,
+        "6683E841"
+      ],
+      [
+        90872770,
+        "410FB709"
+      ],
+      [
+        90872774,
+        "6683C220"
+      ],
+      [
+        90872778,
+        "6683F819"
+      ],
+      [
+        90872782,
+        "410FB701"
+      ],
+      [
+        90872786,
+        "66430F47140A"
+      ],
+      [
+        90872792,
+        "6683C120"
+      ],
+      [
+        90872796,
+        "6683E841"
+      ],
+      [
+        90872800,
+        "6683F819"
+      ],
+      [
+        90872804,
+        "66410F4709"
+      ],
+      [
+        90872809,
+        "663BD1"
+      ],
+      [
+        90872812,
+        "750F"
+      ],
+      [
+        90872814,
+        "49FFC0"
+      ],
+      [
+        90872817,
+        "4983C102"
+      ],
+      [
+        90872821,
+        "4D3BC3"
+      ],
+      [
+        90872824,
+        "7CBA"
+      ],
+      [
+        90872826,
+        "B001"
+      ],
+      [
+        90872828,
+        "C3"
+      ],
+      [
+        90872829,
+        "32C0"
+      ],
+      [
+        90872831,
+        "C3"
+      ]
+    ]
+  },
+  "lookupMethod": [
+    936,
+    "Beyond.Blackboard",
+    "_TryGetNumber",
+    47220768
+  ],
+  "burstGetterMethod": [
+    447657,
+    "Unity.Burst.BurstCompiler",
+    "get_IsEnabled",
+    47223760
+  ],
+  "burstSelection": {
+    "codeWindow": {
+      "startRva": 47220829,
+      "endRva": 47221493,
+      "sha256": "A9CAFB49C902E0961A556EBABF71012F2F1B6844053011A6A6D6B903016387F4",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    },
+    "instructions": [
+      [
+        47221111,
+        "33C9"
+      ],
+      [
+        47221113,
+        "E8520A0000"
+      ],
+      [
+        47221118,
+        "84C0"
+      ],
+      [
+        47221120,
+        "0F84C301DE01"
+      ]
+    ]
+  },
+  "lookupCallbackFragment": {
+    "codeWindow": {
+      "startRva": 78547614,
+      "endRva": 78547915,
+      "sha256": "CF24C0DE8CCC2A264E452AB12D3B1D0FF9F6A4E4B9C3F29EEF9C6DC030BEEC0F",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    },
+    "instructions": [
+      [
+        78547785,
+        "448BC5"
+      ],
+      [
+        78547788,
+        "488D5614"
+      ],
+      [
+        78547792,
+        "498BCE"
+      ],
+      [
+        78547795,
+        "E84810BC00"
+      ]
+    ]
+  },
+  "architectureReferences": [
+    {
+      "url": "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2a-manual.pdf",
+      "section": "CMOVA, word operand size and unsigned CF/ZF condition; XOR/SUB/ADD/CMP/Jcc register semantics."
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Actual current static managed comparison definition, complete leaf CFG, word loads/arithmetic/conditional moves, all loop/return edges and zero writes/calls; exact lookup-unwind-owned callback and false Burst getter branch target.",
+    "conditional": "Readable stable input word spans and signed Int32 bound with normal instruction completion; the managed callback is selected only when the actual Burst getter returns false and the preceding lookup path reaches it.",
+    "direct": "The owned callback fragment forwards R14, RSI plus the stored displacement and EBP to the actual comparison entry.",
+    "unresolved": "The lookup prefix/input origins, actual string/receiver state, Burst enabled callback, patches/failure paths, whole lookup/control-flow results, actual execution, complete actions and Buff roots."
+  }
+}

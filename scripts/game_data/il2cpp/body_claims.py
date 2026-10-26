@@ -22,6 +22,9 @@ by type and method, and evaluates them against whichever build is installed:
                       through a plain epilogue after a checked Boolean guard
 ``returnsArgument``   some path returns the named argument register unchanged
 ``storesConstant``    writes an immediate into a named field of ``this``
+``passesBooleanConstantToCall`` a contiguous straight-line Boolean literal
+                      reaches a named Boolean callee parameter; branches,
+                      clobbers, fragment gaps and high-byte aliases refuse
 ``storesInstanceByteArgumentAfterFalseCall`` complete incoming instance/byte
                       aliases reach a named field on a checked guard's false path
 ``readsField``        reads a named field (any base register)
@@ -38,6 +41,51 @@ by type and method, and evaluates them against whichever build is installed:
                       parameter of a reference instance method returning void/bool
 ``passesArgumentToCall`` a named incoming argument reaches a named callee
                       parameter through register copies
+``passesSpilledArgumentOnFalseCalls`` a complete incoming reference survives
+                      entry-relative stack storage on explicit false-call paths;
+                      CFG joins, partial writes, shadow clobbers and escapes refuse
+``replacesBlackboardPairAfterTrueComparison`` the selected full matched-slot
+                      replacement retains the old dynamic flag and returns;
+                      comparator and complete scan coverage remain separate
+``feedsReferenceResultToCall`` a typed full reference return reaches a named
+                      reference parameter on a selected contiguous fallthrough
+``queriesFloatBlackboardDirectBeforeEntity`` complete ordinary keyed Float
+                      getter/query/result/restore program and checked local edges
+``filtersDynamicBlackboardPairOnFalseGuard`` incoming non-dynamic DataPair
+                      returns false before the scan on the checked false guard
+``copiesBlackboardPairFieldsToDynamicCall`` selected vector/stack copy of all
+                      named pair fields, including unchanged dynamic flag,
+                      with bounded vector-neutral helper entries; traversal separate
+``passesPackedStringIntPair`` an adjacent raw vector split sends low64 and
+                      bits64..95 to a named closed String/Int32 generic call;
+                      source-vector and enumeration semantics remain separate
+``passesInterfaceCurrentStringIntPairFastPath`` a complete owned caller/helper
+                      binds a closed IEnumerator<KeyValuePair<string,int>>
+                      slot-zero get_Current return to that packed call, only
+                      under matching-interface dispatch and valid return
+``callsInterfacePairCurrentFastPaths`` closed KeyValuePair<K,V> current returns
+                      selected by complete owned helper variants and caller
+                      TypeInfo arguments; loop/destination transfer is separate
+``copiesObjectiveMapsOnDefaultPath`` complete owned normal ObjectiveData.Copy
+                      values/detail/nested-hash loops, typed fields/MethodSpecs,
+                      argument lanes and checked backedges; callee semantics,
+                      exceptional paths and live values remain separate
+``comparesSignedInt32OnDefaultPath`` selected named comparator cases and
+                      jump-table joins, with a checked false IFix guard
+``comparesStateEventOnDefaultPath`` matching incoming ID/state lanes reach the
+                      selected comparator and normalized result setter
+``evaluatesBooleanAstOnDefaultPath`` valid AST leaf/Not/And/Or paths, including
+                      short circuit and exact True leaf tests; parser separate
+``evaluatesProgressAstOnDefaultPath`` same recursive logic with visited child
+                      virtual progress predicates; no cached-result projection
+``parsesProgressAstOnDefaultPath`` lazy parse when AST invalid, then progress
+                      evaluation; activation and outer result waiting separate
+``gatesCombinedEvaluationOnDefaultPath`` complete normal child-result loop,
+                      Undecided waiting gate, AST call and result setter flow
+``looksUpQuestStateOnDefaultPath`` cached quest-state read and the completed
+                      owning-mission fallback; owner/collection callees separate
+``propagatesConditionResultOnDefaultPath`` active changed decided result cache
+                      write, returning callback helper, then parent evaluation
 ``passesEnumMemberToCall`` a selected enum member reaches a named callee
                       register parameter through constant and register moves
 ``callsAnonymousHelper`` a named caller reaches one unnamed native body whose
@@ -279,6 +327,22 @@ class BodyIndex:
             ])
         return found
 
+    def matches_parameters(self,pointer: int,parameters: list[str]) -> bool:
+        """Resolve closed generic selectors without accepting an anonymous type index."""
+        signatures=self.parameter_types(pointer)
+        if list(parameters) in signatures:return True
+        if not any('<' in p for p in parameters) or not any(
+                p.startswith('<type-index:') for signature in signatures for p in signature):return False
+        from .reference_layouts import NativeReferenceContext
+        context=NativeReferenceContext(self.image,index=self)
+        for row in self.names_by_pointer.get(pointer,()):
+            method_index=row.get('methodIndex')
+            if not isinstance(method_index,int) or not 0<=method_index<len(self.metadata.methods):continue
+            method=self.metadata.methods[method_index]
+            resolved=[context.type_name(p.type_index) for p in self.metadata.parameters_for(method)]
+            if resolved==list(parameters):return True
+        return False
+
     def parameter_location(self, pointer: int, symbol: str, parameter: str) -> tuple[str, int | str]:
         """Resolve one named parameter to its Windows x64 argument location.
 
@@ -323,7 +387,7 @@ class BodyIndex:
     ) -> Body:
         pointers = sorted(self.pointers_by_name.get(f"{type_name}.{method}") or [])
         if parameters is not None:
-            pointers = [pointer for pointer in pointers if list(parameters) in self.parameter_types(pointer)]
+            pointers = [pointer for pointer in pointers if self.matches_parameters(pointer,parameters)]
         if parameters_prefix is not None:
             pointers = [
                 pointer for pointer in pointers
@@ -593,7 +657,38 @@ def _virtual_getter_helper(index: BodyIndex, pointer: int) -> bool:
     first = data.find(receiver_slot)
     second = data.find(lookup, first + len(receiver_slot)) if first >= 0 else -1
     third = data.find(invoke, second + len(lookup)) if second >= 0 else -1
-    return first >= 0 and second >= 0 and third >= 0
+    if first >= 0 and second >= 0 and third >= 0:
+        return True
+    # A second bounded no-argument helper retains rdx in rdi, loads the
+    # selected function/MethodInfo pair into rax/rdx, then restores its frame
+    # and tail-dispatches rax with rcx=receiver. Specialization branches in
+    # that helper remain separate paths; this recognizes only the generic
+    # continuation's slot/receiver/argument shape.
+    receiver_slot = bytes.fromhex('0f b7 d9 48 8b fa 48 8b 0a')
+    lookup = bytes.fromhex('48 8d 4b 14 48 c1 e1 04 48 03 0f 48 8b 01 48 8b 51 08')
+    invoke = bytes.fromhex('48 8b cf 48 8b 5c 24 30 48 83 c4 20 5f 48 ff e0')
+    first = data.find(receiver_slot)
+    second = data.find(lookup, first + len(receiver_slot)) if first >= 0 else -1
+    third = data.find(invoke, second + len(lookup)) if second >= 0 else -1
+    if first >= 0 and second >= 0 and third >= 0:return True
+    # RDI receiver / RBX slot with an R8 function and RDX MethodInfo. Match
+    # the complete generic entry/lookup/dispatch/epilogue; only the direct
+    # class-init displacement and specialization address are variable.
+    prefix=bytes.fromhex('48895c2408574883ec300fb7d9488bfa488b0a')
+    lookup=bytes.fromhex('488d431448c1e0044803074c8b00488b5008')
+    invoke=bytes.fromhex('488bcf41ffd0488b5c24404883c4305fc3')
+    if not data.startswith(prefix) or data[len(prefix):len(prefix)+1]!=b'\xe8':return False
+    at=len(prefix)+5
+    if data[at:at+len(lookup)]!=lookup:return False
+    at+=len(lookup)
+    if data[at:at+3]!=bytes.fromhex('488d05') or data[at+7:at+10]!=bytes.fromhex('4c3bc0'):return False
+    at+=10
+    if data[at:at+1]==b'\x74' and at+2<=len(data):width=2;disp=data[at+1:at+2]
+    elif data[at:at+2]==b'\x0f\x84' and at+6<=len(data):width=6;disp=data[at+2:at+6]
+    else:return False
+    branch_target=at+width+int.from_bytes(disp,'little',signed=True)
+    end=at+width+len(invoke)
+    return data[at+width:end]==invoke and end<=branch_target<len(data)
 
 
 def _rsp_delta(rows: list[dict[str, Any]], position: int) -> int:
@@ -678,6 +773,69 @@ def _parameter_aliases_before_call(
 
 def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | None:
     """Return a bounded failure reason, or ``None`` when the claim holds."""
+    if 'partitionsGuardedEmbeddedRvaTable' in claim:
+        if claim['partitionsGuardedEmbeddedRvaTable'] is not True:
+            return 'embedded RVA table partition requires explicit true claim'
+        from .embedded_rva_switch import check_embedded_rva_switch
+        return check_embedded_rva_switch(index,body)
+    if 'iteratesDynamicBlackboardListWithCapturedBound' in claim:
+        if claim['iteratesDynamicBlackboardListWithCapturedBound'] is not True:
+            return 'dynamic list iteration requires explicit true claim'
+        from .blackboard_bulk_iteration import check_dynamic_list_iteration
+        return check_dynamic_list_iteration(index,body)
+    if 'passesSpilledArgumentOnFalseCalls' in claim:
+        from .stack_argument_flow import check_spilled_argument
+        return check_spilled_argument(index,body,claim['passesSpilledArgumentOnFalseCalls'])
+    if 'feedsReferenceResultToCall' in claim:
+        from .reference_result_flow import check_reference_result
+        return check_reference_result(index,body,claim['feedsReferenceResultToCall'])
+    if 'queriesFloatBlackboardDirectBeforeEntity' in claim:
+        if claim['queriesFloatBlackboardDirectBeforeEntity'] is not True:
+            return 'keyed Float lookup requires explicit true claim'
+        from .blackboard_query_flow import check_float_query_order
+        return check_float_query_order(index,body)
+    if 'filtersDynamicBlackboardPairOnFalseGuard' in claim:
+        if claim['filtersDynamicBlackboardPairOnFalseGuard'] is not True:
+            return 'dynamic Blackboard filter requires explicit true claim'
+        from .blackboard_assignment import check_dynamic_pair_filter
+        return check_dynamic_pair_filter(index,body)
+    if 'copiesBlackboardPairFieldsToDynamicCall' in claim:
+        if claim['copiesBlackboardPairFieldsToDynamicCall'] is not True:
+            return 'dynamic Blackboard field copy requires explicit true claim'
+        from .blackboard_vector_transfers import check_dynamic_pair_field_copy
+        return check_dynamic_pair_field_copy(index,body)
+    if 'replacesBlackboardPairAfterTrueComparison' in claim:
+        if claim['replacesBlackboardPairAfterTrueComparison'] is not True:
+            return 'matched Blackboard pair replacement requires explicit true claim'
+        from .blackboard_assignment import check_matched_pair_replacement
+        return check_matched_pair_replacement(index,body)
+    if 'passesBooleanConstantToCall' in claim:
+        from .boolean_call_arguments import check_boolean_constant
+        return check_boolean_constant(index,body,claim['passesBooleanConstantToCall'])
+    for operator, kind in (("comparesSignedInt32OnDefaultPath", "intComparison"),
+                           ("comparesStateEventOnDefaultPath", "stateCallback"),
+                           ("evaluatesBooleanAstOnDefaultPath", "booleanAst"),
+                           ("evaluatesProgressAstOnDefaultPath", "progressAst"),
+                           ("parsesProgressAstOnDefaultPath", "progressAstEntry"),
+                           ("comparesConditionProgressOnDefaultPath", "progressComparison"),
+                           ("gatesCombinedEvaluationOnDefaultPath", "combinedEvaluation"),
+                           ("looksUpQuestStateOnDefaultPath", "questLookup"),
+                           ("propagatesConditionResultOnDefaultPath", "resultPropagation")):
+        if operator in claim:
+            from .mission_condition_flow import check_condition_flow
+            return check_condition_flow(index, body, claim[operator], kind)
+    if "copiesObjectiveMapsOnDefaultPath" in claim:
+        from .mission_objective_copy import check_copy_loops
+        return check_copy_loops(index, body, claim["copiesObjectiveMapsOnDefaultPath"])
+    if "callsInterfacePairCurrentFastPaths" in claim:
+        from .packed_pair_current import check_pair_current_helpers
+        return check_pair_current_helpers(index, body, claim["callsInterfacePairCurrentFastPaths"])
+    if "passesInterfaceCurrentStringIntPairFastPath" in claim:
+        from .packed_pair_current import check_current_pair_fast_path
+        return check_current_pair_fast_path(index, body, claim["passesInterfaceCurrentStringIntPairFastPath"])
+    if "passesPackedStringIntPair" in claim:
+        from .packed_pair import check_packed_pair_call
+        return check_packed_pair_call(index, body, claim["passesPackedStringIntPair"])
     if "closedReferenceLayout" in claim:
         from .reference_layouts import check_closed_reference_layout
         return check_closed_reference_layout(index, body, claim["closedReferenceLayout"])

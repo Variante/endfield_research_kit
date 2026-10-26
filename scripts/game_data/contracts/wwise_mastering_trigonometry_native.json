@@ -1,0 +1,275 @@
+{
+  "schema": "endfield.wwise-mastering-trigonometry-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "methods": {
+    "pair": {
+      "rva": "0x25c400",
+      "bodyLength": 67,
+      "bodySha256": "093d0d3460248be0a78000cb3f2a86488ac8b65ea3bd9336f5d2df04cb565015"
+    },
+    "dispatch": {
+      "rva": "0x25c3e0",
+      "bodyLength": 18,
+      "bodySha256": "01993af9057a2629e5cf863d7d7c8f57810fd93c95c70ad099a1680ac1547186"
+    },
+    "lowerSelector": {
+      "rva": "0x25c8b0",
+      "bodyLength": 2360,
+      "bodySha256": "989823f936de5247963a60e3c5c34ee7ba2521f4dc812308a61ac5aa0d034310"
+    },
+    "higherSelector": {
+      "rva": "0x25d1f0",
+      "bodyLength": 1905,
+      "bodySha256": "e829fbc2c936b6ccaf02a8be453efc76665e8fd4f348d0ec6ea6c1dd8c6bb4a5"
+    }
+  },
+  "data": {
+    "absoluteMask": {
+      "rva": "0x371d00",
+      "bytesHex": "ffffff7fffffff7fffffff7fffffff7f"
+    },
+    "inversePi": {
+      "rva": "0x372180",
+      "bytesHex": "83f9a23e83f9a23e83f9a23e83f9a23e"
+    },
+    "roundBias": {
+      "rva": "0x3721c0",
+      "bytesHex": "0000404b0000404b0000404b0000404b"
+    },
+    "piFirst": {
+      "rva": "0x371ec0",
+      "bytesHex": "00004940000049400000494000004940"
+    },
+    "piSecond": {
+      "rva": "0x371f00",
+      "bytesHex": "00a07d3a00a07d3a00a07d3a00a07d3a"
+    },
+    "piThird": {
+      "rva": "0x371f40",
+      "bytesHex": "00202234002022340020223400202234"
+    },
+    "piFourth": {
+      "rva": "0x371f80",
+      "bytesHex": "1a61b42c1a61b42c1a61b42c1a61b42c"
+    },
+    "polynomialNinth": {
+      "rva": "0x372140",
+      "bytesHex": "f8de2e36f8de2e36f8de2e36f8de2e36"
+    },
+    "fastMaximumAbsolute": {
+      "rva": "0x371d40",
+      "bytesHex": "00401c4600401c4600401c4600401c46"
+    },
+    "polynomialSeventh": {
+      "rva": "0x372100",
+      "bytesHex": "ffb74fb9ffb74fb9ffb74fb9ffb74fb9"
+    },
+    "polynomialFifth": {
+      "rva": "0x3720c0",
+      "bytesHex": "6687083c6687083c6687083c6687083c"
+    },
+    "polynomialThird": {
+      "rva": "0x372080",
+      "bytesHex": "a6aa2abea6aa2abea6aa2abea6aa2abe"
+    },
+    "pairAbsoluteMask": {
+      "rva": "0x2dc480",
+      "bytesHex": "ffffff7f000000000000000000000000"
+    },
+    "tinyMaximumAbsolute": {
+      "rva": "0x2dc4b0",
+      "bytesHex": "00000039"
+    },
+    "halfPi": {
+      "rva": "0x2dc4c0",
+      "bytesHex": "db0fc93f"
+    },
+    "pairHalf": {
+      "rva": "0x2dc4a0",
+      "bytesHex": "0000003f000000000000000000000000"
+    },
+    "pairUnity": {
+      "rva": "0x2dc490",
+      "bytesHex": "0000803f"
+    }
+  },
+  "selectorRva": "0x33bad8",
+  "fastPrograms": {
+    "lowerSelector": {
+      "start": 125,
+      "end": 324,
+      "inputRegisters": [
+        0,
+        8
+      ],
+      "slowEntry": 523,
+      "exceptionalEntry": 445,
+      "nonNumeric": [
+        {
+          "role": "alignedScratchPointer",
+          "offset": 132,
+          "bytesHex": "4983e5c0"
+        },
+        {
+          "role": "savedScratchPointer",
+          "offset": 283,
+          "bytesHex": "4c89ac24e8010000"
+        }
+      ]
+    },
+    "higherSelector": {
+      "start": 125,
+      "end": 326,
+      "inputRegisters": [
+        2,
+        9
+      ],
+      "slowEntry": 523,
+      "exceptionalEntry": 445,
+      "nonNumeric": [
+        {
+          "role": "alignedScratchPointer",
+          "offset": 133,
+          "bytesHex": "4983e5c0"
+        },
+        {
+          "role": "rangeMaskTest",
+          "offset": 220,
+          "bytesHex": "85c0"
+        },
+        {
+          "role": "savedScratchPointer",
+          "offset": 276,
+          "bytesHex": "4c89ac2468010000"
+        }
+      ]
+    }
+  },
+  "fastControls": {
+    "lowerSelector": {
+      "inputCapture": {
+        "offset": 89,
+        "bytesHex": "440f28c0"
+      },
+      "inputSeed": {
+        "offset": 89,
+        "bytesHex": "440f28c0"
+      },
+      "zeroExceptionalMask": {
+        "offset": 23,
+        "bytesHex": "4533d2"
+      },
+      "rangeBranch": {
+        "offset": 324,
+        "bytesHex": "85c00f85bf000000"
+      },
+      "exceptionalMaskTest": {
+        "offset": 332,
+        "bytesHex": "4585d2"
+      },
+      "exceptionalBranch": {
+        "offset": 335,
+        "bytesHex": "756c"
+      },
+      "outputMove": {
+        "offset": 345,
+        "bytesHex": "410f28c2"
+      },
+      "return": {
+        "offset": 437,
+        "bytesHex": "4881c4f8010000c3"
+      }
+    },
+    "higherSelector": {
+      "inputCapture": {
+        "offset": 7,
+        "bytesHex": "0f28d0"
+      },
+      "inputSeed": {
+        "offset": 83,
+        "bytesHex": "440f28ca"
+      },
+      "zeroExceptionalMask": {
+        "offset": 35,
+        "bytesHex": "4533d2"
+      },
+      "rangeBranch": {
+        "offset": 326,
+        "bytesHex": "0f85bf000000"
+      },
+      "exceptionalMaskTest": {
+        "offset": 332,
+        "bytesHex": "4585d2"
+      },
+      "exceptionalBranch": {
+        "offset": 335,
+        "bytesHex": "756c"
+      },
+      "outputMove": {
+        "offset": 345,
+        "bytesHex": "410f28c2"
+      },
+      "return": {
+        "offset": 437,
+        "bytesHex": "4881c478010000c3"
+      }
+    }
+  },
+  "pairControls": {
+    "readLow": 0,
+    "absolute": 4,
+    "tinyCompare": 12,
+    "tinyBranch": 19,
+    "prepareCosine": 21,
+    "largePack": 37,
+    "tinySquare": 42,
+    "tinyHalf": 45,
+    "tinyUnity": 52,
+    "tinySubtractAndPack": 60
+  },
+  "pairConstants": {
+    "pairAbsoluteMask": {
+      "offset": 4,
+      "prefixHex": "660fdb15"
+    },
+    "tinyMaximumAbsolute": {
+      "offset": 12,
+      "prefixHex": "0f2f15"
+    },
+    "halfPi": {
+      "offset": 29,
+      "prefixHex": "f30f580d"
+    },
+    "pairHalf": {
+      "offset": 45,
+      "prefixHex": "0f5915"
+    },
+    "pairUnity": {
+      "offset": 52,
+      "prefixHex": "f30f100d"
+    }
+  },
+  "crossoverCaller": {
+    "wrapperMethod": "filterConversion",
+    "generatorMethod": "filterCoefficients",
+    "controls": {
+      "normalizedCutoff": 66,
+      "upperCutoffCompare": 95,
+      "upperCutoffBranch": 102,
+      "generatorArgument": 19,
+      "generatorZeroAndRetain": 30,
+      "generatorScalarCopy": 59
+    },
+    "angleMultiply": 22,
+    "helperCall": 78,
+    "generatorCall": 147
+  },
+  "meaningBoundary": "The crossover helper returns the input and float32(1-0.5*input*input) in its low pair for absolute inputs below the tiny threshold. Otherwise it interleaves input and float32(abs(input)+the stored half-pi approximation), preserving the original second lane as packed lane two and supplying zero lane three, then selects a vector kernel using a signed mutable selector comparison. Both kernel fast paths have independently decoded, identical lane-wise float32 expression trees: rounded-float range reduction, four stored pi pieces, quadrant/original sign bits and a degree-nine polynomial. This proof requires all four packed lanes finite with absolute value at most the fast bound, default completing floating operations and unchanged authenticated constants. The authenticated crossover wrapper admits only normalized cutoffs strictly between zero and one half; the generator clears the remaining helper input lanes and scales the cutoff by its stored full-circle value. Thus these admitted crossover calls use the proved tiny or finite fast path for either signed selector branch. Large-argument table reduction reached by other callers, exceptional-lane callbacks, arbitrary-input numerical sine/cosine equivalence, named whole-helper identity, CPU selector initialization/lifetime, live invocation and audibility are not proved."
+}

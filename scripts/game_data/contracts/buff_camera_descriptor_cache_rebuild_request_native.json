@@ -1,0 +1,87 @@
+{
+  "schema": "endfield.buff-camera-descriptor-cache-rebuild-request-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_descriptor_cache_insertion_native.json",
+  "publicationContract": "buff_camera_descriptor_cache_publication_native.json",
+  "function": {
+    "entryRva": 2921784,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 2921784,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            2921784,
+            2922010,
+            211744936
+          ],
+          "tableRowRva": 251911880,
+          "runtimeTripleRawHex": "38952C001A962C00A8F89E0C",
+          "codeBytes": 226,
+          "unwindRawHex": "010903000901120002300000",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 2921784,
+        "endRva": 2922010,
+        "sha256": "670D1DBDB3AB9C6B67CCCD323C2C18A1870E21C53AD90F1A3C075CE53BA832C6"
+      }
+    ],
+    "checkedInstructionCount": 57
+  },
+  "labels": {
+    "finish": 2921992,
+    "build": 2921962,
+    "unsignedCount": 2921880,
+    "capacityFloat": 2921901,
+    "unsignedCapacity": 2921916,
+    "scale": 2921940
+  },
+  "globals": {
+    "storedCount": 233437952,
+    "auxiliaryCount": 233437944,
+    "threshold": 233437896,
+    "capacity": 233437960,
+    "floatFactor": 233437908,
+    "requestFlag": 233437912
+  },
+  "calls": {
+    "replacement": 792192,
+    "publication": 774720,
+    "cleanup": 472352
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs and complete exception-owned request body",
+    "direct": "Unsigned guards, candidate halving, same temporary passed to three calls, request-byte clear and path-specific AL",
+    "structuralOnly": "Floating-point capacity choice without numeric-policy interpretation",
+    "conditional": "Coherent readable globals, valid disjoint temporary/frame storage and normal opaque callees",
+    "unresolved": "Successful allocation/migration/cleanup, numeric FP policy, runtime selection, pointer history and concurrent visibility"
+  }
+}

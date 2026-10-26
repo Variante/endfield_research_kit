@@ -20,6 +20,7 @@ from scripts.source_paths import (
     resolve_material_source_roots,
 )
 from scripts.game_data import sprite_crops
+from scripts.game_data.fbx_normalize import FBX_CONTENT_SCHEMA, FBX_VARIANT_SCHEMA, fbx_content_fingerprints
 from scripts.webui.assets.obj_geometry import obj_has_drawable_faces
 from scripts.game_data.extraction.unity_overlay import asset_map_containers
 from scripts.webui.assets.fbx_root import read_fbx_root_names, read_fbx_root_names_from_bytes
@@ -314,14 +315,17 @@ def _extract_material_texture_refs(material_payload: dict) -> list[dict]:
     return out
 
 
-def _material_blend(material_payload: dict) -> dict | None:
-    """How the viewer should blend a material, or None for plain opaque.
+def _material_blend(material_payload: dict, texture_refs: list[dict] | None = None) -> dict | None:
+    """Preview appearance, including opaque tint and enabled avatar/emission.
 
     ``q`` render queue, ``src``/``dst`` Unity ``BlendMode`` enum values
     (1 One, 5 SrcAlpha, 10 OneMinusSrcAlpha...; ``dst`` 1 is additive, the
     usual light effect), ``zw`` depth write, ``clip`` alpha-test threshold,
-    ``cull`` Unity ``CullMode`` and ``tint`` the effect colour (``_TintColor``
-    or ``_BaseColor``) as RGBA.
+    ``cull`` Unity ``CullMode`` and ``tint`` the base/effect colour as RGBA.
+    ``avatar`` holds the three CharacterNPR customization colours; its base
+    map is a channel mask, not an RGB albedo. ``emission`` is an enabled colour
+    times brightness, with an optional resolved emission map. These are static
+    preview inputs, not a reproduction of the game's lighting or bloom.
     """
     saved = material_payload.get("m_SavedProperties") or {}
     floats = saved.get("m_Floats") or {}
@@ -330,14 +334,15 @@ def _material_blend(material_payload: dict) -> dict | None:
         return None
     queue = material_payload.get("m_CustomRenderQueue")
     queue = queue if isinstance(queue, int) and queue >= 0 else None
-    transparent = (queue or 0) >= 2450 or floats.get("_SurfaceType", floats.get("_Surface")) == 1.0
+    # AlphaTest (2450) still writes depth: clipping a leaf/fur card does not
+    # make the surviving pixels transparent. Queues through GeometryLast
+    # (2500) remain opaque unless the material explicitly selects transparency.
+    transparent = (queue or 0) > 2500 or floats.get("_SurfaceType", floats.get("_Surface")) == 1.0
     clip = None
-    if floats.get("_AlphaClip") == 1.0 or floats.get("_AlphaTest") == 1.0:
+    if any(floats.get(flag) == 1.0 for flag in ("_AlphaClip", "_AlphaTest", "_EnableAlphaTest")):
         clip = floats.get("_AlphaClipThreshold", floats.get("_Cutoff", 0.5))
     elif queue is not None and 2450 <= queue < 2500:
         clip = floats.get("_Cutoff", floats.get("_AlphaClipThreshold", 0.5))
-    if not transparent and clip is None:
-        return None
     blend: dict = {"q": queue}
     if clip is not None:
         blend["clip"] = round(float(clip), 4)
@@ -345,13 +350,68 @@ def _material_blend(material_payload: dict) -> dict | None:
         blend["src"] = int(floats.get("_SrcBlend", 5))
         blend["dst"] = int(floats.get("_DstBlend", 10))
         blend["zw"] = int(floats.get("_ZWrite", 0))
-        tint = colors.get("_TintColor") or colors.get("_BaseColor")
-        if isinstance(tint, dict):
-            blend["tint"] = [round(float(tint.get(c, 1.0)), 4) for c in "rgba"]
+    tint = colors.get("_TintColor") or colors.get("_BaseColor") or colors.get("_Color")
+    if isinstance(tint, dict):
+        rgba = [round(float(tint.get(c, 1.0)), 4) for c in "rgba"]
+        if transparent or rgba != [1.0, 1.0, 1.0, 1.0]:
+            blend["tint"] = rgba
+
+    keywords = set(material_payload.get("m_ValidKeywords") or [])
+    keywords.update(str(material_payload.get("m_ShaderKeywords") or "").split())
+    avatar_colors = [colors.get(slot) for slot in (
+        "_CustomizeBaseColor", "_CustomizeBaseTintColor", "_CustomizeAddTintColor",
+    )]
+    if "_CUSTOMIZE_AVATAR" in keywords and all(isinstance(color, dict) for color in avatar_colors):
+        blend["avatar"] = [[round(float(color.get(c, 1.0)), 4) for c in "rgb"] for color in avatar_colors]
+
+    emission_color = colors.get("_EmissionColor")
+    if "_EMISSION" in keywords and isinstance(emission_color, dict):
+        brightness = float(floats.get("_EmissionBrightness", 1.0))
+        rgb = [round(float(emission_color.get(c, 0.0)) * brightness, 4) for c in "rgb"]
+        emission_map = (saved.get("m_TexEnvs") or {}).get("_EmissionMap") or {}
+        texture = emission_map.get("m_Texture") or {}
+        has_map = not texture.get("IsNull", False) and bool(
+            texture.get("Name") or _normalize_path_id_hex(texture.get("m_PathID", texture.get("PathID")))
+        )
+        resolved_map = next((ref.get("rel") for ref in texture_refs or [] if ref.get("slot") == "_EmissionMap"), None)
+        # An unavailable authored map must not become a solid emission colour.
+        if any(rgb) and (not has_map or resolved_map or texture_refs is None):
+            blend["emission"] = {"color": rgb}
+            if resolved_map:
+                blend["emission"]["textureRel"] = resolved_map
+
+    if not transparent and clip is None and len(blend) == 1:
+        return None
     cull = floats.get("_Cull", floats.get("_CullMode"))
     if cull is not None:
         blend["cull"] = int(cull)
     return blend
+
+
+def refresh_material_appearance(relations: dict, *, export_root: Path) -> int:
+    """Reproject appearance for existing Material links from the selected store.
+
+    Preserve the published texture/model joins and every other relation. Missing
+    material documents abort publication instead of retaining old appearance.
+    """
+    prefixes = [f"{source}/Material/" for source, _ in resolve_material_source_roots(export_root)]
+    store = open_store_if_present(export_root)
+    if store is None:
+        raise ValueError("Material appearance refresh requires the selected Unity store")
+    changed = 0
+    for rel, relation in sorted(relations.items()):
+        prefix = next((prefix for prefix in prefixes if rel.startswith(prefix)), None)
+        if prefix is None:
+            continue
+        name = rel[len(prefix):]
+        payload = json.loads(store.read_bytes("Material", name).decode("utf-8"))
+        blend = _material_blend(payload, relation.get("textures", []))
+        changed += int(relation.get("blend") != blend)
+        if blend is None:
+            relation.pop("blend", None)
+        else:
+            relation["blend"] = blend
+    return changed
 
 
 def _append_unique(items: list[dict], candidate: dict) -> None:
@@ -624,6 +684,8 @@ class AssetScanResult:
             "relations": self.relations,
             "imageCategories": self.image_categories,
             "materialLikeImages": self.material_like_images,
+            "fbxContentSchema": FBX_CONTENT_SCHEMA,
+            "fbxVariantSchema": FBX_VARIANT_SCHEMA,
         }
         video_payload = {
             "generated": generated,
@@ -642,6 +704,7 @@ def scan_exported_media_assets(
     *,
     root: Path,
     export_root: Path,
+    build_fbx_content: bool = True,
 ) -> AssetScanResult:
     """Scan exported media once and derive image/model/video indexes from it."""
     asset_entries: list[dict] = []
@@ -689,6 +752,7 @@ def scan_exported_media_assets(
     # container memberships, including shared Mesh objects.
     model_containers = asset_map_containers(export_root, (STORED_MODEL_TYPE, "Mesh"))
     stored_sha_by_rel: dict[str, str] = {}
+    fbx_fingerprints: dict[tuple[str, str], tuple[str, str]] = {}
 
     def add_image_entry(entry: dict, asset_rel: str, stem: str, path_id: str, dimensions: tuple[int, int] | None) -> None:
         nonlocal material_like_image_count
@@ -785,11 +849,28 @@ def scan_exported_media_assets(
         if kind == "model":
             if suffix == ".obj":
                 entry["nd"] = not obj_has_drawable_faces(path)
+            fbx_data = None
+            if suffix == ".fbx":
+                try:
+                    fbx_data = sprite_store.read_bytes(STORED_MODEL_TYPE, stored_row.name) if stored_row is not None else path.read_bytes()
+                except OSError:
+                    pass
+                if fbx_data is not None and build_fbx_content:
+                    cache_key = (stored_row.sha256, stem) if stored_row is not None else None
+                    if cache_key is not None and cache_key in fbx_fingerprints:
+                        fingerprint, variant = fbx_fingerprints[cache_key]
+                    else:
+                        fingerprint, variant = fbx_content_fingerprints(fbx_data, stem)
+                        if cache_key is not None:
+                            fbx_fingerprints[cache_key] = fingerprint, variant
+                    if fingerprint:
+                        entry["fc"] = fingerprint
+                        entry["fv"] = variant
             scene_root = _animator_fbx_scene_root(
                 asset_rel,
                 path,
                 stem,
-                sprite_store.read_bytes(STORED_MODEL_TYPE, stored_row.name) if stored_row is not None else None,
+                fbx_data,
             )
             if scene_root:
                 entry["fr"] = scene_root
@@ -892,7 +973,7 @@ def scan_exported_media_assets(
                 continue
 
             texture_refs = _extract_material_texture_refs(material_payload)
-            if not texture_refs:
+            if not texture_refs and not _material_blend(material_payload):
                 continue
 
             material_count += 1
@@ -936,7 +1017,7 @@ def scan_exported_media_assets(
                     texture_link_count += 1
 
             material_relations = relations.setdefault(material_rel, {})
-            blend = _material_blend(material_payload)
+            blend = _material_blend(material_payload, resolved_texture_refs)
             if blend:
                 material_relations["blend"] = blend
             material_textures = material_relations.setdefault("textures", [])
@@ -974,6 +1055,16 @@ def scan_exported_media_assets(
 
     _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel)
     _add_stored_duplicate_hashes(asset_entries, stored_sha_by_rel)
+    # Pose-insensitive resource groups retain a pose-preserving variant key
+    # and full-file hashes; resource grouping is not byte equality.
+    fingerprint_counts = Counter(entry["fc"] for entry in asset_entries if entry.get("fc"))
+    for entry in asset_entries:
+        if entry.get("fc") and fingerprint_counts[entry["fc"]] < 2:
+            del entry["fc"]
+            entry.pop("fv", None)
+        elif entry.get("fc") and not entry.get("h"):
+            rel = entry["r"]
+            entry["h"] = stored_sha_by_rel[rel] if rel in stored_sha_by_rel else _file_sha256(asset_paths_by_rel[rel])
     _add_sprite_crop_hashes(asset_entries, sprite_crops_by_rel, asset_paths_by_rel)
     _add_duplicate_candidate_hashes(video_entries, asset_paths_by_rel)
 

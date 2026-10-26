@@ -1,0 +1,345 @@
+{
+  "schema": "endfield.buff-archery-chip-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "archeryChip": {
+      "sourceContract": "buff_18e_native.json",
+      "wrapperTypeDefinition": 16557,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9959,
+      "runtimeTypeName": "Beyond.Gameplay.Core.TyphoeaArcheryChipDataAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member18",
+      "readerMethod": [
+        123736,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack",
+        "Deserialize",
+        70502080
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502224,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502247,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84980200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70502265,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502287,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F846F0200004533C08BD0488BCE",
+          "sourceContextInstructionRva": 70502252
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70502298,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502320,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F844E0200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70502331,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502353,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F842D0200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "extraArrowKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123719,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502364,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502387,
+            "targetRva": 70502912,
+            "methodIndex": 123719
+          },
+          "sourceToDestinationHex": "4885F60F840C0200004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "extraRicochetKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123720,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502398,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502421,
+            "targetRva": 70502960,
+            "methodIndex": 123720
+          },
+          "sourceToDestinationHex": "4885F60F84EA0100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "hasMachineGunFeatureKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123721,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502432,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502455,
+            "targetRva": 70503008,
+            "methodIndex": 123721
+          },
+          "sourceToDestinationHex": "4885F60F84C80100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "isRapidFireArrowKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123722,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502466,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502489,
+            "targetRva": 70503072,
+            "methodIndex": 123722
+          },
+          "sourceToDestinationHex": "4885F60F84A60100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "needSaveHasMachineGunFeature",
+          "declaredType": "bool",
+          "setterMethodIndex": 123723,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502500,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502523,
+            "targetRva": 70503136,
+            "methodIndex": 123723
+          },
+          "sourceToDestinationHex": "4885F60F84840100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "needSaveProjectileID",
+          "declaredType": "bool",
+          "setterMethodIndex": 123724,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502534,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502557,
+            "targetRva": 70503184,
+            "methodIndex": 123724
+          },
+          "sourceToDestinationHex": "4885F60F84620100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "needSaveRemainBounceCount",
+          "declaredType": "bool",
+          "setterMethodIndex": 123725,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502568,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502591,
+            "targetRva": 70503232,
+            "methodIndex": 123725
+          },
+          "sourceToDestinationHex": "4885F60F84400100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "needSaveSkillTrajectoryType",
+          "declaredType": "bool",
+          "setterMethodIndex": 123726,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502602,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502625,
+            "targetRva": 70503280,
+            "methodIndex": 123726
+          },
+          "sourceToDestinationHex": "4885F60F841E0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "needSaveSplitCountKey",
+          "declaredType": "bool",
+          "setterMethodIndex": 123727,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502636,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502659,
+            "targetRva": 70503328,
+            "methodIndex": 123727
+          },
+          "sourceToDestinationHex": "4885F60F84FC0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "projectileIDKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123728,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502670,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502693,
+            "targetRva": 70503376,
+            "methodIndex": 123728
+          },
+          "sourceToDestinationHex": "4885F60F84DA0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "remainBounceCountKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123729,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502704,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502727,
+            "targetRva": 70503424,
+            "methodIndex": 123729
+          },
+          "sourceToDestinationHex": "4885F60F84B80000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "saveAffix",
+          "declaredType": "bool",
+          "setterMethodIndex": 123730,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70502738,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502761,
+            "targetRva": 70503472,
+            "methodIndex": 123730
+          },
+          "sourceToDestinationHex": "4885F60F84960000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "skillTrajectoryTypeKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123731,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502772,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502791,
+            "targetRva": 70503520,
+            "methodIndex": 123731
+          },
+          "sourceToDestinationHex": "4885F674784533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "splitCountKey",
+          "declaredType": "string",
+          "setterMethodIndex": 123732,
+          "kind": "nullable-byte-payload",
+          "sourceCall": {
+            "rva": 70502802,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70502821,
+            "targetRva": 70503568,
+            "methodIndex": 123732
+          },
+          "sourceToDestinationHex": "4885DB745A4533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "398": "archeryChip"
+  },
+  "stringSourceContract": "memorypack_utf8_source_helper_native.json",
+  "evidenceBoundary": {
+    "exact": "Current eighteen-member source, generated setter and union joins, with independently bounded source-string children.",
+    "direct": "Inherited byte/three DWORDs, eight separate nullable string payloads and six distinct save-flag bytes retain their ordered source spans.",
+    "conditional": "Current native gates and independently proved source-string helper, valid UTF-8 subset, ordinary provider paths and required tail reservations. Null strings do not omit later markers or flags.",
+    "unresolved": "Evaluated keys, projectile/ricochet/split/trajectory/affix settings and writes, actual execution, and complete family/root admission."
+  }
+}

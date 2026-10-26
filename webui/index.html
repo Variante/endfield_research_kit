@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="logo.svg">
-<link rel="stylesheet" href="style.css?v=20261013-sfx-skillorder">
+<link rel="stylesheet" href="style.css?v=20261014-model-emission">
   <link rel="stylesheet" href="src/features/characters/style.css?v=20261010-continuous1">
   <link rel="stylesheet" href="src/features/gameplay/items.css?v=20261010-record-audio-materials">
   <link rel="stylesheet" href="src/features/story/branches.css?v=20261002-expansion1">
@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20261010-continuous1">
   <link rel="stylesheet" href="src/features/recovery/style.css?v=20261010-continuous1">
   <link rel="stylesheet" href="src/features/gameplay/skill_refs.css?v=20261002-expansion1">
-  <link rel="stylesheet" href="src/features/gameplay/style.css?v=20261012-ability-highlight">
+  <link rel="stylesheet" href="src/features/gameplay/style.css?v=20261013-ability-background">
   <link rel="stylesheet" href="src/features/gameplay/battle_stages.css?v=20261011-hints1">
   <link rel="stylesheet" href="src/features/gameplay/activities/style.css?v=20261010-activity-best-image">
   <link rel="stylesheet" href="themes.css?v=20261010-two-themes">
@@ -763,7 +763,10 @@
                   </div>
                   <label id="asset-model-color-label" for="asset-model-color" hidden>Model color</label>
                   <input id="asset-model-color" type="color" value="#5c99db" aria-label="Model color" hidden>
+                  <label id="asset-model-only-label" hidden><input id="asset-model-only" type="checkbox"> <span id="asset-model-only-text">Model only</span></label>
+                  <label id="asset-model-emission-label" hidden><input id="asset-model-emission" type="checkbox"> <span id="asset-model-emission-text">Show emission</span></label>
                 </div>
+                <div id="asset-preview-note" class="asset-preview-note" aria-live="polite" hidden></div>
                 <div id="asset-preview-stage">
                   <div id="asset-preview-placeholder">&#39044;&#35272;&#20250;&#26174;&#31034;&#22312;&#36825;&#37324;&#12290;</div>
                   <img id="asset-preview-image" alt="" hidden>
@@ -771,7 +774,6 @@
                   <canvas id="asset-model-canvas" hidden></canvas>
                   <canvas id="asset-model-axes" aria-hidden="true"></canvas>
                 </div>
-                <div id="asset-preview-note" class="asset-preview-note" hidden></div>
                 <div id="asset-variants-wrap" class="asset-preview-variants" hidden>
                   <div id="asset-variants-label" class="asset-subhead">LOD variants</div>
                   <div id="asset-variants" class="asset-variant-list"></div>
@@ -827,7 +829,7 @@
 <script src="src/core/storage.js?v=20261011-loadout-columns"></script>
 <script src="src/core/text.js?v=20261011-perf2"></script>
 <script src="src/core/locale.js?v=20260701-gp5"></script>
-<script src="src/core/paths.js?v=20261010-current-formats"></script>
+<script src="src/core/paths.js?v=20261014-stored-uv"></script>
 <script src="src/ui/media_player.js?v=20261013-media-name"></script>
 <script src="src/ui/splitter.js?v=20261010-catalogs"></script>
 <script src="src/ui/filters.js?v=20261010-refactor1"></script>
@@ -843,7 +845,7 @@
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="src/features/story/branches.js?v=20261009-review1"></script>
 <script src="app.js?v=20261011-story-triggers"></script>
-<script src="assets.js?v=20261012-root-entry"></script>
+<script src="assets.js?v=20261014-model-parts-fit"></script>
 <script src="src/features/characters/appearances.js?v=20261009-activities"></script>
   <script src="src/features/characters/index.js?v=20261010-refactor1"></script>
   <script src="src/ui/story_links.js?v=20261010-activity-missions"></script>

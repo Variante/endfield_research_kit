@@ -1,0 +1,41 @@
+{
+  "schema": "endfield.buff-selector-validator-consumer-claims.v1",
+  "status": "reviewed",
+  "consumer": {
+    "type": "Beyond.Gameplay.Core.Selector+SkillCastIdValidator+Data",
+    "method": "Validate",
+    "parameters": [
+      "Beyond.Gameplay.Core.AbilitySystem",
+      "UnityEngine.Vector3",
+      "UnityEngine.Vector3",
+      "Beyond.ActionBlackboard",
+      "Beyond.Gameplay.Core.TargetHandle",
+      "Beyond.Gameplay.Core.AbilityAction",
+      "Beyond.Gameplay.Core.TargetHandleView"
+    ],
+    "returnType": "void"
+  },
+  "claims": [
+    {
+      "calls": [
+        "Beyond.Gameplay.Core.TargetHandle.get_targets",
+        "Beyond.Gameplay.Core.BattleTargetWrapper.Lock",
+        "Beyond.Gameplay.Core.AbilitySystem.get_objectType",
+        "Beyond.Gameplay.Core.Skill.get_skillCastId",
+        "Beyond.Gameplay.Core.TargetHandle.RemoveTarget",
+        "Beyond.Gameplay.Core.TargetHandle.Clear"
+      ]
+    }
+  ],
+  "controlRequirements": {
+    "completeOwnedBytePartition": true,
+    "unknownInstructions": 0,
+    "closedBranchTargets": true,
+    "ordinaryWin64CallFrames": true
+  },
+  "evidenceBoundary": {
+    "direct": "The named Data consumer has a void signature and the listed compiled calls, including target-handle mutation entry points.",
+    "conditional": "Complete owned instruction, edge and frame checks describe both static branch outcomes with ordinary returning Win64 callees. They do not establish a feasible or observed path.",
+    "unresolved": "Typed source origins of compared cast identity, complete sink argument/branch joins, IFix outcomes, effects inside opaque callees, consumer invocation and actual target removal."
+  }
+}

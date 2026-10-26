@@ -1,0 +1,648 @@
+{
+  "schema": "endfield.wwise-mix-contributions-observer.v2",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "ownerContract": "wwise_authored_parameters_native",
+  "borrowedGroups": [
+    "matrixBypassGainCollection",
+    "matrixGainDispatch",
+    "matrixGainAvx",
+    "matrixGainAvxTransition",
+    "matrixGainAvxConstant"
+  ],
+  "selection": {
+    "frames": 512,
+    "prefixBytes": 16,
+    "processorMode": 1
+  },
+  "evidenceBoundary": {
+    "exact": "Selected complete original AVX accumulation bodies and direct calls, mixed Win64 ABI, four first-plane arithmetic values with observed gain/step and initial destination.",
+    "conditional": "Current source-publication candidates, ordered prefix snapshots and saved bus/device joins.",
+    "unresolved": "Every cohort member, allocation generation, filtered/SSE mixing, full buffers, attribution through nonlinear effects and whole Event-to-device playback."
+  },
+  "hooks": [
+    {
+      "index": 45,
+      "name": "AkSoundEngine.matrixAccumulateConstant",
+      "sourceKind": "matrixAccumulateConstant",
+      "ownerGroup": "matrixGainAvxConstant",
+      "abiId": "win64.void_pointer2_float_u32_result.v1",
+      "memory": [
+        {
+          "name": "frames",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "coefficientBits",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "sourceWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord0",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord1",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord2",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord3",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "frames",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "coefficientBits",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "sourceWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord0",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord1",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord2",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord3",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 0,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    },
+    {
+      "index": 46,
+      "name": "AkSoundEngine.matrixAccumulateRamp",
+      "sourceKind": "matrixAccumulateRamp",
+      "ownerGroup": "matrixGainAvxTransition",
+      "abiId": "win64.void_pointer2_float2_u32_result.v1",
+      "memory": [
+        {
+          "name": "frames",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "coefficientBits",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "stepBits",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "sourceWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord0",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord1",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord2",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord3",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "frames",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "coefficientBits",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "stepBits",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "sourceWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "sourceWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord0",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord1",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord2",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "destinationWord3",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "equals": 512
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 0,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    }
+  ],
+  "callBindings": [
+    {
+      "group": "matrixBypassGainCollection",
+      "rva": "0x18213a",
+      "targetGroup": "matrixGainDispatch",
+      "returnRva": "0x18213f"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a5530",
+      "targetGroup": "matrixGainAvxConstant",
+      "returnRva": "0x1a5535"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a550c",
+      "targetGroup": "matrixGainAvxTransition",
+      "returnRva": "0x1a5511"
+    }
+  ],
+  "instructionBindings": [
+    {
+      "group": "matrixGainAvxConstant",
+      "rva": "0x1a38a1",
+      "instructionHex": "458bd1",
+      "instruction": "mov r10d, r9d"
+    },
+    {
+      "group": "matrixGainAvxConstant",
+      "rva": "0x1a38a4",
+      "instructionHex": "c4e27d18e2",
+      "instruction": "vbroadcastss ymm4, xmm2"
+    },
+    {
+      "group": "matrixGainAvxConstant",
+      "rva": "0x1a38b0",
+      "instructionHex": "c5fc101c82",
+      "instruction": "vmovups ymm3, ymmword ptr [rdx + rax*4]"
+    },
+    {
+      "group": "matrixGainAvxConstant",
+      "rva": "0x1a38c7",
+      "instructionHex": "c4e25da81c81",
+      "instruction": "vfmadd213ps ymm3, ymm4, ymmword ptr [rcx + rax*4]"
+    },
+    {
+      "group": "matrixGainAvxConstant",
+      "rva": "0x1a38e2",
+      "instructionHex": "c5fc111c81",
+      "instruction": "vmovups ymmword ptr [rcx + rax*4], ymm3"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a396d",
+      "instructionHex": "448b8c24a0000000",
+      "instruction": "mov r9d, dword ptr [rsp + 0xa0]"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a3975",
+      "instructionHex": "4c8bc1",
+      "instruction": "mov r8, rcx"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a3980",
+      "instructionHex": "c4e27d18eb",
+      "instruction": "vbroadcastss ymm5, xmm3"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a398d",
+      "instructionHex": "c4627d18c2",
+      "instruction": "vbroadcastss ymm8, xmm2"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a3992",
+      "instructionHex": "c4c17c10e0",
+      "instruction": "vmovups ymm4, ymm8"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a3997",
+      "instructionHex": "c4e255b825c08f0f00",
+      "instruction": "vfmadd231ps ymm4, ymm5, ymmword ptr [rip + 0xf8fc0]"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a39d0",
+      "instructionHex": "c5fc101c8a",
+      "instruction": "vmovups ymm3, ymmword ptr [rdx + rcx*4]"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a39e7",
+      "instructionHex": "c4c25da81c88",
+      "instruction": "vfmadd213ps ymm3, ymm4, ymmword ptr [r8 + rcx*4]"
+    },
+    {
+      "group": "matrixGainAvxTransition",
+      "rva": "0x1a3a02",
+      "instructionHex": "c4c17c111c88",
+      "instruction": "vmovups ymmword ptr [r8 + rcx*4], ymm3"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a54f2",
+      "instructionHex": "498bd6",
+      "instruction": "mov rdx, r14"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a54f5",
+      "instructionHex": "44897c2420",
+      "instruction": "mov dword ptr [rsp + 0x20], r15d"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a54fa",
+      "instructionHex": "c4c17a101c89",
+      "instruction": "vmovss xmm3, dword ptr [r9 + rcx*4]"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a5500",
+      "instructionHex": "c5fa10148e",
+      "instruction": "vmovss xmm2, dword ptr [rsi + rcx*4]"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a5505",
+      "instructionHex": "498b0ccc",
+      "instruction": "mov rcx, qword ptr [r12 + rcx*8]"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a551e",
+      "instructionHex": "458bcf",
+      "instruction": "mov r9d, r15d"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a5521",
+      "instructionHex": "498bd6",
+      "instruction": "mov rdx, r14"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a5524",
+      "instructionHex": "c5fa10148e",
+      "instruction": "vmovss xmm2, dword ptr [rsi + rcx*4]"
+    },
+    {
+      "group": "matrixGainAvx",
+      "rva": "0x1a5529",
+      "instructionHex": "498b0ccc",
+      "instruction": "mov rcx, qword ptr [r12 + rcx*8]"
+    }
+  ],
+  "rampLaneWords": [
+    1065353216,
+    1073741824,
+    1077936128,
+    1082130432,
+    1084227584,
+    1086324736,
+    1088421888,
+    1090519040
+  ],
+  "consumerOutputGate": {
+    "field": "outputDescriptor",
+    "argumentIndex": 2
+  },
+  "rampLaneData": {
+    "rva": "0x29c960",
+    "bytes": 32,
+    "sha256": "af7de0621354bafceb193edf0fcf5d421cf21de7146580062fff53c7907f54e5",
+    "loadRva": "0x1a3997"
+  }
+}

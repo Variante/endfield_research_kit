@@ -1,0 +1,1463 @@
+{
+  "schema": "endfield.wwise-playback-observer.v3",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "hooks": [
+    {
+      "index": 8,
+      "name": "AkSoundEngine.ownerRoutingConsumer",
+      "ownerContract": "wwise_inheritance_native",
+      "ownerGroup": "ownerRoutingConsumer",
+      "abiId": "win64.void_integer2_result.v1",
+      "memory": [
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "routingFlags",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u8"
+        },
+        {
+          "name": "component",
+          "argIndex": 0,
+          "offset": 16,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ]
+        },
+        {
+          "name": "defaultComponent",
+          "argIndex": 5,
+          "offset": 3429176,
+          "kind": "pointer"
+        },
+        {
+          "name": "objectFallbackListenerId",
+          "argIndex": 0,
+          "offset": 88,
+          "kind": "u64",
+          "pointerOffsets": [
+            8
+          ]
+        },
+        {
+          "name": "routeVector",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "routeCount",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "routeVector",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "routeCount",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "routeRecordPrefix",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "routeCount",
+          "stride": 32,
+          "maxBytes": 256
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "name": "AkSoundEngine.objectComponentGetter",
+      "ownerContract": "wwise_inheritance_native",
+      "ownerGroup": "objectComponentGetter",
+      "abiId": "win64.pointer1_result.v1",
+      "memory": [
+        {
+          "name": "heldComponent",
+          "argIndex": 0,
+          "offset": 16,
+          "kind": "pointer"
+        },
+        {
+          "name": "objectFallbackListenerId",
+          "argIndex": 0,
+          "offset": 88,
+          "kind": "u64"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "listenerOverride",
+          "argIndex": 4,
+          "offset": 224,
+          "kind": "u8",
+          "requireArgument": 4
+        },
+        {
+          "name": "spatialOverride",
+          "argIndex": 4,
+          "offset": 225,
+          "kind": "u8",
+          "requireArgument": 4
+        },
+        {
+          "name": "listenerVector",
+          "argIndex": 4,
+          "offset": 96,
+          "kind": "pointer",
+          "requireArgument": 4
+        },
+        {
+          "name": "listenerCount",
+          "argIndex": 4,
+          "offset": 104,
+          "kind": "u32",
+          "requireArgument": 4
+        },
+        {
+          "name": "listenerIdPrefix",
+          "argIndex": 4,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            96
+          ],
+          "countField": "listenerCount",
+          "stride": 8,
+          "maxBytes": 128
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "name": "AkSoundEngine.componentListenerSelector",
+      "ownerContract": "wwise_inheritance_native",
+      "ownerGroup": "componentListenerSelector",
+      "abiId": "win64.pointer1_result.v1",
+      "memory": [
+        {
+          "name": "listenerOverride",
+          "argIndex": 0,
+          "offset": 224,
+          "kind": "u8"
+        },
+        {
+          "name": "spatialOverride",
+          "argIndex": 0,
+          "offset": 225,
+          "kind": "u8"
+        },
+        {
+          "name": "listenerVector",
+          "argIndex": 0,
+          "offset": 96,
+          "kind": "pointer"
+        },
+        {
+          "name": "listenerCount",
+          "argIndex": 0,
+          "offset": 104,
+          "kind": "u32"
+        },
+        {
+          "name": "listenerIdPrefix",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            96
+          ],
+          "countField": "listenerCount",
+          "stride": 8,
+          "maxBytes": 128
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "listenerVector",
+          "argIndex": 4,
+          "offset": 64,
+          "kind": "pointer",
+          "requireArgument": 4
+        },
+        {
+          "name": "listenerCount",
+          "argIndex": 4,
+          "offset": 72,
+          "kind": "u32",
+          "requireArgument": 4
+        },
+        {
+          "name": "listenerIdPrefix",
+          "argIndex": 4,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            64
+          ],
+          "countField": "listenerCount",
+          "stride": 8,
+          "maxBytes": 128
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "name": "AkSoundEngine.ownerParameterRefresh",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "ownerParameterRefresh",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "parameterNode",
+          "argIndex": 0,
+          "offset": 440,
+          "kind": "pointer"
+        },
+        {
+          "name": "source",
+          "argIndex": 0,
+          "offset": 624,
+          "kind": "pointer"
+        },
+        {
+          "name": "parameterWord0",
+          "argIndex": 0,
+          "offset": 136,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord1",
+          "argIndex": 0,
+          "offset": 140,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord2",
+          "argIndex": 0,
+          "offset": 144,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord3",
+          "argIndex": 0,
+          "offset": 148,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord4",
+          "argIndex": 0,
+          "offset": 152,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord5",
+          "argIndex": 0,
+          "offset": 156,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord6",
+          "argIndex": 0,
+          "offset": 160,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord7",
+          "argIndex": 0,
+          "offset": 164,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord8",
+          "argIndex": 0,
+          "offset": 168,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord9",
+          "argIndex": 0,
+          "offset": 172,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord10",
+          "argIndex": 0,
+          "offset": 176,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterWord11",
+          "argIndex": 0,
+          "offset": 180,
+          "kind": "u32"
+        },
+        {
+          "name": "nodeParent",
+          "argIndex": 0,
+          "offset": 112,
+          "kind": "pointer",
+          "pointerOffsets": [
+            440
+          ]
+        },
+        {
+          "name": "nodeBus",
+          "argIndex": 0,
+          "offset": 120,
+          "kind": "pointer",
+          "pointerOffsets": [
+            440
+          ]
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 12,
+      "name": "AkSoundEngine.contextSourceAttachment",
+      "ownerContract": "wwise_codec_factory_native",
+      "ownerGroup": "contextSourceAttachment",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 13,
+      "name": "AkSoundEngine.contextStart",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "contextStart",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 14,
+      "name": "AkSoundEngine.contextFramePreparation",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "contextFramePreparation",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 15,
+      "name": "AkSoundEngine.contextGainRefresh",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "contextGainRefresh",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "linearGainBits",
+          "argIndex": 0,
+          "offset": 16,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 16,
+      "name": "AkSoundEngine.routeAttachment",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "routeAttachment",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "busHead",
+          "argIndex": 1,
+          "offset": 32,
+          "kind": "pointer"
+        },
+        {
+          "name": "busInputCount",
+          "argIndex": 1,
+          "offset": 200,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 17,
+      "name": "AkSoundEngine.busRouteCollection",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteCollection",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "busHead",
+          "argIndex": 0,
+          "offset": 32,
+          "kind": "pointer"
+        },
+        {
+          "name": "busInputs",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer"
+        },
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 18,
+      "name": "AkSoundEngine.busRouteMix",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "busInputs",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer"
+        },
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        },
+        {
+          "name": "mixRowCount",
+          "argIndex": 2,
+          "offset": 0,
+          "kind": "argumentU32"
+        },
+        {
+          "name": "mixRowPointerPrefix",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [],
+          "countField": "mixRowCount",
+          "stride": 8,
+          "maxBytes": 128
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 19,
+      "name": "AkSoundEngine.pcmFrameConsumer",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "pcmFrameConsumer",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "engineSampleRate",
+          "argIndex": 5,
+          "offset": 3340796,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 20,
+      "name": "AkSoundEngine.sinkInput",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkInput",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "renderClient",
+          "argIndex": 0,
+          "offset": 88,
+          "kind": "pointer"
+        },
+        {
+          "name": "sinkBuffer",
+          "argIndex": 0,
+          "offset": 96,
+          "kind": "pointer"
+        },
+        {
+          "name": "sinkChannelConfiguration",
+          "argIndex": 0,
+          "offset": 104,
+          "kind": "u32"
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16"
+        },
+        {
+          "name": "samplePrefix",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 21,
+      "name": "AkSoundEngine.sinkSubmit",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkSubmit",
+      "abiId": "win64.void_integer2_result.v1",
+      "memory": [
+        {
+          "name": "renderClient",
+          "argIndex": 0,
+          "offset": 88,
+          "kind": "pointer"
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16"
+        },
+        {
+          "name": "samplePrefix",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "invalidFlag",
+          "argIndex": 0,
+          "offset": 613,
+          "kind": "u8"
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16"
+        },
+        {
+          "name": "samplePrefix",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "name": "AkSoundEngine.availableFrameRequest",
+      "ownerContract": "wwise_sink_negotiation_native",
+      "ownerGroup": "availableFrameRequest",
+      "abiId": "win64.u32_integer2_result.v1",
+      "memory": [
+        {
+          "name": "audioClient",
+          "argIndex": 0,
+          "offset": 80,
+          "kind": "pointer"
+        },
+        {
+          "name": "renderClient",
+          "argIndex": 0,
+          "offset": 88,
+          "kind": "pointer"
+        },
+        {
+          "name": "invalidFlag",
+          "argIndex": 0,
+          "offset": 613,
+          "kind": "u8"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "requestedQuanta",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "u32"
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "name": "AkSoundEngine.contextSourceSampleBuffer",
+      "ownerContract": "wwise_codec_factory_native",
+      "ownerGroup": "contextSourceSampleBuffer",
+      "abiId": "win64.void_integer2_result.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16"
+        },
+        {
+          "name": "samplePrefix",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "name": "AkSoundEngine.parameterValueLookup",
+      "ownerContract": "wwise_inheritance_native",
+      "ownerGroup": "parameterValueLookup",
+      "abiId": "win64.u32_integer5_result.v1",
+      "memory": [
+        {
+          "name": "objectContextWord",
+          "argIndex": 2,
+          "offset": 0,
+          "kind": "u64",
+          "requireArgument": 2
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "returnedValueBits",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "u32",
+          "requireArgument": 3
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "name": "AkSoundEngine.nodeRtpcCollector",
+      "ownerContract": "wwise_inheritance_native",
+      "ownerGroup": "nodeRtpcCollector",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "nodeParent",
+          "argIndex": 0,
+          "offset": 112,
+          "kind": "pointer"
+        },
+        {
+          "name": "nodeBus",
+          "argIndex": 0,
+          "offset": 120,
+          "kind": "pointer"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 26,
+      "name": "AkSoundEngine.routeGainMatrixPreparation",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "routeGainMatrixPreparation",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "parameterInputWord0",
+          "argIndex": 1,
+          "offset": 320,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterInputWord1",
+          "argIndex": 1,
+          "offset": 324,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterInputWord2",
+          "argIndex": 1,
+          "offset": 328,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterInputWord3",
+          "argIndex": 1,
+          "offset": 332,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterInputWord4",
+          "argIndex": 1,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "parameterInputWord5",
+          "argIndex": 1,
+          "offset": 340,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 27,
+      "name": "AkSoundEngine.routeMatrixPreparation",
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "routeMatrixPreparation",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "routeSource",
+          "argIndex": 0,
+          "offset": 312,
+          "kind": "pointer"
+        },
+        {
+          "name": "routeBus",
+          "argIndex": 0,
+          "offset": 320,
+          "kind": "pointer"
+        },
+        {
+          "name": "routeRows",
+          "argIndex": 0,
+          "offset": 296,
+          "kind": "pointer"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 28,
+      "name": "AkSoundEngine.outputConsumer",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "outputConsumer",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "outputRegistryHead",
+          "argIndex": 5,
+          "offset": 3429840,
+          "kind": "pointer"
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 29,
+      "name": "AkSoundEngine.contextFrameRelease",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "contextFrameRelease",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "embeddedOwner",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "primaryOwner",
+          "argIndex": 0,
+          "offset": 208,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceWrapper",
+          "argIndex": 0,
+          "offset": 216,
+          "kind": "pointer"
+        },
+        {
+          "name": "frameProcessor",
+          "argIndex": 0,
+          "offset": 232,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedChannelConfiguration",
+          "argIndex": 0,
+          "offset": 336,
+          "kind": "u32"
+        },
+        {
+          "name": "routeHead",
+          "argIndex": 0,
+          "offset": 56,
+          "kind": "pointer"
+        },
+        {
+          "name": "object",
+          "argIndex": 0,
+          "offset": 8,
+          "kind": "pointer",
+          "pointerOffsets": [
+            8
+          ],
+          "requireMemory": {
+            "name": "embeddedOwner",
+            "nonzero": true
+          }
+        }
+      ],
+      "resultMemory": []
+    },
+    {
+      "index": 30,
+      "name": "AkSoundEngine.normalActionExecute",
+      "ownerContract": "wwise_source_queue_native",
+      "ownerGroup": "normalActionExecute",
+      "abiId": "win64.u32_integer2_result.v1",
+      "memory": [
+        {
+          "name": "actionAddressPoint",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "retainedExternalAllocation",
+          "argIndex": 1,
+          "offset": 28,
+          "kind": "pointer"
+        },
+        {
+          "name": "queuedPlaybackSerial",
+          "argIndex": 1,
+          "offset": 48,
+          "kind": "u32"
+        },
+        {
+          "name": "actionPointer40",
+          "argIndex": 1,
+          "offset": 64,
+          "kind": "pointer"
+        },
+        {
+          "name": "actionWord14",
+          "argIndex": 1,
+          "offset": 20,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "actionAddressPoint",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "pointer"
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "name": "AkSoundEngine.eventQueueDrain",
+      "ownerContract": "wwise_source_queue_native",
+      "ownerGroup": "eventQueueDrain",
+      "abiId": "win64.transparent_entry_snapshot.v1",
+      "memory": [
+        {
+          "name": "engineSampleRate",
+          "argIndex": 5,
+          "offset": 3340796,
+          "kind": "u32"
+        }
+      ],
+      "resultMemory": []
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Borrowed complete selected native consumer groups and reviewed operand layouts supply the sites; no duplicate code catalog is owned here.",
+    "direct": "Paired pointer getters, owner routing, source sample output, parameter value output, available-frame request and normal Action execution preserve same-call results and nesting. Entry-only consumers retain their declared raw arguments and field reads.",
+    "structuralOnly": "Raw scalar and bounded byte prefixes preserve observed state. Prefixes are not whole vectors or whole PCM buffers, and snapshots are not atomic.",
+    "conditional": "Readability, observed branches, explicit object/default selection and retained allocation validity apply per observation. Post-read current value bits require native success; native integer output status is not a Windows HRESULT.",
+    "unresolved": "Complete cross-thread allocation generations, unobserved route branches, full bus/effect graphs, individual COM GetBuffer/ReleaseBuffer HRESULTs and audibility."
+  },
+  "argumentScope": "Transparent entries preserve and sample the first four integer registers and low128 bits of XMM0..XMM5. Additional stack inputs remain unobserved. Paired calls observe only their reviewed pointer/integer prototype; parameter lookup explicitly forwards and records its fifth stack input.",
+  "samplingBoundary": "Frequent consumers sample the first three calls per receiver and periodically thereafter through non-evicting hashed buckets, with a per-hook limit of 64 root selections per 500ms interval. Source-selection/Action entries and getter children of selected owner-routing calls are retained; other descendants obey their own budgets. Bucket exhaustion, pointer reuse and intentional skipped calls are not allocation generations. Summary selected/skipped counts describe intentional coverage separately from queue losses. Short ending phases may be absent.",
+  "lineageTransportKey": "anonymousOwnerSourceTransport",
+  "lineageArguments": [
+    {
+      "ownerContract": "wwise_source_native",
+      "endpoint": "factory",
+      "hookKind": "anonymousPrimaryOwnerFactory",
+      "argumentName": "playbackBlobPointer",
+      "argumentIndex": 3,
+      "windowIndex": 0,
+      "bodyOffset": 25,
+      "instructionHex": "498bd9",
+      "forwardBodyOffset": 65,
+      "forwardInstructionHex": "488bd3",
+      "targetArgumentIndex": 1
+    },
+    {
+      "ownerContract": "wwise_source_native",
+      "endpoint": "constructor",
+      "hookKind": "anonymousPrimaryOwnerConstructor",
+      "argumentName": "playbackBlobPointer",
+      "argumentIndex": 1,
+      "windowIndex": 0,
+      "bodyOffset": 39,
+      "instructionHex": "488bf2"
+    }
+  ],
+  "fieldArguments": [
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "fieldName": "mixRowPointerPrefix",
+      "argumentIndex": 3,
+      "windowIndex": 0,
+      "bodyOffset": 41,
+      "instructionHex": "4d8be1",
+      "useBodyOffset": 384,
+      "useInstructionHex": "498b5434fc"
+    }
+  ]
+}

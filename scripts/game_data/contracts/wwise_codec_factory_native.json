@@ -1,0 +1,5002 @@
+{
+  "schema": "endfield.wwise-codec-factory-native.v4",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "ownerSourceCodecSetup",
+      "entryRva": "0x142aa0",
+      "windows": [
+        {
+          "rva": "0x142aa0",
+          "bodyLength": 407,
+          "bodySha256": "5d6e08af23eec462455809b3435620be4f900894f9bb670918bf2eea9e4de724",
+          "unwindRva": "0x309a14",
+          "unwindInfoHex": "01800800805416000ff208f006e0047003600230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadOwnerSource",
+        "loadSourceFlags",
+        "loadSourceArgument",
+        "callFactoryEarly",
+        "callFactoryAfterHeader"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadOwnerSource",
+          "rva": "0x142aaf",
+          "instructionHex": "488bba88020000"
+        },
+        {
+          "role": "loadSourceFlags",
+          "rva": "0x142ad8",
+          "instructionHex": "8b4f0c"
+        },
+        {
+          "role": "loadSourceArgument",
+          "rva": "0x142ade",
+          "instructionHex": "8b5718"
+        },
+        {
+          "role": "callFactoryEarly",
+          "rva": "0x142ae7",
+          "instructionHex": "e834620400"
+        },
+        {
+          "role": "callFactoryAfterHeader",
+          "rva": "0x142bf0",
+          "instructionHex": "e82b610400"
+        }
+      ],
+      "readOrder": "Read the retained source pointer from the primary owner; extract source kind from flags and forward the complete source argument to the implementation factory. The early branch requires the preceding preparation result. The other branch may parse held format bytes, replace the source argument for an extensible format or change source kind before factory selection. No source-byte/output success is implied."
+    },
+    {
+      "key": "sourceImplementationFactory",
+      "entryRva": "0x188d20",
+      "windows": [
+        {
+          "rva": "0x188d20",
+          "bodyLength": 130,
+          "bodySha256": "18e7c7fab0ec55bd25760987bd4b1ddd86a3139f10f703ff8702fa145ec5b36a",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readSourceKind",
+        "readPluginHighWord",
+        "tailRegisteredCodecFactory"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readSourceKind",
+          "rva": "0x188d29",
+          "instructionHex": "83f902"
+        },
+        {
+          "role": "readPluginHighWord",
+          "rva": "0x188d56",
+          "instructionHex": "8bc2"
+        },
+        {
+          "role": "tailRegisteredCodecFactory",
+          "rva": "0x188d71",
+          "instructionHex": "e9ca51f9ff"
+        }
+      ],
+      "readOrder": "Kind2 selects the resident implementation independently of plugin argument. Other nonzero kinds reject a zero argument high word; high word2 selects a built-in implementation and other arguments tail-dispatch to the registered codec factory with full plugin ID, source kind and same primary owner. This is conditional factory selection, not decoded output."
+    },
+    {
+      "key": "registeredCodecFactory",
+      "entryRva": "0x11df40",
+      "windows": [
+        {
+          "rva": "0x11df40",
+          "bodyLength": 92,
+          "bodySha256": "c52756771a648d3f743807ac36e9e79b5c89d94b3f0b7f775081fc791b106b2d",
+          "windowKind": "completeLeafThroughIndirectTailDispatch"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26",
+        "instruction27",
+        "instruction28"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x11df40",
+          "instructionHex": "448b0da1752200"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x11df47",
+          "instructionHex": "4c8bd9"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x11df4a",
+          "instructionHex": "488b058f752200"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x11df51",
+          "instructionHex": "4f8d1489"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x11df55",
+          "instructionHex": "4e8d0cd0"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x11df59",
+          "instructionHex": "493bc1"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x11df5c",
+          "instructionHex": "7410"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x11df5e",
+          "instructionHex": "6690"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x11df60",
+          "instructionHex": "443900"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x11df63",
+          "instructionHex": "7409"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x11df65",
+          "instructionHex": "4883c028"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x11df69",
+          "instructionHex": "493bc1"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x11df6c",
+          "instructionHex": "75f2"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x11df6e",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x11df71",
+          "instructionHex": "488d4808"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x11df75",
+          "instructionHex": "493bc1"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x11df78",
+          "instructionHex": "490f44c8"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x11df7c",
+          "instructionHex": "4885c9"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x11df7f",
+          "instructionHex": "7503"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x11df81",
+          "instructionHex": "33c0"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x11df83",
+          "instructionHex": "c3"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x11df84",
+          "instructionHex": "83fa01"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x11df87",
+          "instructionHex": "7509"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x11df89",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x11df8c",
+          "instructionHex": "498bcb"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x11df8f",
+          "instructionHex": "48ffe0"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x11df92",
+          "instructionHex": "488b4108"
+        },
+        {
+          "role": "instruction27",
+          "rva": "0x11df96",
+          "instructionHex": "498bcb"
+        },
+        {
+          "role": "instruction28",
+          "rva": "0x11df99",
+          "instructionHex": "48ffe0"
+        }
+      ],
+      "readOrder": "Scan stored40-byte codec registry rows for exact full plugin ID; first match wins. Source kind1 tail-calls the first factory pointer, other kinds the second. Forward the same owner argument. No matching row returns null. Row count, pointer readability and non-null chosen function pointer are conditions."
+    },
+    {
+      "key": "codecRegistryRegistration",
+      "entryRva": "0x11e3f0",
+      "windows": [
+        {
+          "rva": "0x11e3f0",
+          "bodyLength": 137,
+          "bodySha256": "9c6390e28d38eb98cb1a63b7b67f73d66499adac7b07126c52097ddbe894bfda",
+          "unwindRva": "0x2f6974",
+          "unwindInfoHex": "010f06000f5408000f3407000f320b60",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11e479",
+          "bodyLength": 168,
+          "bodySha256": "c5fbfd7eff02a3dae39b442324b0c4959937ce42a39388de62dc14ae52788be3",
+          "unwindRva": "0x3071b4",
+          "unwindInfoHex": "2105020005740600f0e3110079e4110074692f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11e521",
+          "bodyLength": 21,
+          "bodySha256": "ac071ce465c67455e53ffe539ca835c8bd84d37777f88afb9092157aa613eaba",
+          "unwindRva": "0x3071c8",
+          "unwindInfoHex": "21000000f0e3110079e4110074692f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "buildPluginCompanyBits",
+        "addCodecId",
+        "shiftPluginTypeBits",
+        "setCodecPluginType",
+        "copyFactoryPair",
+        "storeFactoryPair"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "buildPluginCompanyBits",
+          "rva": "0x11e407",
+          "instructionHex": "c1e30c"
+        },
+        {
+          "role": "addCodecId",
+          "rva": "0x11e414",
+          "instructionHex": "03d9"
+        },
+        {
+          "role": "shiftPluginTypeBits",
+          "rva": "0x11e416",
+          "instructionHex": "c1e304"
+        },
+        {
+          "role": "setCodecPluginType",
+          "rva": "0x11e420",
+          "instructionHex": "ffc3"
+        },
+        {
+          "role": "copyFactoryPair",
+          "rva": "0x11e4ed",
+          "instructionHex": "0f104500"
+        },
+        {
+          "role": "storeFactoryPair",
+          "rva": "0x11e4f1",
+          "instructionHex": "0f1107"
+        }
+      ],
+      "readOrder": "Build the codec plugin ID from the supplied codec/company words with native32-bit arithmetic. An already matching ID returns success without replacing its factory row. New registration requires both factory pointers and copies32 bytes of supplied factory/callback storage into a40-byte row. Capacity expansion and allocation success are conditions."
+    },
+    {
+      "key": "staticCodecListRegistration",
+      "entryRva": "0x11e670",
+      "windows": [
+        {
+          "rva": "0x11e670",
+          "bodyLength": 22,
+          "bodySha256": "6b56dba9f7a005f8db2b33ee9468281230fe85c9bd32eea59564d408057a3761",
+          "unwindRva": "0x3071d8",
+          "unwindInfoHex": "010a03000aa206e004300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11e686",
+          "bodyLength": 403,
+          "bodySha256": "e37f089239a0241c73c6a440806fbbc9f94fc4685d363c76b6a6342403e88276",
+          "unwindRva": "0x3071e4",
+          "unwindInfoHex": "21240a002464100020540f0019f408000ec4090004740a0070e6110086e61100d8713000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11e819",
+          "bodyLength": 13,
+          "bodySha256": "2160939d49f4bc235aa517f996cf22ec65f6a0d41c1e7f1eda16c6611b25838b",
+          "unwindRva": "0x307208",
+          "unwindInfoHex": "2100000070e6110086e61100d8713000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "checkCodecRegistrationKind",
+        "loadCompanyId",
+        "addressCodecFactories",
+        "loadCodecId",
+        "callCodecRegistration",
+        "nextStaticRegistration"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "checkCodecRegistrationKind",
+          "rva": "0x11e6b4",
+          "instructionHex": "413ac6"
+        },
+        {
+          "role": "loadCompanyId",
+          "rva": "0x11e6b9",
+          "instructionHex": "8b5310"
+        },
+        {
+          "role": "addressCodecFactories",
+          "rva": "0x11e6bc",
+          "instructionHex": "4c8d4350"
+        },
+        {
+          "role": "loadCodecId",
+          "rva": "0x11e6c0",
+          "instructionHex": "8b4b0c"
+        },
+        {
+          "role": "callCodecRegistration",
+          "rva": "0x11e6c3",
+          "instructionHex": "e828fdffff"
+        },
+        {
+          "role": "nextStaticRegistration",
+          "rva": "0x11e7e6",
+          "instructionHex": "488b1b"
+        }
+      ],
+      "readOrder": "Walk the supplied static linked list. Kind1 forwards stored codec/company IDs and its factory block to codec registry registration; other kinds use another registry. Optional callbacks and all registration results remain conditional. This does not attest CRT execution order or live singleton replacement."
+    },
+    {
+      "key": "codec4StaticInitializer",
+      "entryRva": "0x1950",
+      "windows": [
+        {
+          "rva": "0x1950",
+          "bodyLength": 85,
+          "bodySha256": "8bfa99fd88370c27c032ccf29014adb77d7f6380ce86746d0591b1becfb3f564",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x1950",
+          "instructionHex": "488b05693b3400"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x1957",
+          "instructionHex": "488b0d72303300"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x195e",
+          "instructionHex": "0f10057b303300"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x1965",
+          "instructionHex": "48890584303300"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x196c",
+          "instructionHex": "488b0565303300"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x1973",
+          "instructionHex": "488905a6303300"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x197a",
+          "instructionHex": "488905c7303300"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x1981",
+          "instructionHex": "488d0568303300"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x1988",
+          "instructionHex": "488905313b3400"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x198f",
+          "instructionHex": "48890d82303300"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x1996",
+          "instructionHex": "48890da3303300"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x199d",
+          "instructionHex": "0f2905ac303300"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x19a4",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete selected CRT initializer leaf copies the checked factory/callback table into its predeclared codec registration record and pushes that record onto the shared static list. The contract checks header kind and codec/company constants independently."
+    },
+    {
+      "key": "codec20StaticInitializer",
+      "entryRva": "0x1a40",
+      "windows": [
+        {
+          "rva": "0x1a40",
+          "bodyLength": 85,
+          "bodySha256": "00a1f3316258f7ee7a079c8dc5c9f71356a6864637467469eea5443acd549207",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x1a40",
+          "instructionHex": "488b05793a3400"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x1a47",
+          "instructionHex": "488b0d92823300"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x1a4e",
+          "instructionHex": "0f10059b823300"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x1a55",
+          "instructionHex": "48890514833300"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x1a5c",
+          "instructionHex": "488b0585823300"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x1a63",
+          "instructionHex": "48890536833300"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x1a6a",
+          "instructionHex": "48890557833300"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x1a71",
+          "instructionHex": "488d05f8823300"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x1a78",
+          "instructionHex": "488905413a3400"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x1a7f",
+          "instructionHex": "48890d12833300"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x1a86",
+          "instructionHex": "48890d33833300"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x1a8d",
+          "instructionHex": "0f29053c833300"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x1a94",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete selected CRT initializer leaf copies the checked factory/callback table into its predeclared codec registration record and pushes that record onto the shared static list. Live execution/ordering is conditional."
+    },
+    {
+      "key": "codec4MediaFactory",
+      "entryRva": "0x1b8180",
+      "windows": [
+        {
+          "rva": "0x1b8180",
+          "bodyLength": 58,
+          "bodySha256": "fa5afbbf74a449376bffee56fae1a47d56e89ddc3817f3462e483c34df45e78c",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadCodecInstanceFactory",
+        "tailMediaSourceConstructor"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadCodecInstanceFactory",
+          "rva": "0x1b819d",
+          "instructionHex": "4c8d050c110000"
+        },
+        {
+          "role": "tailMediaSourceConstructor",
+          "rva": "0x1b81af",
+          "instructionHex": "e91cb3fbff"
+        }
+      ],
+      "readOrder": "Allocate the shared media-source wrapper and forward its codec4 instance factory and the retained primary owner to the constructor. Allocation failure returns null."
+    },
+    {
+      "key": "codec20MediaFactory",
+      "entryRva": "0x1c43f0",
+      "windows": [
+        {
+          "rva": "0x1c43f0",
+          "bodyLength": 58,
+          "bodySha256": "50e85262a436f0b5df185d95938a0fa36464948208e5673265f5ad8d57c72c0b",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadCodecInstanceFactory",
+        "tailMediaSourceConstructor"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadCodecInstanceFactory",
+          "rva": "0x1c440d",
+          "instructionHex": "4c8d054c000000"
+        },
+        {
+          "role": "tailMediaSourceConstructor",
+          "rva": "0x1c441f",
+          "instructionHex": "e9acf0faff"
+        }
+      ],
+      "readOrder": "Allocate the same media-source wrapper and forward its different codec20 instance factory and retained primary owner. Allocation failure returns null."
+    },
+    {
+      "key": "mediaSourceConstructor",
+      "entryRva": "0x1734d0",
+      "windows": [
+        {
+          "rva": "0x1734d0",
+          "bodyLength": 167,
+          "bodySha256": "4f2cd346e3c453b103e284d12585a0b0f50a979be12a4aa03f0e39a432cecbda",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "callBaseConstructor",
+        "loadMediaAddressPoint",
+        "installMediaAddressPoint",
+        "storeCodecInstanceFactory"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callBaseConstructor",
+          "rva": "0x1734e0",
+          "instructionHex": "e8db570100"
+        },
+        {
+          "role": "loadMediaAddressPoint",
+          "rva": "0x1734e8",
+          "instructionHex": "488d05497d1200"
+        },
+        {
+          "role": "installMediaAddressPoint",
+          "rva": "0x1734ef",
+          "instructionHex": "488907"
+        },
+        {
+          "role": "storeCodecInstanceFactory",
+          "rva": "0x173555",
+          "instructionHex": "48899fa8000000"
+        }
+      ],
+      "readOrder": "Construct the shared media-source wrapper, retain its owner through the base constructor and store the supplied codec instance factory separately. The source-kind factory choice therefore does not itself create the codec instance."
+    },
+    {
+      "key": "mediaSourceBaseConstructor",
+      "entryRva": "0x188cc0",
+      "windows": [
+        {
+          "rva": "0x188cc0",
+          "bodyLength": 33,
+          "bodySha256": "19371d84e3727e00bcd18ac5c16d0ddf8cfd3e4c1c3b41b248eedb5d88d6bebe",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "storePrimaryOwner",
+        "instruction8"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x188cc0",
+          "instructionHex": "806120f8"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x188cc4",
+          "instructionHex": "488d0565301100"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x188ccb",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x188cce",
+          "instructionHex": "488901"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x188cd1",
+          "instructionHex": "488bc1"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x188cd4",
+          "instructionHex": "4c894108"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x188cd8",
+          "instructionHex": "4c894110"
+        },
+        {
+          "role": "storePrimaryOwner",
+          "rva": "0x188cdc",
+          "instructionHex": "48895118"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x188ce0",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete source implementation base constructor leaf retains the primary owner and clears two anonymous pointers, then returns the same object."
+    },
+    {
+      "key": "codec4InstanceFactory",
+      "entryRva": "0x1b92b0",
+      "windows": [
+        {
+          "rva": "0x1b92b0",
+          "bodyLength": 169,
+          "bodySha256": "6b8b67ad6a0ff9250d3f7a9a5297da782e9da2353e316b173214efb3943cbaf6",
+          "unwindRva": "0x2efa30",
+          "unwindInfoHex": "0104010004420000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadCodecAddressPoint",
+        "installCodecAddressPoint"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadCodecAddressPoint",
+          "rva": "0x1b92cf",
+          "instructionHex": "488d0df24e0e00"
+        },
+        {
+          "role": "installCodecAddressPoint",
+          "rva": "0x1b92d6",
+          "instructionHex": "488908"
+        }
+      ],
+      "readOrder": "Allocate and initialize the codec4 implementation with its distinct selected address point. No format setup, media decode or output follows from construction."
+    },
+    {
+      "key": "codec20InstanceFactory",
+      "entryRva": "0x1c4460",
+      "windows": [
+        {
+          "rva": "0x1c4460",
+          "bodyLength": 41,
+          "bodySha256": "b1e5d1a116e90114ee3a30b1447c5ff8ce66dac0577a10f518d183a642329ab9",
+          "unwindRva": "0x2efa30",
+          "unwindInfoHex": "0104010004420000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "tailCodecConstructor"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "tailCodecConstructor",
+          "rva": "0x1c447f",
+          "instructionHex": "e9fc150000"
+        }
+      ],
+      "readOrder": "Allocate codec20 implementation storage and tail-dispatch to its complete constructor; allocation failure returns null."
+    },
+    {
+      "key": "codec20InstanceConstructor",
+      "entryRva": "0x1c5a80",
+      "windows": [
+        {
+          "rva": "0x1c5a80",
+          "bodyLength": 147,
+          "bodySha256": "bd7fbfadd209e8b76da1c0f9172b2d98d31a95b1fafabcda92121d90c7ea8376",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "loadCodecAddressPoint",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "installCodecAddressPoint",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26",
+        "instruction27",
+        "instruction28",
+        "instruction29",
+        "instruction30"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x1c5a80",
+          "instructionHex": "33d2"
+        },
+        {
+          "role": "loadCodecAddressPoint",
+          "rva": "0x1c5a82",
+          "instructionHex": "488d05b7b00e00"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x1c5a89",
+          "instructionHex": "885120"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x1c5a8c",
+          "instructionHex": "0f57c0"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x1c5a8f",
+          "instructionHex": "816120ff000000"
+        },
+        {
+          "role": "installCodecAddressPoint",
+          "rva": "0x1c5a96",
+          "instructionHex": "488901"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x1c5a99",
+          "instructionHex": "33c0"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x1c5a9b",
+          "instructionHex": "66895108"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x1c5a9f",
+          "instructionHex": "48895110"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x1c5aa3",
+          "instructionHex": "48c7414401000000"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x1c5aab",
+          "instructionHex": "48895150"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x1c5aaf",
+          "instructionHex": "66895158"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x1c5ab3",
+          "instructionHex": "895160"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x1c5ab6",
+          "instructionHex": "66895164"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x1c5aba",
+          "instructionHex": "895168"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x1c5abd",
+          "instructionHex": "88516c"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x1c5ac0",
+          "instructionHex": "48895170"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x1c5ac4",
+          "instructionHex": "0f114178"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x1c5ac8",
+          "instructionHex": "48898188000000"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x1c5acf",
+          "instructionHex": "8881a8000000"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x1c5ad5",
+          "instructionHex": "488bc1"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x1c5ad8",
+          "instructionHex": "48899198000000"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x1c5adf",
+          "instructionHex": "488991a0000000"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x1c5ae6",
+          "instructionHex": "488991b0000000"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x1c5aed",
+          "instructionHex": "48895118"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x1c5af1",
+          "instructionHex": "48c741242b000000"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x1c5af9",
+          "instructionHex": "48895130"
+        },
+        {
+          "role": "instruction27",
+          "rva": "0x1c5afd",
+          "instructionHex": "c74138ffffffff"
+        },
+        {
+          "role": "instruction28",
+          "rva": "0x1c5b04",
+          "instructionHex": "c7413c0000803f"
+        },
+        {
+          "role": "instruction29",
+          "rva": "0x1c5b0b",
+          "instructionHex": "c74140ffffffff"
+        },
+        {
+          "role": "instruction30",
+          "rva": "0x1c5b12",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete codec20 constructor leaf initializes a different address point and bounded anonymous state. No successful decoder setup or output is claimed."
+    },
+    {
+      "key": "mediaSourceCodecActivation",
+      "entryRva": "0x173a00",
+      "windows": [
+        {
+          "rva": "0x173a00",
+          "bodyLength": 530,
+          "bodySha256": "1a2d9c40aadf1f73d891d1714912fe3f0a3b5bc756af59df47af9b9b23d4de80",
+          "unwindRva": "0x30dc6c",
+          "unwindInfoHex": "011707001774160017341500170112000b500000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadStoredCodecFactory",
+        "callStoredCodecFactory",
+        "storeCodecInstance",
+        "loadCodecInitializationAddressPoint",
+        "callCodecInitializationSlot8"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadStoredCodecFactory",
+          "rva": "0x173a17",
+          "instructionHex": "488b81a8000000"
+        },
+        {
+          "role": "callStoredCodecFactory",
+          "rva": "0x173a27",
+          "instructionHex": "ffd0"
+        },
+        {
+          "role": "storeCodecInstance",
+          "rva": "0x173a29",
+          "instructionHex": "488983b0000000"
+        },
+        {
+          "role": "loadCodecInitializationAddressPoint",
+          "rva": "0x173aac",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "callCodecInitializationSlot8",
+          "rva": "0x173aaf",
+          "instructionHex": "ff5008"
+        }
+      ],
+      "readOrder": "Call the wrapper-held codec instance factory, retain the result and fail locally on null. Obtain provider metadata, then invoke the created codec initialization slot with header/context/output aggregates. The returned status and metadata are checked before later media state transport. Initialization success remains distinct from decode/output."
+    },
+    {
+      "key": "mediaSourcePreparation",
+      "entryRva": "0x1740e0",
+      "windows": [
+        {
+          "rva": "0x1740e0",
+          "bodyLength": 221,
+          "bodySha256": "abd3e54f4a190da76aef611fb6175ecc5415fe2cb20b751ac4349b0fb5639b33",
+          "unwindRva": "0x30dba0",
+          "unwindInfoHex": "01110600110117000570046003300250",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1741bd",
+          "bodyLength": 832,
+          "bodySha256": "5f192f286a4a7042ee71e8e8cacabb7103f781abda4fea1b1aec9b02c7526306",
+          "unwindRva": "0x30dbb0",
+          "unwindInfoHex": "2120080020f4140018e4150010d4160008c41d00e0401700bd411700a0db3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1744fd",
+          "bodyLength": 12,
+          "bodySha256": "5d4724ba8a57e3c6579e3e7b2bf070a8af2c64944f1a44dfcf05636b2ff02614",
+          "unwindRva": "0x30dbd0",
+          "unwindInfoHex": "21000000e0401700bd411700a0db3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "callCodecActivation",
+        "callRiffPrefixReader",
+        "addressEmbeddedOwner",
+        "readOwnerResidentPointer",
+        "readOwnerResidentByteCount",
+        "callSourceStateInitializer",
+        "callInitialProviderRead",
+        "callSourceSliceAccept"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callCodecActivation",
+          "rva": "0x174421",
+          "instructionHex": "e8daf5ffff"
+        },
+        {
+          "role": "callRiffPrefixReader",
+          "rva": "0x1742da",
+          "instructionHex": "e8217cfaff"
+        },
+        {
+          "role": "addressEmbeddedOwner",
+          "rva": "0x1740f8",
+          "instructionHex": "488d7a18"
+        },
+        {
+          "role": "readOwnerResidentPointer",
+          "rva": "0x17418b",
+          "instructionHex": "488b8238030000"
+        },
+        {
+          "role": "readOwnerResidentByteCount",
+          "rva": "0x174196",
+          "instructionHex": "8b8240030000"
+        },
+        {
+          "role": "callSourceStateInitializer",
+          "rva": "0x1741a7",
+          "instructionHex": "e8540f0200"
+        },
+        {
+          "role": "callInitialProviderRead",
+          "rva": "0x174205",
+          "instructionHex": "e8160f0200"
+        },
+        {
+          "role": "callSourceSliceAccept",
+          "rva": "0x17445f",
+          "instructionHex": "e85c0a0200"
+        }
+      ],
+      "readOrder": "Selected shared media-source preparation entry. It obtains provider/source interfaces and format bytes, prepares and checks the header, and calls codec activation on an admitted branch. Provider completion, media parsing, codec initialization and voice/output admission remain conditional."
+    },
+    {
+      "key": "codec4Initialization",
+      "entryRva": "0x1b9920",
+      "windows": [
+        {
+          "rva": "0x1b9920",
+          "bodyLength": 408,
+          "bodySha256": "a630727a9ed4233297210c3ec93b711a1567064889ac862d15fe36a0158579cd",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainInitializationContext"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainInitializationContext",
+          "rva": "0x1b9933",
+          "instructionHex": "4d8bd1"
+        }
+      ],
+      "readOrder": "Selected codec4 initialization entry invoked through the constructed codec address point. Complete body is authenticated; initialization/header/provider completion is distinct from encoded-to-PCM decode and output."
+    },
+    {
+      "key": "codec20Initialization",
+      "entryRva": "0x1c6850",
+      "windows": [
+        {
+          "rva": "0x1c6850",
+          "bodyLength": 136,
+          "bodySha256": "065e43665786a0d4d43dbf22c85496e1a1d7eca12497c1d7ed31ff79e36f1d68",
+          "unwindRva": "0x2f6f3c",
+          "unwindInfoHex": "01180a0018640b0018540a0018340900183214f012e01070",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1c68d8",
+          "bodyLength": 190,
+          "bodySha256": "8218cb05bba29e852133ef8b1c4d5719b929797b36ac1fa1f090df2d4579ce04",
+          "unwindRva": "0x312f00",
+          "unwindInfoHex": "2105020005c4080050681c00d8681c003c6f2f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1c6996",
+          "bodyLength": 28,
+          "bodySha256": "61a7cb863c8531e12f60335e18584a409456ec47675d49a9119125af367d6c3b",
+          "unwindRva": "0x312f14",
+          "unwindInfoHex": "2100000050681c00d8681c003c6f2f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1c69b2",
+          "bodyLength": 151,
+          "bodySha256": "0fe5e5e11fc28b848fa9376293f7a9a0998610d0814bd14fb4de2f0d408f26e7",
+          "unwindRva": "0x312f24",
+          "unwindInfoHex": "2100020000c4080050681c00d8681c003c6f2f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1c6a49",
+          "bodyLength": 12,
+          "bodySha256": "57614df0c13426d28e7267f1a609ad1ac468b8225a7818e31aeef46e70e17ee1",
+          "unwindRva": "0x312f14",
+          "unwindInfoHex": "2100000050681c00d8681c003c6f2f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readFormatPointer",
+        "compareFormatTag",
+        "requireFormatBytes",
+        "storeOutputRate",
+        "callFormatValidation"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readFormatPointer",
+          "rva": "0x1c6868",
+          "instructionHex": "498b6808"
+        },
+        {
+          "role": "compareFormatTag",
+          "rva": "0x1c687d",
+          "instructionHex": "66394500"
+        },
+        {
+          "role": "requireFormatBytes",
+          "rva": "0x1c6887",
+          "instructionHex": "41833824"
+        },
+        {
+          "role": "storeOutputRate",
+          "rva": "0x1c68bc",
+          "instructionHex": "41c70680bb0000"
+        },
+        {
+          "role": "callFormatValidation",
+          "rva": "0x1c6894",
+          "instructionHex": "e867640000"
+        }
+      ],
+      "readOrder": "Selected codec20 initialization entry invoked through the constructed address point. Requires the admitted format tag and minimum format prefix before validating it; the successful header branch transports metadata with an explicit output rate and still requires subsequent helper/initialization success. No encoded-to-PCM decode or output proof follows."
+    },
+    {
+      "key": "codec20FormatValidation",
+      "entryRva": "0x1ccd00",
+      "windows": [
+        {
+          "rva": "0x1ccd00",
+          "bodyLength": 118,
+          "bodySha256": "6adb81ffd0dffedc5b8b99d5960131e44180c96a162f76d198e98a70dfb82815",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26",
+        "instruction27",
+        "instruction28",
+        "instruction29",
+        "instruction30",
+        "instruction31",
+        "instruction32",
+        "instruction33",
+        "instruction34",
+        "instruction35",
+        "instruction36",
+        "instruction37",
+        "instruction38",
+        "instruction39",
+        "instruction40"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x1ccd00",
+          "instructionHex": "448b4114"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x1ccd04",
+          "instructionHex": "baff000000"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x1ccd09",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x1ccd0c",
+          "instructionHex": "25000f0000"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x1ccd11",
+          "instructionHex": "3d00010000"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x1ccd16",
+          "instructionHex": "753a"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x1ccd18",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x1ccd1b",
+          "instructionHex": "c1e80c"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x1ccd1e",
+          "instructionHex": "3d03060000"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x1ccd23",
+          "instructionHex": "7717"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x1ccd25",
+          "instructionHex": "7426"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x1ccd27",
+          "instructionHex": "83e803"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x1ccd2a",
+          "instructionHex": "740c"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x1ccd2c",
+          "instructionHex": "83e801"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x1ccd2f",
+          "instructionHex": "7407"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x1ccd31",
+          "instructionHex": "83f803"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x1ccd34",
+          "instructionHex": "7417"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x1ccd36",
+          "instructionHex": "eb1a"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x1ccd38",
+          "instructionHex": "33d2"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x1ccd3a",
+          "instructionHex": "eb16"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x1ccd3c",
+          "instructionHex": "2d07060000"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x1ccd41",
+          "instructionHex": "740a"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x1ccd43",
+          "instructionHex": "83e808"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x1ccd46",
+          "instructionHex": "7405"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x1ccd48",
+          "instructionHex": "83f830"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x1ccd4b",
+          "instructionHex": "7505"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x1ccd4d",
+          "instructionHex": "ba01000000"
+        },
+        {
+          "role": "instruction27",
+          "rva": "0x1ccd52",
+          "instructionHex": "80792201"
+        },
+        {
+          "role": "instruction28",
+          "rva": "0x1ccd56",
+          "instructionHex": "751b"
+        },
+        {
+          "role": "instruction29",
+          "rva": "0x1ccd58",
+          "instructionHex": "410fb6c0"
+        },
+        {
+          "role": "instruction30",
+          "rva": "0x1ccd5c",
+          "instructionHex": "66394102"
+        },
+        {
+          "role": "instruction31",
+          "rva": "0x1ccd60",
+          "instructionHex": "7511"
+        },
+        {
+          "role": "instruction32",
+          "rva": "0x1ccd62",
+          "instructionHex": "0fb64123"
+        },
+        {
+          "role": "instruction33",
+          "rva": "0x1ccd66",
+          "instructionHex": "3bc2"
+        },
+        {
+          "role": "instruction34",
+          "rva": "0x1ccd68",
+          "instructionHex": "7509"
+        },
+        {
+          "role": "instruction35",
+          "rva": "0x1ccd6a",
+          "instructionHex": "83791c00"
+        },
+        {
+          "role": "instruction36",
+          "rva": "0x1ccd6e",
+          "instructionHex": "7603"
+        },
+        {
+          "role": "instruction37",
+          "rva": "0x1ccd70",
+          "instructionHex": "b001"
+        },
+        {
+          "role": "instruction38",
+          "rva": "0x1ccd72",
+          "instructionHex": "c3"
+        },
+        {
+          "role": "instruction39",
+          "rva": "0x1ccd73",
+          "instructionHex": "32c0"
+        },
+        {
+          "role": "instruction40",
+          "rva": "0x1ccd75",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete codec20 format-validation leaf: checks the stored channel configuration against channels/mapping-family/version bytes and requires a positive packet/seek count field. This is readable-prefix validation, not framing safety or decoded output."
+    },
+    {
+      "key": "mediaSourceSampleBuffer",
+      "entryRva": "0x173630",
+      "windows": [
+        {
+          "rva": "0x173630",
+          "bodyLength": 51,
+          "bodySha256": "fbd64029e45635a53c7c27fee819ea1f4947b8c79c4ff020389f5a1b5eb4ff84",
+          "unwindRva": "0x304dc8",
+          "unwindInfoHex": "0108040008b2047003600250",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x173663",
+          "bodyLength": 160,
+          "bodySha256": "76868bb134bded5f953b49e85c2f05af6af3f05ca3a7f39f37c83287160ac60e",
+          "unwindRva": "0x30dc04",
+          "unwindInfoHex": "21080200083411003036170063361700c84d3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x173703",
+          "bodyLength": 33,
+          "bodySha256": "3441a9bb8d60d350c1cdd203302b272b175527caddd7cc6c304bf77b3be1e4bc",
+          "unwindRva": "0x30dc18",
+          "unwindInfoHex": "21000200003411003036170063361700c84d3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x173724",
+          "bodyLength": 253,
+          "bodySha256": "fb9a626bf45eb540b501e1cd5c411d230d14181ed835ae729e7b5cc1392f9722",
+          "unwindRva": "0x30dc2c",
+          "unwindInfoHex": "212f04002fe41200003411003036170063361700c84d3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadOwner",
+        "selectSourceState",
+        "loadCodec",
+        "dispatchCodecSamples",
+        "publishSamplePointer",
+        "publishValidFrames",
+        "publishCapacity"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadOwner",
+          "rva": "0x173670",
+          "instructionHex": "488b4f18"
+        },
+        {
+          "role": "selectSourceState",
+          "rva": "0x173680",
+          "instructionHex": "4c8d4740"
+        },
+        {
+          "role": "loadCodec",
+          "rva": "0x1736a5",
+          "instructionHex": "488b8fb0000000"
+        },
+        {
+          "role": "dispatchCodecSamples",
+          "rva": "0x1736de",
+          "instructionHex": "ff5028"
+        },
+        {
+          "role": "publishSamplePointer",
+          "rva": "0x173736",
+          "instructionHex": "488906"
+        },
+        {
+          "role": "publishValidFrames",
+          "rva": "0x17373e",
+          "instructionHex": "66894e12"
+        },
+        {
+          "role": "publishCapacity",
+          "rva": "0x173747",
+          "instructionHex": "66894610"
+        }
+      ],
+      "readOrder": "Call the selected codec sample-processing slot with wrapper-held source state, requested capacity and a temporary sample descriptor. Preserve original failure/empty branches. The successful nonempty branch publishes the returned sample pointer and frame counts into the supplied output buffer, then advances metadata/playback state. This is a sample-buffer consumer, not mixer/device output."
+    },
+    {
+      "key": "mediaSourceStatusUpdate",
+      "entryRva": "0x174700",
+      "windows": [
+        {
+          "rva": "0x174700",
+          "bodyLength": 26,
+          "bodySha256": "6a3838c59c4457920fe35f238291b254fecc15328d4932f22adf8684754c3979",
+          "unwindRva": "0x30881c",
+          "unwindInfoHex": "0106020006720260",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x17471a",
+          "bodyLength": 206,
+          "bodySha256": "f9c2380d709a32185492a3793b7ea016f80b7c324b15f8e9c3c3f827611b62c5",
+          "unwindRva": "0x30dc80",
+          "unwindInfoHex": "21130600135407000e340c0005740600004717001a4717001c883000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1747e8",
+          "bodyLength": 6,
+          "bodySha256": "c290ab858d8e8e423bd0fb8c69b2f9f7ad115a7973f3c52f8d5c8f197dd603c0",
+          "unwindRva": "0x30dc9c",
+          "unwindInfoHex": "21000000004717001a4717001c883000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x174700",
+          "instructionHex": "4056"
+        }
+      ],
+      "readOrder": "Conditional owner flag controls provider status/callback updates; an unset flag returns without reading provider state. Resident offline sample witnesses explicitly supply this owner condition."
+    },
+    {
+      "key": "codec4HeaderPreparation",
+      "entryRva": "0x1b9d10",
+      "windows": [
+        {
+          "rva": "0x1b9d10",
+          "bodyLength": 578,
+          "bodySha256": "1c079a5fd9e892f2ca5c359d3a98406b5f9bd9a794301b809ea324ebea7b8ac5",
+          "unwindRva": "0x2ff098",
+          "unwindInfoHex": "01180a0018640f0018540e0018340d00187214f012e01070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x1b9d10",
+          "instructionHex": "48895c2410"
+        }
+      ],
+      "readOrder": "Consume optional stored seek bytes and compressed setup packet from the supplied source state, create/reuse native setup context, initialize sample state and return a bounded status. Header setup is distinct from packet-to-sample processing; cache locks and allocations remain conditions."
+    },
+    {
+      "key": "codec4SampleProcessing",
+      "entryRva": "0x1b9420",
+      "windows": [
+        {
+          "rva": "0x1b9420",
+          "bodyLength": 659,
+          "bodySha256": "44f6951a6b626b70f56c8789ba12abaa15049e4c24f8546363b722d70c645a2b",
+          "unwindRva": "0x3121b8",
+          "unwindInfoHex": "01210c0021640f0021540e0021340c0021521df01be019d017c01570",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "callPacketCollector",
+        "callPacketSamples",
+        "publishSamplePointer",
+        "publishCapacity",
+        "publishValidFrames",
+        "publishPlaybackFrames"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callPacketCollector",
+          "rva": "0x1b949b",
+          "instructionHex": "e820020000"
+        },
+        {
+          "role": "callPacketSamples",
+          "rva": "0x1b956d",
+          "instructionHex": "e8be0f0000"
+        },
+        {
+          "role": "publishSamplePointer",
+          "rva": "0x1b9649",
+          "instructionHex": "488902"
+        },
+        {
+          "role": "publishCapacity",
+          "rva": "0x1b964c",
+          "instructionHex": "66894a10"
+        },
+        {
+          "role": "publishValidFrames",
+          "rva": "0x1b9650",
+          "instructionHex": "66894a12"
+        },
+        {
+          "role": "publishPlaybackFrames",
+          "rva": "0x1b9658",
+          "instructionHex": "66894218"
+        }
+      ],
+      "readOrder": "Collect original prefixed packets, run the native Vorbis packet/sample helper and publish planar sample storage and frame counts. Original error/retry/end conditions are retained. Offline native buffers do not imply parity with another decoder or a live voice."
+    },
+    {
+      "key": "codec20SampleProcessing",
+      "entryRva": "0x1c6490",
+      "windows": [
+        {
+          "rva": "0x1c6490",
+          "bodyLength": 607,
+          "bodySha256": "765c508f50e5fac1c33914d873ed4a7e6870390fa1c6d0d912665e6d0c9f1103",
+          "unwindRva": "0x312f38",
+          "unwindInfoHex": "01421100426412003ef40e003ad40f0033c410002874110017541300103418000c01140005e00000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "callPacketCollector",
+        "callCoreSamples",
+        "publishSamplePointer",
+        "publishCapacity",
+        "publishValidFrames",
+        "publishPlaybackFrames"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callPacketCollector",
+          "rva": "0x1c6519",
+          "instructionHex": "e8d2010000"
+        },
+        {
+          "role": "callCoreSamples",
+          "rva": "0x1c6568",
+          "instructionHex": "e8835c0000"
+        },
+        {
+          "role": "publishSamplePointer",
+          "rva": "0x1c660a",
+          "instructionHex": "48894500"
+        },
+        {
+          "role": "publishCapacity",
+          "rva": "0x1c660e",
+          "instructionHex": "66897d10"
+        },
+        {
+          "role": "publishValidFrames",
+          "rva": "0x1c6622",
+          "instructionHex": "66895512"
+        },
+        {
+          "role": "publishPlaybackFrames",
+          "rva": "0x1c6626",
+          "instructionHex": "66895518"
+        }
+      ],
+      "readOrder": "Select the next packet length from the copied seek table, collect encoded bytes and invoke the original Opus core with a planar-copy callback. Skip stored pre-roll and trim against playback geometry before publishing pointer/capacity/valid counts. Negative core results become a distinct failure. Live provider/voice generation is not proved."
+    },
+    {
+      "key": "codec20PacketCollector",
+      "entryRva": "0x1c66f0",
+      "windows": [
+        {
+          "rva": "0x1c66f0",
+          "bodyLength": 341,
+          "bodySha256": "522350ef80770d2b0d698b35253964d726cf70c89a70db683e2864fd7ae04cc8",
+          "unwindRva": "0x312f94",
+          "unwindInfoHex": "011b0a001b640900135408000e340a000e320af008e00670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readRemainingBytes",
+        "readEncodedPointer",
+        "advanceEncodedPointer",
+        "subtractRemainingBytes",
+        "advanceConsumedBytes"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readRemainingBytes",
+          "rva": "0x1c6714",
+          "instructionHex": "837b2000"
+        },
+        {
+          "role": "readEncodedPointer",
+          "rva": "0x1c67d6",
+          "instructionHex": "488b4318"
+        },
+        {
+          "role": "advanceEncodedPointer",
+          "rva": "0x1c67f9",
+          "instructionHex": "48017318"
+        },
+        {
+          "role": "subtractRemainingBytes",
+          "rva": "0x1c67fd",
+          "instructionHex": "297320"
+        },
+        {
+          "role": "advanceConsumedBytes",
+          "rva": "0x1c6800",
+          "instructionHex": "017328"
+        }
+      ],
+      "readOrder": "Bounded packet-length collector supports direct resident pointers or allocated copies when bytes arrive in pieces. Update source pointer, remaining and consumed counts. Empty input enters provider/refill or final-state branches; those conditions must stay explicit."
+    },
+    {
+      "key": "codec20DecoderPreparation",
+      "entryRva": "0x1c5f00",
+      "windows": [
+        {
+          "rva": "0x1c5f00",
+          "bodyLength": 197,
+          "bodySha256": "86235abf51662b7c480e27ca54d349438ef3c33c9a9b0589bdad25400a74ff8d",
+          "unwindRva": "0x2f294c",
+          "unwindInfoHex": "0114080014640b0014540a001434090014521070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "callSampleAllocation",
+        "allocateDecoderContext",
+        "callContextInitialization"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callSampleAllocation",
+          "rva": "0x1c5f2c",
+          "instructionHex": "e87f5cf5ff"
+        },
+        {
+          "role": "allocateDecoderContext",
+          "rva": "0x1c5f80",
+          "instructionHex": "e81bafeeff"
+        },
+        {
+          "role": "callContextInitialization",
+          "rva": "0x1c5fa8",
+          "instructionHex": "e8b30a0000"
+        }
+      ],
+      "readOrder": "Allocate native sample storage, derive channel layout, allocate native decoder context and initialize it; unwind failures through the codec cleanup slot. Allocation is a platform condition, not a sample computation."
+    },
+    {
+      "key": "codec20DecoderContextInitialization",
+      "entryRva": "0x1c6a60",
+      "windows": [
+        {
+          "rva": "0x1c6a60",
+          "bodyLength": 217,
+          "bodySha256": "6330c2a09b9435abab578d56462e18043e0de09dfdd1bbf07fdac670fa9b96ee",
+          "unwindRva": "0x312f78",
+          "unwindInfoHex": "011d0b001d742b001d642a001d5429001d3428001d01260016e00000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "callCoreContext"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callCoreContext",
+          "rva": "0x1c6ad4",
+          "instructionHex": "e827600000"
+        }
+      ],
+      "readOrder": "Derive original channel mapping and initialize the selected native Opus context. Original result determines success or cleanup."
+    },
+    {
+      "key": "codec20CoreContextInitialization",
+      "entryRva": "0x1ccb00",
+      "windows": [
+        {
+          "rva": "0x1ccb00",
+          "bodyLength": 146,
+          "bodySha256": "fdc4f538b076ee50e0952b82c6038bbd7023ee1e7a7bc1bc1eb6c879f5f28f74",
+          "unwindRva": "0x303124",
+          "unwindInfoHex": "010804000832046003500230",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1ccb92",
+          "bodyLength": 174,
+          "bodySha256": "c93b2295f8e36ea00c13418c3774b1fe496afddadb57a4da6d8f688e8fd7e7b1",
+          "unwindRva": "0x3133fc",
+          "unwindInfoHex": "211b06001bf40a000fe409000574080000cb1c0092cb1c0024313000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1ccc40",
+          "bodyLength": 13,
+          "bodySha256": "7d4ca00f5aede71a0f7f05a20f8844bdb36953e1c0ee5238e49428d787060354",
+          "unwindRva": "0x313418",
+          "unwindInfoHex": "2100000000cb1c0092cb1c0024313000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x1ccb00",
+          "instructionHex": "4053"
+        }
+      ],
+      "readOrder": "Original native Opus stream/channel mapping validation and per-stream decoder initialization. Complete body and selected image are authenticated; codec family identity stays tied to raw registration and consumer flow."
+    },
+    {
+      "key": "codec20CoreSampleDecode",
+      "entryRva": "0x1cc1f0",
+      "windows": [
+        {
+          "rva": "0x1cc1f0",
+          "bodyLength": 1075,
+          "bodySha256": "32240c5f4e9180df4101137f3ce8d99c630561b1bfd3b3ea9b6b2558c6b1355d",
+          "unwindRva": "0x313430",
+          "unwindInfoHex": "01370c5537342400265321011c001af018e016d014c0127011601050",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x1cc1f0",
+          "instructionHex": "4c894c2420"
+        }
+      ],
+      "readOrder": "Original encoded-packet decoding and per-channel callback dispatch. Complete exception body is authenticated; its callees remain covered by the selected whole-image input gate and execution receipts. Original floating point sample computation is distinguished from platform allocation, byte copies and supplied input lifetime."
+    },
+    {
+      "key": "codec20PlanarSampleCopy",
+      "entryRva": "0x1c6f90",
+      "windows": [
+        {
+          "rva": "0x1c6f90",
+          "bodyLength": 77,
+          "bodySha256": "6f28e72f6915953775ace1a4fc598492b860a1cad3dc195050e50ab883e1a674",
+          "unwindRva": "0x2f9628",
+          "unwindInfoHex": "010a05000a4206e00470036002300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1c6fdd",
+          "bodyLength": 167,
+          "bodySha256": "208a4dded3c685c3080613dd03512ab5e8474add45226f84ebb00c8092ca84e5",
+          "unwindRva": "0x31300c",
+          "unwindInfoHex": "212c08002cf4040017d40c000ec40b0005540a00906f1c00dd6f1c0028962f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1c7084",
+          "bodyLength": 87,
+          "bodySha256": "8dd31abb23bdc9a4025a9baf4e008decbe8416d1e15647b1706daf87194d89fe",
+          "unwindRva": "0x31302c",
+          "unwindInfoHex": "21000000906f1c00dd6f1c0028962f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "writePlanarWord"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "writePlanarWord",
+          "rva": "0x1c702f",
+          "instructionHex": "89048f"
+        }
+      ],
+      "readOrder": "Copy original interleaved scratch samples to planar per-channel float storage with a skip offset. The null-source branch clears output. This records buffer geometry, not device output."
+    },
+    {
+      "key": "codecSeekTableInitialize",
+      "entryRva": "0x195af0",
+      "windows": [
+        {
+          "rva": "0x195af0",
+          "bodyLength": 124,
+          "bodySha256": "c9904f491e75dc738ba3157cbad69f23dd9595d5a102146938a2a1db13ef2f9c",
+          "unwindRva": "0x2f2c54",
+          "unwindInfoHex": "011a0a001a7409001a6408001a5407001a3406001a3216e0",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x195af0",
+          "instructionHex": "48895c2408"
+        }
+      ],
+      "readOrder": "Allocate and copy the supplied seek-length words into codec-held storage, retain count and frame quantum, and return success or allocation failure."
+    },
+    {
+      "key": "codecSeekTableSum",
+      "entryRva": "0x1959e0",
+      "windows": [
+        {
+          "rva": "0x1959e0",
+          "bodyLength": 244,
+          "bodySha256": "02b348737683ed5388764b75873de0c17a888a0399fee853938df9f9379b75f5",
+          "unwindRva": "0x2efba0",
+          "unwindInfoHex": "010a04000a74020005340100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x1959e0",
+          "instructionHex": "48895c2408"
+        }
+      ],
+      "readOrder": "Sum selected unsigned seek-length words with scalar/SSE tails. This is encoded-offset arithmetic, not PCM."
+    },
+    {
+      "key": "codecSampleBufferAllocate",
+      "entryRva": "0x11bbb0",
+      "windows": [
+        {
+          "rva": "0x11bbb0",
+          "bodyLength": 345,
+          "bodySha256": "f175d5540ad058df79976c1c7a1cf44b8eec28f3fc2b52136a1ce9fe0759dae3",
+          "unwindRva": "0x306e60",
+          "unwindInfoHex": "01460b004668020041e4060031340e000a6206f00470036002500000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryInstruction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryInstruction",
+          "rva": "0x11bbb0",
+          "instructionHex": "4055"
+        }
+      ],
+      "readOrder": "Obtain pooled or newly aligned storage using channel/frame geometry. Allocation/pool lifetime is a platform condition."
+    },
+    {
+      "key": "codecSeekCounter",
+      "entryRva": "0x1c6d40",
+      "windows": [
+        {
+          "rva": "0x1c6d40",
+          "bodyLength": 86,
+          "bodySha256": "be5f9ff056f4c1d01dcff1b6aa3615efd4d94ed725f1dc1a053eca6e55c19385",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x1c6d40",
+          "instructionHex": "440fb75908"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x1c6d45",
+          "instructionHex": "0f57c0"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x1c6d48",
+          "instructionHex": "440fb75164"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x1c6d4d",
+          "instructionHex": "8b4960"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x1c6d50",
+          "instructionHex": "4403d2"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x1c6d53",
+          "instructionHex": "33d2"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x1c6d55",
+          "instructionHex": "418bc2"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x1c6d58",
+          "instructionHex": "41f7f3"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x1c6d5b",
+          "instructionHex": "8d0c89"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x1c6d5e",
+          "instructionHex": "418bd3"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x1c6d61",
+          "instructionHex": "c1e104"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x1c6d64",
+          "instructionHex": "0fafd0"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x1c6d67",
+          "instructionHex": "f3480f2ac1"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x1c6d6c",
+          "instructionHex": "442bd2"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x1c6d6f",
+          "instructionHex": "f30f590581b50c00"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x1c6d77",
+          "instructionHex": "f3480f2cc8"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x1c6d7c",
+          "instructionHex": "443bd1"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x1c6d7f",
+          "instructionHex": "730e"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x1c6d81",
+          "instructionHex": "85c0"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x1c6d83",
+          "instructionHex": "740a"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x1c6d85",
+          "instructionHex": "ffc8"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x1c6d87",
+          "instructionHex": "4503d3"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x1c6d8a",
+          "instructionHex": "443bd1"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x1c6d8d",
+          "instructionHex": "72f2"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x1c6d8f",
+          "instructionHex": "418900"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x1c6d92",
+          "instructionHex": "458911"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x1c6d95",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete leaf: convert requested sample position plus pre-roll to packet/within-packet counters under the stored frame quantum and bounded pre-roll adjustment."
+    },
+    {
+      "key": "codecPlaybackStateAdvance",
+      "entryRva": "0x195850",
+      "windows": [
+        {
+          "rva": "0x195850",
+          "bodyLength": 88,
+          "bodySha256": "cafc79704a6b530e6d6e75c770444e1de3366f347b7cc20bbeedc749df25d0fe",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x195850",
+          "instructionHex": "4533c9"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x195853",
+          "instructionHex": "41c60000"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x195857",
+          "instructionHex": "448b5104"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x19585b",
+          "instructionHex": "4403d2"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x19585e",
+          "instructionHex": "85d2"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x195860",
+          "instructionHex": "44895104"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x195864",
+          "instructionHex": "0fb75114"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x195868",
+          "instructionHex": "410f94c1"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x19586c",
+          "instructionHex": "4183c12d"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x195870",
+          "instructionHex": "6683fa01"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x195874",
+          "instructionHex": "7421"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x195876",
+          "instructionHex": "443b5110"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x19587a",
+          "instructionHex": "7628"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x19587c",
+          "instructionHex": "8b410c"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x19587f",
+          "instructionHex": "894104"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x195882",
+          "instructionHex": "6683fa01"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x195886",
+          "instructionHex": "7607"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x195888",
+          "instructionHex": "66ffca"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x19588b",
+          "instructionHex": "66895114"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x19588f",
+          "instructionHex": "41c60001"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x195893",
+          "instructionHex": "418bc1"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x195896",
+          "instructionHex": "c3"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x195897",
+          "instructionHex": "443b5108"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x19589b",
+          "instructionHex": "b811000000"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x1958a0",
+          "instructionHex": "440f43c8"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x1958a4",
+          "instructionHex": "418bc1"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x1958a7",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete leaf: advance playback position, handle finite/infinite loop state and distinguish data/end statuses. The boolean loop result and raw statuses are retained."
+    },
+    {
+      "key": "codecPlaybackStateInitialize",
+      "entryRva": "0x195b70",
+      "windows": [
+        {
+          "rva": "0x195b70",
+          "bodyLength": 38,
+          "bodySha256": "4a05df1393a92cb4b91c985d04e8f29dcd90e15dc69fef6b3efb4da56f3f119c",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x195b70",
+          "instructionHex": "418b4010"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x195b74",
+          "instructionHex": "8901"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x195b76",
+          "instructionHex": "c7410400000000"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x195b7d",
+          "instructionHex": "418b4014"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x195b81",
+          "instructionHex": "894108"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x195b84",
+          "instructionHex": "8b4218"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x195b87",
+          "instructionHex": "89410c"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x195b8a",
+          "instructionHex": "8b421c"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x195b8d",
+          "instructionHex": "894110"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x195b90",
+          "instructionHex": "6644894914"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x195b95",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete leaf: copy admitted format/frame and loop geometry into codec playback state. This does not select a live voice."
+    },
+    {
+      "key": "mediaRiffPrefixReader",
+      "entryRva": "0x11bf00",
+      "windows": [
+        {
+          "rva": "0x11bf00",
+          "bodyLength": 58,
+          "bodySha256": "da44ec552ede6444bf4bb4c76e5fb818af08d0e5f4d8c762fa266b2fb99f0555",
+          "unwindRva": "0x306e7c",
+          "unwindInfoHex": "010d05000d8209e007d0057004600000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11bf3a",
+          "bodyLength": 789,
+          "bodySha256": "e1db3f9779540e16d0304c84080f8bab956aac1fd6ae26175d57c5747d4501bd",
+          "unwindRva": "0x306e8c",
+          "unwindInfoHex": "2112080012f408000cc4110008340f000454100000bf11003abf11007c6e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11c24f",
+          "bodyLength": 47,
+          "bodySha256": "9776d029dfd1227666900b09c0b83b1fb081f9581798df6d75f522964c02586e",
+          "unwindRva": "0x306eac",
+          "unwindInfoHex": "2100080000f4080000c411000054100000340f0000bf11003abf11007c6e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11c27e",
+          "bodyLength": 16,
+          "bodySha256": "39cdfa4117654205812a81ce3d9e71d4e7cdb1f58a475f326fc9e9ab13f0a3f5",
+          "unwindRva": "0x306ecc",
+          "unwindInfoHex": "2100000000bf11003abf11007c6e3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readSignature",
+        "requireWave",
+        "readChunkHeader",
+        "storeFormatBytes",
+        "storeFormatPointer",
+        "legacyChannelRewrite",
+        "storeSeekBytes",
+        "storeSeekPointer",
+        "storeDataBytes",
+        "storeDataOffset"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readSignature",
+          "rva": "0x11bf6a",
+          "instructionHex": "8b01"
+        },
+        {
+          "role": "requireWave",
+          "rva": "0x11bf73",
+          "instructionHex": "81790857415645"
+        },
+        {
+          "role": "readChunkHeader",
+          "rva": "0x11bfce",
+          "instructionHex": "498b11"
+        },
+        {
+          "role": "storeFormatBytes",
+          "rva": "0x11c055",
+          "instructionHex": "41894500"
+        },
+        {
+          "role": "storeFormatPointer",
+          "rva": "0x11c059",
+          "instructionHex": "49895d08"
+        },
+        {
+          "role": "legacyChannelRewrite",
+          "rva": "0x11c09f",
+          "instructionHex": "44894314"
+        },
+        {
+          "role": "storeSeekBytes",
+          "rva": "0x11c1e7",
+          "instructionHex": "418907"
+        },
+        {
+          "role": "storeSeekPointer",
+          "rva": "0x11c1ea",
+          "instructionHex": "49895f08"
+        },
+        {
+          "role": "storeDataBytes",
+          "rva": "0x11c264",
+          "instructionHex": "8901"
+        },
+        {
+          "role": "storeDataOffset",
+          "rva": "0x11c26e",
+          "instructionHex": "8918"
+        }
+      ],
+      "readOrder": "Read a supplied RIFF/WAVE prefix and stop successfully at its data header after fmt. Return separate format, encoded-data, loop, auxiliary and seek views. Chunk-body availability is checked except for data, whose payload may arrive later; RIFF declared whole-file size is not enforced. First fmt wins. Odd-chunk padding advances only when the next readable byte is zero. A legacy channel-configuration branch can rewrite supplied format bytes in place when its mode flag allows it. Stored data pointers do not prove provider/file lifetime; readable format/smpl/cue substructures retain distinct bounds."
+    },
+    {
+      "key": "mediaSourceSliceAccept",
+      "entryRva": "0x194ec0",
+      "windows": [
+        {
+          "rva": "0x194ec0",
+          "bodyLength": 343,
+          "bodySha256": "5a0b79aebe5cace92e0a4205ad2be7161479b8a25bb335de03733fed7f969d48",
+          "unwindRva": "0x2f7ed8",
+          "unwindInfoHex": "0114080014640a00145409001434080014521070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "publishEncodedPointer",
+        "publishRemainingBytes",
+        "advanceConsumedCursor",
+        "dispatchProviderSeek",
+        "trimRemainingBytes"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "publishEncodedPointer",
+          "rva": "0x194ee0",
+          "instructionHex": "48895118"
+        },
+        {
+          "role": "publishRemainingBytes",
+          "rva": "0x194ee4",
+          "instructionHex": "44894120"
+        },
+        {
+          "role": "advanceConsumedCursor",
+          "rva": "0x194eec",
+          "instructionHex": "89692c"
+        },
+        {
+          "role": "dispatchProviderSeek",
+          "rva": "0x194f48",
+          "instructionHex": "ff5070"
+        },
+        {
+          "role": "trimRemainingBytes",
+          "rva": "0x194f30",
+          "instructionHex": "895320"
+        }
+      ],
+      "readOrder": "Accept a provider buffer, carry its pointer/count into encoded source state, advance consumed/absolute counters and trim the last slice to the selected end/loop boundary. Loop/end and provider seek/start remain explicit conditional branches; successful packet storage has a distinct lifetime from decoded sample buffers."
+    },
+    {
+      "key": "mediaSourceRefill",
+      "entryRva": "0x195020",
+      "windows": [
+        {
+          "rva": "0x195020",
+          "bodyLength": 219,
+          "bodySha256": "841499645dea2a8e1d57d854c9bc543beb400a20a1a88ea9a2600117a438a216",
+          "unwindRva": "0x2f61c4",
+          "unwindInfoHex": "0106020006520230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entryPrologue"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entryPrologue",
+          "rva": "0x195020",
+          "instructionHex": "4053"
+        }
+      ],
+      "readOrder": "Refill uses existing resident bytes when source-state flags admit them; otherwise read/update provider settings and request the next buffer. Original read/status conditions feed the source-slice acceptance helper. No asynchronous provider schedule or live seek/lifetime is admitted."
+    },
+    {
+      "key": "mediaSourceStateInitialize",
+      "entryRva": "0x195100",
+      "windows": [
+        {
+          "rva": "0x195100",
+          "bodyLength": 23,
+          "bodySha256": "eae9f766090c0d0e78ad2958f4b9b119dca32ba16872cea1aa2e15403c9c1b73",
+          "windowKind": "completeLeafThroughTailDispatch"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "tailProviderFactory"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x195100",
+          "instructionHex": "0f57c0"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x195103",
+          "instructionHex": "0f1101"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x195106",
+          "instructionHex": "0f114110"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x19510a",
+          "instructionHex": "0f114120"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x19510e",
+          "instructionHex": "0f114130"
+        },
+        {
+          "role": "tailProviderFactory",
+          "rva": "0x195112",
+          "instructionHex": "e909010000"
+        }
+      ],
+      "readOrder": "Complete leaf: clear the entire source-state aggregate and tail-dispatch the provider factory with the unchanged descriptor."
+    },
+    {
+      "key": "mediaSourceInitialRead",
+      "entryRva": "0x195120",
+      "windows": [
+        {
+          "rva": "0x195120",
+          "bodyLength": 173,
+          "bodySha256": "75c7ff842a9cf5e69d35f1011d7cb26c765a642266f3e0e4a33c6f919688f3b6",
+          "unwindRva": "0x2f5150",
+          "unwindInfoHex": "010f06000f6409000f3408000f520b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "readResidentCursor",
+        "instruction12",
+        "readResidentPointer",
+        "instruction14",
+        "readResidentByteCount",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26",
+        "instruction27",
+        "instruction28",
+        "instruction29",
+        "instruction30",
+        "instruction31",
+        "instruction32",
+        "instruction33",
+        "instruction34",
+        "instruction35",
+        "instruction36",
+        "instruction37",
+        "instruction38",
+        "instruction39",
+        "instruction40",
+        "instruction41",
+        "instruction42",
+        "instruction43",
+        "instruction44",
+        "dispatchProviderRead",
+        "instruction46",
+        "instruction47",
+        "instruction48",
+        "instruction49",
+        "instruction50"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x195120",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x195125",
+          "instructionHex": "4889742410"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x19512a",
+          "instructionHex": "57"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x19512b",
+          "instructionHex": "4883ec30"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x19512f",
+          "instructionHex": "0fb6413e"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x195133",
+          "instructionHex": "498bf8"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x195136",
+          "instructionHex": "2438"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x195138",
+          "instructionHex": "488bf2"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x19513b",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x19513e",
+          "instructionHex": "3c08"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x195140",
+          "instructionHex": "753a"
+        },
+        {
+          "role": "readResidentCursor",
+          "rva": "0x195142",
+          "instructionHex": "448b492c"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x195146",
+          "instructionHex": "b82d000000"
+        },
+        {
+          "role": "readResidentPointer",
+          "rva": "0x19514b",
+          "instructionHex": "4c034910"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x19514f",
+          "instructionHex": "4c890a"
+        },
+        {
+          "role": "readResidentByteCount",
+          "rva": "0x195152",
+          "instructionHex": "8b4924"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x195155",
+          "instructionHex": "2b4b2c"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x195158",
+          "instructionHex": "418908"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x19515b",
+          "instructionHex": "33c9"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x19515d",
+          "instructionHex": "80633ed7"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x195161",
+          "instructionHex": "804b3e10"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x195165",
+          "instructionHex": "48894b18"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x195169",
+          "instructionHex": "894b20"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x19516c",
+          "instructionHex": "488b5c2440"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x195171",
+          "instructionHex": "488b742448"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x195176",
+          "instructionHex": "4883c430"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x19517a",
+          "instructionHex": "5f"
+        },
+        {
+          "role": "instruction27",
+          "rva": "0x19517b",
+          "instructionHex": "c3"
+        },
+        {
+          "role": "instruction28",
+          "rva": "0x19517c",
+          "instructionHex": "33c9"
+        },
+        {
+          "role": "instruction29",
+          "rva": "0x19517e",
+          "instructionHex": "488d542420"
+        },
+        {
+          "role": "instruction30",
+          "rva": "0x195183",
+          "instructionHex": "48894b18"
+        },
+        {
+          "role": "instruction31",
+          "rva": "0x195187",
+          "instructionHex": "488b0b"
+        },
+        {
+          "role": "instruction32",
+          "rva": "0x19518a",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction33",
+          "rva": "0x19518d",
+          "instructionHex": "ff5020"
+        },
+        {
+          "role": "instruction34",
+          "rva": "0x195190",
+          "instructionHex": "0fb64308"
+        },
+        {
+          "role": "instruction35",
+          "rva": "0x195194",
+          "instructionHex": "488d542420"
+        },
+        {
+          "role": "instruction36",
+          "rva": "0x195199",
+          "instructionHex": "488b0b"
+        },
+        {
+          "role": "instruction37",
+          "rva": "0x19519c",
+          "instructionHex": "8844242d"
+        },
+        {
+          "role": "instruction38",
+          "rva": "0x1951a0",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction39",
+          "rva": "0x1951a3",
+          "instructionHex": "ff5028"
+        },
+        {
+          "role": "instruction40",
+          "rva": "0x1951a6",
+          "instructionHex": "488b0b"
+        },
+        {
+          "role": "instruction41",
+          "rva": "0x1951a9",
+          "instructionHex": "4c8bc7"
+        },
+        {
+          "role": "instruction42",
+          "rva": "0x1951ac",
+          "instructionHex": "440fb60dc1f71a00"
+        },
+        {
+          "role": "instruction43",
+          "rva": "0x1951b4",
+          "instructionHex": "488bd6"
+        },
+        {
+          "role": "instruction44",
+          "rva": "0x1951b7",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "dispatchProviderRead",
+          "rva": "0x1951ba",
+          "instructionHex": "ff5078"
+        },
+        {
+          "role": "instruction46",
+          "rva": "0x1951bd",
+          "instructionHex": "488b5c2440"
+        },
+        {
+          "role": "instruction47",
+          "rva": "0x1951c2",
+          "instructionHex": "488b742448"
+        },
+        {
+          "role": "instruction48",
+          "rva": "0x1951c7",
+          "instructionHex": "4883c430"
+        },
+        {
+          "role": "instruction49",
+          "rva": "0x1951cb",
+          "instructionHex": "5f"
+        },
+        {
+          "role": "instruction50",
+          "rva": "0x1951cc",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete exception-registered routine through all return paths. Resident mode returns pointer plus consumed offset and remaining count, clears the current encoded slice, and changes availability flags. Other modes read/update provider metadata and request a provider buffer. Metadata slots share a bounded settings representation; they are not arbitrary-size output arrays."
+    },
+    {
+      "key": "contextSourceAttachment",
+      "entryRva": "0x142c40",
+      "windows": [
+        {
+          "rva": "0x142c40",
+          "bodyLength": 754,
+          "bodySha256": "c150ff36724e5095a8f103711c460b2250a22c94f2a20d274c26c668cfba6d7e",
+          "unwindRva": "0x304960",
+          "unwindInfoHex": "011c0c001c640d001c540b001c340a001c3218f016e014d012c01070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readWrapperOwner",
+        "storeContextOnOwner",
+        "callPreparation",
+        "storeActiveSource",
+        "storeEmbeddedOwner",
+        "storePendingSource"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readWrapperOwner",
+          "rva": "0x142c5c",
+          "instructionHex": "488b7a18"
+        },
+        {
+          "role": "storeContextOnOwner",
+          "rva": "0x142c71",
+          "instructionHex": "48898f90020000"
+        },
+        {
+          "role": "callPreparation",
+          "rva": "0x142e8e",
+          "instructionHex": "e81d5f0400"
+        },
+        {
+          "role": "storeActiveSource",
+          "rva": "0x142ee9",
+          "instructionHex": "4c89b6d8000000"
+        },
+        {
+          "role": "storeEmbeddedOwner",
+          "rva": "0x142eff",
+          "instructionHex": "48894e08"
+        },
+        {
+          "role": "storePendingSource",
+          "rva": "0x142f0c",
+          "instructionHex": "4c89b6e0000000"
+        }
+      ],
+      "readOrder": "Retain the wrapper primary owner and store the incoming context on it. Under supplied admission/transition flags and context state, prepare the source, preserve original error/cleanup branches, and store the same wrapper as active or pending. The active-source branch stores its embedded owner on the context. The offline cohort sets the admission-check flag false and leaves prior transition state empty; it does not execute voice admission, pending-source replacement or cleanup success."
+    },
+    {
+      "key": "sourcePreparationDispatch",
+      "entryRva": "0x188db0",
+      "windows": [
+        {
+          "rva": "0x188db0",
+          "bodyLength": 116,
+          "bodySha256": "5e7a7bef81731e672563e09134139bcd28dba6617e4a940df54553f35a3b556e",
+          "unwindRva": "0x30f3a8",
+          "unwindInfoHex": "012304002374060006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "checkPreparedFlag",
+        "addressResidentReference",
+        "callResidentPreparation",
+        "dispatchPreparationSlot",
+        "markPrepared"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "checkPreparedFlag",
+          "rva": "0x188db6",
+          "instructionHex": "f6412001"
+        },
+        {
+          "role": "addressResidentReference",
+          "rva": "0x188dd3",
+          "instructionHex": "488db828030000"
+        },
+        {
+          "role": "callResidentPreparation",
+          "rva": "0x188df6",
+          "instructionHex": "e8b516f7ff"
+        },
+        {
+          "role": "dispatchPreparationSlot",
+          "rva": "0x188e0e",
+          "instructionHex": "ff5068"
+        },
+        {
+          "role": "markPrepared",
+          "rva": "0x188e16",
+          "instructionHex": "084320"
+        }
+      ],
+      "readOrder": "Already-prepared sources return success. Otherwise selected resident kind3 first checks/prepares the owner-held media reference. Successful preparation dispatches the wrapper preparation slot with its reference data/count; only result1 sets the prepared flag. Non-success stays distinct; no voice or device output follows from this bit."
+    },
+    {
+      "key": "residentReferencePreparation",
+      "entryRva": "0xfa4b0",
+      "windows": [
+        {
+          "rva": "0xfa4b0",
+          "bodyLength": 28,
+          "bodySha256": "3e4cfc9657a968314fecfc9535d52ea09439a48fc52ad5dd5a2f3d10b12791f7",
+          "unwindRva": "0x2f4f54",
+          "unwindInfoHex": "0106020006320270",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xfa4cc",
+          "bodyLength": 123,
+          "bodySha256": "3a7b77c6444541a8aed2544167300ae4161f53d342fdbbf4272c7ff16fc88bc8",
+          "unwindRva": "0x303ebc",
+          "unwindInfoHex": "2105020005340600b0a40f00cca40f00544f2f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xfa547",
+          "bodyLength": 25,
+          "bodySha256": "34bb326815dc710f0d670418922d472384cdbcb72b12d0d11197ad7a868b2f97",
+          "unwindRva": "0x303ed0",
+          "unwindInfoHex": "21000000b0a40f00cca40f00544f2f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readResidentData",
+        "requireRegistryEntry",
+        "alreadyResidentSuccess"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readResidentData",
+          "rva": "0xfa4bd",
+          "instructionHex": "488b4210"
+        },
+        {
+          "role": "requireRegistryEntry",
+          "rva": "0xfa4ba",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "alreadyResidentSuccess",
+          "rva": "0xfa547",
+          "instructionHex": "b801000000"
+        }
+      ],
+      "readOrder": "Original resident-reference readiness: an existing data pointer succeeds directly. An entry without data searches admitted buffer kinds under the selected registry lock, subject to entry flags, and may rebind the reference. Missing entry/data and unusable buffers return distinct statuses. The selected host context cohort admits only the already-resident branch, not asynchronous population."
+    },
+    {
+      "key": "contextSourceSampleBuffer",
+      "entryRva": "0x1435c0",
+      "windows": [
+        {
+          "rva": "0x1435c0",
+          "bodyLength": 230,
+          "bodySha256": "8a349496a00156fd6af36fa9b56873e27614aa1ee35373cb33563807062e5a29",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readPostProcessor",
+        "readFrameQuantum",
+        "storeRequestedCapacity",
+        "readActiveSource",
+        "dispatchSourceSamples",
+        "checkRetryState",
+        "checkEndState",
+        "readPendingSource"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readPostProcessor",
+          "rva": "0x1435d0",
+          "instructionHex": "488b89e8000000"
+        },
+        {
+          "role": "readFrameQuantum",
+          "rva": "0x1435dc",
+          "instructionHex": "0fb70521c41e00"
+        },
+        {
+          "role": "storeRequestedCapacity",
+          "rva": "0x1435e3",
+          "instructionHex": "66894210"
+        },
+        {
+          "role": "readActiveSource",
+          "rva": "0x1435e7",
+          "instructionHex": "488b8fd8000000"
+        },
+        {
+          "role": "dispatchSourceSamples",
+          "rva": "0x1435f1",
+          "instructionHex": "ff5078"
+        },
+        {
+          "role": "checkRetryState",
+          "rva": "0x1435f4",
+          "instructionHex": "837b302e"
+        },
+        {
+          "role": "checkEndState",
+          "rva": "0x143602",
+          "instructionHex": "837b3011"
+        },
+        {
+          "role": "readPendingSource",
+          "rva": "0x14360c",
+          "instructionHex": "4883bfe000000000"
+        }
+      ],
+      "readOrder": "When no optional processor is attached, request the native frame quantum from the retained active source sample slot. The output descriptor is forwarded unchanged. Retry, end, pending-source transition and optional-processor paths remain distinct. The selected offline cohort executes only the active/no-processor/no-pending path to full return, including final end status; original PCM is unchanged. Mixer routing, gains and device output are not proved."
+    },
+    {
+      "key": "contextSourceSampleRetry",
+      "entryRva": "0x143810",
+      "windows": [
+        {
+          "rva": "0x143810",
+          "bodyLength": 65,
+          "bodySha256": "d822c0ce924ea0fcc802c372c61f17b5f3e5eb212bdcca7654c7bdfc742110a6",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readActiveSource",
+        "dispatchSourceSamples"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readActiveSource",
+          "rva": "0x14382b",
+          "instructionHex": "488b89d8000000"
+        },
+        {
+          "role": "dispatchSourceSamples",
+          "rva": "0x143835",
+          "instructionHex": "ff5078"
+        }
+      ],
+      "readOrder": "Thin whole context consumer requests the native frame quantum from the active source sample slot and conditionally invokes retry handling. Its static route is authenticated; separate pending-source transition/cleanup remains outside the admitted host cohort."
+    },
+    {
+      "key": "residentMediaArrayAdmission",
+      "entryRva": "0xf3d90",
+      "windows": [
+        {
+          "rva": "0xf3d90",
+          "bodyLength": 67,
+          "bodySha256": "4a9a7b47b9f2feb1e89470e089ea8b88c1a13a5af772471f64dfeba9d2a3f79a",
+          "unwindRva": "0x30395c",
+          "unwindInfoHex": "01150500158211f00fd00dc00b600000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf3dd3",
+          "bodyLength": 41,
+          "bodySha256": "da9476d92d9f7aeab1d9a8d1a03d6ab46c666c4a83e6defbd56b6db9e7b92706",
+          "unwindRva": "0x30396c",
+          "unwindInfoHex": "211404001454080008341000903d0f00d33d0f005c393000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf3dfc",
+          "bodyLength": 377,
+          "bodySha256": "4313d9bc1384d87151cc33698add91a209f666f0cb786aefcfec16aaf91eb7ad",
+          "unwindRva": "0x303984",
+          "unwindInfoHex": "211a04001ae4060005740700d33d0f00fc3d0f006c393000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf3f75",
+          "bodyLength": 22,
+          "bodySha256": "44af9ea885eb464891200a57938f23b3d7f08bc75ff3ac62b76fae6cd0c8207c",
+          "unwindRva": "0x30399c",
+          "unwindInfoHex": "21000000d33d0f00fc3d0f006c393000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf3f8b",
+          "bodyLength": 15,
+          "bodySha256": "f0e163e8e9f7b8620b7bd0bbefbeb459b5ecc7261727b20c29a192103370ff8a",
+          "unwindRva": "0x3039ac",
+          "unwindInfoHex": "21000000903d0f00d33d0f005c393000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf3f9a",
+          "bodyLength": 6,
+          "bodySha256": "5ff50ecaccd63da273e7e170154829ddc96030e908b119a866180a9a1cca7985",
+          "unwindRva": "0x3039bc",
+          "unwindInfoHex": "2100080000e40600007407000054080000341000903d0f00d33d0f005c393000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainRowCount",
+        "retainRowPointer",
+        "rejectNullRows",
+        "readRowPointer",
+        "requireRowByteCount",
+        "readRowId",
+        "callRegistryInsertion",
+        "storeEntryId",
+        "allocateBufferRecord",
+        "advanceInputRows",
+        "storeBufferPointer",
+        "storeBufferByteCount",
+        "storeBufferKind"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainRowCount",
+          "rva": "0xf3da5",
+          "instructionHex": "458be0"
+        },
+        {
+          "role": "retainRowPointer",
+          "rva": "0xf3da8",
+          "instructionHex": "4c8bea"
+        },
+        {
+          "role": "rejectNullRows",
+          "rva": "0xf3db9",
+          "instructionHex": "b81f000000"
+        },
+        {
+          "role": "readRowPointer",
+          "rva": "0xf3e16",
+          "instructionHex": "48833f00"
+        },
+        {
+          "role": "requireRowByteCount",
+          "rva": "0xf3e20",
+          "instructionHex": "837f0800"
+        },
+        {
+          "role": "readRowId",
+          "rva": "0xf3e2a",
+          "instructionHex": "8b57f8"
+        },
+        {
+          "role": "callRegistryInsertion",
+          "rva": "0xf3e37",
+          "instructionHex": "e8b4560000"
+        },
+        {
+          "role": "storeEntryId",
+          "rva": "0xf3e50",
+          "instructionHex": "894610"
+        },
+        {
+          "role": "allocateBufferRecord",
+          "rva": "0xf3e7a",
+          "instructionHex": "e821d0fbff"
+        },
+        {
+          "role": "advanceInputRows",
+          "rva": "0xf3ebc",
+          "instructionHex": "4883c718"
+        },
+        {
+          "role": "storeBufferPointer",
+          "rva": "0xf3ec0",
+          "instructionHex": "48894808"
+        },
+        {
+          "role": "storeBufferByteCount",
+          "rva": "0xf3ec4",
+          "instructionHex": "44896810"
+        },
+        {
+          "role": "storeBufferKind",
+          "rva": "0xf3ec8",
+          "instructionHex": "c6401603"
+        }
+      ],
+      "readOrder": "Under the selected manager lock, consume readable24-byte input records containing DWORD ID, pointer and DWORD byte count. Reject null row array, null data or empty bytes with status31; allocation failure returns52. Exact-key insertion creates/reuses the media entry, retains it and prepends a newly allocated buffer record with the same pointer/count and kind3. The native helper does not copy or decode the supplied media bytes. Prefix rollback/removal preserves distinct failure branches; caller lifetime, package read/decryption and managed API identity are not inferred."
+    },
+    {
+      "key": "residentMediaRegistryInsert",
+      "entryRva": "0xf94f0",
+      "windows": [
+        {
+          "rva": "0xf94f0",
+          "bodyLength": 72,
+          "bodySha256": "94b58326ef62e10c89ffa70d1ccc77094e7171fbe7c1e303ed91e223f160e0f5",
+          "unwindRva": "0x2f29e8",
+          "unwindInfoHex": "010a04000a3407000a320670",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf9538",
+          "bodyLength": 84,
+          "bodySha256": "e200fa53f7900145b4a30e0163cf75c8acb77fef078629ef31ebad7076f0c3ea",
+          "unwindRva": "0x303db8",
+          "unwindInfoHex": "2105020005640600f0940f0038950f00e8292f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf958c",
+          "bodyLength": 70,
+          "bodySha256": "2760f100c756cbc28011050d27a4ab730ab45a93da0464a050291f3f2c681c55",
+          "unwindRva": "0x303dcc",
+          "unwindInfoHex": "2100020000640600f0940f0038950f00e8292f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf95d2",
+          "bodyLength": 13,
+          "bodySha256": "210331c29aa3ec5cdfd302a0119dc36b11e02eb999d38ac4d914c7f23c98627f",
+          "unwindRva": "0x303de0",
+          "unwindInfoHex": "21000000f0940f0038950f00e8292f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readBucketCount",
+        "readEntryCount",
+        "callConditionalGrowth",
+        "readBucketTable",
+        "compareFullId",
+        "allocateEntryNode",
+        "storeEntryKey",
+        "publishBucketHead",
+        "advanceEntryCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readBucketCount",
+          "rva": "0xf94ff",
+          "instructionHex": "8b5108"
+        },
+        {
+          "role": "readEntryCount",
+          "rva": "0xf9506",
+          "instructionHex": "8b4110"
+        },
+        {
+          "role": "callConditionalGrowth",
+          "rva": "0xf9526",
+          "instructionHex": "e8053affff"
+        },
+        {
+          "role": "readBucketTable",
+          "rva": "0xf9541",
+          "instructionHex": "488b03"
+        },
+        {
+          "role": "compareFullId",
+          "rva": "0xf9550",
+          "instructionHex": "397908"
+        },
+        {
+          "role": "allocateEntryNode",
+          "rva": "0xf956f",
+          "instructionHex": "e82c79fbff"
+        },
+        {
+          "role": "storeEntryKey",
+          "rva": "0xf959a",
+          "instructionHex": "897a08"
+        },
+        {
+          "role": "publishBucketHead",
+          "rva": "0xf95b8",
+          "instructionHex": "488914f0"
+        },
+        {
+          "role": "advanceEntryCount",
+          "rva": "0xf95bf",
+          "instructionHex": "ff4310"
+        }
+      ],
+      "readOrder": "Exact DWORD ID lookup in the supplied hash table returns an existing entry or allocates and links a new node. Available nonzero table capacity and bounded load avoid the separate growth helper in the admitted host cohort. New entry storage starts with empty buffer-list/reference state; supplied row admission populates its list. Allocation failure returns null. Hash keys are not package-qualified; registration precedence/language and live origin remain separate."
+    },
+    {
+      "key": "sourceResidentPreparationEntry",
+      "entryRva": "0x104450",
+      "windows": [
+        {
+          "rva": "0x104450",
+          "bodyLength": 37,
+          "bodySha256": "26b32de402340d05b1d4819b6e6391e6a5a477c39e13b924b96cda1e132ee4e6",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "requireStoredByteCount",
+        "instruction1",
+        "requireNoDirectPointer",
+        "instruction3",
+        "incrementSourcePreparationCounter",
+        "forwardSameSource",
+        "loadSharedMediaRegistry",
+        "tailResidentPreparationSelection",
+        "instruction8",
+        "instruction9"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "requireStoredByteCount",
+          "rva": "0x104450",
+          "instructionHex": "83790800"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x104454",
+          "instructionHex": "7419"
+        },
+        {
+          "role": "requireNoDirectPointer",
+          "rva": "0x104456",
+          "instructionHex": "4883791000"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x10445b",
+          "instructionHex": "7512"
+        },
+        {
+          "role": "incrementSourcePreparationCounter",
+          "rva": "0x10445d",
+          "instructionHex": "fe4120"
+        },
+        {
+          "role": "forwardSameSource",
+          "rva": "0x104460",
+          "instructionHex": "488bd1"
+        },
+        {
+          "role": "loadSharedMediaRegistry",
+          "rva": "0x104463",
+          "instructionHex": "488b0db6052400"
+        },
+        {
+          "role": "tailResidentPreparationSelection",
+          "rva": "0x10446a",
+          "instructionHex": "e9612dffff"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x10446f",
+          "instructionHex": "b801000000"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x104474",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Complete source preparation leaf. Zero stored byte count or an existing direct pointer returns success without registering bytes. Otherwise increment the source preparation byte counter and tail-forward the same source aggregate to the shared resident manager. Counter lifetime, wrap and cleanup are separate from this admitted source preparation."
+    },
+    {
+      "key": "residentPreparationSelection",
+      "entryRva": "0xf71d0",
+      "windows": [
+        {
+          "rva": "0xf71d0",
+          "bodyLength": 99,
+          "bodySha256": "9e3146a2842cdce7c153e93bb6c18d86532f9f497e4c206c105b80d29c69877d",
+          "unwindRva": "0x2f61c4",
+          "unwindInfoHex": "0106020006520230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readCollectionFlag",
+        "addressDeferredVector",
+        "callDeferredAppend",
+        "copySourceFirstHalf",
+        "copySourceSecondHalf",
+        "tailImmediatePreparation"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readCollectionFlag",
+          "rva": "0xf71d6",
+          "instructionHex": "80b9e000000000"
+        },
+        {
+          "role": "addressDeferredVector",
+          "rva": "0xf71e5",
+          "instructionHex": "4881c1d0000000"
+        },
+        {
+          "role": "callDeferredAppend",
+          "rva": "0xf71fb",
+          "instructionHex": "e8a0cdffff"
+        },
+        {
+          "role": "copySourceFirstHalf",
+          "rva": "0xf7213",
+          "instructionHex": "0f1100"
+        },
+        {
+          "role": "copySourceSecondHalf",
+          "rva": "0xf721a",
+          "instructionHex": "0f114810"
+        },
+        {
+          "role": "tailImmediatePreparation",
+          "rva": "0xf722e",
+          "instructionHex": "e9cdeaffff"
+        }
+      ],
+      "readOrder": "When the manager collection flag is clear, tail-dispatch whole numeric preparation immediately. Otherwise find/insert a32-byte row ordered by the second DWORD source/file ID and copy the complete32-byte source aggregate into that row, including the native plugin argument. Existing equal-key rows are overwritten. Available vector storage, sorted existing rows, source lifetime and later drain are conditions."
+    },
+    {
+      "key": "residentPreparationDeferredAppend",
+      "entryRva": "0xf3fa0",
+      "windows": [
+        {
+          "rva": "0xf3fa0",
+          "bodyLength": 141,
+          "bodySha256": "72b1257cc42c881967e41dbf780e66970f3d0de5f22227067027d5545cd637a0",
+          "unwindRva": "0x2f23d8",
+          "unwindInfoHex": "0112080012540c0012340b0012520ee00c700b60",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf402d",
+          "bodyLength": 89,
+          "bodySha256": "4eabe334c018d9f7597abf2a88c5afed950d1e2bf00ed8d0f0c770aac2c48997",
+          "unwindRva": "0x303e98",
+          "unwindInfoHex": "2105020005f40a00a03f0f002d400f00d8232f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf4086",
+          "bodyLength": 77,
+          "bodySha256": "a8386a117c8fe44125f47e423da8df478fdc43bc36e50d350d586e260393403a",
+          "unwindRva": "0x303eac",
+          "unwindInfoHex": "21000000a03f0f002d400f00d8232f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readVectorCount",
+        "compareSourceFileId",
+        "callConditionalGrowth",
+        "shiftLaterRows",
+        "advanceVectorCount",
+        "markExistingRow"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readVectorCount",
+          "rva": "0xf3fb5",
+          "instructionHex": "8b5108"
+        },
+        {
+          "role": "compareSourceFileId",
+          "rva": "0xf3ff6",
+          "instructionHex": "413bc2"
+        },
+        {
+          "role": "callConditionalGrowth",
+          "rva": "0xf4040",
+          "instructionHex": "e83bc3fdff"
+        },
+        {
+          "role": "shiftLaterRows",
+          "rva": "0xf4071",
+          "instructionHex": "e89a541900"
+        },
+        {
+          "role": "advanceVectorCount",
+          "rva": "0xf4079",
+          "instructionHex": "41ff06"
+        },
+        {
+          "role": "markExistingRow",
+          "rva": "0xf4086",
+          "instructionHex": "c60601"
+        }
+      ],
+      "readOrder": "Bounded binary search over supplied sorted32-byte rows compares the source file-ID DWORD. Existing rows return their slot; absent rows shift later storage and advance the count when capacity is available, otherwise use a separate growth helper. The checked offline cohort supplies one empty-capacity row; general allocation/growth and overlapping copy semantics remain separate."
+    },
+    {
+      "key": "residentPreparationDeferredDrain",
+      "entryRva": "0xf7240",
+      "windows": [
+        {
+          "rva": "0xf7240",
+          "bodyLength": 40,
+          "bodySha256": "e756f4947e39c1071f576b2637ec28909b467ede3655a2e244ae088bf45b21b1",
+          "unwindRva": "0x303e28",
+          "unwindInfoHex": "01080300084204e002300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf7268",
+          "bodyLength": 70,
+          "bodySha256": "f9f2b565b4acf4075b118c9eb2cb241d1224041317dc04c201f9f9d42251c178",
+          "unwindRva": "0x303e34",
+          "unwindInfoHex": "2105020005f4040040720f0068720f00283e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf72ae",
+          "bodyLength": 17,
+          "bodySha256": "44917dd7124edd5aadd965b137619e6eb3a946c8559b4a680ba01a6b1d0c3226",
+          "unwindRva": "0x303e48",
+          "unwindInfoHex": "2105040005740a0000f4040040720f0068720f00283e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf72bf",
+          "bodyLength": 124,
+          "bodySha256": "84b09f547396983897621654667ddebde1d545f1c98d0dd5ba066f3179edfbe6",
+          "unwindRva": "0x303e60",
+          "unwindInfoHex": "210a04000a64090005540800ae720f00bf720f00483e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf733b",
+          "bodyLength": 18,
+          "bodySha256": "55cadbf591c9284c8138eb4a34d8c932b9af77837a4b28e5446deabc1df79810",
+          "unwindRva": "0x303e78",
+          "unwindInfoHex": "21000000ae720f00bf720f00483e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf734d",
+          "bodyLength": 13,
+          "bodySha256": "fb1ad7281c3433b8161cc72e923d3b844d3b5918ba05066a7122cb6dc1a4841e",
+          "unwindRva": "0x303e88",
+          "unwindInfoHex": "2100000040720f0068720f00283e3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readDeferredRows",
+        "readDeferredCount",
+        "callNumericPreparation",
+        "advanceSourceRow",
+        "rollbackEarlierEntry"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readDeferredRows",
+          "rva": "0xf7248",
+          "instructionHex": "488b99d0000000"
+        },
+        {
+          "role": "readDeferredCount",
+          "rva": "0xf7252",
+          "instructionHex": "8b81d8000000"
+        },
+        {
+          "role": "callNumericPreparation",
+          "rva": "0xf7276",
+          "instructionHex": "e885eaffff"
+        },
+        {
+          "role": "advanceSourceRow",
+          "rva": "0xf728a",
+          "instructionHex": "4883c320"
+        },
+        {
+          "role": "rollbackEarlierEntry",
+          "rva": "0xf7316",
+          "instructionHex": "e875190000"
+        }
+      ],
+      "readOrder": "Walk manager-held32-byte source rows and call whole numeric preparation in vector order. On first failure, decrement/clean previously admitted registry entries before returning that failure. A successful one-row offline cohort retains exactly the same file request and complete PCM as immediate preparation; upstream collection selection and multientry rollback ownership remain conditional."
+    },
+    {
+      "key": "residentNumericPreparation",
+      "entryRva": "0xf5d00",
+      "windows": [
+        {
+          "rva": "0xf5d00",
+          "bodyLength": 54,
+          "bodySha256": "9575f20f176c4467dd7c35bf6bc2a9ebd238534a553b6e59700ebf807b87250e",
+          "unwindRva": "0x3038e4",
+          "unwindInfoHex": "010f05000fa20bf009e0076006300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf5d36",
+          "bodyLength": 167,
+          "bodySha256": "1e74ebc5dac2824fd020bc23adf49595d639a7fd7fd44cfa1cfd1d9cc9117a83",
+          "unwindRva": "0x3038f4",
+          "unwindInfoHex": "2111040011d4080005740a00005d0f00365d0f00e4383000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf5ddd",
+          "bodyLength": 257,
+          "bodySha256": "6100a4ed8b5c810247fc8b0c90a6c5d2a5696cc6487b9c28df42c31716080c2e",
+          "unwindRva": "0x30390c",
+          "unwindInfoHex": "2112040012c4090008541300365d0f00dd5d0f00f4383000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf5ede",
+          "bodyLength": 10,
+          "bodySha256": "4cde6d940b0d0f7c08b5cf5e5ec2da950400385977ce46ff16298db878b8cd20",
+          "unwindRva": "0x303924",
+          "unwindInfoHex": "21000000365d0f00dd5d0f00f4383000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf5ee8",
+          "bodyLength": 167,
+          "bodySha256": "9b16c85fc4e429d2596ea5a8ea10932f37bf90c464c4826c202c5e541b8d34e7",
+          "unwindRva": "0x303934",
+          "unwindInfoHex": "2100040000c4090000541300365d0f00dd5d0f00f4383000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf5f8f",
+          "bodyLength": 32,
+          "bodySha256": "d77ff975a371e0e4248de84c82f5912b399235312af994874aa45b0b88f2574e",
+          "unwindRva": "0x303924",
+          "unwindInfoHex": "21000000365d0f00dd5d0f00f4383000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf5faf",
+          "bodyLength": 16,
+          "bodySha256": "7603d40a9d7fac0f4d26347b418586729c70e6a66860380543750c82425832e3",
+          "unwindRva": "0x30394c",
+          "unwindInfoHex": "21000000005d0f00365d0f00e4383000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readRequestedByteCount",
+        "readSourceFlags",
+        "readRegistryId",
+        "callRegistryFindInsert",
+        "readExistingBufferKind",
+        "readSourceFileCodec",
+        "allocateResidentBytes",
+        "releaseRegistryLockForIo",
+        "readLanguageFlag",
+        "readNumericFileId",
+        "callNumericStreamOpen",
+        "callNumericStreamRead",
+        "compareReadCount",
+        "closeNumericStream",
+        "publishResidentBuffer",
+        "cleanupFailedEntry"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readRequestedByteCount",
+          "rva": "0xf5d0f",
+          "instructionHex": "448b7a08"
+        },
+        {
+          "role": "readSourceFlags",
+          "rva": "0xf5d22",
+          "instructionHex": "8b520c"
+        },
+        {
+          "role": "readRegistryId",
+          "rva": "0xf5d4d",
+          "instructionHex": "418b1e"
+        },
+        {
+          "role": "callRegistryFindInsert",
+          "rva": "0xf5d69",
+          "instructionHex": "e872380000"
+        },
+        {
+          "role": "readExistingBufferKind",
+          "rva": "0xf5db0",
+          "instructionHex": "0fb64816"
+        },
+        {
+          "role": "readSourceFileCodec",
+          "rva": "0xf5dce",
+          "instructionHex": "6641837e1a03"
+        },
+        {
+          "role": "allocateResidentBytes",
+          "rva": "0xf5e21",
+          "instructionHex": "e82ab0fbff"
+        },
+        {
+          "role": "releaseRegistryLockForIo",
+          "rva": "0xf5e35",
+          "instructionHex": "ff15bd531900"
+        },
+        {
+          "role": "readLanguageFlag",
+          "rva": "0xf5e5f",
+          "instructionHex": "410fb6460c"
+        },
+        {
+          "role": "readNumericFileId",
+          "rva": "0xf5e67",
+          "instructionHex": "458b4604"
+        },
+        {
+          "role": "callNumericStreamOpen",
+          "rva": "0xf5e7f",
+          "instructionHex": "e8fc92ffff"
+        },
+        {
+          "role": "callNumericStreamRead",
+          "rva": "0xf5eb9",
+          "instructionHex": "e8f28dffff"
+        },
+        {
+          "role": "compareReadCount",
+          "rva": "0xf5ed3",
+          "instructionHex": "41394608"
+        },
+        {
+          "role": "closeNumericStream",
+          "rva": "0xf5f2c",
+          "instructionHex": "e81f8dffff"
+        },
+        {
+          "role": "publishResidentBuffer",
+          "rva": "0xf5f58",
+          "instructionHex": "e8e3dcffff"
+        },
+        {
+          "role": "cleanupFailedEntry",
+          "rva": "0xf5f7d",
+          "instructionHex": "e80e2d0000"
+        }
+      ],
+      "readOrder": "Whole numeric resident preparation uses source DWORD0 as exact registry ID, DWORD4 as numeric file ID, DWORD8 as requested resident byte count, flag bit0 as language-specific request, and WORD26 from the native plugin argument as file codec. Stored zero bytes and ordinary streamed sources without the prepare flag return success without loading. Eligible existing prepared buffers short-circuit; otherwise allocate, release the registry lock during numeric open/read, require the complete requested read, close and publish kind1 bytes. Separate type2-buffer copying and allocation/read/publication failure branches retain their own boundaries. Selected physical source info is produced by the original bank reader and setter, not a zero-supplied record tail."
+    },
+    {
+      "key": "residentMediaRegistryFindInsert",
+      "entryRva": "0xf95e0",
+      "windows": [
+        {
+          "rva": "0xf95e0",
+          "bodyLength": 80,
+          "bodySha256": "a1d1183ead9faf1318b3f7b500fe00c13657d57e72a738ec527b4060c5d64b09",
+          "unwindRva": "0x2f57c0",
+          "unwindInfoHex": "010f06000f6408000f3407000f320b70",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf9630",
+          "bodyLength": 80,
+          "bodySha256": "957ad9d07ff6e9f27f009d7a92469a900ebc995db829c196fa182b81a75cebf7",
+          "unwindRva": "0x303df0",
+          "unwindInfoHex": "2105020005540600e0950f0030960f00c0572f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf9680",
+          "bodyLength": 70,
+          "bodySha256": "249051e1967aa3cc5764d636e5f1389554892e233803263e59ebd686d0c067e8",
+          "unwindRva": "0x303e04",
+          "unwindInfoHex": "2100020000540600e0950f0030960f00c0572f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xf96c6",
+          "bodyLength": 18,
+          "bodySha256": "2aef8958807faf22f26946a6af7146d769e4f6a10cbb5b492f0a6d4649dc77cf",
+          "unwindRva": "0x303e18",
+          "unwindInfoHex": "21000000e0950f0030960f00c0572f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readBucketCount",
+        "readEntryCount",
+        "callConditionalGrowth",
+        "compareFullId",
+        "markNewEntry",
+        "allocateEntryNode",
+        "markExistingEntry",
+        "storeEntryKey",
+        "advanceEntryCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readBucketCount",
+          "rva": "0xf95f4",
+          "instructionHex": "8b5108"
+        },
+        {
+          "role": "readEntryCount",
+          "rva": "0xf95fe",
+          "instructionHex": "8b4110"
+        },
+        {
+          "role": "callConditionalGrowth",
+          "rva": "0xf961e",
+          "instructionHex": "e80d39ffff"
+        },
+        {
+          "role": "compareFullId",
+          "rva": "0xf9647",
+          "instructionHex": "397908"
+        },
+        {
+          "role": "markNewEntry",
+          "rva": "0xf9659",
+          "instructionHex": "c60600"
+        },
+        {
+          "role": "allocateEntryNode",
+          "rva": "0xf965e",
+          "instructionHex": "e83d78fbff"
+        },
+        {
+          "role": "markExistingEntry",
+          "rva": "0xf9689",
+          "instructionHex": "c60601"
+        },
+        {
+          "role": "storeEntryKey",
+          "rva": "0xf969c",
+          "instructionHex": "897a08"
+        },
+        {
+          "role": "advanceEntryCount",
+          "rva": "0xf96c1",
+          "instructionHex": "ff4310"
+        }
+      ],
+      "readOrder": "Find or create the exact DWORD-key entry in the shared resident table, returning an explicit existing/new flag. Available table capacity avoids separate growth in the admitted cohort. Nodes initialize empty buffer and reference fields. This key carries no package/language qualifier."
+    },
+    {
+      "key": "residentPreparedBufferPublication",
+      "entryRva": "0xf3c40",
+      "windows": [
+        {
+          "rva": "0xf3c40",
+          "bodyLength": 154,
+          "bodySha256": "4205375db515cd5ead197d8cc875506d6229948021d1f0c25dfc2d4a9b4df8fa",
+          "unwindRva": "0x2f2c40",
+          "unwindInfoHex": "0114080014640800145407001434060014321070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "allocateBufferRecord",
+        "readExistingBufferHead",
+        "publishFirstBuffer",
+        "prependBuffer",
+        "storeBufferKind",
+        "storeResidentPointer",
+        "storeResidentByteCount",
+        "storeAllocationPool"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "allocateBufferRecord",
+          "rva": "0xf3c6a",
+          "instructionHex": "e831d2fbff"
+        },
+        {
+          "role": "readExistingBufferHead",
+          "rva": "0xf3c88",
+          "instructionHex": "488b4308"
+        },
+        {
+          "role": "publishFirstBuffer",
+          "rva": "0xf3c91",
+          "instructionHex": "4c895308"
+        },
+        {
+          "role": "prependBuffer",
+          "rva": "0xf3ca0",
+          "instructionHex": "4c895308"
+        },
+        {
+          "role": "storeBufferKind",
+          "rva": "0xf3ca9",
+          "instructionHex": "41884216"
+        },
+        {
+          "role": "storeResidentPointer",
+          "rva": "0xf3cb2",
+          "instructionHex": "49896a08"
+        },
+        {
+          "role": "storeResidentByteCount",
+          "rva": "0xf3cb6",
+          "instructionHex": "41897210"
+        },
+        {
+          "role": "storeAllocationPool",
+          "rva": "0xf3cba",
+          "instructionHex": "41897a18"
+        }
+      ],
+      "readOrder": "Allocate a32-byte buffer record, prepend it to the exact-key media entry and retain supplied resident pointer, count, kind and allocation pool. Whole numeric preparation supplies kind1 and its original allocation. Failure returns52 and the caller frees bytes and releases the failed entry. Publication does not compute samples."
+    },
+    {
+      "key": "residentNumericStreamOpen",
+      "entryRva": "0xef180",
+      "windows": [
+        {
+          "rva": "0xef180",
+          "bodyLength": 267,
+          "bodySha256": "95ab35cb247c17fcae17932d1016d0b437619e8889f92e0ae4e1ee9b6be6fda4",
+          "unwindRva": "0x303240",
+          "unwindInfoHex": "011207001264530012345200120150000b700000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "storeFileCodec",
+        "storeLanguageFlag",
+        "storeNumericId",
+        "loadStreamManager",
+        "addressStreamOutput",
+        "callStandardStreamFactory",
+        "callReaderSetup"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "storeFileCodec",
+          "rva": "0xef19e",
+          "instructionHex": "8944244c"
+        },
+        {
+          "role": "storeLanguageFlag",
+          "rva": "0xef1ad",
+          "instructionHex": "88442460"
+        },
+        {
+          "role": "storeNumericId",
+          "rva": "0xef249",
+          "instructionHex": "4489442438"
+        },
+        {
+          "role": "loadStreamManager",
+          "rva": "0xef24e",
+          "instructionHex": "488b0d9b562500"
+        },
+        {
+          "role": "addressStreamOutput",
+          "rva": "0xef255",
+          "instructionHex": "4c8d4740"
+        },
+        {
+          "role": "callStandardStreamFactory",
+          "rva": "0xef264",
+          "instructionHex": "ff5018"
+        },
+        {
+          "role": "callReaderSetup",
+          "rva": "0xef271",
+          "instructionHex": "e8fafcffff"
+        }
+      ],
+      "readOrder": "Build the file-open descriptor for the selected stream manager. Null textual filename retains the DWORD numeric ID; nonnull text uses a separate conversion/length branch. Flags contain company0, the supplied file codec and language flag, with synchronous creation. On factory result1, configure the retained reader through its original setup routine. Actual package lookup/decryption/precedence remains the selected provider condition."
+    },
+    {
+      "key": "residentNumericStreamSetup",
+      "entryRva": "0xeef70",
+      "windows": [
+        {
+          "rva": "0xeef70",
+          "bodyLength": 48,
+          "bodySha256": "ebb113a77ee1af6be3f8850a5c419962227a3b33ecb2005c13bee85ad73af9ea",
+          "unwindRva": "0x30097c",
+          "unwindInfoHex": "010a04000a5409000a320660",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeefa0",
+          "bodyLength": 86,
+          "bodySha256": "caa8325295731298af4ef739f106e43d229bde1f1c4407b4345f4249573fbe74",
+          "unwindRva": "0x3032a4",
+          "unwindInfoHex": "210e04000e7407000534060070ef0e00a0ef0e007c093000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeeff6",
+          "bodyLength": 4,
+          "bodySha256": "a67d6ecf992129b76ab44f30ff6992f10cd60372ab46f6ab7fe72e9d612eeb99",
+          "unwindRva": "0x3032bc",
+          "unwindInfoHex": "21000400007407000034060070ef0e00a0ef0e007c093000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeeffa",
+          "bodyLength": 22,
+          "bodySha256": "5feda04bd80f8aa94afe7eb0c6a8fabb6fd696f3ac8fe15cf8b9aa1ac2c30d3d",
+          "unwindRva": "0x3032d4",
+          "unwindInfoHex": "2105020005e40800f6ef0e00faef0e00bc323000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xef010",
+          "bodyLength": 47,
+          "bodySha256": "359dc230dd3d8280b933ed6fb36e4d2e7197af9229b4ce15cfa58c9f32128727",
+          "unwindRva": "0x3032e8",
+          "unwindInfoHex": "21000000f6ef0e00faef0e00bc323000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readProviderBlockSize",
+        "retainBlockSize",
+        "requireNonzeroBlockSize",
+        "retainReaderBufferCapacity",
+        "allocateReaderBuffers"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readProviderBlockSize",
+          "rva": "0xeef86",
+          "instructionHex": "ff5028"
+        },
+        {
+          "role": "retainBlockSize",
+          "rva": "0xeef89",
+          "instructionHex": "894630"
+        },
+        {
+          "role": "requireNonzeroBlockSize",
+          "rva": "0xeef8c",
+          "instructionHex": "85c0"
+        },
+        {
+          "role": "retainReaderBufferCapacity",
+          "rva": "0xef023",
+          "instructionHex": "890b"
+        },
+        {
+          "role": "allocateReaderBuffers",
+          "rva": "0xef02a",
+          "instructionHex": "e8211efcff"
+        }
+      ],
+      "readOrder": "Use the virtual stream block size to configure bounded reader buffers. Zero block size fails; supplied capacity/retained allocation can be reused, otherwise allocate two buffers using at least the native minimum. Nonzero initial offset invokes the provider seek slot. The admitted cohort supplies block size1 and zero offset; alternate alignments/seeks and storage reuse remain conditional."
+    },
+    {
+      "key": "residentNumericStreamRead",
+      "entryRva": "0xeecb0",
+      "windows": [
+        {
+          "rva": "0xeecb0",
+          "bodyLength": 103,
+          "bodySha256": "3f7a194e13d1f5f1e8345e3313a489ff5ae019f0ee4762e620ff70bbc2eeec09",
+          "unwindRva": "0x303254",
+          "unwindInfoHex": "01160700168212d010c00e700d600c500b300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeed17",
+          "bodyLength": 510,
+          "bodySha256": "3ec3eefe948697f4f4fd588b259b78ee65e62f0e5002fa77f31b96e8f257916f",
+          "unwindRva": "0x303268",
+          "unwindInfoHex": "210d04000df4080008e41000b0ec0e0017ed0e0054323000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeef15",
+          "bodyLength": 26,
+          "bodySha256": "40104febc783aeb133ff8fc4f55cc250a96f8bb92984f32054f95479b4a4b576",
+          "unwindRva": "0x303280",
+          "unwindInfoHex": "21000000b0ec0e0017ed0e0054323000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readRequestedByteCount",
+        "readStreamPointer",
+        "callBufferedRead",
+        "callDirectRead",
+        "waitForDirectRead",
+        "advanceCopiedCount",
+        "publishActualReadCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readRequestedByteCount",
+          "rva": "0xeeccf",
+          "instructionHex": "458be8"
+        },
+        {
+          "role": "readStreamPointer",
+          "rva": "0xeed8a",
+          "instructionHex": "488b5340"
+        },
+        {
+          "role": "callBufferedRead",
+          "rva": "0xeee36",
+          "instructionHex": "41ffd2"
+        },
+        {
+          "role": "callDirectRead",
+          "rva": "0xeeebe",
+          "instructionHex": "41ffd2"
+        },
+        {
+          "role": "waitForDirectRead",
+          "rva": "0xeeecf",
+          "instructionHex": "ff5060"
+        },
+        {
+          "role": "advanceCopiedCount",
+          "rva": "0xeeede",
+          "instructionHex": "03f2"
+        },
+        {
+          "role": "publishActualReadCount",
+          "rva": "0xeef1d",
+          "instructionHex": "8930"
+        }
+      ],
+      "readOrder": "Whole reader copies retained buffered bytes or requests original virtual stream reads, rounds requests by the supplied block size and waits on the direct-read path. A partial read attempts remaining bytes; zero read ends with the actual copied count, which the numeric preparation caller compares against its stored requirement. Virtual read/wait errors become reader failure56. The physical provider supplies bytes; copies and count/status propagation are original native code."
+    },
+    {
+      "key": "residentNumericStreamClose",
+      "entryRva": "0xeec50",
+      "windows": [
+        {
+          "rva": "0xeec50",
+          "bodyLength": 94,
+          "bodySha256": "fd68dd7feb4cb1acd13dfbab92ea2fbcfd77859cedb617b839fcf543d6f1011e",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readStreamPointer",
+        "stopStream",
+        "destroyStream",
+        "clearStreamPointer",
+        "freeReaderBuffers"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readStreamPointer",
+          "rva": "0xeec5f",
+          "instructionHex": "488b4940"
+        },
+        {
+          "role": "stopStream",
+          "rva": "0xeec6b",
+          "instructionHex": "ff5050"
+        },
+        {
+          "role": "destroyStream",
+          "rva": "0xeec75",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "clearStreamPointer",
+          "rva": "0xeec78",
+          "instructionHex": "48897b40"
+        },
+        {
+          "role": "freeReaderBuffers",
+          "rva": "0xeec9a",
+          "instructionHex": "e81121fcff"
+        }
+      ],
+      "readOrder": "When a stream exists, dispatch stop/destroy and clear it. Reset retained buffer pointers/counts and free owned reader-buffer storage. Platform stream lifetime and allocator behavior remain explicit; no samples are computed."
+    },
+    {
+      "key": "sourceCollectionResidentPreparation",
+      "entryRva": "0x46a00",
+      "windows": [
+        {
+          "rva": "0x46a00",
+          "bodyLength": 479,
+          "bodySha256": "a4ccf62a859fa1cfbdae69ab3a9114bd69ee942ed1249b314ee2ff9c347fde5b",
+          "unwindRva": "0x2f6894",
+          "unwindInfoHex": "0117090017641c0017541b0017341a001701180010700000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readSourceRows",
+        "readSourceCount",
+        "readRetainedSourcePointer",
+        "callSourcePreparation",
+        "stopOnSourceFailure",
+        "rollbackEarlierSource"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readSourceRows",
+          "rva": "0x46a17",
+          "instructionHex": "488b99e0000000"
+        },
+        {
+          "role": "readSourceCount",
+          "rva": "0x46a21",
+          "instructionHex": "8b81e8000000"
+        },
+        {
+          "role": "readRetainedSourcePointer",
+          "rva": "0x46a40",
+          "instructionHex": "488b4b08"
+        },
+        {
+          "role": "callSourcePreparation",
+          "rva": "0x46a44",
+          "instructionHex": "e807da0b00"
+        },
+        {
+          "role": "stopOnSourceFailure",
+          "rva": "0x46a4b",
+          "instructionHex": "83f801"
+        },
+        {
+          "role": "rollbackEarlierSource",
+          "rva": "0x46b4b",
+          "instructionHex": "e8f0db0b00"
+        }
+      ],
+      "readOrder": "Traverse readable16-byte source rows and call source preparation on each retained pointer, stopping at first failure and cleaning earlier sources. A separate collection of28-byte bank rows has its own preparation and rollback calls. The admitted host cohort supplies one physical source pointer and an empty bank-row collection. This proves the original source-collection caller, not its unobserved live population or class identity."
+    },
+    {
+      "key": "nodeResidentSourcePreparation",
+      "entryRva": "0x151130",
+      "windows": [
+        {
+          "rva": "0x151130",
+          "bodyLength": 12,
+          "bodySha256": "23c23546be21eb0659cc5b21c42bb8836101ea6b8a9a510039cb13413ed51ea8",
+          "windowKind": "completeLeafThroughTailDispatch"
+        }
+      ],
+      "requiredRoles": [
+        "addressEmbeddedNodeSource",
+        "tailSourcePreparation"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "addressEmbeddedNodeSource",
+          "rva": "0x151130",
+          "instructionHex": "4881c1e0000000"
+        },
+        {
+          "role": "tailSourcePreparation",
+          "rva": "0x151137",
+          "instructionHex": "e91433fbff"
+        }
+      ],
+      "readOrder": "Complete node preparation leaf. Address the embedded source and tail-forward it to the original source preparation entry. This displacement equals the independently authenticated bank-source loader and node-play source displacement on the same selected triplet. Readable node/source storage and upstream selection remain conditional; this leaf is reached through the checked existing node address-point preparation slot."
+    }
+  ],
+  "dataWindows": [
+    {
+      "key": "codec4FactoryBlock",
+      "rva": "0x3349d0",
+      "bytes": 32,
+      "sha256": "f917f0ecc451d4537368f2120259f99965e16135736c4bfefa4fdf3342955cd6"
+    },
+    {
+      "key": "codec4RecordHeader",
+      "rva": "0x3349f8",
+      "bytes": 16,
+      "sha256": "0fb84472ffe2b1591c692c9d25d94d8c28050b69e42dfc3823eb373446684311"
+    },
+    {
+      "key": "codec20FactoryBlock",
+      "rva": "0x339ce0",
+      "bytes": 32,
+      "sha256": "ebd6744876145f59261eea0380d317401a1189eb1a7ac269c90b1ff174501b60"
+    },
+    {
+      "key": "codec20RecordHeader",
+      "rva": "0x339d78",
+      "bytes": 16,
+      "sha256": "7d4caa713ebd0a1eb16e94a17cd0ece403854389d05e649a40496e237980d071"
+    },
+    {
+      "key": "mediaSourceAddressPoint",
+      "rva": "0x29b238",
+      "bytes": 128,
+      "sha256": "a3c94d5752cf720defb5b03e21f7e539e5ba1c891c32daf268739a7d084d1908"
+    },
+    {
+      "key": "codec4AddressPoint",
+      "rva": "0x29e1c8",
+      "bytes": 48,
+      "sha256": "cddccc66e1a894a36ee88b1bebf8b7aa8c0d5b8ef8982186477d87b49e92d530"
+    },
+    {
+      "key": "codec20AddressPoint",
+      "rva": "0x2b0b40",
+      "bytes": 48,
+      "sha256": "16b510501bc3136e1bd1c9c6c2b62b1bcd2ddc50d295f5bcebc3782d1561940c"
+    },
+    {
+      "key": "contextFrameQuantum",
+      "rva": "0x32fa04",
+      "bytes": 2,
+      "sha256": "fcf0a6c700dd13e274b6fba8deea8dd9b26e4eedde3495717cac8408c9c5177f",
+      "readOrder": "Original context sample consumers read the native requested frame quantum. The isolated host cohort uses its initialized value without overwriting this field."
+    },
+    {
+      "key": "nodeResidentPreparationSlot",
+      "rva": "0x2995c0",
+      "bytes": 8,
+      "sha256": "681b738f2ff45628e53f43afd0db5d250fe77017859bac3a7b9d69e786298d82",
+      "readOrder": "Selected preparation slot in the existing Event/Action target node address point. The separately owned queue contract already authenticates the broader table and node-play entry. This new binding authenticates its preparation dispatch to the original embedded source, without a second full table catalog."
+    }
+  ],
+  "initializedCodecs": [
+    {
+      "codecId": 4,
+      "companyId": 0,
+      "kind": 1,
+      "initializerGroup": "codec4StaticInitializer",
+      "recordRva": "0x3349f0",
+      "headerWindow": "codec4RecordHeader",
+      "factoryWindow": "codec4FactoryBlock",
+      "factoryGroup": "codec4MediaFactory",
+      "instanceFactoryGroup": "codec4InstanceFactory",
+      "sampleGroup": "codec4SampleProcessing",
+      "sampleAddressPoint": "codec4AddressPoint"
+    },
+    {
+      "codecId": 20,
+      "companyId": 0,
+      "kind": 1,
+      "initializerGroup": "codec20StaticInitializer",
+      "recordRva": "0x339d70",
+      "headerWindow": "codec20RecordHeader",
+      "factoryWindow": "codec20FactoryBlock",
+      "factoryGroup": "codec20MediaFactory",
+      "instanceFactoryGroup": "codec20InstanceFactory",
+      "sampleGroup": "codec20SampleProcessing",
+      "sampleAddressPoint": "codec20AddressPoint"
+    }
+  ],
+  "addressPointBindings": [
+    {
+      "dataWindow": "mediaSourceAddressPoint",
+      "slot": 104,
+      "targetGroup": "mediaSourcePreparation"
+    },
+    {
+      "dataWindow": "codec4AddressPoint",
+      "slot": 8,
+      "targetGroup": "codec4Initialization"
+    },
+    {
+      "dataWindow": "codec20AddressPoint",
+      "slot": 8,
+      "targetGroup": "codec20Initialization"
+    },
+    {
+      "dataWindow": "codec4AddressPoint",
+      "slot": 16,
+      "targetGroup": "codec4HeaderPreparation"
+    },
+    {
+      "dataWindow": "codec4AddressPoint",
+      "slot": 40,
+      "targetGroup": "codec4SampleProcessing"
+    },
+    {
+      "dataWindow": "codec20AddressPoint",
+      "slot": 40,
+      "targetGroup": "codec20SampleProcessing"
+    },
+    {
+      "dataWindow": "mediaSourceAddressPoint",
+      "slot": 120,
+      "targetGroup": "mediaSourceSampleBuffer"
+    },
+    {
+      "dataWindow": "nodeResidentPreparationSlot",
+      "slot": 0,
+      "targetGroup": "nodeResidentSourcePreparation"
+    }
+  ],
+  "directEdges": [
+    {
+      "group": "ownerSourceCodecSetup",
+      "witnessRole": "callFactoryEarly",
+      "targetGroup": "sourceImplementationFactory",
+      "kind": "call"
+    },
+    {
+      "group": "ownerSourceCodecSetup",
+      "witnessRole": "callFactoryAfterHeader",
+      "targetGroup": "sourceImplementationFactory",
+      "kind": "call"
+    },
+    {
+      "group": "sourceImplementationFactory",
+      "witnessRole": "tailRegisteredCodecFactory",
+      "targetGroup": "registeredCodecFactory",
+      "kind": "tailJump"
+    },
+    {
+      "group": "staticCodecListRegistration",
+      "witnessRole": "callCodecRegistration",
+      "targetGroup": "codecRegistryRegistration",
+      "kind": "call"
+    },
+    {
+      "group": "codec4MediaFactory",
+      "witnessRole": "tailMediaSourceConstructor",
+      "targetGroup": "mediaSourceConstructor",
+      "kind": "tailJump"
+    },
+    {
+      "group": "codec20MediaFactory",
+      "witnessRole": "tailMediaSourceConstructor",
+      "targetGroup": "mediaSourceConstructor",
+      "kind": "tailJump"
+    },
+    {
+      "group": "mediaSourceConstructor",
+      "witnessRole": "callBaseConstructor",
+      "targetGroup": "mediaSourceBaseConstructor",
+      "kind": "call"
+    },
+    {
+      "group": "codec20InstanceFactory",
+      "witnessRole": "tailCodecConstructor",
+      "targetGroup": "codec20InstanceConstructor",
+      "kind": "tailJump"
+    },
+    {
+      "group": "mediaSourcePreparation",
+      "witnessRole": "callCodecActivation",
+      "targetGroup": "mediaSourceCodecActivation",
+      "kind": "call"
+    },
+    {
+      "group": "codec20Initialization",
+      "witnessRole": "callFormatValidation",
+      "targetGroup": "codec20FormatValidation",
+      "kind": "call"
+    },
+    {
+      "group": "codec20SampleProcessing",
+      "witnessRole": "callPacketCollector",
+      "targetGroup": "codec20PacketCollector",
+      "kind": "call"
+    },
+    {
+      "group": "codec20SampleProcessing",
+      "witnessRole": "callCoreSamples",
+      "targetGroup": "codec20CoreSampleDecode",
+      "kind": "call"
+    },
+    {
+      "group": "codec20DecoderPreparation",
+      "witnessRole": "callSampleAllocation",
+      "targetGroup": "codecSampleBufferAllocate",
+      "kind": "call"
+    },
+    {
+      "group": "codec20DecoderPreparation",
+      "witnessRole": "callContextInitialization",
+      "targetGroup": "codec20DecoderContextInitialization",
+      "kind": "call"
+    },
+    {
+      "group": "codec20DecoderContextInitialization",
+      "witnessRole": "callCoreContext",
+      "targetGroup": "codec20CoreContextInitialization",
+      "kind": "call"
+    },
+    {
+      "group": "mediaSourcePreparation",
+      "witnessRole": "callRiffPrefixReader",
+      "targetGroup": "mediaRiffPrefixReader",
+      "kind": "call"
+    },
+    {
+      "group": "mediaSourcePreparation",
+      "witnessRole": "callSourceStateInitializer",
+      "targetGroup": "mediaSourceStateInitialize",
+      "kind": "call"
+    },
+    {
+      "group": "mediaSourcePreparation",
+      "witnessRole": "callInitialProviderRead",
+      "targetGroup": "mediaSourceInitialRead",
+      "kind": "call"
+    },
+    {
+      "group": "mediaSourcePreparation",
+      "witnessRole": "callSourceSliceAccept",
+      "targetGroup": "mediaSourceSliceAccept",
+      "kind": "call"
+    },
+    {
+      "group": "mediaSourceStateInitialize",
+      "witnessRole": "tailProviderFactory",
+      "targetGroup": "mediaProviderFactory",
+      "kind": "tailJump"
+    },
+    {
+      "group": "contextSourceAttachment",
+      "witnessRole": "callPreparation",
+      "targetGroup": "sourcePreparationDispatch",
+      "kind": "call"
+    },
+    {
+      "group": "sourcePreparationDispatch",
+      "witnessRole": "callResidentPreparation",
+      "targetGroup": "residentReferencePreparation",
+      "kind": "call"
+    },
+    {
+      "group": "residentMediaArrayAdmission",
+      "witnessRole": "callRegistryInsertion",
+      "targetGroup": "residentMediaRegistryInsert",
+      "kind": "call"
+    },
+    {
+      "group": "sourceResidentPreparationEntry",
+      "witnessRole": "tailResidentPreparationSelection",
+      "targetGroup": "residentPreparationSelection",
+      "kind": "tailJump"
+    },
+    {
+      "group": "residentPreparationSelection",
+      "witnessRole": "tailImmediatePreparation",
+      "targetGroup": "residentNumericPreparation",
+      "kind": "tailJump"
+    },
+    {
+      "group": "residentPreparationSelection",
+      "witnessRole": "callDeferredAppend",
+      "targetGroup": "residentPreparationDeferredAppend",
+      "kind": "call"
+    },
+    {
+      "group": "residentPreparationDeferredDrain",
+      "witnessRole": "callNumericPreparation",
+      "targetGroup": "residentNumericPreparation",
+      "kind": "call"
+    },
+    {
+      "group": "residentNumericPreparation",
+      "witnessRole": "callRegistryFindInsert",
+      "targetGroup": "residentMediaRegistryFindInsert",
+      "kind": "call"
+    },
+    {
+      "group": "residentNumericPreparation",
+      "witnessRole": "callNumericStreamOpen",
+      "targetGroup": "residentNumericStreamOpen",
+      "kind": "call"
+    },
+    {
+      "group": "residentNumericPreparation",
+      "witnessRole": "callNumericStreamRead",
+      "targetGroup": "residentNumericStreamRead",
+      "kind": "call"
+    },
+    {
+      "group": "residentNumericPreparation",
+      "witnessRole": "publishResidentBuffer",
+      "targetGroup": "residentPreparedBufferPublication",
+      "kind": "call"
+    },
+    {
+      "group": "sourceCollectionResidentPreparation",
+      "witnessRole": "callSourcePreparation",
+      "targetGroup": "sourceResidentPreparationEntry",
+      "kind": "call"
+    },
+    {
+      "group": "nodeResidentSourcePreparation",
+      "witnessRole": "tailSourcePreparation",
+      "targetGroup": "sourceResidentPreparationEntry",
+      "kind": "tailJump"
+    }
+  ],
+  "sourceOwnerDependency": {
+    "ownerTransportKey": "anonymousOwnerSourceTransport",
+    "sourcePointerWitness": {
+      "group": "ownerSourceCodecSetup",
+      "role": "loadOwnerSource",
+      "prefixHex": "488bba"
+    },
+    "residentOwnerReadBindings": [
+      {
+        "field": "embeddedOwner",
+        "group": "mediaSourcePreparation",
+        "role": "addressEmbeddedOwner",
+        "prefixHex": "488d7a",
+        "operandBytes": 1
+      },
+      {
+        "field": "residentData",
+        "group": "mediaSourcePreparation",
+        "role": "readOwnerResidentPointer",
+        "prefixHex": "488b82",
+        "operandBytes": 4
+      },
+      {
+        "field": "residentByteCount",
+        "group": "mediaSourcePreparation",
+        "role": "readOwnerResidentByteCount",
+        "prefixHex": "8b82",
+        "operandBytes": 4
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected explicit native inputs, complete exception/unwind groups, completely covered unwindless leaves and selected factory/record/address-point bytes.",
+    "direct": "Owner-held selected source argument/kind feeds implementation choice and exact plugin registry lookup. Selected raw codec4 and codec20 static registrations retain the same media-source factory shape with different instance factories. Shared wrapper construction retains the same primary owner and a separate instance factory; an admitted preparation branch calls it and stores the codec instance before invoking its initialization slot. The shared media wrapper calls the codec sample-processing slot and publishes the returned sample pointer/frame counts. Selected raw20 packet collection, native decoding and planar copy feed this buffer interface; raw4 has distinct setup and packet/sample helpers. The media-source preparation caller invokes the original RIFF-prefix reader and carries its format/data/seek views into codec activation. Success at a data header does not require the encoded payload to be present yet. Media preparation addresses the same embedded owner as the existing source LockDataPtr consumer. Its resident pointer/count reads resolve arithmetically to that consumer output reference plus the existing media-reference data/count fields. The original source lookup and selected preparation/provider interfaces therefore share storage under a successful registry resolution. Resident kind3 passes bytes/count to the memory provider slot; it does not request a file by ID at that slot. The attachment routine stores the wrapper on the context and that context on the same primary owner. Original virtual preparation marks successful readiness, and the active/no-processor context sample consumer forwards its output descriptor to the same wrapper sample slot. A host cohort returns identical complete floats at the native frame quantum. Original resident-media array admission and exact-key hash insertion now populate the same registry consumed by the existing source LockDataPtr method. Their original pointer/count buffer record is retained and reaches native preparation/context PCM without an intermediate copy or modeled registry insertion. The original source-collection caller forwards retained source pointers to source preparation. That entry forwards the same native source aggregate through immediate preparation or deferred sorted-row collection/drain. Whole numeric preparation requests its file ID/plugin codec/language through original stream open/setup/read/close, publishes the original resident allocation under the source registry ID, and existing lookup/provider/codec/context consumers return complete PCM. Open failure, incomplete read followed by EOF and read error publish no resident bytes in bounded native cohorts. The selected node address-point preparation slot tail-forwards its embedded source at the same displacement used by the existing bank loader and node-play wrapper. Conditional native host cohorts execute this virtual preparation dispatch before numeric file requests and complete context PCM.",
+    "conditional": "Static initializer/list registration execution and unchanged registry; an earlier matching plugin ID wins. Readable bounded supplied tables, successful wrapper/codec allocation, provider/header success and selected virtual interface are required. The fallback header branch may rewrite source kind/argument; successful initialization is not decoded output. Offline native sample witnesses use supplied authenticated resident RIFF bytes, descriptor/owner state, available locks/allocations and an emulated CPU/thread environment. Platform models must not compute sample values. Original Opus output can be compared independently; native Vorbis output parity remains under investigation. Selected physical numeric Event/Sound paths now execute original source-read/set, exact-key resident-registry lookup, registered factory, whole media preparation and sample-wrapper output on the host CPU. Registry membership/bytes, owner readiness and provider interfaces are supplied conditions. Host Opus floats independently equal the emulator output; whole-prepared host Vorbis equals separately initialized host Vorbis, while reference equality remains distinct. Context attachment is admitted only with its voice-admission flag false, empty transition state, already-resident reference, no pending source and no optional sample processor. It is a downstream PCM transfer proof, not voice admission or a mixer/device result. A host cohort supplies authenticated physical WEM bytes as a typed ID/pointer/count input row and available empty table capacity; original admission creates the resident entry and buffer node. Input lifetime, manager selection, upstream package callbacks and actual managed/native API dispatch remain conditions, not live observations. The numeric stream-manager virtual interface selects an independently authenticated physical package occurrence under explicit package conditions and supplies its clear bytes. Readable source-row storage, available registry/vector capacity, manager immediate/deferred state, provider interfaces and buffer lifetime remain supplied conditions. Deferred and immediate cohorts preserve the same selected PCM. Actual game callbacks, package/language precedence and continuous Event pointer generations remain unresolved.",
+    "unresolved": "Live package/media registry population and buffer/allocation generations, asynchronous reads/refill/seek/lifetime, external descriptor ownership per posted Event, Vorbis emulator-to-host and host-to-reference differences, voice/effects/mixer/device output and audibility. Offline original codecs produce selected PCM; that does not establish an audible live Event."
+  },
+  "sampleBufferFields": [
+    {
+      "structure": "encodedSourceState",
+      "name": "remainingBytes",
+      "offset": 32,
+      "bytes": 4,
+      "group": "codec20PacketCollector",
+      "role": "readRemainingBytes",
+      "operandPrefixHex": "837b",
+      "operandSuffixHex": "00"
+    },
+    {
+      "structure": "encodedSourceState",
+      "name": "encodedPointer",
+      "offset": 24,
+      "bytes": 8,
+      "group": "codec20PacketCollector",
+      "role": "readEncodedPointer",
+      "operandPrefixHex": "488b43"
+    },
+    {
+      "structure": "encodedSourceState",
+      "name": "consumedBytes",
+      "offset": 40,
+      "bytes": 4,
+      "group": "codec20PacketCollector",
+      "role": "advanceConsumedBytes",
+      "operandPrefixHex": "0173"
+    },
+    {
+      "structure": "codecSampleDescriptor",
+      "name": "capacityFrames",
+      "offset": 16,
+      "bytes": 2,
+      "group": "codec20SampleProcessing",
+      "role": "publishCapacity",
+      "operandPrefixHex": "66897d"
+    },
+    {
+      "structure": "codecSampleDescriptor",
+      "name": "validFrames",
+      "offset": 18,
+      "bytes": 2,
+      "group": "codec20SampleProcessing",
+      "role": "publishValidFrames",
+      "operandPrefixHex": "668955"
+    },
+    {
+      "structure": "codecSampleDescriptor",
+      "name": "playbackFrames",
+      "offset": 24,
+      "bytes": 2,
+      "group": "codec20SampleProcessing",
+      "role": "publishPlaybackFrames",
+      "operandPrefixHex": "668955"
+    }
+  ],
+  "sampleDispatch": {
+    "group": "mediaSourceSampleBuffer",
+    "role": "dispatchCodecSamples",
+    "instructionPrefixHex": "ff50",
+    "slot": 40
+  },
+  "nativeGroupDependencies": [
+    {
+      "key": "mediaProviderFactory",
+      "ownerContract": "wwise_source_provider_dispatch_native",
+      "ownerGroup": "anonymousSourceProviderPreparation"
+    }
+  ]
+}

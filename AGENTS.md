@@ -36,6 +36,8 @@ Keep the active documentation hierarchy concise:
   including the extraction pipeline and Unity object identity.
 - `memory/runtime_capture_requirements.md` owns the shared backlog of required
   runtime captures across evidence lanes.
+- `memory/network_capture/` owns the live client-server protocol dossier: one
+  file per protocol layer, indexed by its own `README.md`.
 
 Fold durable observations, conclusions, and recovery status into the existing
 topic documents under `memory/`. Do not recreate one-file-per-investigation or
@@ -50,6 +52,7 @@ Know which side a path is on before routing content to it:
 | Path | State | Consequence for an agent |
 | --- | --- | --- |
 | `AGENTS.md`, `README.md`, `memory/`, `.codex/skills/` | tracked | the durable record; a conclusion survives only here |
+| `memory/runtime_capture_requirements.md` | ignored, kept in place | the capture backlog stays local on purpose |
 | `scripts/`, `webui/` sources | tracked, except `scripts/tests/` | code, docs, and reviewed contracts |
 | `scripts/tests/` | ignored, stays in place | the suite still runs locally; it is not part of the repo |
 | `webui/overrides/*.json`, `scripts/**/*.json` | tracked | the correction layer and the reviewed data-structure contracts |
@@ -65,6 +68,14 @@ the repository. Route a changing count, inventory, or per-build hash to
 session must not re-derive, in the owning `memory/` topic. Do not cite a
 `reports/`, `scratch/`, or `tmp/` path as the sole evidence for a documented
 conclusion.
+
+`memory/network_capture/` and `memory/runtime_capture_requirements.md` are
+deliberately untracked, so "write it into the network dossier" does not make a
+fact durable. That dossier remains the owning topic for protocol conclusions,
+but any rule another lane depends on, and any conclusion a later clean checkout
+must not re-derive, also gets stated in a tracked topic
+(`memory/game_data_recovery.md`, `memory/webui_recovery.md`) or in the owning
+code contract.
 
 ### What gets tracked
 
@@ -644,9 +655,12 @@ Script notes:
 and it is organised on two axes, each an entry point plus a folder:
 `memory/webui_recovery.md` + `memory/webui/` own how original game data
 reaches the WebUI; `memory/game_data_recovery.md` + `memory/game_data/` own
-how the original binary is understood. `memory/webui/` holds one guide per
-active page plus shared Story reconstruction; `memory/game_data/` holds one
-file per installed-data lane.
+how the original binary is understood; `memory/network_capture/` owns the
+live client-server protocol. `memory/webui/` holds one guide per active page
+plus shared Story reconstruction; `memory/game_data/` holds one file per
+installed-data lane; `memory/network_capture/` holds one file per protocol
+layer and is indexed by its own `README.md`.
+
 Treat these documents as living sources of truth:
 
 - update the current conclusion, evidence boundary, essential commands, and
@@ -710,8 +724,12 @@ Story, game-data, asset, or exporter semantics.
 page contracts, and Story reconstruction. `memory/game_data_recovery.md` plus
 `memory/game_data/` own how the original binary is understood -- raw formats,
 containers, native gates, Unity object identity, extraction, and per-lane
-semantics. WebUI page contracts are owned by their page guides; cross-page
-export and frontend rules remain in `memory/webui_recovery.md`.
+semantics. `memory/network_capture/` owns the runtime client-server protocol:
+framing, transport attribution, login and payload semantics, and the capture
+plan that closes each gap. WebUI page contracts are owned by their page
+guides; cross-page export and frontend rules remain in
+`memory/webui_recovery.md`.
+
 Cross-topic improvement plans should be split into the recovery queues of those
 owning files rather than maintained as a second status source.
 
@@ -812,6 +830,14 @@ receipts withhold claims. Entry-only observations cannot supply the return or
 nesting claims of historical paired recordings. Store raw sessions in ignored
 paths and record durable conclusions in the owning memory topic.
 
+Before requesting another EndfieldCapture run, review the recorder ABI/read
+programs and the offline consumer against the exact unresolved question. Patch
+known defects, add bounded regression cases, and replay affected saved captures
+first. Establish which missing fields/phases can decide the question and what
+comparison will consume them. Do not request an unchanged repeat when its
+recipe lacks the needed operands or producer/consumer identity. Build/help,
+more rows, and zero queue loss alone do not establish capture sufficiency.
+
 Append every newly identified required game-data capture to
 [`memory/runtime_capture_requirements.md`](memory/runtime_capture_requirements.md).
 Extend a matching entry instead of duplicating it. Record the unresolved
@@ -819,7 +845,9 @@ question, required fields and phases, representative cases, acceptance
 criteria, and owning-topic/contract links. Keep accepted entries with their
 evidence boundary so later agents can reuse them; native addresses and hashes
 remain in contracts or generated reports. Do not create separate capture
-backlogs or rely on chat-only checklists.
+backlogs or rely on chat-only checklists. That backlog file is local-only (see
+Tracked versus local-only paths), so a capture requirement another lane must
+honour also gets an entry in that lane's own recovery queue.
 
 The current checkout does not ship a separate `endfield-story-recovery`
 skill folder. For that workflow, use the active docs (`README.md`,

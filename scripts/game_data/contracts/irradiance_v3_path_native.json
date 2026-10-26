@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.irradiance-v3-path-native-contract.v13",
+  "schema": "endfield.irradiance-v3-path-native-contract.v14",
   "status": "validated",
   "nativeInputs": {
     "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -630,10 +630,179 @@
     ],
     "boundary": "The selected room handler copies the calculated record byte count into a context-owned allocation and packs its allocation descriptor into a 0x58-byte callback payload. The selected callback path clones that payload, reads the record allocation descriptor's first word at +0x28, binds it through a native command slot, and requests a positive-count virtual dispatch with ceil(grid-cell count / 64), one, one as its group dimensions. This is a structural consumer of the copied room records. It does not decode an individual 8- or 16-byte record, prove successful GPU execution, or establish a texture format."
   },
+  "nativeRegionRoomBindings": {
+    "codeWindows": [
+      {
+        "role": "property global construction",
+        "startRva": "0x3f6083",
+        "endRva": "0x3f608f",
+        "sha256": "049B046C1947EBDF4A2CC63530816273C161C4E3D2E15C080C598DB0EDEF4C26"
+      },
+      {
+        "role": "property constructor entry",
+        "startRva": "0x4f7fb0",
+        "endRva": "0x4f7fc5",
+        "sha256": "184B9E0540C6D69D361F453E84FBBE3B58D9CA398D4960665EB28ADFFC364B29"
+      },
+      {
+        "role": "property registrations",
+        "startRva": "0x4f7fd5",
+        "endRva": "0x4f8035",
+        "sha256": "2E024F14B84C929C461A6AFB5FCD470BCB4C66481B2B0A920C9AAB53BDB6FAEE"
+      },
+      {
+        "role": "property identifier constructor",
+        "startRva": "0xd1860",
+        "endRva": "0xd187d",
+        "sha256": "E6F77120DD8297D9B14656538A3BED462FC561E3332C1A23072A67C572F175B2"
+      },
+      {
+        "role": "operation selector",
+        "startRva": "0x1af720",
+        "endRva": "0x1af75e",
+        "sha256": "8EA5A6B96609FA20456C9C68AB2029322D6E206B5CF49AB9C343C0E113623D93"
+      },
+      {
+        "role": "descriptor binding wrapper",
+        "startRva": "0x11ebe90",
+        "endRva": "0x11ebeaf",
+        "sha256": "5993CB3051DE2C57A9F23D5FDDE88B6E5C78464322C4DFA535C5DC106AEED7FC"
+      }
+    ],
+    "propertyTableBaseRva": "0x1d0f230",
+    "propertyTableLoadRva": "0x3f6083",
+    "propertyTableLoadHex": "488D0DA6919101",
+    "propertyTableConstructorCallRva": "0x3f608a",
+    "propertyConstructorRva": "0x4f7fb0",
+    "propertyIdentifierConstructorRva": "0xd1860",
+    "slots": [
+      {
+        "role": "configuration allocation",
+        "name": "_Input0",
+        "tableOffset": "0x18",
+        "constructorSlotRva": "0x4f8015",
+        "literalLoadRva": "0x4f8019",
+        "literalRva": "0x186dbc0",
+        "constructorCallRva": "0x4f8020",
+        "callbackPropertyLoadRva": "0x16ad9f1",
+        "callbackPropertyLoadHex": "488D1550186600",
+        "callbackArgumentWindow": {
+          "role": "configuration allocation",
+          "startRva": "0x16ad9ed",
+          "endRva": "0x16ada0f",
+          "sha256": "528FC80F574EDE189CF434B7C016759660D38D89124D3CF812B01F13230E456B"
+        },
+        "callbackCallRva": "0x16ada0a",
+        "callbackTargetRva": "0x11ebe90"
+      },
+      {
+        "role": "copied room records",
+        "name": "_Input1",
+        "tableOffset": "0x1c",
+        "constructorSlotRva": "0x4f8025",
+        "literalLoadRva": "0x4f8029",
+        "literalRva": "0x186dbb8",
+        "constructorCallRva": "0x4f8030",
+        "callbackPropertyLoadRva": "0x16ada13",
+        "callbackPropertyLoadHex": "4C8D0532186600",
+        "callbackArgumentWindow": {
+          "role": "copied room records",
+          "startRva": "0x16ada0f",
+          "endRva": "0x16ada2e",
+          "sha256": "D27A26BC210EB023C37E7A3FEE14A8A5200BBC61077300886DFA4D6D362DC1A9"
+        },
+        "callbackCallRva": "0x16ada29",
+        "callbackTargetRva": "0x324fc0"
+      },
+      {
+        "role": "first resource handle",
+        "name": "_Output0",
+        "tableOffset": "0x8",
+        "constructorSlotRva": "0x4f7fd5",
+        "literalLoadRva": "0x4f7fd9",
+        "literalRva": "0x186dbd8",
+        "constructorCallRva": "0x4f7fe0",
+        "callbackPropertyLoadRva": "0x16ada44",
+        "callbackPropertyLoadHex": "4C8D05ED176600",
+        "callbackArgumentWindow": {
+          "role": "first resource handle",
+          "startRva": "0x16ada2e",
+          "endRva": "0x16ada6a",
+          "sha256": "E787CB13491200445563116B55F892D344B77E1551204746BA6C17F9EA1D1559"
+        },
+        "callbackCallRva": "0x16ada65",
+        "callbackTargetRva": "0x325fa0"
+      },
+      {
+        "role": "second resource handle",
+        "name": "_Output1",
+        "tableOffset": "0xc",
+        "constructorSlotRva": "0x4f7fe5",
+        "literalLoadRva": "0x4f7fe9",
+        "literalRva": "0x186dbc8",
+        "constructorCallRva": "0x4f7ff0",
+        "callbackPropertyLoadRva": "0x16ada80",
+        "callbackPropertyLoadHex": "4C8D05B5176600",
+        "callbackArgumentWindow": {
+          "role": "second resource handle",
+          "startRva": "0x16ada6a",
+          "endRva": "0x16adaa6",
+          "sha256": "A3F8AF29AE83D40C1FE6394D68558E88D5786CB8CDED664D40B43505A3202AAD"
+        },
+        "callbackCallRva": "0x16adaa1",
+        "callbackTargetRva": "0x325fa0"
+      }
+    ],
+    "selector": {
+      "callbackSetup": {
+        "role": "payload operation key",
+        "rva": "0x16ad9de",
+        "hex": "488BF1488D5120488B09"
+      },
+      "callbackCallRva": "0x16ad9e8",
+      "functionRva": "0x1af720",
+      "payloadKeyOffset": "0x20",
+      "entryStride": "0x68",
+      "instructions": [
+        {
+          "role": "read supplied key",
+          "rva": "0x1af738",
+          "hex": "448B02"
+        },
+        {
+          "role": "compare entry first word",
+          "rva": "0x1af740",
+          "hex": "443900"
+        },
+        {
+          "role": "advance entry",
+          "rva": "0x1af748",
+          "hex": "4883C068"
+        },
+        {
+          "role": "return matched ordinal",
+          "rva": "0x1af756",
+          "hex": "418BC1"
+        }
+      ],
+      "keyCopyWindow": {
+        "role": "handler key to callback payload",
+        "startRva": "0x42c763",
+        "endRva": "0x42c77d",
+        "sha256": "0850F568DB314C01220803942397FD309A2223DB1640F1AC87161182A884B8BF"
+      }
+    },
+    "descriptorBindingCall": {
+      "role": "descriptor wrapper forwards three allocation words",
+      "callRva": "0x11ebea5",
+      "targetRva": "0x1d8700"
+    },
+    "boundary": "Direct, conditional on the selected room callback: the same global property-name registrations join configuration-allocation descriptor words to _Input0, copied-record allocation first word to _Input1, and two resolved resource-handle first words to _Output0/_Output1. The callback selects an operation ordinal by comparing its supplied key to the first word of stride-0x68 entries, then reuses that ordinal for record/output bindings and dispatch. These generic slot names do not decode room record words, identify the selected shader/kernel, assign tuple axes, establish texture formats or prove GPU execution."
+  },
   "evidenceBoundary": {
     "direct": "The managed ReloadIndexFileV3 path at +0x20 reaches native volume +0x220 and a parser-retained +0xB0 key. The selected parser calls a native lookup with that key; on lookup success it constructs a stream object from the result pair. The stream allocates result word1 plus 0xC8 bytes, stores result word1 as its requested buffer size, and later returns its stored data-buffer pointer to the V3 cursor. Its constructor sets request type and queue partition to zero, leaves the multi-read descriptor null, and queues the object on a native singleton. That singleton's thread drains the pending vector, retrieves the type-zero request and invokes its read branch. The branch passes request +0x78 as backend offset, +0x68 as data buffer, and +0x70 as requested size to an accumulating read helper. It sends success status zero to the completion dispatcher only after the returned byte count equals the requested size. The installed completion callback writes status and releases a reference. A sibling worker on the same singleton has a similar exact-count gate, but is not needed to establish this selected route. The selected parser obtains a buffer pointer only after status zero. The parser checks V3 magics 0x03000002/03 and handles scene records in 36-byte units and Gacha records in 32-byte units. Its complete selected body has no final cursor-offset-versus-stream-size or EOF equality comparison; both u8 and u32 cursor leaf readers load pointer-plus-offset and advance without a local bound comparison. Both the scene StreamingInNewMap and Gacha CreateGachaIV paths append the selected managed literal /v3/index.bytes through System.String.Concat before their stored paths can reach SetMapV3. UpdateGachaIV compares and replaces its Gacha path using the same suffix. In the selected HGIrradianceVolumeProxyEntityConvertFunc.ConvertFrom branch, a static PROP_ID_IV_INDEX_PATH is passed to ConvertStringFrom_Injected and its returned string is concatenated with that suffix before staging manager +0x28.",
-    "conditional": "The suffix join applies when the respective scene, Gacha, or proxy path branch is selected. A separate selected caller supplies its +0x160 string to a room handler that derives its directory through the last forward slash, appends a formatted regionIv_%s_%u.bytes basename, and passes that assembled local to the checked path-keyed lookup and stream constructor. A ready-buffer branch in that handler checks room magic 0x1000, reads the header-size word, two twelve-byte triples, and three grid dimensions, then copies grid-cell count times eight or sixteen bytes from buffer plus header size under a configuration branch. It hands the copy's allocation descriptor through a cloned callback payload to a native command binding and requests a virtual dispatch sized as ceil(grid-cell count / 64) by one by one. The current seven room files fit the sixteen-byte variant. The live supplied-root value and selected room file remain open. If the resource registry has no matching registered provider, its default provider is returned. That default provider's open/read virtual slots lead to the selected KERNEL32 CreateFileW, SetFilePointerEx, and ReadFile imports. This static fallback does not establish that an IV request selected the default provider at runtime.",
-    "unresolved": "The supplied scene/Gacha root strings, the serialized proxy property value, and native lookup normalization are not joined to a unique authenticated VFS index.bytes entry. The provider selected for the IV request, payload record meaning, actual GPU execution, and texture format are not identified."
+    "conditional": "The suffix join applies when the respective scene, Gacha, or proxy path branch is selected. A separate selected caller supplies its +0x160 string to a room handler that derives its directory through the last forward slash, appends a formatted regionIv_%s_%u.bytes basename, and passes that assembled local to the checked path-keyed lookup and stream constructor. A ready-buffer branch in that handler checks room magic 0x1000, reads the header-size word, two twelve-byte triples, and three grid dimensions, then copies grid-cell count times eight or sixteen bytes from buffer plus header size under a configuration branch. It hands the copy's allocation descriptor through a cloned callback payload to a native command binding and requests a virtual dispatch sized as ceil(grid-cell count / 64) by one by one. The authenticated global property registrations join the room callback's configuration allocation to _Input0, copied-record allocation first word to _Input1, and two resolved resource-handle first words to _Output0/_Output1. A keyed native entry lookup selects the operation ordinal reused for record/output bindings and dispatch; these generic slots do not identify record fields or the selected shader/kernel. The current seven room files fit the sixteen-byte variant. The live supplied-root value and selected room file remain open. If the resource registry has no matching registered provider, its default provider is returned. That default provider's open/read virtual slots lead to the selected KERNEL32 CreateFileW, SetFilePointerEx, and ReadFile imports. This static fallback does not establish that an IV request selected the default provider at runtime.",
+    "unresolved": "The supplied scene/Gacha root strings, the serialized proxy property value, and native lookup normalization are not joined to a unique authenticated VFS index.bytes entry. The provider selected for the IV request, payload record meaning, selected room shader/kernel, actual GPU execution, and texture format are not identified."
   },
   "managedIndexPath": {
     "literal": "/v3/index.bytes",

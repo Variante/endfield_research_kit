@@ -1,0 +1,194 @@
+{
+  "schema": "endfield.collision-shape-index-native.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "actorUserdata": {
+    "complexShape": 8
+  },
+  "selection": {
+    "auxiliaryKinds": [
+      "complexMesh"
+    ],
+    "auxiliaryIndex": 0,
+    "ordinaryIndexBase": 1
+  },
+  "queryFaceEvidence": {
+    "unavailableFaceId": 4294967295
+  },
+  "codeWindows": [
+    {
+      "role": "complex_constructor",
+      "rva": 13228336,
+      "bytes": 955,
+      "sha256": "9ae0cc6f83ddb0b3e9e6007266622288844ad5a60b3ebb2b0b7d766abcbc5349",
+      "runtimeRanges": [
+        [
+          13228336,
+          13228687,
+          29403844
+        ],
+        [
+          13228687,
+          13229273,
+          29403868
+        ],
+        [
+          13229273,
+          13229291,
+          29403888
+        ]
+      ]
+    },
+    {
+      "role": "ordinary_constructor",
+      "rva": 13234144,
+      "bytes": 784,
+      "sha256": "a43629ec65c1e0f5df4f2669a30580d4104d1316cb2773f5af689c235c589ac4",
+      "runtimeRanges": [
+        [
+          13234144,
+          13234928,
+          28586672
+        ]
+      ]
+    },
+    {
+      "role": "parameter_lookup",
+      "rva": 13236672,
+      "bytes": 174,
+      "sha256": "fe1900b63ae30399999f27388b8341aa9845bb1b0eb3cc8bd99cea8c99afec3e",
+      "runtimeRanges": [
+        [
+          13236672,
+          13236766,
+          29369000
+        ],
+        [
+          13236766,
+          13236833,
+          29404100
+        ],
+        [
+          13236833,
+          13236846,
+          29404120
+        ]
+      ]
+    },
+    {
+      "role": "hit_writer",
+      "rva": 2835504,
+      "bytes": 360,
+      "sha256": "8216cd445967da411f6dd49c10a19d555a1077c58547f228e4f118740abcdd34",
+      "runtimeRanges": [
+        [
+          2835504,
+          2835864,
+          28635740
+        ]
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "role": "complex_constructor",
+      "offset": 589,
+      "hex": "498b7f104883e7f8"
+    },
+    {
+      "role": "complex_constructor",
+      "offset": 718,
+      "hex": "4c896f08",
+      "field": "actorUserdata.complexShape",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "role": "complex_constructor",
+      "offset": 925,
+      "hex": "49894d10"
+    },
+    {
+      "role": "parameter_lookup",
+      "offset": 24,
+      "hex": "85d27528"
+    },
+    {
+      "role": "parameter_lookup",
+      "offset": 28,
+      "hex": "488b41104883e0f8"
+    },
+    {
+      "role": "parameter_lookup",
+      "offset": 45,
+      "hex": "488b4008",
+      "field": "actorUserdata.complexShape",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "role": "parameter_lookup",
+      "offset": 77,
+      "hex": "83ee01",
+      "field": "selection.ordinaryIndexBase",
+      "operandOffset": 2,
+      "operandBytes": 1
+    },
+    {
+      "role": "parameter_lookup",
+      "offset": 118,
+      "hex": "ff90b8000000"
+    },
+    {
+      "role": "ordinary_constructor",
+      "offset": 162,
+      "hex": "488b0f488bd04c8b81a0000000488bcf41ffd0"
+    },
+    {
+      "role": "hit_writer",
+      "offset": 210,
+      "hex": "c7452c01000000",
+      "field": "selection.ordinaryIndexBase",
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "role": "hit_writer",
+      "offset": 260,
+      "hex": "41ff92b8000000"
+    },
+    {
+      "role": "hit_writer",
+      "offset": 267,
+      "hex": "488b442460ffc348394708"
+    },
+    {
+      "role": "hit_writer",
+      "offset": 191,
+      "hex": "baffffffff",
+      "field": "queryFaceEvidence.unavailableFaceId",
+      "operandOffset": 1,
+      "operandBytes": 4
+    },
+    {
+      "role": "hit_writer",
+      "offset": 187,
+      "hex": "84c07577"
+    },
+    {
+      "role": "hit_writer",
+      "offset": 310,
+      "hex": "488b4c2448488b01ff5060"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected code windows and exact exception-table parent triples establish constructor, parameter lookup and hit-writer bodies.",
+    "direct": "The complex constructor stores its returned shape in masked actor userdata +8. Parameter index zero reads that separate shape; positive indices subtract one and enumerate the actor. The ordinary constructor explicitly attaches its created shape to the actor, and the hit writer compares the returned shape with enumerated actor shapes using a one-based result. The hit writer stores an unavailable face sentinel when its virtual triangle-geometry getter fails; a nonsentinel returned face therefore witnesses the successful getter and returned-object remap consumer path, without revealing the returned geometry pointer value or concrete vtable.",
+    "conditional": "Positive descriptor candidates exclude the separately stored complexMesh record. Successful attachment, skipped constructors, later attachment/removal, actor shape reordering and exact mesh geometry remain independent conditions. Matching parameter tuples never prove geometry.",
+    "unresolved": "Actual per-constructor success, exact returned-shape geometry and live attachment history are not supplied by this static contract."
+  }
+}

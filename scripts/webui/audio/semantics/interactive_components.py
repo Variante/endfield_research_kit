@@ -6,6 +6,7 @@ from scripts.source_paths import ExportLayout
 import hashlib
 import struct
 from collections import defaultdict
+from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -18,6 +19,7 @@ from scripts.game_data.memorypack.interactive import (
     find_interactive_audio_property_maps,
     parse_interactive_audio_component,
 )
+from scripts.game_data.string_pool import export_string_pool
 from scripts.game_data.interactive_binary import decode_interactive_table
 from scripts.game_data.levelscript_binary import (
     find_embedded_action_serialized_map_audio,
@@ -96,7 +98,10 @@ def collect_interactive_component_contexts(
     table_source_fingerprint = ""
     table: dict[str, Any] | None = None
     if table_decoder is None:
-        table_decoder = decode_interactive_table
+        table_decoder = partial(
+            decode_interactive_table,
+            strings=export_string_pool(ExportLayout(export_root).game / "Json"),
+        )
     table_versions: list[tuple[str, Path, bytes, str]] = []
     for source_root in ("game",):
         table_path = (

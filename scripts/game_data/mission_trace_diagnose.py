@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.game_data import mission_trace_inspect as inspector
+from scripts.game_data.mission_trace_invocations import Invocations, InvocationError
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -48,6 +49,11 @@ def diagnose_session(session: Path, output_dir: Path, *, limits: inspector.Limit
         report["failureReason"] = summary.get("failureReason")
         report["firstFailure"] = summary.get("firstFailure")
         report["retainedBindingsConsistent"] = True
+        paired = summary.get('schema') == 'endfieldCapture.missionTraceSummary.v3'
+        if paired:
+            report['schema'] = 'endfield.mission-trace-diagnostic.v2'
+        pair_validator = Invocations() if paired else None
+        first_pair_failure = None
         journal = inspector.safe_path(session, "mission-trace/events.jsonl")
         digest, input_bytes, calls, states = hashlib.sha256(), 0, Counter(), Counter()
         seen, failures, output_bytes = set(), 0, 0
@@ -59,7 +65,8 @@ def diagnose_session(session: Path, output_dir: Path, *, limits: inspector.Limit
                 inspector.require(report["decodedRows"] < limits.rows, "diagnostic row budget exceeded")
                 digest.update(line)
                 row = inspector.parse_json(line, "mission-trace/events.jsonl")
-                inspector.require(isinstance(row, dict) and row.get("schema") == "endfieldCapture.missionTraceEntry.v1", "invalid diagnostic row schema")
+                inspector.require(isinstance(row, dict) and row.get("schema") == ('endfieldCapture.missionTraceEntry.v2' if paired
+                        else 'endfieldCapture.missionTraceEntry.v1'), "invalid diagnostic row schema")
                 index = inspector.integer(row.get("hookIndex"), "hookIndex", len(hooks) - 1)
                 hook = hooks[index]
                 inspector.require(row.get("hook") == hook["name"], "diagnostic hook binding mismatch")
@@ -67,7 +74,8 @@ def diagnose_session(session: Path, output_dir: Path, *, limits: inspector.Limit
                 inspector.require(sequence > 0 and sequence not in seen, "duplicate or zero diagnostic sequence")
                 seen.add(sequence)
                 fields = row.get("fields")
-                inspector.require(isinstance(fields, list) and len(fields) == len(hook["fields"]), "diagnostic field count mismatch")
+                inspector.require(isinstance(fields, list) and len(fields) == (0 if paired and row.get('phase') == 'unwind'
+                        else len(hook["fields"])), "diagnostic field count mismatch")
                 decoded = [inspector.decode_field(field, observed, profile.get("enumDefinitions", {}))
                            for field, observed in zip(hook["fields"], fields)]
                 for number, field in enumerate(decoded):
@@ -80,6 +88,17 @@ def diagnose_session(session: Path, output_dir: Path, *, limits: inspector.Limit
                 calls[index] += 1
                 payload = {"sequence": sequence, "qpc": row.get("qpc"), "hook": hook["name"],
                            "args": row.get("args"), "captureAdmitted": False, "fields": decoded}
+                if paired:
+                    inspector.require(row.get('phase') in {'entry','enter','return','unwind'}, 'invalid diagnostic phase')
+                    payload['phase'] = row['phase']
+                    for name in ('invocationId','parentInvocationId','depth'):
+                        payload[name] = inspector.integer(row.get(name), 'diagnostic '+name)
+                    payload['invocationAdmitted'] = False
+                    if first_pair_failure is None:
+                        try:
+                            pair_validator.observe(row,hook)
+                        except (InvocationError,KeyError,TypeError) as exc:
+                            first_pair_failure={'sequence':sequence,'hook':hook['name'],'detail':str(exc)[:1024]}
                 encoded = (json.dumps(payload, ensure_ascii=False) + "\n").encode("utf-8")
                 output_bytes += len(encoded)
                 inspector.require(len(encoded) <= limits.output_line_bytes and output_bytes <= limits.output_bytes,
@@ -87,8 +106,25 @@ def diagnose_session(session: Path, output_dir: Path, *, limits: inspector.Limit
                 destination.write(encoded)
                 report["decodedRows"] += 1
         report["inputs"]["mission-trace/events.jsonl"] = {"bytes": input_bytes, "sha256": digest.hexdigest()}
-        inspector.require(all(calls[index] == receipt["calls"] for index, receipt in enumerate(summary["hooks"])),
-                          "diagnostic journal/summary hook counts differ")
+        if paired:
+            report['pairTransportDiagnostic']={**pair_validator.finish(False),
+                'firstFailure':first_pair_failure,'captureAdmitted':False,
+                'boundary':'Structural pairing of retained rows only; a closed journal cannot rule out descendants omitted by an early hook disable.'}
+        # Provider calls count attempts before queue admission. A failed queue
+        # must explain the missing rows, never require attempted == written.
+        report['hookLosses'] = []
+        for index, receipt in enumerate(summary['hooks']):
+            attempted = inspector.integer(receipt.get('calls'), 'diagnostic attempted hook calls')
+            recorded = calls[index]
+            inspector.require(recorded <= attempted,
+                f"diagnostic hook count exceeds attempts: hook={hooks[index]['name']}, attempted={attempted}, recorded={recorded}")
+            if attempted != recorded:
+                report['hookLosses'].append({'hook': hooks[index]['name'],
+                    'attempted': attempted, 'recorded': recorded, 'missing': attempted-recorded})
+        missing = sum(r['missing'] for r in report['hookLosses'])
+        expected_missing = inspector.integer(summary.get('dropped', 0), 'diagnostic dropped records')
+        inspector.require(missing == expected_missing,
+            f'diagnostic lost-row accounting differs: expectedDropped={expected_missing}, actualMissing={missing}')
         inspector.require(report["decodedRows"] == summary.get("written"), "diagnostic journal/summary written count differs")
         inspector.require(states["unreadable"] == summary.get("unreadableFields") and states["truncated"] == summary.get("truncatedFields"),
                           "diagnostic journal/summary failed field counts differ")
@@ -115,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  sequence={field['sequence']} hook={field['hook']} field={field['label']} state={field['stateName']} read={field['read']}")
     if report.get("detail"):
         print(report["detail"])
+    for loss in report.get('hookLosses', [])[:64]:
+        print(f"  hook={loss['hook']} attempted={loss['attempted']} recorded={loss['recorded']} missing={loss['missing']}")
     return 0 if report["status"] == "diagnosed" else 1
 
 

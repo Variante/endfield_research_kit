@@ -1,0 +1,205 @@
+{
+  "schema": "endfield.buff-name-cache-constructor-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-conditional-cache-constructor-defaults",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "constructor": {
+      "entryRva": 436256,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 436256,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              436256,
+              436390,
+              212479716
+            ],
+            "tableRowRva": 251750252,
+            "runtimeTripleRawHex": "20A80600A6A80600E42EAA0C",
+            "codeBytes": 134,
+            "unwindRawHex": "110D03000D01180006300000AC541900",
+            "unwindVersion": 1,
+            "unwindFlags": 2,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              3110122,
+              3110180,
+              212479784
+            ],
+            "tableRowRva": 251927792,
+            "runtimeTripleRawHex": "EA742F0024752F00282FAA0C",
+            "codeBytes": 58,
+            "unwindRawHex": "2100000020A80600A6A80600E42EAA0C",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  3110122,
+                  3110180,
+                  212479784
+                ],
+                "parent": [
+                  436256,
+                  436390,
+                  212479716
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "ownedWindows": [
+        {
+          "startRva": 436256,
+          "endRva": 436390,
+          "sha256": "9C22744EA3544E0097A9C250CA9F620C66696EEF6F9DFC2A1B1DDFDAA4914A3B"
+        },
+        {
+          "startRva": 3110122,
+          "endRva": 3110180,
+          "sha256": "408C544971396D2BAA56063F44452CA14E734579D0E8C1041B62BAFBDBF929BD"
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 436256,
+          "endRva": 436390,
+          "sha256": "9C22744EA3544E0097A9C250CA9F620C66696EEF6F9DFC2A1B1DDFDAA4914A3B"
+        },
+        {
+          "startRva": 3110122,
+          "endRva": 3110179,
+          "sha256": "475739DB02496FE110D90AE1D3C2A47D93894EECAA77A400C8C34FEEE9A4E470"
+        }
+      ],
+      "paddingWindows": [
+        {
+          "startRva": 3110179,
+          "endRva": 3110180,
+          "sha256": "1DD8312636F6A0BF3D21FA2855E63072507453E93A5CED4301B364E91C9D87D6"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 434750,
+        "targetRva": 436256
+      }
+    },
+    "baseInitializer": {
+      "entryRva": 436400,
+      "ownershipKind": "closedNoCallProgram",
+      "unwindFamily": null,
+      "ownedWindows": [],
+      "codeWindows": [
+        {
+          "startRva": 436400,
+          "endRva": 436669,
+          "sha256": "165D248D5606726C2406E6463E3B512EA5EF5968B7DD1921AA2D9EE9384CAC51"
+        }
+      ],
+      "paddingWindows": [],
+      "actualParentCall": {
+        "siteRva": 436280,
+        "targetRva": 436400
+      }
+    },
+    "nodeInitializer": {
+      "entryRva": 3174660,
+      "ownershipKind": "closedNoCallProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 3174660,
+          "endRva": 3174696,
+          "sha256": "C1C17E95CD5119C72637FC0D803B0FD336FBBA43C99722F27E014D07DD43BB2A"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 436372,
+        "targetRva": 3174660,
+        "instructionHex": "E86BC82900"
+      },
+      "ownedWindows": [],
+      "paddingWindows": []
+    }
+  },
+  "layout": {
+    "upperThreshold": 0,
+    "lowerThreshold": 8,
+    "upperFactor": 16,
+    "lowerFactor": 20,
+    "flags": 24,
+    "generation": 28,
+    "copiedByte": 33,
+    "removedHeader": 40,
+    "removedNamespace": 48,
+    "removedName": 56,
+    "removedCount": 64,
+    "usedCount": 72,
+    "capacity": 80,
+    "freeHeader": 88,
+    "freeNamespace": 96,
+    "freeName": 104,
+    "freeRecord": 112,
+    "nodes": 120
+  },
+  "defaults": {
+    "capacity": 32,
+    "upperFactorBits": 1056964608,
+    "lowerFactorBits": 1045220557,
+    "markerFlagsWord": 257,
+    "removedHeader": 2,
+    "freeHeader": 1
+  },
+  "externalCalls": {
+    "allocator": 1709936,
+    "rehash": 435952,
+    "swap": 179936,
+    "free": 1708640
+  },
+  "thresholdConstant": {
+    "rva": 176958456,
+    "rawHex": "0000005F",
+    "sha256": "B894454077582B5D5AAD1F58872264AFC2DDB8D95683FB8C005E3F98C2AA26F8"
+  },
+  "conditionalDomain": {
+    "baseStorage": "Valid writable cache and stack frame; selected source stack byte readable; writes do not alias that byte or code/constant storage; stable memory and normal instruction completion.",
+    "arithmetic": "Normal SSE completion, including any inexact truncation exception; constant pool is the authenticated positive binary32 two-to-63 value. Selected normal positive products are exact under every MXCSR rounding mode.",
+    "allocator": "Normal ABI completion returns valid disjoint nonwrapping storage for the requested bytes; preserves cache capacity/markers/counts/frame. These allocator postconditions are assumed, not proved or observed.",
+    "nodeStorage": "Returned node array is disjoint from cache, stack and source byte; nodeBase+32*capacity is valid and nonwrapping."
+  },
+  "evidenceBoundary": {
+    "exact": "Complete constructor exception-family bytes and partition; complete closed base/initializer local CFGs and frames; actual calls and exact constant-pool bytes.",
+    "direct": "Base writes defaults and copies one input stack byte; constructor establishes distinct nonzero markers, supplies capacity times node stride to allocator, and joins returned storage to initializer.",
+    "conditional": "Under valid stable disjoint storage and normal completion, base returns zero counts and exact default thresholds; cold rehash is unselected. Under explicit allocator postconditions, returned nodes receive free-marker fields; padding remains unconstrained.",
+    "structuralOnly": "Cold rehash/swap/free controls are inventoried but no cold child semantics or allocator execution is inferred.",
+    "unresolved": "Allocator postconditions, future population capacity/history, duplicate insertion, named primitive class identity, concrete DamageType sharing/provider and complete positive stored parent/root admission."
+  }
+}

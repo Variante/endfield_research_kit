@@ -1,0 +1,38 @@
+{
+  "schema": "endfield.dynamic-mission-key-source-native-claims.v3",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_scalar_components_native.json",
+      "schema": "endfield.dynamic-scalar-components-native-contract.v3"
+    },
+    {
+      "path": "dynamic_mission_condition_consumers_native.json",
+      "schema": "endfield.dynamic-mission-condition-consumers-native-contract.v3"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "writer": {
+    "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+    "method": "RegisterEntityCaredCondition"
+  },
+  "query": {
+    "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+    "method": "_GetCurrentConditionValue"
+  },
+  "poolField": "m_conditionPool",
+  "evidenceBoundary": {
+    "exact": "Selected source-owned methods and ordinary Int32 runtime-key return; complete bounded writer instructions and declared unwind membership.",
+    "direct": "The selected GetStrKey return flows through R14D into the returned anonymous slot's Int32 lane at +8. The selected query reads that lane as its Dictionary<Int32,Int32> request key. The actual GetStrKey Boolean argument is zero. Its selected complete normal family returns the successful referenced Int32 lookup output, a typed counter candidate forwarded to the same UInt64/Int32 dictionary setter request on miss, or -1 when its anonymous carrier Int32 lane is zero.",
+    "conditional": "The bounded writer block is reached with valid native arguments and receiver, its pool is nonnull, and returning callees follow normal Win64 preservation and do not corrupt saved values. Combining writes and reads requires the same returned slot, pool/hotSlot/index, stable storage and lookup/context results, valid record selection, and nonwrapping index/position arithmetic.",
+    "unresolved": "Complete registration entry/lifecycle, helper implementation identity beyond the actual call/context, boxed-to-unboxed missionKey label, GetStrKey result values and allocation/dedup/stability behavior, live pool/storage selection and execution remain unresolved. The returned Int32 is distinct from the authored string index."
+  },
+  "providerValueSource": {
+    "dependency": "dynamic_mission_string_providers_native_claims.json",
+    "originalBoolean": false
+  }
+}

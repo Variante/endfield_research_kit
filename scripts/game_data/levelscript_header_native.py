@@ -59,7 +59,7 @@ def _read_contract() -> dict[str, Any]:
     ):
         raise ValueError(f"{LABEL}.contract:route-set")
     layout_contract = json.loads(LAYOUT_PATH.read_bytes())
-    if layout_contract.get("schema") != "endfield.action-map-layouts.v3":
+    if layout_contract.get("schema") != "endfield.action-map-layouts.v5":
         raise ValueError(f"{LABEL}.contract:layout-schema")
     layouts = layout_contract.get("layouts", [])
     for route in routes:
@@ -88,7 +88,8 @@ def _read_contract() -> dict[str, Any]:
             or route["nestedContexts"][0].get("elementTypeName") != "System.Boolean"
         ):
             raise ValueError(f"{LABEL}.contract:route-shape=ActionHeader:{tag:#x}")
-        matching = [row for row in layouts if row.get("family") == "ActionHeader" and row.get("tag") == tag]
+        matching = [row for row in layouts if row.get("family") == "ActionHeader"
+                    and row.get("wrapperName") == route.get("wrapperName")]
         if (
             len(matching) != 1
             or matching[0].get("fields") != fields
@@ -97,18 +98,9 @@ def _read_contract() -> dict[str, Any]:
             or matching[0].get("nativeGate") != "levelscript_header_native"
         ):
             raise ValueError(f"{LABEL}.contract:layout-join=ActionHeader:{tag:#x}")
-        identity = matching[0].get("nativeIdentity") or {}
-        dispatcher = route["dispatcher"]
-        branch_hex = identity.get("branchCodeHex", "")
-        if (
-            identity.get("registeredTypeIndex") != dispatcher["registeredTypeIndex"]
-            or identity.get("typeDefinition") != dispatcher["wrapperTypeDefinition"]
-            or identity.get("usageRawHex") != dispatcher["usageRawHex"]
-            or len(branch_hex) != 208
-            or hashlib.sha256(bytes.fromhex(branch_hex)).hexdigest().upper()
-            != dispatcher["branchWindow"]["sha256"]
-        ):
-            raise ValueError(f"{LABEL}.contract:layout-native-identity=ActionHeader:{tag:#x}")
+        # v5 layout rows carry no per-build identity; the route's own
+        # dispatcher identity is proved against read_union_switch in
+        # _validate_route on the selected build.
         cursor = matching[0].get("cursorEvidence")
         if (
             not isinstance(cursor, dict)

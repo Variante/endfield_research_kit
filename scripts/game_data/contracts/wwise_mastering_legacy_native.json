@@ -1,0 +1,1168 @@
+{
+  "schema": "endfield.wwise-mastering-legacy-native-contract.v4",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "guards": {
+    "bandLegacyCount": {
+      "method": "convertBands",
+      "offset": 242,
+      "branchOpcode": "0f82",
+      "errorOffset": 2230
+    },
+    "bandLegacyCountUpper": {
+      "method": "convertBands",
+      "offset": 255,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandLegacyBypassUpper": {
+      "method": "convertBands",
+      "offset": 271,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandLegacyBypassThreeBits": {
+      "method": "convertBands",
+      "offset": 280,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandLegacyLink": {
+      "method": "convertBands",
+      "offset": 292,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandLegacySpecial": {
+      "method": "convertBands",
+      "offset": 305,
+      "branchOpcode": "0f85",
+      "errorOffset": 2230
+    },
+    "bandLegacyPair": {
+      "method": "convertBands",
+      "offset": 323,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandCurrentCount": {
+      "method": "convertBands",
+      "offset": 883,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandCurrentBypass": {
+      "method": "convertBands",
+      "offset": 902,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandCurrentLink": {
+      "method": "convertBands",
+      "offset": 918,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandCurrentPair": {
+      "method": "convertBands",
+      "offset": 934,
+      "branchOpcode": "0f87",
+      "errorOffset": 2230
+    },
+    "bandLegacyReservedFirst": {
+      "method": "convertBands",
+      "offset": 366,
+      "branchOpcode": "0f85",
+      "errorOffset": 2230
+    },
+    "bandLegacyReservedSecond": {
+      "method": "convertBands",
+      "offset": 378,
+      "branchOpcode": "0f85",
+      "errorOffset": 2230
+    },
+    "bandCurrentReservedFirst": {
+      "method": "convertBands",
+      "offset": 977,
+      "branchOpcode": "0f85",
+      "errorOffset": 2230
+    },
+    "bandCurrentReservedSecond": {
+      "method": "convertBands",
+      "offset": 989,
+      "branchOpcode": "0f85",
+      "errorOffset": 2230
+    },
+    "peakLegacyMode": {
+      "method": "convertPeak",
+      "offset": 150,
+      "branchOpcode": "0f87",
+      "errorOffset": 656
+    },
+    "peakLegacyReservedFirst": {
+      "method": "convertPeak",
+      "offset": 162,
+      "branchOpcode": "0f85",
+      "errorOffset": 656
+    },
+    "peakLegacyReservedSecond": {
+      "method": "convertPeak",
+      "offset": 172,
+      "branchOpcode": "0f85",
+      "errorOffset": 656
+    },
+    "peakCurrentMode": {
+      "method": "convertPeak",
+      "offset": 296,
+      "branchOpcode": "0f87",
+      "errorOffset": 656
+    },
+    "peakCurrentReservedFirst": {
+      "method": "convertPeak",
+      "offset": 308,
+      "branchOpcode": "0f85",
+      "errorOffset": 656
+    },
+    "peakCurrentReservedSecond": {
+      "method": "convertPeak",
+      "offset": 318,
+      "branchOpcode": "0f85",
+      "errorOffset": 656
+    }
+  },
+  "conversionLayouts": {
+    "bands": {
+      "legacyBandLimit": 3,
+      "legacyBandOffset": 44,
+      "currentBandOffset": 48,
+      "bandStride": 24,
+      "legacyCutSlots": 2,
+      "currentCutSlots": 3,
+      "legacyBypassMaximum": 7,
+      "currentBypassMaximum": 15,
+      "crossRevisionRequiresSpecialLink": false
+    },
+    "peak": {
+      "legacyReservedOffsets": [
+        24,
+        28
+      ],
+      "currentExtraAmplitudeOffset": 24,
+      "currentLinkOffset": 28,
+      "crossRevisionLink": "special equals one"
+    }
+  },
+  "bandCrossRevisionLinkStore": {
+    "offset": 931
+  },
+  "peakCrossRevisionFields": {
+    "offset": 415
+  },
+  "peakLoops": {
+    "legacy": {
+      "start": 144,
+      "end": 502,
+      "removed": [
+        {
+          "offset": 144,
+          "role": "legacyModeRead",
+          "byteLength": 3
+        },
+        {
+          "offset": 147,
+          "role": "legacyPowerBase",
+          "byteLength": 4
+        },
+        {
+          "offset": 151,
+          "role": "legacyModeStore",
+          "byteLength": 3
+        },
+        {
+          "offset": 154,
+          "role": "legacyLinkZero",
+          "byteLength": 3
+        }
+      ],
+      "instructions": [
+        {
+          "offset": 157,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 162,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 167,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 170,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 175,
+          "byteLength": 6,
+          "kind": "bytes"
+        },
+        {
+          "offset": 181,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 184,
+          "byteLength": 2,
+          "kind": "bytes"
+        },
+        {
+          "offset": 186,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 357,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 192,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 195,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 330,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 201,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 204,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 1054,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 210,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 221,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 226,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 229,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 236,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 231,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 234,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 271,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 236,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 239,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 242,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 247,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 251,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 255,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 259,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 264,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 267,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 271,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 274,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 277,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 286,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 295,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 306,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 309,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 318,
+          "byteLength": 7,
+          "kind": "bytes"
+        },
+        {
+          "offset": 325,
+          "byteLength": 5,
+          "kind": "branch",
+          "targetOffset": 489,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 330,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 341,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 352,
+          "byteLength": 5,
+          "kind": "branch",
+          "targetOffset": 489,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 357,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 362,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 365,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 372,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 367,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 370,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 407,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 372,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 375,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 378,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 383,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 387,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 391,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 395,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 400,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 403,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 407,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 410,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 413,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 422,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 427,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 430,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 445,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 432,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 443,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 489,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 445,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 448,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 451,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 456,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 460,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 464,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 468,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 473,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 476,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 480,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 489,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 492,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 496,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 144,
+          "displacementBytes": 4
+        }
+      ]
+    },
+    "current": {
+      "start": 672,
+      "end": 1049,
+      "removed": [
+        {
+          "offset": 677,
+          "role": "currentPowerBase",
+          "byteLength": 4
+        },
+        {
+          "offset": 700,
+          "role": "currentAmplitudeBase",
+          "byteLength": 4
+        },
+        {
+          "offset": 704,
+          "role": "currentAmplitudeRead",
+          "byteLength": 5
+        },
+        {
+          "offset": 709,
+          "role": "currentAmplitudeScale",
+          "byteLength": 5
+        },
+        {
+          "offset": 714,
+          "role": "currentAmplitudePower",
+          "byteLength": 5
+        },
+        {
+          "offset": 719,
+          "role": "currentAmplitudeStore",
+          "byteLength": 9
+        }
+      ],
+      "instructions": [
+        {
+          "offset": 672,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 681,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 686,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 689,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 694,
+          "byteLength": 6,
+          "kind": "bytes"
+        },
+        {
+          "offset": 728,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 731,
+          "byteLength": 2,
+          "kind": "bytes"
+        },
+        {
+          "offset": 733,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 904,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 739,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 742,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 877,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 748,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 751,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 1054,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 757,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 768,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 773,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 776,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 783,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 778,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 781,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 818,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 783,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 786,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 789,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 794,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 798,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 802,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 806,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 811,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 814,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 818,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 821,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 824,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 833,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 842,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 853,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 856,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 865,
+          "byteLength": 7,
+          "kind": "bytes"
+        },
+        {
+          "offset": 872,
+          "byteLength": 5,
+          "kind": "branch",
+          "targetOffset": 1036,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 877,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 888,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 899,
+          "byteLength": 5,
+          "kind": "branch",
+          "targetOffset": 1036,
+          "displacementBytes": 4
+        },
+        {
+          "offset": 904,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 909,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 912,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 919,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 914,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 917,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 954,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 919,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 922,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 925,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 930,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 934,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 938,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 942,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 947,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 950,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 954,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 957,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 960,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 969,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 974,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 977,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 992,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 979,
+          "byteLength": 11,
+          "kind": "bytes"
+        },
+        {
+          "offset": 990,
+          "byteLength": 2,
+          "kind": "branch",
+          "targetOffset": 1036,
+          "displacementBytes": 1
+        },
+        {
+          "offset": 992,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 995,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 998,
+          "byteLength": 5,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1003,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1007,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1011,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1015,
+          "byteLength": 5,
+          "kind": "relative",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1020,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1023,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1027,
+          "byteLength": 9,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1036,
+          "byteLength": 3,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1039,
+          "byteLength": 4,
+          "kind": "bytes"
+        },
+        {
+          "offset": 1043,
+          "byteLength": 6,
+          "kind": "branch",
+          "targetOffset": 672,
+          "displacementBytes": 4
+        }
+      ]
+    }
+  },
+  "controlOffsets": {
+    "legacyBandThresholdRead": {
+      "method": "convertBands",
+      "offset": 605
+    },
+    "legacyBandThresholdStore": {
+      "method": "convertBands",
+      "offset": 617
+    },
+    "crossBandThresholdRead": {
+      "method": "convertBands",
+      "offset": 1213
+    },
+    "crossBandThresholdStore": {
+      "method": "convertBands",
+      "offset": 1229
+    },
+    "legacyBandIndex": {
+      "method": "convertBands",
+      "offset": 601
+    },
+    "crossBandIndex": {
+      "method": "convertBands",
+      "offset": 1209
+    },
+    "legacyLinkSeed": {
+      "method": "applyPeak",
+      "offset": 98
+    },
+    "currentModeAndLink": {
+      "method": "applyPeak",
+      "offset": 651
+    },
+    "currentToSharedAllocation": {
+      "method": "applyPeak",
+      "offset": 1049
+    },
+    "modeDispatch": {
+      "method": "processModes",
+      "offset": 131
+    },
+    "delayedStateBase": {
+      "method": "processModes",
+      "offset": 163
+    },
+    "delayedSavedBase": {
+      "method": "delayedKernel",
+      "offset": 41
+    },
+    "delayedAmplitudeRead": {
+      "method": "delayedKernel",
+      "offset": 189
+    },
+    "delayedAmplitudeCapture": {
+      "method": "delayedKernel",
+      "offset": 246
+    },
+    "delayedAmplitudeMultiply": {
+      "method": "delayedKernel",
+      "offset": 1762
+    }
+  },
+  "defaultPeakMode": 0,
+  "bandActiveProgram": {
+    "start": 656,
+    "end": 1699,
+    "statePointerOffsetWithinBand": 100,
+    "constantRegisters": {
+      "7": 1.0,
+      "8": -2.2,
+      "9": 0.0,
+      "11": -440.0000305175781,
+      "12": 0.05,
+      "13": 10.0,
+      "14": 0.5
+    },
+    "constantLoads": {
+      "7": 150,
+      "8": 249,
+      "11": 164,
+      "12": 262,
+      "13": 275,
+      "14": 284
+    },
+    "setupControls": {
+      "stateAlias": 33,
+      "parameterAlias": 30,
+      "frequencyPointer": 258,
+      "frequencyRetain": 304,
+      "groupSetup": 604,
+      "groupLoop": 1699,
+      "zeroTime": 271
+    }
+  },
+  "meaningBoundary": "Authenticated legacy integer control guards and reviewed record layouts; complete old/current peak loop correspondence after explicit mode/link initialization and current-only amplitude-helper steps. The old path forces link zero and leaves the amplitude array unchanged; the current path writes it from the extra control. The two paths share allocation/fill logic. Legacy active-band scalar arithmetic is independently decoded across all four time-zero/unordered predicate selections; its nine field-array expressions repeat across twelve channels using the original group loop. The complete inactive six-channel group resets eleven arrays and repeats twice per band, then visits every remaining band through the four-band capacity. Its attack and power coefficients share the power-time factor, while release uses the inactive-release factor; histories become zero and unity. Legacy crossover routing is decoded with symbolic copied cutoff, format, frequency and selection words: outer bands use two stages and interior bands four, with independent destination, descriptor and call-order joins across every admitted band index. Single-band counts remain untouched and unused. Every nonzero conversion result branches to the common application error after retaining earlier writes; this layer models completing ABI-preserving helpers. The temporary descriptor final word remains unwritten and unused by the admitted type-one/two generation. Frequency uses the unsigned word converted through a zero-extended 64-bit register. Helper returns retain their numerical boundaries and callee-saved register preservation is conditional. Correspondence assumes immutable controls, completing selected helpers and disjoint state/control/allocated buffers; repeated old mode/link stores can otherwise be observable. Delayed mode reads the extra amplitude array. The authenticated file-default old peak record uses mode zero; the normal parameter/control pipeline supplies current records. This does not establish runtime legacy delayed-mode reachability, arbitrary-input converter/application equivalence, helper parity, allocation admission/lifetime, floating exceptions, public names or audible consequences.",
+  "bandInactiveProgram": {
+    "start": 1840,
+    "end": 2904,
+    "statePointerOffsetWithinBand": 436,
+    "constantRegisters": {
+      "6": -22.0,
+      "7": 1.0,
+      "11": -440.0000305175781
+    },
+    "releaseConstantLoad": 1783,
+    "setupControls": {
+      "admittedEntry": 1756,
+      "emptyCountFrequency": 1779,
+      "groupSetup": 1791,
+      "bandSetup": 1824,
+      "groupLoop": 2904,
+      "bandLoop": 2918,
+      "sharedTail": 2941
+    }
+  },
+  "bandCrossoverProgram": {
+    "start": 304,
+    "end": 604,
+    "errorExit": 4656,
+    "setupControls": {
+      "frame": 0,
+      "countRead": 141,
+      "bandIndexZero": 236,
+      "descriptorHeader": 195,
+      "frequencySave": 293,
+      "outerLoop": 1715,
+      "conversionError": 4656
+    }
+  }
+}

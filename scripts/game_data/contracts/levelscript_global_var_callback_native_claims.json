@@ -1,0 +1,33 @@
+{
+  "schema": "endfield.levelscript-global-var-callback-native-claims.v2",
+  "status": "reviewed",
+  "dependencies": [
+    {"role": "paramValue", "path": "levelscript_long_param_value_native_claims.json"}
+  ],
+  "methods": {
+    "callback": {"image": "Gameplay.Beyond.dll", "type": "Beyond.Gameplay.CheckClientGlobalVar", "method": "EventCallback", "static": false, "return": "Void", "parameters": ["explicit byref EventData<Int64,Int64>"]},
+    "patch": {"image": "Gameplay.Beyond.dll", "type": "IFix.WrappersManagerImpl", "method": "IsPatched", "static": true, "return": "Boolean", "parameters": ["Int32"]},
+    "compare": {"image": "Common.Beyond.dll", "type": "Beyond.TableUtils", "method": "DoCompare", "static": true, "return": "Boolean", "parameters": ["CompareOperator", "Single", "Single"]},
+    "resultSetter": {"image": "Gameplay.Beyond.dll", "type": "Beyond.Gameplay.GameCondition", "method": "set_result", "static": false, "return": "Void", "parameters": ["ConditionResult"]}
+  },
+  "types": {
+    "eventData": {"image": "Common.Beyond.dll", "type": "Beyond.EventData`2"},
+    "CompareOperator": {"image": "Common.Beyond.dll", "type": "Beyond.GEnums.CompareOperator"},
+    "ConditionResult": {"image": "Gameplay.Beyond.dll", "type": "Beyond.Gameplay.ConditionResult"}
+  },
+  "fields": {"enumValue": "_comparer", "longValue": "_targetValue"},
+  "enumPhysicalEntryArgument": "System.Int32Enum",
+  "claims": {
+    "selectedNormalPaths": 2,
+    "eventLaneNamedPlacementProved": false,
+    "comparisonInputs": ["signed Int64 anonymous byref lane to Single", "signed Int64 current parameter return to Single"],
+    "resultSetterInput": "zero-extended current comparison AL as ordinary ConditionResult",
+    "enumSharedImplementationCompatibilityProved": false,
+    "concreteNumericResultOrSetterEffectProved": false
+  },
+  "evidenceBoundary": {
+    "direct": "Complete owned callback bytes, selected original-path control and frame returns, fresh ordinary declarations, concrete receiver/Param field contexts and actual calls/loaded MethodSpec cells.",
+    "conditional": "Original patch-false normal paths with compatible initialized contexts, normal ABI returns, a valid anonymous byref QWORD lane and MXCSR conditions; the enum physical shared entry must be compatible with its loaded actual CompareOperator context.",
+    "unresolved": "Concrete EventData field placement, enum shared implementation compatibility, provider/runtime object selection, concrete converted values/comparison result, setter body effects, event ordering and live execution."
+  }
+}

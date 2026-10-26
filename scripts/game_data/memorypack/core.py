@@ -6,6 +6,7 @@ import struct
 from typing import Any
 
 from scripts.game_data.contracts import CONTRACTS_DIR  # noqa: F401  (re-exported for the MemoryPack readers)
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
 
 MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
 MEMORYPACK_UNION_WIDE_TAG = 0xFA
@@ -105,7 +106,18 @@ def require_memorypack_string(
     data: bytes,
     offset: int,
     field_name: str,
+    *,
+    strings: StringPool | None = None,
 ) -> tuple[str | None, int]:
+    """Read one nullable string; ``strings`` selects pooled storage."""
+    if strings is not None:
+        if offset + 4 > len(data):
+            raise ValueError(f"{field_name}:poolIndex:truncated")
+        index = struct.unpack_from("<i", data, offset)[0]
+        try:
+            return strings.resolve(index), offset + 4
+        except StringPoolDecodeError as exc:
+            raise ValueError(f"{field_name}:{exc}") from exc
     value, offset, error = read_memorypack_utf8_string(data, offset)
     if error:
         raise ValueError(f"{field_name}:{error}")
@@ -136,7 +148,25 @@ def require_memorypack_non_null_string(
     field_name: str,
     *,
     max_length: int = 512,
+    strings: StringPool | None = None,
 ) -> tuple[str, int]:
+    """Read one non-null string; ``strings`` selects pooled storage.
+
+    Builds that ship ``Json/StringPool/`` store a string as an i32 global pool
+    index instead of an inline length + UTF-8 run. The caller selects the
+    encoding; the reader never guesses.
+    """
+    if strings is not None:
+        if offset + 4 > len(data):
+            raise ValueError(f"{field_name}:poolIndex:truncated")
+        index = struct.unpack_from("<i", data, offset)[0]
+        try:
+            value = strings.resolve(index)
+        except StringPoolDecodeError as exc:
+            raise ValueError(f"{field_name}:{exc}") from exc
+        if value is None:
+            raise ValueError(f"{field_name}:null-string")
+        return value, offset + 4
     value, offset, error = read_memorypack_utf8_string(data, offset, max_length=max_length)
     if error:
         raise ValueError(f"{field_name}:{error}")

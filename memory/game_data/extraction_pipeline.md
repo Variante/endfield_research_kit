@@ -62,10 +62,30 @@ refreshes the rest of the supported scope and verifies ordinary per-input
 freshness, including the merged object index; a structured delta cannot make
 an older Unity export current.
 
+`EndfieldVfsLoader` supports catalog versions 1--5. Version 4 has 32-bit
+chunk/file tag slots; version 5 has 64-bit slots. Unknown values retain every
+bit and stay unnamed; matching their positions does not prove runtime meanings.
+CRC, count, range and exact-ending checks remain required. A version rejection
+occurs after decrypted-metadata CRC verification and before logical-file decoding.
+Unity can scan chunk containers independently, and failed index commands can
+leave old indexes on disk; neither successful Unity work nor `exists=True`
+authenticates a current catalog. The full exporter records a required-index
+failure and stops before overlay selection or workers, without refreshing
+published provenance. Delta reader-command failures return exit code 2 and stop
+the wrapper; missing baseline evidence still permits full-extraction fallback.
+
 Per-asset Unity cache keys bind both the object's layer and all installed
 fallback layers, in addition to the overlay skip list, object Hash, CLI,
 DummyDll and export options. An unchanged object Hash cannot authenticate its
 parsed dependencies after a fallback-layer update.
+
+Model Convert stages additionally load the selected player's available loose
+Unity built-in resource files. Their paths, sizes and hashes enter model cache
+signatures and the published model type's `auxiliaryInputs`; other Unity types
+retain their own stamps. The freshness guard reports missing or changed
+auxiliary inputs instead of accepting an old model export. Focused repair
+publication preserves the original layer stamp and changes only its resource
+dependency record; it never restamps unrelated output types as freshly extracted.
 
 The VFS dump bounds file extraction to at most eight parallel producers.
 Packed `Json/LipSync` writes enqueue compression tasks on the same thread pool;
@@ -206,6 +226,17 @@ AnimatorOverrideController) with `--map_op CABMap,Load` when the layer's CAB map
 exists; the CLI loads dependencies only to resolve PPtrs and exports just the
 primary file's objects (`SelectPrimaryFiles`). It costs several times the load
 time per bundle.
+
+Dependency loads also pass the other installed layer's CABMap as
+`--fallback_cab_map`. The selected layer remains authoritative for duplicate
+CAB names; the fallback fills only absent names and preserves its own source
+root. Dependency offsets must be retained even inside the selected input
+chunk, because a filtered run otherwise omits same-chunk renderer resources.
+The loader normalizes dependency paths and rejects malformed supplied maps
+before using them. The cat attachment is a verified example: a layer-only
+export retained fur and skeleton while omitting body/secondary meshes; the
+patched two-layer load retained every declared mesh across its LODs.
+This fixes dependency discovery, not shader deformation or runtime appearance.
 
 Animator conversion accounts for meshless results with a
 `.fbx.empty.json` document whose `animeStudio.reason` is `no_mesh`. This proves
@@ -381,6 +412,9 @@ local coordinates and winding and are not published as render replacements.
 
 ## Remaining gaps
 
+- Export coverage for separately declared language LipSync catalogs. Unknown
+  catalogs with absent payloads remain full-audit failures; optional-language
+  availability needs its own proven contract before changing that gate.
 - Per-object clean/partial/error certification and dependency diagnostics.
 - Rebuild the CLI and re-export so Material/TextAsset/AnimatorOverrideController
   provenance reaches consumers, then re-run the invalidated corpus gates.

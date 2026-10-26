@@ -561,7 +561,7 @@ def _encounter_opera_segments(
         audit = validate_levelscript_encounter_opera_segments_native_contract()
         if audit.get("status") != "validated":
             raise LevelScriptModuleCodecError(
-                f"unvalidated positive {field}: status={audit.get('status')},"
+                f"{field}.nativeContract: owner=levelscript_encounter_opera_segments_native,status={audit.get('status')},"
                 f"check={audit.get('failedGate')},detail={audit.get('detail')}"
             )
         try:
@@ -838,7 +838,7 @@ def _require_module_structure(field: str) -> None:
     from scripts.game_data.levelscript_module_structures_native import validate
     audit = validate()
     if audit.get("status") != "validated":
-        raise LevelScriptModuleCodecError(f"{field}:module-default-grammar:status={audit.get('status')},detail={audit.get('detail')}")
+        raise LevelScriptModuleCodecError(f"{field}.nativeContract:owner=levelscript_module_structures_native,status={audit.get('status')},detail={audit.get('detail')}")
 
 
 def _rolling_launcher(data, cursor, field):
@@ -937,7 +937,7 @@ def _union_header(data: bytes, cursor: int, field: str) -> tuple[int, int, int]:
 
 
 def decode_module_dictionary(
-    data: bytes, cursor: int
+    data: bytes, cursor: int, diagnostics: list[dict[str, Any]] | None = None
 ) -> tuple[dict[str, Any] | None, int]:
     """Decode current supported module values or return ``None`` at the count."""
     start = cursor
@@ -951,9 +951,25 @@ def decode_module_dictionary(
         if key in seen:
             raise LevelScriptModuleCodecError(f"duplicate module key: {key}")
         seen.add(key)
+        header_offset = cursor
         tag, cursor, tag_width = _union_header(data, cursor, f"modules[{index}].value")
+        member_count = data[cursor] if cursor < len(data) else None
+        if member_count is not None and member_count != 0xFF:
+            audit = union_tags.union_tags_audit()
+            if audit.get("status") != "validated":
+                raise LevelScriptModuleCodecError(
+                    f"modules[{index}].value.nativeContract:owner=levelscript_union_tags,"
+                    f"status={audit.get('status')},detail={str(audit.get('detail', ''))[:500]}"
+                )
         supported = _SUPPORTED.get(tag)
         if supported is None:
+            if diagnostics is not None:
+                diagnostics.append({"gate": "supportedModuleUnionShape", "moduleIndex": index,
+                    "moduleKey": str(key), "moduleUnionTag": f"0x{tag:04x}",
+                    "serializedMemberCount": member_count, "moduleOffset": header_offset,
+                    "moduleType": (union_tags.type_name_for_tag("LevelScriptModuleData", tag)
+                                   if member_count is not None and member_count != 0xFF else None),
+                    "expectedSerializedMemberCount": None})
             return None, start
         expected_count, parser = supported
         _need(data, cursor, 1, f"modules[{index}].value.memberCount")

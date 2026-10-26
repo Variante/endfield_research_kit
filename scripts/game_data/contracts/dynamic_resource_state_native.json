@@ -1,0 +1,53 @@
+{
+  "schema": "endfield.dynamic-resource-state-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "method": {
+    "index": 88110,
+    "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem",
+    "method": "_FillTargetStateGroupSet",
+    "rva": 105037548,
+    "parameters": [
+      {
+        "name": "modelGroupMap",
+        "type": "System.Collections.Generic.Dictionary`2<ulong,uint>"
+      },
+      {
+        "name": "ecsGroupMap",
+        "type": "System.Collections.Generic.Dictionary`2<ulong,uint>"
+      },
+      {
+        "name": "compId",
+        "type": "ulong"
+      },
+      {
+        "name": "mask",
+        "type": "uint"
+      }
+    ],
+    "returnType": "void"
+  },
+  "window": {
+    "rva": 105037548,
+    "length": 475,
+    "sha256": "223338E3C8F9FC686EDBA299DD190473CA9A2F62340E4E89B75ABD27E0130292",
+    "boundary": "Registered caller main .pdata body, including the selected unpatched LogicState call, supplied-mask test, Group call and next-iteration branch; iFix branch bodies are not selected."
+  },
+  "maskGate": {
+    "frameSetupOffset": 24,
+    "getterCallOffset": 238,
+    "zeroBranchTargetOffset": 371,
+    "laterGroupCallOffset": 262,
+    "maskParameter": "mask",
+    "resourceScalar": "LogicState"
+  },
+  "evidenceBoundary": {
+    "direct": "The registered _FillTargetStateGroupSet unpatched body calls ResourceGroupWithStateDesc.get_LogicState and tests its returned UInt32 bits against the named incoming UInt32 mask stack parameter. A zero intersection takes a forward branch past the subsequent Group getter to the loop advance.",
+    "conditional": "This is the selected unpatched state-group query; it does not establish the activation predicate of another resource consumer or the currently selected scene/group.",
+    "unresolved": "The descriptor source helper ownership, resource loading or activation, other state/level/factory consumers and iFix execution remain outside this selected scalar gate."
+  }
+}

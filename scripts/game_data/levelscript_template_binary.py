@@ -237,6 +237,7 @@ def frame_levelscript_template(data: bytes) -> dict[str, Any]:
             "payload stay opaque."
         ),
     }
+    result["stopField"] = "actionMap" if action_map["status"] != "exact_named_action_map" else "topLevelContinuation"
     if action_map["status"] == "exact_named_action_map":
         try:
             if prefix_end + 4 > template_offset:
@@ -249,8 +250,9 @@ def frame_levelscript_template(data: bytes) -> dict[str, Any]:
                 raise LevelScriptTemplateFramingError("taskMap: truncated count")
             task_count = struct.unpack_from("<I", data, cursor)[0]
             cursor += 4
-        except (LevelInteractiveCodecError, LevelScriptTemplateFramingError):
-            pass
+        except (LevelInteractiveCodecError, LevelScriptTemplateFramingError) as exc:
+            result["stopField"] = "propertiesOrPropertyMapOrTaskMap"
+            result["diagnostics"] = [{"gate": "namedPrefix", "detail": str(exc)[:1000]}]
         else:
             result["namedPrefix"] = {
                 "maxStage": max_stage,
@@ -259,6 +261,11 @@ def frame_levelscript_template(data: bytes) -> dict[str, Any]:
                 "taskMapCount": None if task_count == NULL_COUNT else task_count,
                 "endOffset": cursor,
             }
+            result["stopField"] = "taskMap.entries"
+            result["diagnostics"] = [{"gate": "taskMapCountAndBoundary", "detail": (
+                f"taskMap: expected null at templateId or count<=128 with exact boundary; "
+                f"actual count={task_count}, offset={cursor}, templateIdOffset={template_offset}"
+            )}]
             if task_count == NULL_COUNT and cursor == template_offset:
                 property_entries = properties.get("values")
                 result.update({
@@ -284,8 +291,9 @@ def frame_levelscript_template(data: bytes) -> dict[str, Any]:
                     tasks, task_end = decode_levelscript_task_map_exact(
                         data, cursor, task_count, template_offset
                     )
-                except LevelScriptTopLevelFramingError:
-                    pass
+                except LevelScriptTopLevelFramingError as exc:
+                    result["stopField"] = "taskMap.entries"
+                    result["diagnostics"] = [{"gate": "taskMapExactBoundary", "detail": str(exc)[:1000]}]
                 else:
                     result.update({
                         "status": "exact_named_action_map_task_template",
@@ -309,4 +317,7 @@ def frame_levelscript_template(data: bytes) -> dict[str, Any]:
                             "the counted task map closes at the terminal templateId boundary."
                         ),
                     })
+    if result["schemaStatus"] == "named_exact":
+        result.pop("stopField", None)
+        result.pop("diagnostics", None)
     return result

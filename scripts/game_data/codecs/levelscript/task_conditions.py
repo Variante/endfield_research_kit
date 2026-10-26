@@ -1278,8 +1278,11 @@ def _decode_levelscript_task_entry(
                     if isinstance(union_tag, int)
                     else None
                 )
+                from scripts.game_data.codecs.levelscript.task_native_refusals import reached_native_refusals
+                native_failures = (reached_native_refusals(union_tag, member_count, base_known=expected is not None)
+                                   if isinstance(union_tag, int) and isinstance(member_count, int) else [])
                 diagnostics.append({
-                    "gate": (
+                    "gate": "nativeContract" if native_failures else (
                         "supportedConditionPayloadLayout"
                         if expected is not None
                         else "supportedConditionUnionTag"
@@ -1302,6 +1305,7 @@ def _decode_levelscript_task_entry(
                     ),
                     "payloadHexPrefix": data[cursor : cursor + 48].hex(" "),
                     "nativeMappingId": LEVELSCRIPT_TASK_CONDITION_MAPPING_ID,
+                    **({"nativeRefusals": native_failures} if native_failures else {}),
                 })
             return None
         condition, cursor = condition_decoded

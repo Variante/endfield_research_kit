@@ -1,0 +1,190 @@
+{
+  "schema": "endfield.buff-camera-descriptor-cache-helpers-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_descriptor_cache_lookup_native.json",
+  "probe": {
+    "entryRva": 269376,
+    "codeWindow": {
+      "startRva": 269376,
+      "endRva": 269430,
+      "sha256": "0761072DC6DF4888CD6E9898F68F80A61831811C34FD5351565838BC79A4CA2A"
+    },
+    "labels": {
+      "false": 28,
+      "remaining": 31,
+      "true": 51
+    },
+    "checkedInstructionCount": 20,
+    "boundary": "closed-reachable-entry-program; physical function extent unresolved"
+  },
+  "emptyOutput": {
+    "entryRva": 3175796,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 3175796,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            3175796,
+            3175856,
+            211641408
+          ],
+          "tableRowRva": 251937908,
+          "runtimeTripleRawHex": "74753000B075300040649D0C",
+          "codeBytes": 60,
+          "unwindRawHex": "0104010004620000",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 3175796,
+        "endRva": 3175856,
+        "sha256": "E096F341863A1A2A4A0EE02F2F558DAEBBA48CA5ED4EC79E336089C59EC2A8D9"
+      }
+    ],
+    "checkedInstructionCount": 14
+  },
+  "constructor": {
+    "entryRva": 165904,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 165904,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            165904,
+            166044,
+            211637472
+          ],
+          "tableRowRva": 251735456,
+          "runtimeTripleRawHex": "108802009C880200E0549D0C",
+          "codeBytes": 140,
+          "unwindRawHex": "0104010004420000",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        },
+        {
+          "runtimeTriple": [
+            3044174,
+            3044203,
+            211676904
+          ],
+          "tableRowRva": 251920040,
+          "runtimeTripleRawHex": "4E732E006B732E00E8EE9D0C",
+          "codeBytes": 29,
+          "unwindRawHex": "21000000108802009C880200E0549D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                3044174,
+                3044203,
+                211676904
+              ],
+              "parent": [
+                165904,
+                166044,
+                211637472
+              ]
+            }
+          ]
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 165904,
+        "endRva": 166044,
+        "sha256": "A976D63277457AD7DA96D786A8534EF75A04DF26D2A4ED00A35900BFF00B03E2"
+      },
+      {
+        "startRva": 3044174,
+        "endRva": 3044203,
+        "sha256": "6AA4FEE002ADB8F87EC672802449A05DA9F7F50B06882905F4B98CF6ED781EC9"
+      }
+    ],
+    "checkedInstructionCount": 48
+  },
+  "constructorSegments": {
+    "primary": [
+      165904,
+      166044
+    ],
+    "coldProbe": [
+      3044174,
+      3044203
+    ]
+  },
+  "constructorLabels": {
+    "return": 165934,
+    "optionalScan": 165942,
+    "scan": 165949,
+    "otherMarker": 165986,
+    "remaining": 166001,
+    "testMatch": 166023,
+    "advance": 166027,
+    "mismatch": 166040,
+    "coldProbe": 3044174
+  },
+  "globals": {
+    "table": 233437888,
+    "marker": 233437968,
+    "sentinelTriple": 233437976,
+    "auxiliaryCount": 233437944,
+    "probeData": 233437928,
+    "capacity": 233437960,
+    "begin": 233437984
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, closed reachable comparator byte program and complete declared empty/constructor exception ranges",
+    "direct": "Comparator AL predicate, memory/register effects; iterator stores and scan control; actual empty-call and probe joins",
+    "conditional": "Coherent readable key/table/markers, disjoint writable output/frame storage; stable begin/current/end/zero-flag reads for caller hit equality",
+    "unresolved": "Physical comparator function extent, concurrent mutation, local-key lifetime across preceding opaque calls, insertion, actual descriptor/target selection and positive camera grammar"
+  }
+}

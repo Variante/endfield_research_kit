@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.buff-leaf-actions-native-contract.v5",
+  "schema": "endfield.buff-leaf-actions-native-contract.v9",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -625,6 +625,2434 @@
           "sourceContextInstructionRva": 67628334
         }
       ]
+    },
+    "checkSkillCastId": {
+      "sourceContract": "buff_73_native.json",
+      "wrapperTypeDefinition": 16675,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCastId_DataForMemoryPack",
+      "runtimeTypeDefinition": 13539,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckSkillCastId+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member4",
+      "readerMethod": [
+        124546,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCastId_DataForMemoryPack",
+        "Deserialize",
+        71361920
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 71362064,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 71362087,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84BC0000004533C00FB6D0488BCE",
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "normalized-byte-return",
+            "argumentProgram": [
+              [
+                71362058,
+                "488B33"
+              ],
+              [
+                71362061,
+                "488BCF"
+              ]
+            ],
+            "transferProgram": [
+              [
+                71362069,
+                "4885F6"
+              ],
+              [
+                71362072,
+                "0F84BC000000"
+              ],
+              [
+                71362078,
+                "4533C0"
+              ],
+              [
+                71362081,
+                "0FB6D0"
+              ],
+              [
+                71362084,
+                "488BCE"
+              ]
+            ],
+            "setterProgram": [
+              [
+                52483776,
+                "4883EC28"
+              ],
+              [
+                52483780,
+                "488B4110"
+              ],
+              [
+                52483784,
+                "4885C0"
+              ],
+              [
+                52483787,
+                "7408"
+              ],
+              [
+                52483789,
+                "885010"
+              ],
+              [
+                52483792,
+                "4883C428"
+              ],
+              [
+                52483796,
+                "C3"
+              ],
+              [
+                52483797,
+                "E83A0D8AFD"
+              ],
+              [
+                52483802,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 52483797,
+              "targetRva": 11199508
+            }
+          }
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 71362105,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 71362127,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84930000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 71362092,
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "int32-return",
+            "argumentProgram": [
+              [
+                71362092,
+                "488B15F5B7C708"
+              ],
+              [
+                71362099,
+                "488BCF"
+              ],
+              [
+                71362102,
+                "488B33"
+              ]
+            ],
+            "transferProgram": [
+              [
+                71362110,
+                "4885F6"
+              ],
+              [
+                71362113,
+                "0F8493000000"
+              ],
+              [
+                71362119,
+                "4533C0"
+              ],
+              [
+                71362122,
+                "8BD0"
+              ],
+              [
+                71362124,
+                "488BCE"
+              ]
+            ],
+            "setterProgram": [
+              [
+                58153824,
+                "4883EC28"
+              ],
+              [
+                58153828,
+                "488B4110"
+              ],
+              [
+                58153832,
+                "4885C0"
+              ],
+              [
+                58153835,
+                "7408"
+              ],
+              [
+                58153837,
+                "895014"
+              ],
+              [
+                58153840,
+                "4883C428"
+              ],
+              [
+                58153844,
+                "C3"
+              ],
+              [
+                58153845,
+                "E89A8833FD"
+              ],
+              [
+                58153850,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 58153845,
+              "targetRva": 11199508
+            }
+          }
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 71362138,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 71362156,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F674764533C08BD0488BCE",
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "int32-return",
+            "argumentProgram": [
+              [
+                71362132,
+                "488B33"
+              ],
+              [
+                71362135,
+                "488BCF"
+              ]
+            ],
+            "transferProgram": [
+              [
+                71362143,
+                "4885F6"
+              ],
+              [
+                71362146,
+                "7476"
+              ],
+              [
+                71362148,
+                "4533C0"
+              ],
+              [
+                71362151,
+                "8BD0"
+              ],
+              [
+                71362153,
+                "488BCE"
+              ]
+            ],
+            "setterProgram": [
+              [
+                58153856,
+                "4883EC28"
+              ],
+              [
+                58153860,
+                "488B4110"
+              ],
+              [
+                58153864,
+                "4885C0"
+              ],
+              [
+                58153867,
+                "7408"
+              ],
+              [
+                58153869,
+                "895018"
+              ],
+              [
+                58153872,
+                "4883C428"
+              ],
+              [
+                58153876,
+                "C3"
+              ],
+              [
+                58153877,
+                "E87A8833FD"
+              ],
+              [
+                58153882,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 58153877,
+              "targetRva": 11199508
+            }
+          }
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 71362167,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 71362185,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885DB74594533C08BD0488BCB",
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "int32-return",
+            "argumentProgram": [
+              [
+                71362161,
+                "488B1B"
+              ],
+              [
+                71362164,
+                "488BCF"
+              ]
+            ],
+            "transferProgram": [
+              [
+                71362172,
+                "4885DB"
+              ],
+              [
+                71362175,
+                "7459"
+              ],
+              [
+                71362177,
+                "4533C0"
+              ],
+              [
+                71362180,
+                "8BD0"
+              ],
+              [
+                71362182,
+                "488BCB"
+              ]
+            ],
+            "setterProgram": [
+              [
+                58153888,
+                "4883EC28"
+              ],
+              [
+                58153892,
+                "488B4110"
+              ],
+              [
+                58153896,
+                "4885C0"
+              ],
+              [
+                58153899,
+                "7408"
+              ],
+              [
+                58153901,
+                "89501C"
+              ],
+              [
+                58153904,
+                "4883C428"
+              ],
+              [
+                58153908,
+                "C3"
+              ],
+              [
+                58153909,
+                "E85A8833FD"
+              ],
+              [
+                58153914,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 58153909,
+              "targetRva": 11199508
+            }
+          }
+        }
+      ],
+      "inheritedActionSource": {
+        "mode": "reader-rdi-ref-wrapper-rbx-four-common-primitives",
+        "baseWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "baseDataName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+        "baseInstanceField": "___instance",
+        "parentProgram": [
+          [
+            71361920,
+            "48895C2418"
+          ],
+          [
+            71361925,
+            "57"
+          ],
+          [
+            71361926,
+            "4883EC20"
+          ],
+          [
+            71361930,
+            "803D23B4A90900"
+          ],
+          [
+            71361937,
+            "488BDA"
+          ],
+          [
+            71361940,
+            "488BF9"
+          ],
+          [
+            71361943,
+            "0F8401010000"
+          ],
+          [
+            71361949,
+            "488B0B"
+          ],
+          [
+            71361952,
+            "C644243800"
+          ],
+          [
+            71361957,
+            "4885C9"
+          ],
+          [
+            71361960,
+            "0F8532BBBB00"
+          ],
+          [
+            71361966,
+            "488D542438"
+          ],
+          [
+            71361971,
+            "488BCF"
+          ],
+          [
+            71361974,
+            "E8A5A289FE"
+          ],
+          [
+            71361979,
+            "84C0"
+          ],
+          [
+            71361981,
+            "0F8462BBBB00"
+          ],
+          [
+            71361987,
+            "4889742430"
+          ],
+          [
+            71361992,
+            "48833B00"
+          ],
+          [
+            71361996,
+            "752D"
+          ],
+          [
+            71361998,
+            "488B0D5BB2C208"
+          ],
+          [
+            71362005,
+            "E8867AC1FB"
+          ],
+          [
+            71362010,
+            "488BF0"
+          ],
+          [
+            71362013,
+            "4885C0"
+          ],
+          [
+            71362016,
+            "0F84F4000000"
+          ],
+          [
+            71362022,
+            "33D2"
+          ],
+          [
+            71362024,
+            "488BC8"
+          ],
+          [
+            71362027,
+            "E8F0000000"
+          ],
+          [
+            71362032,
+            "488BCB"
+          ],
+          [
+            71362035,
+            "488933"
+          ],
+          [
+            71362038,
+            "E84585C1FB"
+          ],
+          [
+            71362043,
+            "0FB6742438"
+          ],
+          [
+            71362048,
+            "4080FE04"
+          ],
+          [
+            71362052,
+            "0F85E3BABB00"
+          ],
+          [
+            71362058,
+            "488B33"
+          ],
+          [
+            71362061,
+            "488BCF"
+          ],
+          [
+            71362064,
+            "E8ABA289FE"
+          ],
+          [
+            71362069,
+            "4885F6"
+          ],
+          [
+            71362072,
+            "0F84BC000000"
+          ],
+          [
+            71362078,
+            "4533C0"
+          ],
+          [
+            71362081,
+            "0FB6D0"
+          ],
+          [
+            71362084,
+            "488BCE"
+          ],
+          [
+            71362087,
+            "E894F0DFFE"
+          ],
+          [
+            71362092,
+            "488B15F5B7C708"
+          ],
+          [
+            71362099,
+            "488BCF"
+          ],
+          [
+            71362102,
+            "488B33"
+          ],
+          [
+            71362105,
+            "E872A089FE"
+          ],
+          [
+            71362110,
+            "4885F6"
+          ],
+          [
+            71362113,
+            "0F8493000000"
+          ],
+          [
+            71362119,
+            "4533C0"
+          ],
+          [
+            71362122,
+            "8BD0"
+          ],
+          [
+            71362124,
+            "488BCE"
+          ],
+          [
+            71362127,
+            "E80C7536FF"
+          ],
+          [
+            71362132,
+            "488B33"
+          ],
+          [
+            71362135,
+            "488BCF"
+          ],
+          [
+            71362138,
+            "E851A089FE"
+          ],
+          [
+            71362143,
+            "4885F6"
+          ],
+          [
+            71362146,
+            "7476"
+          ],
+          [
+            71362148,
+            "4533C0"
+          ],
+          [
+            71362151,
+            "8BD0"
+          ],
+          [
+            71362153,
+            "488BCE"
+          ],
+          [
+            71362156,
+            "E80F7536FF"
+          ],
+          [
+            71362161,
+            "488B1B"
+          ],
+          [
+            71362164,
+            "488BCF"
+          ],
+          [
+            71362167,
+            "E834A089FE"
+          ],
+          [
+            71362172,
+            "4885DB"
+          ],
+          [
+            71362175,
+            "7459"
+          ],
+          [
+            71362177,
+            "4533C0"
+          ],
+          [
+            71362180,
+            "8BD0"
+          ],
+          [
+            71362182,
+            "488BCB"
+          ],
+          [
+            71362185,
+            "E8127536FF"
+          ]
+        ]
+      }
+    },
+    "skillAffix": {
+      "sourceContract": "buff_164_native.json",
+      "wrapperTypeDefinition": 16477,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAffixAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9863,
+      "runtimeTypeName": "Beyond.Gameplay.Core.SkillAffixAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member4",
+      "readerMethod": [
+        123065,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAffixAction_DataForMemoryPack",
+        "Deserialize",
+        70905616
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70905760,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70905783,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84BC0000004533C00FB6D0488BCE",
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "normalized-byte-return",
+            "argumentProgram": [
+              [
+                70905754,
+                "488B33"
+              ],
+              [
+                70905757,
+                "488BCF"
+              ]
+            ],
+            "transferProgram": [
+              [
+                70905765,
+                "4885F6"
+              ],
+              [
+                70905768,
+                "0F84BC000000"
+              ],
+              [
+                70905774,
+                "4533C0"
+              ],
+              [
+                70905777,
+                "0FB6D0"
+              ],
+              [
+                70905780,
+                "488BCE"
+              ]
+            ],
+            "setterProgram": [
+              [
+                52483776,
+                "4883EC28"
+              ],
+              [
+                52483780,
+                "488B4110"
+              ],
+              [
+                52483784,
+                "4885C0"
+              ],
+              [
+                52483787,
+                "7408"
+              ],
+              [
+                52483789,
+                "885010"
+              ],
+              [
+                52483792,
+                "4883C428"
+              ],
+              [
+                52483796,
+                "C3"
+              ],
+              [
+                52483797,
+                "E83A0D8AFD"
+              ],
+              [
+                52483802,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 52483797,
+              "targetRva": 11199508
+            }
+          }
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70905801,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70905823,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84930000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 70905788,
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "int32-return",
+            "argumentProgram": [
+              [
+                70905788,
+                "488B1565AECE08"
+              ],
+              [
+                70905795,
+                "488BCF"
+              ],
+              [
+                70905798,
+                "488B33"
+              ]
+            ],
+            "transferProgram": [
+              [
+                70905806,
+                "4885F6"
+              ],
+              [
+                70905809,
+                "0F8493000000"
+              ],
+              [
+                70905815,
+                "4533C0"
+              ],
+              [
+                70905818,
+                "8BD0"
+              ],
+              [
+                70905820,
+                "488BCE"
+              ]
+            ],
+            "setterProgram": [
+              [
+                58153824,
+                "4883EC28"
+              ],
+              [
+                58153828,
+                "488B4110"
+              ],
+              [
+                58153832,
+                "4885C0"
+              ],
+              [
+                58153835,
+                "7408"
+              ],
+              [
+                58153837,
+                "895014"
+              ],
+              [
+                58153840,
+                "4883C428"
+              ],
+              [
+                58153844,
+                "C3"
+              ],
+              [
+                58153845,
+                "E89A8833FD"
+              ],
+              [
+                58153850,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 58153845,
+              "targetRva": 11199508
+            }
+          }
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70905834,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70905852,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F674764533C08BD0488BCE",
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "int32-return",
+            "argumentProgram": [
+              [
+                70905828,
+                "488B33"
+              ],
+              [
+                70905831,
+                "488BCF"
+              ]
+            ],
+            "transferProgram": [
+              [
+                70905839,
+                "4885F6"
+              ],
+              [
+                70905842,
+                "7476"
+              ],
+              [
+                70905844,
+                "4533C0"
+              ],
+              [
+                70905847,
+                "8BD0"
+              ],
+              [
+                70905849,
+                "488BCE"
+              ]
+            ],
+            "setterProgram": [
+              [
+                58153856,
+                "4883EC28"
+              ],
+              [
+                58153860,
+                "488B4110"
+              ],
+              [
+                58153864,
+                "4885C0"
+              ],
+              [
+                58153867,
+                "7408"
+              ],
+              [
+                58153869,
+                "895018"
+              ],
+              [
+                58153872,
+                "4883C428"
+              ],
+              [
+                58153876,
+                "C3"
+              ],
+              [
+                58153877,
+                "E87A8833FD"
+              ],
+              [
+                58153882,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 58153877,
+              "targetRva": 11199508
+            }
+          }
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70905863,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70905881,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885DB74594533C08BD0488BCB",
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "setterTransfer": {
+            "mode": "int32-return",
+            "argumentProgram": [
+              [
+                70905857,
+                "488B1B"
+              ],
+              [
+                70905860,
+                "488BCF"
+              ]
+            ],
+            "transferProgram": [
+              [
+                70905868,
+                "4885DB"
+              ],
+              [
+                70905871,
+                "7459"
+              ],
+              [
+                70905873,
+                "4533C0"
+              ],
+              [
+                70905876,
+                "8BD0"
+              ],
+              [
+                70905878,
+                "488BCB"
+              ]
+            ],
+            "setterProgram": [
+              [
+                58153888,
+                "4883EC28"
+              ],
+              [
+                58153892,
+                "488B4110"
+              ],
+              [
+                58153896,
+                "4885C0"
+              ],
+              [
+                58153899,
+                "7408"
+              ],
+              [
+                58153901,
+                "89501C"
+              ],
+              [
+                58153904,
+                "4883C428"
+              ],
+              [
+                58153908,
+                "C3"
+              ],
+              [
+                58153909,
+                "E85A8833FD"
+              ],
+              [
+                58153914,
+                "CC"
+              ]
+            ],
+            "errorCall": {
+              "rva": 58153909,
+              "targetRva": 11199508
+            }
+          }
+        }
+      ],
+      "inheritedActionSource": {
+        "mode": "reader-rdi-ref-wrapper-rbx-four-common-primitives",
+        "baseWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "baseDataName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+        "baseInstanceField": "___instance",
+        "parentProgram": [
+          [
+            70905616,
+            "48895C2418"
+          ],
+          [
+            70905621,
+            "57"
+          ],
+          [
+            70905622,
+            "4883EC20"
+          ],
+          [
+            70905626,
+            "803D1FA8B00900"
+          ],
+          [
+            70905633,
+            "488BDA"
+          ],
+          [
+            70905636,
+            "488BF9"
+          ],
+          [
+            70905639,
+            "0F8401010000"
+          ],
+          [
+            70905645,
+            "488B0B"
+          ],
+          [
+            70905648,
+            "C644243800"
+          ],
+          [
+            70905653,
+            "4885C9"
+          ],
+          [
+            70905656,
+            "0F85EEB7C100"
+          ],
+          [
+            70905662,
+            "488D542438"
+          ],
+          [
+            70905667,
+            "488BCF"
+          ],
+          [
+            70905670,
+            "E8159990FE"
+          ],
+          [
+            70905675,
+            "84C0"
+          ],
+          [
+            70905677,
+            "0F841EB8C100"
+          ],
+          [
+            70905683,
+            "4889742430"
+          ],
+          [
+            70905688,
+            "48833B00"
+          ],
+          [
+            70905692,
+            "752D"
+          ],
+          [
+            70905694,
+            "488B0D9390C808"
+          ],
+          [
+            70905701,
+            "E8F670C8FB"
+          ],
+          [
+            70905706,
+            "488BF0"
+          ],
+          [
+            70905709,
+            "4885C0"
+          ],
+          [
+            70905712,
+            "0F84F4000000"
+          ],
+          [
+            70905718,
+            "33D2"
+          ],
+          [
+            70905720,
+            "488BC8"
+          ],
+          [
+            70905723,
+            "E8F0000000"
+          ],
+          [
+            70905728,
+            "488BCB"
+          ],
+          [
+            70905731,
+            "488933"
+          ],
+          [
+            70905734,
+            "E8B57BC8FB"
+          ],
+          [
+            70905739,
+            "0FB6742438"
+          ],
+          [
+            70905744,
+            "4080FE04"
+          ],
+          [
+            70905748,
+            "0F859FB7C100"
+          ],
+          [
+            70905754,
+            "488B33"
+          ],
+          [
+            70905757,
+            "488BCF"
+          ],
+          [
+            70905760,
+            "E81B9990FE"
+          ],
+          [
+            70905765,
+            "4885F6"
+          ],
+          [
+            70905768,
+            "0F84BC000000"
+          ],
+          [
+            70905774,
+            "4533C0"
+          ],
+          [
+            70905777,
+            "0FB6D0"
+          ],
+          [
+            70905780,
+            "488BCE"
+          ],
+          [
+            70905783,
+            "E804E7E6FE"
+          ],
+          [
+            70905788,
+            "488B1565AECE08"
+          ],
+          [
+            70905795,
+            "488BCF"
+          ],
+          [
+            70905798,
+            "488B33"
+          ],
+          [
+            70905801,
+            "E8E29690FE"
+          ],
+          [
+            70905806,
+            "4885F6"
+          ],
+          [
+            70905809,
+            "0F8493000000"
+          ],
+          [
+            70905815,
+            "4533C0"
+          ],
+          [
+            70905818,
+            "8BD0"
+          ],
+          [
+            70905820,
+            "488BCE"
+          ],
+          [
+            70905823,
+            "E87C6B3DFF"
+          ],
+          [
+            70905828,
+            "488B33"
+          ],
+          [
+            70905831,
+            "488BCF"
+          ],
+          [
+            70905834,
+            "E8C19690FE"
+          ],
+          [
+            70905839,
+            "4885F6"
+          ],
+          [
+            70905842,
+            "7476"
+          ],
+          [
+            70905844,
+            "4533C0"
+          ],
+          [
+            70905847,
+            "8BD0"
+          ],
+          [
+            70905849,
+            "488BCE"
+          ],
+          [
+            70905852,
+            "E87F6B3DFF"
+          ],
+          [
+            70905857,
+            "488B1B"
+          ],
+          [
+            70905860,
+            "488BCF"
+          ],
+          [
+            70905863,
+            "E8A49690FE"
+          ],
+          [
+            70905868,
+            "4885DB"
+          ],
+          [
+            70905871,
+            "7459"
+          ],
+          [
+            70905873,
+            "4533C0"
+          ],
+          [
+            70905876,
+            "8BD0"
+          ],
+          [
+            70905878,
+            "488BCB"
+          ],
+          [
+            70905881,
+            "E8826B3DFF"
+          ]
+        ]
+      }
+    },
+    "triggerSpellBurst": {
+      "sourceContract": "buff_18b_native.json",
+      "wrapperTypeDefinition": 16551,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerSpellBurstEventAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9953,
+      "runtimeTypeName": "Beyond.Gameplay.Core.TriggerSpellBurstEventAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        123686,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerSpellBurstEventAction_DataForMemoryPack",
+        "Deserialize",
+        67014032
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 67014176,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014199,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84F40000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67014217,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014239,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84CB0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67014204
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67014250,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014272,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84AA0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67014283,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014305,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84890000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "spellBurstType",
+          "declaredType": "Beyond.GEnums.EnergyShardType",
+          "setterMethodIndex": 123683,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67014323,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014341,
+            "targetRva": 67017280,
+            "methodIndex": 123683
+          },
+          "sourceToDestinationHex": "4885DB74654533C08BD0488BCB",
+          "sourceContextInstructionRva": 67014310
+        }
+      ]
+    },
+    "checkDamageType": {
+      "sourceContract": "buff_5d_native.json",
+      "wrapperTypeDefinition": 16619,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageType_DataForMemoryPack",
+      "runtimeTypeDefinition": 13489,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckDamageType+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        124168,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageType_DataForMemoryPack",
+        "Deserialize",
+        58592688
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58592832,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592855,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84F40000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58592873,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592895,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84CB0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 58592860
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58592906,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592928,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84AA0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58592939,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592961,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84890000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "damageType",
+          "declaredType": "Beyond.GEnums.DamageType",
+          "setterMethodIndex": 124165,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58592979,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592997,
+            "targetRva": 58593104,
+            "methodIndex": 124165
+          },
+          "sourceToDestinationHex": "4885DB74654533C08BD0488BCB",
+          "sourceContextInstructionRva": 58592966
+        }
+      ]
     }
   },
   "actionDispatch": {
@@ -633,12 +3061,16 @@
     "257": "abnormalStartFinish",
     "299": "refreshBuffAttrModifier",
     "82": "squadInFight",
-    "244": "moveGait"
+    "244": "moveGait",
+    "115": "checkSkillCastId",
+    "356": "skillAffix",
+    "395": "triggerSpellBurst",
+    "93": "checkDamageType"
   },
   "evidenceBoundary": {
-    "exact": "Selected inherited member order and original-span four-member NotNextCheckAction storage with its extended union tag.",
-    "direct": "Independently authenticated named nonrecursive action fields, including the inherited four-member prefix and scalar/byte suffixes. Source reader, generated setters/runtime fields and the selected action dispatcher must each agree. CheckSquadInFight independently names four inherited fields and its stored invertCondition byte.",
-    "conditional": "Exact storage requires source digest, selected native inputs, member-four/null-wrapper framing and exact original span.",
-    "unresolved": "Enum and flag meanings, evaluated predicates, IFix paths, provider selection, environment ownership and gameplay execution. An inherited-only action does not establish a no-op; a stored flag does not establish pause or event delivery. A stored invertCondition byte does not prove the selected fight-state receiver, predicate inversion, returned condition or execution. MoveGait stores maxGait before minGait; neither raw enum proves the evaluated movement limit or gait change."
+    "exact": "Selected inherited member order and original-span four-member NotNextCheckAction storage with its extended union tag. CheckSkillCastId has exactly four inherited source operands; its explicit buffered primitive programs and inherited setters prove the reader/ref-wrapper/owned base Data transfer and cursor accounting. SkillAffix has its own current route/source and four independently validated inherited buffered primitive/cursor/base-Data transfers; no extra serialized affix identifier is present. CheckDamageType joins its independently checked five-member current reader, generated setters and current dispatcher route; the final DamageType operand is a raw four-byte scalar.",
+    "direct": "Independently authenticated named nonrecursive action fields, including the inherited four-member prefix and scalar/byte suffixes. Source reader, generated setters/runtime fields and the selected action dispatcher must each agree. CheckSquadInFight independently names four inherited fields and its stored invertCondition byte. TriggerSpellBurstEventAction independently stores the four inherited operands followed by the spellBurstType DWORD.",
+    "conditional": "Exact storage requires source digest, selected native inputs, reviewed member-count/null-wrapper framing and exact original span. Buffered helper paths and ordinary child returns preserving Win64 nonvolatile registers are required; source Boolean bits are retained independently of the normalized value passed to the setter.",
+    "unresolved": "Enum and flag meanings, evaluated predicates, IFix paths, provider selection, environment ownership and gameplay execution. An inherited-only action does not establish a no-op; a stored flag does not establish pause or event delivery. A stored invertCondition byte does not prove the selected fight-state receiver, predicate inversion, returned condition or execution. MoveGait stores maxGait before minGait; neither raw enum proves the evaluated movement limit or gait change. CheckSkillCastId has no additional serialized skill ID field. Live condition context, acquired cast identities, comparison result and condition execution remain unproved. Live skill-affix lookup/selection, handler effects and surrounding root admission remain unresolved. The spellBurstType bits do not prove an emitted spell-burst event or its receiver and effects. Stored DamageType values do not establish condition evaluation, a selected damage event, or any runtime branch effect."
   }
 }

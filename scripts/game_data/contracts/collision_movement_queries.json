@@ -1,0 +1,97 @@
+{
+  "schema": "endfield.collision-movement-query-claims.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional: named native bodies contain these calls and field reads. These claims establish available movement/query routes, not their executed branch, live IFix selection, query masks/results, contact notifications, solver response or selected-mesh participation. Internal-call string bindings and native registration require their own proof.",
+  "methods": {
+    "Movement.TryMoveCapsule": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "TryMoveCapsule",
+      "contract": "queries a character sweep and has a logic-position update route",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.CharacterCollisionSweep", "Beyond.Gameplay.Core.MovementComponent.set_logicPos"]}]
+    },
+    "Movement.CharacterCollisionSweep": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "CharacterCollisionSweep",
+      "contract": "queries capsule casts, reads the hit buffer and filters collider proxies",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovePhysQuery.CapsuleCastAll", "Beyond.Gameplay.Core.MovePhysQuery.get_castHits", "Beyond.Gameplay.Core.MovementComponent._CheckIfColliderValidForCollisions"]}]
+    },
+    "Movement.CharacterCollisionOverlap": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "CharacterCollisionOverlap",
+      "contract": "reads overlap results and applies the character collider filter",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovePhysQuery.get_overlappedColliders", "Beyond.Gameplay.Core.MovementComponent._CheckIfColliderValidForCollisions"]}]
+    },
+    "Movement.CharacterCollisionRaycast": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "CharacterCollisionRaycast",
+      "contract": "gets the collidable-layer mask, queries rays and filters returned collider proxies",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.get_collidableLayers", "Beyond.Gameplay.Core.MovePhysQuery.RaycastAll", "Beyond.Gameplay.Core.MovePhysQuery.get_castHits", "Beyond.Gameplay.Core.MovementComponent._CheckIfColliderValidForCollisions"], "ordered": true}]
+    },
+    "Movement.CalcPenetration": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "CalcPenetration",
+      "contract": "has a capsule-penetration route using collider-proxy transform data",
+      "claims": [{"calls": ["UnityEngine.ECSColliderResultProxy.get_transformPosition", "UnityEngine.ECSColliderResultProxy.get_transformRotation", "Beyond.Gameplay.Core.MovePhysQuery.ComputeCapsulePenetration"]}]
+    },
+    "Movement.ComputeFloorDist": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "ComputeFloorDist",
+      "contract": "queries a sphere sweep and evaluates walkable-collider results",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.SphereCollisionSweep", "Beyond.Gameplay.Core.MoveUtils.IsWalkableCollider"]}]
+    },
+    "Movement.FindFloor": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "FindFloor",
+      "contract": "uses the floor-distance query and postprocesses the floor result",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.ComputeFloorDist", "Beyond.Gameplay.Core.MovementComponent+FindFloorResult.PostProcessFloor"]}]
+    },
+    "Grounded.ProcessPosition": {
+      "type": "Beyond.Gameplay.Core.MovePipelineGrounded",
+      "method": "ProcessPosition",
+      "contract": "has floor-query and movement-along-floor routes",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.FindFloor", "Beyond.Gameplay.Core.MovePipelineGroundBase.MoveAlongFloor"]}]
+    },
+    "GroundBase.MoveAlongFloor": {
+      "type": "Beyond.Gameplay.Core.MovePipelineGroundBase",
+      "method": "MoveAlongFloor",
+      "contract": "has a capsule-movement route",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.TryMoveCapsule"]}]
+    },
+    "Air.ProcessPosition": {
+      "type": "Beyond.Gameplay.Core.MovePipelineAir",
+      "method": "ProcessPosition",
+      "contract": "has capsule-movement and impact-handler routes",
+      "claims": [{"calls": ["Beyond.Gameplay.Core.MovementComponent.TryMoveCapsule", "Beyond.Gameplay.Core.MovementComponent.HandleImpact"]}]
+    },
+    "Movement.ColliderFilter": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "_CheckIfColliderValidForCollisions",
+      "contract": "reads collider gameplay options and layer data while filtering candidates",
+      "claims": [{"calls": ["Beyond.Gameplay.PhysHelper.GetColliderOptionsFromCollider", "UnityEngine.ECSColliderResultProxy.get_layer", "UnityEngine.MultiCollider.GetGameplayOptionAt"]}]
+    },
+    "Movement.CollidableLayers": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "get_collidableLayers",
+      "contract": "reads the configured base mask and ignored mask; this claim alone does not establish their live values or exact expression",
+      "claims": [{"readsField": "Beyond.Gameplay.Core.MovementComponent::baseCollidableLayers"}, {"readsField": "Beyond.Gameplay.Core.MovementComponent::ignoreCollidableLayers"}]
+    },
+    "Movement.OverlapLayers": {
+      "type": "Beyond.Gameplay.Core.MovementComponent",
+      "method": "get_overlapLayers",
+      "contract": "reads the configured base collidable and ignored masks; overlap-only additions remain separate",
+      "claims": [{"readsField": "Beyond.Gameplay.Core.MovementComponent::baseCollidableLayers"}, {"readsField": "Beyond.Gameplay.Core.MovementComponent::ignoreCollidableLayers"}]
+    },
+    "Query.RaycastAll": {
+      "type": "Beyond.Gameplay.Core.MovePhysQuery",
+      "method": "RaycastAll",
+      "contract": "has a PhysHelper ray-query route",
+      "claims": [{"calls": ["Beyond.Gameplay.PhysHelper.RaycastAll"]}]
+    },
+    "Query.CapsulePenetration": {
+      "type": "Beyond.Gameplay.Core.MovePhysQuery",
+      "method": "ComputeCapsulePenetration",
+      "contract": "has a PhysHelper capsule-penetration route",
+      "claims": [{"calls": ["Beyond.Gameplay.PhysHelper.ComputeCapsulePenetration"]}]
+    }
+  }
+}

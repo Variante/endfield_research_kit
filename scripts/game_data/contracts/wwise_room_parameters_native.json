@@ -1,0 +1,2481 @@
+{
+  "schema": "endfield.wwise-room-parameters-native.v2",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "parameterOwnerContract": "wwise_effect_parameters_native",
+  "parameterOwnerSchema": "endfield.wwise-effect-parameters-native.v4",
+  "configurationOwnerContract": "wwise_room_configuration_native",
+  "configurationOwnerSchema": "endfield.wwise-room-configuration-native.v3",
+  "factoryClassId": "0x00760003",
+  "nativeGroups": [
+    {
+      "key": "roomParameterDestructor",
+      "entryRva": "0x2312d0",
+      "windows": [
+        {
+          "rva": "0x2312d0",
+          "bodyLength": 43,
+          "bodySha256": "56005e42947a6e02f128a73b6e2f2e1fad0017aabe63fc3bdfc4601068425c8b",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "deleteFlag",
+        "deleteCall"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "deleteFlag",
+          "rva": "0x2312e3",
+          "instructionHex": "f6c201"
+        },
+        {
+          "role": "deleteCall",
+          "rva": "0x2312ed",
+          "instructionHex": "e8c2a80200"
+        }
+      ]
+    },
+    {
+      "key": "roomParameterUpdate",
+      "entryRva": "0x231590",
+      "windows": [
+        {
+          "rva": "0x231590",
+          "bodyLength": 1979,
+          "bodySha256": "909b64405eea627787a4ca89aaf9e78f00725e6af1029d5339f95a79a6fbe1c9",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "nullInput",
+        "signedId",
+        "maximumId",
+        "remap",
+        "targetLookup",
+        "dispatch",
+        "successfulNoOp",
+        "nullInputResult"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "nullInput",
+          "rva": "0x231599",
+          "instructionHex": "4d85c0"
+        },
+        {
+          "role": "signedId",
+          "rva": "0x2315a9",
+          "instructionHex": "480fbfc2"
+        },
+        {
+          "role": "maximumId",
+          "rva": "0x2315ad",
+          "instructionHex": "83f86e"
+        },
+        {
+          "role": "remap",
+          "rva": "0x2315bd",
+          "instructionHex": "0fb68402dc1c2300"
+        },
+        {
+          "role": "targetLookup",
+          "rva": "0x2315c5",
+          "instructionHex": "8b8c82181c2300"
+        },
+        {
+          "role": "dispatch",
+          "rva": "0x2315cf",
+          "instructionHex": "ffe1"
+        },
+        {
+          "role": "successfulNoOp",
+          "rva": "0x231c0a",
+          "instructionHex": "b801000000"
+        },
+        {
+          "role": "nullInputResult",
+          "rva": "0x23159e",
+          "instructionHex": "b81f000000"
+        }
+      ]
+    },
+    {
+      "key": "roomParameterClone",
+      "entryRva": "0x231300",
+      "windows": [
+        {
+          "rva": "0x231300",
+          "bodyLength": 227,
+          "bodySha256": "e0ee1f7426b74675d9761296bb33127a0e4d223f82acd84017bf42a0352bcfaf",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "allocationSize",
+        "allocatorCall",
+        "vtable",
+        "refreshFlag",
+        "rebuildFlag"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "allocationSize",
+          "rva": "0x23131c",
+          "instructionHex": "bac8000000"
+        },
+        {
+          "role": "allocatorCall",
+          "rva": "0x231324",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "vtable",
+          "rva": "0x231333",
+          "instructionHex": "488d05568a0a00"
+        },
+        {
+          "role": "refreshFlag",
+          "rva": "0x23136e",
+          "instructionHex": "c6425801"
+        },
+        {
+          "role": "rebuildFlag",
+          "rva": "0x231398",
+          "instructionHex": "c6829a00000001"
+        }
+      ]
+    },
+    {
+      "key": "roomParameterTerminate",
+      "entryRva": "0x180060",
+      "windows": [
+        {
+          "rva": "0x180060",
+          "bodyLength": 56,
+          "bodySha256": "b169d6a4a681445a7d0e3b1e7dd9293bfa7ce78c28a33dc0bb6558491a357b24",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "nullThis",
+        "destructorCall",
+        "freeCall"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "nullThis",
+          "rva": "0x180070",
+          "instructionHex": "4885c9"
+        },
+        {
+          "role": "destructorCall",
+          "rva": "0x18007a",
+          "instructionHex": "ff10"
+        },
+        {
+          "role": "freeCall",
+          "rva": "0x180085",
+          "instructionHex": "ff5010"
+        }
+      ]
+    },
+    {
+      "key": "effectTemplateSetPlugin",
+      "entryRva": "0x14c130",
+      "windows": [
+        {
+          "rva": "0x14c130",
+          "bodyLength": 181,
+          "bodySha256": "2ad6f4835048b3fa324b2be2f0a252c07cd87dde534460d3267973c70834ef3f",
+          "unwindRva": "0x2f7ed8",
+          "unwindInfoHex": "0114080014640a00145409001434080014521070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "templateParameterStore",
+        "templateClassStore",
+        "factoryDispatch",
+        "parameterInitialize",
+        "parameterRelease",
+        "parameterAllocator"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "templateParameterStore",
+          "rva": "0x14c1c4",
+          "instructionHex": "48897338"
+        },
+        {
+          "role": "templateClassStore",
+          "rva": "0x14c1cd",
+          "instructionHex": "897b30"
+        },
+        {
+          "role": "factoryDispatch",
+          "rva": "0x14c164",
+          "instructionHex": "e8f71efdff"
+        },
+        {
+          "role": "parameterInitialize",
+          "rva": "0x14c188",
+          "instructionHex": "ff5018"
+        },
+        {
+          "role": "parameterRelease",
+          "rva": "0x14c1c1",
+          "instructionHex": "ff5020"
+        },
+        {
+          "role": "parameterAllocator",
+          "rva": "0x14c17b",
+          "instructionHex": "488d15ce391e00"
+        }
+      ]
+    },
+    {
+      "key": "effectTemplateLoad",
+      "entryRva": "0x14c250",
+      "windows": [
+        {
+          "rva": "0x14c250",
+          "bodyLength": 748,
+          "bodySha256": "d521018e2db5ae11c0f6ec66987f3e93292256ec883f1f53e12973b8316f0e1d",
+          "unwindRva": "0x309fc8",
+          "unwindInfoHex": "01140a0014340c00143210f00ee00cd00ac0087007600650",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "templateParameterStore",
+        "factoryDispatch",
+        "parameterInitialize"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "templateParameterStore",
+          "rva": "0x14c315",
+          "instructionHex": "49897d38"
+        },
+        {
+          "role": "factoryDispatch",
+          "rva": "0x14c2ab",
+          "instructionHex": "e8b01dfdff"
+        },
+        {
+          "role": "parameterInitialize",
+          "rva": "0x14c2ce",
+          "instructionHex": "ff5018"
+        }
+      ]
+    },
+    {
+      "key": "effectParameterInstantiate",
+      "entryRva": "0x14ad60",
+      "windows": [
+        {
+          "rva": "0x14ad60",
+          "bodyLength": 34,
+          "bodySha256": "5511695cc486ee2123527d67d7ad5d39fcfa5cf4676f79e4e521a75ad58cf092",
+          "unwindRva": "0x2f22e0",
+          "unwindInfoHex": "0104010004620000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "instantiate"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instantiate",
+          "rva": "0x14ad78",
+          "instructionHex": "e803ffffff"
+        }
+      ]
+    },
+    {
+      "key": "effectParameterInstantiateWithAllocator",
+      "entryRva": "0x14ac80",
+      "windows": [
+        {
+          "rva": "0x14ac80",
+          "bodyLength": 67,
+          "bodySha256": "76a7b188b93b23aeb81966ef4761790b93277aecfc2b9d766b001c348c287dbf",
+          "unwindRva": "0x2f70c4",
+          "unwindInfoHex": "0114080014640900145408001434070014321070",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14acc3",
+          "bodyLength": 94,
+          "bodySha256": "e2bb6dff0d297dcb836778f69740817a210f456641af6aea6e1d0a0e440cbf51",
+          "unwindRva": "0x30a2ac",
+          "unwindInfoHex": "2105020005e4060080ac1400c3ac1400c4702f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14ad21",
+          "bodyLength": 57,
+          "bodySha256": "ac9114494f500637362e792a0de21494b9883ca8ac9d12d9605db4f2ac5f6e57",
+          "unwindRva": "0x30a2c0",
+          "unwindInfoHex": "2100000080ac1400c3ac1400c4702f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "sourceParameter",
+        "subscriberTemplate",
+        "subscriberParameter",
+        "subscriberNext",
+        "subscriberHead",
+        "referenceRetain",
+        "templateLock",
+        "conditionalSubscribe",
+        "parameterClone",
+        "cloneAllocator"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "sourceParameter",
+          "rva": "0x14acac",
+          "instructionHex": "488b4a38"
+        },
+        {
+          "role": "subscriberTemplate",
+          "rva": "0x14accf",
+          "instructionHex": "48897b58"
+        },
+        {
+          "role": "subscriberParameter",
+          "rva": "0x14acd3",
+          "instructionHex": "48894350"
+        },
+        {
+          "role": "subscriberNext",
+          "rva": "0x14acf9",
+          "instructionHex": "48898380000000"
+        },
+        {
+          "role": "subscriberHead",
+          "rva": "0x14ad00",
+          "instructionHex": "48899fa0000000"
+        },
+        {
+          "role": "referenceRetain",
+          "rva": "0x14ad11",
+          "instructionHex": "f0ff4714"
+        },
+        {
+          "role": "templateLock",
+          "rva": "0x14accb",
+          "instructionHex": "488d4f70"
+        },
+        {
+          "role": "conditionalSubscribe",
+          "rva": "0x14ad2f",
+          "instructionHex": "e8dc0c0000"
+        },
+        {
+          "role": "parameterClone",
+          "rva": "0x14acc8",
+          "instructionHex": "ff5010"
+        },
+        {
+          "role": "cloneAllocator",
+          "rva": "0x14acbc",
+          "instructionHex": "488d159d4e1e00"
+        }
+      ]
+    },
+    {
+      "key": "effectTemplateConstructor",
+      "entryRva": "0x149cc0",
+      "windows": [
+        {
+          "rva": "0x149cc0",
+          "bodyLength": 126,
+          "bodySha256": "642b6d9763be9490e30a40ca09d336fdd5083031f6e874071eb16acd268a0ce2",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "initializeLock"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "initializeLock",
+          "rva": "0x149d23",
+          "instructionHex": "ff15e7141400"
+        }
+      ]
+    },
+    {
+      "key": "effectParameterSubscribe",
+      "entryRva": "0x14ba10",
+      "windows": [
+        {
+          "rva": "0x14ba10",
+          "bodyLength": 113,
+          "bodySha256": "ff3c83ee5cb6f8678ef8f4ba745a6b819fd83fcc32d68253a833422904f08fa4",
+          "unwindRva": "0x30a2d0",
+          "unwindInfoHex": "012408002401110018e016d014c0127011301050",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14ba81",
+          "bodyLength": 203,
+          "bodySha256": "7fef4a6112c396d8bdebb1d746a037076d41e42a1eec0219674cd641f7b3b8e0",
+          "unwindRva": "0x30a2e4",
+          "unwindInfoHex": "2113040013f410000864180010ba140081ba1400d0a23000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14bb4c",
+          "bodyLength": 295,
+          "bodySha256": "3943cdf27632e1789077cfea87aa26c56b2c91a853ce8d182874745c57c12964",
+          "unwindRva": "0x30a2fc",
+          "unwindInfoHex": "2100020000f4100010ba140081ba1400d0a23000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14bc73",
+          "bodyLength": 19,
+          "bodySha256": "53999475e3151223be05352158d722a3b8c4875b21c4fde52092ba6719fd2343",
+          "unwindRva": "0x30a310",
+          "unwindInfoHex": "2100000010ba140081ba1400d0a23000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "storedParameterGuard"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "storedParameterGuard",
+          "rva": "0x14ba73",
+          "instructionHex": "4c396350"
+        }
+      ]
+    },
+    {
+      "key": "effectParameterRegistryCreate",
+      "entryRva": "0x11e060",
+      "windows": [
+        {
+          "rva": "0x11e060",
+          "bodyLength": 130,
+          "bodySha256": "a26addc81ad93669fe5f3328ef687f2c49df62f84e2c764523f82b6c3c51cf0a",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "registryRows",
+        "registryCount",
+        "registryStride",
+        "parameterFactory",
+        "successWithoutFactory",
+        "parameterFactoryCall",
+        "publishParameter",
+        "selectedRegistryRecord"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "registryRows",
+          "rva": "0x11e072",
+          "instructionHex": "488b0557742200"
+        },
+        {
+          "role": "registryCount",
+          "rva": "0x11e079",
+          "instructionHex": "448b0d58742200"
+        },
+        {
+          "role": "registryStride",
+          "rva": "0x11e094",
+          "instructionHex": "4883c020"
+        },
+        {
+          "role": "parameterFactory",
+          "rva": "0x11e0b8",
+          "instructionHex": "488b4108"
+        },
+        {
+          "role": "successWithoutFactory",
+          "rva": "0x11e0c1",
+          "instructionHex": "b801000000"
+        },
+        {
+          "role": "parameterFactoryCall",
+          "rva": "0x11e0cf",
+          "instructionHex": "ffd0"
+        },
+        {
+          "role": "publishParameter",
+          "rva": "0x11e0d1",
+          "instructionHex": "488903"
+        },
+        {
+          "role": "selectedRegistryRecord",
+          "rva": "0x11e0a0",
+          "instructionHex": "488d4808"
+        }
+      ]
+    },
+    {
+      "key": "effectParameterCarrierRelease",
+      "entryRva": "0x14c860",
+      "windows": [
+        {
+          "rva": "0x14c860",
+          "bodyLength": 13,
+          "bodySha256": "8a20aba8d16e19c5dd634eb049708a13d1d34135d2d593b1f79864db9283a825",
+          "unwindRva": "0x30a16c",
+          "unwindInfoHex": "010a04000a340e000a920650",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14c86d",
+          "bodyLength": 121,
+          "bodySha256": "0408c9e8c41601c57b7f8dee85ab62161375253ac60e87e8aee9961ab9d8539f",
+          "unwindRva": "0x30a178",
+          "unwindInfoHex": "2105020005740d0060c814006dc814006ca13000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14c8e6",
+          "bodyLength": 68,
+          "bodySha256": "864c2157599b8693368cd3cd3f7f92f9ee58ff8fd225c3e59ae30ec7147c700a",
+          "unwindRva": "0x30a18c",
+          "unwindInfoHex": "2105020005640c006dc81400e6c8140078a13000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14c92a",
+          "bodyLength": 14,
+          "bodySha256": "8829fbf05d8819adfa5ed58e17fc419ab3e3b2edbb2c03b448c4abe567a60237",
+          "unwindRva": "0x30a1a0",
+          "unwindInfoHex": "210000006dc81400e6c8140078a13000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14c938",
+          "bodyLength": 54,
+          "bodySha256": "731d61fd8fc0de68aa87d889d676a0ee3db4133f8aa5b515ae01686ce728b900",
+          "unwindRva": "0x30a1b0",
+          "unwindInfoHex": "2100000060c814006dc814006ca13000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x14c96e",
+          "bodyLength": 71,
+          "bodySha256": "c084ebc209e5d555b87e6b894a12285c486059a4112e94e9f0f83a0a64b02f7f",
+          "unwindRva": "0x30a1c0",
+          "unwindInfoHex": "2100040000740d0000640c0060c814006dc814006ca13000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "unsubscribeObject",
+        "parameterRead",
+        "templateRead",
+        "clearTemplate",
+        "removeHead",
+        "removeInterior",
+        "referenceRelease",
+        "unsubscribe",
+        "parameterRelease",
+        "releaseAllocator"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "unsubscribeObject",
+          "rva": "0x14c872",
+          "instructionHex": "4883c108"
+        },
+        {
+          "role": "parameterRead",
+          "rva": "0x14c8bf",
+          "instructionHex": "488b4b50"
+        },
+        {
+          "role": "templateRead",
+          "rva": "0x14c8d9",
+          "instructionHex": "488b7b58"
+        },
+        {
+          "role": "clearTemplate",
+          "rva": "0x14c926",
+          "instructionHex": "48896b58"
+        },
+        {
+          "role": "removeHead",
+          "rva": "0x14c97a",
+          "instructionHex": "4c8987a0000000"
+        },
+        {
+          "role": "removeInterior",
+          "rva": "0x14c983",
+          "instructionHex": "4c898280000000"
+        },
+        {
+          "role": "referenceRelease",
+          "rva": "0x14c999",
+          "instructionHex": "f00fc14714"
+        },
+        {
+          "role": "unsubscribe",
+          "rva": "0x14c876",
+          "instructionHex": "e835d7fbff"
+        },
+        {
+          "role": "parameterRelease",
+          "rva": "0x14c8d2",
+          "instructionHex": "ff5020"
+        },
+        {
+          "role": "releaseAllocator",
+          "rva": "0x14c8cb",
+          "instructionHex": "488d158e321e00"
+        }
+      ]
+    },
+    {
+      "key": "effectParameterUnsubscribe",
+      "entryRva": "0x109fb0",
+      "windows": [
+        {
+          "rva": "0x109fb0",
+          "bodyLength": 106,
+          "bodySha256": "102bf2cdf8a3164eae00e1f946ec0cc38d0e83c9b781d171a96a8a556690626f",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "subscriptionCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "subscriptionCount",
+          "rva": "0x109fc1",
+          "instructionHex": "8b4140"
+        }
+      ]
+    }
+  ],
+  "parameterSlots": [
+    {
+      "slot": 0,
+      "group": "roomParameterDestructor"
+    },
+    {
+      "slot": 8,
+      "group": "roomParameterUpdate"
+    },
+    {
+      "slot": 16,
+      "group": "roomParameterClone"
+    },
+    {
+      "slot": 32,
+      "group": "roomParameterTerminate"
+    }
+  ],
+  "initializeLeaf": {
+    "entryRva": "0x231430",
+    "byteLength": 343,
+    "bytesHex": "4d8bd84c8bd14585c90f853b0100000f100572911000c741089a99993fb8010000000f100d6f911000c7410c000010400f11819c000000c741100000c842f20f1005629110000f1189ac00000048c7411400003443f20f1181bc000000c7411c0000c84248c741200000803fc7412800007a4448c7412c0000803fc7413400401c46c741380000803fc7413c0000803fc741400000803fc741440000803fc741484ff38437c7414c0000803fc74150cdcccc3dc74154c0fc903dc7415c1700000048c741600000c841c741680000204266c781980000000001c7416c0000a042c741700000c842c7417408000000c7417c4ff38437c741780000803f48c7818000000003000000c7818800000003000000c7818c00000001000000c7819000000003000000c78194000000020000008b0d7b90100041898ac400000041c642580141c6829a00000001c3488b01458bc1498bd348ff6028",
+    "sha256": "6d74f7a40d483b8d330f283894d3f3eadcf1047a6a250f38579ec9f7d06ae953",
+    "slot": 24,
+    "boundary": "complete stackless entry through default return and bulk-loader tail jump"
+  },
+  "dispatch": {
+    "group": "roomParameterUpdate",
+    "maximumId": 110,
+    "remapRva": "0x231cdc",
+    "remapBytes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      48,
+      48,
+      48,
+      48,
+      48,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      48,
+      48,
+      48,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      48,
+      48,
+      48,
+      48,
+      28,
+      29,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      30,
+      31,
+      32,
+      33,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      35,
+      36,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47
+    ],
+    "targetTableRva": "0x231c18",
+    "targetRvas": [
+      "0x23196e",
+      "0x231986",
+      "0x23199e",
+      "0x2319b6",
+      "0x23194f",
+      "0x2315d1",
+      "0x2315e6",
+      "0x2319ce",
+      "0x2319e6",
+      "0x2319fe",
+      "0x2315fb",
+      "0x231627",
+      "0x231b1a",
+      "0x231a78",
+      "0x231a93",
+      "0x231653",
+      "0x231684",
+      "0x231699",
+      "0x231aae",
+      "0x231ac9",
+      "0x2316ae",
+      "0x2316df",
+      "0x2316f4",
+      "0x231ae4",
+      "0x231aff",
+      "0x231709",
+      "0x23173a",
+      "0x23174f",
+      "0x231a16",
+      "0x231a47",
+      "0x231764",
+      "0x2317a9",
+      "0x2317ee",
+      "0x231833",
+      "0x231878",
+      "0x2318bd",
+      "0x231902",
+      "0x231b39",
+      "0x231b4d",
+      "0x231b61",
+      "0x231b75",
+      "0x231b89",
+      "0x231b9d",
+      "0x231bb1",
+      "0x231bc5",
+      "0x231bd9",
+      "0x231bed",
+      "0x231c01",
+      "0x231c0a"
+    ],
+    "defaultRva": "0x231c0a",
+    "defaultResult": 1,
+    "nullInputResult": 31,
+    "rows": [
+      {
+        "parameterId": 0,
+        "branchRva": "0x23196e",
+        "role": "earlyReflections.patternId",
+        "sourceBytes": 4,
+        "storedOffset": 92,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231971",
+            "instructionHex": "89435c",
+            "offset": 92,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231979",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b0089435cb801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 1,
+        "branchRva": "0x231986",
+        "role": "reverb.preDelayMilliseconds",
+        "sourceBytes": 4,
+        "storedOffset": 96,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231989",
+            "instructionHex": "894360",
+            "offset": 96,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231991",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00894360b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 2,
+        "branchRva": "0x23199e",
+        "role": "earlyReflections.roomSizePercent",
+        "sourceBytes": 4,
+        "storedOffset": 100,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2319a1",
+            "instructionHex": "894364",
+            "offset": 100,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2319a9",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00894364b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 3,
+        "branchRva": "0x2319b6",
+        "role": "earlyReflections.rearDelayMilliseconds",
+        "sourceBytes": 4,
+        "storedOffset": 104,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2319b9",
+            "instructionHex": "894368",
+            "offset": 104,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2319c1",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00894368b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 4,
+        "branchRva": "0x23194f",
+        "role": "earlyReflections.enabled",
+        "sourceBytes": 1,
+        "storedOffset": 153,
+        "storedBytes": 1,
+        "transform": "boolean",
+        "stores": [
+          {
+            "rva": "0x231953",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          },
+          {
+            "rva": "0x23195d",
+            "instructionHex": "888399000000",
+            "offset": 153,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "41803800c6839a000000010f95c0888399000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 10,
+        "branchRva": "0x2315d1",
+        "role": "reverb.decayTimeSeconds",
+        "sourceBytes": 4,
+        "storedOffset": 8,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2315d4",
+            "instructionHex": "894308",
+            "offset": 8,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2315dc",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b00894308b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 11,
+        "branchRva": "0x2315e6",
+        "role": "reverb.highFrequencyDamping",
+        "sourceBytes": 4,
+        "storedOffset": 12,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2315e9",
+            "instructionHex": "89430c",
+            "offset": 12,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2315f1",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b0089430cb801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 12,
+        "branchRva": "0x2319ce",
+        "role": "reverb.densityPercent",
+        "sourceBytes": 4,
+        "storedOffset": 108,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2319d1",
+            "instructionHex": "89436c",
+            "offset": 108,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2319d9",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b0089436cb801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 13,
+        "branchRva": "0x2319e6",
+        "role": "reverb.roomShapePercent",
+        "sourceBytes": 4,
+        "storedOffset": 112,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2319e9",
+            "instructionHex": "894370",
+            "offset": 112,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2319f1",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00894370b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 14,
+        "branchRva": "0x2319fe",
+        "role": "reverb.qualityReverberations",
+        "sourceBytes": 4,
+        "storedOffset": 116,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231a01",
+            "instructionHex": "894374",
+            "offset": 116,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231a09",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00894374b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 15,
+        "branchRva": "0x2315fb",
+        "role": "reverb.diffusionPercent",
+        "sourceBytes": 4,
+        "storedOffset": 16,
+        "storedBytes": 4,
+        "transform": "clampedFloat",
+        "stores": [
+          {
+            "rva": "0x231613",
+            "instructionHex": "f30f114b10",
+            "offset": 16,
+            "bytes": 4
+          },
+          {
+            "rva": "0x23161d",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f10000f57c90f2fc1720bf30f5d05c80d06000f28c8f30f114b10b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 16,
+        "branchRva": "0x231627",
+        "role": "reverb.stereoWidthDegrees",
+        "sourceBytes": 4,
+        "storedOffset": 20,
+        "storedBytes": 4,
+        "transform": "clampedFloat",
+        "stores": [
+          {
+            "rva": "0x23163f",
+            "instructionHex": "f30f114b14",
+            "offset": 20,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231649",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f10000f57c90f2fc1720bf30f5d05f06406000f28c8f30f114b14b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 20,
+        "branchRva": "0x231b1a",
+        "role": "tone.enabled",
+        "sourceBytes": 1,
+        "storedOffset": 152,
+        "storedBytes": 1,
+        "transform": "boolean",
+        "stores": [
+          {
+            "rva": "0x231b1e",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          },
+          {
+            "rva": "0x231b28",
+            "instructionHex": "888398000000",
+            "offset": 152,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "41803800c6839a000000010f95c0888398000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 21,
+        "branchRva": "0x231a78",
+        "role": "tone.bands[0].insert",
+        "sourceBytes": 4,
+        "storedOffset": 128,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231a7b",
+            "instructionHex": "898380000000",
+            "offset": 128,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231a86",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00898380000000b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 22,
+        "branchRva": "0x231a93",
+        "role": "tone.bands[0].curve",
+        "sourceBytes": 4,
+        "storedOffset": 132,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231a96",
+            "instructionHex": "898384000000",
+            "offset": 132,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231aa1",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00898384000000b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 23,
+        "branchRva": "0x231653",
+        "role": "tone.bands[0].gainDb",
+        "sourceBytes": 4,
+        "storedOffset": 24,
+        "storedBytes": 4,
+        "transform": "clampedFloat",
+        "stores": [
+          {
+            "rva": "0x231670",
+            "instructionHex": "f30f114b18",
+            "offset": 24,
+            "bytes": 4
+          },
+          {
+            "rva": "0x23167a",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100dcc870a000f2fc1720bf30f5d05a33708000f28c8f30f114b18b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 24,
+        "branchRva": "0x231684",
+        "role": "tone.bands[0].frequencyHz",
+        "sourceBytes": 4,
+        "storedOffset": 28,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231687",
+            "instructionHex": "89431c",
+            "offset": 28,
+            "bytes": 4
+          },
+          {
+            "rva": "0x23168f",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b0089431cb801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 25,
+        "branchRva": "0x231699",
+        "role": "tone.bands[0].qualityFactor",
+        "sourceBytes": 4,
+        "storedOffset": 32,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x23169c",
+            "instructionHex": "894320",
+            "offset": 32,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2316a4",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b00894320b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 26,
+        "branchRva": "0x231aae",
+        "role": "tone.bands[1].insert",
+        "sourceBytes": 4,
+        "storedOffset": 136,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231ab1",
+            "instructionHex": "898388000000",
+            "offset": 136,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231abc",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00898388000000b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 27,
+        "branchRva": "0x231ac9",
+        "role": "tone.bands[1].curve",
+        "sourceBytes": 4,
+        "storedOffset": 140,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231acc",
+            "instructionHex": "89838c000000",
+            "offset": 140,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231ad7",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b0089838c000000b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 28,
+        "branchRva": "0x2316ae",
+        "role": "tone.bands[1].gainDb",
+        "sourceBytes": 4,
+        "storedOffset": 36,
+        "storedBytes": 4,
+        "transform": "clampedFloat",
+        "stores": [
+          {
+            "rva": "0x2316cb",
+            "instructionHex": "f30f114b24",
+            "offset": 36,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2316d5",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100d71870a000f2fc1720bf30f5d05483708000f28c8f30f114b24b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 29,
+        "branchRva": "0x2316df",
+        "role": "tone.bands[1].frequencyHz",
+        "sourceBytes": 4,
+        "storedOffset": 40,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2316e2",
+            "instructionHex": "894328",
+            "offset": 40,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2316ea",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b00894328b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 30,
+        "branchRva": "0x2316f4",
+        "role": "tone.bands[1].qualityFactor",
+        "sourceBytes": 4,
+        "storedOffset": 44,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x2316f7",
+            "instructionHex": "89432c",
+            "offset": 44,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2316ff",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b0089432cb801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 31,
+        "branchRva": "0x231ae4",
+        "role": "tone.bands[2].insert",
+        "sourceBytes": 4,
+        "storedOffset": 144,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231ae7",
+            "instructionHex": "898390000000",
+            "offset": 144,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231af2",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00898390000000b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 32,
+        "branchRva": "0x231aff",
+        "role": "tone.bands[2].curve",
+        "sourceBytes": 4,
+        "storedOffset": 148,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231b02",
+            "instructionHex": "898394000000",
+            "offset": 148,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231b0d",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "418b00898394000000b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 33,
+        "branchRva": "0x231709",
+        "role": "tone.bands[2].gainDb",
+        "sourceBytes": 4,
+        "storedOffset": 48,
+        "storedBytes": 4,
+        "transform": "clampedFloat",
+        "stores": [
+          {
+            "rva": "0x231726",
+            "instructionHex": "f30f114b30",
+            "offset": 48,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231730",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100d16870a000f2fc1720bf30f5d05ed3608000f28c8f30f114b30b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 34,
+        "branchRva": "0x23173a",
+        "role": "tone.bands[2].frequencyHz",
+        "sourceBytes": 4,
+        "storedOffset": 52,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x23173d",
+            "instructionHex": "894334",
+            "offset": 52,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231745",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b00894334b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 35,
+        "branchRva": "0x23174f",
+        "role": "tone.bands[2].qualityFactor",
+        "sourceBytes": 4,
+        "storedOffset": 56,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231752",
+            "instructionHex": "894338",
+            "offset": 56,
+            "bytes": 4
+          },
+          {
+            "rva": "0x23175a",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "418b00894338b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 40,
+        "branchRva": "0x231a16",
+        "role": "inputLevelsDb.center",
+        "sourceBytes": 4,
+        "storedOffset": 120,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x231a30",
+            "instructionHex": "f30f114378",
+            "offset": 120,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231a3a",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "f3410f1008f30f590de9e10500f30f1005b9080600e8b08d0300f30f114378b801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 41,
+        "branchRva": "0x231a47",
+        "role": "inputLevelsDb.lfe",
+        "sourceBytes": 4,
+        "storedOffset": 124,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x231a61",
+            "instructionHex": "f30f11437c",
+            "offset": 124,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231a6b",
+            "instructionHex": "c6839a00000001",
+            "offset": 154,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          154
+        ],
+        "branchBytesHex": "f3410f1008f30f590db8e10500f30f100588080600e87f8d0300f30f11437cb801000000c6839a000000014883c4205bc3"
+      },
+      {
+        "parameterId": 50,
+        "branchRva": "0x231764",
+        "role": "reverbLevelsDb.front",
+        "sourceBytes": 4,
+        "storedOffset": 60,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x231795",
+            "instructionHex": "f30f11433c",
+            "offset": 60,
+            "bytes": 4
+          },
+          {
+            "rva": "0x23179f",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100de71f06000f2fc1720a0f28c80f57c0f30f5dc8f30f590d84e40500f30f1005540b0600e84b900300f30f11433cb801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 51,
+        "branchRva": "0x2317a9",
+        "role": "reverbLevelsDb.rear",
+        "sourceBytes": 4,
+        "storedOffset": 64,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x2317da",
+            "instructionHex": "f30f114340",
+            "offset": 64,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2317e4",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100da21f06000f2fc1720a0f28c80f57c0f30f5dc8f30f590d3fe40500f30f10050f0b0600e806900300f30f114340b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 52,
+        "branchRva": "0x2317ee",
+        "role": "reverbLevelsDb.center",
+        "sourceBytes": 4,
+        "storedOffset": 68,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x23181f",
+            "instructionHex": "f30f114344",
+            "offset": 68,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231829",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100d5d1f06000f2fc1720a0f28c80f57c0f30f5dc8f30f590dfae30500f30f1005ca0a0600e8c18f0300f30f114344b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 53,
+        "branchRva": "0x231833",
+        "role": "reverbLevelsDb.lfe",
+        "sourceBytes": 4,
+        "storedOffset": 72,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x231864",
+            "instructionHex": "f30f114348",
+            "offset": 72,
+            "bytes": 4
+          },
+          {
+            "rva": "0x23186e",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100d181f06000f2fc1720a0f28c80f57c0f30f5dc8f30f590db5e30500f30f1005850a0600e87c8f0300f30f114348b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 60,
+        "branchRva": "0x231878",
+        "role": "outputLevelsDb.dry",
+        "sourceBytes": 4,
+        "storedOffset": 76,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x2318a9",
+            "instructionHex": "f30f11434c",
+            "offset": 76,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2318b3",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100dd31e06000f2fc1720a0f28c80f57c0f30f5dc8f30f590d70e30500f30f1005400a0600e8378f0300f30f11434cb801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 61,
+        "branchRva": "0x2318bd",
+        "role": "outputLevelsDb.earlyReflections",
+        "sourceBytes": 4,
+        "storedOffset": 80,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x2318ee",
+            "instructionHex": "f30f114350",
+            "offset": 80,
+            "bytes": 4
+          },
+          {
+            "rva": "0x2318f8",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100d8e1e06000f2fc1720a0f28c80f57c0f30f5dc8f30f590d2be30500f30f1005fb090600e8f28e0300f30f114350b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 62,
+        "branchRva": "0x231902",
+        "role": "outputLevelsDb.reverb",
+        "sourceBytes": 4,
+        "storedOffset": 84,
+        "storedBytes": 4,
+        "transform": "dbToLinear",
+        "stores": [
+          {
+            "rva": "0x23193b",
+            "instructionHex": "f30f114354",
+            "offset": 84,
+            "bytes": 4
+          },
+          {
+            "rva": "0x231945",
+            "instructionHex": "c6435801",
+            "offset": 88,
+            "bytes": 1
+          }
+        ],
+        "dirtyOffsets": [
+          88
+        ],
+        "branchBytesHex": "f3410f1000f30f100d491e06000f2fc1720a0f28c80f57c0f30f5dc8f30f590de6e20500f30f1005b6090600f30f5c0dce0e0600e8a58e0300f30f114354b801000000c64358014883c4205bc3"
+      },
+      {
+        "parameterId": 100,
+        "branchRva": "0x231b39",
+        "role": "internalTuningParameters[0]",
+        "sourceBytes": 4,
+        "storedOffset": 156,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231b3c",
+            "instructionHex": "89839c000000",
+            "offset": 156,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b0089839c000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 101,
+        "branchRva": "0x231b4d",
+        "role": "internalTuningParameters[1]",
+        "sourceBytes": 4,
+        "storedOffset": 160,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231b50",
+            "instructionHex": "8983a0000000",
+            "offset": 160,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983a0000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 102,
+        "branchRva": "0x231b61",
+        "role": "internalTuningParameters[2]",
+        "sourceBytes": 4,
+        "storedOffset": 164,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231b64",
+            "instructionHex": "8983a4000000",
+            "offset": 164,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983a4000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 103,
+        "branchRva": "0x231b75",
+        "role": "internalTuningParameters[3]",
+        "sourceBytes": 4,
+        "storedOffset": 168,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231b78",
+            "instructionHex": "8983a8000000",
+            "offset": 168,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983a8000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 104,
+        "branchRva": "0x231b89",
+        "role": "internalTuningParameters[4]",
+        "sourceBytes": 4,
+        "storedOffset": 172,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231b8c",
+            "instructionHex": "8983ac000000",
+            "offset": 172,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983ac000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 105,
+        "branchRva": "0x231b9d",
+        "role": "internalTuningParameters[5]",
+        "sourceBytes": 4,
+        "storedOffset": 176,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231ba0",
+            "instructionHex": "8983b0000000",
+            "offset": 176,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983b0000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 106,
+        "branchRva": "0x231bb1",
+        "role": "internalTuningParameters[6]",
+        "sourceBytes": 4,
+        "storedOffset": 180,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231bb4",
+            "instructionHex": "8983b4000000",
+            "offset": 180,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983b4000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 107,
+        "branchRva": "0x231bc5",
+        "role": "internalTuningParameters[7]",
+        "sourceBytes": 4,
+        "storedOffset": 184,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231bc8",
+            "instructionHex": "8983b8000000",
+            "offset": 184,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983b8000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 108,
+        "branchRva": "0x231bd9",
+        "role": "internalTuningParameters[8]",
+        "sourceBytes": 4,
+        "storedOffset": 188,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231bdc",
+            "instructionHex": "8983bc000000",
+            "offset": 188,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983bc000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 109,
+        "branchRva": "0x231bed",
+        "role": "internalTuningParameters[9]",
+        "sourceBytes": 4,
+        "storedOffset": 192,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231bf0",
+            "instructionHex": "8983c0000000",
+            "offset": 192,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983c0000000b8010000004883c4205bc3"
+      },
+      {
+        "parameterId": 110,
+        "branchRva": "0x231c01",
+        "role": "internalTuningParameters[10]",
+        "sourceBytes": 4,
+        "storedOffset": 196,
+        "storedBytes": 4,
+        "transform": "copyBits",
+        "stores": [
+          {
+            "rva": "0x231c04",
+            "instructionHex": "8983c4000000",
+            "offset": 196,
+            "bytes": 4
+          }
+        ],
+        "dirtyOffsets": [],
+        "branchBytesHex": "418b008983c4000000b8010000004883c4205bc3"
+      }
+    ]
+  },
+  "clone": {
+    "group": "roomParameterClone",
+    "byteExtent": 200,
+    "copies": [
+      {
+        "sourceOffset": 8,
+        "bytes": 16,
+        "loadRva": "0x23133d",
+        "loadHex": "0f104308",
+        "destinationOffset": 8,
+        "storeRva": "0x231341",
+        "storeHex": "0f114208"
+      },
+      {
+        "sourceOffset": 24,
+        "bytes": 16,
+        "loadRva": "0x231345",
+        "loadHex": "0f104b18",
+        "destinationOffset": 24,
+        "storeRva": "0x231349",
+        "storeHex": "0f114a18"
+      },
+      {
+        "sourceOffset": 40,
+        "bytes": 16,
+        "loadRva": "0x23134d",
+        "loadHex": "0f104328",
+        "destinationOffset": 40,
+        "storeRva": "0x231351",
+        "storeHex": "0f114228"
+      },
+      {
+        "sourceOffset": 56,
+        "bytes": 16,
+        "loadRva": "0x231355",
+        "loadHex": "0f104b38",
+        "destinationOffset": 56,
+        "storeRva": "0x231359",
+        "storeHex": "0f114a38"
+      },
+      {
+        "sourceOffset": 72,
+        "bytes": 16,
+        "loadRva": "0x23135d",
+        "loadHex": "0f104348",
+        "destinationOffset": 72,
+        "storeRva": "0x231361",
+        "storeHex": "0f114248"
+      },
+      {
+        "sourceOffset": 88,
+        "bytes": 4,
+        "loadRva": "0x231365",
+        "loadHex": "8b4358",
+        "destinationOffset": 88,
+        "storeRva": "0x231368",
+        "storeHex": "894258"
+      },
+      {
+        "sourceOffset": 92,
+        "bytes": 16,
+        "loadRva": "0x231372",
+        "loadHex": "0f10435c",
+        "destinationOffset": 92,
+        "storeRva": "0x231376",
+        "storeHex": "0f11425c"
+      },
+      {
+        "sourceOffset": 108,
+        "bytes": 16,
+        "loadRva": "0x23137a",
+        "loadHex": "0f104b6c",
+        "destinationOffset": 108,
+        "storeRva": "0x23137e",
+        "storeHex": "0f114a6c"
+      },
+      {
+        "sourceOffset": 124,
+        "bytes": 16,
+        "loadRva": "0x231382",
+        "loadHex": "0f10437c",
+        "destinationOffset": 124,
+        "storeRva": "0x231386",
+        "storeHex": "0f11427c"
+      },
+      {
+        "sourceOffset": 140,
+        "bytes": 16,
+        "loadRva": "0x23138a",
+        "loadHex": "0f108b8c000000",
+        "destinationOffset": 140,
+        "storeRva": "0x231391",
+        "storeHex": "0f118a8c000000"
+      },
+      {
+        "sourceOffset": 156,
+        "bytes": 16,
+        "loadRva": "0x23139f",
+        "loadHex": "0f10839c000000",
+        "destinationOffset": 156,
+        "storeRva": "0x2313a6",
+        "storeHex": "0f11829c000000"
+      },
+      {
+        "sourceOffset": 172,
+        "bytes": 16,
+        "loadRva": "0x2313ad",
+        "loadHex": "0f108bac000000",
+        "destinationOffset": 172,
+        "storeRva": "0x2313b4",
+        "storeHex": "0f118aac000000"
+      },
+      {
+        "sourceOffset": 188,
+        "bytes": 8,
+        "loadRva": "0x2313bb",
+        "loadHex": "f20f1083bc000000",
+        "destinationOffset": 188,
+        "storeRva": "0x2313c3",
+        "storeHex": "f20f1182bc000000"
+      },
+      {
+        "sourceOffset": 196,
+        "bytes": 4,
+        "loadRva": "0x2313cb",
+        "loadHex": "8b8bc4000000",
+        "destinationOffset": 196,
+        "storeRva": "0x2313d1",
+        "storeHex": "898ac4000000"
+      }
+    ],
+    "dirtyStores": [
+      {
+        "rva": "0x23136e",
+        "instructionHex": "c6425801",
+        "offset": 88,
+        "value": 1
+      },
+      {
+        "rva": "0x231398",
+        "instructionHex": "c6829a00000001",
+        "offset": 154,
+        "value": 1
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected parameter vtable clone/update/terminate/destructor and stackless initialization entry, complete remap/target table and per-ID stored value/dirty-byte transport. Complete generic effect-template loading/setting, parameter-factory dispatch, clone-carrier storage and conditional subscription consumers.",
+    "direct": "Cloning allocates separate parameter storage, copies stored settings and forces both dirty flags. Value updates split into coefficient refresh, topology rebuild and flag-free internal tuning writes; unknown non-null IDs return success without mutation. The full class ID selects a parameter factory in a runtime registry; templates retain parameters and processing carriers retain the cloned parameters and their template, linking a subscriber list and reference count. Carrier release terminates stored cloned parameters, removes head or interior list entries, clears retained template/parameter pointers and releases the template reference; a last reference takes a separate virtual destruction path.",
+    "conditional": "Original isolated parameter lifecycle on supplied owned buffers; no Wwise engine initialization, live authored occurrence or allocation-generation claim. Registry and template/clone/FX initialization composition may use explicitly supplied private original tables, allocators and locks with subscription disabled; these are supplied interfaces, not observed game services. Original carrier release is exercised with an empty subscription list and a retained template reference; real subscription and last-reference destruction remain separate.",
+    "unresolved": "Actual live bank/template/clone identity and consumers of anonymous internal tuning fields; live RTPC scheduling, update transaction and full effect history."
+  },
+  "ownershipLayout": {
+    "templateParameter": 56,
+    "templateClass": 48,
+    "subscriberTemplate": 88,
+    "subscriberParameter": 80,
+    "subscriberNext": 128,
+    "templateSubscribers": 160,
+    "templateRefCount": 20,
+    "templateLock": 112,
+    "unsubscribeObject": 8,
+    "unsubscribeCount": 64
+  },
+  "ownershipFieldBindings": [
+    {
+      "group": "effectTemplateSetPlugin",
+      "role": "templateParameterStore",
+      "layoutField": "templateParameter",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectTemplateSetPlugin",
+      "role": "templateClassStore",
+      "layoutField": "templateClass",
+      "operandOffset": 2,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectTemplateLoad",
+      "role": "templateParameterStore",
+      "layoutField": "templateParameter",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "sourceParameter",
+      "layoutField": "templateParameter",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "subscriberTemplate",
+      "layoutField": "subscriberTemplate",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "subscriberParameter",
+      "layoutField": "subscriberParameter",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "subscriberNext",
+      "layoutField": "subscriberNext",
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "subscriberHead",
+      "layoutField": "templateSubscribers",
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "referenceRetain",
+      "layoutField": "templateRefCount",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "templateLock",
+      "layoutField": "templateLock",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "unsubscribeObject",
+      "layoutField": "unsubscribeObject",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "parameterRead",
+      "layoutField": "subscriberParameter",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "templateRead",
+      "layoutField": "subscriberTemplate",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "clearTemplate",
+      "layoutField": "subscriberTemplate",
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "removeHead",
+      "layoutField": "templateSubscribers",
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "removeInterior",
+      "layoutField": "subscriberNext",
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "referenceRelease",
+      "layoutField": "templateRefCount",
+      "operandOffset": 4,
+      "operandBytes": 1
+    },
+    {
+      "group": "effectParameterUnsubscribe",
+      "role": "subscriptionCount",
+      "layoutField": "unsubscribeCount",
+      "operandOffset": 2,
+      "operandBytes": 1
+    }
+  ],
+  "ownershipCallBindings": [
+    {
+      "group": "effectTemplateSetPlugin",
+      "role": "factoryDispatch",
+      "targetGroup": "effectParameterRegistryCreate"
+    },
+    {
+      "group": "effectTemplateLoad",
+      "role": "factoryDispatch",
+      "targetGroup": "effectParameterRegistryCreate"
+    },
+    {
+      "group": "effectParameterInstantiate",
+      "role": "instantiate",
+      "targetGroup": "effectParameterInstantiateWithAllocator"
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "conditionalSubscribe",
+      "targetGroup": "effectParameterSubscribe"
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "unsubscribe",
+      "targetGroup": "effectParameterUnsubscribe"
+    }
+  ],
+  "ownershipVirtualBindings": [
+    {
+      "group": "effectTemplateSetPlugin",
+      "role": "parameterInitialize",
+      "slot": 24,
+      "parameterTarget": "initializeLeaf"
+    },
+    {
+      "group": "effectTemplateSetPlugin",
+      "role": "parameterRelease",
+      "slot": 32,
+      "parameterTarget": "roomParameterTerminate"
+    },
+    {
+      "group": "effectTemplateLoad",
+      "role": "parameterInitialize",
+      "slot": 24,
+      "parameterTarget": "initializeLeaf"
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "parameterClone",
+      "slot": 16,
+      "parameterTarget": "roomParameterClone"
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "parameterRelease",
+      "slot": 32,
+      "parameterTarget": "roomParameterTerminate"
+    }
+  ],
+  "ownershipGlobals": [
+    {
+      "group": "effectParameterRegistryCreate",
+      "role": "registryRows",
+      "rva": "0x3454d0",
+      "operandOffset": 3
+    },
+    {
+      "group": "effectParameterRegistryCreate",
+      "role": "registryCount",
+      "rva": "0x3454d8",
+      "operandOffset": 3
+    },
+    {
+      "group": "effectTemplateSetPlugin",
+      "role": "parameterAllocator",
+      "rva": "0x32fb50",
+      "operandOffset": 3
+    },
+    {
+      "group": "effectParameterInstantiateWithAllocator",
+      "role": "cloneAllocator",
+      "rva": "0x32fb60",
+      "operandOffset": 3
+    },
+    {
+      "group": "effectParameterCarrierRelease",
+      "role": "releaseAllocator",
+      "rva": "0x32fb60",
+      "operandOffset": 3
+    }
+  ],
+  "runtimeRegistryLayout": {
+    "byteStride": 32,
+    "parameterFactoryOffset": 16
+  }
+}

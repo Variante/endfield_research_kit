@@ -208,6 +208,8 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
         "map_streaming_instances",
         (module("scripts.webui.map.recover_map_streaming_instances", *streaming_args),),
         needs=("map_recovery",),
+        # Resolves published maps through LevelConfig and its StringPool.
+        reads=of(("json-data",)),
         optional=of(convert_types=("Mesh",)),
     ))
     # Reads the streaming sidecars, and the Assets page's published
@@ -235,11 +237,12 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
 
     # ---- Assets and Characters ----------------------------------------------
     # Indexes converted media plus Material relations; reads no other page.
+    # Optional authenticated Model-source evidence reads existing raw inputs.
     tasks.append(TaskSpec(
         "assets",
         (module("scripts.webui.assets.build_assets", "--mode", options.asset_mode, "--publish", "index"),),
         optional=of(
-            ("table", "video", "audit-video"),
+            ("table", "video", "audit-video", "dynamic-streaming", "bundle-manifest"),
             ("Material",),
             ("Texture2D", "Sprite", "Mesh", "Animator"),
         ),

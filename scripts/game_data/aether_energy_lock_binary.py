@@ -7,6 +7,8 @@ import struct
 from collections import Counter
 from typing import Any
 
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
+
 
 class AetherEnergyLockDecodeError(ValueError):
     pass
@@ -30,7 +32,16 @@ def _count(data: bytes, offset: int, field: str, limit: int = 100_000) -> tuple[
     return value, offset + 4
 
 
-def _string(data: bytes, offset: int, field: str) -> tuple[str | None, int]:
+def _string(
+    data: bytes, offset: int, field: str, strings: StringPool | None = None
+) -> tuple[str | None, int]:
+    if strings is not None:
+        _need(data, offset, 4, f"{field}.poolIndex")
+        index = struct.unpack_from("<i", data, offset)[0]
+        try:
+            return strings.resolve(index), offset + 4
+        except StringPoolDecodeError as exc:
+            raise AetherEnergyLockDecodeError(f"{field}: {exc}") from exc
     length, offset = _count(data, offset, f"{field}.length", 16_384)
     if length is None:
         return None, offset
@@ -61,7 +72,15 @@ def _scalar_list(data: bytes, offset: int, field: str, width: int) -> tuple[int,
     return count, _fixed(data, offset, count * width, field)
 
 
-def decode_aether_energy_lock_table(data: bytes) -> dict[str, Any]:
+def decode_aether_energy_lock_table(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
+    """Decode the table; ``strings`` selects pooled string storage.
+
+    Builds that ship ``Json/StringPool/`` store each string as an i32 global
+    pool index instead of an inline length + UTF-8 run. The caller selects the
+    encoding (see ``string_pool.export_string_pool``); the reader never guesses.
+    """
     if not data or data[0] != 1:
         raise AetherEnergyLockDecodeError("root member count is not 1")
     config_count, offset = _count(data, 1, "configDataPlain.count", 4096)
@@ -84,7 +103,7 @@ def decode_aether_energy_lock_table(data: bytes) -> dict[str, Any]:
                 raise AetherEnergyLockDecodeError(f"{item}: member count is not 4")
             offset += 1
             offset = _fixed(data, offset, 12, f"{item}.localScale")
-            _, offset = _string(data, offset, f"{item}.name")
+            _, offset = _string(data, offset, f"{item}.name", strings)
             offset = _fixed(data, offset, 12, f"{item}.position")
             offset = _fixed(data, offset, 16, f"{item}.rotation")
         # The unmanaged identifier occupies 24 bytes in the current runtime:

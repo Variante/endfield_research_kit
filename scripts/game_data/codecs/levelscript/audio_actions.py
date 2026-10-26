@@ -326,7 +326,10 @@ def _audio_action_layouts() -> dict[
         # MemoryPack payload.  The record can still carry the bounded
         # ActionMap list framing accepted by _finish_audio_action_fields.
         union_tags.action("ExitCustomMusicMode"): ("ExitCustomMusicMode", ()),
-        (0x0016, 0x09): (
+        # Reviewed at nine members; a build that changes the count drops the
+        # route (the placeholder key never matches a scanned pair).
+        (union_tags.plain_route("ActionBase", "AnnounceAudioOnTarget", 9)
+         or ("unavailable", "ActionBase", "AnnounceAudioOnTarget@9")): (
             "AnnounceAudioOnTarget",
             (
                 ("target", _decode_announce_audio_target_param),

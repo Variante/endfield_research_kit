@@ -1,0 +1,44 @@
+{
+  "schema": "endfield.buff-selector-validator-identity-claims.v1",
+  "status": "reviewed",
+  "consumer": {
+    "type": "Beyond.Gameplay.Core.Selector+SkillCastIdValidator+Data",
+    "method": "Validate",
+    "returnType": "void",
+    "ownerParameter": {"name": "owner", "type": "Beyond.Gameplay.Core.AbilitySystem"},
+    "actionParameter": {"name": "abilityAction", "type": "Beyond.Gameplay.Core.AbilityAction"}
+  },
+  "receiverAncestorChain": ["Beyond.Gameplay.Core.TickComponent", "Beyond.Gameplay.Core.BaseComponent"],
+  "calls": {
+    "lock": {"method": "Beyond.Gameplay.Core.BattleTargetWrapper.Lock", "returnType": "Beyond.Gameplay.Core.AbilitySystem"},
+    "clear": {"method": "Beyond.Gameplay.Core.TargetHandle.Clear", "returnType": "void"},
+    "remove": {"method": "Beyond.Gameplay.Core.TargetHandle.RemoveTarget", "returnType": "void"},
+    "objectType": {"method": "Beyond.Gameplay.Core.AbilitySystem.get_objectType", "returnType": "Beyond.Gameplay.Core.ObjectType"},
+    "skillCastId": {"method": "Beyond.Gameplay.Core.Skill.get_skillCastId", "returnType": "uint"},
+    "isPatched": {"method": "IFix.WrappersManagerImpl.IsPatched", "returnType": "bool"}
+  },
+  "fields": {
+    "entity": {"field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField", "type": "Beyond.Gameplay.Core.Entity"},
+    "controller": {"field": "Beyond.Gameplay.Core.Entity::<abilityEntityCtrl>k__BackingField", "type": "Beyond.Gameplay.Core.AbilityEntityController"},
+    "castInfo": {"field": "Beyond.Gameplay.Core.AbilityEntityController::m_skillCastInfo", "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo"},
+    "curSkill": {"field": "Beyond.Gameplay.Core.AbilitySystem::<curSkill>k__BackingField", "type": "Beyond.Gameplay.Core.Skill"},
+    "ability": {"field": "Beyond.Gameplay.Core.Skill::m_ability", "type": "Beyond.Gameplay.Core.Ability"},
+    "abilityCastId": {"field": "Beyond.Gameplay.Core.Ability::skillCastId", "type": "uint"}
+  },
+  "castInfo": {
+    "type": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+    "boxedObjectHeaderBytes": 16,
+    "copiedValueBytes": 24,
+    "members": [
+      {"name": "skillCastId", "type": "uint", "inlineOffset": 0},
+      {"name": "originSkill", "type": "Beyond.Gameplay.Core.Skill", "inlineOffset": 8},
+      {"name": "nonReturnedAtbCost", "type": "float", "inlineOffset": 16}
+    ]
+  },
+  "objectTypeSelection": {"enum": "Beyond.Gameplay.Core.ObjectType", "member": "AbilityEntity"},
+  "evidenceBoundary": {
+    "direct": "Selected field types, parent edges, boxed size row and enum member are authenticated against current native inputs.",
+    "conditional": "Complete consumer and getter CFGs bind named reference origins, field reads, low UInt32 extraction and mutation call branches on the checked unpatched paths, using the selected Win64 IL2CPP two-pointer boxed-object header and stable disjoint storage.",
+    "unresolved": "The non-null abilityAction helper's result type and sources, patched returns, opaque callee effects, Selector dispatch invocation, live values and branch outcomes."
+  }
+}

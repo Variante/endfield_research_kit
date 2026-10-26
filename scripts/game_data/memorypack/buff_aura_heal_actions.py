@@ -156,9 +156,13 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
                     reader.assignment_profile()
                 value["child"] = assignments.decode_assignment_list(data, **args, start=begin, end=reader.pos,
                                                                       native_validation=context["createInput"])
-            elif kind in ("collider-shape-profile", "target-filter-profile", "tagList"):
+            elif kind == "tagList":
+                reader.tag_list_profile()
+                value["child"] = decode_tag_list(data, source=source, digest=digest,
+                    start=begin, end=reader.pos, native_validation=native)
+            elif kind in ("collider-shape-profile", "target-filter-profile"):
                 value["child"] = record({"collider-shape-profile": "colliderShape",
-                                         "target-filter-profile": "targetFilter", "tagList": "tagList"}[kind])
+                                         "target-filter-profile": "targetFilter"}[kind])
             elif kind == "signedCount":
                 value["child"] = child_list("tagElement")
             elif kind == "scalar-payload":
@@ -224,13 +228,8 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
             "parent": parent, "recursiveStoredSchemaExact": True, "runtimeMeaningExact": False}
 
 
-def decode_tag_elements(data: bytes, *, source: str, digest: str, start: int, end: int,
-                        native_validation: dict[str, Any]) -> dict[str, Any]:
-    """Read a direct nullable list of source-proved GameplayTag wrappers.
-
-    The caller independently joins its List<GameplayTag> field and count loop.
-    There is no GameplayTagList object header and no raw DWORD-array shortcut.
-    """
+def _tag_reader(data: bytes, *, source: str, digest: str, start: int, end: int,
+                native_validation: dict[str, Any]) -> tuple[dict[str, Any], Reader]:
     contract = _contract()
     if (native_validation.get("status") != "validated"
             or native_validation.get("nativeInputs") != contract["nativeInputs"]
@@ -240,6 +239,49 @@ def decode_tag_elements(data: bytes, *, source: str, digest: str, start: int, en
             or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
         raise ValueError(f"{LABEL}.tags:native-source-or-span")
     reader = Reader(data, source, end); reader.pos = start
+    return contract, reader
+
+
+def decode_tag_list(data: bytes, *, source: str, digest: str, start: int, end: int,
+                    native_validation: dict[str, Any]) -> dict[str, Any]:
+    """Read the independently owned GameplayTagList object and its tag list.
+
+    Callers prove their parent field's closed type. Null object, null list,
+    empty list and null element retain different bytes and receipts.
+    """
+    contract, reader = _tag_reader(data, source=source, digest=digest,
+        start=start, end=end, native_validation=native_validation)
+    record = contract["records"]["tagList"]
+    members = record["members"]
+    if [(m["fieldName"], m["kind"]) for m in members] != [("predefinedTag", "signedCount")]:
+        raise ValueError(f"{LABEL}.tags:independent-object-members")
+    fields = []
+    if reader.peek() == 255:
+        reader.take(1, "null-tag-list-object"); status = "exact-null"
+    else:
+        reader.header(len(members)); begin = reader.pos
+        child = decode_tag_elements(data, source=source, digest=digest,
+            start=begin, end=end, native_validation=native_validation)
+        reader.pos = child["end"]; status = "named-stored-members-exact-span"
+        fields.append({"fieldName": members[0]["fieldName"],
+            "declaredType": members[0]["declaredType"], "kind": members[0]["kind"],
+            "start": begin, "end": reader.pos, "child": child})
+    if reader.pos != end:
+        raise ValueError(f"{LABEL}.tags:object-end={reader.pos}; expected={end}")
+    return {"source": source, "logicalSha256": digest.upper(), "start": start, "end": end,
+        "status": status, "typeName": record["runtimeTypeName"], "namedFields": fields,
+        "recursiveStoredSchemaExact": True, "runtimeMeaningExact": False}
+
+
+def decode_tag_elements(data: bytes, *, source: str, digest: str, start: int, end: int,
+                        native_validation: dict[str, Any]) -> dict[str, Any]:
+    """Read a direct nullable list of source-proved GameplayTag wrappers.
+
+    The caller independently joins its List<GameplayTag> field and count loop.
+    There is no GameplayTagList object header and no raw DWORD-array shortcut.
+    """
+    contract, reader = _tag_reader(data, source=source, digest=digest,
+        start=start, end=end, native_validation=native_validation)
     count = reader.count(1, nullable=True); elements = []
     for _ in range(max(0, count)):
         begin = reader.pos; fields = []

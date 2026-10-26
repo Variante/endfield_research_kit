@@ -1,0 +1,36 @@
+{
+  "schema": "endfield.buff-selector-validator-mutation-claims.v1",
+  "status": "reviewed",
+  "consumer": "Beyond.Gameplay.Core.Selector+SkillCastIdValidator+Data",
+  "method": "Validate",
+  "consumerReturnType": "void",
+  "incomingHandleParameter": "targetHandle",
+  "incomingHandleType": "Beyond.Gameplay.Core.TargetHandle",
+  "targetSourceCall": "Beyond.Gameplay.Core.BattleTargetWrapper.Lock",
+  "targetSourceReturnType": "Beyond.Gameplay.Core.AbilitySystem",
+  "mutations": [
+    {
+      "method": "Beyond.Gameplay.Core.TargetHandle.Clear",
+      "returnType": "void",
+      "parameters": [
+        {"name": "clearEntity", "type": "bool", "value": true},
+        {"name": "clearPosition", "type": "bool", "value": true},
+        {"name": "clearSlot", "type": "bool", "value": true}
+      ],
+      "receiver": "incomingHandleParameter",
+      "argumentSetup": "three-true-booleans-and-null-method-info"
+    },
+    {
+      "method": "Beyond.Gameplay.Core.TargetHandle.RemoveTarget",
+      "returnType": "void",
+      "parameters": [{"name": "target", "type": "Beyond.Gameplay.Core.AbilitySystem"}],
+      "receiver": "incomingHandleParameter",
+      "target": "targetSourceCallReturn",
+      "argumentSetup": "reference-target-and-null-method-info"
+    }
+  ],
+  "evidenceBoundary": {
+    "conditional": "Complete static reference origins and local literal argument setup with ordinary returning Win64 callees, stable incoming stack slots and disjoint storage.",
+    "unresolved": "Branch predicates, typed cast-identity source origins, Selector dispatch invocation, effects inside opaque callees, IFix outcomes and actual target removal."
+  }
+}

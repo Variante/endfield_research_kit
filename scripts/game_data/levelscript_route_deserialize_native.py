@@ -36,8 +36,33 @@ when an established wire grammar is shared with another output type. The
 patrol-event header retains entity, key and patrol-ID outputs, while the
 camera-effect action retains an effect-ID output. Header filter/trigger enums
 additionally require an explicit signed-Int32 backing declaration. The stored
+footstep target enum has its own backing declaration and shares the proved
+Int32 reader; it establishes no resolved effect asset or runtime binding. The
 NPC name/proxy operands and challenge-banner action use existing Param and
 base-action grammars. None establishes a resolved output or an event firing.
+
+The property/proxy getter routes retain an interactive entity and saved-property
+key, a Vector3-property path and LevelScriptPtr, or an NPC proxy ID. The vector
+getter contains no serialized Vector3 result. Combo-skill headers retain an
+entity output, skill-ID filter and skill-ID output; the water-drone header
+retains target entity/list filters and an EntityPtr output, even though its
+field is named targetEntityListOutput. Each route authenticates its own typed
+ReadValue contexts and complete native reader before reusing existing codecs.
+These are stored inputs and destinations, not live property values or events.
+
+Encounter opera-signal actions retain a typed LsmPtr parameter and signal
+string. Spawner-wave-complete headers retain separate spawner/wave-key filters
+and their typed output parameters. A signal named finish is not a Story target,
+and those output paths are not observed wave values or event firings.
+
+Unlock-removal actions retain an authored system enum and independently prove
+their own generated reader. Enemy-patrol headers retain entity/key/patrol
+destinations and a key filter; pressure-board sequence-failure headers retain
+a module operand and a separately typed ParamOutput<LsmPtr> destination.
+The output is only source selector plus path, not a manual or resolved module.
+Each complete header reader and inherited member order keeps its own union
+domain and generic contexts. Stored definitions do not establish event firing,
+unlock changes or mission causality.
 
 Run as: python -m scripts.game_data.levelscript_route_deserialize_native
 """
@@ -48,11 +73,14 @@ import argparse
 import gzip
 import hashlib
 import json
+import os
 import struct
+import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
-from scripts.common import check_installed_native_inputs, write_canonical_json
+from scripts.common import EXPORT_FULL_SUMMARY, EXPORT_ROOT, check_installed_native_inputs, resolve_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_method_candidates, method_spec_record, method_spec_usage_index
@@ -70,10 +98,12 @@ DEFAULT_REPORT = REPO_ROOT / "reports/game_data/levelscript_route_deserialize_na
 SCHEMA = "endfield.levelscript-route-deserialize-native.v1"
 TYPED_SCHEMA = "endfield.levelscript-route-deserialize-native.v2"
 COLLECTION_SCHEMA = "endfield.levelscript-route-deserialize-native.v3"
+CONDITION_SCHEMA = "endfield.levelscript-route-deserialize-native.v4"
 UNION_BASES = {
     "ActionBase": "Beyond_Gameplay_Actions_ActionBaseForMemoryPack",
     "GetterBase": "Beyond_Gameplay_Actions_PureGetterForMemoryPack",
     "ActionHeader": "Beyond_Gameplay_Actions_ActionHeaderForMemoryPack",
+    "GameCondition": "Beyond_Gameplay_GameConditionForMemoryPack",
 }
 PARAM_ENUM_UNDERLYING = {'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralAbilityType>': ('Beyond.GEnums.GeneralAbilityType',
                                                                        'int'),
@@ -83,7 +113,12 @@ PARAM_ENUM_UNDERLYING = {'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralA
                                                                  'int'),
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.RollingStoneController+ManipulateLauncherOp>': ('Beyond.Gameplay.RollingStoneController+ManipulateLauncherOp',
                                                                                                   'int'),
-    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait>': ('Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait', 'int')}
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait>': ('Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait', 'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.UnlockSystemType>': ('Beyond.GEnums.UnlockSystemType', 'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.TweenManager+TweenEase>': ('Beyond.Gameplay.Core.TweenManager+TweenEase', 'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>': ('Beyond.GEnums.CompareOperator', 'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.ServerGameVarEnum>': ('Beyond.GEnums.ServerGameVarEnum', 'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>': ('Beyond.Gameplay.Core.MovementSettingName', 'int')}
 HEADER_ENUM_UNDERLYING = {
     name: (name, "int") for name in (
         "Beyond.Gameplay.Actions.FilterLevel",
@@ -91,6 +126,10 @@ HEADER_ENUM_UNDERLYING = {
         "Beyond.Gameplay.Actions.TriggerActiveDuring",
         "Beyond.Gameplay.Actions.EntityEventHeader+TriggerTarget",
     )
+}
+STORED_ENUM_UNDERLYING = {
+    "Beyond.Gameplay.Actions.SetFootStepOverrideEffect+FootStepOverrideTargetType":
+        ("Beyond.Gameplay.Actions.SetFootStepOverrideEffect+FootStepOverrideTargetType", "int"),
 }
 
 
@@ -105,6 +144,20 @@ def _runtime_parameter_name(image: NativeImage, type_index: int) -> str:
     types = int(image.registration["types"], 16)
     type_va = image.pe.u64_at_va(types + type_index * 8)
     return runtime_type_name(image.pe, image.metadata, type_va)
+
+
+def _ordinary_param_enum_backing(image: NativeImage, type_index: int) -> None:
+    pointer = image.pe.u64_at_va(int(image.registration['types'], 16) + type_index * 8)
+    raw = image.pe.bytes_at_va(pointer, 16)
+    if raw[10] != 8 or raw[11] & 0x7F:
+        raise ValueError('levelscriptRouteDeserialize.native:param-enum-backing-abi='
+                         + raw[10:12].hex())
+
+
+def _ordinary_param_reference_argument(raw_hex: str) -> None:
+    raw = bytes.fromhex(raw_hex)
+    if len(raw) != 16 or raw[10] != 21 or raw[11] != 0:
+        raise ValueError('levelscriptRouteDeserialize.native:param-reference-argument-abi=' + raw_hex)
 
 
 def _typed_read_context(image: NativeImage, item: dict[str, Any], previous: int) -> None:
@@ -134,6 +187,13 @@ def _typed_read_context(image: NativeImage, item: dict[str, Any], previous: int)
     if len(instance.arguments) != 1:
         raise ValueError(f"levelscriptRouteDeserialize.native:typed-context-arity={item['name']}")
     argument = instance.arguments[0]
+    if item['declaredType'] in (
+        'Beyond.Gameplay.Actions.Param`1<long>',
+        'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>',
+        'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.ServerGameVarEnum>',
+        'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>',
+    ):
+        _ordinary_param_reference_argument(argument.raw_type_record_hex)
     actual = runtime_type_name(image.pe, image.metadata, argument.type_pointer_va)
     if (actual != item["declaredType"] or actual != context["argumentType"]
             or argument.raw_type_record_hex.upper() != context["argumentRawHex"].upper()):
@@ -158,6 +218,8 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'Beyond.Gameplay.Actions.TriggerActiveDuring': 'int32',
  'Beyond.Gameplay.Actions.EntityEventHeader+TriggerTarget': 'int32',
  'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.EntityPtr>': 'ParamOutput<EntityPtr>',
+ 'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.SpawnerPtr>': 'ParamOutput<SpawnerPtr>',
+ 'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.LsmPtr>': 'ParamOutput<LsmPtr>',
  'Beyond.Gameplay.Actions.ParamOutput`1<int>': 'ParamOutput<int>',
  'Beyond.Gameplay.Actions.ParamOutput`1<string>': 'ParamOutput<string>',
  'Beyond.Gameplay.Actions.ParamOutput`1<ulong>': 'ParamOutput<ulong>',
@@ -169,6 +231,9 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.GlobalBuffId>': 'Param<GlobalBuffId>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>': 'Param<LevelScriptPtr>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LsmPtr>': 'Param<LsmPtr>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.SplinePtr>': 'Param<SplinePtr>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.SpawnerPtr>': 'Param<SpawnerPtr>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.WaterVolumePtr>': 'Param<WaterVolumePtr>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MountPoint>': 'Param<MountPoint>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.RollingStoneController+ManipulateLauncherOp>': 'Param<RollingStoneController.ManipulateLauncherOp>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.LangKey>': 'Param<LangKey>',
@@ -185,14 +250,23 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'Beyond.Gameplay.Actions.Param`1<string>': 'Param<string>',
  'Beyond.Gameplay.Actions.Param`1<uint>': 'Param<uint>',
  'Beyond.Gameplay.Actions.Param`1<ulong>': 'Param<ulong>',
+ 'Beyond.Gameplay.Actions.Param`1<long>': 'Param<long>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>': 'Param<CompareOperator>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.ServerGameVarEnum>': 'Param<ServerGameVarEnum>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>': 'Param<MovementSettingName>',
  'Beyond.Gameplay.DestroyBallReason': 'int32',
+ 'Beyond.Gameplay.Actions.SetFootStepOverrideEffect+FootStepOverrideTargetType': 'int32',
  'System.Collections.Generic.List`1<int>': 'List<int>',
  'bool': 'bool',
  'int': 'int32',
  'string': 'string',
     'Beyond.Gameplay.Actions.ParamOutput`1<float>': 'ParamOutput<float>',
     'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait>': 'Param<MovementComponent.GroundedMoveGait>',
-    'Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<int>>': 'Param<List<int>>'}
+    'Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<int>>': 'Param<List<int>>',
+    'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.UnlockSystemType>': 'Param<UnlockSystemType>',
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.TweenManager+TweenEase>': 'Param<TweenManager.TweenEase>',
+    'Beyond.Gameplay.Actions.ParamOutput`1<bool>': 'ParamOutput<bool>',
+    'Beyond.Gameplay.Actions.ParamOutput`1<uint>': 'ParamOutput<uint>'}
     if [[member.name.lstrip("_"), aliases.get(member.declared_type)] for member in members] != row["fields"]:
         raise ValueError(f"levelscriptRouteDeserialize.native:codec-kinds={key}")
     for member in members:
@@ -346,9 +420,11 @@ def _validate(
     export_root: Path | None = None, ledger_path: Path | None = None, summary_path: Path | None = None,
 ) -> dict[str, Any]:
     contract = json.loads(contract_path.read_bytes())
-    if contract.get("schema") not in (SCHEMA, TYPED_SCHEMA, COLLECTION_SCHEMA):
+    if contract.get("schema") not in (SCHEMA, TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA):
         raise ValueError("levelscriptRouteDeserialize.contract:unsupported-schema")
-    typed = contract["schema"] in (TYPED_SCHEMA, COLLECTION_SCHEMA)
+    typed = contract["schema"] in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA)
+    if any(row.get('family') == 'GameCondition' for row in contract.get('routes', [])) and contract['schema'] != CONDITION_SCHEMA:
+        raise ValueError('levelscriptRouteDeserialize.contract:condition-domain-v4-required')
     if typed and contract.get("status") != "exact-current-build":
         raise ValueError("levelscriptRouteDeserialize.contract:unsupported-status")
     native_inputs = contract["nativeInputs"]
@@ -364,9 +440,18 @@ def _validate(
     }
     if gate.status != "validated":
         return audit
+    if any(any(kind == 'Param<long>' for _, kind in row.get('fields', []))
+           for row in contract['routes']):
+        from scripts.game_data.levelscript_long_param_native import validate_long_param_native_contract
+        child = validate_long_param_native_contract(gameassembly=gate.gameassembly, metadata=gate.metadata)
+        audit['childGates'] = {'longParam': child}
+        if child.get('status') != 'validated':
+            audit.update(status=child.get('status', 'unresolved'), validatedRows=[],
+                         failedCheck='long-param-child-native', detail=str(child.get('detail', '')))
+            return audit
 
     image = NativeImage(gate.gameassembly, gate.metadata, label="levelscriptRouteDeserialize")
-    if contract["schema"] == COLLECTION_SCHEMA:
+    if contract["schema"] in (COLLECTION_SCHEMA, CONDITION_SCHEMA):
         _validate_collection_readers(image, contract)
     elif any(kind.startswith("List<") for route in contract.get("routes", []) for _, kind in route.get("fields", [])):
         raise ValueError("levelscriptRouteDeserialize.contract:collection-reader-v3-required")
@@ -384,6 +469,12 @@ def _validate(
     if not header_enums.issubset(actual_enums):
         raise ValueError("levelscriptRouteDeserialize.contract:required-header-enum-underlying="
                          f"expected={sorted(header_enums)}:actual={sorted(actual_enums)}")
+    stored_enums = {STORED_ENUM_UNDERLYING[item["declaredType"]]
+                    for row in contract["routes"] for item in row["readOrder"]
+                    if item["declaredType"] in STORED_ENUM_UNDERLYING}
+    if not stored_enums.issubset(actual_enums):
+        raise ValueError("levelscriptRouteDeserialize.contract:required-stored-enum-underlying="
+                         f"expected={sorted(stored_enums)}:actual={sorted(actual_enums)}")
     for enum in recorded_enums:
         definition = enum["typeDefinition"]
         if image.type_name(definition) != enum["typeName"]:
@@ -392,10 +483,21 @@ def _validate(
         value_fields = [field for field in fields if image.metadata.string(field.name_index) == "value__"]
         if len(value_fields) != 1 or _runtime_parameter_name(image, value_fields[0].type_index) != enum["underlyingType"]:
             raise ValueError(f"levelscriptRouteDeserialize.native:enum-underlying={definition}")
+        if enum['typeName'] in ('Beyond.GEnums.CompareOperator', 'Beyond.GEnums.ServerGameVarEnum',
+                                'Beyond.Gameplay.Core.MovementSettingName'):
+            _ordinary_param_enum_backing(image, value_fields[0].type_index)
     layouts = json.loads(layout_path.read_bytes())
-    if layouts.get("schema") != "endfield.action-map-layouts.v3":
+    if layouts.get("schema") != "endfield.action-map-layouts.v5":
         raise ValueError("levelscriptRouteDeserialize.layout:unsupported-schema")
-    selected = {(row["family"], row["tag"]): row for row in layouts["layouts"]}
+    selected = {}
+    # v5 rows carry no per-build tag: join by wrapper; the row's own
+    # nativeIdentity is proved against this build's union switch below.
+    for layout in [*layouts['layouts'],
+                   *({'family': 'GameCondition', **row} for row in layouts.get('conditionLayouts', []))]:
+        key = layout['family'], layout['wrapperName']
+        if key in selected:
+            raise ValueError(f'levelscriptRouteDeserialize.layout:duplicate-route={key}')
+        selected[key] = layout
     wrappers = derive_from_image(image) if any("nativeIdentity" in row for row in contract["routes"]) else None
     bodies = BodyIndex(image) if typed else None
     if typed:
@@ -417,7 +519,7 @@ def _validate(
     switches: dict[str, dict[str, Any]] = {}
     for row in contract["routes"]:
         key = row["family"], row["tag"]
-        layout = selected.get(key)
+        layout = selected.get((row["family"], row["wrapperName"]))
         if layout is None or layout["wrapperName"] != row["wrapperName"]:
             raise ValueError(f"levelscriptRouteDeserialize.layout:missing-route={key}")
         order = row["readOrder"]
@@ -491,6 +593,31 @@ def _validate(
         audit["sourceReceiptsChecked"] = _source_receipts(contract, export_root, ledger_path, summary_path)
     elif ledger_path is not None or summary_path is not None:
         raise ValueError("levelscriptRouteDeserialize.source:explicit-export-root-required")
+    # Recheck the pair actually opened, even when inner proofs reuse cached facts.
+    after = check_installed_native_inputs(
+        native_inputs["gameAssembly"]["sha256"], native_inputs["metadata"]["sha256"],
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    if after.status != "validated":
+        audit.update(
+            status=after.status if after.status in ("missing", "mismatched", "unresolved") else "unresolved",
+            validatedRows=[], nativeGate=after.detail, failedCheck="native-inputs-after",
+            detail="levelscriptRouteDeserialize.native:native-inputs-after:" + after.detail,
+            validationFailures=[{
+                "check": "native-inputs-after", "source": str(contract_path),
+                "expected": {
+                    "status": "validated", "gameassembly": str(gate.gameassembly),
+                    "metadata": str(gate.metadata),
+                    "gameassemblySha256": native_inputs["gameAssembly"]["sha256"],
+                    "metadataSha256": native_inputs["metadata"]["sha256"],
+                },
+                "actual": {
+                    "status": after.status, "detail": after.detail,
+                    "gameassemblySha256": getattr(after, "gameassembly_sha256", ""),
+                    "metadataSha256": getattr(after, "metadata_sha256", ""),
+                },
+            }],
+        )
     return audit
 
 
@@ -499,7 +626,7 @@ def validate(
     export_root: Path | None = None, ledger_path: Path | None = None, summary_path: Path | None = None,
 ) -> dict[str, Any]:
     """V2 failures are actionable audit rows; keep V1's exception API intact."""
-    typed = json.loads(contract_path.read_bytes()).get("schema") in (TYPED_SCHEMA, COLLECTION_SCHEMA)
+    typed = json.loads(contract_path.read_bytes()).get("schema") in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA)
     try:
         return _validate(contract_path=contract_path, layout_path=layout_path, export_root=export_root,
                          ledger_path=ledger_path, summary_path=summary_path)
@@ -514,7 +641,52 @@ def validate(
                 "validationFailures": [{"check": check, "source": str(contract_path), "actual": detail[:1000]}]}
 
 
-def main() -> None:
+def _publication_inputs(args: argparse.Namespace) -> list[Path]:
+    """Enumerate aliases without hashing or repeating a native/source proof."""
+    paths = [args.contract, LAYOUT_PATH, EXPORT_FULL_SUMMARY,
+             REPO_ROOT / 'endfield_paths.bat', *resolve_installed_native_inputs()]
+    paths.extend(path for path in (args.ledger, args.summary) if path is not None)
+    package = REPO_ROOT / 'scripts'
+    paths.extend(package.rglob('*.py'))
+    paths.extend(package.rglob('*.json'))
+    paths.extend((REPO_ROOT / 'tools/endfield-il2cpp').glob('*.py'))
+    contract = json.loads(args.contract.read_bytes())
+    root = args.export_root if args.export_root is not None else EXPORT_ROOT / 'game/Json'
+    for row in contract.get('routes', []):
+        paths.extend(root / source[0] for source in row.get('sourceReceipts', []))
+    return paths
+
+
+def _guard_report(report: Path, inputs: list[Path]) -> None:
+    target, repo = report.resolve(), REPO_ROOT.resolve()
+    root = (repo / 'reports').resolve()
+    if not root.is_relative_to(repo) or target == root or not target.is_relative_to(root):
+        raise ValueError(f'report-output-root: expected={root} actual={target}')
+    for source in inputs:
+        if target == source.resolve() or (report.exists() and source.exists() and report.samefile(source)):
+            raise ValueError(f'report-input-alias: output={report} input={source}')
+
+
+def _publish_report(report: Path, audit: dict[str, Any], inputs: list[Path], args: argparse.Namespace) -> None:
+    _guard_report(report, inputs)
+    report.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, name = tempfile.mkstemp(prefix='.levelscript-native-', suffix='.tmp', dir=report.parent)
+    staged = Path(name)
+    try:
+        with os.fdopen(descriptor, 'w', encoding='utf-8', newline='\n') as handle:
+            json.dump(audit, handle, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+            handle.write('\n')
+        # Re-resolve the requested path, not only the earlier resolved target.
+        current_inputs = [*inputs, *_publication_inputs(args)]
+        _guard_report(staged, current_inputs)
+        _guard_report(report, current_inputs)
+        os.replace(staged, report)
+    finally:
+        if staged.exists():
+            staged.unlink()
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--contract", type=Path, default=CONTRACT_PATH)
     parser.add_argument("--export-root", type=Path)
@@ -522,13 +694,26 @@ def main() -> None:
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     args = parser.parse_args()
-    audit = validate(contract_path=args.contract, export_root=args.export_root,
-                     ledger_path=args.ledger, summary_path=args.summary)
-    write_canonical_json(args.report, audit)
+    stage = 'report-output'
+    try:
+        initial_inputs = _publication_inputs(args)
+        _guard_report(args.report, initial_inputs)
+        stage = 'native-validation'
+        audit = validate(contract_path=args.contract, export_root=args.export_root,
+                         ledger_path=args.ledger, summary_path=args.summary)
+        if audit.get('status') != 'validated':
+            print(json.dumps(audit, ensure_ascii=False, sort_keys=True))
+            return 2
+        stage = 'report-publication'
+        _publish_report(args.report, audit, [*initial_inputs, *_publication_inputs(args)], args)
+    except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
+        print(json.dumps({'status':'publication_refused', 'validator':'levelscriptRouteDeserialize',
+                          'failedCheck':stage, 'detail':str(exc)[:1500],
+                          'validatedRows':[]}, ensure_ascii=False, sort_keys=True), file=sys.stderr)
+        return 2
     print(audit["status"], "routes", len(audit["validatedRows"]), "report", args.report)
-    if audit.get("detail"):
-        print(audit["detail"])
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

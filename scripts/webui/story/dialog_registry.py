@@ -6,7 +6,8 @@ DialogIdTable is the runtime's authoritative dialog registry: every dialog
 the runtime can load must appear here. Each entry is a MemoryPack-serialized
 DialogBriefInfo record keyed by dialog ID. The decoded record schema does not
 contain branch or option-position fields, so this helper extracts only the
-printable identifier vocabulary. Per-line/trunk structure below is token-shape
+identifier vocabulary of the decoded strings (pooled builds resolve them
+through ``Json/StringPool/``). Per-line/trunk structure below is token-shape
 classification, not recovered runtime routing.
 
 The runtime class for this table is `Beyond.Gameplay.DialogIdTable` with
@@ -31,8 +32,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import struct
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -42,34 +41,25 @@ from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
 from scripts.game_data.memorypack.tables import (
     DIALOG_ID_TABLE_LINE_RE,
     DIALOG_ID_TABLE_OPTION_RAW_RE,
+    DIALOG_ID_TABLE_RAW_ID_RE,
     DIALOG_ID_TABLE_OPTION_RE,
-    parse_dialog_brief_info_records,
+    parse_dialog_id_table_vocabulary,
 )
+from scripts.game_data.string_pool import StringPool, export_string_pool
 
 DEFAULT_ROOT = REPO_ROOT
 
 DEFAULT_INPUT  = EXPORT_LAYOUT.json_dir / "GameplayConfig" / "DialogIdTable.json"
 DEFAULT_OUTPUT = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 
-_ID_RE = re.compile(
-    rb"(?<!option_)(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})"
-)
-
-def _dialog_timeline_ids(raw: bytes) -> dict[str, list[str]]:
-    try:
-        records, _next_member_offset = parse_dialog_brief_info_records(raw)
-    except (UnicodeDecodeError, struct.error, ValueError):
-        return {}
-    return {
-        record["key"]: list(record["value"]["usedDialogTimelineIds"])
+def build_index(raw: bytes, *, strings: StringPool | None = None) -> dict:
+    records, vocabulary = parse_dialog_id_table_vocabulary(raw, strings=strings)
+    all_ids = sorted({m.group().decode("ascii") for m in DIALOG_ID_TABLE_RAW_ID_RE.finditer(vocabulary)})
+    option_ids = sorted({m.group().decode("ascii") for m in DIALOG_ID_TABLE_OPTION_RAW_RE.finditer(vocabulary)})
+    dialog_brief_records = {
+        record["key"]: list(record["value"]["usedDialogTimelineIds"] or ())
         for record in records
     }
-
-
-def build_index(raw: bytes) -> dict:
-    all_ids = sorted({m.group().decode("ascii") for m in _ID_RE.finditer(raw)})
-    option_ids = sorted({m.group().decode("ascii") for m in DIALOG_ID_TABLE_OPTION_RAW_RE.finditer(raw)})
-    dialog_brief_records = _dialog_timeline_ids(raw)
     used_timeline_ids = {
         dialog_id: timeline_ids
         for dialog_id, timeline_ids in dialog_brief_records.items()
@@ -153,7 +143,10 @@ def main():
         return
 
     raw = args.input.read_bytes()
-    index = build_index(raw)
+    try:
+        index = build_index(raw, strings=export_string_pool(args.input.parent.parent))
+    except (UnicodeDecodeError, ValueError) as exc:
+        raise SystemExit(f"dialog_registry: cannot decode {args.input}: {exc}") from exc
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")

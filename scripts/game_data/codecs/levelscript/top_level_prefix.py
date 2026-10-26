@@ -295,8 +295,9 @@ def decode_empty_action_map_owner_prefix(
     ranges["maxStage"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
+    module_diagnostics = []
     try:
-        module_rows, module_end = modules.decode_module_dictionary(data, cursor)
+        module_rows, module_end = modules.decode_module_dictionary(data, cursor, module_diagnostics)
     except modules.LevelScriptModuleCodecError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
     if module_rows is None:
@@ -312,6 +313,7 @@ def decode_empty_action_map_owner_prefix(
                 "endOffset": cursor,
                 "status": "unsupported-positive",
                 "count": count,
+                "diagnostics": module_diagnostics,
             },
         }
     fields["modules"] = module_rows

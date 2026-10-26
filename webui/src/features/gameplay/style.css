@@ -174,34 +174,26 @@
 .gameplay-loadout-picker .gameplay-item-chip-icon img { width: 100%; height: 100%; object-fit: contain; }
 .gameplay-loadout-picker > p { padding: 0 8px; }
 /* Ability matches share a visual vocabulary across equipment and character loadouts. */
-.gameplay-ability-main {
-  color: var(--accent-text);
+.gameplay-ability-main,
+.gameplay-ability-sub {
   background: rgba(var(--accent-rgb), 0.12);
-  border-bottom: 2px solid var(--accent-text);
   padding: 2px 4px;
   border-radius: 3px;
 }
-.gameplay-ability-sub {
-  color: var(--accent-2-text);
-  border-bottom: 2px dashed var(--accent-2-text);
-  padding: 2px 4px;
-}
-.gameplay-ability-main.gameplay-ability-sub {
-  box-shadow: inset 0 2px 0 var(--accent-text);
+.gameplay-ability-main {
+  font-weight: 700;
 }
 .gameplay-ability-label {
   margin-inline-start: 6px;
   font-size: 0.8em;
-  font-weight: 600;
+  font-weight: inherit;
 }
-.gameplay-ability-main .gameplay-desc-value,
-.gameplay-ability-sub .gameplay-desc-value { color: inherit; }
-.gameplay-equipment-main .gameplay-description {
-  background: rgba(var(--accent-rgb), 0.12);
-  border-left: 3px solid var(--accent-text);
-  padding-inline: 6px;
-}
+.gameplay-equipment-main .gameplay-description,
 .gameplay-equipment-sub .gameplay-description {
-  border-left: 3px dashed var(--accent-2-text);
+  background: rgba(var(--accent-rgb), 0.12);
   padding-inline: 6px;
+  border-radius: 3px;
+}
+.gameplay-equipment-main .gameplay-description {
+  font-weight: 700;
 }

@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import skill_cursor_native_context as observer
 from scripts.game_data.il2cpp.native_image import NativeImage, read_reviewed_contract
@@ -89,7 +91,7 @@ def _evidence(target_contract_path: Path) -> tuple[dict[str, Any], dict[str, Any
              and len(source) <= contract["captureMaxSourceBytes"],
              "current-source-identity")
     _require(row.get("timelineSharedSequenceStopReason")
-             == "skillTimelineSharedSequence.timeline[17]:route=0x009F:not-contracted",
+             == f"skillTimelineSharedSequence.timeline[17]:route={_AT('Core_DispelAction_Data')}:not-contracted",
              "first-stop-drift")
     controls = _load(control_path)
     wulfa = _load(WULFA_CONTEXT)
@@ -122,7 +124,7 @@ def _context(target_contract_path: Path = TARGET_CONTRACT) -> dict[str, Any]:
     route = validate_current_native_contract(
         gameassembly=gate.gameassembly, metadata=gate.metadata,
     )
-    _require(route.get("status") == "validated" and route.get("unionTag") == 0x9F,
+    _require(route.get("status") == "validated" and route.get("unionTag") == _A("Core_DispelAction_Data"),
              "dispel-native-drift")
     binding = f"{target['length']}:{target['logicalSha256']}".encode("ascii")
     return {

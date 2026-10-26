@@ -1,0 +1,54 @@
+{
+  "schema": "endfield.collision-solver-body-claims.v1",
+  "groups": {
+    "destructibleActivation": {
+      "methods": {
+        "DestructiblePhysicsMono._LoadData": {
+          "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
+          "method": "_LoadData",
+          "claims": [
+            {"passesBooleanConstantToCall": {"call": "UnityEngine.Rigidbody.set_isKinematic", "parameter": "value", "value": true}},
+            {"calls": ["UnityEngine.Rigidbody.set_mass", "UnityEngine.Rigidbody.set_drag", "UnityEngine.Rigidbody.set_angularDrag"]}
+          ],
+          "contract": "Stored physics-item colliders can receive dormant kinematic rigid bodies and configured mass/drag. Existence of this route does not prove it ran."
+        },
+        "DestructiblePhysicsMono._Break": {
+          "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
+          "method": "_Break",
+          "claims": [
+            {"passesBooleanConstantToCall": {"call": "UnityEngine.Rigidbody.set_isKinematic", "parameter": "value", "value": false}},
+            {"calls": ["UnityEngine.Rigidbody.set_isKinematic", "UnityEngine.Rigidbody.set_collisionDetectionMode", "UnityEngine.Rigidbody.AddForce_Injected"], "ordered": true},
+            {"readsField": "Beyond.Gameplay.View.DestructiblePhysicsMono::physicsSettings"}
+          ],
+          "contract": "An original compiled break route clears isKinematic and applies force to a Rigidbody obtained from a physics-item collider. Branch execution, native shape filtering and positive solving remain conditional."
+        },
+        "DestructiblePhysicsMono._BreakFromAttack": {
+          "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
+          "method": "_BreakFromAttack",
+          "claims": [{"calls": ["Beyond.Gameplay.View.DestructiblePhysicsMono._Break"]}],
+          "contract": "The attack-break callback reaches the original compiled break method. Timer, IFix and gameplay selection remain separate."
+        },
+        "InteractivePhysicsDestructibleComponent.Break": {
+          "type": "Beyond.Gameplay.Core.InteractivePhysicsDestructibleComponent",
+          "method": "Break",
+          "claims": [{"calls": ["Beyond.Gameplay.View.DestructiblePhysicsMono.PrepareBreakFromAttack", "Beyond.Gameplay.DestructiblePhysicsManager.SubmitObject"]}],
+          "contract": "Interactive break can prepare physics debris and submit its handle to the bounded manager. Manager admission is not guaranteed."
+        }
+      }
+    },
+    "kickableActivation": {
+      "methods": {
+        "KickableScenePhysicsObjectFormal.BeginPhysicsLaunch": {
+          "type": "Beyond.Gameplay.View.KickableScenePhysicsObjectFormal",
+          "method": "BeginPhysicsLaunch",
+          "claims": [
+            {"passesBooleanConstantToCall": {"call": "Beyond.Gameplay.View.ScenePhysicsObject.set_isSimulating", "parameter": "value", "value": true}},
+            {"calls": ["Beyond.Gameplay.View.ScenePhysicsObject.set_isSimulating", "UnityEngine.Rigidbody.WakeUp", "UnityEngine.Physics.SetForceSimulateThisFrame_Internal"], "ordered": true}
+          ],
+          "contract": "The original launch route requests simulation and, when its body exists, wakes it and forces a physics frame. The concrete loaded kickable body remains unobserved."
+        }
+      }
+    }
+  },
+  "evidenceBoundary": "direct: named original compiled calls, field reads and bounded Boolean arguments on explicitly selected native inputs. conditional: destructible and kickable bodies are solver candidates only when these original branches execute with valid admitted objects and filters. unresolved: IFix selection, live activation, awake islands, actual contact constraints and positive solving."
+}

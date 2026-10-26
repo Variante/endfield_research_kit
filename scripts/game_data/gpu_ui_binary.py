@@ -27,6 +27,10 @@ Two families, two readers:
 Negative kept on purpose: ``renderNodes`` can hold more entries than the
 stored ``nodeCount``; the two counts must not be equated.
 
+Every reader takes ``strings``: builds that ship ``Json/StringPool/`` store
+each string as an ``i32`` global pool index instead of inline UTF-8. The
+caller passes the export's pool to select that encoding; no reader guesses.
+
 Evidence tier: exact stored schema. Stored render configuration does not
 establish runtime prefab selection, GPU buffer addressing, animation
 evaluation, shader consumption, or a resolved texture-hash identity.
@@ -40,10 +44,24 @@ from typing import Any
 from pathlib import Path
 
 from scripts.game_data.gpu_ui_damage_text_native import load_damage_text_schema
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
 
 
 class GpuUiFramingError(ValueError):
     pass
+
+
+def _pooled_string(
+    data: bytes, offset: int, field: str, strings: StringPool
+) -> tuple[str | None, int]:
+    """Resolve one i32 global StringPool index (pooled string storage)."""
+    if offset + 4 > len(data):
+        raise GpuUiFramingError(f"truncated {field} pool index")
+    index = struct.unpack_from("<i", data, offset)[0]
+    try:
+        return strings.resolve(index), offset + 4
+    except StringPoolDecodeError as exc:
+        raise GpuUiFramingError(f"{field}: {exc}") from exc
 
 
 EXTENDED_PREFAB_GROUP_FIELDS = (
@@ -92,7 +110,9 @@ ANIMATION_FIELDS = (
 )
 
 
-def frame_gpu_ui_root16_prefix(data: bytes) -> dict[str, Any]:
+def frame_gpu_ui_root16_prefix(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Validate the named ExtendedPrefabGroup prefix and first prefab boundary."""
     if not data or data[0] != 16:
         raise GpuUiFramingError("root member count is not 16")
@@ -113,17 +133,22 @@ def frame_gpu_ui_root16_prefix(data: bytes) -> dict[str, Any]:
         raise GpuUiFramingError("invalid prefix boolean 2")
     boolean2 = bool(data[offset])
     offset += 1
-    if offset + 4 > len(data):
-        raise GpuUiFramingError("truncated charset length")
-    length = struct.unpack_from("<I", data, offset)[0]
-    offset += 4
-    if length > 128 or offset + length + 5 > len(data):
-        raise GpuUiFramingError(f"invalid charset length {length}")
-    try:
-        charset = data[offset:offset + length].decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise GpuUiFramingError("invalid charset UTF-8") from exc
-    offset += length
+    if strings is not None:
+        charset, offset = _pooled_string(data, offset, "charset", strings)
+        if offset + 5 > len(data):
+            raise GpuUiFramingError("truncated layoutType")
+    else:
+        if offset + 4 > len(data):
+            raise GpuUiFramingError("truncated charset length")
+        length = struct.unpack_from("<I", data, offset)[0]
+        offset += 4
+        if length > 128 or offset + length + 5 > len(data):
+            raise GpuUiFramingError(f"invalid charset length {length}")
+        try:
+            charset = data[offset:offset + length].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise GpuUiFramingError("invalid charset UTF-8") from exc
+        offset += length
     layout_type = struct.unpack_from("<i", data, offset)[0]
     offset += 4
     if offset + 9 > len(data):
@@ -172,9 +197,10 @@ def frame_gpu_ui_root16_prefix(data: bytes) -> dict[str, Any]:
 class _GpuUiCursor:
     """Strict cursor for generated GPUI wrapper field layouts."""
 
-    def __init__(self, data: bytes, offset: int):
+    def __init__(self, data: bytes, offset: int, strings: StringPool | None = None):
         self.data = data
         self.offset = offset
+        self.strings = strings
 
     def scalar(self, fmt: str, field: str) -> Any:
         size = struct.calcsize("<" + fmt)
@@ -193,6 +219,9 @@ class _GpuUiCursor:
         return bool(value)
 
     def string(self, field: str) -> str | None:
+        if self.strings is not None:
+            value, self.offset = _pooled_string(self.data, self.offset, field, self.strings)
+            return value
         size = self.scalar("I", field)
         if size == 0xFFFFFFFF:
             return None
@@ -261,10 +290,12 @@ _EXTENDED_NODE_LAYOUT = (
 _SUBROOT_LAYOUT = (("anchorNodeIndex", "i"), ("subrootName", "string"))
 
 
-def decode_gpu_ui_root16(data: bytes) -> dict[str, Any]:
+def decode_gpu_ui_root16(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode all ExtendedPrefabGroup fields and nested records to exact EOF."""
-    prefix = frame_gpu_ui_root16_prefix(data)
-    cursor = _GpuUiCursor(data, prefix["bytesConsumed"])
+    prefix = frame_gpu_ui_root16_prefix(data, strings=strings)
+    cursor = _GpuUiCursor(data, prefix["bytesConsumed"], strings)
     fields = dict(prefix["fields"])
     count = fields.pop("prefabsCount")
     prefabs = []
@@ -309,7 +340,9 @@ def decode_gpu_ui_root16(data: bytes) -> dict[str, Any]:
     }
 
 
-def _row_prefix(data: bytes, offset: int) -> dict[str, Any] | None:
+def _row_prefix(
+    data: bytes, offset: int, strings: StringPool | None = None
+) -> dict[str, Any] | None:
     try:
         if data[offset] != 6 or data[offset + 1] not in (0, 1):
             return None
@@ -323,12 +356,20 @@ def _row_prefix(data: bytes, offset: int) -> dict[str, Any] | None:
             if data[cursor] != 5:
                 return None
             cursor += 1
-            length = struct.unpack_from("<I", data, cursor)[0]
-            cursor += 4
-            if not 1 <= length <= 128 or cursor + length + 16 > len(data):
-                return None
-            name = data[cursor:cursor + length].decode("utf-8")
-            cursor += length
+            if strings is not None:
+                try:
+                    name, cursor = _pooled_string(data, cursor, "animationName", strings)
+                except GpuUiFramingError:
+                    return None
+                if not name or cursor + 16 > len(data):
+                    return None
+            else:
+                length = struct.unpack_from("<I", data, cursor)[0]
+                cursor += 4
+                if not 1 <= length <= 128 or cursor + length + 16 > len(data):
+                    return None
+                name = data[cursor:cursor + length].decode("utf-8")
+                cursor += length
             animation_time, render_nodes_offset, total_frames, wrap_mode = (
                 struct.unpack_from("<fiii", data, cursor)
             )
@@ -360,20 +401,27 @@ def _row_prefix(data: bytes, offset: int) -> dict[str, Any] | None:
         return None
 
 
-def frame_damage_text(data: bytes) -> dict[str, Any]:
+def frame_damage_text(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Name the current PrefabGroup/Prefab/Animation outer framing."""
     if not data or data[0] != 6:
         raise GpuUiFramingError("root member count is not 6")
     if len(data) < 13:
         raise GpuUiFramingError("truncated root")
-    length = struct.unpack_from("<I", data, 1)[0]
-    if length > 128 or 5 + length + 8 > len(data):
-        raise GpuUiFramingError("invalid charset")
-    try:
-        charset = data[5:5 + length].decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise GpuUiFramingError("invalid charset UTF-8") from exc
-    offset = 5 + length
+    if strings is not None:
+        charset, offset = _pooled_string(data, 1, "charset", strings)
+        if offset + 8 > len(data):
+            raise GpuUiFramingError("truncated style/count")
+    else:
+        length = struct.unpack_from("<I", data, 1)[0]
+        if length > 128 or 5 + length + 8 > len(data):
+            raise GpuUiFramingError("invalid charset")
+        try:
+            charset = data[5:5 + length].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise GpuUiFramingError("invalid charset UTF-8") from exc
+        offset = 5 + length
     style_discriminator = struct.unpack_from("<i", data, offset)[0]
     declared_count = struct.unpack_from("<I", data, offset + 4)[0]
     first_row = offset + 8
@@ -382,7 +430,7 @@ def frame_damage_text(data: bytes) -> dict[str, Any]:
     starts: list[int] = []
     prefixes: list[dict[str, Any]] = []
     for candidate in range(first_row, len(data)):
-        prefix = _row_prefix(data, candidate)
+        prefix = _row_prefix(data, candidate, strings)
         if prefix is not None:
             starts.append(candidate)
             prefixes.append(prefix)
@@ -425,14 +473,16 @@ def frame_damage_text(data: bytes) -> dict[str, Any]:
     }
 
 
-def decode_damage_text(data: bytes, *, game_root: Path | None = None) -> dict[str, Any]:
+def decode_damage_text(
+    data: bytes, *, game_root: Path | None = None, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode the complete six-member PrefabGroup using authenticated native layouts."""
     contract, native_audit = load_damage_text_schema(game_root=game_root)
     if contract is None:
         raise GpuUiFramingError(
             "DamageText native schema unavailable: " + str(native_audit)
         )
-    cursor = _GpuUiCursor(data, 0)
+    cursor = _GpuUiCursor(data, 0, strings)
     spans: list[dict[str, Any]] = []
     root_field_ranges: dict[str, dict[str, int]] = {}
 

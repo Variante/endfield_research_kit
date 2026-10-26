@@ -53,9 +53,9 @@ no longer exist independently of the proposed owner:
 - Add a new top-level topic only for a genuinely new durable ownership domain.
   Add a WebUI page guide only when that page is active, and update both WebUI
   indexes in the same change.
-- `webui/` and `game_data/` are the only subdirectories. A `game_data/` file
-  owns one installed-data evidence domain; its cross-family rules, refresh
-  commands, and remaining gaps stay in `game_data_recovery.md`. Add one only
-  for a genuinely separate family, and update
+- `webui/` and `game_data/` are the subdirectories. A `game_data/` file owns one
+  installed-data evidence domain; its cross-family rules, refresh commands, and
+  remaining gaps stay in `game_data_recovery.md`. Add one only for a genuinely
+  separate family, and update
   [`game_data/README.md`](game_data/README.md), the parent file's index, and
   this file together.

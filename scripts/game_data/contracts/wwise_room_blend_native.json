@@ -1,0 +1,706 @@
+{
+  "schema": "endfield.wwise-room-blend-observer.v2",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "borrowedGroups": [
+    "roomVerbFactory",
+    "roomVerbExecute"
+  ],
+  "selection": {
+    "format": 12546,
+    "capacity": 512,
+    "validFrames": 512,
+    "prefixBytes": 16,
+    "blendFrameCounts": [
+      64,
+      128,
+      256,
+      512
+    ]
+  },
+  "layout": {
+    "parameterObject": 344
+  },
+  "nativeGroups": [
+    {
+      "key": "roomVerbStereo",
+      "entryRva": "0x22d680",
+      "windows": [
+        {
+          "rva": "0x22d680",
+          "bodyLength": 396,
+          "bodySha256": "1932fb40068f7b3fc1236c4fd80cdb071f6490b81b507a7096c5af3f23fa6806",
+          "unwindRva": "0x31819c",
+          "unwindInfoHex": "01f31700f3c80800e1b80900c4a80a00bb980b00ae880c0097780d0088f41f0079e420006ac421001001240009d0077006600000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22d80c",
+          "bodyLength": 1634,
+          "bodySha256": "03dcf68aa3969324da746551c3fe49ef0241707f0af873cbdc2549d64088bac1",
+          "unwindRva": "0x3181d0",
+          "unwindInfoHex": "2125080025d807001f680e00175422000834230080d622000cd822009c813100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22de6e",
+          "bodyLength": 114,
+          "bodySha256": "becda2fce2aefaafe7716cffa2d922dfb3e84584fcb16fa23a35db1ef193d6b8",
+          "unwindRva": "0x3181f0",
+          "unwindInfoHex": "2100000080d622000cd822009c813100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "allocateScratch",
+        "blockFrameCount",
+        "leftBlend",
+        "leftExtraBlend",
+        "rightBlend",
+        "rightExtraBlend"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "allocateScratch",
+          "rva": "0x22d6bc",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "blockFrameCount",
+          "rva": "0x22d7f9",
+          "instructionHex": "0fb74f12"
+        },
+        {
+          "role": "leftBlend",
+          "rva": "0x22dad6",
+          "instructionHex": "e805680000"
+        },
+        {
+          "role": "leftExtraBlend",
+          "rva": "0x22db46",
+          "instructionHex": "e895670000"
+        },
+        {
+          "role": "rightBlend",
+          "rva": "0x22dbe3",
+          "instructionHex": "e8f8660000"
+        },
+        {
+          "role": "rightExtraBlend",
+          "rva": "0x22dc53",
+          "instructionHex": "e888660000"
+        }
+      ]
+    },
+    {
+      "key": "roomVerbBlend",
+      "entryRva": "0x2342e0",
+      "windows": [
+        {
+          "rva": "0x2342e0",
+          "bodyLength": 577,
+          "bodySha256": "87efd9982b43ce43c48c1dc906c03fafa43fd4c0493b7cfc2699e103612cb6a0",
+          "unwindRva": "0x318768",
+          "unwindInfoHex": "0131070031880000237801001868020004620000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "constantMultiplyWetA",
+        "constantMultiplyDry",
+        "constantMultiplyWetB",
+        "constantAddDry",
+        "constantAddWetB",
+        "rampReciprocal",
+        "rampFirstDry",
+        "rampAdvanceDry"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "constantMultiplyWetA",
+          "rva": "0x23435e",
+          "instructionHex": "0f59d5"
+        },
+        {
+          "role": "constantMultiplyDry",
+          "rva": "0x234361",
+          "instructionHex": "0f59c3"
+        },
+        {
+          "role": "constantMultiplyWetB",
+          "rva": "0x234364",
+          "instructionHex": "0f59cc"
+        },
+        {
+          "role": "constantAddDry",
+          "rva": "0x234367",
+          "instructionHex": "0f58d0"
+        },
+        {
+          "role": "constantAddWetB",
+          "rva": "0x23436a",
+          "instructionHex": "0f58d1"
+        },
+        {
+          "role": "rampReciprocal",
+          "rva": "0x2343b6",
+          "instructionHex": "f30f5ec8"
+        },
+        {
+          "role": "rampFirstDry",
+          "rva": "0x2343e6",
+          "instructionHex": "f3410f5911"
+        },
+        {
+          "role": "rampAdvanceDry",
+          "rva": "0x2343eb",
+          "instructionHex": "f3410f58d8"
+        }
+      ]
+    }
+  ],
+  "callBindings": [
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22dad6",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22dadb"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22db46",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22db4b"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22dbe3",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22dbe8"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22dc53",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22dc58"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22dce6",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22dceb"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22dd47",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22dd4c"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22dde3",
+      "targetGroup": "roomVerbBlend",
+      "returnRva": "0x22dde8"
+    }
+  ],
+  "abiBindings": [
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2342e4",
+      "instructionHex": "f30f10642478"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2342ed",
+      "instructionHex": "f30f106c2468"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2342f8",
+      "instructionHex": "f30f10742470"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x234303",
+      "instructionHex": "f30f10bc2480000000"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x234311",
+      "instructionHex": "f3440f10442460"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x234328",
+      "instructionHex": "8b842488000000"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x234318",
+      "instructionHex": "440f2ec3"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x23431e",
+      "instructionHex": "0f2ef5"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x234323",
+      "instructionHex": "0f2efc"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x234395",
+      "instructionHex": "f3440f5cc3"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2343a2",
+      "instructionHex": "f30f5cf5"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2343a9",
+      "instructionHex": "f30f5cfc"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2343ad",
+      "instructionHex": "f3480f2ac1"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2343ba",
+      "instructionHex": "f3440f59c1"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2343bf",
+      "instructionHex": "f30f59f1"
+    },
+    {
+      "group": "roomVerbBlend",
+      "rva": "0x2343c3",
+      "instructionHex": "f30f59f9"
+    }
+  ],
+  "hooks": [
+    {
+      "index": 47,
+      "name": "AkSoundEngine.roomVerbExecute",
+      "sourceKind": "roomVerbExecute",
+      "ownerGroup": "roomVerbExecute",
+      "abiId": "win64.void_integer2_result.v1",
+      "memory": [
+        {
+          "name": "instance",
+          "argIndex": 0,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "buffer",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "format",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "capacity",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 16
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 18
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "kind": "pointer",
+          "offset": 0
+        },
+        {
+          "name": "parameterObject",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 344
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "instance",
+          "argIndex": 0,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "buffer",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "format",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "capacity",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 16
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 18
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "kind": "pointer",
+          "offset": 0
+        },
+        {
+          "name": "parameterObject",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 344
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    },
+    {
+      "index": 48,
+      "name": "AkSoundEngine.roomVerbBlend",
+      "sourceKind": "roomVerbBlend",
+      "ownerGroup": "roomVerbBlend",
+      "abiId": "win64.void_pointer3_float6_u32_result.v1",
+      "memory": [
+        {
+          "name": "frames",
+          "argIndex": 11,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "dryPreviousBits",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "dryTargetBits",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetAPreviousBits",
+          "argIndex": 7,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetATargetBits",
+          "argIndex": 8,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetBPreviousBits",
+          "argIndex": 9,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetBTargetBits",
+          "argIndex": 10,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetAWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetAWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetAWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetAWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord0",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord1",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord2",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord3",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 0,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "frames",
+          "argIndex": 11,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "dryPreviousBits",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "dryTargetBits",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetAPreviousBits",
+          "argIndex": 7,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetATargetBits",
+          "argIndex": 8,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetBPreviousBits",
+          "argIndex": 9,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetBTargetBits",
+          "argIndex": 10,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "wetAWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetAWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetAWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetAWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord0",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord1",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord2",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "wetBWord3",
+          "argIndex": 2,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 0,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected registered RoomVerb instance and original three-buffer SSE blend with three previous/target gain pairs, first-sample previous gains, and separately rounded products/additions.",
+    "conditional": "Actual nested blend prefixes through the RoomVerb return and admitted bus/device path.",
+    "unresolved": "Delay/filter/feedback generation of wet buffers, isolated Event wet contribution, other formats/counts and full buffers."
+  },
+  "stereoDispatch": {
+    "format": 12546,
+    "tableRva": "0x22a9fc",
+    "tableIndex": 0,
+    "branchRva": "0x22a935",
+    "callRva": "0x22a93b",
+    "targetGroup": "roomVerbStereo"
+  },
+  "unitConstant": {
+    "rva": "0x28f350",
+    "word": 1065353216,
+    "loadRva": "0x23439a",
+    "instructionHex": "f30f100daeaf0500"
+  }
+}

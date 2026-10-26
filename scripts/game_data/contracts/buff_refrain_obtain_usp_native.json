@@ -1,0 +1,163 @@
+{
+  "schema": "endfield.buff-refrain-obtain-usp-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "refrainObtainUsp": {
+      "sourceContract": "buff_12a_native.json",
+      "wrapperTypeDefinition": 16361,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack",
+      "runtimeTypeDefinition": 9732,
+      "runtimeTypeName": "Beyond.Gameplay.Core.RefrainObtainUsp+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        122228,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack",
+        "Deserialize",
+        70655968
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70656112,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656135,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F844C0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70656153,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656175,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84230100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 70656140
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70656186,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656208,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84020100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70656219,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656241,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84E10000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "clearUspOnEnd",
+          "declaredType": "bool",
+          "setterMethodIndex": 122223,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70656252,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656275,
+            "targetRva": 70656464,
+            "methodIndex": 122223
+          },
+          "sourceToDestinationHex": "4885F60F84C00000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "refrainObtainUspTags",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTagList",
+          "setterMethodIndex": 122224,
+          "kind": "tag-list-profile",
+          "sourceCall": {
+            "rva": 70656293,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656316,
+            "targetRva": 70656512,
+            "methodIndex": 122224
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 70656280
+        },
+        {
+          "fieldName": "targetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 122225,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 70656334,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656353,
+            "targetRva": 70656560,
+            "methodIndex": 122225
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 70656321
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "298": "refrainObtainUsp"
+  },
+  "childTypes": {
+    "tagList": "Beyond.Gameplay.Core.GameplayTagList",
+    "target": "Beyond.Gameplay.Core.TargetSettings"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected parent source order, physical source calls and stores, current dispatcher and independent child runtime-type joins.",
+    "direct": "Seven stored fields include separate clear flag, GameplayTagList and TargetSettings; each child must close its own source range and bind its named tree.",
+    "conditional": "Stored grammar uses the independently validated ordinary tag-list and target child profiles; actual formatter/provider selection remains separate.",
+    "unresolved": "Actual target selection, tag evaluation, USP suppression/clear effects, runtime provider choices and complete Buff parent/root admission."
+  }
+}

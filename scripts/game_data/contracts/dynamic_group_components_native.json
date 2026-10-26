@@ -1,0 +1,730 @@
+{
+  "schema": "endfield.dynamic-group-components-native-contract.v2",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": [
+    {
+      "name": "NavModifyAreaComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneNavModifyAreaComp",
+      "gridFieldIndex": 24,
+      "width": 24,
+      "alignment": 4,
+      "builderMethodIndex": 89453,
+      "builderStructInstructionOffset": 95,
+      "fields": [
+        {
+          "name": "Group",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89452,
+          "offset": 0,
+          "carrierCallOffset": 86,
+          "carrierHelper": "forward"
+        }
+      ]
+    },
+    {
+      "name": "ViewStateControlComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneViewStateControlComp",
+      "gridFieldIndex": 26,
+      "width": 40,
+      "alignment": 8,
+      "builderMethodIndex": 89472,
+      "builderStructInstructionOffset": 95,
+      "fields": [
+        {
+          "name": "Id",
+          "type": "System.UInt64",
+          "getterMethodIndex": 89469,
+          "offset": 0
+        },
+        {
+          "name": "ComputeType",
+          "type": "System.Int32",
+          "getterMethodIndex": 89470,
+          "offset": 8
+        },
+        {
+          "name": "Entries",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89471,
+          "offset": 12,
+          "carrierCallOffset": 90,
+          "carrierHelper": "forward"
+        }
+      ]
+    },
+    {
+      "name": "MissionControlComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp",
+      "gridFieldIndex": 27,
+      "width": 32,
+      "alignment": 4,
+      "builderMethodIndex": 89480,
+      "builderStructInstructionOffset": 95,
+      "fields": [
+        {
+          "name": "Conditions",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89477,
+          "offset": 0,
+          "carrierCallOffset": 81,
+          "carrierHelper": "initialize"
+        },
+        {
+          "name": "CompareType",
+          "type": "System.Int32",
+          "getterMethodIndex": 89478,
+          "offset": 24
+        },
+        {
+          "name": "ToBeTrue",
+          "type": "System.Int32",
+          "getterMethodIndex": 89479,
+          "offset": 28
+        }
+      ]
+    },
+    {
+      "name": "ConveyorBeltGroupComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "gridFieldIndex": 40,
+      "width": 40,
+      "alignment": 4,
+      "builderMethodIndex": 89595,
+      "builderStructInstructionOffset": 98,
+      "fields": [
+        {
+          "name": "Speed",
+          "type": "System.Single",
+          "getterMethodIndex": 89590,
+          "offset": 0
+        },
+        {
+          "name": "TotalLength",
+          "type": "System.Single",
+          "getterMethodIndex": 89591,
+          "offset": 4
+        },
+        {
+          "name": "LevelId",
+          "type": "System.Int32",
+          "getterMethodIndex": 89592,
+          "offset": 8
+        },
+        {
+          "name": "SplineId",
+          "type": "System.Int32",
+          "getterMethodIndex": 89593,
+          "offset": 12
+        },
+        {
+          "name": "Paths",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89594,
+          "offset": 16,
+          "carrierCallOffset": 90,
+          "carrierHelper": "forward"
+        }
+      ]
+    },
+    {
+      "name": "RemapSceneComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneRemapSceneComp",
+      "gridFieldIndex": 48,
+      "width": 24,
+      "alignment": 4,
+      "builderMethodIndex": 89679,
+      "builderStructInstructionOffset": 95,
+      "fields": [
+        {
+          "name": "SceneGridInfoList",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89678,
+          "offset": 0,
+          "carrierCallOffset": 86,
+          "carrierHelper": "forward"
+        }
+      ]
+    },
+    {
+      "name": "StreamingAreaComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneStreamingAreaComp",
+      "gridFieldIndex": 50,
+      "width": 28,
+      "alignment": 4,
+      "builderMethodIndex": 89700,
+      "builderStructInstructionOffset": 94,
+      "fields": [
+        {
+          "name": "AreaId",
+          "type": "System.Int32",
+          "getterMethodIndex": 89698,
+          "offset": 0
+        },
+        {
+          "name": "VisibleGroup",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89699,
+          "offset": 4,
+          "carrierCallOffset": 90,
+          "carrierHelper": "forward"
+        }
+      ]
+    },
+    {
+      "name": "ActivityControlComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneActivityControlComp",
+      "gridFieldIndex": 54,
+      "width": 32,
+      "alignment": 4,
+      "builderMethodIndex": 89738,
+      "builderStructInstructionOffset": 95,
+      "fields": [
+        {
+          "name": "Conditions",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89735,
+          "offset": 0,
+          "carrierCallOffset": 86,
+          "carrierHelper": "forward"
+        },
+        {
+          "name": "CompareType",
+          "type": "System.Int32",
+          "getterMethodIndex": 89736,
+          "offset": 24
+        },
+        {
+          "name": "ToBeTrue",
+          "type": "System.Int32",
+          "getterMethodIndex": 89737,
+          "offset": 28
+        }
+      ]
+    },
+    {
+      "name": "ErosionRootComp",
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+      "gridFieldIndex": 36,
+      "width": 48,
+      "alignment": 8,
+      "builderMethodIndex": 89560,
+      "builderStructInstructionOffset": 95,
+      "fields": [
+        {
+          "name": "ErosionCoreId",
+          "type": "System.UInt64",
+          "getterMethodIndex": 89557,
+          "offset": 0
+        },
+        {
+          "name": "PosList",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "getterMethodIndex": 89558,
+          "offset": 8,
+          "carrierCallOffset": 90,
+          "carrierHelper": "forward"
+        },
+        {
+          "name": "ErosionCorePos",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVector3",
+          "getterMethodIndex": 89559,
+          "offset": 32,
+          "carrierCallOffset": 90,
+          "carrierHelper": "forward"
+        }
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "index": 89452,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneNavModifyAreaComp",
+      "method": "get_Group",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105298580,
+      "bodyExtent": 169,
+      "bodySha256": "C421213F93B23F6DC0B34EF306380B4439B91A48CEF8D9581F92561D6E511428"
+    },
+    {
+      "index": 89453,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneNavModifyAreaComp",
+      "method": "CreateFBDynamicSceneNavModifyAreaComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "group_index_IsInvalid",
+        "group_index_Type",
+        "group_index_Grid",
+        "group_index_Index",
+        "group_Num",
+        "group_TotalInGrid"
+      ],
+      "returnType": "<type-index:71287>",
+      "rva": 105298092,
+      "bodyExtent": 371,
+      "bodySha256": "C2CDA8BFF10EACB1E6A4947C161CA129CF1068C512E882CB87812C0F9C7E1CEA"
+    },
+    {
+      "index": 89469,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneViewStateControlComp",
+      "method": "get_Id",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.UInt64",
+      "rva": 105347724,
+      "bodyExtent": 147,
+      "bodySha256": "0F362EA585C3BAF6B55C1859B917A874740C1856B4E45E07B4AF941699F7BAA3"
+    },
+    {
+      "index": 89470,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneViewStateControlComp",
+      "method": "get_ComputeType",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 105347400,
+      "bodyExtent": 148,
+      "bodySha256": "6BC3170EC8A554D0936E02F354CCE3A9A050FB017FC51004E5801FD438E3F16C"
+    },
+    {
+      "index": 89471,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneViewStateControlComp",
+      "method": "get_Entries",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105347548,
+      "bodyExtent": 173,
+      "bodySha256": "579C5DDFF6D4600B168380B622EB612FBC92F3025C508769976BB43C42F1D65F"
+    },
+    {
+      "index": 89472,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneViewStateControlComp",
+      "method": "CreateFBDynamicSceneViewStateControlComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.UInt64",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "Id",
+        "ComputeType",
+        "entries_index_IsInvalid",
+        "entries_index_Type",
+        "entries_index_Grid",
+        "entries_index_Index",
+        "entries_Num",
+        "entries_TotalInGrid"
+      ],
+      "returnType": "<type-index:71311>",
+      "rva": 105346836,
+      "bodyExtent": 447,
+      "bodySha256": "3A2E2AB29A1455173717C25A98DD8B7D9B9B613F50162A43409AE0A08690D912"
+    },
+    {
+      "index": 89477,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp",
+      "method": "get_Conditions",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 57532112,
+      "bodyExtent": 117,
+      "bodySha256": "1672092CD35ABA0B2007370011773203E52C283972D4581DB9A6E8ACD493E706"
+    },
+    {
+      "index": 89478,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp",
+      "method": "get_CompareType",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 57531856,
+      "bodyExtent": 93,
+      "bodySha256": "912C14B2C1DE4B8862C16049BCD876805D8D05D5EDAB17FACBA29E089CDDC0C9"
+    },
+    {
+      "index": 89479,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp",
+      "method": "get_ToBeTrue",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 57531760,
+      "bodyExtent": 93,
+      "bodySha256": "A36E4C158FE500F8E14645DAD7DEF6419EB157B169DA118D8C51710E66B2054F"
+    },
+    {
+      "index": 89480,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionControlComp",
+      "method": "CreateFBDynamicSceneMissionControlComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "conditions_index_IsInvalid",
+        "conditions_index_Type",
+        "conditions_index_Grid",
+        "conditions_index_Index",
+        "conditions_Num",
+        "conditions_TotalInGrid",
+        "CompareType",
+        "ToBeTrue"
+      ],
+      "returnType": "<type-index:71281>",
+      "rva": 105295924,
+      "bodyExtent": 430,
+      "bodySha256": "5F013975BD736E3DE418E62D5393DF837A3E00D4DEAEF8EF2EA4DAFD1D20C4A9"
+    },
+    {
+      "index": 89590,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "method": "get_Speed",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Single",
+      "rva": 105281556,
+      "bodyExtent": 147,
+      "bodySha256": "A50F85B1EA8D808D7C6F12F2CA65969B96D250BD8406016946F6AF99D2FEC91F"
+    },
+    {
+      "index": 89591,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "method": "get_TotalLength",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Single",
+      "rva": 105281852,
+      "bodyExtent": 148,
+      "bodySha256": "AD735B887B082F7C8AB50CDBED5DFD2360B8598652CF9CBE1C27FB4A755897BF"
+    },
+    {
+      "index": 89592,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "method": "get_LevelId",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 105281232,
+      "bodyExtent": 148,
+      "bodySha256": "FD574C435F062B5FE1DA681317288FB9806292F50F1602EE5BDAF317263BD6E2"
+    },
+    {
+      "index": 89593,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "method": "get_SplineId",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 105281704,
+      "bodyExtent": 148,
+      "bodySha256": "C94D024EEEB681505905D6EBA96BBC3EF1B9EC27A42A3686B9B1C5B558021E49"
+    },
+    {
+      "index": 89594,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "method": "get_Paths",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105281380,
+      "bodyExtent": 173,
+      "bodySha256": "95E1DB45967172195F1C04CC64BC39106FFA2BC8AEFBB90EA4BEF52287110579"
+    },
+    {
+      "index": 89595,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneConveyorBeltGroupComp",
+      "method": "CreateFBDynamicSceneConveyorBeltGroupComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Single",
+        "System.Single",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "Speed",
+        "TotalLength",
+        "LevelId",
+        "SplineId",
+        "paths_index_IsInvalid",
+        "paths_index_Type",
+        "paths_index_Grid",
+        "paths_index_Index",
+        "paths_Num",
+        "paths_TotalInGrid"
+      ],
+      "returnType": "<type-index:71257>",
+      "rva": 105280616,
+      "bodyExtent": 497,
+      "bodySha256": "E61A476CD108EC4D277D8E328FFED8A6D3EB4EEFE822DE42DC20376428458AA7"
+    },
+    {
+      "index": 89678,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneRemapSceneComp",
+      "method": "get_SceneGridInfoList",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105302416,
+      "bodyExtent": 169,
+      "bodySha256": "FD349C57842456C329AFD554E18E1954FA06B2D6BBB1D71EE26EE20DBC2E20D0"
+    },
+    {
+      "index": 89679,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneRemapSceneComp",
+      "method": "CreateFBDynamicSceneRemapSceneComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "sceneGridInfoList_index_IsInvalid",
+        "sceneGridInfoList_index_Type",
+        "sceneGridInfoList_index_Grid",
+        "sceneGridInfoList_index_Index",
+        "sceneGridInfoList_Num",
+        "sceneGridInfoList_TotalInGrid"
+      ],
+      "returnType": "<type-index:71292>",
+      "rva": 105301928,
+      "bodyExtent": 371,
+      "bodySha256": "C2E69E2DE68064339AEA6412706A79E7FD3C5CBB45C0CDEE146534FBAEF4C038"
+    },
+    {
+      "index": 89698,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneStreamingAreaComp",
+      "method": "get_AreaId",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 105344556,
+      "bodyExtent": 147,
+      "bodySha256": "F2F6514D6868570A185DD9BB57E1901A17C099E831D7743F344FCD1F7C51D931"
+    },
+    {
+      "index": 89699,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneStreamingAreaComp",
+      "method": "get_VisibleGroup",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105344820,
+      "bodyExtent": 173,
+      "bodySha256": "34758724C417CAC620BF58954BD134B488A0F463062855236E88E822016F48CB"
+    },
+    {
+      "index": 89700,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneStreamingAreaComp",
+      "method": "CreateFBDynamicSceneStreamingAreaComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "AreaId",
+        "visibleGroup_index_IsInvalid",
+        "visibleGroup_index_Type",
+        "visibleGroup_index_Grid",
+        "visibleGroup_index_Index",
+        "visibleGroup_Num",
+        "visibleGroup_TotalInGrid"
+      ],
+      "returnType": "<type-index:71304>",
+      "rva": 105344156,
+      "bodyExtent": 399,
+      "bodySha256": "D2942F456B1DE9C3C7052FF49E8032DD6FEDA4738B730C8480910ACBD3D43865"
+    },
+    {
+      "index": 89735,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneActivityControlComp",
+      "method": "get_Conditions",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105278260,
+      "bodyExtent": 169,
+      "bodySha256": "079EE0D83D90AACE542A2A7B76EF4ED65FDDD0C580CEBFBC249C233295D58BE5"
+    },
+    {
+      "index": 89736,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneActivityControlComp",
+      "method": "get_CompareType",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 58004816,
+      "bodyExtent": 93,
+      "bodySha256": "F380B8DAE4AA1E44300F4501CC2069E0413C59EBBEA9B10B149A354398ECBD9F"
+    },
+    {
+      "index": 89737,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneActivityControlComp",
+      "method": "get_ToBeTrue",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.Int32",
+      "rva": 105278432,
+      "bodyExtent": 148,
+      "bodySha256": "1B1A33689C5D5107CB70EBA41B103D2C3CD125E87F2863B30AE7C20DE6B870EA"
+    },
+    {
+      "index": 89738,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneActivityControlComp",
+      "method": "CreateFBDynamicSceneActivityControlComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "builder",
+        "conditions_index_IsInvalid",
+        "conditions_index_Type",
+        "conditions_index_Grid",
+        "conditions_index_Index",
+        "conditions_Num",
+        "conditions_TotalInGrid",
+        "CompareType",
+        "ToBeTrue"
+      ],
+      "returnType": "<type-index:71251>",
+      "rva": 105277712,
+      "bodyExtent": 430,
+      "bodySha256": "37926734EA459760BC96229E82123708E8968729C6A8592A0DC9507700BC619E"
+    },
+    {
+      "index": 89557,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+      "method": "get_ErosionCoreId",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "System.UInt64",
+      "rva": 105289420,
+      "bodyExtent": 147,
+      "bodySha256": "DA08F137B1B4AEB6F435D2370B7156998BD4613EA4323EA0EA0DF648DED0E87A"
+    },
+    {
+      "index": 89558,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+      "method": "get_PosList",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 105289744,
+      "bodyExtent": 173,
+      "bodySha256": "BF94E240589C6B3BC9A43B40CB4972524A12639057DE14727A58C27C45ECC3B9"
+    },
+    {
+      "index": 89559,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+      "method": "get_ErosionCorePos",
+      "parameters": [],
+      "parameterNames": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVector3",
+      "rva": 105289568,
+      "bodyExtent": 173,
+      "bodySha256": "ED4D69DA27DC07AB74EA495D9E0BEA88B85B5588CD06D80E22ABBD2DE7C91976"
+    },
+    {
+      "index": 89560,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+      "method": "CreateFBDynamicSceneErosionRootComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.UInt64",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Single",
+        "System.Single",
+        "System.Single"
+      ],
+      "parameterNames": [
+        "builder",
+        "ErosionCoreId",
+        "posList_index_IsInvalid",
+        "posList_index_Type",
+        "posList_index_Grid",
+        "posList_index_Index",
+        "posList_Num",
+        "posList_TotalInGrid",
+        "erosionCorePos_X",
+        "erosionCorePos_Y",
+        "erosionCorePos_Z"
+      ],
+      "returnType": "<type-index:71266>",
+      "rva": 105288760,
+      "bodyExtent": 544,
+      "bodySha256": "293563558DF19540BDCCC54BF998F8326E44DFD593F32FD004A8C4143BD051BE"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected generated getter identities and primitive/nested carrier positions plus flattened builder fields and first struct-width/alignment declaration authenticate containing inline layouts. DataGroup and DataIndex are owned by independently validated root/index contracts. Scalar-owned inline Vector3 fields are independently authenticated from their owning contract, not copied into this catalog.",
+    "structuralOnly": "Explicit stored DataGroup type/grid/index/count spans link authored components to same-grid target records. This is not runtime registration or evaluated activation.",
+    "unresolved": "Other-grid references, live selection, target enum semantics, control IDs, units and activation behavior remain unresolved."
+  },
+  "inlineTypes": [
+    "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVector3"
+  ]
+}

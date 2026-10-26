@@ -1,4 +1,4 @@
-"""Selected-build SkillData reader for CustomRootMotionAction union 0x0099.
+"""Selected-build SkillData reader for CustomRootMotionAction union (tag resolved by name).
 
 The contract owns the member read order. This module reuses the bounded
 MemoryPack profiles that the selected native source calls identify, and leaves
@@ -18,6 +18,7 @@ import struct
 from functools import lru_cache
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
@@ -43,7 +44,7 @@ def _contract() -> dict[str, Any]:
         or not reads
         or len(reads) != value.get("serializedMemberCount")
         or [row.get("memberIndex") for row in reads] != list(range(len(reads)))
-        or value.get("dispatcher", {}).get("unionTag") != 0x0099
+        or value.get("dispatcher", {}).get("unionTag") != _A("Core_CustomRootMotionAction_Data")
     ):
         raise ValueError(f"{LABEL}.contract:read-order-or-route")
     admitted = {
@@ -132,7 +133,7 @@ def validate_current_native_contract() -> dict[str, Any]:
 
 
 def decode_custom_root_motion_action(reader: Reader, depth: int, tag: int, width: int) -> None:
-    """Consume one reached 0x0099 union; ``Reader.action`` records its range."""
+    """Consume one reached CustomRootMotionAction union; ``Reader.action`` records its range."""
     del depth  # None of the selected 24 members is a recursive action list.
     contract = _contract()
     if tag != contract["dispatcher"]["unionTag"] or width != 1 or reader.peek() != tag:

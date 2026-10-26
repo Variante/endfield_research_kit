@@ -1,0 +1,531 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v9",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "name": "buff.Blackboard.TryGetFloat",
+      "type": "Beyond.Blackboard",
+      "method": "TryGetFloat",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "float"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "key",
+          "argument": "key",
+          "type": "string",
+          "role": "lookup-key"
+        },
+        {
+          "label": "outputFloat",
+          "argument": "value",
+          "type": "float",
+          "role": "lookup-output",
+          "argumentRepresentation": {
+            "mode": "scalarByRef",
+            "type": "float"
+          }
+        }
+      ],
+      "semanticRole": "Blackboard evaluated values and healing amount observation",
+      "evidenceBoundary": {
+        "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+        "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+        "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+      }
+    },
+    {
+      "name": "buff.ActionBlackboard.GetDouble",
+      "type": "Beyond.ActionBlackboard",
+      "method": "GetDouble",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "input",
+          "type": "Beyond.Blackboard+BlackboardDouble"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "expressionIdentity",
+          "argument": "input",
+          "type": "Beyond.Blackboard+BlackboardDouble",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "Blackboard evaluated values and healing amount observation",
+      "evidenceBoundary": {
+        "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+        "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+        "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+      }
+    },
+    {
+      "name": "buff.ActionBlackboard.GetFloatInput",
+      "type": "Beyond.ActionBlackboard",
+      "method": "GetFloat",
+      "returnType": "float",
+      "static": false,
+      "parameters": [
+        {
+          "name": "input",
+          "type": "Beyond.Blackboard+BlackboardDouble"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "expressionIdentity",
+          "argument": "input",
+          "type": "Beyond.Blackboard+BlackboardDouble",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "Blackboard evaluated values and healing amount observation",
+      "evidenceBoundary": {
+        "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+        "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+        "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+      }
+    },
+    {
+      "name": "buff.ActionBlackboard.GetFloatKey",
+      "type": "Beyond.ActionBlackboard",
+      "method": "GetFloat",
+      "returnType": "float",
+      "static": false,
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "key",
+          "argument": "key",
+          "type": "string",
+          "role": "lookup-key"
+        }
+      ],
+      "semanticRole": "Blackboard evaluated values and healing amount observation",
+      "evidenceBoundary": {
+        "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+        "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+        "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+      }
+    },
+    {
+      "name": "buff.HealPackData.GetFinalHealValue",
+      "type": "Beyond.Gameplay.Core.HealPackData",
+      "method": "GetFinalHealValue",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "detail",
+          "type": "Proto.BATTLE_HEAL_ACTION_DETAIL"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "healDetailIdentity",
+          "argument": "detail",
+          "type": "Proto.BATTLE_HEAL_ACTION_DETAIL",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "reportedSourceId",
+          "argument": "detail",
+          "type": "ulong",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::sourceId_",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "reportedTargetId",
+          "argument": "detail",
+          "type": "ulong",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::targetId_",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "reportedHealValue",
+          "argument": "detail",
+          "type": "double",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::value_",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "reportedCurrentHp",
+          "argument": "detail",
+          "type": "double",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::curHp_",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Blackboard evaluated values and healing amount observation",
+      "evidenceBoundary": {
+        "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+        "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+        "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+      }
+    },
+    {
+      "name": "buff.Skill.AssignSourceBlackboard",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "AssignSourceBlackboard",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "extraBlackboard",
+          "type": "Beyond.Blackboard"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "extraBlackboardIdentity",
+          "argument": "extraBlackboard",
+          "type": "Beyond.Blackboard",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "onCreateBlackboardIdentity",
+          "argument": "this",
+          "type": "Beyond.Blackboard",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<onCreateBlackboard>k__BackingField",
+              "type": "Beyond.Blackboard",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "actionBlackboardIdentity",
+          "argument": "this",
+          "type": "Beyond.ActionBlackboard",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<blackboard>k__BackingField",
+              "type": "Beyond.ActionBlackboard",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Blackboard evaluated values and healing amount observation",
+      "evidenceBoundary": {
+        "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+        "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+        "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.SkillUtil",
+      "method": "CalculateTalentModifiedSkillData",
+      "returnType": "Beyond.Gameplay.Core.SkillData",
+      "static": true,
+      "parameters": [
+        {
+          "name": "templateData",
+          "type": "Beyond.Gameplay.Core.SkillData"
+        },
+        {
+          "name": "charId",
+          "type": "string"
+        },
+        {
+          "name": "talentNodeIds",
+          "type": "System.Collections.Generic.HashSet`1<string>"
+        },
+        {
+          "name": "charInstId",
+          "type": "ulong"
+        }
+      ],
+      "name": "buff.SkillUtil.CalculateTalentModifiedSkillData",
+      "fields": [
+        {
+          "label": "templateData",
+          "argument": "templateData",
+          "type": "Beyond.Gameplay.Core.SkillData",
+          "role": "initialization-input",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "inputSkillSkillid",
+          "argument": "templateData",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "inputSkillLevel",
+          "argument": "templateData",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::level",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "charId",
+          "argument": "charId",
+          "type": "string",
+          "role": "initialization-input"
+        },
+        {
+          "label": "charInstId",
+          "argument": "charInstId",
+          "type": "ulong",
+          "role": "initialization-input"
+        }
+      ],
+      "semanticRole": "Skill modifier selection at initialization",
+      "evidenceBoundary": {
+        "direct": "Named initialization entry arguments and selected SkillData fields.",
+        "conditional": "Selected unique normal entry; bounded sequential reads only.",
+        "unresolved": "Return reference, full HashSet contents, completed arithmetic writes and serialized node ownership remain unobserved."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.SkillUtil",
+      "method": "CalculatePotentialModifiedSkillData",
+      "returnType": "Beyond.Gameplay.Core.SkillData",
+      "static": true,
+      "parameters": [
+        {
+          "name": "templateData",
+          "type": "Beyond.Gameplay.Core.SkillData"
+        },
+        {
+          "name": "charId",
+          "type": "string"
+        },
+        {
+          "name": "potentialLevel",
+          "type": "uint"
+        },
+        {
+          "name": "charInstId",
+          "type": "ulong"
+        }
+      ],
+      "name": "buff.SkillUtil.CalculatePotentialModifiedSkillData",
+      "fields": [
+        {
+          "label": "templateData",
+          "argument": "templateData",
+          "type": "Beyond.Gameplay.Core.SkillData",
+          "role": "initialization-input",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "inputSkillSkillid",
+          "argument": "templateData",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "inputSkillLevel",
+          "argument": "templateData",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::level",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "charId",
+          "argument": "charId",
+          "type": "string",
+          "role": "initialization-input"
+        },
+        {
+          "label": "potentialLevel",
+          "argument": "potentialLevel",
+          "type": "uint",
+          "role": "initialization-input"
+        },
+        {
+          "label": "charInstId",
+          "argument": "charInstId",
+          "type": "ulong",
+          "role": "initialization-input"
+        }
+      ],
+      "semanticRole": "Skill modifier selection at initialization",
+      "evidenceBoundary": {
+        "direct": "Named initialization entry arguments and selected SkillData fields.",
+        "conditional": "Selected unique normal entry; bounded sequential reads only.",
+        "unresolved": "Return reference, full HashSet contents, completed arithmetic writes and serialized node ownership remain unobserved."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.SkillUtil",
+      "method": "_CalculatePotentialTalentEffect",
+      "returnType": "void",
+      "static": true,
+      "parameters": [
+        {
+          "name": "skillData",
+          "type": "Beyond.Gameplay.Core.SkillData"
+        },
+        {
+          "name": "blackboard",
+          "type": "Beyond.Blackboard"
+        },
+        {
+          "name": "effectId",
+          "type": "string"
+        },
+        {
+          "name": "charInstId",
+          "type": "ulong"
+        }
+      ],
+      "name": "buff.SkillUtil._CalculatePotentialTalentEffect",
+      "fields": [
+        {
+          "label": "skillData",
+          "argument": "skillData",
+          "type": "Beyond.Gameplay.Core.SkillData",
+          "role": "initialization-input",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "inputSkillSkillid",
+          "argument": "skillData",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "inputSkillLevel",
+          "argument": "skillData",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::level",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "blackboard",
+          "argument": "blackboard",
+          "type": "Beyond.Blackboard",
+          "role": "initialization-input",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "effectId",
+          "argument": "effectId",
+          "type": "string",
+          "role": "initialization-input"
+        },
+        {
+          "label": "charInstId",
+          "argument": "charInstId",
+          "type": "ulong",
+          "role": "initialization-input"
+        }
+      ],
+      "semanticRole": "Skill modifier selection at initialization",
+      "evidenceBoundary": {
+        "direct": "Named initialization entry arguments and selected SkillData fields.",
+        "conditional": "Selected unique normal entry; bounded sequential reads only.",
+        "unresolved": "Return reference, full HashSet contents, completed arithmetic writes and serialized node ownership remain unobserved."
+      }
+    }
+  ],
+  "coverageGaps": [
+    "Numeric returns are raw IEEE-754 bits, never forced through a Boolean ABI. Normal floating arguments and unresolved generic entries are refused.",
+    "TryGetFloat output is a selected native byref pointer, sampled before/after; only a normal return supplies a lookup result. A false return is not a successful zero-value lookup.",
+    "HealPackData is a value type: its normal instance entry receives an unboxed this pointer. That address is a temporary value carrier, not a managed-object identity.",
+    "Expression identity without a nested keyed lookup does not reveal the expression key or its literal. Healing return is a calculated amount, not an observed final HP write."
+  ],
+  "evidenceBoundary": {
+    "direct": "Recorded normal-return IEEE-754 bits or Boolean result, original GP arguments and explicit synchronous invocation identity.",
+    "conditional": "Unique selected normal method; all supplied argument lanes are GP references or checked byref pointers. Floating returns use XMM0. Reads are sequential and bounded.",
+    "unresolved": "No whole collection enumeration, final HP write, server acceptance, IFix branch selection or serialized node ownership."
+  },
+  "inheritsRecipe": "buff_runtime_paired_capture.json"
+}

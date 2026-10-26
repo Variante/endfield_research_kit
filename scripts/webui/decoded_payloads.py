@@ -23,6 +23,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import struct
+from pathlib import Path
 from typing import Any, Callable
 
 from scripts.game_data.leveldata_binary import frame_leveldata_named_prefix
@@ -32,6 +33,7 @@ from scripts.game_data.memorypack.tables import (
     DIALOG_ID_TABLE_REL,
     decode_dialog_id_table_memorypack,
 )
+from scripts.game_data.string_pool import StringPool, export_string_pool
 
 
 # What a reader raises when the payload is not the shape it proves. Anything
@@ -50,27 +52,34 @@ class DecodedText:
     coverage: str  # "whole_file" or "partial"
 
 
-def _leveldata(rel_path: str, data: bytes) -> dict[str, Any]:
+def _leveldata(rel_path: str, data: bytes, strings: StringPool | None) -> dict[str, Any]:
     return frame_leveldata_named_prefix(data)
 
 
-def _levelscript(rel_path: str, data: bytes) -> dict[str, Any]:
+def _levelscript(rel_path: str, data: bytes, strings: StringPool | None) -> dict[str, Any]:
     # The summary is keyed by the script id, which is the file's own stem.
     stem = rel_path.rsplit("/", 1)[-1].removesuffix(".json")
     return decode_levelscript_binary_summary(data, int(stem))
 
 
-def _levelscript_template(rel_path: str, data: bytes) -> dict[str, Any]:
+def _levelscript_template(
+    rel_path: str, data: bytes, strings: StringPool | None
+) -> dict[str, Any]:
     return frame_levelscript_template(data)
 
 
-def _dialog_id_table(rel_path: str, data: bytes) -> dict[str, Any]:
-    return decode_dialog_id_table_memorypack(DIALOG_ID_TABLE_REL, data, len(data))
+def _dialog_id_table(rel_path: str, data: bytes, strings: StringPool | None) -> dict[str, Any]:
+    return decode_dialog_id_table_memorypack(
+        DIALOG_ID_TABLE_REL, data, len(data), strings=strings
+    )
 
 
 # Export-relative path prefix -> (dotted reader name, call). A prefix ending in
 # ``/`` routes a whole family; one ending in ``.json`` routes a single file.
-ROUTES: tuple[tuple[str, str, Callable[[str, bytes], dict[str, Any]]], ...] = (
+# Each call receives the owning export's string pool, or ``None`` for an export
+# that inlines its strings.
+RouteCall = Callable[[str, bytes, StringPool | None], dict[str, Any]]
+ROUTES: tuple[tuple[str, str, RouteCall], ...] = (
     (
         JSON_ROOT + "LevelData/",
         "scripts.game_data.leveldata_binary.frame_leveldata_named_prefix",
@@ -94,7 +103,7 @@ ROUTES: tuple[tuple[str, str, Callable[[str, bytes], dict[str, Any]]], ...] = (
 )
 
 
-def _route(rel_path: str) -> tuple[str, Callable[[str, bytes], dict[str, Any]]] | None:
+def _route(rel_path: str) -> tuple[str, RouteCall] | None:
     normalized = rel_path.replace("\\", "/")
     for prefix, decoder, call in ROUTES:
         if normalized.startswith(prefix):
@@ -102,13 +111,19 @@ def _route(rel_path: str) -> tuple[str, Callable[[str, bytes], dict[str, Any]]] 
     return None
 
 
-def render_decoded_payload(rel_path: str, data: bytes) -> DecodedText | None:
+def render_decoded_payload(
+    rel_path: str, data: bytes, *, export_root: Path | None = None
+) -> DecodedText | None:
     """Render ``data`` through the reader that owns ``rel_path``.
 
     Returns ``None`` when no reader routes the path, when the reader rejects
     the payload, or when it decodes nothing. The first line of the rendered
     text names the reader and how much of the file it read, so a reader that
     covers only part of a payload cannot be mistaken for a complete view of it.
+
+    ``export_root`` names the export that holds ``rel_path``; its
+    ``game/Json/StringPool`` decides whether strings are pooled. Without it the
+    payload is read as inline-string, so a pooled payload renders as ``None``.
     """
 
     route = _route(rel_path)
@@ -116,7 +131,12 @@ def render_decoded_payload(rel_path: str, data: bytes) -> DecodedText | None:
         return None
     decoder, call = route
     try:
-        result = call(rel_path, data)
+        strings = (
+            export_string_pool(export_root / "game" / "Json")
+            if export_root is not None
+            else None
+        )
+        result = call(rel_path, data, strings)
     except READER_ERRORS:
         return None
     if not isinstance(result, dict) or not result:

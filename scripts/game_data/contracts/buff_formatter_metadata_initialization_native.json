@@ -1,0 +1,417 @@
+{
+  "schema": "endfield.buff-formatter-metadata-initialization-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-owned-metadata-initialization-control-selected-header-base-cache-stores-and-conditional-size-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_formatter_receiver_resolution_native.json",
+  "metadataSource": {
+    "headerCellRva": 233439216,
+    "baseCellRva": 233439208
+  },
+  "cacheCellRva": 233439432,
+  "recordLayout": {
+    "recordBytes": 92,
+    "fieldCountWordOffset": 72,
+    "vtableCountWordOffset": 78,
+    "headerTypeDefinitionsOffsetField": 160
+  },
+  "loaderEntryRva": 106704,
+  "allocatorCellRva": 229719544,
+  "postInitializeEntryRva": 2986080,
+  "function": {
+    "entryRva": 104736,
+    "ownedWindows": [
+      {
+        "startRva": 104736,
+        "endRva": 105023,
+        "sha256": "2C721039144969B6667F761E2429D5D38D8F107138D1601F53690A9DE1E02BE3"
+      }
+    ],
+    "codeWindows": [
+      {
+        "startRva": 104736,
+        "endRva": 105023,
+        "sha256": "2C721039144969B6667F761E2429D5D38D8F107138D1601F53690A9DE1E02BE3"
+      }
+    ],
+    "paddingWindows": [],
+    "checkedInstructionCount": 57,
+    "frameBytes": 40,
+    "localBranches": [
+      {
+        "siteRva": 104758,
+        "kind": "conditional",
+        "target": 6442555965,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 105021,
+        "kind": "jump",
+        "target": 6442555960
+      }
+    ],
+    "calls": [
+      {
+        "siteRva": 104740,
+        "kind": "call",
+        "target": 6442557648
+      },
+      {
+        "siteRva": 104839,
+        "kind": "registerCall",
+        "register": "rax"
+      },
+      {
+        "siteRva": 104871,
+        "kind": "registerCall",
+        "register": "rax"
+      },
+      {
+        "siteRva": 104932,
+        "kind": "registerCall",
+        "register": "rax"
+      },
+      {
+        "siteRva": 104968,
+        "kind": "registerCall",
+        "register": "rax"
+      },
+      {
+        "siteRva": 105000,
+        "kind": "registerCall",
+        "register": "rax"
+      },
+      {
+        "siteRva": 105009,
+        "kind": "call",
+        "target": 6445437024
+      }
+    ],
+    "explicitStores": [
+      {
+        "siteRva": 104745,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334456,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555696,
+            "absoluteAddress": 6675890152
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104771,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334438,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555722,
+            "absoluteAddress": 6675890160
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104795,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "edx",
+          "backingRegister": "rdx",
+          "registerBits": 32,
+          "registerBitOffset": 0,
+          "memoryBytes": 4,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233400963,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555745,
+            "absoluteAddress": 6675956708
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104812,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "eax",
+          "backingRegister": "rax",
+          "registerBits": 32,
+          "registerBitOffset": 0,
+          "memoryBytes": 4,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233400942,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555762,
+            "absoluteAddress": 6675956704
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104825,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "edx",
+          "backingRegister": "rdx",
+          "registerBits": 32,
+          "registerBitOffset": 0,
+          "memoryBytes": 4,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334513,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555775,
+            "absoluteAddress": 6675890288
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104841,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334552,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555792,
+            "absoluteAddress": 6675890344
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104873,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334536,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555824,
+            "absoluteAddress": 6675890360
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104934,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334491,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555885,
+            "absoluteAddress": 6675890376
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 104970,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334359,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555921,
+            "absoluteAddress": 6675890280
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      },
+      {
+        "siteRva": 105002,
+        "kind": "memoryOperation",
+        "facts": {
+          "direction": "store",
+          "register": "rax",
+          "backingRegister": "rax",
+          "registerBits": 64,
+          "registerBitOffset": 0,
+          "memoryBytes": 8,
+          "address": {
+            "base": null,
+            "index": null,
+            "scale": 1,
+            "displacement": 233334343,
+            "ripRelative": true,
+            "addressBits": 64,
+            "ripBase": 6442555953,
+            "absoluteAddress": 6675890296
+          },
+          "valueExtension": null,
+          "upperRegisterEffect": "preserved",
+          "requiredAlignmentBytes": 1,
+          "nonTemporalHint": false,
+          "writesFlags": false
+        }
+      }
+    ],
+    "returnRvas": [
+      105020
+    ],
+    "trapRvas": [],
+    "prefix": {
+      "window": {
+        "startRva": 104736,
+        "endRva": 104778,
+        "sha256": "3CF576D117675495BB39DC789166AD0C444CA4C59E9DE110F334BCABFA3D48BB"
+      },
+      "preHeaderReadOffset": 172
+    },
+    "cacheAllocation": {
+      "window": {
+        "startRva": 104880,
+        "endRva": 104941,
+        "sha256": "3E9CE2F3EEDD5DE6B9312812FA362A722F0CD9CB03434553F468C33B3B4DF992"
+      },
+      "multiplier": 7218291159277650633,
+      "shift": 6
+    },
+    "successWindow": {
+      "startRva": 105009,
+      "endRva": 105016,
+      "sha256": "6F48DE9E8A69C4651A28FB8F765297BD08979713D71F0827B04639137DD5C407"
+    },
+    "restoreWindow": {
+      "startRva": 105016,
+      "endRva": 105021,
+      "sha256": "3297A0E4175E5D032A2BE5212C1A1980CD3DF21251DB492413A47FCB4B6187AC"
+    },
+    "nullJumpWindow": {
+      "startRva": 105021,
+      "endRva": 105023,
+      "sha256": "E66DFFB8753C30E0A5F69B844492822096D4FF7E0F9226E140EFFE146457447D"
+    }
+  },
+  "conditions": [
+    "normal ABI-compatible loader and children with valid header storage and disjoint normal stack",
+    "cache quotient assumes the fresh signed header size equals the explicitly authenticated nonnegative selected typeDefinitions byte size",
+    "allocation arguments and result store do not establish a live allocator identity, allocation success, zero initialization or capacity",
+    "later header/base/cache reads and child aliases remain independent fresh views"
+  ],
+  "evidenceBoundary": {
+    "exact": "Complete owned initialization instructions, local control, explicit stores and normal frames; both unsigned MUL boundaries and full products.",
+    "direct": "Actual loader result reaches selected base/header cells, fresh header size reaches indirect allocator arguments and its normal result reaches the resolver cache cell.",
+    "structuralOnly": "Other initialization stores, anonymous allocator pointer cell and unprojected child effects.",
+    "conditional": "All nonnegative record-multiple quotients through the selected current metadata section; selected count with eight-byte stride requires matching fresh header bytes.",
+    "unresolved": "Actual loaded source/file identity, allocator target/outcome, capacity, global stability, child aliases, live class/count identity and runtime/root composition."
+  }
+}

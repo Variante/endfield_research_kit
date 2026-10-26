@@ -1,0 +1,153 @@
+{
+  "schema": "endfield.buff-camera-list-constructor-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "buff_camera_usp_damage_actions_native.json",
+  "sourceRoles": [
+    "cameraGroups",
+    "cameraConditions"
+  ],
+  "sharedConstructor": {
+    "method": [
+      428796,
+      "MemoryPack.Formatters.ListFormatter`1",
+      ".ctor"
+    ],
+    "classArguments": [
+      "object"
+    ],
+    "methodArguments": [],
+    "registration": {
+      "pointer": 6512336368,
+      "methodSpecIndex": 215494,
+      "registration": {
+        "tableIndex": 203778,
+        "va": 6641931136,
+        "methodSpecIndex": 215494,
+        "rawHex": "C6490300C51A030010020100FFFFFFFF",
+        "indices": [
+          203461,
+          66064,
+          -1
+        ]
+      },
+      "classInstantiation": {
+        "index": 75,
+        "table_slot_va": 6625974776,
+        "record_va": 6626910416,
+        "argument_vector_va": 6669037504,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879512,
+            "raw_type_record_hex": "068E00000000000000001C0000000000"
+          }
+        ]
+      },
+      "methodInstantiation": {
+        "index": -1,
+        "table_slot_va": null,
+        "record_va": null,
+        "argument_vector_va": null,
+        "padding_hex": "",
+        "arguments": []
+      },
+      "methodDefinitionIndices": [
+        428796
+      ],
+      "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+    }
+  },
+  "function": {
+    "entryRva": 69885424,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 69885424,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            69885424,
+            69885459,
+            211637472
+          ],
+          "tableRowRva": 254077952,
+          "runtimeTripleRawHex": "F05D2A04135E2A04E0549D0C",
+          "codeBytes": 35,
+          "unwindRawHex": "0104010004420000",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        },
+        {
+          "runtimeTriple": [
+            79532220,
+            79532243,
+            213842664
+          ],
+          "tableRowRva": 254776400,
+          "runtimeTripleRawHex": "BC90BD04D390BD04E8FABE0C",
+          "codeBytes": 23,
+          "unwindRawHex": "21000000F05D2A04135E2A04E0549D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                79532220,
+                79532243,
+                213842664
+              ],
+              "parent": [
+                69885424,
+                69885459,
+                211637472
+              ]
+            }
+          ]
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 69885424,
+        "endRva": 69885459,
+        "sha256": "EE8B449F2F0601A780FE8EFD822A3980AEB78672980AB85AB3D48ACC95959D7C"
+      },
+      {
+        "startRva": 79532220,
+        "endRva": 79532243,
+        "sha256": "3BCBB0793FA1489B5B90913E96A626DFB0C0C27461B379D45DEDFA87047BB524"
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Current independent Object constructor registration, actual camera constructor CALLs, typed allocation/constructor/Register contexts, and complete two-range exception-owned constructor bytes.",
+    "direct": "Both camera list element types pass their concrete constructor contexts to the same shared constructor. Its nonzero anonymous context guard returns without calls or explicit data stores. Its zero branch re-reads the context, calls through slot zero and rejoins the restored return.",
+    "structuralOnly": "Anonymous constructor context offsets retain their physical meaning only; a shared Object entry does not replace either concrete camera element type.",
+    "conditional": "Readable compatible contexts; typed nonnull allocation and normally returning constructor/indirect initialization calls with ordinary Win64 stack and nonvolatile preservation.",
+    "unresolved": "Indirect initialization effects, actual provider/cache selection, runtime generic inflation, concrete list positive-element grammar/loop composition, complete camera parent/root admission and actual camera effects."
+  }
+}

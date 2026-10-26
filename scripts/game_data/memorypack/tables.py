@@ -7,7 +7,7 @@ import re
 import struct
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from scripts.game_data.memorypack.core import (
     MEMORYPACK_NULL_COUNT,
@@ -24,6 +24,7 @@ from scripts.game_data.memorypack.core import (
     unique_strings,
 )
 from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
 
 
 BAMBOO_RAFT_TASK_TABLE_REL = "Json/NonGeneratedConfigs/BambooRaftTaskTable.json"
@@ -65,7 +66,7 @@ DIALOG_ID_TABLE_BRIEF_MEMBER_COUNT = 9
 DIALOG_ID_TABLE_KEY_RE = re.compile(r"^(?:dlg|radio)_[A-Za-z0-9_]{2,140}$")
 
 
-DIALOG_ID_TABLE_RAW_ID_RE = re.compile(rb"(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})")
+DIALOG_ID_TABLE_RAW_ID_RE = re.compile(rb"(?<!option_)(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})")
 
 
 DIALOG_ID_TABLE_LINE_RE = re.compile(r"^(?P<scene>dlg_[A-Za-z0-9_]+?)_(?P<trunk>[1-9]\d*)_(?P<line>\d{3,5})$")
@@ -580,7 +581,10 @@ def decode_damage_text_memorypack(rel: str, data: bytes, size: int) -> dict[str,
     }
 
 
-def decode_bamboo_raft_task_table_memorypack(rel: str, data: bytes, size: int) -> dict[str, Any] | None:
+def decode_bamboo_raft_task_table_memorypack(
+    rel: str, data: bytes, size: int, *, strings: StringPool | None = None
+) -> dict[str, Any] | None:
+    """Decode BambooRaftTaskTable; ``strings`` selects pooled taskId storage."""
     if rel != BAMBOO_RAFT_TASK_TABLE_REL:
         return None
     if not data or data[0] != BAMBOO_RAFT_TASK_ROOT_MEMBER_COUNT:
@@ -629,6 +633,7 @@ def decode_bamboo_raft_task_table_memorypack(rel: str, data: bytes, size: int) -
                     offset,
                     f"BambooRaftTaskTable[{row_index}].tasks[{task_index}].taskId",
                     max_length=96,
+                    strings=strings,
                 )
                 if offset >= len(data):
                     raise ValueError(f"BambooRaftTaskTable[{row_index}].tasks[{task_index}].memberCount:truncated")
@@ -640,6 +645,7 @@ def decode_bamboo_raft_task_table_memorypack(rel: str, data: bytes, size: int) -
                     offset,
                     f"BambooRaftTaskTable[{row_index}].tasks[{task_index}].duplicateId",
                     max_length=96,
+                    strings=strings,
                 )
                 if offset + 4 > len(data):
                     raise ValueError(f"BambooRaftTaskTable[{row_index}].tasks[{task_index}].tail:truncated")
@@ -728,9 +734,21 @@ def decode_bamboo_raft_task_table_memorypack(rel: str, data: bytes, size: int) -
     }
 
 
-def dialog_id_table_row_start(data: bytes, offset: int) -> str | None:
+def dialog_id_table_row_start(
+    data: bytes, offset: int, *, strings: StringPool | None = None
+) -> str | None:
     if offset + 5 > len(data):
         return None
+    if strings is not None:
+        try:
+            key = strings.resolve(struct.unpack_from("<i", data, offset)[0])
+        except StringPoolDecodeError:
+            return None
+        if key is None or not DIALOG_ID_TABLE_KEY_RE.match(key):
+            return None
+        if data[offset + 4] != DIALOG_ID_TABLE_BRIEF_MEMBER_COUNT:
+            return None
+        return key
     length = struct.unpack_from("<I", data, offset)[0]
     if length < 5 or length > 140 or offset + 4 + length >= len(data):
         return None
@@ -745,7 +763,7 @@ def dialog_id_table_row_start(data: bytes, offset: int) -> str | None:
     return key
 
 
-def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000, retain_rows: bool = False) -> tuple[dict[str, Any], int]:
+def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000, retain_rows: bool = False, strings: StringPool | None = None) -> tuple[dict[str, Any], int]:
     count, offset = read_memorypack_u32_count(data, offset, field_name, max_count=max_count)
     rows: list[dict[str, Any]] = []
     retained: list[dict[str, Any]] = []
@@ -759,6 +777,7 @@ def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: s
             offset,
             f"{field_name}[{row_index}].value",
             max_length=220,
+            strings=strings,
         )
         if key_min is None or value < key_min:
             key_min = value
@@ -778,7 +797,7 @@ def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: s
     }, offset
 
 
-def parse_dialog_id_table_string_int_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000, retain_rows: bool = False) -> tuple[dict[str, Any], int]:
+def parse_dialog_id_table_string_int_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000, retain_rows: bool = False, strings: StringPool | None = None) -> tuple[dict[str, Any], int]:
     count, offset = read_memorypack_u32_count(data, offset, field_name, max_count=max_count)
     rows: list[dict[str, Any]] = []
     retained: list[dict[str, Any]] = []
@@ -791,6 +810,7 @@ def parse_dialog_id_table_string_int_map(data: bytes, offset: int, field_name: s
             offset,
             f"{field_name}[{row_index}].key",
             max_length=220,
+            strings=strings,
         )
         value, offset = read_memorypack_i32(data, offset)
         value_counts[value] += 1
@@ -824,7 +844,7 @@ def dialog_id_table_counter_to_json(counter: Counter[Any], limit: int = 24) -> d
     return out
 
 
-def parse_dialog_id_table_lang_key(data: bytes, offset: int, field_name: str) -> tuple[dict[str, Any], int]:
+def parse_dialog_id_table_lang_key(data: bytes, offset: int, field_name: str, *, strings: StringPool | None = None) -> tuple[dict[str, Any], int]:
     if offset >= len(data):
         raise ValueError(f"{field_name}:truncated-member-count")
     member_count = data[offset]
@@ -833,11 +853,11 @@ def parse_dialog_id_table_lang_key(data: bytes, offset: int, field_name: str) ->
         return {"memberCount": None, "value": None}, offset
     if member_count != 1:
         raise ValueError(f"{field_name}:unexpected-member-count={member_count}")
-    value, offset = require_memorypack_string(data, offset, f"{field_name}.value")
+    value, offset = require_memorypack_string(data, offset, f"{field_name}.value", strings=strings)
     return {"memberCount": member_count, "value": value}, offset
 
 
-def parse_dialog_id_table_string_list(data: bytes, offset: int, field_name: str, *, max_count: int = 256) -> tuple[dict[str, Any], int]:
+def parse_dialog_id_table_string_list(data: bytes, offset: int, field_name: str, *, max_count: int = 256, strings: StringPool | None = None) -> tuple[dict[str, Any], int]:
     if offset + 4 > len(data):
         raise ValueError(f"{field_name}:truncated-count")
     count = struct.unpack_from("<I", data, offset)[0]
@@ -848,7 +868,7 @@ def parse_dialog_id_table_string_list(data: bytes, offset: int, field_name: str,
         raise ValueError(f"{field_name}:invalid-count={count}")
     values: list[str] = []
     for index in range(count):
-        value, offset = require_memorypack_non_null_string(data, offset, f"{field_name}[{index}]", max_length=220)
+        value, offset = require_memorypack_non_null_string(data, offset, f"{field_name}[{index}]", max_length=220, strings=strings)
         values.append(value)
     return {"count": count, "values": values}, offset
 
@@ -901,18 +921,31 @@ def split_dialog_id_table_masks(prefix: bytes, field_name: str) -> tuple[dict[st
     return matches[0]
 
 
-def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -> dict[str, Any]:
-    marker = struct.pack("<I", len(key.encode("utf-8"))) + key.encode("utf-8")
-    search_from = 0
+def _dialog_id_offsets(payload: bytes, key: str, strings: StringPool | None) -> Iterator[int]:
+    """Yield candidate offsets of the duplicated ``dialogId`` string."""
+    if strings is None:
+        marker = struct.pack("<I", len(key.encode("utf-8"))) + key.encode("utf-8")
+        search_from = 0
+        while (found := payload.find(marker, search_from)) >= 0:
+            yield found
+            search_from = found + 1
+        return
+    for candidate in range(len(payload) - 3):
+        try:
+            value = strings.resolve(struct.unpack_from("<i", payload, candidate)[0])
+        except StringPoolDecodeError:
+            continue
+        if value == key:
+            yield candidate
+
+
+def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str, *, strings: StringPool | None = None) -> dict[str, Any]:
     last_error = "duplicate-dialogId:not-found"
-    while True:
-        dialog_id_offset = payload.find(marker, search_from)
-        if dialog_id_offset < 0:
-            break
+    for dialog_id_offset in _dialog_id_offsets(payload, key, strings):
         try:
             after_mask, before_mask = split_dialog_id_table_masks(payload[:dialog_id_offset], field_name)
             offset = dialog_id_offset
-            dialog_id, offset = require_memorypack_non_null_string(payload, offset, f"{field_name}.dialogId", max_length=220)
+            dialog_id, offset = require_memorypack_non_null_string(payload, offset, f"{field_name}.dialogId", max_length=220, strings=strings)
             if dialog_id != key:
                 raise ValueError(f"{field_name}.dialogId:mismatch")
             dialog_type, offset = read_memorypack_i32(payload, offset)
@@ -922,8 +955,8 @@ def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -
                 raise ValueError(f"{field_name}.enableSeamlessStartInSameFrame:invalid")
             enable_seamless_start = bool(payload[offset])
             offset += 1
-            interact_text, offset = parse_dialog_id_table_lang_key(payload, offset, f"{field_name}.interactText")
-            npc_proxy_ids, offset = parse_dialog_id_table_string_list(payload, offset, f"{field_name}.npcProxyIds")
+            interact_text, offset = parse_dialog_id_table_lang_key(payload, offset, f"{field_name}.interactText", strings=strings)
+            npc_proxy_ids, offset = parse_dialog_id_table_string_list(payload, offset, f"{field_name}.npcProxyIds", strings=strings)
             if offset >= len(payload):
                 raise ValueError(f"{field_name}.useBlackScreen:truncated")
             use_black_screen_byte = payload[offset]
@@ -935,6 +968,7 @@ def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -
                 offset,
                 f"{field_name}.usedDialogTimelineIds",
                 max_count=256,
+                strings=strings,
             )
             if offset != len(payload):
                 raise ValueError(f"{field_name}:trailing-bytes={len(payload) - offset}")
@@ -954,11 +988,11 @@ def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -
             }
         except (UnicodeDecodeError, struct.error, ValueError) as exc:
             last_error = str(exc)
-            search_from = dialog_id_offset + 1
     raise ValueError(f"{field_name}:{last_error}")
 
 
 def summarize_dialog_id_table_registry(data: bytes) -> dict[str, Any]:
+    """Summarize scene/line/option ids found in NUL-separated decoded strings."""
     all_ids = sorted({match.group().decode("ascii") for match in DIALOG_ID_TABLE_RAW_ID_RE.finditer(data)})
     option_ids = sorted({match.group().decode("ascii") for match in DIALOG_ID_TABLE_OPTION_RAW_RE.finditer(data)})
 
@@ -1016,9 +1050,13 @@ def summarize_dialog_id_table_registry(data: bytes) -> dict[str, Any]:
 
 
 def parse_dialog_brief_info_records(
-    data: bytes,
+    data: bytes, *, strings: StringPool | None = None
 ) -> tuple[list[dict[str, Any]], int]:
-    """Decode the complete first DialogIdTable member and return its boundary."""
+    """Decode the complete first DialogIdTable member and return its boundary.
+
+    ``strings`` selects pooled string storage (i32 global pool indices); the
+    caller selects the encoding, the reader never guesses.
+    """
     if not data or data[0] != DIALOG_ID_TABLE_ROOT_MEMBER_COUNT:
         raise ValueError("DialogIdTable.memberCount:invalid")
     brief_count, offset = read_memorypack_u32_count(
@@ -1026,7 +1064,7 @@ def parse_dialog_brief_info_records(
     )
     starts: list[tuple[int, str]] = []
     for candidate in range(offset, len(data) - 5):
-        key = dialog_id_table_row_start(data, candidate)
+        key = dialog_id_table_row_start(data, candidate, strings=strings)
         if key is not None:
             starts.append((candidate, key))
             if len(starts) >= brief_count + 1:
@@ -1044,7 +1082,7 @@ def parse_dialog_brief_info_records(
             continue
         try:
             _probe, probe_offset = parse_dialog_id_table_int_string_map(
-                data, candidate, "dialogIdByIntIdProbe", max_count=20_000
+                data, candidate, "dialogIdByIntIdProbe", max_count=20_000, strings=strings
             )
         except (UnicodeDecodeError, struct.error, ValueError):
             continue
@@ -1057,7 +1095,7 @@ def parse_dialog_brief_info_records(
     records: list[dict[str, Any]] = []
     for row_index, (row_start, key) in enumerate(starts[:brief_count]):
         row_end = starts[row_index + 1][0] if row_index + 1 < brief_count else field2_offset
-        key_length = struct.unpack_from("<I", data, row_start)[0]
+        key_length = 0 if strings is not None else struct.unpack_from("<I", data, row_start)[0]
         payload_start = row_start + 4 + key_length + 1
         if row_end < payload_start:
             raise ValueError(f"dialogBriefInfoDict[{row_index}].payload:negative")
@@ -1067,20 +1105,67 @@ def parse_dialog_brief_info_records(
             "rowStart": row_start,
             "payload": payload,
             "value": parse_dialog_brief_info_payload(
-                payload, key, f"dialogBriefInfoDict[{row_index}]"
+                payload, key, f"dialogBriefInfoDict[{row_index}]", strings=strings
             ),
         })
     return records, field2_offset
 
 
-def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[str, Any] | None:
+def parse_dialog_id_table_vocabulary(
+    data: bytes, *, strings: StringPool | None = None
+) -> tuple[list[dict[str, Any]], bytes]:
+    """Return the DialogBriefInfo records and every decoded string, NUL-joined.
+
+    Consumers that classify the id vocabulary scan this blob, not the raw
+    table: a pooled table stores only indices, and on an inline table an id
+    regex absorbs the adjacent length/int-id bytes.
+    """
+    records, offset = parse_dialog_brief_info_records(data, strings=strings)
+    maps = []
+    for parser, name in (
+        (parse_dialog_id_table_int_string_map, "dialogIdByIntId"),
+        (parse_dialog_id_table_int_string_map, "optionIdByIntId"),
+        (parse_dialog_id_table_string_int_map, "intIdByDialogOrOptionId"),
+        (parse_dialog_id_table_string_int_map, "intIdByDialogId"),
+    ):
+        table, offset = parser(data, offset, name, retain_rows=True, strings=strings)
+        maps.append(table)
+    if offset != len(data):
+        raise ValueError(f"DialogIdTable:trailing-bytes:offset={offset}:size={len(data)}")
+    return records, _dialog_id_table_decoded_strings(records, tuple(maps))
+
+
+def _dialog_id_table_decoded_strings(
+    brief_records: list[dict[str, Any]], maps: tuple[dict[str, Any], ...]
+) -> bytes:
+    """Join every decoded string so the registry summary can scan pooled tables."""
+    values: list[str] = []
+    for record in brief_records:
+        brief = record["value"]
+        values.append(record["key"])
+        values.append(brief["dialogId"])
+        if brief["interactText"] is not None:
+            values.append(brief["interactText"])
+        values.extend(brief["npcProxyIds"] or ())
+        values.extend(brief["usedDialogTimelineIds"] or ())
+    for table in maps:
+        for row in table["rows"]:
+            text = row["value"] if isinstance(row["value"], str) else row["key"]
+            values.append(text)
+    return b"\0".join(value.encode("utf-8") for value in values)
+
+
+def decode_dialog_id_table_memorypack(
+    rel: str, data: bytes, size: int, *, strings: StringPool | None = None
+) -> dict[str, Any] | None:
+    """Decode DialogIdTable; ``strings`` selects pooled string storage."""
     if rel != DIALOG_ID_TABLE_REL:
         return None
     if not data or data[0] != DIALOG_ID_TABLE_ROOT_MEMBER_COUNT:
         return None
 
     try:
-        brief_records, field2_offset = parse_dialog_brief_info_records(data)
+        brief_records, field2_offset = parse_dialog_brief_info_records(data, strings=strings)
         brief_count = len(brief_records)
 
         brief_rows: list[dict[str, Any]] = []
@@ -1141,13 +1226,11 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
                 "beforeMaskBlendData": before_mask,
             }
             if len(brief_rows) < 16:
-                string_hits = scan_length_prefixed_utf8_string_hits(
-                    payload,
-                    max_samples=8,
-                    min_length=3,
-                    max_length=160,
-                )
-                row_preview["stringSamples"] = [hit["value"] for hit in string_hits[:6]]
+                row_preview["stringSamples"] = [
+                    parsed_brief["dialogId"],
+                    *(parsed_brief["npcProxyIds"] or ()),
+                    *(parsed_brief["usedDialogTimelineIds"] or ()),
+                ][:6]
                 brief_rows.append(row_preview)
             has_variant_mask = after_mask["byteLength"] not in (1, 31) or before_mask["byteLength"] not in (1, 31)
             has_non_default_text = parsed_brief["interactText"] is not None
@@ -1156,16 +1239,23 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
                 interesting_brief_rows.append(row_preview)
 
         offset = field2_offset
-        field2, offset = parse_dialog_id_table_int_string_map(data, offset, "dialogIdByIntId")
-        field3, offset = parse_dialog_id_table_int_string_map(data, offset, "optionIdByIntId")
-        field4, offset = parse_dialog_id_table_string_int_map(data, offset, "intIdByDialogOrOptionId")
-        field5, offset = parse_dialog_id_table_string_int_map(data, offset, "intIdByDialogId")
+        field2, offset = parse_dialog_id_table_int_string_map(data, offset, "dialogIdByIntId", retain_rows=True, strings=strings)
+        field3, offset = parse_dialog_id_table_int_string_map(data, offset, "optionIdByIntId", retain_rows=True, strings=strings)
+        field4, offset = parse_dialog_id_table_string_int_map(data, offset, "intIdByDialogOrOptionId", retain_rows=True, strings=strings)
+        field5, offset = parse_dialog_id_table_string_int_map(data, offset, "intIdByDialogId", retain_rows=True, strings=strings)
         if offset != len(data):
             raise ValueError(f"trailing-bytes:{len(data) - offset}")
     except (UnicodeDecodeError, struct.error, ValueError):
         return None
 
-    registry = summarize_dialog_id_table_registry(data)
+    # The registry summary scans the decoded strings, never the raw bytes: a
+    # pooled table stores only indices, and on an inline table the id regex
+    # absorbs the adjacent length/int-id bytes (``dlg_a1m13_1`` + ``i``).
+    registry = summarize_dialog_id_table_registry(
+        _dialog_id_table_decoded_strings(brief_records, (field2, field3, field4, field5))
+    )
+    for table in (field2, field3, field4, field5):
+        table.pop("rows", None)
     payload_summary = ",".join(
         f"{length}:{count}" for length, count in payload_length_counts.most_common(6)
     )

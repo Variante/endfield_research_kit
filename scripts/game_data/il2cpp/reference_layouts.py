@@ -14,6 +14,20 @@ from typing import Any
 from .protocol import runtime_type_name, runtime_type_field_offsets
 
 
+def validate_reference_ancestor_chain(selected: Any, owner: str, chain: Any, ancestor: str) -> None:
+    """Check every declared parent edge to a specifically named reference ancestor."""
+    if (not isinstance(chain, list) or not 1 <= len(chain) <= 16
+            or any(not isinstance(name, str) or not name for name in chain)
+            or len(set([owner, *chain])) != len(chain) + 1 or chain[-1] != ancestor):
+        raise ValueError('reference ancestor chain: explicit bounded distinct parents required')
+    current = owner
+    for expected in chain:
+        actual = selected.parent(current)
+        if actual != expected or selected.is_value_type(current) or selected.is_value_type(expected):
+            raise ValueError(f'reference ancestor chain: {current} expected={expected} actual={actual}')
+        current = expected
+
+
 class NativeReferenceContext:
     """Selected metadata relationships needed by reference-layout proofs.
 

@@ -1,0 +1,3507 @@
+{
+  "schema": "endfield.mission-expression-native-contract.v4",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected named owned body windows, source-selector leaf bytes and complete equality-only selector programs, enum/field/literal declarations and actual caller MethodSpec usage cells.",
+    "direct": "Reviewed parser/resolver/path callers, concrete constructor/reader stores, typed state-event joins and checked default objective-initializer/combined child-loop programs. No live admission, source-to-instance construction or chronology claim.",
+    "conditional": "ASCII source model; ordinary valid String/List/Stack/HashSet/array/helper semantics, successful allocation, generic context initialization and Win64 ABI; false IFix guards. Constant parameter resolution additionally requires coherent typed Param instances with paramSource zero.",
+    "unresolved": "JSON-to-live Param initialization, live patches/objects/events, nested cached-result coherence and authoritative mission admission/order."
+  },
+  "grammar": {
+    "inputSubset": "ASCII, bounded by source-model resource limits",
+    "lowercase": "String.ToLower; ASCII model uses lower",
+    "whitespaceCodepoints": [
+      9,
+      32
+    ],
+    "operatorScanOrder": [
+      "not",
+      "and",
+      "or"
+    ],
+    "operatorWordBoundariesRequired": false,
+    "index": "one or more ASCII digits in braces, parsed by Int32.Parse",
+    "distinctIndices": "exact contiguous set 0..count-1; duplicate occurrences allowed",
+    "binaryPrecedence": "and and or equal precedence, left associative by immediate _Backtrace reduction",
+    "unary": "prefix not reduces on the next completed subtree",
+    "parentheses": "incomplete Parenthesis node blocks reduction until matching RParenthesis; _Pruning strips it",
+    "rootValidation": "exactly one completed stack node; get_valid is rootNode != null",
+    "suppliedChildCountValidation": "parser receives expression only; no check against CombineCondition subConditions count in reviewed activation",
+    "outerEvaluation": "all supplied children must be decided, including expression-unused children"
+  },
+  "parameterResolution": {
+    "constantSource": 0,
+    "useGetterSources": [
+      -1,
+      -2
+    ],
+    "idRefMinusOne": "GetValue returns passed default for getter sources when idRef is -1",
+    "normalConstantPath": "TryGetValue copies typed constValue and returns true before blackboard/getter dispatch; GetValue reads its out slot",
+    "stateCallerArguments": "GetValue<T>(configured Param,default(T),true); typed result stored in matching cached field",
+    "sourceInitialization": "Value constructors explicitly select zero; full MemoryPack readers explicitly read the source. Neither proves the live source of an omitted JSON field.",
+    "wrapperConstruction": "Typed wrappers allocate a Param and set idRef=-1; a full MemoryPack deserialize subsequently overwrites all four serialized fields, including paramSource. JSON source omission remains a separate live-construction question.",
+    "nonconstant": {
+      "sourceSelectorMeaning": "sourceSelectors prove exact membership only, not a returned value. They are not a complete resolver switch: special current-source IDs use context keys and further dispatch.",
+      "referenceResolver": "Reviewed complete registered reference GetValue/TryGetValue and path/cache bodies; ordinary initialized generic context and typed receiver required. Null Param, sentinel getter ID or false TryGetValue return select the supplied GetValue default.",
+      "boundVariable": "Source 1 or 100 takes TryGetGetterValue; its selected reference body requires the bind flag and a nonnull stored getter. Missing binding returns false/default out. A successful delegate return is copied into out; delegate effects and current binding are live obligations.",
+      "getterReference": "Sources -1/-2 use ActionContext and idRef to look up a typed getter. Failed typed lookup can try the raw getter and conversion. Actual getter registry, context owner and result cannot be supplied from stored idRef alone.",
+      "pathFamilies": "Action-context/self/config/save/server-self sources enter the path lane. get_pathRuntime calls PropertyPathDict.GetPath and PropertyPath.Concat and caches a nullable runtime path. Stored path text alone does not prove the selected blackboard, rewritten path or live value.",
+      "currentSources": "The reviewed reference TryGetValue handles selected current level/entity/script/parent-script/subgame/map sources through keyed blackboard routes, including subgame lookup/cache. This is not a complete implementation of every named current-source selector; in particular the CurrentMissionId selector is not itself a resolution proof. Specialized consumers and context setup remain separate joins.",
+      "runtimeBoundary": "No nonconstant state-Param resolver invocation, context/registry snapshot, live binding, provider value or source-to-instance creator is in the retained daily capture. Static RGCTX MethodSpec-index candidates remain unadmitted; no 16-byte static entry is treated as an 8-byte runtime slot."
+    }
+  },
+  "ownerLookup": {
+    "cache": "incoming quest ID to mission ID cache is checked first",
+    "uncached": "first ordinal _q# substring yields the prefix; absent delimiter yields empty string",
+    "chronology": "ID ownership and current state are not timestamp or causal handoff evidence"
+  },
+  "methods": {
+    "Beyond.Gameplay.Lex.LexAnalysis": {
+      "method": [
+        19799,
+        "Beyond.Gameplay.Lex",
+        "LexAnalysis",
+        49523056
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "System.Collections.Generic.List`1<Beyond.Gameplay.Lex>",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 49523056,
+          "endRva": 49523078,
+          "sha256": "DC849B94117C56DCBD606A9F2D1F1115F1CBD1AE221D6C2BA0A21077D0CCFB09",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 49523078,
+          "endRva": 49523754,
+          "sha256": "6BD81B6CA447E840B07CAA3B6368E158962FE8199C9817058F1136245F57F02C",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49523754,
+          "endRva": 49523850,
+          "sha256": "EC3B4F1420197281E8F1991457EA9AEA8163394D72F01C214A69CC5F38BB1B37",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49523850,
+          "endRva": 49523856,
+          "sha256": "4E0912873D7F6BBA5460B4C2A3CD17D7A48F0207445747CB7CB982535A568A61",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 80369002,
+          "endRva": 80369737,
+          "sha256": "6692208C58879626A6FBC607B544644C9D9A887568ACAC846E4FFF716EBCEEB1",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.Lex.GetConditionIdx": {
+      "method": [
+        19798,
+        "Beyond.Gameplay.Lex",
+        "GetConditionIdx",
+        49525808
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "int",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 49525808,
+          "endRva": 49525902,
+          "sha256": "804919A49899FC51A7416BAA0AB60C575B98581BDF0776084BD643A65337540B",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 80371382,
+          "endRva": 80371426,
+          "sha256": "41D9414A9DF13CDA4047E4CDEAEBD7B45FC834370BCFDDE66188BD4B2884D9E5",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.Lex.<LexAnalysis>g__SubString|8_0": {
+      "method": [
+        19800,
+        "Beyond.Gameplay.Lex",
+        "<LexAnalysis>g__SubString|8_0",
+        49523856
+      ],
+      "parameters": [
+        "string",
+        "int",
+        "int"
+      ],
+      "returnType": "string",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 49523856,
+          "endRva": 49523902,
+          "sha256": "958210B9E66969537C0B1F8884E1DBD635DBF571FB4180DDE18131346D40B2E3",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 49523902,
+          "endRva": 49523953,
+          "sha256": "D0ED95483C04561190AE96C0CD2AA5E2CCC27974001F80D1CF96EA6812AAF67C",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49523953,
+          "endRva": 49523969,
+          "sha256": "2002358E1ABAB439F79C79F2F1C457C971BB4C2707B31CC8F4E654A7CB195BD8",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49523969,
+          "endRva": 49523973,
+          "sha256": "5F68522DC2DE8C948541AC10CB70944B4A1EF2A57DBAB27429E81839FF0DB358",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49523973,
+          "endRva": 49524006,
+          "sha256": "D4A8BEF4260DB53B4CF387C757226263ACAB84ABE87FF7032530911F1C11F2B8",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49524006,
+          "endRva": 49524013,
+          "sha256": "50565B8966A3925C9C0BD73A797263979DE0B235F64BED534BD9D6A55F5773D6",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49524013,
+          "endRva": 49524019,
+          "sha256": "58DFDEDCD82944C572B731F20A879BA765EDF02933D0DECE002B94BFBE420F55",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 80369738,
+          "endRva": 80369750,
+          "sha256": "564246C57AD882A1DF6A295B259E756DDE7EE706D4116FAE54FB03940F9E1FD8",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.AST.Parse": {
+      "method": [
+        18689,
+        "Beyond.Gameplay.AST",
+        "Parse",
+        49524320
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 49524320,
+          "endRva": 49524352,
+          "sha256": "267469E344ED780792853F87FC9FF09FB014FC92627FF66114C76E216D2CF941",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 49524352,
+          "endRva": 49525142,
+          "sha256": "E59605F2F1E2F776184F19E6703281E8FC11A3C00E114A8D8B98E0E4DE834F44",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49525142,
+          "endRva": 49525310,
+          "sha256": "96B6CC5884E8723C4F4C04D9AF2B7B9FFD1080CCDA7A03E1E79A0D445C493BEC",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 49525310,
+          "endRva": 49525316,
+          "sha256": "AB273F95AB01E63EA76A722507F300FA44B590D0F63415A7DACA9F7FB60A6175",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 80370080,
+          "endRva": 80371150,
+          "sha256": "F5320965B3A810C64DF8BED66EABFF22018D50D1F012E0E3908895454E269E00",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.AST._Backtrace": {
+      "method": [
+        18690,
+        "Beyond.Gameplay.AST",
+        "_Backtrace",
+        49525424
+      ],
+      "parameters": [
+        "System.Collections.Generic.Stack`1<Beyond.Gameplay.ASTNode>"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 49525424,
+          "endRva": 49525432,
+          "sha256": "53CBE171265719EA842817D27A75E5861225F71873956463CB62C5F7F0756F59",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 49525432,
+          "endRva": 49525803,
+          "sha256": "0A2E9E9895B9206C8C414CD8D9E3D3BA8DF65A2179E07D8A310583A0E42B1767",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 80371150,
+          "endRva": 80371382,
+          "sha256": "F83BBC308DB8EFB4C39911DE958BBAD79D32ADAC0FC10666AE23318577012A0E",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.AST._Pruning": {
+      "method": [
+        18691,
+        "Beyond.Gameplay.AST",
+        "_Pruning",
+        62507568
+      ],
+      "parameters": [
+        "Beyond.Gameplay.ASTNode"
+      ],
+      "returnType": "Beyond.Gameplay.ASTNode",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 62507568,
+          "endRva": 62507753,
+          "sha256": "E3F1DEF70513CF4C8DCB448C3669CC66FB6B76B055FD258E241874F23CEFFAA4",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 82615948,
+          "endRva": 82616020,
+          "sha256": "6CB79ADB0E23F224413775F1E7AA601EA092FB3AA484EE487FF0E6C67E101C68",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.AST.FindAllConditionIdx": {
+      "method": [
+        18693,
+        "Beyond.Gameplay.AST",
+        "FindAllConditionIdx",
+        62507760
+      ],
+      "parameters": [
+        "Beyond.Gameplay.ASTNode",
+        "System.Collections.Generic.HashSet`1<int>"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 62507760,
+          "endRva": 62507787,
+          "sha256": "A6D569C011A20AF464F4DC86314AA6980FF45E037326C65B91A733FED4797B4A",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 62507787,
+          "endRva": 62507901,
+          "sha256": "CCB306C0FBB66AB40B600E961E19BAC5451CF81F35565B3157225D8AD30D007E",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 62507901,
+          "endRva": 62507925,
+          "sha256": "661A8342A6564A87433862830E4A16EC9ACD05352A2E4C1C948531CD6CAE7F24",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 62507925,
+          "endRva": 62507937,
+          "sha256": "9BC62B0B635A3D448A3E456B0D51769E5B6ABF646D14871255E93877500E5580",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 82616020,
+          "endRva": 82616064,
+          "sha256": "14174FB829590F22AA67FF8A27A9240AA33D27FB5A4EF10FC4FD2606E6EA8239",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.AST.get_valid": {
+      "method": [
+        18688,
+        "Beyond.Gameplay.AST",
+        "get_valid",
+        65294224
+      ],
+      "parameters": [],
+      "returnType": "bool",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 65294224,
+          "endRva": 65294272,
+          "sha256": "34751CBC6B8125E8D682687C9521F2A8DD975726CC0F3F226A4EBDFE60608923",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 83009158,
+          "endRva": 83009201,
+          "sha256": "280EF765D559471E2591D790AB97CB58D40778990A0F80D8A0FD334779761E5D",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.ASTNode..ctor": {
+      "method": [
+        18687,
+        "Beyond.Gameplay.ASTNode",
+        ".ctor",
+        49525328
+      ],
+      "parameters": [
+        "Beyond.Gameplay.LogicOperator"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 49525328,
+          "endRva": 49525424,
+          "sha256": "E745B7CB78284500307241590D74DBD18677704B55AFC686F98B3D2B7C07084E",
+          "boundary": "exact .pdata primary"
+        }
+      ]
+    },
+    "Beyond.Gameplay.CombineCondition.OnActivate": {
+      "method": [
+        19655,
+        "Beyond.Gameplay.CombineCondition",
+        "OnActivate",
+        65296176
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 65296176,
+          "endRva": 65296888,
+          "sha256": "F6FD4365F0805AFB364413465D65B630307D6CD61E28658E1E7AEEDC98A324A8",
+          "boundary": "exact .pdata primary"
+        }
+      ]
+    },
+    "Beyond.Gameplay.CheckQuestState.OnActivate": {
+      "method": [
+        18963,
+        "Beyond.Gameplay.CheckQuestState",
+        "OnActivate",
+        62243312
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 62243312,
+          "endRva": 62243445,
+          "sha256": "99836C8FEBAA5F7BEC22CA1051FA9E5C194D5F4F1249772C42C5E2D3DF68978D",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 62243445,
+          "endRva": 62243838,
+          "sha256": "CD8B5BC252EAC09895E6570E92E4FF917A150EB575EE43B9B104F337DEFF33B0",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 82580892,
+          "endRva": 82580931,
+          "sha256": "EE9997E9CEE96C7D1B320330B1ADFF17475ED7319351E37CFF73838D3A36C53D",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.CheckMissionState.OnActivate": {
+      "method": [
+        18886,
+        "Beyond.Gameplay.CheckMissionState",
+        "OnActivate",
+        62242784
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 62242784,
+          "endRva": 62242917,
+          "sha256": "C6879CA9C96EDB498C8A714CDCCD12454563276768F65080E9EAC55DD7C1F366",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 62242917,
+          "endRva": 62243304,
+          "sha256": "CCE7E86BFD3A27A43FC03B73CC6DE81B0FA64E65E9054390ABE88503A572D3BD",
+          "boundary": "exact chained unwind fragment"
+        },
+        {
+          "startRva": 82580852,
+          "endRva": 82580891,
+          "sha256": "1BBB3C475014D4C8D4FF112BAC5F0682286434F1F9EAC6F8838C00368B4AB2A4",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "Beyond.Gameplay.MissionSystem.GetMissionIdByQuestId": {
+      "method": [
+        22275,
+        "Beyond.Gameplay.MissionSystem",
+        "GetMissionIdByQuestId",
+        52719712
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "string",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 52719712,
+          "endRva": 52719941,
+          "sha256": "6562A059966A8A1C8E1DC7D41F07C29F95675E06BCB6E4ACAC3E3598308D836F",
+          "boundary": "exact .pdata primary"
+        },
+        {
+          "startRva": 78799482,
+          "endRva": 78799526,
+          "sha256": "8EF073BCEE2DF641691EACC1D63BE3FA25763C4EB6463E5C413F2FC90F83282D",
+          "boundary": "exact chained unwind fragment"
+        }
+      ]
+    },
+    "GetValueReference": {
+      "method": [
+        39021,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "GetValue",
+        59516656
+      ],
+      "sharedRepresentation": "reference",
+      "ownedWindows": [
+        {
+          "startRva": 59516656,
+          "endRva": 59516817,
+          "sha256": "6E5BE21FA67E0EDCA1A8E4E10E67A79B85A6D644A70A6701D37E22A7218AFD9E",
+          "boundary": "exact generic .pdata normal body and cold paths"
+        }
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[409]>",
+        "MVAR[409]",
+        "bool"
+      ],
+      "returnType": "MVAR[409]",
+      "static": true
+    },
+    "GetValueInt32Enum": {
+      "method": [
+        39021,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "GetValue",
+        66267376
+      ],
+      "sharedRepresentation": "Int32 enum",
+      "ownedWindows": [
+        {
+          "startRva": 66267376,
+          "endRva": 66267541,
+          "sha256": "23A57AD95FC834E865D3214C288185155D39AD2156CEC754B7E9EF3384605CD9",
+          "boundary": "exact generic .pdata normal body and cold paths"
+        }
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[409]>",
+        "MVAR[409]",
+        "bool"
+      ],
+      "returnType": "MVAR[409]",
+      "static": true
+    },
+    "TryGetValueReference": {
+      "method": [
+        39025,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "TryGetValue",
+        59515808
+      ],
+      "sharedRepresentation": "reference",
+      "ownedWindows": [
+        {
+          "startRva": 59515808,
+          "endRva": 59516653,
+          "sha256": "8D16B3E9CFE87F75B05E2B17423DFC2A168E62BBC3D85D691DF1B7274421E58E",
+          "boundary": "exact generic .pdata normal body and cold paths"
+        },
+        {
+          "startRva": 79035168,
+          "endRva": 79037448,
+          "sha256": "D6A6BB2D2113DA7FC8B56C852D6EC1DFD1CA1D7CEE8621F4D19AEF3D923191AE",
+          "boundary": "exact generic .pdata normal body and cold paths"
+        }
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[412]>",
+        "MVAR[412]",
+        "bool"
+      ],
+      "returnType": "bool",
+      "static": true
+    },
+    "TryGetValueInt32Enum": {
+      "method": [
+        39025,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "TryGetValue",
+        66266832
+      ],
+      "sharedRepresentation": "Int32 enum",
+      "ownedWindows": [
+        {
+          "startRva": 66266832,
+          "endRva": 66267261,
+          "sha256": "CBFDD6D14008E268D0A2CDCC3D9CFAEDF01E8D06F05E2D07D589E817F1587849",
+          "boundary": "exact generic .pdata normal body and cold paths"
+        },
+        {
+          "startRva": 79376336,
+          "endRva": 79378802,
+          "sha256": "1A5AB1B875E9835E048DE36F42234B533F4D2FE9F92F31D8312204023F2CE351",
+          "boundary": "exact generic .pdata normal body and cold paths"
+        }
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[412]>",
+        "MVAR[412]",
+        "bool"
+      ],
+      "returnType": "bool",
+      "static": true
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.set___constValue__": {
+      "method": [
+        125336,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "set___constValue__",
+        52460176
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 52460176,
+          "endRva": 52460212,
+          "sha256": "63BE8CEE32AFB2713EEF36C7737BA6D21A47D1104973A2C87C71282C8513DC23",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.set___paramSource__": {
+      "method": [
+        125338,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "set___paramSource__",
+        84403284
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84403284,
+          "endRva": 84403311,
+          "sha256": "1D0235940505D2D31AB38C3D2CB1338358663CE5D0072523397F1A4EE627B2AF",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___constValue__": {
+      "method": [
+        125308,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "set___constValue__",
+        84402984
+      ],
+      "parameters": [
+        "Beyond.GEnums.CompareOperator"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84402984,
+          "endRva": 84403011,
+          "sha256": "D24438FB86BBBD9FD0C34D135F2C504A811300504C431F02A5F13D6DEC6D8263",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___paramSource__": {
+      "method": [
+        125310,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "set___paramSource__",
+        84403284
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84403284,
+          "endRva": 84403311,
+          "sha256": "1D0235940505D2D31AB38C3D2CB1338358663CE5D0072523397F1A4EE627B2AF",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___constValue__": {
+      "method": [
+        125475,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "set___constValue__",
+        84402984
+      ],
+      "parameters": [
+        "Beyond.Gameplay.MissionSystem+QuestState"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84402984,
+          "endRva": 84403011,
+          "sha256": "D24438FB86BBBD9FD0C34D135F2C504A811300504C431F02A5F13D6DEC6D8263",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___paramSource__": {
+      "method": [
+        125477,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "set___paramSource__",
+        84403284
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84403284,
+          "endRva": 84403311,
+          "sha256": "1D0235940505D2D31AB38C3D2CB1338358663CE5D0072523397F1A4EE627B2AF",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___constValue__": {
+      "method": [
+        125461,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "set___constValue__",
+        84402984
+      ],
+      "parameters": [
+        "Beyond.Gameplay.MissionSystem+MissionState"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84402984,
+          "endRva": 84403011,
+          "sha256": "D24438FB86BBBD9FD0C34D135F2C504A811300504C431F02A5F13D6DEC6D8263",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___paramSource__": {
+      "method": [
+        125463,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "set___paramSource__",
+        84403284
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84403284,
+          "endRva": 84403311,
+          "sha256": "1D0235940505D2D31AB38C3D2CB1338358663CE5D0072523397F1A4EE627B2AF",
+          "boundary": "named generated setter concrete cell proof"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.CreateInstance": {
+      "method": [
+        125335,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "CreateInstance",
+        153951780
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 153951780,
+          "endRva": 153951874,
+          "sha256": "581C7E4D6A5D02BFFC7C5D9502AD0D42C8C331368448FC55B5845FC23473E1F6",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.CreateInstance": {
+      "method": [
+        125307,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "CreateInstance",
+        153932108
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 153932108,
+          "endRva": 153932202,
+          "sha256": "517F844AA11E2718C777AE970C9BD6E9788E660157F01162F191A5DC2A1ABA86",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.CreateInstance": {
+      "method": [
+        125474,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "CreateInstance",
+        153947644
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 153947644,
+          "endRva": 153947738,
+          "sha256": "0C7D9BBA07B89F3F492924582883893EBD2A927222C73E536EE35ABB3CBF10EA",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.CreateInstance": {
+      "method": [
+        125460,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "CreateInstance",
+        153947548
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 153947548,
+          "endRva": 153947642,
+          "sha256": "0916E37D9D9AEE18A965E0E7E686C95936D06828E4A87B44A24905F963CCAB5D",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.Gameplay.MissionSystem.Handle_QuestStateUpdate": {
+      "method": [
+        22385,
+        "Beyond.Gameplay.MissionSystem",
+        "Handle_QuestStateUpdate",
+        64099056
+      ],
+      "parameters": [
+        "Proto.SC_QUEST_STATE_UPDATE"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 64099056,
+          "endRva": 64101048,
+          "sha256": "8F1BFA2D7B28EAB3977F3B515F80CD27C8B120056D05292B85383C6CB641379D",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.Gameplay.MissionSystem.Handle_MissionStateUpdate": {
+      "method": [
+        22389,
+        "Beyond.Gameplay.MissionSystem",
+        "Handle_MissionStateUpdate",
+        64104480
+      ],
+      "parameters": [
+        "Proto.SC_MISSION_STATE_UPDATE"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 64104480,
+          "endRva": 64108764,
+          "sha256": "5573B6C490ADF77CF4AEA2954DD8B48A26732DC66319832B1BA4A2CA29A7785C",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.Gameplay.MissionSystem.RaiseMissionStateChangeEvent": {
+      "method": [
+        22314,
+        "Beyond.Gameplay.MissionSystem",
+        "RaiseMissionStateChangeEvent",
+        73132688
+      ],
+      "parameters": [
+        "string",
+        "Beyond.Gameplay.MissionSystem+MissionState",
+        "Beyond.Gameplay.MissionSystem+MissionState",
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 73132688,
+          "endRva": 73134087,
+          "sha256": "A6C661EFCF208DBB6CCBF801CB50A446E0DE599D885C97A84FB30395D9F806F1",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.EventManager.SendGlobal": {
+      "method": [
+        244339,
+        "Beyond.EventManager",
+        "SendGlobal",
+        65598672
+      ],
+      "parameters": [
+        "Beyond.CombineKey",
+        "MVAR[14364]",
+        "MVAR[14365]"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 65598672,
+          "endRva": 65599179,
+          "sha256": "5190EDCE060E6323E9647736AF39E4D097A4BAFC53634F947353917B377AD936",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        },
+        {
+          "startRva": 79344042,
+          "endRva": 79344100,
+          "sha256": "24A3FB2D922EBD2D72002BB1086B9008D6EE7FC55ACC71683E2BF6E3AF8BEB04",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ],
+      "sharedRepresentation": "selected compiled context; actual typed caller joins below"
+    },
+    "Beyond.EventManager.BindGlobal": {
+      "method": [
+        244335,
+        "Beyond.EventManager",
+        "BindGlobal",
+        71234832
+      ],
+      "parameters": [
+        "Beyond.CombineKey",
+        "Beyond.EventDelegateForStruct`1<MVAR[14361]>",
+        "Beyond.EventLifeScope"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 71234832,
+          "endRva": 71234878,
+          "sha256": "48CB30C61059EAA6F6AE9A3568FD7D9DE214A1DEBB5B01711701AAA9FBF11D67",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        },
+        {
+          "startRva": 71234878,
+          "endRva": 71234971,
+          "sha256": "427638868E95B9E18B3A8533490A001A10CACB6FABF535F93BB3F243B5821520",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        },
+        {
+          "startRva": 71234971,
+          "endRva": 71235003,
+          "sha256": "5B5E37462421234325FDC238E33DBC94221A66F505843DF41C054038DEF8B392",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        },
+        {
+          "startRva": 71235003,
+          "endRva": 71235013,
+          "sha256": "BD9BEFEEC8D0B71A788D1CB3C5624541B6D2DF984785B538277B0C743AD1FCCB",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ],
+      "sharedRepresentation": "selected compiled context; actual typed caller joins below"
+    },
+    "Beyond.EventDispatcher`1.Dispatch": {
+      "method": [
+        247180,
+        "Beyond.EventDispatcher`1",
+        "Dispatch",
+        62604880
+      ],
+      "parameters": [
+        "VAR[14715]",
+        "MVAR[14713]"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 62604880,
+          "endRva": 62605090,
+          "sha256": "885F2FDC12D1287188064D452F998AE31BFE26F7B35ADE1BE05A536473C426F2",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        },
+        {
+          "startRva": 79163126,
+          "endRva": 79163149,
+          "sha256": "020173DFBC25EF7EB21887F2D88E6C9F79F97609BEF5A580E20213CE246F210B",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ],
+      "sharedRepresentation": "selected compiled context; actual typed caller joins below"
+    },
+    "Beyond.EventBinding`1.Dispatch": {
+      "method": [
+        247151,
+        "Beyond.EventBinding`1",
+        "Dispatch",
+        59051696
+      ],
+      "parameters": [
+        "MVAR[14689]"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 59051696,
+          "endRva": 59052121,
+          "sha256": "42381E32FCF216B405EAFE5EADAF31D78FE07A22F5D71727757EA56A7B1AF841",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        },
+        {
+          "startRva": 79017480,
+          "endRva": 79017810,
+          "sha256": "E80F952A4309A5CB1EE71ACC9AF7186CD6CDE2439F2418A9A25644931CC61718",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ],
+      "sharedRepresentation": "selected compiled context; actual typed caller joins below"
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.set___idRef__": {
+      "method": [
+        125337,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "set___idRef__",
+        84403760
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84403760,
+          "endRva": 84403787,
+          "sha256": "743AD225A911ACF270DD56C41001DFDB9170F1E36AB528AAA5279C74C3E13B9B",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___idRef__": {
+      "method": [
+        125309,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "set___idRef__",
+        84402828
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84402828,
+          "endRva": 84402855,
+          "sha256": "C92DF47A1C9E8A0A6407D1E7915A49F6B260B0B872522C60BBF22EBBF555023B",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___idRef__": {
+      "method": [
+        125476,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "set___idRef__",
+        84402828
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84402828,
+          "endRva": 84402855,
+          "sha256": "C92DF47A1C9E8A0A6407D1E7915A49F6B260B0B872522C60BBF22EBBF555023B",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___idRef__": {
+      "method": [
+        125462,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "set___idRef__",
+        84402828
+      ],
+      "parameters": [
+        "int"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 84402828,
+          "endRva": 84402855,
+          "sha256": "C92DF47A1C9E8A0A6407D1E7915A49F6B260B0B872522C60BBF22EBBF555023B",
+          "boundary": "exact selected normal/cold unwind-owned bytes; caller review distinct from callee/helper behavior"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.Deserialize": {
+      "method": [
+        125342,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "Deserialize",
+        64489168
+      ],
+      "parameters": [
+        "MemoryPack.MemoryPackReader",
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 64489168,
+          "endRva": 64489517,
+          "sha256": "98317707EC31580D7D387E4153603B571FFEEFA6A8C8762CB69A8549571306F1",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 82888848,
+          "endRva": 82889003,
+          "sha256": "2D5948044EE9439C264B4DDE48429766623653E1390C6FAC12E0DB82BE0A0474",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.set___path__": {
+      "method": [
+        125339,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "set___path__",
+        52469328
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 52469328,
+          "endRva": 52469364,
+          "sha256": "B4567240B623758B276FFFFC056BC31F273205047C66E4A9CADAA383777B24F5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack..ctor": {
+      "method": [
+        125331,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        ".ctor",
+        67042448
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 67042448,
+          "endRva": 67042547,
+          "sha256": "4096D77E4E770E599F65396BDFAB81D37457EA6ECEBA91B567BF96F769216F5A",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.Deserialize": {
+      "method": [
+        125314,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "Deserialize",
+        60620144
+      ],
+      "parameters": [
+        "MemoryPack.MemoryPackReader",
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 60620144,
+          "endRva": 60620199,
+          "sha256": "CD7B311AB1B340592708357EF60594BDA069484A3635C7B3E275B5ACE20E4FE8",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 60620199,
+          "endRva": 60620366,
+          "sha256": "FE304633B02E54D0111B3DB720AEAB9F371040262C728886D37944AC09F12472",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 60620366,
+          "endRva": 60620437,
+          "sha256": "6D820E687AC615BBF955146B3F43909A03BAED1D501EAA7FD18BB9B3DBEC9BBD",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 60620437,
+          "endRva": 60620443,
+          "sha256": "E0E2694B7C59DDC1A117484137CFD20D6F89B15C2D252EC8F9D1EFFFD5DFB082",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 82335238,
+          "endRva": 82335345,
+          "sha256": "EF4FFEA2F67CEA9DD0BEDB37FBA1E526FA99C84C25EB961CB673C1044A25E2A3",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 82335345,
+          "endRva": 82335366,
+          "sha256": "B2C4D6D742AD1BE5B5B9E4C86634137E7B51019380E3E0C19B78497F6F674211",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___path__": {
+      "method": [
+        125311,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "set___path__",
+        52469328
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 52469328,
+          "endRva": 52469364,
+          "sha256": "B4567240B623758B276FFFFC056BC31F273205047C66E4A9CADAA383777B24F5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack..ctor": {
+      "method": [
+        125303,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        ".ctor",
+        71658992
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 71658992,
+          "endRva": 71659091,
+          "sha256": "3F32CE5035028286EC91C1EFC28BA2FDC8C512DB49DAEDE70BF24DE1B8B8BACE",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.Deserialize": {
+      "method": [
+        125481,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "Deserialize",
+        68904656
+      ],
+      "parameters": [
+        "MemoryPack.MemoryPackReader",
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 68904656,
+          "endRva": 68904711,
+          "sha256": "6A71A36335D75796FFB3D2B1C59B1942570B71BC3430D085DEF59B3B49E355B4",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 68904711,
+          "endRva": 68904878,
+          "sha256": "D7E0AF83FD854337A2858917C55EFE03B579FB25F9CB586004DF67CD97397AE3",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 68904878,
+          "endRva": 68904949,
+          "sha256": "6A64FFF647243E8E0E2243288548BCF9B6A14FE8B85F18B0F7205BB0D590E392",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 68904949,
+          "endRva": 68904955,
+          "sha256": "F29F7EBE306B6A27A8B1EB4AC97A42B092633ECF3F1E7BC10B25001D7C463589",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 83426172,
+          "endRva": 83426279,
+          "sha256": "192BDB1C16E4F564E01EE50314599E0D84F4E5C101ECF0ED5A74261D449EBA3D",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 83426279,
+          "endRva": 83426300,
+          "sha256": "99BEF1332D8C7EF18C248016D957CE97F45E8566B4844D4E2356B302C3BF79F5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___path__": {
+      "method": [
+        125478,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "set___path__",
+        52469328
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 52469328,
+          "endRva": 52469364,
+          "sha256": "B4567240B623758B276FFFFC056BC31F273205047C66E4A9CADAA383777B24F5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack..ctor": {
+      "method": [
+        125470,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        ".ctor",
+        72024208
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 72024208,
+          "endRva": 72024307,
+          "sha256": "3DD9D29A2B71C602EC95E87CE7150335758FC551F763DA9A93589BEBF50AC0D8",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.Deserialize": {
+      "method": [
+        125467,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "Deserialize",
+        71360432
+      ],
+      "parameters": [
+        "MemoryPack.MemoryPackReader",
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack"
+      ],
+      "returnType": "void",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 71360432,
+          "endRva": 71360487,
+          "sha256": "187EE3BFD43EEDB22DAF8E054F6E7003F35820EB922D402511E0411651E103D5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 71360487,
+          "endRva": 71360654,
+          "sha256": "46AE6694A62FFF64450D1C0166FAF045DE70286E2BA53BBE27A5E34E317E02AE",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 71360654,
+          "endRva": 71360725,
+          "sha256": "230A2989D8D4FAC302EB5536722066485A5496B26842AA7EBB423119EBED023A",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 71360725,
+          "endRva": 71360731,
+          "sha256": "47F070F6A0AE603D441FCFCD1AFECC5C7EB3965A951B1BDC3F2B2CF37E4F718C",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 83664950,
+          "endRva": 83665057,
+          "sha256": "5519482AAFAAEE7569018A80AC17DC19E8B5C781EB732FD87D85E93252E72334",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 83665057,
+          "endRva": 83665078,
+          "sha256": "69A52EE23183799EEB3D54447D075A39BEE2044086DD235C4CCDBE519A389FC5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___path__": {
+      "method": [
+        125464,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "set___path__",
+        52469328
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 52469328,
+          "endRva": 52469364,
+          "sha256": "B4567240B623758B276FFFFC056BC31F273205047C66E4A9CADAA383777B24F5",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack..ctor": {
+      "method": [
+        125456,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        ".ctor",
+        73756784
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 73756784,
+          "endRva": 73756883,
+          "sha256": "3F97082D515CD9DB5EAB8979F4E8EB4A59D20CB3B1B43AF7ECE80D4C9AF5827C",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "ParamValueConstructor.reference": {
+      "method": [
+        38974,
+        "Beyond.Gameplay.Actions.Param`1",
+        ".ctor",
+        70503920
+      ],
+      "parameters": [
+        "VAR[406]"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 70503920,
+          "endRva": 70503980,
+          "sha256": "57BD1B40422E921F1C052DE67D9E8890ED9C4BD5A3B58303694AF1B943A6ECE7",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "ParamValueConstructor.int32Enum": {
+      "method": [
+        38974,
+        "Beyond.Gameplay.Actions.Param`1",
+        ".ctor",
+        76906400
+      ],
+      "parameters": [
+        "VAR[406]"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 76906400,
+          "endRva": 76906452,
+          "sha256": "89BF666B083BB29F1F5B5931CA7B52BECB359097BB4E6DD958AB698C2DA1D5A4",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "ParamImplicit.reference": {
+      "method": [
+        39013,
+        "Beyond.Gameplay.Actions.Param`1",
+        "op_Implicit",
+        67011360
+      ],
+      "parameters": [
+        "VAR[406]"
+      ],
+      "returnType": "Beyond.Gameplay.Actions.Param`1<VAR[406]>",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 67011360,
+          "endRva": 67011514,
+          "sha256": "DA40AC6B610C58419A7EFC4043FA47F8F657A189E4815D575CF1AA0F66A22221",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 83228566,
+          "endRva": 83228594,
+          "sha256": "1A21FF62096F5B3D90B0727DA5038902C8A24D5110F1576C0338AAED8A0D87FA",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "ParamImplicit.int32Enum": {
+      "method": [
+        39013,
+        "Beyond.Gameplay.Actions.Param`1",
+        "op_Implicit",
+        66741344
+      ],
+      "parameters": [
+        "VAR[406]"
+      ],
+      "returnType": "Beyond.Gameplay.Actions.Param`1<VAR[406]>",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 66741344,
+          "endRva": 66741487,
+          "sha256": "D6C393BBC76B7BAA5A86788D2167AA74375031A38405897DF3847CF91F3F2845",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 83200070,
+          "endRva": 83200098,
+          "sha256": "013816EC9BCD93D01C782204F63D5ED9389B13522680BE575907DBE8A0891A91",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.Gameplay.DataManager+MissionRuntimeAssetTable.TryGetData": {
+      "method": [
+        4450,
+        "Beyond.Gameplay.DataManager+MissionRuntimeAssetTable",
+        "TryGetData",
+        51993392
+      ],
+      "parameters": [
+        "string",
+        "Beyond.Gameplay.MissionRuntimeAsset",
+        "bool",
+        "bool"
+      ],
+      "returnType": "bool",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 51993392,
+          "endRva": 51993501,
+          "sha256": "B585D60FE67406E251B4503B1A347182813CCF02841A4670D65D3EEF8B2E0C93",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 51993501,
+          "endRva": 51993557,
+          "sha256": "C1AFC40C0B6AD42F86F02003FAB2E385822B75E26D314A7C81459FCAF4E70904",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 51993557,
+          "endRva": 51993638,
+          "sha256": "ED249CDDE35A53A90C48AB22F4684CF4DE33A234E4F5CA283A13264F32303725",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 51993638,
+          "endRva": 51993645,
+          "sha256": "BE08B551E934D093831AB011593C471B6EA614374B221989A5B95BA8A2E31702",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 51993645,
+          "endRva": 51993651,
+          "sha256": "2EDA9B5347D67695F43F43EAAFB7C08F19A9A9EED785508D9AED23AE270A7C29",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 80905216,
+          "endRva": 80905312,
+          "sha256": "F095AA6084F3038EB80A3278901B7D993BC8A89F862A43579DD745AF163300FC",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "Beyond.Gameplay.DataManager.LoadJson": {
+      "method": [
+        4373,
+        "Beyond.Gameplay.DataManager",
+        "LoadJson",
+        66478496
+      ],
+      "parameters": [
+        "Beyond.Resource.StringPathHash",
+        "bool",
+        "bool"
+      ],
+      "returnType": "MVAR[31]",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 66478496,
+          "endRva": 66478576,
+          "sha256": "2E6CFA7732E0F061E52C4B1D1B147103E613739C5682F5C055EA4704A5EDAAE8",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.Gameplay.DataManager._LoadJson": {
+      "method": [
+        4376,
+        "Beyond.Gameplay.DataManager",
+        "_LoadJson",
+        55690400
+      ],
+      "parameters": [
+        "Beyond.Resource.StringPathHash",
+        "Newtonsoft.Json.JsonSerializerSettings",
+        "bool"
+      ],
+      "returnType": "MVAR[34]",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 55690400,
+          "endRva": 55691405,
+          "sha256": "DF5A7903B2D883B95F4D77EE0263CE512F5D753D82CFCF911F3F0A8A7D6F8EF6",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.Resource.ResourceManager.DeserializeFromJson": {
+      "method": [
+        248580,
+        "Beyond.Resource.ResourceManager",
+        "DeserializeFromJson",
+        57309904
+      ],
+      "parameters": [
+        "Beyond.Resource.StringPathHash",
+        "Newtonsoft.Json.JsonSerializerSettings"
+      ],
+      "returnType": "MVAR[14821]",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 57309904,
+          "endRva": 57309924,
+          "sha256": "8D328FAB5FA1911FE11D242DFFB58C8596E3D824B955C87DFBA747CFD1B3CAC1",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 57309924,
+          "endRva": 57309931,
+          "sha256": "C0F50EF08E0DF87BA881460B58AD8655ED10FFE092C85C56292DF5728C3D1522",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 57309931,
+          "endRva": 57312067,
+          "sha256": "D295C71563B15CB821FE43FCCBE02ADEBD54FB36273BC89E364DC676A9DA33B0",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 57312067,
+          "endRva": 57312124,
+          "sha256": "EAFA3F1C9B25B3067699FB80DEE82EA7D6D6E441F60575E509B22142094E40BC",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 57312124,
+          "endRva": 57312304,
+          "sha256": "1FD7343F91F6F934483F3DF38A56DABCF91367A8B129F3B20BDA8D5A381A905F",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.Resource.ResourceManager._MemoryPackDeserializeFromJson": {
+      "method": [
+        248587,
+        "Beyond.Resource.ResourceManager",
+        "_MemoryPackDeserializeFromJson",
+        51936944
+      ],
+      "parameters": [
+        "Beyond.Resource.StringPathHash",
+        "Newtonsoft.Json.JsonSerializerSettings"
+      ],
+      "returnType": "MVAR[14828]",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 51936944,
+          "endRva": 51938224,
+          "sha256": "BA4CE2D1D5B792F006EB5960B943A5220596AF1E8C6AE7689240CC59D36ECAAD",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.Resource.ResourceManager._DeserializeFromJson": {
+      "method": [
+        248585,
+        "Beyond.Resource.ResourceManager",
+        "_DeserializeFromJson",
+        55706320
+      ],
+      "parameters": [
+        "Beyond.Resource.StringPathHash",
+        "Newtonsoft.Json.JsonSerializerSettings"
+      ],
+      "returnType": "MVAR[14826]",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 55706320,
+          "endRva": 55706519,
+          "sha256": "6759077B36AFF7FFAECE4DF1558009764416FA72238204EC0BD9B4DFD001F8BF",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 55706519,
+          "endRva": 55707120,
+          "sha256": "4AEAFAC120DFDA5BA1024B224FDC463F86FADDD714A1606A9CE580822B98D4C6",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 55707120,
+          "endRva": 55707448,
+          "sha256": "6E81DB2A902A2B5A2EE00204AF371C229F2306A7F28C8C56E43CE4C42E2C9410",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.JsonHelper.TryDeserializeObject": {
+      "method": [
+        246373,
+        "Beyond.JsonHelper",
+        "TryDeserializeObject",
+        74423200
+      ],
+      "parameters": [
+        "string",
+        "MVAR[14635]",
+        "Newtonsoft.Json.JsonSerializerSettings"
+      ],
+      "returnType": "bool",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 74423200,
+          "endRva": 74423386,
+          "sha256": "A394A55BE7F1E3A0048156CB0AF41F458486B69ED48CB062DF4C1D87655B4B19",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 84049710,
+          "endRva": 84049768,
+          "sha256": "F1E18F34AEB94F4928541C2EBE3C624DADF783F81BC01F83CB99371AA564D469",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "sharedRepresentation": "registered physical representation; selected typed caller/context requirements remain explicit"
+    },
+    "Beyond.JsonHelper.get_defaultDeserializeSettings": {
+      "method": [
+        246361,
+        "Beyond.JsonHelper",
+        "get_defaultDeserializeSettings",
+        55712960
+      ],
+      "parameters": [],
+      "returnType": "Newtonsoft.Json.JsonSerializerSettings",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 55712960,
+          "endRva": 55713798,
+          "sha256": "CBAD1C9BF752B94262A845F86DA9FF87D485BE37E73B22B83A3BAE2B2270C713",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 81529070,
+          "endRva": 81529107,
+          "sha256": "50C0EB2D9DCC435570FCF0346F99A9658E78B4A67338E41C97E63095C629DAC9",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ]
+    },
+    "ParamResolver.System.Object.TryGetValue": {
+      "method": [
+        39025,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "TryGetValue",
+        59515808
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[412]>",
+        "MVAR[412]",
+        "bool"
+      ],
+      "returnType": "bool",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 59515808,
+          "endRva": 59516653,
+          "sha256": "8D16B3E9CFE87F75B05E2B17423DFC2A168E62BBC3D85D691DF1B7274421E58E",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 79035168,
+          "endRva": 79037448,
+          "sha256": "D6A6BB2D2113DA7FC8B56C852D6EC1DFD1CA1D7CEE8621F4D19AEF3D923191AE",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ],
+      "sharedRepresentation": "selected registered reference or Int32-enum representation; actual runtime closed context remains conditional"
+    },
+    "ParamResolver.System.Object.GetValue": {
+      "method": [
+        39021,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "GetValue",
+        59516656
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[409]>",
+        "MVAR[409]",
+        "bool"
+      ],
+      "returnType": "MVAR[409]",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 59516656,
+          "endRva": 59516817,
+          "sha256": "6E5BE21FA67E0EDCA1A8E4E10E67A79B85A6D644A70A6701D37E22A7218AFD9E",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ],
+      "sharedRepresentation": "selected registered reference or Int32-enum representation; actual runtime closed context remains conditional"
+    },
+    "ParamResolver.System.Int32Enum.TryGetValue": {
+      "method": [
+        39025,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "TryGetValue",
+        66266832
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[412]>",
+        "MVAR[412]",
+        "bool"
+      ],
+      "returnType": "bool",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 66266832,
+          "endRva": 66267261,
+          "sha256": "CBFDD6D14008E268D0A2CDCC3D9CFAEDF01E8D06F05E2D07D589E817F1587849",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 79376336,
+          "endRva": 79378802,
+          "sha256": "1A5AB1B875E9835E048DE36F42234B533F4D2FE9F92F31D8312204023F2CE351",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ],
+      "sharedRepresentation": "selected registered reference or Int32-enum representation; actual runtime closed context remains conditional"
+    },
+    "ParamResolver.System.Int32Enum.GetValue": {
+      "method": [
+        39021,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "GetValue",
+        66267376
+      ],
+      "parameters": [
+        "Beyond.Gameplay.Actions.Param`1<MVAR[409]>",
+        "MVAR[409]",
+        "bool"
+      ],
+      "returnType": "MVAR[409]",
+      "static": true,
+      "ownedWindows": [
+        {
+          "startRva": 66267376,
+          "endRva": 66267541,
+          "sha256": "23A57AD95FC834E865D3214C288185155D39AD2156CEC754B7E9EF3384605CD9",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ],
+      "sharedRepresentation": "selected registered reference or Int32-enum representation; actual runtime closed context remains conditional"
+    },
+    "ParamResolver.reference.TryGetGetterValue": {
+      "method": [
+        38987,
+        "Beyond.Gameplay.Actions.Param`1",
+        "TryGetGetterValue",
+        76174928
+      ],
+      "parameters": [
+        "VAR[406]"
+      ],
+      "returnType": "bool",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 76174928,
+          "endRva": 76175091,
+          "sha256": "77A2E08A9DFE5622464CEFC1B8C5B6D509719DB8388857E1A60A606AD6680F47",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 79732596,
+          "endRva": 79732642,
+          "sha256": "DA9446C4FAEEB459E780A349E2AAF12F6507C145F9E06D3F2D04DBBB437856CA",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ],
+      "sharedRepresentation": "selected registered reference or Int32-enum representation; actual runtime closed context remains conditional"
+    },
+    "ParamResolver.reference.get_pathRuntime": {
+      "method": [
+        38971,
+        "Beyond.Gameplay.Actions.Param`1",
+        "get_pathRuntime",
+        59522800
+      ],
+      "parameters": [],
+      "returnType": "Beyond.PropertyPath",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 59522800,
+          "endRva": 59522852,
+          "sha256": "194F53BB042DC38A81638A5FDF1B7EBE433A4F66BDD8CD2650A5E4A19249B7E8",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 59522852,
+          "endRva": 59523397,
+          "sha256": "B22E3758DFEDCA79A7708E4A3FDAAC44538DFCF04111A57880D0DA97F9561997",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 59523397,
+          "endRva": 59523493,
+          "sha256": "2D1E3493D5EA8900E3890A4E24B7B8CFFB07992AFCA0DF2FE821508FAF398152",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 79042684,
+          "endRva": 79042859,
+          "sha256": "950512877889B4318B32E8088B55AB37BFB936FB0C01A2CC938383677B2300F9",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ],
+      "sharedRepresentation": "selected registered reference or Int32-enum representation; actual runtime closed context remains conditional"
+    },
+    "Beyond.Gameplay.Actions.ActionContext.TryGetRawGetter": {
+      "method": [
+        33987,
+        "Beyond.Gameplay.Actions.ActionContext",
+        "TryGetRawGetter",
+        56423648
+      ],
+      "parameters": [
+        "int",
+        "Beyond.Gameplay.Actions.PureGetter"
+      ],
+      "returnType": "bool",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 56423648,
+          "endRva": 56423782,
+          "sha256": "DD8C24E3696DA5BC55DC51EFC75A2C6DDA7F90DCAB2CDD560ED811AE08DB2EC8",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 81685776,
+          "endRva": 81685847,
+          "sha256": "7A84102A6633963445EC6472BF552B7DC33F6CDD0A2C869DF2B920527310AB9B",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ]
+    },
+    "Beyond.Gameplay.GameCondition.InitAsObjectiveCondition": {
+      "method": [
+        19726,
+        "Beyond.Gameplay.GameCondition",
+        "InitAsObjectiveCondition",
+        72731760
+      ],
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 72731760,
+          "endRva": 72731795,
+          "sha256": "5BABB6ED7F1729CCCCCB045D817194AAB38E5C9EEF1CDEA87B96066AEC7F89C4",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 83817010,
+          "endRva": 83817053,
+          "sha256": "F1000A85BE00E9399F2D28DB34891791E70BED1C38E08364F91450AFB29727C9",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ]
+    },
+    "Beyond.Gameplay.CombineCondition.ActivateClientCondition": {
+      "method": [
+        19649,
+        "Beyond.Gameplay.CombineCondition",
+        "ActivateClientCondition",
+        71714176
+      ],
+      "parameters": [
+        "string"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 71714176,
+          "endRva": 71714205,
+          "sha256": "14622AD155FB7020FE9687C0C0C06550F987DDD7EC3C0464C99038649A286323",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 71714205,
+          "endRva": 71714380,
+          "sha256": "70243EB55A044B1BAC50B20AAC789E91355EB7F62F823DFFAEDE7B46EDDD2451",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 71714380,
+          "endRva": 71714452,
+          "sha256": "8222DB6E5413C7BAA76E22C92ADB7B4AE15EC53E40756A91EA1049932A4D9C21",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 71714452,
+          "endRva": 71714458,
+          "sha256": "4B56E2CE804222B58F85BE2B9FAFF9D6EA88A279A5C77375ACB84859F2D59EFF",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 83700206,
+          "endRva": 83700291,
+          "sha256": "1E4069A887F82E7061F5BE0106B8DD63D8C36F5DB5BF6C95EB0B8393D04D090F",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ]
+    },
+    "Beyond.Gameplay.MissionSystem.StartQuest": {
+      "method": [
+        22297,
+        "Beyond.Gameplay.MissionSystem",
+        "StartQuest",
+        62510768
+      ],
+      "parameters": [
+        "string",
+        "bool"
+      ],
+      "returnType": "void",
+      "static": false,
+      "ownedWindows": [
+        {
+          "startRva": 62510768,
+          "endRva": 62510801,
+          "sha256": "0A56A1C66D399D4DB3EC430EEF4CB02D3D92F5F4DA5B7DF87FBF84045AFA8ACE",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 62510801,
+          "endRva": 62511232,
+          "sha256": "415F0EF8B53BDDC55A20C4FBD2B95ABBCE40E7CD2DBB90C57053D4ECCF9281F8",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 62511232,
+          "endRva": 62511316,
+          "sha256": "8875DBE97D48A80BCAF7C9D347E59447BB82FC7D0A9F060D5ED5EF2A4CD5D41C",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 62511316,
+          "endRva": 62511322,
+          "sha256": "AAA6662629B96BEC08023B697D9CA7D68FE9206461EBA2988BC4863BCB7CA101",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        },
+        {
+          "startRva": 82616270,
+          "endRva": 82616454,
+          "sha256": "2968D0C464465C9C22DDC0CF8B8C59D1009FEFBE303BE57ADF2BBC8EA2B1B065",
+          "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+        }
+      ]
+    }
+  },
+  "fields": {
+    "Beyond.Gameplay.Lex::type": [
+      "Beyond.Gameplay.Lex",
+      "Beyond.Gameplay.Lex+LexType",
+      16
+    ],
+    "Beyond.Gameplay.Lex::start": [
+      "Beyond.Gameplay.Lex",
+      "int",
+      20
+    ],
+    "Beyond.Gameplay.Lex::end": [
+      "Beyond.Gameplay.Lex",
+      "int",
+      24
+    ],
+    "Beyond.Gameplay.AST::rootNode": [
+      "Beyond.Gameplay.AST",
+      "Beyond.Gameplay.ASTNode",
+      16
+    ],
+    "Beyond.Gameplay.AST::subConditionCount": [
+      "Beyond.Gameplay.AST",
+      "int",
+      24
+    ],
+    "Beyond.Gameplay.ASTNode::logicOperator": [
+      "Beyond.Gameplay.ASTNode",
+      "Beyond.Gameplay.LogicOperator",
+      16
+    ],
+    "Beyond.Gameplay.ASTNode::conditionIdx": [
+      "Beyond.Gameplay.ASTNode",
+      "int",
+      20
+    ],
+    "Beyond.Gameplay.ASTNode::children": [
+      "Beyond.Gameplay.ASTNode",
+      "Beyond.Gameplay.ASTNode[]",
+      24
+    ],
+    "Beyond.Gameplay.ASTNode::completed": [
+      "Beyond.Gameplay.ASTNode",
+      "bool",
+      32
+    ],
+    "Beyond.Gameplay.CombineCondition::conditionEvalString": [
+      "Beyond.Gameplay.CombineCondition",
+      "string",
+      144
+    ],
+    "Beyond.Gameplay.CombineCondition::ast": [
+      "Beyond.Gameplay.CombineCondition",
+      "Beyond.Gameplay.AST",
+      152
+    ],
+    "Beyond.Gameplay.CombineCondition::subConditions": [
+      "Beyond.Gameplay.CombineCondition",
+      "System.Collections.Generic.List`1<Beyond.Gameplay.GameCondition>",
+      160
+    ],
+    "Beyond.Gameplay.CheckQuestState::_questId": [
+      "Beyond.Gameplay.CheckQuestState",
+      "Beyond.Gameplay.Actions.Param`1<string>",
+      144
+    ],
+    "Beyond.Gameplay.CheckQuestState::_comparer": [
+      "Beyond.Gameplay.CheckQuestState",
+      "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+      152
+    ],
+    "Beyond.Gameplay.CheckQuestState::_targetQuestState": [
+      "Beyond.Gameplay.CheckQuestState",
+      "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+      160
+    ],
+    "Beyond.Gameplay.CheckQuestState::m_questId": [
+      "Beyond.Gameplay.CheckQuestState",
+      "string",
+      168
+    ],
+    "Beyond.Gameplay.CheckQuestState::m_comparer": [
+      "Beyond.Gameplay.CheckQuestState",
+      "Beyond.GEnums.CompareOperator",
+      176
+    ],
+    "Beyond.Gameplay.CheckQuestState::m_targetQuestState": [
+      "Beyond.Gameplay.CheckQuestState",
+      "Beyond.Gameplay.MissionSystem+QuestState",
+      180
+    ],
+    "Beyond.Gameplay.CheckMissionState::_missionId": [
+      "Beyond.Gameplay.CheckMissionState",
+      "Beyond.Gameplay.Actions.Param`1<string>",
+      144
+    ],
+    "Beyond.Gameplay.CheckMissionState::_comparer": [
+      "Beyond.Gameplay.CheckMissionState",
+      "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+      152
+    ],
+    "Beyond.Gameplay.CheckMissionState::_targetMissionState": [
+      "Beyond.Gameplay.CheckMissionState",
+      "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+      160
+    ],
+    "Beyond.Gameplay.CheckMissionState::m_missionId": [
+      "Beyond.Gameplay.CheckMissionState",
+      "string",
+      168
+    ],
+    "Beyond.Gameplay.CheckMissionState::m_comparer": [
+      "Beyond.Gameplay.CheckMissionState",
+      "Beyond.GEnums.CompareOperator",
+      176
+    ],
+    "Beyond.Gameplay.CheckMissionState::m_targetMissionState": [
+      "Beyond.Gameplay.CheckMissionState",
+      "Beyond.Gameplay.MissionSystem+MissionState",
+      180
+    ],
+    "Beyond.PredefinedEventKeys::ON_QUEST_STATE_CHANGE": [
+      "Beyond.PredefinedEventKeys",
+      "Beyond.CombineKey",
+      2864
+    ],
+    "Beyond.PredefinedEventKeys::ON_MISSION_STATE_CHANGE": [
+      "Beyond.PredefinedEventKeys",
+      "Beyond.CombineKey",
+      2880
+    ],
+    "Beyond.EventManager::m_eventDispatcher": [
+      "Beyond.EventManager",
+      "Beyond.EventDispatcher`1<Beyond.CombineKey>",
+      24
+    ],
+    "Beyond.Gameplay.MissionSystem::currentQuests": [
+      "Beyond.Gameplay.MissionSystem",
+      "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.MissionSystem+QuestData>",
+      224
+    ],
+    "Beyond.Gameplay.MissionSystem::missions": [
+      "Beyond.Gameplay.MissionSystem",
+      "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.MissionSystem+MissionData>",
+      216
+    ],
+    "Beyond.Gameplay.MissionSystem+QuestData::questId": [
+      "Beyond.Gameplay.MissionSystem+QuestData",
+      "string",
+      16
+    ],
+    "Beyond.Gameplay.MissionSystem+QuestData::questState": [
+      "Beyond.Gameplay.MissionSystem+QuestData",
+      "Beyond.Gameplay.MissionSystem+QuestState",
+      24
+    ],
+    "Beyond.Gameplay.MissionSystem+MissionData::missionId": [
+      "Beyond.Gameplay.MissionSystem+MissionData",
+      "string",
+      16
+    ],
+    "Beyond.Gameplay.MissionSystem+MissionData::missionState": [
+      "Beyond.Gameplay.MissionSystem+MissionData",
+      "Beyond.Gameplay.MissionSystem+MissionState",
+      24
+    ],
+    "Proto.SC_QUEST_STATE_UPDATE::questId_": [
+      "Proto.SC_QUEST_STATE_UPDATE",
+      "string",
+      24
+    ],
+    "Proto.SC_QUEST_STATE_UPDATE::questState_": [
+      "Proto.SC_QUEST_STATE_UPDATE",
+      "int",
+      32
+    ],
+    "Proto.SC_MISSION_STATE_UPDATE::missionId_": [
+      "Proto.SC_MISSION_STATE_UPDATE",
+      "string",
+      24
+    ],
+    "Proto.SC_MISSION_STATE_UPDATE::missionState_": [
+      "Proto.SC_MISSION_STATE_UPDATE",
+      "int",
+      32
+    ]
+  },
+  "enums": {
+    "Beyond.Gameplay.Lex+LexType": {
+      "Not": 0,
+      "Or": 1,
+      "And": 2,
+      "ConditionIdx": 3,
+      "LParenthesis": 4,
+      "RParenthesis": 5
+    },
+    "Beyond.Gameplay.LogicOperator": {
+      "ConditionIdx": 0,
+      "Not": 1,
+      "And": 2,
+      "Or": 3,
+      "Parenthesis": 4
+    },
+    "Beyond.Gameplay.MissionSystem+QuestState": {
+      "None": 0,
+      "Processing": 2,
+      "Completed": 3,
+      "Failed": 4,
+      "Disabled": 5
+    },
+    "Beyond.Gameplay.MissionSystem+MissionState": {
+      "None": 0,
+      "Available": 1,
+      "Processing": 2,
+      "Completed": 3,
+      "Failed": 4,
+      "Disabled": 5
+    },
+    "Newtonsoft.Json.DefaultValueHandling": {
+      "Include": 0,
+      "Ignore": 1,
+      "Populate": 2
+    },
+    "Newtonsoft.Json.NullValueHandling": {
+      "Include": 0,
+      "Ignore": 1
+    }
+  },
+  "literals": {
+    "Beyond.Gameplay.Lex.LexAnalysis": [
+      "and",
+      "not",
+      "or"
+    ],
+    "Beyond.Gameplay.MissionSystem.GetMissionIdByQuestId": [
+      "",
+      "_q#"
+    ]
+  },
+  "wrapperFields": [
+    {
+      "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "instanceField": [
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "Beyond.Gameplay.Actions.Param`1<string>",
+        16
+      ],
+      "argument": "string",
+      "constValueOffset": 32,
+      "paramSourceOffset": 16,
+      "boundary": "direct generated named setter cells, never open generic field offsets",
+      "idRefOffset": 40,
+      "pathOffset": 24
+    },
+    {
+      "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+      "instanceField": [
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+        16
+      ],
+      "argument": "Beyond.GEnums.CompareOperator",
+      "constValueOffset": 32,
+      "paramSourceOffset": 16,
+      "boundary": "direct generated named setter cells, never open generic field offsets",
+      "idRefOffset": 36,
+      "pathOffset": 24
+    },
+    {
+      "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+      "instanceField": [
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+        16
+      ],
+      "argument": "Beyond.Gameplay.MissionSystem+QuestState",
+      "constValueOffset": 32,
+      "paramSourceOffset": 16,
+      "boundary": "direct generated named setter cells, never open generic field offsets",
+      "idRefOffset": 36,
+      "pathOffset": 24
+    },
+    {
+      "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+      "instanceField": [
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+        16
+      ],
+      "argument": "Beyond.Gameplay.MissionSystem+MissionState",
+      "constValueOffset": 32,
+      "paramSourceOffset": 16,
+      "boundary": "direct generated named setter cells, never open generic field offsets",
+      "idRefOffset": 36,
+      "pathOffset": 24
+    }
+  ],
+  "getterLeaf": {
+    "symbol": "Beyond.Gameplay.Actions.Param`1.get_useGetter",
+    "window": {
+      "startRva": 66557072,
+      "endRva": 66557088,
+      "sha256": "79FFE75595FDEBAB539C416467090A9B6218F2EDEA585D34B7C8C6F5ED8A5302",
+      "boundary": "explicit direct-call leaf prefix through both RETs; no .pdata extent inferred"
+    },
+    "rawHex": "837910FF7409837910FE740332C0C3B0"
+  },
+  "callSites": [
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243477,
+      "callRva": 62243494,
+      "targetRva": 59516656,
+      "methodArguments": [
+        "string"
+      ],
+      "methodDefinition": 39021
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243528,
+      "callRva": 62243537,
+      "targetRva": 66267376,
+      "methodArguments": [
+        "Beyond.GEnums.CompareOperator"
+      ],
+      "methodDefinition": 39021
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243560,
+      "callRva": 62243567,
+      "targetRva": 66267376,
+      "methodArguments": [
+        "Beyond.Gameplay.MissionSystem+QuestState"
+      ],
+      "methodDefinition": 39021
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62242949,
+      "callRva": 62242966,
+      "targetRva": 59516656,
+      "methodArguments": [
+        "string"
+      ],
+      "methodDefinition": 39021
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62243000,
+      "callRva": 62243009,
+      "targetRva": 66267376,
+      "methodArguments": [
+        "Beyond.GEnums.CompareOperator"
+      ],
+      "methodDefinition": 39021
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62243032,
+      "callRva": 62243039,
+      "targetRva": 66267376,
+      "methodArguments": [
+        "Beyond.Gameplay.MissionSystem+MissionState"
+      ],
+      "methodDefinition": 39021
+    },
+    {
+      "caller": "Beyond.Gameplay.MissionSystem.Handle_QuestStateUpdate",
+      "loadRva": 64100151,
+      "callRva": 64100166,
+      "targetRva": 65598672,
+      "methodArguments": [
+        "string",
+        "Beyond.Gameplay.MissionSystem+QuestState"
+      ],
+      "methodDefinition": 244339
+    },
+    {
+      "caller": "Beyond.Gameplay.MissionSystem.RaiseMissionStateChangeEvent",
+      "loadRva": 73132983,
+      "callRva": 73132998,
+      "targetRva": 65598672,
+      "methodArguments": [
+        "string",
+        "Beyond.Gameplay.MissionSystem+MissionState"
+      ],
+      "methodDefinition": 244339
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243671,
+      "callRva": 62243686,
+      "targetRva": 71234832,
+      "methodArguments": [
+        "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+QuestState>"
+      ],
+      "methodDefinition": 244335
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62243262,
+      "callRva": 62243277,
+      "targetRva": 71234832,
+      "methodArguments": [
+        "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+MissionState>"
+      ],
+      "methodDefinition": 244335
+    }
+  ],
+  "eventPublication": {
+    "questUpdate": "Normal admitted Handle_QuestStateUpdate creates/adds or overwrites QuestData.questState before its state-case StartQuest/SucceedQuest calls and ON_QUEST_STATE_CHANGE send. Completion show-data and processing-quest membership helpers can run earlier; this is not whole-handler atomicity.",
+    "missionUpdate": "Normal admitted Handle_MissionStateUpdate builds a MissionData with incoming missionState and publishes it in the missions dictionary before the Available/Start/Complete lifecycle branch. Earlier completion/show-data and property-map helpers can run before publication.",
+    "typedEvents": "Quest and mission sends select string plus the respective MissionSystem state enum. Matching OnActivate BindGlobal selects EventData<string,the same enum> and the matching PredefinedEventKeys field.",
+    "packet": "Selected SendGlobal physical caller puts the incoming reference at packet-relative zero and the incoming Int32 enum at eight, then passes the packet address to Dispatch. This is a direct compiled representation, not an open generic EventData field-layout assertion.",
+    "dispatch": "Dispatcher looks up the event key and calls EventBinding.Dispatch with the same packet reference. Binding walks the entry-count-bounded delegate list, skips entries marked removed, and calls a struct-delegate helper synchronously. Handler order is runtime registration/list order and can be affected by callbacks.",
+    "callback": "The selected unregistered compiler delegate helper recognizes the QuestState callback native entry pointer and includes its ID-filter/state-comparison normal branch; other delegates use dynamic calls or specialized branches.",
+    "propagation": "Active changed decided results are cached before an onResultChange helper and subsequent parent Evaluate. Callback reentrancy/mutation and nested cache quiescence are not proved.",
+    "timeline": "These are local conditional publication/call relationships. They do not prove server admission, a total mission order, live subscription/IFix state, observed events or any previously unrecorded handoff."
+  },
+  "helpers": {
+    "structDelegateDispatch": {
+      "entryRva": 66684432,
+      "calledBy": "Beyond.EventBinding`1.Dispatch",
+      "ownedWindows": [
+        {
+          "startRva": 66684432,
+          "endRva": 66684676,
+          "sha256": "BA50B87078EF5F797F1291AEF9DAFDDE8626F7EEF4C8788A4025D7D7BEC74A6C",
+          "boundary": "unregistered compiler helper reached by reviewed EventBinding caller; no method-name identity assigned"
+        },
+        {
+          "startRva": 79398814,
+          "endRva": 79399064,
+          "sha256": "0D8C135AC22C90A0E77BC1950E910A34F5144DED1A2FF1B1B8B9517339729144",
+          "boundary": "unregistered compiler helper reached by reviewed EventBinding caller; no method-name identity assigned"
+        }
+      ],
+      "boundary": "conditional on valid runtime delegate/context; synchronous helper calls include specialized QuestState callback"
+    },
+    "paramInt32Reader": {
+      "entryRva": 46827184,
+      "calledBy": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.Deserialize",
+      "ownedWindows": [
+        {
+          "startRva": 46827184,
+          "endRva": 46827264,
+          "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 79834730,
+          "endRva": 79834775,
+          "sha256": "D2734E25B242526810BBFB40ADA6A51218DE1F0423FDADE791F627C8DEF785D7",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "boundary": "unregistered compiler reader reached by actual typed wrapper; buffered Int32/string caller review, no invented registered method identity or refill/allocator parity"
+    },
+    "paramStringReader": {
+      "entryRva": 46827264,
+      "calledBy": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.Deserialize",
+      "ownedWindows": [
+        {
+          "startRva": 46827264,
+          "endRva": 46827462,
+          "sha256": "B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        },
+        {
+          "startRva": 78517122,
+          "endRva": 78517180,
+          "sha256": "2604D3A08B35B51A7CD94A7C8564A5EC9D40FB83B8EB4B8377A8094D206F7FD1",
+          "boundary": "exact selected owned bytes; reviewed caller interpretation, helper effects and live path selection separate"
+        }
+      ],
+      "boundary": "unregistered compiler reader reached by actual typed wrapper; buffered Int32/string caller review, no invented registered method identity or refill/allocator parity"
+    }
+  },
+  "usageCells": [
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243599,
+      "loadPrefixHex": "488B0D",
+      "kind": "type",
+      "name": "Beyond.EventDelegateForStruct`1<Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+QuestState>>"
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62243194,
+      "loadPrefixHex": "488B0D",
+      "kind": "type",
+      "name": "Beyond.EventDelegateForStruct`1<Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+MissionState>>"
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243629,
+      "loadPrefixHex": "4C8B05",
+      "kind": "method",
+      "name": "Beyond.Gameplay.CheckQuestState._OnQuestStateChange",
+      "methodIndex": 18964,
+      "entryRva": 76006384
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62243220,
+      "loadPrefixHex": "4C8B05",
+      "kind": "method",
+      "name": "Beyond.Gameplay.CheckMissionState._OnMissionStateChange",
+      "methodIndex": 18887,
+      "entryRva": 107359180
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckQuestState.OnActivate",
+      "loadRva": 62243578,
+      "loadPrefixHex": "488B0D",
+      "kind": "methodSpec",
+      "definition": 245407,
+      "classArguments": [
+        "Beyond.PredefinedEventKeys"
+      ],
+      "methodArguments": []
+    },
+    {
+      "caller": "Beyond.Gameplay.CheckMissionState.OnActivate",
+      "loadRva": 62243177,
+      "loadPrefixHex": "488B0D",
+      "kind": "methodSpec",
+      "definition": 245407,
+      "classArguments": [
+        "Beyond.PredefinedEventKeys"
+      ],
+      "methodArguments": []
+    },
+    {
+      "caller": "Beyond.Gameplay.MissionSystem.Handle_QuestStateUpdate",
+      "loadRva": 64100095,
+      "loadPrefixHex": "488B0D",
+      "kind": "methodSpec",
+      "definition": 245407,
+      "classArguments": [
+        "Beyond.PredefinedEventKeys"
+      ],
+      "methodArguments": []
+    },
+    {
+      "caller": "Beyond.Gameplay.MissionSystem.RaiseMissionStateChangeEvent",
+      "loadRva": 73132936,
+      "loadPrefixHex": "488B0D",
+      "kind": "methodSpec",
+      "definition": 245407,
+      "classArguments": [
+        "Beyond.PredefinedEventKeys"
+      ],
+      "methodArguments": []
+    },
+    {
+      "caller": "Beyond.Gameplay.DataManager+MissionRuntimeAssetTable.TryGetData",
+      "loadRva": 51993557,
+      "loadPrefixHex": "488B15",
+      "kind": "methodSpec",
+      "definition": 4373,
+      "classArguments": [],
+      "methodArguments": [
+        "Beyond.Gameplay.MissionRuntimeAsset"
+      ]
+    }
+  ],
+  "parameterLoading": {
+    "valueConstructor": "The selected complete ordinary reference and Int32-enum value constructors explicitly write paramSource=0, stringPath=null, idRef=-1 and the supplied constValue. The reference-barrier helper is an opaque returning boundary; this proves caller stores, not arbitrary global effects.",
+    "implicitConversion": "Selected op_Implicit inline construction explicitly writes paramSource=0, idRef=-1 and the supplied value. An alternate runtime context entry invokes a constructor indirectly. Neither path identifies the construction of a retained live mission Param.",
+    "memoryPack": "Each selected concrete Param wrapper accepts a null header or a full property count of four. A non-null object reuses the supplied wrapper or constructs one, then reads constValue, idRef, paramSource and path in that order through reviewed unregistered buffered readers. A non-four header is rejected. The read source overwrites any prior constructor value; omitted source is not a supported partial-header default here. Reader refill/decoding helper effects remain conditional.",
+    "jsonResourceRoute": "MissionRuntimeAssetTable.TryGetData consults its cache, then selects DataManager.LoadJson<MissionRuntimeAsset>. The normal loader can use TextAsset JSON deserialization or ResourceManager.DeserializeFromJson. The ResourceManager caller tests formatter availability, dispatches to MemoryPack or JSON readers, and the MemoryPack caller also contains a JSON fallback. Selected bodies do not establish which branch or bytes a live request used.",
+    "jsonDefaults": "The normal default JsonHelper settings explicitly configure DefaultValueHandling.Include and NullValueHandling.Ignore. These settings do not identify a Param default creator, constructor, field setter, runtime converter or resulting paramSource for an omitted JSON member.",
+    "activationOrder": "Both selected predicates resolve and cache operands first. CheckQuestState binds its global event before querying initial quest state and setting result; CheckMissionState queries initial mission state and sets result before binding its event. Therefore an activation-time true result does not require a later state-change event. Callback/reentrancy and effective activation/subscription remain runtime questions.",
+    "evidenceBoundary": {
+      "exact": "selected named method signatures, owned code windows and directly checked reader/setter/constructor cells",
+      "direct": "reviewed normal constructor and typed deserializer stores plus loader calls",
+      "conditional": "normal native selection, returning helpers, compatible closed contexts and actual loaded source",
+      "unresolved": "source-to-live object ownership, JSON creator/field-setting outcome, effective patches, selected loader/formatter and live callback nesting"
+    },
+    "liveParamSourceInitializationProved": false,
+    "jsonMemoryPackEquivalenceProved": false,
+    "timelineEdgesAdded": 0
+  },
+  "parameterPrograms": {
+    "valueConstructors": [
+      {
+        "method": "ParamValueConstructor.reference",
+        "representation": "reference",
+        "idRefOffset": 40,
+        "constValueOffset": 32,
+        "sourceOffset": 16,
+        "pathOffset": 24
+      },
+      {
+        "method": "ParamValueConstructor.int32Enum",
+        "representation": "int32",
+        "idRefOffset": 36,
+        "constValueOffset": 32,
+        "sourceOffset": 16,
+        "pathOffset": 24
+      }
+    ],
+    "deserializers": [
+      {
+        "method": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack.Deserialize",
+        "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+        "countGuardRva": 64489269,
+        "countRegister": "bpl",
+        "fields": [
+          {
+            "field": "constValue",
+            "readCallRva": 64489285,
+            "storeRva": 64489312,
+            "storeHex": "48894120",
+            "readerHelper": "paramStringReader"
+          },
+          {
+            "field": "idRef",
+            "readCallRva": 64489331,
+            "storeRva": 64489358,
+            "storeHex": "894128",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "paramSource",
+            "readCallRva": 64489367,
+            "storeRva": 64489390,
+            "storeHex": "894110",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "path",
+            "readCallRva": 64489399,
+            "storeRva": 64489418,
+            "storeHex": "48894118",
+            "readerHelper": "paramStringReader"
+          }
+        ]
+      },
+      {
+        "method": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.Deserialize",
+        "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack",
+        "countGuardRva": 60620219,
+        "countRegister": "sil",
+        "fields": [
+          {
+            "field": "constValue",
+            "readCallRva": 60620242,
+            "setterCallRva": 60620264,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___constValue__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "idRef",
+            "readCallRva": 60620275,
+            "setterCallRva": 60620297,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___idRef__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "paramSource",
+            "readCallRva": 60620308,
+            "setterCallRva": 60620326,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___paramSource__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "path",
+            "readCallRva": 60620337,
+            "setterCallRva": 60620356,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack.set___path__",
+            "readerHelper": "paramStringReader"
+          }
+        ]
+      },
+      {
+        "method": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.Deserialize",
+        "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack",
+        "countGuardRva": 68904731,
+        "countRegister": "sil",
+        "fields": [
+          {
+            "field": "constValue",
+            "readCallRva": 68904754,
+            "setterCallRva": 68904776,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___constValue__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "idRef",
+            "readCallRva": 68904787,
+            "setterCallRva": 68904809,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___idRef__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "paramSource",
+            "readCallRva": 68904820,
+            "setterCallRva": 68904838,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___paramSource__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "path",
+            "readCallRva": 68904849,
+            "setterCallRva": 68904868,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack.set___path__",
+            "readerHelper": "paramStringReader"
+          }
+        ]
+      },
+      {
+        "method": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.Deserialize",
+        "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack",
+        "countGuardRva": 71360507,
+        "countRegister": "sil",
+        "fields": [
+          {
+            "field": "constValue",
+            "readCallRva": 71360530,
+            "setterCallRva": 71360552,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___constValue__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "idRef",
+            "readCallRva": 71360563,
+            "setterCallRva": 71360585,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___idRef__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "paramSource",
+            "readCallRva": 71360596,
+            "setterCallRva": 71360614,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___paramSource__",
+            "readerHelper": "paramInt32Reader"
+          },
+          {
+            "field": "path",
+            "readCallRva": 71360625,
+            "setterCallRva": 71360644,
+            "setter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack.set___path__",
+            "readerHelper": "paramStringReader"
+          }
+        ]
+      }
+    ],
+    "activationCalls": [
+      {
+        "method": "Beyond.Gameplay.CheckQuestState.OnActivate",
+        "calls": [
+          {
+            "callRva": 62243686,
+            "method": "Beyond.EventManager.BindGlobal",
+            "targetRva": 71234832
+          },
+          {
+            "callRva": 62243786,
+            "method": "Beyond.Gameplay.GameCondition.set_result",
+            "targetRva": 62516784
+          }
+        ],
+        "boundary": "reviewed admitted normal branch order; no observed execution or callback quiescence"
+      },
+      {
+        "method": "Beyond.Gameplay.CheckMissionState.OnActivate",
+        "calls": [
+          {
+            "callRva": 62243172,
+            "method": "Beyond.Gameplay.GameCondition.set_result",
+            "targetRva": 62516784
+          },
+          {
+            "callRva": 62243277,
+            "method": "Beyond.EventManager.BindGlobal",
+            "targetRva": 71234832
+          }
+        ],
+        "boundary": "reviewed admitted normal branch order; no observed execution or callback quiescence"
+      }
+    ]
+  },
+  "sourceSelectors": [
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_useGetter",
+      "methodIndex": 38993,
+      "entryRva": 66557072,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 66557072,
+        "endRva": 66557090,
+        "sha256": "74A87224AA344B084B739693344E1E0A434A1B83BA737F108B8341E6B82A2C28",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        -2,
+        -1
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isConst",
+      "methodIndex": 38994,
+      "entryRva": 66930032,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 66930032,
+        "endRva": 66930040,
+        "sha256": "3BE2585E7AD2D7DD75DD38F56860C9C2BB321F22829EC06E60E88F42BC5D33ED",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        0
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromBlackboard",
+      "methodIndex": 38995,
+      "entryRva": 67868352,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 67868352,
+        "endRva": 67868364,
+        "sha256": "14F88F45185EA04A24F084D2AE3FCBEE595051649E34DDD60FE0876CF019117E",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromActionContext",
+      "methodIndex": 38996,
+      "entryRva": 72633904,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 72633904,
+        "endRva": 72633922,
+        "sha256": "1F5AC7E19BE4B1212870818BDF1E8572F50DE0036BB05853C6CD52815F9F3421",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        2,
+        5
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromSelfBB",
+      "methodIndex": 38997,
+      "entryRva": 72633872,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 72633872,
+        "endRva": 72633890,
+        "sha256": "493AAE1E7CDBCCB911C44B2F6D439B61B02401C5122980F12019F2525CCB8A51",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        3,
+        4
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromTemp",
+      "methodIndex": 38998,
+      "entryRva": 67807376,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 67807376,
+        "endRva": 67807384,
+        "sha256": "4A4C643AA6353450E2D8E900D26AE393080080116B2214E07CC50247E8CE37A5",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        100
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromConfig",
+      "methodIndex": 38999,
+      "entryRva": 73233872,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 73233872,
+        "endRva": 73233883,
+        "sha256": "73B4335DD5F4E69CD274F3491B60CB342113008D2722E3ACF78656731038A8EA",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        200
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromSave",
+      "methodIndex": 39000,
+      "entryRva": 73264944,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 73264944,
+        "endRva": 73264959,
+        "sha256": "4F7B49E7C5659FE2B2F7620A70A1B95726860D61B00ACFACFB781524DF1C36F2",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        300
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromServerSelf",
+      "methodIndex": 39001,
+      "entryRva": 73264928,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 73264928,
+        "endRva": 73264940,
+        "sha256": "0728A37B881A0542F2033161B9AA3765DEA434980E5FEB78011CA8316A81DA4C",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        19
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromServerMsg",
+      "methodIndex": 39002,
+      "entryRva": 136199084,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136199084,
+        "endRva": 136199092,
+        "sha256": "069E490C0591A74F6464DB619C881860BD8FFFD5BFD5F71B68E322F217FC7105",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        20
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isFromServerContext",
+      "methodIndex": 39003,
+      "entryRva": 136199060,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136199060,
+        "endRva": 136199083,
+        "sha256": "3848427B4F1F1AFD57D18178A4CD1C494BCDBD101CBB3B902ADE9A0DA2E9B3DE",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        21,
+        22,
+        23
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentLevelId",
+      "methodIndex": 39004,
+      "entryRva": 77707312,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 77707312,
+        "endRva": 77707327,
+        "sha256": "69EB37AC52A05CB4E6BEFE809EA558725EEACFF6FD85F5950571BF73EF12CA62",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1000
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentEntityId",
+      "methodIndex": 39005,
+      "entryRva": 136198904,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198904,
+        "endRva": 136198915,
+        "sha256": "FB55270594D7A3A6DBB7B4FEB58C302F3518FC2B591E5A2E5CF493C98545E784",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1001
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentScriptId",
+      "methodIndex": 39006,
+      "entryRva": 136198988,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198988,
+        "endRva": 136198999,
+        "sha256": "7FA1BAAF20CB60B02BE16ED80F21AE914F22AF9D5C2DA837CF65C70D7A7E9383",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1002
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentEventArgs",
+      "methodIndex": 39007,
+      "entryRva": 136198916,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198916,
+        "endRva": 136198927,
+        "sha256": "BAC1BBEF8C3429BB04B32A8644CEA8797B97B1DF9C9148E6A289BE73C1C60D60",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1003
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentMissionId",
+      "methodIndex": 39008,
+      "entryRva": 136198964,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198964,
+        "endRva": 136198975,
+        "sha256": "F705CEDF4A8189F59AC93DE65D394FE47398EF2E782238E3E869917D91C6D413",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1004
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentSubGameId",
+      "methodIndex": 39009,
+      "entryRva": 136199000,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136199000,
+        "endRva": 136199011,
+        "sha256": "3B6335154E2385416EC127E9E4182F6C91902B58D8399DC6E3E3E301FB050F3E",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1005
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentLsmId",
+      "methodIndex": 39010,
+      "entryRva": 136198940,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198940,
+        "endRva": 136198951,
+        "sha256": "20B8885002E627D0C62C7735C7F9699D19210939F65961D643AD267C3C29E2F3",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1007
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentParentScriptId",
+      "methodIndex": 39011,
+      "entryRva": 136198976,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198976,
+        "endRva": 136198987,
+        "sha256": "E6919213B5B89962E057D61DAEF85CDCED148469022D012247E78FF7108448D1",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1008
+      ]
+    },
+    {
+      "symbol": "Beyond.Gameplay.Actions.Param`1.get_isCurrentMapId",
+      "methodIndex": 39012,
+      "entryRva": 136198952,
+      "classArguments": [
+        "System.Object"
+      ],
+      "methodArguments": [],
+      "wrapperWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack",
+      "window": {
+        "startRva": 136198952,
+        "endRva": 136198963,
+        "sha256": "EA418ECE76A2B3167BE8667DA8F19386B5D0306295F7EE2B9FE792EE13ABD71B",
+        "boundary": "exact reviewed leaf window or full unwind-owned body; live selection separate"
+      },
+      "selectedSources": [
+        1010
+      ]
+    }
+  ],
+  "objectiveActivation": {
+    "defaultInitializer": "Beyond.Gameplay.GameCondition.InitAsObjectiveCondition",
+    "combinedClientLoop": "Beyond.Gameplay.CombineCondition.ActivateClientCondition",
+    "initializerAbsentOverrides": [
+      "Beyond.Gameplay.CombineCondition",
+      "Beyond.Gameplay.GameConditionBoth"
+    ],
+    "interpretation": "Default objective setup does not activate or parse an exact CombineCondition root. StartQuest binds client callbacks and calls the objective initializer and client-activation virtual lanes. Exact combined children recurse; other leaves need ClientOnly. Ordinary state predicates are excluded from this client lane. A Guide/other direct Activate can still parse/evaluate the composite. No server admission or live override proof. This setup proof does not exclude lazy GetResultByProgress parsing and useProgress=true evaluation, reviewed separately in the shared combinedConditionAst claims."
+  },
+  "resolverCalls": [
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516007,
+      "targetRva": 67868352,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromBlackboard"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516079,
+      "targetRva": 66557072,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_useGetter"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516169,
+      "targetRva": 56424464,
+      "method": "Beyond.Gameplay.Actions.ActionContext.TryGetGetter"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516253,
+      "targetRva": 72633904,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromActionContext"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516296,
+      "targetRva": 72633872,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromSelfBB"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516371,
+      "targetRva": 73264944,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromSave"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516420,
+      "targetRva": 73264928,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromServerSelf"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516472,
+      "targetRva": 77707312,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isCurrentLevelId"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516573,
+      "targetRva": 61808800,
+      "method": "Beyond.Gameplay.ParamBlackboard.TryGetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 59516616,
+      "targetRva": 76174928,
+      "method": "Beyond.Gameplay.Actions.Param`1.TryGetGetterValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79035361,
+      "targetRva": 59522800,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_pathRuntime"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79035417,
+      "targetRva": 54374784,
+      "method": "Beyond.PropertyPath.get_isEmpty"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79035537,
+      "targetRva": 59522800,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_pathRuntime"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79035884,
+      "targetRva": 106626860,
+      "method": "Beyond.Gameplay.ParamBlackboard.GetCurrentParamBlackboardContextDebugInfo"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036135,
+      "targetRva": 61808800,
+      "method": "Beyond.Gameplay.ParamBlackboard.TryGetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036244,
+      "targetRva": 61808800,
+      "method": "Beyond.Gameplay.ParamBlackboard.TryGetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036289,
+      "targetRva": 58521744,
+      "method": "Beyond.Gameplay.Core.WorldInfo.get_curSubGameId"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036367,
+      "targetRva": 66476320,
+      "method": "Beyond.Gameplay.ParamBlackboard.SetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036465,
+      "targetRva": 59517216,
+      "method": "Beyond.Gameplay.ParamBlackboard.GetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036646,
+      "targetRva": 61808800,
+      "method": "Beyond.Gameplay.ParamBlackboard.TryGetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036756,
+      "targetRva": 61808800,
+      "method": "Beyond.Gameplay.ParamBlackboard.TryGetValue"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036848,
+      "targetRva": 59522800,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_pathRuntime"
+    },
+    {
+      "caller": "ParamResolver.System.Object.TryGetValue",
+      "callRva": 79036985,
+      "targetRva": 56423648,
+      "method": "Beyond.Gameplay.Actions.ActionContext.TryGetRawGetter"
+    },
+    {
+      "caller": "ParamResolver.reference.get_pathRuntime",
+      "callRva": 59522962,
+      "targetRva": 59526048,
+      "method": "Beyond.PropertyPathDict.GetPath"
+    },
+    {
+      "caller": "ParamResolver.reference.get_pathRuntime",
+      "callRva": 59523312,
+      "targetRva": 54376320,
+      "method": "Beyond.PropertyPath.Concat"
+    },
+    {
+      "caller": "ParamResolver.reference.get_pathRuntime",
+      "callRva": 79042748,
+      "targetRva": 73264944,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromSave"
+    },
+    {
+      "caller": "ParamResolver.reference.get_pathRuntime",
+      "callRva": 79042817,
+      "targetRva": 73264928,
+      "method": "Beyond.Gameplay.Actions.Param`1.get_isFromServerSelf"
+    }
+  ]
+}

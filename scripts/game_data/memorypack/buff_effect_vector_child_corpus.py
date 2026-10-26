@@ -20,6 +20,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.common import ROOT, canonical_json_sha256, sha256_file_upper
 from scripts.game_data.memorypack.buff_action_receipts import (
     selected_candidate, certified_action_spans,
@@ -169,7 +170,7 @@ def build_report(
                                  for member in row["namedMembers"])
     if action_by_source:
         _fail("unmatched-action-sources", detail=str(len(action_by_source)))
-    expected_effect = actions["summary"]["byTag"]["0x00A2"]
+    expected_effect = actions["summary"]["byTag"][_AT("Core_EffectAction_EffectActionData")]
     if (
         len(rows) != expected_effect["actionSpans"]
         or len(files_with_effect) != expected_effect["files"]

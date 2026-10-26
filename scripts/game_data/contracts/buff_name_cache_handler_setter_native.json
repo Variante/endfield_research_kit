@@ -1,0 +1,85 @@
+{
+  "schema": "endfield.buff-name-cache-handler-setter-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-handler-replacement-and-old-word-return-formula",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "function": {
+    "entryRva": 1820000,
+    "ownershipKind": "exceptionFamily",
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 1820000,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            1820000,
+            1820089,
+            214471412
+          ],
+          "tableRowRva": 251824964,
+          "runtimeTripleRawHex": "60C51B00B9C51B00F492C80C",
+          "codeBytes": 89,
+          "unwindRawHex": "110A04000A3406000A320670CC561900",
+          "unwindVersion": 1,
+          "unwindFlags": 2,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 1820000,
+        "endRva": 1820089,
+        "sha256": "24C6D506555ED318DD4FF633F652B0D3CF56B97DAFCDB9FAB5FB9EB8122D9672"
+      }
+    ]
+  },
+  "globals": {
+    "cookie": 217652352,
+    "encodedHandler": 230665096
+  },
+  "guardCalls": [
+    {
+      "siteRva": 1820015,
+      "targetRva": 1806444,
+      "instructionHex": "E8F8CAFFFF"
+    },
+    {
+      "siteRva": 1820070,
+      "targetRva": 1806528,
+      "instructionHex": "E815CBFFFF"
+    }
+  ],
+  "conditionalDomain": {
+    "execution": "Valid selected reads/writes and frames; normal ABI-compatible guard calls preserve RBX/RDI. The same read cookie is used for returned old-word decoding and stored new-word encoding.",
+    "identity": "The new and returned words are raw bits, not proved callable objects; setter invocation and same-cookie state in a subsequent getter are not observed."
+  },
+  "evidenceBoundary": {
+    "exact": "Complete owned setter CFG/frame, actual guard calls, selected cookie/encoded read/store operands and rotate widths.",
+    "direct": "Returns ROR64(oldEncoded XOR cookie,cookie AND 63); stores ROR64(newWord,64-(cookie AND 63)) XOR cookie. Both guards receive zero ECX.",
+    "conditional": "A subsequent getter using the same cookie inverts that stored encoding. Guard side effects, object/callback identity and publication epoch remain separate conditions.",
+    "structuralOnly": "A reference-containing owned definition is not evidence that the client called it or that all other writes use it.",
+    "unresolved": "Setter callers/invocation, unowned direct writer entry/callers, all-writer guard coverage and live cookie/critical-section state."
+  }
+}

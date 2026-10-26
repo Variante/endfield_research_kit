@@ -1,0 +1,2047 @@
+{
+  "schema": "endfield.wwise-mastering-context-native-contract.v6",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "methods": {
+    "init": {
+      "consumerMethod": "init",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4883ec284c8949104d8bd04c8b4c2450488951184c8941204c898120040000418b51048bc225000f00003d000300000f8586000000488b542458448b02418bc02500f0ffff3d004000007520498b02"
+        },
+        {
+          "offset": 79,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2daeb0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 86,
+          "bytesHex": "41b802000000498bcaff5040b84e0000004883c428c3807a0d007420498b02"
+        },
+        {
+          "offset": 117,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2daef0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 124,
+          "bytesHex": "41b802000000498bcaff5040b84e0000004883c428c3448981e00300000fb6420c8881ec030000837a04000f97c08881ed0300008b42048981f0030000eb0f8991e003000066c781ec030000000080b91004000000740c498bd14883c428"
+        },
+        {
+          "offset": 218,
+          "prefixHex": "e9",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "prepare",
+          "targetOffset": 0
+        },
+        {
+          "offset": 223,
+          "bytesHex": "b9020000008bc14883c428c3"
+        }
+      ]
+    },
+    "prepare": {
+      "consumerMethod": "prepare",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "405341554881ec78040000488bd94c8bea8b89e00300008bc125000f00007527488b4b20"
+        },
+        {
+          "offset": 36,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2daf40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 43,
+          "bytesHex": "41b802000000488b01ff5040b84e0000004881c478040000415d5bc33d000200007527488b4b20"
+        },
+        {
+          "offset": 82,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2daf90",
+          "targetOffset": 0
+        },
+        {
+          "offset": 89,
+          "bytesHex": "41b802000000488b01ff5040b84e0000004881c478040000415d5bc30fb6c183f80c764141b90c000000"
+        },
+        {
+          "offset": 131,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dafd8",
+          "targetOffset": 0
+        },
+        {
+          "offset": 138,
+          "bytesHex": "ba00040000488d4c2460"
+        },
+        {
+          "offset": 148,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entryb9c70",
+          "targetOffset": 0
+        },
+        {
+          "offset": 153,
+          "bytesHex": "488b4b20488d54246041b802000000488b01ff5040b84e0000004881c478040000415d5bc3488b4b18"
+        },
+        {
+          "offset": 194,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 201,
+          "bytesHex": "4889ac249004000083c00383e0fc4889b424980400004889bc24a004000041b9090300008983e8030000c1e00a8bf8c783e4030000040000008bd7488b014c89a424700400004c89b424680400004c89bc2460040000ff5008488b4b18"
+        },
+        {
+          "offset": 294,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 301,
+          "bytesHex": "488983f803000041b90a0300008bd7488b01ff50084883bbf803000000488983000400000f849a0500004885c00f849105000080bbed03000000750980bbec03000000742a488b4b18"
+        },
+        {
+          "offset": 374,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 381,
+          "bytesHex": "41b910030000488bd7488b01ff5008488983080400004885c00f845505000033ed"
+        },
+        {
+          "offset": 414,
+          "prefixHex": "392d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 420,
+          "bytesHex": "0f85b8000000"
+        },
+        {
+          "offset": 426,
+          "prefixHex": "488b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 433,
+          "bytesHex": "488b7b184885d27420"
+        },
+        {
+          "offset": 442,
+          "prefixHex": "488b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 449,
+          "prefixHex": "892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 455,
+          "bytesHex": "488b01ff5010"
+        },
+        {
+          "offset": 461,
+          "prefixHex": "48892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 468,
+          "prefixHex": "892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 474,
+          "prefixHex": "488b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 481,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 488,
+          "bytesHex": "4885d27420"
+        },
+        {
+          "offset": 493,
+          "prefixHex": "488b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 500,
+          "prefixHex": "892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 506,
+          "bytesHex": "488b01ff5010"
+        },
+        {
+          "offset": 512,
+          "prefixHex": "48892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 519,
+          "prefixHex": "892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 525,
+          "prefixHex": "4c8b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 532,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 539,
+          "bytesHex": "4d85c07432"
+        },
+        {
+          "offset": 544,
+          "prefixHex": "488b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 551,
+          "bytesHex": "498bd0"
+        },
+        {
+          "offset": 554,
+          "prefixHex": "892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 560,
+          "bytesHex": "488b01ff50104c8bc5"
+        },
+        {
+          "offset": 569,
+          "prefixHex": "48892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 576,
+          "bytesHex": "448bcd"
+        },
+        {
+          "offset": 579,
+          "prefixHex": "892d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 585,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 592,
+          "bytesHex": "eb1e"
+        },
+        {
+          "offset": 594,
+          "prefixHex": "448b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 601,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 608,
+          "bytesHex": "eb0e"
+        },
+        {
+          "offset": 610,
+          "prefixHex": "448b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 617,
+          "prefixHex": "4c8b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 624,
+          "prefixHex": "8b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 630,
+          "bytesHex": "498bc0488bbb20040000498d0cf04c3bc174150f1f800000000048393874094883c008483bc175f2483bc1488bd541bf01000000480f45d04885d20f854f010000413bf1723c418bd1"
+        },
+        {
+          "offset": 703,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 710,
+          "bytesHex": "d1ea4103d14585c9410f44d7"
+        },
+        {
+          "offset": 722,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "growKeys",
+          "targetOffset": 0
+        },
+        {
+          "offset": 727,
+          "bytesHex": "84c00f8472020000"
+        },
+        {
+          "offset": 735,
+          "prefixHex": "3b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 741,
+          "bytesHex": "0f8366020000"
+        },
+        {
+          "offset": 747,
+          "prefixHex": "8b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 753,
+          "prefixHex": "4c8b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 760,
+          "bytesHex": "8bc6ffc6"
+        },
+        {
+          "offset": 764,
+          "prefixHex": "8935",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 770,
+          "bytesHex": "498d0cc04885c90f8442020000488939"
+        },
+        {
+          "offset": 786,
+          "prefixHex": "8b3d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 792,
+          "prefixHex": "8b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 798,
+          "bytesHex": "3bf8722a8bd0"
+        },
+        {
+          "offset": 804,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 811,
+          "bytesHex": "d1ea03d085c0410f44d7"
+        },
+        {
+          "offset": 821,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "growStatus",
+          "targetOffset": 0
+        },
+        {
+          "offset": 826,
+          "bytesHex": "84c07428"
+        },
+        {
+          "offset": 830,
+          "prefixHex": "3b3d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 836,
+          "bytesHex": "7320"
+        },
+        {
+          "offset": 838,
+          "prefixHex": "8b3d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 844,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 851,
+          "bytesHex": "8bcfffc7"
+        },
+        {
+          "offset": 855,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 861,
+          "bytesHex": "488d14884885d27510"
+        },
+        {
+          "offset": 870,
+          "prefixHex": "ff0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 876,
+          "bytesHex": "b802000000e980030000"
+        },
+        {
+          "offset": 886,
+          "prefixHex": "8b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 892,
+          "prefixHex": "3b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 898,
+          "bytesHex": "722c"
+        },
+        {
+          "offset": 900,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 907,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "growRecords",
+          "targetOffset": 0
+        },
+        {
+          "offset": 912,
+          "bytesHex": "84c00f8410010000"
+        },
+        {
+          "offset": 920,
+          "prefixHex": "3b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 926,
+          "bytesHex": "0f8304010000"
+        },
+        {
+          "offset": 932,
+          "prefixHex": "8b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 938,
+          "prefixHex": "8b3d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 944,
+          "bytesHex": "8bc6ffc6486bd068"
+        },
+        {
+          "offset": 952,
+          "prefixHex": "8935",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 958,
+          "prefixHex": "480315",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 965,
+          "bytesHex": "0f84e30000000f57c033c00f11020f1142100f1142204889423048c7423800020000896a4048896a4848896a5048896a58896a60"
+        },
+        {
+          "offset": 1017,
+          "prefixHex": "8b35",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 1023,
+          "prefixHex": "4c8b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 1030,
+          "bytesHex": "8bfd85f67415488b8b200400008bc749390cc07406ffc73bfe72f24038abed0300000f842f010000"
+        },
+        {
+          "offset": 1070,
+          "prefixHex": "488b2d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 1077,
+          "bytesHex": "8b8bf00300004c8b73188bc7486bf06848837c2e58007579894c2e60488d14cd000000004c89742e48"
+        },
+        {
+          "offset": 1118,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1125,
+          "bytesHex": "498b06448be141b926010000498bceff50084889442e504885c00f84cc000000498b064a8d14a50000000041b92c010000"
+        },
+        {
+          "offset": 1174,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1181,
+          "bytesHex": "498bceff5008e988000000"
+        },
+        {
+          "offset": 1192,
+          "prefixHex": "8b3d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 1198,
+          "prefixHex": "ff0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 1204,
+          "bytesHex": "b802000000ffcf"
+        },
+        {
+          "offset": 1211,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 1217,
+          "bytesHex": "e930020000394c2e600f848b000000488b542e504c8d04cd00000000894c2e60"
+        },
+        {
+          "offset": 1249,
+          "prefixHex": "4c8d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1256,
+          "bytesHex": "4c89742e484c8be1498b06498bcec74424203e010000ff50204889442e504885c07446498b064e8d04a500000000488b542e58"
+        },
+        {
+          "offset": 1307,
+          "prefixHex": "4c8d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1314,
+          "bytesHex": "498bcec744242048010000ff50204889442e584885c07521498b06498bce488b542e50ff501048c7442e5000000000b802000000e99b01000033ed80bbed03000000750d80bbec030000000f84b1000000488b03488bcbff50484c8b8b180400004d85c9750cba020000008bc2e9620100000fb68bec0300008b43080fb693ed030000894424340fb683e00300008944243c884c2439f6d9c74424300300ba001bc08854243883e0028944244084d2740c8b83f003000089442444eb04896c2444488b83f80300004c8d442430488b5318498bc94889442448488b83000400004889442450488b83080400004889442458"
+        },
+        {
+          "offset": 1555,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry24ad90",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1560,
+          "bytesHex": "8bd0413bc77405e9d2000000418b4500"
+        },
+        {
+          "offset": 1576,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2dae40",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1583,
+          "prefixHex": "4c8b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 1590,
+          "bytesHex": "0f57c0448bdf4d6bd368f3480f2ac0"
+        },
+        {
+          "offset": 1605,
+          "prefixHex": "f30f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "durationScale",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1613,
+          "bytesHex": "43896c0a3cf3480f2cc0ffc88bc8d1e90bc88bc1c1e8020bc18bc8c1e9040bc88bd1c1ea080bd18bc2c1e8100bc2ba10230000ffc04389440a3841b938030000"
+        },
+        {
+          "offset": 1677,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 1684,
+          "bytesHex": "42892c98488b4b18488b01ff5008488bf84885c07443488d482848892848896808488968104889681848896820"
+        },
+        {
+          "offset": 1729,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry242c80",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1734,
+          "bytesHex": "c6870823000000410fb6d7488bcb48897b28"
+        },
+        {
+          "offset": 1752,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry246900",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1757,
+          "bytesHex": "84c0b91f000000440f44f9418bc7eb0948896b28b8340000004c8bb424680400004c8ba42470040000488bbc24a0040000488bb42498040000488bac24900400004c8bbc24600400004881c478040000415d5bc3"
+        }
+      ]
+    },
+    "refresh": {
+      "consumerMethod": "refresh",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4885d20f84d20400004c89442418488954241048894c2408554154415641574881ecc8000000f6421003498be94d8bf04c8bfa4c8be10f85910400008b4208448b89e0030000418bd133d084d20f857a040000418bc933c8f7c1000f00000f85690400004433c841f7c100f0ffff0f855904000041389424ec03000074094d85c00f8446040000"
+        },
+        {
+          "offset": 135,
+          "prefixHex": "8b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 141,
+          "bytesHex": "48899c24080100004889b424c00000004889bc24b800000033ff8bcf85d274214d8b842420040000"
+        },
+        {
+          "offset": 181,
+          "prefixHex": "4c8b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 188,
+          "bytesHex": "0f1f40008bc14d3904c17406ffc13bca72f2"
+        },
+        {
+          "offset": 206,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 213,
+          "bytesHex": "8bf1498bcc8b1cb0498b0424ff50402bc383f8010f84420100000f57c033c0486bde68"
+        },
+        {
+          "offset": 248,
+          "prefixHex": "48031d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 255,
+          "bytesHex": "897b3c0f11030f1143100f11432048894330488b4b504885c9740f448b436033d241c1e003"
+        },
+        {
+          "offset": 292,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry289bb0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 297,
+          "bytesHex": "488b4b584885c9740f448b436033d241c1e002"
+        },
+        {
+          "offset": 316,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry289bb0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 321,
+          "bytesHex": "498b5c2428488b8b980500008b831c0200004885c9740dc1e00933d2448bc0"
+        },
+        {
+          "offset": 352,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry289bb0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 357,
+          "bytesHex": "ba04000000488d830c0c0000b90400000066660f1f8400000000000f57c00f57c90f1140d00f1140e00f1140f00f11080f1148100f1148200f1140300f1140400f1140500f1148600f1148700f1188800000004805d80000004883e90175bc4883ea0175a7b906000000488d839406000066660f1f8400000000000f1140d00f1140e00f1140f00f11080f1148100f1148200f1140300f1140400f1140500f1148600f1148700f118880000000488d80d80000004883e90175c1498b8c24180400004885c97405"
+        },
+        {
+          "offset": 556,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry24bf80",
+          "targetOffset": 0
+        },
+        {
+          "offset": 561,
+          "bytesHex": "33d2498bcc"
+        },
+        {
+          "offset": 566,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry246900",
+          "targetOffset": 0
+        },
+        {
+          "offset": 571,
+          "bytesHex": "84c0755341c7470c020000004d85f6740841c7460c02000000488b4d084885c90f8454020000397d000f864b020000660f1f4400008bc7488b14c14885d2740bc7420c02000000488b4d08ffc73b7d0072e3e9230200004138bc24110400007512498b4424104038b8780100000f84070200004c89ac24b0000000448bef397d000f869c0000000f1f400066660f1f840000000000488b4508418bcd488b1cc848393b745d0fb74b100fb743120fb65308663bc1660f43c1440fb7c0412bc8744185d27435448bf9458be049c1e702488bf7448bf20fb74b104d8bc7488b0333d2480fafce4903cc488d0c88"
+        },
+        {
+          "offset": 807,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry289bb0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 812,
+          "bytesHex": "48ffc64983ee0175db0fb743106689431241ffc5443b6d00728a4c8ba424f00000004c8bbc24f80000004c8bb42400010000498b8c24180400004885c97408488bd5"
+        },
+        {
+          "offset": 878,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry24b2a0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 883,
+          "bytesHex": "418b8424e00300000fb7f7450fb76f100fb6c8c1e80c894c2460898424f80000004585ed0f84ea0000008bdfb8000100000f1f40000f1f8400000000004c8b842400010000458bf5442bf34c8bcd443bf0498bd7498bcc440f47f04489742428895c2420"
+        },
+        {
+          "offset": 983,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry247900",
+          "targetOffset": 0
+        },
+        {
+          "offset": 988,
+          "bytesHex": "498b4424184d8d8424700200004939bc24180400004d8b4c2428498b9424000400000f95c148894424588b8424f8000000897c2450884c2448498b8c24f803000089442440418b8424e8030000894424388b44246089442430498d44243044897424284889442420"
+        },
+        {
+          "offset": 1092,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry249010",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1097,
+          "bytesHex": "85c00f858b00000044897424284c8bcd4c8bb42400010000498bd74d8bc6895c2420498bcc"
+        },
+        {
+          "offset": 1134,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry247ed0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1139,
+          "bytesHex": "b8000100006603f00fb7de413bdd0f8229ffffff498b8c24180400004885c97408488bd5"
+        },
+        {
+          "offset": 1175,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry24b1b0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1180,
+          "bytesHex": "4c8bcd4d8bc6498bd7498bcc"
+        },
+        {
+          "offset": 1192,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry246fa0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 1197,
+          "bytesHex": "4c8bac24b0000000488bb424c0000000488b9c2408010000488bbc24b80000004881c4c8000000415f415e415c5dc3488b84240001000041c7470c020000004885c07407c7400c02000000488b4d084885c9742c397d00762766660f1f8400000000008bc7488b14c14885d2740bc7420c02000000488b4d08ffc73b7d0072e341c684241104000000e972ffffff"
+        }
+      ]
+    },
+    "execute": {
+      "consumerMethod": "execute",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48896c2410488974241848897c242041564883ec3080b91004000000498bf1498be84c8bf2488bf90f849700000048895c2440"
+        },
+        {
+          "offset": 51,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "refresh",
+          "targetOffset": 0
+        },
+        {
+          "offset": 56,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "sharedLock",
+          "targetOffset": 0
+        },
+        {
+          "offset": 63,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "lockEnterImport",
+          "targetOffset": 0
+        },
+        {
+          "offset": 69,
+          "prefixHex": "8b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 75,
+          "bytesHex": "33c085d2741b4c8b8720040000"
+        },
+        {
+          "offset": 88,
+          "prefixHex": "4c8b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 95,
+          "bytesHex": "904d3904c17406ffc03bc272f48bd84c8bce0fb687ed0300004c8bc588442428498bd60fb687ec030000486bcb6888442420"
+        },
+        {
+          "offset": 145,
+          "prefixHex": "48030d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 152,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry2433b0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 157,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 164,
+          "bytesHex": "488bcf488d1c98488b07ff5040"
+        },
+        {
+          "offset": 177,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "sharedLock",
+          "targetOffset": 0
+        },
+        {
+          "offset": 184,
+          "bytesHex": "8903"
+        },
+        {
+          "offset": 186,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "lockLeaveImport",
+          "targetOffset": 0
+        },
+        {
+          "offset": 192,
+          "bytesHex": "488b5c2440488b6c2448488b742450488b7c24584883c430415ec3"
+        }
+      ]
+    },
+    "status": {
+      "rva": "0x2461d0",
+      "bodyLength": 34,
+      "bodySha256": "8093acdfd1cd0102117bdd6ed60532422cf35d3256fb5663c48724597848c67d",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4883ec28488b4920488b01ff5008488b08488b91d0000000488bc84883c42848ffe2"
+        }
+      ]
+    },
+    "trigger": {
+      "rva": "0x246870",
+      "bodyLength": 133,
+      "bodySha256": "6b335489e40639a38c5fa51b68e1af67f3a687b7ea21b986177f6709f2ea43d2",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4883ec28"
+        },
+        {
+          "offset": 4,
+          "prefixHex": "833d",
+          "suffixHex": "00",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 11,
+          "bytesHex": "746e"
+        },
+        {
+          "offset": 13,
+          "prefixHex": "8b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 19,
+          "bytesHex": "33c048895c243048897c242085d2741a4c8b8120040000"
+        },
+        {
+          "offset": 42,
+          "prefixHex": "4c8b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 49,
+          "bytesHex": "4d3904c17406ffc03bc272f48bf8"
+        },
+        {
+          "offset": 63,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 70,
+          "bytesHex": "8b1cb8488b01ff50402bc3488b5c243083f8017511486bd768"
+        },
+        {
+          "offset": 95,
+          "prefixHex": "480315",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 102,
+          "bytesHex": "8b423889423c488b7c2420b8010000004883c428c3b8010000004883c428c3"
+        }
+      ]
+    },
+    "globalCallback": {
+      "rva": "0x2466f0",
+      "bodyLength": 375,
+      "bodySha256": "3dbde4b92eb6ea2bd73abdb1e603b91735aae7d5738378c4373f4291accaa523",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48897c241841564883ec404c8bf183fa017538488b01"
+        },
+        {
+          "offset": 22,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "globalCallback",
+          "targetOffset": 0
+        },
+        {
+          "offset": 29,
+          "bytesHex": "33ff41b9ba00000048897c24304533c0c7442428800000004889542420b203ff5040488b7c24604883c440415ec381fa800000000f8514010000"
+        },
+        {
+          "offset": 87,
+          "prefixHex": "448b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 94,
+          "bytesHex": "33ff"
+        },
+        {
+          "offset": 96,
+          "prefixHex": "488b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 103,
+          "bytesHex": "48895c24508bdf4585c0746048897424580f1f8400000000008bc3486bf0684803f24c8b4e584d85c97435488b4e48498bd1488b01ff5010488b4e48488b5650488b01ff501048897e5848897e5048897e48"
+        },
+        {
+          "offset": 185,
+          "prefixHex": "448b05",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 192,
+          "prefixHex": "488b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 199,
+          "bytesHex": "ffc3413bd872b2488b742458488b5c24504885d27420"
+        },
+        {
+          "offset": 221,
+          "prefixHex": "488b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 228,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 234,
+          "bytesHex": "488b01ff5010"
+        },
+        {
+          "offset": 240,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 247,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "recordVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 253,
+          "prefixHex": "488b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 260,
+          "bytesHex": "4885d27420"
+        },
+        {
+          "offset": 265,
+          "prefixHex": "488b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 272,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 278,
+          "bytesHex": "488b01ff5010"
+        },
+        {
+          "offset": 284,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 291,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "statusVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 297,
+          "prefixHex": "488b15",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 304,
+          "bytesHex": "4885d27420"
+        },
+        {
+          "offset": 309,
+          "prefixHex": "488b0d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 0
+        },
+        {
+          "offset": 316,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 16
+        },
+        {
+          "offset": 322,
+          "bytesHex": "488b01ff5010"
+        },
+        {
+          "offset": 328,
+          "prefixHex": "48893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 8
+        },
+        {
+          "offset": 335,
+          "prefixHex": "893d",
+          "suffixHex": "",
+          "targetKind": "global",
+          "target": "keyVector",
+          "targetOffset": 20
+        },
+        {
+          "offset": 341,
+          "bytesHex": "498b06"
+        },
+        {
+          "offset": 344,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "globalCallback",
+          "targetOffset": 0
+        },
+        {
+          "offset": 351,
+          "bytesHex": "41b880000000498bceff5048488b7c24604883c440415ec3"
+        }
+      ]
+    },
+    "terminate": {
+      "rva": "0x2480a0",
+      "bodyLength": 247,
+      "bodySha256": "945c432fac2f7cdefd2a15c7e03ae7c2f3333dfcc8cd005f1f44e014901adb11",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c24084889742410574883ec20488bd933f6488b4928488bfa4885c9741f488b5318"
+        },
+        {
+          "offset": 36,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry249600",
+          "targetOffset": 0
+        },
+        {
+          "offset": 41,
+          "bytesHex": "488b53284885d27409488b07488bcfff501048897328488b93f80300004885d27410488b07488bcfff50104889b3f8030000488b93000400004885d27410488b07488bcfff50104889b300040000488b93080400004885d27410488b07488bcfff50104889b3080400004038b3100400007430488b8b180400004885c97424488bd7"
+        },
+        {
+          "offset": 171,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry24c070",
+          "targetOffset": 0
+        },
+        {
+          "offset": 176,
+          "bytesHex": "488b93180400004885d27409488b07488bcfff50104889b318040000488b0333d2488bcbff10488b07488bd3488bcfff5010488b5c2430b801000000488b7424384883c4205fc3"
+        }
+      ]
+    },
+    "growKeys": {
+      "rva": "0x2464d0",
+      "bodyLength": 297,
+      "bodySha256": "91f742739bff1089bf18f2b4472be4b279753a9fdfe71bcc1bf110076a8c9144",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c240848896c2410488974241857415641574883ec30448b7914488d71148b6910488d79084c8b174403fa4c8bf1418bd7488b0948c1e203488b014d85d274284c8bc2c7442420cd000000498bd2"
+        },
+        {
+          "offset": 80,
+          "prefixHex": "4c8d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2ba5d0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 87,
+          "bytesHex": "ff5020488bd84885c07420488bc7e99e00000041b9cc000000"
+        },
+        {
+          "offset": 112,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2ba5d0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 119,
+          "bytesHex": "ff5008488bd84885c0750732c0e987000000488b17488bc74885d27474483bd3746f4533c94885ed74524883fd0272394c8d04ed00000000498d48f8498d40f84803cb4803c2483bd87705483bca7319483bdf7705483bcf730f488bcb"
+        },
+        {
+          "offset": 212,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry289510",
+          "targetOffset": 0
+        },
+        {
+          "offset": 217,
+          "bytesHex": "eb180f1f440000488b074a8b0cc84a890ccb49ffc14c3bcd72ed498b0e498b5608488b01ff5010498d4608498d7614488918b00144893e488b5c2450488b6c2458488b7424604883c430415f415e5fc3"
+        }
+      ]
+    },
+    "growStatus": {
+      "rva": "0x246220",
+      "bodyLength": 297,
+      "bodySha256": "96f3a27713dff7f3a42f3e6d9c01f56bf0dca0cb40f7ac1adf1cd81bb7f45c42",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c240848896c2410488974241857415641574883ec30448b7914488d71148b6910488d79084c8b174403fa4c8bf1418bd7488b0948c1e202488b014d85d274284c8bc2c7442420cd000000498bd2"
+        },
+        {
+          "offset": 80,
+          "prefixHex": "4c8d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2ba5d0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 87,
+          "bytesHex": "ff5020488bd84885c07420488bc7e99e00000041b9cc000000"
+        },
+        {
+          "offset": 112,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2ba5d0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 119,
+          "bytesHex": "ff5008488bd84885c0750732c0e987000000488b17488bc74885d27474483bd3746f4533c94885ed74524883fd0472394c8d04ad00000000498d48fc498d40fc4803cb4803c2483bd87705483bca7319483bdf7705483bcf730f488bcb"
+        },
+        {
+          "offset": 212,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "entry289510",
+          "targetOffset": 0
+        },
+        {
+          "offset": 217,
+          "bytesHex": "eb180f1f440000488b07428b0c8842890c8b49ffc14c3bcd72ed498b0e498b5608488b01ff5010498d4608498d7614488918b00144893e488b5c2450488b6c2458488b7424604883c430415f415e5fc3"
+        }
+      ]
+    },
+    "growRecords": {
+      "rva": "0x246350",
+      "bodyLength": 377,
+      "bodySha256": "8ed9106f364057de50929403fdec0c45cc8f43152353c595b182e1b47491912c",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c240848896c24104889742418574883ec308b5114488bd98beab901000000d1ed03ea4c8b530885d28b73100f44e9488b0b03ea8bc5486bd068488b014d85d2742b4c8bc2c7442420cd000000498bd2"
+        },
+        {
+          "offset": 82,
+          "prefixHex": "4c8d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2ba5d0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 89,
+          "bytesHex": "ff5020488bf84885c00f85f300000032c0e9f500000041b9cc000000"
+        },
+        {
+          "offset": 117,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "data2ba5d0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 124,
+          "bytesHex": "ff5008488bf84885c074e1488b43084885c00f84c7000000483bc70f84be0000004885f60f84a800000049c7c1c8ffffff488d47384c2bcf4533d24c8d40c84d85c074320f57c033c9410f1100410f114010410f114020488948f848c70000020000448950084c8950104c8950184c89502044895028488b4b08498d14014883c0680f10040a410f11000f104c0a10410f1148100f10440a20410f1140200f104c0a30410f1148300f10440a40410f1140400f104c0a50410f114850f20f10440a60f2410f1140604883ee010f8569ffffff488b0b488b5308488b01ff501048897b08b001896b14488b5c2440488b6c2448488b7424504883c4305fc3"
+        }
+      ]
+    },
+    "bufferSetup": {
+      "rva": "0x2489d0",
+      "bodyLength": 334,
+      "bodySha256": "fcb443f4e85fdf5a396f94397d212a9723c6885e80bbb31fc4d916cfc46d8bab",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c241048896c2418488974242041564883ec204883792000498be84c8bf2488bd97530418b500441b99a000000498b06"
+        },
+        {
+          "offset": 50,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "storageAddress2db250",
+          "targetOffset": 0
+        },
+        {
+          "offset": 57,
+          "bytesHex": "c1e20a498bceff5008488943204885c0750ab80a008080e9e30000008b750448897c243033ffc1e60a48393b751b498b06"
+        },
+        {
+          "offset": 106,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "storageAddress2db0a0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 113,
+          "bytesHex": "41b9090100008bd6498bceff500848890348397b08751d498b06"
+        },
+        {
+          "offset": 139,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "storageAddress2db0a0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 146,
+          "bytesHex": "41b90b010000488bd6498bceff500848894308488b43104885c0751d498b06"
+        },
+        {
+          "offset": 177,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "storageAddress2db0a0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 184,
+          "bytesHex": "41b90d010000488bd6498bceff500848894310be0a00808048393b740b48397b0874054885c075028bfe807d3c01752985ff7545498b06"
+        },
+        {
+          "offset": 239,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "storageAddress2db0a0",
+          "targetOffset": 0
+        },
+        {
+          "offset": 246,
+          "bytesHex": "41b917010000ba00040000498bceff50084885c0488943180f44fe85ff751c488d4b284c8bc5498bd6"
+        },
+        {
+          "offset": 287,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "storageFormatSetup",
+          "targetOffset": 0
+        },
+        {
+          "offset": 292,
+          "bytesHex": "85c0750bc6830823000001eb028bc7488b7c2430488b5c2438488b6c2440488b7424484883c420415ec3"
+        }
+      ]
+    }
+  },
+  "globals": {
+    "keyVector": {
+      "rva": "0x348750",
+      "byteLength": 24
+    },
+    "statusVector": {
+      "rva": "0x348738",
+      "byteLength": 24
+    },
+    "recordVector": {
+      "rva": "0x348768",
+      "byteLength": 24
+    }
+  },
+  "data": {
+    "data2daeb0": {
+      "rva": "0x2daeb0",
+      "byteLength": 8,
+      "bytesHex": "4d6173746572696e"
+    },
+    "data2daef0": {
+      "rva": "0x2daef0",
+      "byteLength": 8,
+      "bytesHex": "4d6173746572696e"
+    },
+    "data2daf40": {
+      "rva": "0x2daf40",
+      "byteLength": 8,
+      "bytesHex": "4d6173746572696e"
+    },
+    "data2daf90": {
+      "rva": "0x2daf90",
+      "byteLength": 8,
+      "bytesHex": "4d6173746572696e"
+    },
+    "data2dafd8": {
+      "rva": "0x2dafd8",
+      "byteLength": 8,
+      "bytesHex": "4d6173746572696e"
+    },
+    "data2dae40": {
+      "rva": "0x2dae40",
+      "byteLength": 8,
+      "bytesHex": "433a5c4a656e6b69"
+    },
+    "data2ba5d0": {
+      "rva": "0x2ba5d0",
+      "byteLength": 8,
+      "bytesHex": "433a5c4a656e6b69"
+    },
+    "durationScale": {
+      "rva": "0x28fc0c",
+      "byteLength": 4,
+      "bytesHex": "cdcc4c3d"
+    },
+    "sharedLock": {
+      "rva": "0x348710",
+      "byteLength": 8,
+      "evidenceBoundary": "addressOnly"
+    },
+    "lockEnterImport": {
+      "rva": "0x28b200",
+      "byteLength": 8,
+      "evidenceBoundary": "addressOnly"
+    },
+    "lockLeaveImport": {
+      "rva": "0x28b1f8",
+      "byteLength": 8,
+      "evidenceBoundary": "addressOnly"
+    },
+    "storageAddress2db250": {
+      "rva": "0x2db250",
+      "evidenceBoundary": "addressOnly"
+    },
+    "storageAddress2db0a0": {
+      "rva": "0x2db0a0",
+      "evidenceBoundary": "addressOnly"
+    }
+  },
+  "externalEntries": {
+    "entryb9c70": {
+      "rva": "0xb9c70",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry24ad90": {
+      "rva": "0x24ad90",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry242c80": {
+      "rva": "0x242c80",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry246900": {
+      "rva": "0x246900",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry289bb0": {
+      "rva": "0x289bb0",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry24bf80": {
+      "rva": "0x24bf80",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry24b2a0": {
+      "rva": "0x24b2a0",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry247900": {
+      "rva": "0x247900",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry249010": {
+      "rva": "0x249010",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry247ed0": {
+      "rva": "0x247ed0",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry24b1b0": {
+      "rva": "0x24b1b0",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry246fa0": {
+      "rva": "0x246fa0",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry2433b0": {
+      "rva": "0x2433b0",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry249600": {
+      "rva": "0x249600",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry24c070": {
+      "rva": "0x24c070",
+      "evidenceBoundary": "unresolved"
+    },
+    "entry289510": {
+      "rva": "0x289510",
+      "evidenceBoundary": "unresolved"
+    },
+    "storageFormatSetup": {
+      "rva": "0x248850",
+      "evidenceBoundary": "addressOnly"
+    }
+  },
+  "registrationCallback": {
+    "offsetFromRegistration": 48,
+    "method": "globalCallback"
+  },
+  "vtableSlots": {
+    "trigger": 16,
+    "status": 64,
+    "terminate": 8
+  },
+  "imports": {
+    "lockEnterImport": {
+      "library": "KERNEL32.dll",
+      "symbol": "EnterCriticalSection"
+    },
+    "lockLeaveImport": {
+      "library": "KERNEL32.dll",
+      "symbol": "LeaveCriticalSection"
+    }
+  },
+  "layout": {
+    "recordStrideBytes": 104,
+    "vectorAllocatorOffset": 0,
+    "vectorPointerOffset": 8,
+    "vectorCountOffset": 16,
+    "vectorCapacityOffset": 20,
+    "recordAllocatorOffset": 72,
+    "recordIdentityPointerOffset": 80,
+    "recordValuePointerOffset": 88,
+    "recordCapacityOffset": 96,
+    "durationOffset": 56,
+    "remainingOffset": 60,
+    "capturedCountOffset": 64,
+    "contextKeyEffectOffset": 1056,
+    "auxiliaryFlagEffectOffset": 1004,
+    "listFlagEffectOffset": 1005,
+    "listCapacityEffectOffset": 1008,
+    "primaryScratchEffectOffset": 1016,
+    "secondaryScratchEffectOffset": 1024,
+    "optionalScratchEffectOffset": 1032,
+    "roundedChannelsEffectOffset": 1000,
+    "activeEffectOffset": 1040,
+    "viewEffectOffset": 1048
+  },
+  "stateMachine": {
+    "key": "retained context pointer equality",
+    "initialDuration": 512,
+    "configuredDuration": "nextPowerOfTwo(uint32(trunc(float32(uint32(sampleRate)*float32(0.05)))))",
+    "durationDomain": "positive ordinary sample rates whose scaled truncation lies in [1,2^31]",
+    "trigger": "uint32(currentAnonymousCounter-previousCounter)==1 copies duration into remaining",
+    "refresh": "same unit difference preserves shared/local histories; every other difference clears remaining and histories",
+    "execute": "after shared processing, store the current anonymous counter into the parallel status row",
+    "sameKeyPrepare": "reuse record, configure duration, clear remaining and previous counter; prior captured storage/count can persist",
+    "captureCountOnDiscontinuity": "retained while identity/value storage is zeroed",
+    "keyGrowth": "oldCapacity + (oldCapacity + floor(oldCapacity/2) if oldCapacity else 1)",
+    "statusGrowth": "oldCapacity + (oldCapacity + floor(oldCapacity/2) if oldCapacity else 1)",
+    "recordGrowth": "2*oldCapacity + floor(oldCapacity/2) if oldCapacity else 1"
+  },
+  "ownership": {
+    "primaryScratchBytes": "roundUpToFour(channels)*256*4",
+    "scratchCount": "2 plus 1 when either optional flag is nonzero",
+    "identitiesBytes": "capacity*8",
+    "valuesBytes": "capacity*4",
+    "allocatorSlots": {
+      "allocate": 8,
+      "free": 16,
+      "reallocate": 32
+    },
+    "localTermination": "free effect engine, scratch buffers, admitted optional view and effect object; shared context rows remain",
+    "globalRegistration": "callback reason 1 registers this callback for reason 128 through global-context vtable slot 64",
+    "globalCleanup": "callback reason 128 frees each record value/identity pair when value pointer is nonnull, then frees and clears all three vector headers; unregisters through slot 72",
+    "cleanupCaveat": "a record with null value pointer is skipped even when its identity pointer is nonnull",
+    "initialValueAllocationFailure": "store null value pointer, free newly allocated identity pointer, clear identity pointer, return 2",
+    "identityReallocationFailure": "overwrite identity pointer with null, retain value pointer, return 2",
+    "valueReallocationFailure": "overwrite value pointer with null, free resized identity pointer, clear identity pointer, return 2",
+    "capacityWrittenBeforeReallocation": true,
+    "synchronizationBoundary": "Execute brackets shared processing and status publication with declared EnterCriticalSection/LeaveCriticalSection calls; producer, reset and global cleanup do not establish a complete synchronization protocol"
+  },
+  "meaningBoundary": "Selected native producer, reset, discontinuity reset and teardown joins for anonymous context records. Positive ordinary duration input, valid preexisting vector bounds and key membership, usable allocator contract and admitted storage remain conditional. Counter API meaning, callback scheduling, synchronization/lifetime under concurrency, allocator failure recovery, optional view semantics and live invocation unresolved. The normal local-DSP caller joins prepared channel count and rounded stride to engine descriptor admission: its local rate is fixed, internal frame capacity is bounded, scratch requests cover that capacity, and refresh rejects a different channel-format word. This is conditional on unchanged prepared fields, completing helpers and allocations supplying their requested capacity; standalone descriptor admission still has no upper stride bound. The chunk loop uses a 16-bit offset; higher uint16 primary maxima can wrap it. Primary-frame admission, external buffer extents, helper side effects, concurrent mutation and live reachability remain separate gaps. Full local buffer setup checks only main pointer nullness before requesting storage. It retains existing main pointers without proving capacity, attempts all trailing main allocations before their combined check, and does not roll back earlier successful allocations. An enabled optional request overwrites its pointer on every setup. Failure recovery, allocator capacity and ownership remain conditional. Refresh first rejects a primary frame maximum not divisible by four. This lowers the reachable wrap-domain to aligned uint16 maxima above the finite traversal bound; the alignment guard supplies no upper bound. Full original refresh checks after supported channel setup confirm conditional aligned wrap paths with downstream effects modeled. Host admission and live reachability remain unresolved.",
+  "localCaller": {
+    "consumerMethods": [
+      "sync",
+      "engineControl"
+    ],
+    "controls": {
+      "channelAdmission": {
+        "method": "prepare",
+        "offset": 117
+      },
+      "alignedScratch": {
+        "method": "prepare",
+        "offset": 209
+      },
+      "syncCountAndStride": {
+        "method": "sync",
+        "offset": 187
+      },
+      "controlLogicalCount": {
+        "method": "engineControl",
+        "offset": 114
+      },
+      "controlDescriptor": {
+        "method": "engineControl",
+        "offset": 252
+      },
+      "refreshFormatMatch": {
+        "method": "refresh",
+        "offset": 60
+      },
+      "refreshLogicalCount": {
+        "method": "refresh",
+        "offset": 883
+      },
+      "refreshChunkCapacity": {
+        "method": "refresh",
+        "offset": 927
+      },
+      "refreshChunk": {
+        "method": "refresh",
+        "offset": 952
+      },
+      "refreshStride": {
+        "method": "refresh",
+        "offset": 1057
+      },
+      "refreshChunkAdvance": {
+        "method": "refresh",
+        "offset": 1139
+      },
+      "refreshPrimaryAlignment": {
+        "method": "refresh",
+        "offset": 38
+      }
+    },
+    "calls": {
+      "syncToControl": {
+        "method": "sync",
+        "offset": 281
+      },
+      "controlToInit": {
+        "method": "engineControl",
+        "offset": 324
+      },
+      "refreshToControl": {
+        "method": "refresh",
+        "offset": 1092
+      }
+    },
+    "layout": {
+      "localSampleRate": 48000,
+      "frameCapacity": 256,
+      "logicalChannels": [
+        1,
+        12
+      ],
+      "normalStride": [
+        4,
+        12
+      ],
+      "normalScratchRequestBytes": [
+        4096,
+        12288
+      ],
+      "normalStrideFormula": "roundUpToFour(logicalChannels)",
+      "refreshFormatBoundary": "all channel-format word bits must match the prepared format",
+      "frameTraversalBoundary": "completing chunk loop terminates for uint16 maxima at most 65280; higher maxima wrap its 16-bit offset",
+      "primaryFrameQuantum": 4
+    }
+  },
+  "localStorage": {
+    "evidenceBoundary": "conditional",
+    "controlCallOffset": 233,
+    "mainPointerOffsets": [
+      32,
+      0,
+      8,
+      16
+    ],
+    "optionalPointerOffset": 24,
+    "allocationTags": [
+      154,
+      265,
+      267,
+      269
+    ],
+    "optionalAllocationTag": 279,
+    "strideDescriptorOffset": 4,
+    "requestShift": 10,
+    "requestArithmeticBits": 32,
+    "optionalFlagOffset": 60,
+    "optionalFlagValue": 1,
+    "optionalRequestBytes": 1024,
+    "readyFlagOffset": 8968,
+    "allocationFailure": "0x8080000a",
+    "callerFailure": "0x80800005",
+    "reuse": "nonnull main pointer skips allocation without capacity check",
+    "optionalReuse": "enabled optional allocation always overwrites its pointer without freeing the previous pointer",
+    "mainFailure": "first main failure exits immediately; other three are all attempted before the combined check",
+    "formatFailure": "returns helper result and retains the previous ready flag",
+    "success": "sets ready flag to one",
+    "boundary": "Selected engine-control initialization route and full local buffer setup. Stable nonaliased descriptor, completing ABI-conforming allocator/format helper and valid engine storage. Requests and stored returned pointers are proved; actual capacity, allocation ownership, retry cleanup and lifetime are not."
+  }
+}

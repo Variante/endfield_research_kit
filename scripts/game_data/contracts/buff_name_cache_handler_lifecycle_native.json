@@ -1,0 +1,220 @@
+{
+  "schema": "endfield.buff-name-cache-handler-lifecycle-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-zero-counter-init-prefix-and-rollback-control",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "initializer": {
+      "entryRva": 1806372,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1806372,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1806372,
+              1806444,
+              211637216
+            ],
+            "tableRowRva": 251824400,
+            "runtimeTripleRawHex": "24901B006C901B00E0539D0C",
+            "codeBytes": 72,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1806372,
+          "endRva": 1806444,
+          "sha256": "98FB183B261A7119E769122B06B7162514B6136D073D200E47F3FBA13B7FD7A8"
+        }
+      ]
+    },
+    "cleanup": {
+      "entryRva": 1806472,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1806472,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1806472,
+              1806527,
+              211637216
+            ],
+            "tableRowRva": 251824412,
+            "runtimeTripleRawHex": "88901B00BF901B00E0539D0C",
+            "codeBytes": 55,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1806472,
+          "endRva": 1806527,
+          "sha256": "1F0D08B105109E9B42122A9FED17A2F7C2648CA77417D9541A48814B3C19F50A"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1806431,
+        "targetRva": 1806472,
+        "instructionHex": "E824000000"
+      }
+    },
+    "initProxy": {
+      "entryRva": 1824732,
+      "ownershipKind": "closedIndirectTailProgram",
+      "codeWindows": [
+        {
+          "startRva": 1824732,
+          "endRva": 1824739,
+          "sha256": "A857BD6C984949DC2CA74D57ECF242A504051EFDF6B3C6666999C37E732BC0FA"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1806403,
+        "targetRva": 1824732,
+        "instructionHex": "E894470000"
+      }
+    }
+  },
+  "arrayBaseRva": 230664144,
+  "counterRva": 230664744,
+  "layout": {
+    "strideBytes": 40,
+    "slots": 15,
+    "spinCount": 4000,
+    "flags": 0
+  },
+  "initImportSlotRva": 176354424,
+  "deleteImportSlotRva": 176353464,
+  "importDeclaration": {
+    "selectedImports": [
+      {
+        "slotRva": 176353464,
+        "descriptorRva": 217639872,
+        "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+        "libraryNameRva": 217644624,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 217640168,
+        "firstThunkRva": 176353352,
+        "thunkIndex": 14,
+        "actualThunkCount": 181,
+        "terminatedLookupBytes": 1456,
+        "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+        "lookupEntryRva": 217640280,
+        "lookupEntryHex": "18 f7 f8 0c 00 00 00 00",
+        "iatEntryHex": "18 f7 f8 0c 00 00 00 00",
+        "hintNameRva": 217642776,
+        "hint": 303,
+        "hintHex": "2f 01",
+        "symbolName": "DeleteCriticalSection",
+        "symbolNameHex": "44 65 6c 65 74 65 43 72 69 74 69 63 61 6c 53 65 63 74 69 6f 6e 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      },
+      {
+        "slotRva": 176354424,
+        "descriptorRva": 217639872,
+        "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+        "libraryNameRva": 217644624,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 217640168,
+        "firstThunkRva": 176353352,
+        "thunkIndex": 134,
+        "actualThunkCount": 181,
+        "terminatedLookupBytes": 1456,
+        "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+        "lookupEntryRva": 217641240,
+        "lookupEntryHex": "58 06 f9 0c 00 00 00 00",
+        "iatEntryHex": "58 06 f9 0c 00 00 00 00",
+        "hintNameRva": 217646680,
+        "hint": 919,
+        "hintHex": "97 03",
+        "symbolName": "InitializeCriticalSectionEx",
+        "symbolNameHex": "49 6e 69 74 69 61 6c 69 7a 65 43 72 69 74 69 63 61 6c 53 65 63 74 69 6f 6e 45 78 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    ],
+    "importDirectoryRva": 217639872,
+    "importDirectoryBytes": 220,
+    "importDirectoryHeader": {
+      "fileOffset": 456,
+      "rawHex": "c0 eb f8 0c dc 00 00 00"
+    },
+    "iatDirectoryRva": 176353280,
+    "iatDirectoryBytes": 2176,
+    "iatDirectoryHeader": {
+      "fileOffset": 544,
+      "rawHex": "00 f0 82 0a 80 08 00 00"
+    },
+    "walkedDescriptors": 10,
+    "descriptorNullTerminatorRva": 217640072,
+    "actualTerminatedTableOwnershipChecked": true,
+    "completeImportSymbolCatalogProved": false,
+    "liveIatValueOrCalleeSelected": false
+  },
+  "conditionalDomain": {
+    "count": "Initializer entry count is zero; cleanup count exactly describes a valid initialized prefix within the array. Count, frames and object storage are stable and disjoint from unknown external writes.",
+    "api": "Normal ABI-compatible InitializeCriticalSectionEx/DeleteCriticalSection bindings and return semantics, writable valid storage, no concurrent use/deletion or repeated initialization of live objects.",
+    "invocation": "Definitions and intra-definition helper calls only. No caller/order or actual initial counter/object state is proved."
+  },
+  "evidenceBoundary": {
+    "exact": "Whole owned initializer/cleanup programs, exact frameless init import tail, counter widths/steps, local control/frame and static named declarations.",
+    "direct": "Initializer attempts array entries in ascending order, with spin/flags arguments; nonzero EAX increments count, zero calls cleanup. Cleanup decrements a captured DWORD count and deletes reverse-prefix addresses, decrementing global count. Results are AL only.",
+    "conditional": "From zero count and a valid stable prefix with compatible API completion, success initializes the whole selected array; failure deletes only successful prefix entries and restores count zero.",
+    "structuralOnly": "Counter initial value, initialization scheduling, object liveness and imported runtime effects are unobserved. Full RAX boolean is not established.",
+    "unresolved": "Actual initializer/caller ordering, repeat/concurrent lifecycle safety, all writers and live bindings, error-context/cache isolation, named primitive type and positive parent/root integration."
+  }
+}

@@ -50,6 +50,10 @@ from scripts.webui.story.context import (
     _NPC_PROXY_EX_CACHE,
 )
 from scripts.webui.story.scene_graph import _scene_graph_node_kind, _scene_graph_runtime_payload_key
+from scripts.game_data.codecs.levelscript.record_hints import (
+    LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
+    LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID,
+)
 from scripts.game_data.levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
     LEVELSCRIPT_NATIVE_HEADER_NAMES,
@@ -592,14 +596,11 @@ def _load_mission_levelscript_dialogs(mission_id: str, level_ids: list[str]) -> 
 
 # Normalized LevelScript (MemoryPack union tag, concrete member count) -> class.
 #
-# This table is tied to the installed 2026-07-11 GameAssembly build. Its
-# ActionBaseForMemoryPack formatter table was recovered at CodeRegistration
-# 0x18b9217d0 and contains contiguous tags 0x0000..0x0520. The member count is
+# Tags come from the ActionBase union in contracts/levelscript_union_tags.json,
+# which authenticates the selected build. The member count is
 # retained as a payload-shape guard. Compact records must not be keyed by the
 # legacy parser's combined `(memberCount << 8) | tag` value.
-LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID = (
-    "gameassembly-2026-07-11-cr-0x18b9217d0-actionbase-0x0000-0x0520"
-)
+
 # Current original GameAssembly.dll (SHA-256
 # 0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE)
 # proves that ActionMapRuntime stores actions in actionArray[action.id]. In
@@ -723,9 +724,7 @@ def levelscript_native_action_name_from_pair(pair: tuple[int, int]) -> str:
     return ACTIONBASE_FORMATTER_ACTION_NAMES.get(code, "")
 
 
-LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID = (
-    "gameassembly-2026-07-11-cr-0x18413bed0-puregetter-0x0000-0x044e"
-)
+
 # Only predicate getter shapes currently reached by Story-bearing native
 # Split/IfElse/Switch paths are retained here. The member count guards against
 # confusing overlapping union-tag spaces or a future changed payload shape.
@@ -11479,10 +11478,7 @@ def build_mission_tracked_world_entity_levelscript_contexts(
             if row.get("recordClass") == "preload_cutscene"
             and row.get("actionName") == "PreloadCutsceneAction"
             and row.get("nativeMappingId")
-            == (
-                "gameassembly-2026-07-11-cr-0x18b9217d0-"
-                "actionbase-0x0000-0x0520"
-            )
+            == LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID
         ]
         occurrences = [
             row
@@ -11757,7 +11753,7 @@ def classify_world_entity_story_receiver_owner(owner: dict) -> str:
     if not (
         owner.get("status") == "exact_serialized_control_path"
         and owner.get("nativeHeaderMappingId")
-        == "gameassembly-2026-07-11-cr-0x18b9217d0-actionheader"
+        == LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
         and detail.get("payloadSchemaStatus")
         == "exact_current_build_memorypack_fields"
         and detail.get("payloadSchemaMappingId")

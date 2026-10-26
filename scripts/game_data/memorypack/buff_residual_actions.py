@@ -11,30 +11,30 @@ select a different wrapper and member count elsewhere).
 Routes in ``buff_residual_actions_native.json`` (every wrapper reads the
 inherited action prefix first: byte, scalar32, scalar32, scalar32):
 
-- ``0x130`` ``ReturnFalseAction``: fieldless; four-member base body.
-- ``0xEE`` ``ModifyPartsDamageRatio`` and ``0xEF`` ``ModifyPartsPoiseRatio``:
+- ``ReturnFalseAction``: fieldless; four-member base body.
+- ``ModifyPartsDamageRatio`` and ``ModifyPartsPoiseRatio``:
   seven members; one bounded ``BlackboardDouble`` profile, one bounded
   ``GameplayTagQuery`` and a terminal byte. The two wrappers reverse the
   order of the nested profiles, in accord with their generated setters and
   selected readers.
-- ``0xF5`` ``MoveTickAction``: seven members; bounded ``TargetSettings``,
+- ``MoveTickAction``: seven members; bounded ``TargetSettings``,
   ``SequenceActionData`` and ``BlackboardDouble`` in generated setter order,
   with fail-closed recursion for unknown child actions.
-- ``0x10A`` ``PassiveJumpAction.Data``: sixteen members.
-- ``0x6C`` ``CheckPartTagMatch``: target then tag query.
-- ``0x29`` ``ChangeMoveGaitMultiplier``: nine members, three of them
+- ``PassiveJumpAction.Data``: sixteen members.
+- ``CheckPartTagMatch``: target then tag query.
+- ``ChangeMoveGaitMultiplier``: nine members, three of them
   ``SerializeFieldDictionary<GroundedMoveGait, float>``. A non-null
   dictionary has a one-member object header, a signed count and fixed
   enum/float pairs (``gait_multiplier_map``); it is not framed like a bare
   ``Dictionary``.
-- ``0x46`` ``CheckMoveSpeed``: seven members; a direct compare scalar,
+- ``CheckMoveSpeed``: seven members; a direct compare scalar,
   ``BlackboardDouble`` and ``TargetSettings``.
-- ``0xD0`` ``IgnoreModelIntervalCheck``: four-member base body.
+- ``IgnoreModelIntervalCheck``: four-member base body.
 
 The frontier contracts add the base-only, six-member, residual-twelve and
 final nineteen routes described in ``buff_frontiers_native``. The
 ``frontier9_counts`` table in ``_action`` carries the member counts of the
-final frontier. Union tag ``0x00FF`` is accepted only with extended width
+final frontier. Tags are keyed by wrapper name; a tag of 255 is read only with extended width
 (``FA FF 00``); a one-byte ``FF`` stays the null-union sentinel, and a null
 wrapper (``FF`` after the tag) is a separate state.
 
@@ -67,6 +67,8 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 from scripts.game_data.memorypack.buff import frame_buff_named_middle as _base_named_middle
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
+from scripts.game_data.levelscript_union_tags import short_name
 from scripts.game_data.memorypack.buff_icon_config import decode_icon_config
 from scripts.game_data.memorypack.buff_enable_move_collider import decode_enable_move_collider_action
 from scripts.game_data.memorypack.buff_actions import (
@@ -87,6 +89,24 @@ def _contract() -> dict[str, Any]:
         CONTRACT_PATH, schema="endfield.buff-residual-action-native-contract.v1", label=LABEL
     )
     return value
+
+
+def _residual_routes_gate() -> dict[str, str]:
+    """Whether the residual and frontier tags describe the selected build.
+
+    ``_ResidualReader`` dispatches on the union tags those contracts record,
+    and union tags are ordinals that shift between builds. Off the pinned
+    build the routes are withheld, so a shifted tag is never read with
+    another wrapper's member count and field order.
+    """
+    contracts = [(CONTRACT_PATH.name, _contract())]
+    contracts += [(spec.file, buff_frontiers.reviewed_contract(name)) for name, spec in buff_frontiers.FRONTIERS.items()]
+    for name, contract in contracts:
+        inputs = contract["nativeInputs"]
+        gate = check_installed_native_inputs(inputs["GameAssembly.dll"], inputs["global-metadata.dat"])
+        if gate.status != NATIVE_EVIDENCE_VALIDATED:
+            return {"status": gate.status, "contract": name, "detail": gate.detail}
+    return {"status": NATIVE_EVIDENCE_VALIDATED, "contract": "", "detail": ""}
 
 
 def validate_current_native_contract() -> dict[str, Any]:
@@ -235,14 +255,14 @@ class _ResidualReader(_BaseReader):
         self.scalar_payload()
 
     def _action(self, depth: int, tag: int, width: int) -> None:
-        if tag == 0x00A6:
+        if tag == _A("Core_EnableMoveColliderAction_Data"):
             decode_enable_move_collider_action(self, tag, width)
             return
         frontier9_counts = {
-            0x1D: 14, 0x82: 12, 0x97: 17, 0xB5: 12, 0xB8: 9,
-            0xBE: 15, 0xC8: 10, 0xD1: 9, 0xDD: 13, 0xE5: 10,
-            0xE9: 4, 0x104: 12, 0x108: 6, 0x11B: 7, 0x141: 11,
-            0x143: 11, 0x17D: 9, 0x17E: 8, 0x191: 11,
+            _A("Core_BlowOffEnemyAction_Data"): 14, _A("Core_Conditions_CheckTwoDirectionAngle_Data"): 12, _A("Core_CrushAction_Data"): 17, _A("Core_FinishBuffByTag_Data"): 12, _A("Core_FootStepChangeAction_FootStepChangeData"): 9,
+            _A("Core_FractureAction_Data"): 15, _A("Core_HurtAnimAction_Data"): 10, _A("Core_ImmuneTextAction_Data"): 9, _A("Core_KnockDownAction_Data"): 13, _A("Core_LogAction_LogActionData"): 10,
+            _A("Core_MarkInheritSkillCastIdOnNormalAttack_Data"): 4, _A("Core_OverrideCameraFollowAction_OverrideCameraFollowActionData"): 12, _A("Core_OverrideRawAttributeAction_Data"): 6, _A("Core_PreventBuffConsumeAction_Data"): 7, _A("Core_SaveTwoDirectionAngle_Data"): 11,
+            _A("Core_SealAction_Data"): 11, _A("Core_TeleportPosSelectAction_Data"): 9, _A("Core_TemporaryUnlockAction_Data"): 8, _A("Core_TyphoeaArcheryTargetSelect_Data"): 11,
         }
         if tag in frontier9_counts:
             self.take(width, "union-tag")
@@ -253,79 +273,79 @@ class _ResidualReader(_BaseReader):
             self.take(1, "anonymous-nonzero-byte")
             for _ in range(3):
                 self.take(4, "anonymous-scalar32")
-            if tag == 0x1D:
+            if tag == _A("Core_BlowOffEnemyAction_Data"):
                 self.blow_off_fields()
-            elif tag == 0x82:
+            elif tag == _A("Core_Conditions_CheckTwoDirectionAngle_Data"):
                 self.take(4, "anonymous-enum32")
                 self.take(4, "anonymous-enum32")
                 self.target_profile(); self.target_profile()
                 self.take(4, "anonymous-enum32")
                 self.target_profile(); self.target_profile(); self.scalar_payload()
-            elif tag in (0x97, 0xBE):
+            elif tag in (_A("Core_CrushAction_Data"), _A("Core_FractureAction_Data")):
                 self.blow_off_fields()
-                if tag == 0x97:
+                if tag == _A("Core_CrushAction_Data"):
                     self.scalar_payload()
                     self.take(1, "anonymous-byte")
                 self.take(4, "anonymous-float32")
-            elif tag == 0xB5:
+            elif tag == _A("Core_FinishBuffByTag_Data"):
                 self.target_profile(); self.target_profile(); self.take(1, "anonymous-byte")
                 self.scalar_payload(); self.target_profile(); self.take(1, "anonymous-byte")
                 self.take(1, "anonymous-byte"); self.query_profile()
-            elif tag == 0xB8:
+            elif tag == _A("Core_FootStepChangeAction_FootStepChangeData"):
                 for _ in range(3):
                     self.take(1, "anonymous-byte")
                 self.byte_payload(); self.target_profile()
-            elif tag == 0xC8:
+            elif tag == _A("Core_HurtAnimAction_Data"):
                 self.take(4, "anonymous-float32"); self.take(4, "anonymous-enum32")
                 self.take(4, "anonymous-float32"); self.take(4, "anonymous-float32")
                 self.take(4, "anonymous-int32"); self.target_profile()
-            elif tag == 0xD1:
+            elif tag == _A("Core_ImmuneTextAction_Data"):
                 self.take(1, "anonymous-byte"); self.take(4, "anonymous-enum32")
                 self.take(8, "anonymous-vector2"); self.target_profile(); self.byte_payload()
-            elif tag == 0xDD:
+            elif tag == _A("Core_KnockDownAction_Data"):
                 self.take(4, "anonymous-enum32"); self.scalar_payload(); self.direction_profile()
                 self.take(1, "anonymous-byte"); self.take(4, "anonymous-float32")
                 self.take(1, "anonymous-byte"); self.take(4, "anonymous-enum32")
                 self.target_profile(); self.target_profile()
-            elif tag == 0xE5:
+            elif tag == _A("Core_LogAction_LogActionData"):
                 self.take(1, "anonymous-byte"); self.byte_payload(); self.take(1, "anonymous-byte")
                 self.take(1, "anonymous-byte"); self.byte_payload(); self.take(1, "anonymous-byte")
-            elif tag == 0xE9:
+            elif tag == _A("Core_MarkInheritSkillCastIdOnNormalAttack_Data"):
                 pass
-            elif tag == 0x104:
+            elif tag == _A("Core_OverrideCameraFollowAction_OverrideCameraFollowActionData"):
                 self.take(4, "anonymous-enum32"); self.scalar_payload()
                 self.take(4, "anonymous-enum32")
                 for _ in range(3):
                     self.scalar_payload()
                 self.target_profile(); self.target_profile()
-            elif tag == 0x108:
+            elif tag == _A("Core_OverrideRawAttributeAction_Data"):
                 self.attribute_override_list(); self.target_profile()
-            elif tag == 0x11B:
+            elif tag == _A("Core_PreventBuffConsumeAction_Data"):
                 self.buff_id_list(reserve=5); self.take(4, "anonymous-enum32"); self.query_profile()
-            elif tag == 0x141:
+            elif tag == _A("Core_SaveTwoDirectionAngle_Data"):
                 self.take(4, "anonymous-enum32"); self.target_profile(); self.target_profile()
                 self.take(4, "anonymous-enum32"); self.target_profile(); self.target_profile()
                 self.byte_payload()
-            elif tag == 0x143:
+            elif tag == _A("Core_SealAction_Data"):
                 self.target_profile(); self.byte_payload(); self.curve_profile(); self.scalar_payload()
                 self.take(1, "anonymous-byte"); self.target_profile(); self.take(1, "anonymous-byte")
-            elif tag == 0x17D:
+            elif tag == _A("Core_TeleportPosSelectAction_Data"):
                 self.byte_payload(); self.teleport_fix_distance_profile(); self.teleport_ranged_profile()
                 self.target_profile(); self.take(4, "anonymous-enum32")
-            elif tag == 0x17E:
+            elif tag == _A("Core_TemporaryUnlockAction_Data"):
                 self.take(1, "anonymous-byte"); self.take(1, "anonymous-byte")
                 self.take(4, "anonymous-float32"); self.target_profile()
-            elif tag == 0x191:
+            elif tag == _A("Core_TyphoeaArcheryTargetSelect_Data"):
                 self.take(1, "anonymous-byte"); self.scalar_payload(); self.scalar_payload()
                 self.create_buff_input_profile(); self.scalar_payload()
                 self.smart_target_select_profile(); self.scalar_payload()
             return
         if (tag == 0xFF and width == 1) or tag not in (
-            0x21, 0x29, 0x2A, 0x46, 0x6C, 0x9E, 0xD0, 0xD7,
-            0xE4, 0xEE, 0xEF, 0xF5, 0x100, 0x10A, 0x111, 0x12F,
-            0x130, 0x15F, 0x18D, 0xFF, 0x106, 0x109, 0x149, 0x162,
-            0x170, 0x173, 0x195, 0x09, 0x14, 0x1E, 0x2D, 0x4D,
-            0x5F, 0xAF, 0xC2, 0xD9, 0x107, 0x10D, 0x114,
+            _A("Core_BreakPassingSmallSceneObject_Data"), _A("Core_ChangeMoveGaitMultiplier_Data"), _A("Core_ChangePushBackDistanceFactor_Data"), _A("Core_CheckMoveSpeed_Data"), _A("Core_Conditions_CheckPartTagMatch_Data"), _A("Core_DisableRootMotionAction_Data"), _A("Core_IgnoreModelIntervalCheck_Data"), _A("Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionData"),
+            _A("Core_LockMainCharacterToggleAction_Data"), _A("Core_ModifyPartsDamageRatio_Data"), _A("Core_ModifyPartsPoiseRatio_Data"), _A("Core_MoveTickAction_Data"), _A("Core_OnPhysicalNoGuardStart_Data"), _A("Core_PassiveJumpAction_Data"), _A("Core_PausePoiseRecover_Data"), _A("Core_ReplaceAnimationShake_Data"),
+            _A("Core_ReturnFalseAction_Data"), _A("Core_ShowComboSkillUI_Data"), _A("Core_TyphoeaArcheryBrainToggleRegisterAction_Data"), _A("Core_ObtainUspInNormalSkill_Data"), _A("Core_OverrideJumpAction_Data"), _A("Core_OverrideStateAnimationWithMontageAction_OverrideStateAnimationActionData"), _A("Core_SetAllowedDamageDecoMask_Data"), _A("Core_ShowTyphoeaHudHint_Data"),
+            _A("Core_StoreAtbValue_Data"), _A("Core_StoreCurSkillExecuteFrame_Data"), _A("Core_UpdateGlobalContextTarget_Data"), _A("Core_AddDynamicNavmeshObstacle_Data"), _A("Core_AttackClickListenerAction_Data"), _A("Core_BombClearAction_BombClearActionData"), _A("Core_ChangeSkillType_Data"), _A("Core_ComboAction_Data"),
+            _A("Core_Conditions_CheckDungeonCategory_Data"), _A("Core_ExtendBuffAction_Data"), _A("Core_GetPatrolTeleportPos_Data"), _A("Core_JumpToAction_Data"), _A("Core_OverrideMultiDashLimit_Data"), _A("Core_PatrolTeleportToCachePos_Data"), _A("Core_PickTargetAction_Data"),
         ):
             return super()._action(depth, tag, width)
         self.take(width, "union-tag")
@@ -333,116 +353,116 @@ class _ResidualReader(_BaseReader):
             self.take(1, "null-wrapper")
             return
         self.header(
-            4 if tag in (0x1E, 0x10D, 0x21, 0x9E, 0xD0, 0x100, 0x130, 0x15F)
-            else 9 if tag == 0x29
-            else 16 if tag == 0x10A
-            else 6 if tag == 0x6C
-            else 6 if tag in (0x09, 0x14, 0xAF, 0xC2, 0xD9, 0x107,
-                                  0xFF, 0x106, 0x109, 0x149, 0x162, 0x170, 0x173, 0x195)
-            else 5 if tag in (0x2A, 0xD7, 0xE4, 0x111, 0x12F, 0x18D)
+            4 if tag in (_A("Core_BombClearAction_BombClearActionData"), _A("Core_PatrolTeleportToCachePos_Data"), _A("Core_BreakPassingSmallSceneObject_Data"), _A("Core_DisableRootMotionAction_Data"), _A("Core_IgnoreModelIntervalCheck_Data"), _A("Core_OnPhysicalNoGuardStart_Data"), _A("Core_ReturnFalseAction_Data"), _A("Core_ShowComboSkillUI_Data"))
+            else 9 if tag == _A("Core_ChangeMoveGaitMultiplier_Data")
+            else 16 if tag == _A("Core_PassiveJumpAction_Data")
+            else 6 if tag == _A("Core_Conditions_CheckPartTagMatch_Data")
+            else 6 if tag in (_A("Core_AddDynamicNavmeshObstacle_Data"), _A("Core_AttackClickListenerAction_Data"), _A("Core_ExtendBuffAction_Data"), _A("Core_GetPatrolTeleportPos_Data"), _A("Core_JumpToAction_Data"), _A("Core_OverrideMultiDashLimit_Data"),
+                                  _A("Core_ObtainUspInNormalSkill_Data"), _A("Core_OverrideJumpAction_Data"), _A("Core_OverrideStateAnimationWithMontageAction_OverrideStateAnimationActionData"), _A("Core_SetAllowedDamageDecoMask_Data"), _A("Core_ShowTyphoeaHudHint_Data"), _A("Core_StoreAtbValue_Data"), _A("Core_StoreCurSkillExecuteFrame_Data"), _A("Core_UpdateGlobalContextTarget_Data"))
+            else 5 if tag in (_A("Core_ChangePushBackDistanceFactor_Data"), _A("Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionData"), _A("Core_LockMainCharacterToggleAction_Data"), _A("Core_PausePoiseRecover_Data"), _A("Core_ReplaceAnimationShake_Data"), _A("Core_TyphoeaArcheryBrainToggleRegisterAction_Data"))
             else 7
         )
         self.take(1, "anonymous-nonzero-byte")
         for _ in range(3):
             self.take(4, "anonymous-scalar32")
-        if tag in (0x1E, 0x10D):
+        if tag in (_A("Core_BombClearAction_BombClearActionData"), _A("Core_PatrolTeleportToCachePos_Data")):
             pass
-        elif tag == 0x09:
+        elif tag == _A("Core_AddDynamicNavmeshObstacle_Data"):
             self.string_list(reserve=1)
             self.target_profile()
-        elif tag == 0x14:
+        elif tag == _A("Core_AttackClickListenerAction_Data"):
             self.sequence(depth)
             self.take(1, "anonymous-byte")
-        elif tag == 0x2D:
+        elif tag == _A("Core_ChangeSkillType_Data"):
             self.paired_payload()
             self.take(4, "anonymous-enum32")
             self.target_profile()
-        elif tag == 0x4D:
+        elif tag == _A("Core_ComboAction_Data"):
             self.scalar_payload()
             self.scalar_payload()
             self.target_profile()
-        elif tag == 0x5F:
+        elif tag == _A("Core_Conditions_CheckDungeonCategory_Data"):
             self.string_list(reserve=2)
             self.take(1, "anonymous-byte")
             self.take(1, "anonymous-byte")
-        elif tag == 0xAF:
+        elif tag == _A("Core_ExtendBuffAction_Data"):
             self.target_profile()
             self.finder_profile()
-        elif tag == 0xC2:
+        elif tag == _A("Core_GetPatrolTeleportPos_Data"):
             self.byte_payload()
             self.take(4, "anonymous-float32")
-        elif tag == 0xD9:
+        elif tag == _A("Core_JumpToAction_Data"):
             self.sequence(depth)
             self.take(4, "anonymous-int32")
-        elif tag == 0x107:
+        elif tag == _A("Core_OverrideMultiDashLimit_Data"):
             self.scalar_payload()
             self.target_profile()
-        elif tag == 0x114:
+        elif tag == _A("Core_PickTargetAction_Data"):
             self.byte_payload()
             self.scalar_payload()
             self.target_profile()
-        elif tag == 0x29:
+        elif tag == _A("Core_ChangeMoveGaitMultiplier_Data"):
             self.gait_multiplier_map()
             self.take(4, "anonymous-float32")
             self.take(1, "anonymous-byte")
             self.gait_multiplier_map()
             self.gait_multiplier_map()
-        elif tag == 0x2A:
+        elif tag == _A("Core_ChangePushBackDistanceFactor_Data"):
             self.scalar_payload()
-        elif tag == 0x46:
+        elif tag == _A("Core_CheckMoveSpeed_Data"):
             self.take(4, "anonymous-scalar32")
             self.scalar_payload()
             self.target_profile()
-        elif tag == 0x6C:
+        elif tag == _A("Core_Conditions_CheckPartTagMatch_Data"):
             self.target_profile()
             self.query_profile()
-        elif tag in (0xD7, 0x111):
+        elif tag in (_A("Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionData"), _A("Core_PausePoiseRecover_Data")):
             self.target_profile()
-        elif tag in (0xE4, 0x18D):
+        elif tag in (_A("Core_LockMainCharacterToggleAction_Data"), _A("Core_TyphoeaArcheryBrainToggleRegisterAction_Data")):
             self.take(1, "anonymous-byte")
-        elif tag == 0xEE:
+        elif tag == _A("Core_ModifyPartsDamageRatio_Data"):
             self.scalar_payload()
             self.query_profile()
             self.take(1, "anonymous-byte")
-        elif tag == 0xEF:
+        elif tag == _A("Core_ModifyPartsPoiseRatio_Data"):
             self.query_profile()
             self.scalar_payload()
             self.take(1, "anonymous-byte")
-        elif tag == 0xF5:
+        elif tag == _A("Core_MoveTickAction_Data"):
             self.target_profile()
             self.sequence(depth)
             self.scalar_payload()
-        elif tag == 0x10A:
+        elif tag == _A("Core_PassiveJumpAction_Data"):
             for _ in range(7):
                 self.scalar_payload()
             self.target_profile()
             for _ in range(3):
                 self.take(1, "anonymous-nonzero-byte")
             self.scalar_payload()
-        elif tag == 0x12F:
+        elif tag == _A("Core_ReplaceAnimationShake_Data"):
             self.byte_payload()
-        elif tag == 0xFF:
+        elif tag == _A("Core_ObtainUspInNormalSkill_Data"):
             self.scalar_payload()
             self.target_profile()
-        elif tag == 0x106:
+        elif tag == _A("Core_OverrideJumpAction_Data"):
             self.buff_input_profile()
             self.take(4, "anonymous-enum32")
-        elif tag == 0x109:
+        elif tag == _A("Core_OverrideStateAnimationWithMontageAction_OverrideStateAnimationActionData"):
             self.byte_payload()
             self.take(4, "anonymous-int32")
-        elif tag == 0x149:
+        elif tag == _A("Core_SetAllowedDamageDecoMask_Data"):
             self.take(8, "anonymous-int64")
             self.target_profile()
-        elif tag == 0x162:
+        elif tag == _A("Core_ShowTyphoeaHudHint_Data"):
             self.byte_payload()
             self.byte_payload()
-        elif tag == 0x170:
+        elif tag == _A("Core_StoreAtbValue_Data"):
             self.take(4, "anonymous-enum32")
             self.byte_payload()
-        elif tag == 0x173:
+        elif tag == _A("Core_StoreCurSkillExecuteFrame_Data"):
             self.byte_payload()
             self.target_profile()
-        elif tag == 0x195:
+        elif tag == _A("Core_UpdateGlobalContextTarget_Data"):
             self.target_profile()
             self.byte_payload()
 
@@ -458,6 +478,9 @@ def root_continuation(
     base = _base_root_continuation(data, source=source, start=start, limit=limit)
     if base.get("status") != "unsupported":
         return base
+    gate = _residual_routes_gate()
+    if gate["status"] != NATIVE_EVIDENCE_VALIDATED:
+        return {**base, "nativeResidualGate": gate}
 
     reader = _ResidualReader(data, source, limit)
     if type(start) is not int or not 1 <= start <= reader.limit:
@@ -508,14 +531,14 @@ def root_continuation(
         "wholeSchemaExact": False,
         "evidenceLevel": "structural-only",
         "nativeResidualActionTags": [
-            0x21, 0x29, 0x2A, 0x46, 0x6C, 0x9E, 0xD0, 0xD7,
-            0xE4, 0xEE, 0xEF, 0xF5, 0x100, 0x10A, 0x111, 0x12F,
-            0x130, 0x15F, 0x18D, 0xFF, 0x106, 0x109, 0x149, 0x162,
-            0x170, 0x173, 0x195, 0x09, 0x14, 0x1E, 0x2D, 0x4D,
-            0x5F, 0xAF, 0xC2, 0xD9, 0x107, 0x10D, 0x114,
-            0x1D, 0x82, 0x97, 0xB5, 0xB8, 0xBE, 0xC8, 0xD1,
-            0xDD, 0xE5, 0xE9, 0x104, 0x108, 0x11B, 0x141, 0x143,
-            0x17D, 0x17E, 0x191,
+            _A("Core_BreakPassingSmallSceneObject_Data"), _A("Core_ChangeMoveGaitMultiplier_Data"), _A("Core_ChangePushBackDistanceFactor_Data"), _A("Core_CheckMoveSpeed_Data"), _A("Core_Conditions_CheckPartTagMatch_Data"), _A("Core_DisableRootMotionAction_Data"), _A("Core_IgnoreModelIntervalCheck_Data"), _A("Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionData"),
+            _A("Core_LockMainCharacterToggleAction_Data"), _A("Core_ModifyPartsDamageRatio_Data"), _A("Core_ModifyPartsPoiseRatio_Data"), _A("Core_MoveTickAction_Data"), _A("Core_OnPhysicalNoGuardStart_Data"), _A("Core_PassiveJumpAction_Data"), _A("Core_PausePoiseRecover_Data"), _A("Core_ReplaceAnimationShake_Data"),
+            _A("Core_ReturnFalseAction_Data"), _A("Core_ShowComboSkillUI_Data"), _A("Core_TyphoeaArcheryBrainToggleRegisterAction_Data"), _A("Core_ObtainUspInNormalSkill_Data"), _A("Core_OverrideJumpAction_Data"), _A("Core_OverrideStateAnimationWithMontageAction_OverrideStateAnimationActionData"), _A("Core_SetAllowedDamageDecoMask_Data"), _A("Core_ShowTyphoeaHudHint_Data"),
+            _A("Core_StoreAtbValue_Data"), _A("Core_StoreCurSkillExecuteFrame_Data"), _A("Core_UpdateGlobalContextTarget_Data"), _A("Core_AddDynamicNavmeshObstacle_Data"), _A("Core_AttackClickListenerAction_Data"), _A("Core_BombClearAction_BombClearActionData"), _A("Core_ChangeSkillType_Data"), _A("Core_ComboAction_Data"),
+            _A("Core_Conditions_CheckDungeonCategory_Data"), _A("Core_ExtendBuffAction_Data"), _A("Core_GetPatrolTeleportPos_Data"), _A("Core_JumpToAction_Data"), _A("Core_OverrideMultiDashLimit_Data"), _A("Core_PatrolTeleportToCachePos_Data"), _A("Core_PickTargetAction_Data"),
+            _A("Core_BlowOffEnemyAction_Data"), _A("Core_Conditions_CheckTwoDirectionAngle_Data"), _A("Core_CrushAction_Data"), _A("Core_FinishBuffByTag_Data"), _A("Core_FootStepChangeAction_FootStepChangeData"), _A("Core_FractureAction_Data"), _A("Core_HurtAnimAction_Data"), _A("Core_ImmuneTextAction_Data"),
+            _A("Core_KnockDownAction_Data"), _A("Core_LogAction_LogActionData"), _A("Core_MarkInheritSkillCastIdOnNormalAttack_Data"), _A("Core_OverrideCameraFollowAction_OverrideCameraFollowActionData"), _A("Core_OverrideRawAttributeAction_Data"), _A("Core_PreventBuffConsumeAction_Data"), _A("Core_SaveTwoDirectionAngle_Data"), _A("Core_SealAction_Data"),
+            _A("Core_TeleportPosSelectAction_Data"), _A("Core_TemporaryUnlockAction_Data"), _A("Core_TyphoeaArcheryTargetSelect_Data"),
         ],
         "nativeResidualContract": CONTRACT_PATH.name,
         "nativeFrontierContracts": {name: spec.file for name, spec in buff_frontiers.FRONTIERS.items()},
@@ -553,12 +576,17 @@ def frame_buff_named_middle(
             data=data,
             id_marker_offset=id_marker_offset,
         )
+    if _residual_routes_gate()["status"] != NATIVE_EVIDENCE_VALIDATED:
+        return base
     contracts = (
         (_contract(), CONTRACT_PATH.name),
         *((buff_frontiers.reviewed_contract(name), spec.file) for name, spec in buff_frontiers.FRONTIERS.items()),
     )
+    # Contract rows name their wrappers; the recorded ``unionTag`` ordinal is
+    # build-locked, so the current tag is resolved by name (a placeholder on
+    # an unvalidated build, which never matches a scanned tag).
     authenticated_tags = {
-        action["unionTag"]
+        _A(short_name(action["wrapperName"]))
         for contract, _ in contracts
         for action in contract.get("actions", [])
     }

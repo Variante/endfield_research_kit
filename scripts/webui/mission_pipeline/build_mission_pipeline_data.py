@@ -27,6 +27,7 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.mission_pipeline.build_mission_pipeline_data"
     )
 
+from scripts.game_data.codecs.levelscript.record_hints import LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
 from scripts.common import require_export_layout
 
 from scripts.common import (
@@ -290,9 +291,7 @@ PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
 )
-BATTLE_SIGNAL_RECEIVER_MAPPING_ID = (
-    "gameassembly-2026-07-11-cr-0x18b9217d0-actionheader"
-)
+BATTLE_SIGNAL_RECEIVER_MAPPING_ID = LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
 BATTLE_SIGNAL_PAYLOAD_MAPPING_ID = (
     "gameassembly-2026-07-17-memorypack-native-event-fields"
 )

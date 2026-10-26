@@ -787,7 +787,7 @@ selected breakthrough, shows each node's affinity requirement, and accumulates
 its authored attribute modifiers with separate source labels. Evidence limits:
 [`memory/webui/gameplay.md`](../memory/webui/gameplay.md) and
 [`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md).
-Equipment main/secondary ability terms have distinct solid/tinted and dashed highlight styles. Character Loadout also highlights concrete equipment attributes matching the selected character's main or secondary ability, with textual labels; combined matches show both indicators. The matching changes with character selection and leaves calculation unchanged.
+Equipment main-ability terms use bold text with a background; secondary-ability terms use only the same background. Both retain their existing text colors, without underlines or borders. Character Loadout also highlights concrete equipment attributes matching the selected character's main or secondary ability, with textual labels; combined matches use the main-ability bold treatment. The matching changes with character selection and leaves calculation unchanged.
 
 Item recipe cards select the exact source method from grouped `recipeVariants`,
 including its machine, ingredients, outputs, time and environment. Shop cards
@@ -1193,11 +1193,105 @@ remain in the unique shared catalog. What each state refuses to claim is in
   and geometry counts). The `Collision` tag starts off and reset turns it off.
   Collision rows never share a render-model group or inherit name-based
   material/table ownership. Their previews use mesh local coordinates and
-  original cooked winding; scene placement and runtime activation are unproven.
+  original cooked winding; the preview applies no scene transform.
   OBJ files live under `data/assets/collision/`, with the source root recorded
   in the index so local serving and the resources package use the same files.
   An unavailable current corpus publishes no collision rows and records its
   diagnostic for the tag tooltip.
+  Optional `cl.runtime` v1 evidence joins admitted getter/cache observations by
+  full CAB/PathID, physical source/offset and raw/cooked hashes. Details distinguish
+  decoded geometry, observed query geometry, uniquely matched movement returns,
+  accepted filter candidates, complete arrays versus captured prefixes, and
+  conditional surface comparisons. Initial-overlap/nonpositive sweep points are
+  excluded from surface comparisons. Solver contacts remain unproved. A missing
+  observation does not mean unused. Invalid runtime inputs clear only runtime
+  claims, with a diagnostic in `collision.runtime`; stored previews remain.
+  Enable the Collision tag and search `observed` / `已观察查询`,
+  `movement` / `移动结果`, or `captured` / `捕获前缀` to find
+  sampled evidence without promoting filter candidates to movement results.
+  Optional `cl.authored` v1 metadata records freshly revalidated stored
+  MeshCollider/prefab owners, joined by full physical identity and raw/cooked
+  hashes. Details show prefab paths, reciprocal root-to-collider hierarchies
+  and authored enabled/active flags. These do not prove live instances,
+  activation or world placement, and previews retain mesh local coordinates.
+  Search `authored` / `存储归属` with Collision enabled to find these owners.
+  Invalid scene receipts clear only owner claims and expose their diagnostic.
+  Optional `cl.models` v1 metadata links exact collider owners to native-gated
+  authored Model source records through the manifest path, logical Bundle and
+  declared prefab root. Details show source records and stored transform axes;
+  grid transforms and final world placement remain unproved. These values never
+  alter the mesh preview. Search `configured` / `定义场景` to find them.
+  Links to Data's raw source rows require authenticated files in the selected
+  export root. Invalid Model evidence clears only these source labels.
+  Optional `cl.prefabs` v2 metadata links generated assemblies through the
+  `CollisionPrefab` source root. Details offer assembly preview, single-mesh
+  reset and OBJ downloads. Assemblies group by physical prefab root and apply
+  each selected MeshCollider and separately admitted BoxCollider's stored root/descendant transforms, retaining
+  disabled/inactive definitions and counting selected unrecovered siblings.
+  Mesh and box counts stay separate; box details retain full size, local center
+  and trigger flags. Search `BoxCollider` / `存储盒形` to find boxes. Other
+  primitive/custom and unselected colliders remain outside coverage; runtime
+  grid/parent matrices and world placement are not applied. Search `assembly` /
+  `组合预览` to find these variants. Invalid assemblies clear only their links.
+  Optional `cl.renderers` v3 records selected MeshFilter/MeshRenderer components
+  in the same physical prefab roots. Details show stored component hierarchies,
+  enabled flags, Mesh reference status and ordered material slots; expandable
+  records expose exact decimal pointers and distinguish unresolved/excluded
+  targets. Search `MeshRenderer` / `渲染组件` or `material slots` / `材质槽` with
+  Collision enabled. Selected target identity does not prove decoded render
+  geometry, material appearance, live drawing or world placement; other Renderer
+  classes remain outside coverage. Invalid renderer evidence clears only these
+  labels and retains the other collision projections.
+  Independently admitted resource scopes add exact Mesh/material target names,
+  stored Material JSON downloads and neutral render previews through
+  `StoredRender` under `data/assets/stored_render/`. Stored LOD buttons use actual
+  LODGroup memberships; assembly coordinates include root/descendant stored TRS.
+  UV sets remain distinct in stored evidence; OBJ previews use UV0. Runtime
+  shader/material appearance, LOD selection, vertex overrides, animation and
+  world placement remain unproved. Resource failures restore component-only
+  labels and clear only render artifact links/source root. Original collision
+  files and previews remain available.
+  Stored-render v2 and Material-document v2 also expose exact-source Texture2D
+  PNG thumbnails and full image links under each material's stored texture
+  details. UV set, tiling/offset, dimensions, block format, stored mip count and
+  colour-space enum are displayed; full sampler fields remain in the JSON.
+  Images retain decoded top-mip channels with a vertical export-coordinate flip;
+  no gamma conversion, normal reconstruction or shader appearance is implied.
+  Texture decoding failures preserve neutral render previews and stored refs.
+  Stored Material links also offer lazy Shader details through the independent
+  `data/assets/shader_analysis/index.json` sidecar (v3). Bindings require the
+  published Material artifact hash; source publication requires exact physical
+  Shader identity and raw hash. Details expose stored keywords, passes,
+  conditional keyword-superset program counts and an analysis JSON download.
+  Missing or stale bindings remain unavailable. These candidates allow extra
+  engine keywords and do not establish runtime variant/pass/resource selection;
+  neutral previews remain unchanged.
+  Shader details separate explicit numeric Material values from unoverridden
+  Shader declarations. Per-pass conditional parameter tables show named resource
+  presence and constant-buffer offset alternatives; these are table declarations,
+  not instruction-use or live-upload claims.
+  A separate compiled-input section counts conditional VS/PS instruction
+  references, checked register joins, named field reads and offset alternatives.
+  Dynamic and anonymous reads remain visible, and malformed instruction rows
+  fail closed. These static reads do not establish runtime program execution,
+  uploads, sampler state or source Material ownership.
+  Recovered renderer/material inspectors use the full width below the preview.
+  Stored texture details offer RGB/R/G/B/A inspection on the exact referring
+  renderer's material slot. This checks the Mesh OBJ and PNG artifact hashes,
+  uses the declared UV0 or an independently admitted UV1 projection plus stored scale/offset and wrap modes, and shows decoded
+  top-mip channels without lighting, tint, colour conversion or transparency.
+  Other slots remain neutral. Unsupported UV sets, sampler enums, non-drawable
+  slots, WebGL limits or artifact mismatches show scoped failure diagnostics.
+  Trilinear storage is inspected as bilinear at mip zero; runtime samplers,
+  original mip selection, multi-layer arithmetic and game shading remain open.
+  UV1 copies live under `data/assets/mesh_uv/`, reached through a lazy v2 sidecar
+  and the `StoredUV` source label. Publication first reproduces the original UV0
+  OBJ byte-for-byte from fresh admitted Mesh buffers, then changes only `vt`
+  coordinates. Bindings require the original Mesh artifact/body hashes and
+  stored-render publication root, including when UV0 stays unchanged; this does not
+  rewrite or renew the existing asset index or imply live UV selection.
+  Preview evidence and diagnostic notes appear above the image/model, so the
+  inspection mode and its limits remain visible when the preview is tall.
 
 - OBJ rows carry `nd` when no valid face can emit a triangle. The
   `Empty mesh / no drawable faces` tag starts off and reset turns it off;
@@ -1214,6 +1308,17 @@ remain in the unique shared catalog. What each state refuses to claim is in
 
 - OBJ and FBX previews share background presets, a custom background picker,
   and a model color picker. Colors apply to both WebGL and software previews.
+  Initial framing fits the bounds' enclosing sphere to the narrower viewport
+  dimension so bulky models stay inside the canvas when rotated. Zoom/pan
+  remain relative to that fit. Small flat meshes normalize using their actual
+  nonzero extent; FBX fitting excludes initially hidden LODs and proxies.
+  Model only switches WebGL to opaque geometry in the chosen model color,
+  disabling material textures, tint, emission, blending and alpha clipping.
+  The software preview already uses untextured geometry. The switch stays
+  selected when changing models within the page; it does not deform VAT meshes.
+  Non-additive transparent surfaces without depth writes sort their triangles
+  back to front as the camera rotates, within each material's queue-ordered
+  draw range. Intersecting transparency and game effect shaders remain approximate.
 
 - Assets lists images, video, OBJ, and FBX, not exported JSON: every such
   document is a Decoded-page store row, and a material links to its Decoded-page
@@ -1247,6 +1352,21 @@ Unity object equality or ownership; OBJ omits skin weights and blend shapes.
 Sprite crops retain their separate texture/crop content evidence. Export files
 remain in place.
 
+Matching FBX resources share one item page with all deduplicated resource paths
+from `c`/`cs` listed in its details. The optional `fc` key ignores export/instance
+labels, placement/joint transforms, preferred angles, pose matrices and bind
+matrices; geometry, materials, mesh/bone names, skeleton connections, skin
+indices/weights and animation still participate. The pose-preserving `fv` key
+ignores the same export/instance labels but retains transforms, poses and bind
+matrices; matrix compression alone does not create a difference. Distinct `fv`
+keys become named, selectable variants with a placement/pose/skin-binding
+difference fact. Selection switches the preview and Download current file to
+that variant's original FBX. Resource files also links every original download.
+Path/name-only aliases share their variant and list multiple resource paths.
+`h` remains the full-file SHA-256. Paths, filenames and PathIDs remain searchable,
+and every original `?asset=` link resolves to the correct variant within the
+shared item. Distinct FBX LOD content retains its prefab-scoped variants.
+
 OBJ WebGL previews preserve face UVs, authored normals, and `usemtl` draw
 ranges. An OBJ without `usemtl` uses a material only when its published links
 have one distinct material name; multiple candidates remain neutral. Linked
@@ -1254,11 +1374,41 @@ Unity material relations supply base textures, tint, alpha testing and blending.
 Missing UVs keep the affected range untextured. These name-based preview links
 do not prove runtime renderer ownership; the software fallback stays untextured.
 
-FBX mesh controls mark `eyesshadow`, `hairshadow`, and standalone `hs` name
-tokens as shadows, including matching ancestor models and material names.
+Alpha-tested materials keep depth writes and discard pixels below their clip
+threshold. Queue 2450 does not enable alpha blending; queues above 2500 or an
+explicit transparent surface do. Each WebGL frame resets depth writes before
+clearing its depth buffer, then uses the published depth setting for transparent
+groups.
+
+The material relation's `blend` also carries opaque `tint`, keyword-enabled
+`avatar` (base, base tint, additional tint RGB colors), and `emission` (RGB color
+times brightness plus optional `textureRel`). WebGL converts avatar base-map
+channel masks into the saved palette before lighting. `Show emission` is off
+by default so HDR glow does not saturate the display and obscure surface
+details. Turning it on adds the stored emission; Model only disables it.
+Mapped emission waits for its texture and requires UVs. This static preview
+omits game lighting, bloom and runtime material overrides.
+
+FBX mesh controls mark `eyesshadow`, `hairshadow`, and character-context or
+terminal `hs` labels as shadows, including matching ancestor models and material
+names. Ordinary names such as `hs_machine` and `HS File` remain visible; an
+interior `hs` token alone does not establish a shadow part.
 `vfxpart` mesh/material names count as VFX. Shadows start hidden; VFX starts
 hidden alongside ordinary meshes, but stays visible in effect-only prefabs.
 These labels describe preview grouping rather than runtime rendering proof.
+
+When separate parts have different available minimum LODs, FBX starts with
+`Best per part` so an available body is not hidden by a weapon's lower LOD
+number. The preset groups normalized LOD names within each owning branch;
+numeric LOD controls remain available. It is an inspection view, not a claim
+about the game's authored LODGroup selection. A hash-matched index `mr` record
+shows incomplete source mesh-instance coverage in the resource inspector;
+stale or invalid records are ignored.
+
+FBX previews bake connected linear skin weights and binary cluster bind
+matrices against the stored skeleton transforms, so skinned meshes show their
+exported static pose. Unweighted points retain their mesh placement; rigid
+meshes still use the model hierarchy. This does not play animation stacks.
 
 ### Decoded
 

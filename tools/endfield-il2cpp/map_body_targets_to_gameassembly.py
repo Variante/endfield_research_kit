@@ -645,10 +645,14 @@ def reg_name(code: int, *, width: int = 64) -> str:
                "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
     names32 = ["eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi",
                "r8d", "r9d", "r10d", "r11d", "r12d", "r13d", "r14d", "r15d"]
+    names16 = ["ax", "cx", "dx", "bx", "sp", "bp", "si", "di",
+               "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w"]
     names8 = ["al", "cl", "dl", "bl", "spl", "bpl", "sil", "dil",
               "r8b", "r9b", "r10b", "r11b", "r12b", "r13b", "r14b", "r15b"]
     if width == 8:
         return names8[code]
+    if width == 16:
+        return names16[code]
     return (names64 if width == 64 else names32)[code]
 
 
@@ -678,9 +682,7 @@ def canonical_register(name: str) -> str:
         "esi": "rsi", "si": "rsi", "sil": "rsi",
         "edi": "rdi", "di": "rdi", "dil": "rdi",
     }
-    if re.fullmatch(r"r\d+d", name):
-        return name[:-1]
-    if re.fullmatch(r"r\d+b", name):
+    if re.fullmatch(r"r\d+[dbw]", name):
         return name[:-1]
     return aliases.get(name, name)
 
@@ -696,8 +698,8 @@ def is_register_name(value: str) -> bool:
 
 
 def read_disp(data: bytes, pos: int, size: int) -> tuple[int, int]:
-    if pos + size > len(data):
-        return 0, len(data)
+    if pos < 0 or pos + size > len(data):
+        raise IndexError("truncated memory displacement")
     if size == 1:
         return struct.unpack_from("<b", data, pos)[0], pos + 1
     if size == 4:
@@ -715,6 +717,8 @@ def rm_operand(
     width: int,
     start_va: int,
     offset: int,
+    trailing_immediate_bytes: int = 0,
+    rex_x: int = 0,
 ) -> tuple[str, int]:
     rm_code = rm | (rex_b << 3)
     if mod == 3:
@@ -726,7 +730,8 @@ def rm_operand(
         rm,
         rex_b,
         start_va=start_va + offset,
-        instruction_end_hint=(pos - offset) + (4 if mod in (0, 2) else 1),
+        instruction_end_hint=(pos - offset) + (4 if mod in (0, 2) else 1) + trailing_immediate_bytes,
+        rex_x=rex_x,
     )
 
 
@@ -739,21 +744,22 @@ def format_memory_operand(
     *,
     start_va: int,
     instruction_end_hint: int,
+    rex_x: int = 0,
 ) -> tuple[str, int]:
     base_reg = rm | (rex_b << 3)
     if rm == 4:
-        # SIB addressing. Only stringify the common forms; still advance over
-        # displacement correctly so later instructions stay aligned.
+        # REX.X extends the index independently of REX.B's base extension.
+        # Index 4 means no index only without that extension; R12 is valid.
         sib = data[pos]
         pos += 1
         scale = (sib >> 6) & 0x3
         index = (sib >> 3) & 0x7
         sib_base = sib & 0x7
         base_name = reg_name(sib_base | (rex_b << 3))
-        index_name = "" if index == 4 else reg_name(index)
+        index_name = "" if index == 4 and not rex_x else reg_name(index | (rex_x << 3))
         if mod == 0 and sib_base == 5:
             disp, pos = read_disp(data, pos, 4)
-            base = f"0x{disp & 0xffffffff:x}"
+            base = f"0x{disp & 0xffffffffffffffff:x}"
         elif mod == 1:
             disp, pos = read_disp(data, pos, 1)
             base = f"{base_name}{signed_hex(disp)}"
@@ -804,7 +810,7 @@ def decode_byte_cmp_x64(data: bytes, offset: int, start_va: int):
     register=byte_register(reg|(rex_r<<3))
     if mod==3:operand=byte_register(rm|(rex_b<<3))
     else:
-        operand,pos=rm_operand(data,pos,mod,rm,rex_b,width=8,start_va=start_va,offset=offset)
+        operand,pos=rm_operand(data,pos,mod,rm,rex_b,width=8,start_va=start_va,offset=offset, rex_x=(rex >> 1) & 1)
     left,right=(operand,register) if opcode==0x38 else (register,operand)
     return {'offset':offset,'va':hex(start_va+offset),'bytes':data[offset:pos].hex(' '),
         'text':f'cmp {left}, {right}','write':None},pos
@@ -846,15 +852,60 @@ def decode_extra_x64(data: bytes, offset: int, start_va: int):
         parts=base+('+'+index+'*'+str(scale) if index is not None else '')
         if displacement:parts+=f'-0x{-displacement:x}' if displacement<0 else f'+0x{displacement:x}'
         return '['+parts+']',end
-    if pos+2<=len(data) and data[pos] in (0x21,0x23) and not prefixes:
+    if pos+2<=len(data) and not prefixes and data[pos] in (0x08,0x0a,0x30,0x32):
+        # Byte OR/XOR register forms keep operand direction and the legacy
+        # high-byte versus REX low-byte distinction. Memory forms stay refused.
         mod,reg,rm=decode_modrm(data[pos+1])
         if mod==3:
+            def byte_name(code):
+                if not rex and 4<=code<=7:return ('ah','ch','dh','bh')[code-4]
+                return reg_name(code,width=8)
+            rr=byte_name(reg+(8 if rex&4 else 0));rb=byte_name(rm+(8 if rex&1 else 0))
+            left,right=(rb,rr) if data[pos] in (0x08,0x30) else (rr,rb)
+            mnemonic='or' if data[pos] in (0x08,0x0a) else 'xor'
+            result,end=row(f'{mnemonic} {left}, {right}',pos+2,left)
+            if mnemonic=='xor' and left==right:result['write']['value']='0'
+            return result,end
+    if pos+3<=len(data) and data[pos]==0x0f and data[pos+1]==0x5e and prefixes in ([],[0x66],[0xf2],[0xf3]):
+        # Packed/scalar floating division: the register form has one complete
+        # boundary and changes only its XMM destination, never a GPR.
+        mod,reg,rm=decode_modrm(data[pos+2])
+        if mod==3:
+            suffix={(): 'ps',(0x66,): 'pd',(0xf2,): 'sd',(0xf3,): 'ss'}[tuple(prefixes)]
+            left=xmm_name(reg+(8 if rex&4 else 0));right=xmm_name(rm+(8 if rex&1 else 0))
+            return row(f'div{suffix} {left}, {right}',pos+3,left)
+    if pos+3<=len(data) and data[pos:pos+2]==b'\x0f\x5a' and prefixes in ([0xf2],[0xf3]):
+        mod,reg,rm=decode_modrm(data[pos+2])
+        if mod==3:
+            mnemonic='cvtsd2ss' if prefixes==[0xf2] else 'cvtss2sd'
+            left=xmm_name(reg+(8 if rex&4 else 0));right=xmm_name(rm+(8 if rex&1 else 0))
+            return row(f'{mnemonic} {left}, {right}',pos+3,left)
+    if pos+2<=len(data) and data[pos] in (0x0b,0x21,0x23) and not prefixes:
+        mod,reg,rm=decode_modrm(data[pos+1])
+        if data[pos] in (0x0b,0x23) and mod!=3:
+            # OR/AND r32/r64, memory reads the mask field and modifies only the
+            # register destination. Complete base/SIB/displacement bounds are
+            # shared with the other admitted memory forms above.
+            operand=memory(pos+2,mod,rm)
+            if operand is not None:
+                source,end=operand
+                destination=reg_name(reg+(8 if rex&4 else 0),width=64 if rex&8 else 32)
+                mnemonic='or' if data[pos]==0x0b else 'and'
+                return row(f'{mnemonic} {destination}, {source}',end,destination)
+        if mod==3 and data[pos]!=0x0b:
             width=64 if rex&8 else 32;rr=reg_name(reg+(8 if rex&4 else 0),width=width)
             rm=reg_name(rm+(8 if rex&1 else 0),width=width)
             left,right=(rm,rr) if data[pos]==0x21 else (rr,rm)
             return row(f'and {left}, {right}',pos+2,left)
     if pos+3>len(data) or data[pos]!=0x0f:return fallback()
     second=data[pos+1];mod,reg,rm=decode_modrm(data[pos+2]);end=pos+3
+    if second==0x1f and reg==0 and not rex&4 and mod!=3 and prefixes in ([],[0x66]):
+        # NOP r/m uses its complete addressing encoding but reads no operand
+        # and changes no register or flags. Unsupported address forms refuse.
+        operand=memory(end,mod,rm)
+        if operand is not None:
+            _,end=operand
+            return row('nop',end)
     if second==0xb1 and prefixes in ([],[0xf0]) and mod!=3:
         operand=memory(end,mod,rm)
         if operand is not None:
@@ -922,6 +973,21 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             "write": {"register": write[0], "value": write[1]} if write else None,
         }, new_pos
 
+    def address_end(at: int, mod: int, rm: int) -> int:
+        """Frame one ModRM address without accepting its operand semantics."""
+        if mod == 3:
+            return at
+        base = rm
+        if rm == 4:
+            if at >= len(data):
+                raise IndexError("truncated ModRM SIB")
+            base = data[at] & 7
+            at += 1
+        at += 4 if (mod == 2 or (mod == 0 and base == 5)) else (1 if mod == 1 else 0)
+        if at > len(data):
+            raise IndexError("truncated ModRM displacement")
+        return at
+
     if opcode == 0x90:
         return result("nop", None, pos)
     if opcode == 0xCC:
@@ -946,45 +1012,55 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         mod, reg, rm = decode_modrm(modrm)
         reg_code = reg | (rex_r << 3)
         rm_code = rm | (rex_b << 3)
+        if 0x67 in prefixes:
+            # The common memory expression is a 64-bit address expression.
+            # Address-size overrides need their own wrapped EIP/base/index
+            # semantics; preserve framing and invalidate any destination.
+            end = address_end(pos, mod, rm)
+            destination = reg_code if opcode not in (0x88, 0x89) else rm_code if mod == 3 else None
+            if destination is not None and opcode in (0x8A, 0x88) and not rex and destination >= 4:
+                destination -= 4
+            write = (reg_name(destination), "modified") if destination is not None else None
+            return result(f"db {data[offset:end].hex(' ')}", write, end)
         if opcode == 0x8A:
             dst = reg_name(reg_code, width=8)
             src, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=8, start_va=start_va, offset=offset,
+                width=8, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"mov {dst}, {src}", (dst, src), pos)
         if opcode == 0x88:
             src = reg_name(reg_code, width=8)
             dst, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=8, start_va=start_va, offset=offset,
+                width=8, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"mov {dst}, {src}", (dst, src) if mod == 3 else None, pos)
         if opcode == 0x8B:
             dst = reg_name(reg_code, width=width)
             src, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=width, start_va=start_va, offset=offset,
+                width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"mov {dst}, {src}", (dst, src), pos)
         if opcode == 0x89:
             src = reg_name(reg_code, width=width)
             dst, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=width, start_va=start_va, offset=offset,
+                width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"mov {dst}, {src}", (dst, src) if mod == 3 else None, pos)
         if opcode == 0x63:
             dst = reg_name(reg_code, width=64)
             src, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=32, start_va=start_va, offset=offset,
+                width=32, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"movsxd {dst}, {src}", (dst, src), pos)
         dst = reg_name(reg_code, width=64)
         src, pos = rm_operand(
             data, pos, mod, rm, rex_b,
-            width=64, start_va=start_va, offset=offset,
+            width=64, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
         )
         return result(f"lea {dst}, {src}", (dst, f"&{src}"), pos)
 
@@ -1011,6 +1087,9 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         reg_code = reg | (rex_r << 3)
         rm_code = rm | (rex_b << 3)
         dst = reg_name(reg_code, width=width)
+        if 0x67 in prefixes:
+            end = address_end(pos, mod, rm)
+            return result(f"db {data[offset:end].hex(' ')}", (canonical_register(dst), "modified"), end)
         if mod == 3 and reg_code == rm_code:
             return result(f"xor {dst}, {dst}", (dst, "0"), pos)
         return result(f"xor {dst}, {reg_name(rm_code, width=width) if mod == 3 else 'mem'}", None, pos)
@@ -1019,10 +1098,38 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         modrm = data[pos]
         pos += 1
         mod, group_op, rm = decode_modrm(modrm)
+        word = opcode != 0x80 and 0x66 in prefixes and not rex_w
+        immediate_at = address_end(pos, mod, rm)
+        immediate_size = (2 if word else 4) if opcode == 0x81 else 1
+        end = immediate_at + immediate_size
+        if end > len(data):
+            raise IndexError("truncated group immediate")
+        if prefixes:
+            # A 66-prefixed 81 immediate is two bytes unless REX.W wins.
+            # Consuming four bytes here swallowed the following NOP/RET in
+            # the selected stack probe. Other decorated semantics stay out
+            # of this subset, but retain their complete encoded boundary.
+            write = (reg_name(rm | (rex_b << 3)), "modified") if mod == 3 and group_op != 7 else None
+            if prefixes == [0x66] and word and opcode == 0x81 and group_op == 4 and mod == 3:
+                names16 = ("ax", "cx", "dx", "bx", "sp", "bp", "si", "di",
+                           "r8w", "r9w", "r10w", "r11w", "r12w", "r13w", "r14w", "r15w")
+                destination = names16[rm | (rex_b << 3)]
+                immediate = int.from_bytes(data[immediate_at:end], "little")
+                row, end = result(f"and {destination}, 0x{immediate:x}", write, end)
+                # The conservative full-root write invalidates origins; this
+                # 16-bit operation preserves, rather than clears, high bits.
+                row["operandWidth"] = 16
+                row["upperRegisterEffect"] = "preserved upper 48 bits"
+                return row, end
+            return result(f"db {data[offset:end].hex(' ')}", write, end)
+        if rex & 2 and mod != 3 and rm == 4:
+            # The common formatter does not represent REX.X SIB indices.
+            return result(f"db {data[offset:end].hex(' ')}", None, end)
         op_width = 8 if opcode == 0x80 else width
         dst, pos = rm_operand(
             data, pos, mod, rm, rex_b,
-            width=op_width, start_va=start_va, offset=offset,
+            width=op_width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
+            trailing_immediate_bytes=immediate_size,
         )
         if opcode in (0x80, 0x83):
             if pos >= len(data):
@@ -1056,11 +1163,14 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         pos += 1
         mod, reg, rm = decode_modrm(modrm)
         reg_code = reg | (rex_r << 3)
+        if 0x67 in prefixes:
+            end = address_end(pos, mod, rm)
+            return result(f"db {data[offset:end].hex(' ')}", None, end)
         operand_width = 8 if opcode == 0x84 else width
         reg_operand = reg_name(reg_code, width=operand_width)
         rm_op, pos = rm_operand(
             data, pos, mod, rm, rex_b,
-            width=operand_width, start_va=start_va, offset=offset,
+            width=operand_width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
         )
         if opcode in (0x84, 0x85):
             return result(f"test {rm_op}, {reg_operand}", None, pos)
@@ -1078,25 +1188,41 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         modrm = data[pos]
         pos += 1
         mod, group_op, rm = decode_modrm(modrm)
-        if group_op != 0:
-            return result(f"db 0x{opcode:02x}", None, offset + 1)
+        word = opcode == 0xC7 and 0x66 in prefixes and not rex_w
+        immediate_size = (2 if word else 4) if opcode == 0xC7 else 1
+        immediate_at = address_end(pos, mod, rm)
+        end = immediate_at + immediate_size
+        if end > len(data):
+            raise IndexError("truncated MOV immediate")
+        if group_op != 0 or prefixes or (rex & 2 and mod != 3 and rm == 4):
+            write = (reg_name(rm | (rex_b << 3)), "modified") if mod == 3 and group_op == 0 else None
+            return result(f"db {data[offset:end].hex(' ')}", write, end)
+        op_width = 8 if opcode == 0xC6 else width
         dst, pos = rm_operand(
             data, pos, mod, rm, rex_b,
-            width=8 if opcode == 0xC6 else 32,
+            width=op_width,
             start_va=start_va,
-            offset=offset,
+            offset=offset, rex_x=(rex >> 1) & 1,
+            trailing_immediate_bytes=immediate_size,
         )
         if opcode == 0xC6:
             imm = data[pos]
             pos += 1
         else:
-            imm = struct.unpack_from("<I", data, pos)[0]
+            # A REX.W C7 stores a sign-extended imm32 into a 64-bit operand.
+            imm = struct.unpack_from("<i" if rex_w else "<I", data, pos)[0]
             pos += 4
-        return result(
-            f"mov {dst}, 0x{imm:x}",
-            (dst, f"0x{imm:x}") if is_register_name(dst) else None,
+        imm_text = f"-0x{-imm:x}" if imm < 0 else f"0x{imm:x}"
+        row, end = result(
+            f"mov {dst}, {imm_text}",
+            (dst, imm_text) if is_register_name(dst) else None,
             pos,
         )
+        row["operandWidth"] = op_width
+        if mod == 3:
+            row["upperRegisterEffect"] = ("zero upper 32 bits" if op_width == 32 else
+                                          "replaced full register" if op_width == 64 else "preserved upper 56 bits")
+        return row, end
 
     if opcode in (0x44, 0x45) and pos < len(data):
         # Common two-byte REX-prefixed 32-bit forms such as:
@@ -1149,16 +1275,52 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         modrm = data[pos]
         pos += 1
         mod, group_op, rm = decode_modrm(modrm)
+        # INC/DEC use the ordinary 32-bit default, unlike near indirect
+        # CALL/JMP and PUSH. A register increment destroys its prior origin;
+        # do not silently retain a loaded pointer or argument alias.
+        operand_width = width if group_op in (0, 1) else 64
+        operand_end = address_end(pos, mod, rm)
+        write = (reg_name(rm | (rex_b << 3), width=operand_width), "modified") if mod == 3 and group_op in (0, 1) else None
+        if prefixes or group_op not in (0, 1, 2, 4, 6) or (mod != 3 and rex & 2):
+            # Decorated forms and extended SIB indexes have not been proved
+            # by this subset. Consume the complete boundary, without turning
+            # a prefixed INC r/m16 into an unprefixed INC r/m32.
+            return result(f"db {data[offset:operand_end].hex(' ')}", write, operand_end)
         operand, pos = rm_operand(
             data, pos, mod, rm, rex_b,
-            width=64, start_va=start_va, offset=offset,
+            width=operand_width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
         )
-        op_name = {0: "inc", 1: "dec", 2: "call", 4: "jmp", 6: "push"}.get(group_op, f"ff/{group_op}")
-        return result(f"{op_name} {operand}", None, pos)
+        op_name = {0: "inc", 1: "dec", 2: "call", 4: "jmp", 6: "push"}[group_op]
+        row, end = result(f"{op_name} {operand}", write, pos)
+        row["operandWidth"] = operand_width
+        if write:
+            row["upperRegisterEffect"] = "replaced full register" if rex_w else "zero upper 32 bits"
+        return row, end
 
     if opcode == 0x0F and pos < len(data):
         op2 = data[pos]
         pos += 1
+        address_forms = {0x6E, 0x7E, 0xAB, 0xB6, 0xB7, 0x2E, 0x2F,
+                         0x10, 0x11, 0x28, 0x29, 0x57, 0x58, 0x59, 0x5C, 0x5D, 0x0D}
+        if 0x67 in prefixes and (op2 in address_forms or 0x90 <= op2 <= 0x9F):
+            if pos >= len(data):
+                raise IndexError("truncated address-size override ModRM")
+            mod, reg, rm = decode_modrm(data[pos])
+            end = address_end(pos + 1, mod, rm)
+            destination = None
+            if op2 in (0x6E, 0x10, 0x28, 0x57, 0x58, 0x59, 0x5C, 0x5D) or (op2 == 0x7E and 0xF3 in prefixes):
+                destination = xmm_name(reg | (rex_r << 3))
+            elif op2 in (0x11, 0x29) and mod == 3:
+                destination = xmm_name(rm | (rex_b << 3))
+            elif op2 in (0xB6, 0xB7):
+                destination = reg_name(reg | (rex_r << 3))
+            elif mod == 3 and (op2 in (0x7E, 0xAB) or 0x90 <= op2 <= 0x9F):
+                code = rm | (rex_b << 3)
+                if 0x90 <= op2 <= 0x9F and not rex and code >= 4:
+                    code -= 4
+                destination = reg_name(code)
+            return result(f"db {data[offset:end].hex(' ')}",
+                          (destination, "modified") if destination is not None else None, end)
         if op2 == 0xA3 and not prefixes and pos < len(data):
             # Register BT reads two operands and writes only flags. Memory
             # bit strings and decorated forms require their own proof.
@@ -1178,16 +1340,33 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             dst = xmm_name(reg | (rex_r << 3))
             src, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=width, start_va=start_va, offset=offset,
+                width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"{'movq' if rex_w else 'movd'} {dst}, {src}", (dst, src), pos)
+        if op2 == 0x7E and prefixes == [0x66] and pos < len(data):
+            # The reverse MOVD/MOVQ form extracts the low scalar lane from
+            # XMM into r/m32 or r/m64. F3 0F 7E is a different XMM operation.
+            modrm = data[pos]
+            pos += 1
+            mod, reg, rm = decode_modrm(modrm)
+            src = xmm_name(reg | (rex_r << 3))
+            dst, pos = rm_operand(
+                data, pos, mod, rm, rex_b,
+                width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
+            )
+            row, end = result(f"{'movq' if rex_w else 'movd'} {dst}, {src}",
+                              (dst, src) if mod == 3 else None, pos)
+            row['scalarTransfer'] = {'direction': 'xmm-to-integer', 'source': src,
+                'destination': dst, 'bits': width,
+                'upperRegisterEffect': ('replaced full register' if rex_w else 'zero upper 32 bits') if mod == 3 else 'preserved'}
+            return row, end
         if 0x90 <= op2 <= 0x9F and pos < len(data):
             modrm = data[pos]
             pos += 1
             mod, _reg, rm = decode_modrm(modrm)
             dst, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=8, start_va=start_va, offset=offset,
+                width=8, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             mnemonic = {
                 0x92: "setb",
@@ -1212,7 +1391,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             src = reg_name(reg_code, width=width)
             dst, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=width, start_va=start_va, offset=offset,
+                width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             if mod == 3 and prefixes:
                 return result(f"db 0x{data[offset]:02x}", None, offset + 1)
@@ -1224,13 +1403,30 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             mod, reg, rm = decode_modrm(modrm)
             reg_code = reg | (rex_r << 3)
             dst = reg_name(reg_code, width=width)
+            end = address_end(pos, mod, rm)
+            if (prefixes or (rex & 2 and mod != 3 and rm == 4)
+                    or (mod == 3 and op2 == 0xB6 and not rex and rm >= 4)):
+                # Extended SIB indices, decorated destination widths, word
+                # destination forms and legacy high-byte registers are not represented
+                # by this operand formatter. Keep the actual full boundary and
+                # conservatively invalidate the destination's entire origin.
+                return result(f"db {data[offset:end].hex(' ')}",
+                              (canonical_register(dst), "modified"), end)
             src, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=8 if op2 == 0xB6 else 32,
+                width=8 if op2 == 0xB6 else 16,
                 start_va=start_va,
-                offset=offset,
+                offset=offset, rex_x=(rex >> 1) & 1,
             )
-            return result(f"movzx {dst}, {src}", (dst, src), pos)
+            # A byte/word source cannot carry a full pointer origin, including
+            # a prior full-width spill at the same memory slot. Exact source
+            # and width stay available to independent typed consumer checks.
+            row, end = result(f"movzx {dst}, {src}", (dst, "modified"), pos)
+            row["sourceWidth"] = 8 if op2 == 0xB6 else 16
+            row["operandWidth"] = width
+            row["sourceExtension"] = "zero extension"
+            row["upperRegisterEffect"] = "zero upper 32 bits" if width == 32 else "replaced full register"
+            return row, end
         if op2 in (0x2E, 0x2F) and pos < len(data):
             if prefixes not in ([], [0x66]):
                 return result(f"db 0x{data[offset]:02x}", None, offset + 1)
@@ -1241,7 +1437,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             left = xmm_name(reg_code)
             right, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=64, start_va=start_va, offset=offset,
+                width=64, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             mnemonic = ("ucomi" if op2 == 0x2E else "comi") + ("sd" if prefixes else "ss")
             return result(f"{mnemonic} {left}, {right}", None, pos)
@@ -1272,6 +1468,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                         rex_b,
                         start_va=start_va + offset,
                         instruction_end_hint=(pos - offset) + (4 if mod in (0, 2) else 1),
+                        rex_x=(rex >> 1) & 1,
                     )
                 return result(f"{mnemonic} {dst}, {src}", (dst, src), pos)
             if op2 in (0x11, 0x29):
@@ -1287,6 +1484,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                     rex_b,
                     start_va=start_va + offset,
                     instruction_end_hint=(pos - offset) + (4 if mod in (0, 2) else 1),
+                    rex_x=(rex >> 1) & 1,
                 )
                 return result(f"{mnemonic} {dst}, {src}", None, pos)
             dst = xmm_name(reg_code)
@@ -1306,6 +1504,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                         rex_b,
                         start_va=start_va + offset,
                         instruction_end_hint=(pos - offset) + (4 if mod in (0, 2) else 1),
+                        rex_x=(rex >> 1) & 1,
                     )
                 return result(f"{mnemonic} {dst}, {src}", (dst, f"{dst} {mnemonic} {src}"), pos)
             src = xmm_name(rm_code) if mod == 3 else "mem"
@@ -1318,7 +1517,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             mod, _reg, rm = decode_modrm(modrm)
             operand, pos = rm_operand(
                 data, pos, mod, rm, rex_b,
-                width=64, start_va=start_va, offset=offset,
+                width=64, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
             )
             return result(f"prefetch {operand}", None, pos)
         if 0x80 <= op2 <= 0x8F and pos + 4 <= len(data):
@@ -1330,9 +1529,16 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         modrm = data[pos]
         pos += 1
         mod, group_op, rm = decode_modrm(modrm)
+        end = address_end(pos, mod, rm) + 1
+        if end > len(data):
+            raise IndexError("truncated shift immediate")
+        if prefixes or (mod != 3 and rex & 2):
+            write = (reg_name(rm | (rex_b << 3)), "modified") if mod == 3 else None
+            return result(f"db {data[offset:end].hex(' ')}", write, end)
         dst, pos = rm_operand(
             data, pos, mod, rm, rex_b,
-            width=width, start_va=start_va, offset=offset,
+            width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
+            trailing_immediate_bytes=1,
         )
         imm = data[pos]
         pos += 1

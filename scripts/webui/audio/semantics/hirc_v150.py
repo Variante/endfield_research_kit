@@ -1770,9 +1770,9 @@ def decode_hirc_v150_effect_parameters(
                     )
                 )
 
-            # Current SetParamsBlock authenticates the eleven serialized floats.
-            # Their older SetParam IDs and runtime consumer roles have not been
-            # revalidated on the selected client and are withheld.
+            # The bulk loader authenticates the eleven serialized floats.
+            # The separate Room parameter contract re-proves numeric update IDs
+            # and stored destinations; their runtime DSP meanings stay unresolved.
             internal_tuning = [
                 {
                     "serializedOffset": 142 + index * 4,

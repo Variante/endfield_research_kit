@@ -1,0 +1,2596 @@
+{
+  "schema": "endfield.collision-capture-native.v17",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": [
+    {
+      "index": 87766,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+      "method": "_DoInitModel",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "elementData",
+          "type": "Beyond.Gameplay.Core.DynamicScene.ModelCompData"
+        },
+        {
+          "name": "fbElement",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneModel"
+        }
+      ],
+      "rva": 48515600,
+      "bodyBytes": 43,
+      "bodySha256": "eb001d165144342d8e83c8471ad0031f5f59ec20d627b34002eb289cdd37a846",
+      "role": "init_model",
+      "hook": true,
+      "parameterByRef": [
+        true,
+        true
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 25,
+          "bytes": "498bf0",
+          "instruction": "mov rsi, r8"
+        },
+        {
+          "offset": 28,
+          "bytes": "488bea",
+          "instruction": "mov rbp, rdx"
+        },
+        {
+          "offset": 31,
+          "bytes": "488bf9",
+          "instruction": "mov rdi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 87747,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+      "method": "_DoInitInstantiateModel",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "context",
+          "type": "Beyond.Gameplay.Core.DynamicScene.ElementDealContext"
+        },
+        {
+          "name": "elementData",
+          "type": "Beyond.Gameplay.Core.DynamicScene.ModelCompData"
+        },
+        {
+          "name": "fbElement",
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneModel"
+        }
+      ],
+      "rva": 48513104,
+      "bodyBytes": 815,
+      "bodySha256": "9512717afd079c458e712eab935e7216487a27d8acc83f6de479bf520ddcb1d0",
+      "role": "init_instance",
+      "hook": true,
+      "parameterByRef": [
+        true,
+        true,
+        true
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 40,
+          "bytes": "498bf1",
+          "instruction": "mov rsi, r9"
+        },
+        {
+          "offset": 43,
+          "bytes": "498bd8",
+          "instruction": "mov rbx, r8"
+        },
+        {
+          "offset": 46,
+          "bytes": "4c8bf2",
+          "instruction": "mov r14, rdx"
+        },
+        {
+          "offset": 49,
+          "bytes": "488bf9",
+          "instruction": "mov rdi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 87739,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+      "method": "_GetModelTransform",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "modelId",
+          "type": "ulong"
+        },
+        {
+          "name": "pos",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rot",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "scl",
+          "type": "UnityEngine.Vector3"
+        }
+      ],
+      "rva": 48519600,
+      "bodyBytes": 52,
+      "bodySha256": "b7ada723cf2caea724b6fe4f44324da8f05321c1d5fc885bde8aeaab19bdfdc3",
+      "role": "model_transform",
+      "hook": true,
+      "parameterByRef": [
+        false,
+        true,
+        true,
+        true
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "u64",
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 34,
+          "bytes": "4d8bf9",
+          "instruction": "mov r15, r9"
+        },
+        {
+          "offset": 37,
+          "bytes": "4d8be8",
+          "instruction": "mov r13, r8"
+        },
+        {
+          "offset": 40,
+          "bytes": "4c8bf2",
+          "instruction": "mov r14, rdx"
+        },
+        {
+          "offset": 43,
+          "bytes": "488bf1",
+          "instruction": "mov rsi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 89051,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "GetMat",
+      "static": false,
+      "returnType": "UnityEngine.Matrix4x4",
+      "parameters": [
+        {
+          "name": "uniqueId",
+          "type": "uint"
+        }
+      ],
+      "rva": 105243072,
+      "bodyBytes": 374,
+      "bodySha256": "e9aadac82679d36874263f52232c7d86ac0a8f5293861e810a3d2d7091cfe68f",
+      "role": "grid_matrix",
+      "hook": true,
+      "parameterByRef": [
+        false
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "u32",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 64
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 22,
+          "bytes": "488bda",
+          "instruction": "mov rbx, rdx"
+        },
+        {
+          "offset": 25,
+          "bytes": "418bf0",
+          "instruction": "mov esi, r8d"
+        },
+        {
+          "offset": 28,
+          "bytes": "488bf9",
+          "instruction": "mov rdi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 89049,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "OnAddUniqueId",
+      "static": false,
+      "returnType": "uint",
+      "parameters": [
+        {
+          "name": "uniqueId",
+          "type": "string"
+        },
+        {
+          "name": "direction",
+          "type": "int"
+        },
+        {
+          "name": "pos",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "minPos",
+          "type": "UnityEngine.Vector2"
+        },
+        {
+          "name": "maxPos",
+          "type": "UnityEngine.Vector2"
+        }
+      ],
+      "rva": 105245224,
+      "bodyBytes": 675,
+      "bodySha256": "7787fd1a87fd44cac12e07db5aa4c400291f4533e276bcb74426413c78211de5",
+      "role": "register_scene",
+      "hook": true,
+      "parameterByRef": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "i32",
+          "pointer",
+          "u64",
+          "u64",
+          "pointer"
+        ],
+        "returnMode": "u32",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 42,
+          "bytes": "4d8bf1",
+          "instruction": "mov r14, r9"
+        },
+        {
+          "offset": 45,
+          "bytes": "458bf8",
+          "instruction": "mov r15d, r8d"
+        },
+        {
+          "offset": 48,
+          "bytes": "4c8be2",
+          "instruction": "mov r12, rdx"
+        },
+        {
+          "offset": 51,
+          "bytes": "488bf1",
+          "instruction": "mov rsi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 87761,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+      "method": "_SetColliderEnable",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "modelId",
+          "type": "ulong"
+        },
+        {
+          "name": "enable",
+          "type": "bool"
+        }
+      ],
+      "rva": 105006200,
+      "bodyBytes": 816,
+      "bodySha256": "b8560bff92aaa33de5c5050370d4111caba0dd24ca641b25615fe5785e1551fa",
+      "role": "collider_enable",
+      "hook": true,
+      "parameterByRef": [
+        false,
+        false
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "u64",
+          "bool",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 37,
+          "bytes": "488bf2",
+          "instruction": "mov rsi, rdx"
+        },
+        {
+          "offset": 40,
+          "bytes": "488bf9",
+          "instruction": "mov rdi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 248567,
+      "type": "Beyond.Resource.ResourceManager",
+      "method": "InstantiatePrefabAsync",
+      "static": true,
+      "returnType": "Beyond.Resource.FAssetProxyHandle",
+      "parameters": [
+        {
+          "name": "channel",
+          "type": "Beyond.ELogChannel"
+        },
+        {
+          "name": "path",
+          "type": "Beyond.Resource.StringPathHash"
+        },
+        {
+          "name": "bIsHiddenMode",
+          "type": "bool"
+        },
+        {
+          "name": "category",
+          "type": "Beyond.Resource.RootCategory"
+        },
+        {
+          "name": "priority",
+          "type": "Beyond.Resource.EResourceRequestPriority"
+        }
+      ],
+      "rva": 55963520,
+      "bodyBytes": 119,
+      "bodySha256": "372dd81ac08b529e88f9accf8a7d89e6578987edbf8bc5f6eddeb8529fcabb4f",
+      "role": "prefab_request",
+      "hook": true,
+      "parameterByRef": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "u8",
+          "u64",
+          "bool",
+          "u8",
+          "u32",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 20
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 26,
+          "bytes": "440fb6ea",
+          "instruction": "movzx r13d, dl"
+        },
+        {
+          "offset": 30,
+          "bytes": "450fb6e1",
+          "instruction": "movzx r12d, r9b"
+        },
+        {
+          "offset": 34,
+          "bytes": "4c8bf9",
+          "instruction": "mov r15, rcx"
+        },
+        {
+          "offset": 44,
+          "bytes": "498bd8",
+          "instruction": "mov rbx, r8"
+        }
+      ]
+    },
+    {
+      "index": 360068,
+      "type": "UnityEngine.Transform",
+      "method": "SetParent",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "parent",
+          "type": "UnityEngine.Transform"
+        },
+        {
+          "name": "worldPositionStays",
+          "type": "bool"
+        }
+      ],
+      "rva": 49288976,
+      "bodyBytes": 95,
+      "bodySha256": "9c27db9ab7f62913dd4c3e24a45af0e7bdc969dfc89f557ce0dac0ec5e17e90d",
+      "role": "parent",
+      "hook": true,
+      "parameterByRef": [
+        false,
+        false
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "bool",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 26,
+          "bytes": "488bfa",
+          "instruction": "mov rdi, rdx"
+        },
+        {
+          "offset": 29,
+          "bytes": "488bf1",
+          "instruction": "mov rsi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 439113,
+      "type": "UnityEngine.Collider",
+      "method": "set_enabled",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "rva": 53675792,
+      "bodyBytes": 77,
+      "bodySha256": "df5cf6ceddb8cec146c3a4e481775ba6f02868f7ca05bbddef6cb0d34f6c883f",
+      "role": "collider_set",
+      "hook": true,
+      "parameterByRef": [
+        false
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "bool",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 20,
+          "bytes": "488bf9",
+          "instruction": "mov rdi, rcx"
+        }
+      ]
+    },
+    {
+      "index": 360070,
+      "type": "UnityEngine.Transform",
+      "method": "get_localToWorldMatrix",
+      "static": false,
+      "returnType": "UnityEngine.Matrix4x4",
+      "parameters": [],
+      "rva": 48129344,
+      "bodyBytes": 98,
+      "bodySha256": "6c420cb0afe9f6d3b51fcffd1fb8916c5e9c07d976b04974de57492f01929968",
+      "role": "world_matrix",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 64
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 20,
+          "bytes": "488bfa",
+          "instruction": "mov rdi, rdx"
+        },
+        {
+          "offset": 23,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 359297,
+      "type": "UnityEngine.Component",
+      "method": "get_transform",
+      "static": false,
+      "returnType": "UnityEngine.Transform",
+      "parameters": [],
+      "rva": 48127712,
+      "bodyBytes": 62,
+      "bodySha256": "00464a2fb393f5c1f3ee01a223c9b7b871d8ae46e51879454dfb024e814197bd",
+      "role": "component_transform",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 13,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 359298,
+      "type": "UnityEngine.Component",
+      "method": "get_gameObject",
+      "static": false,
+      "returnType": "UnityEngine.GameObject",
+      "parameters": [],
+      "rva": 47525408,
+      "bodyBytes": 62,
+      "bodySha256": "36150a9c9b316f741dfab5653487d4719d0929a11883d22ae82bb859e704e9e8",
+      "role": "component_go",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 13,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 359554,
+      "type": "UnityEngine.Object",
+      "method": "GetInstanceID",
+      "static": false,
+      "returnType": "int",
+      "parameters": [],
+      "rva": 47858080,
+      "bodyBytes": 167,
+      "bodySha256": "179f937b5a14966cb2fd26be5a7838a09a53525196b961419571c68776b63bb2",
+      "role": "instance_id",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "i32",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 11,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 359562,
+      "type": "UnityEngine.Object",
+      "method": "get_name",
+      "static": false,
+      "returnType": "string",
+      "parameters": [],
+      "rva": 52533904,
+      "bodyBytes": 85,
+      "bodySha256": "fa4b5a2046e3704a464d7155dac3cb0117fafa3e99765f659bae11c279cb07d9",
+      "role": "object_name",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 6,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 439235,
+      "type": "UnityEngine.MeshCollider",
+      "method": "get_sharedMesh",
+      "static": false,
+      "returnType": "UnityEngine.Mesh",
+      "parameters": [],
+      "rva": 171508264,
+      "bodyBytes": 51,
+      "bodySha256": "4406a5bbe2829f68a0f83c6a49d54780bce5a5ffb350b8068636bac69656a4fa",
+      "role": "mesh",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 13,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 439237,
+      "type": "UnityEngine.MeshCollider",
+      "method": "get_convex",
+      "static": false,
+      "returnType": "bool",
+      "parameters": [],
+      "rva": 171508160,
+      "bodyBytes": 51,
+      "bodySha256": "c028b259b7d71633440b5128dcd1e2caa4a100c574163b9ed46c8448e450f7d8",
+      "role": "convex",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "bool",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 13,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 359417,
+      "type": "UnityEngine.GameObject",
+      "method": "get_activeInHierarchy",
+      "static": false,
+      "returnType": "bool",
+      "parameters": [],
+      "rva": 48683248,
+      "bodyBytes": 62,
+      "bodySha256": "2a6163b093aef6b69d11a2c86d9b317bfe88b10b847b4b4ef96995bb8315ce8a",
+      "role": "active",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "bool",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 13,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 439112,
+      "type": "UnityEngine.Collider",
+      "method": "get_enabled",
+      "static": false,
+      "returnType": "bool",
+      "parameters": [],
+      "rva": 55515552,
+      "bodyBytes": 62,
+      "bodySha256": "3e2bbd9f314cfc10f0db038e6092e4f600a247b0884099a15ba6a7765f078f31",
+      "role": "enabled",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "bool",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 13,
+          "bytes": "488bd9",
+          "instruction": "mov rbx, rcx"
+        }
+      ]
+    },
+    {
+      "index": 359623,
+      "type": "UnityEngine.Object",
+      "method": "CurrentThreadIsMainThread",
+      "static": true,
+      "returnType": "bool",
+      "parameters": [],
+      "rva": 171214696,
+      "bodyBytes": 42,
+      "bodySha256": "fb3cd823fc704662f4cbcc072a873a7d665bd8a449905b11afcf86d13f41e0c1",
+      "role": "main_thread",
+      "hook": false,
+      "parameterByRef": [],
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "bool",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "index": 359382,
+      "type": "UnityEngine.GameObject",
+      "method": "GetComponentsInChildren",
+      "static": false,
+      "returnType": "UnityEngine.Component[]",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "System.Type"
+        },
+        {
+          "name": "includeInactive",
+          "type": "bool"
+        }
+      ],
+      "rva": 55134352,
+      "parameterByRef": [
+        false,
+        false
+      ],
+      "role": "child_components",
+      "hook": false,
+      "bodyBytes": 55,
+      "bodySha256": "19ea9ab036499728eee7359e020b16bf40aaf2aaa00b1b60e2abe9a2219b0836",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "bool",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 6,
+          "bytes": "41b101",
+          "instruction": "recursive=true"
+        },
+        {
+          "offset": 23,
+          "bytes": "4488442420",
+          "instruction": "includeInactive from r8b"
+        }
+      ]
+    },
+    {
+      "index": 277817,
+      "type": "System.Array",
+      "method": "get_Length",
+      "static": false,
+      "returnType": "int",
+      "parameters": [],
+      "rva": 47628480,
+      "parameterByRef": [],
+      "role": "array_length",
+      "hook": false,
+      "bodyBytes": 105,
+      "bodySha256": "fe673c17152159879c457dbad0121d90b100934af7a4104ec4a5747f4caff1d2",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "i32",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 10,
+          "bytes": "488bd9",
+          "instruction": "array this from rcx"
+        }
+      ]
+    },
+    {
+      "index": 277829,
+      "type": "System.Array",
+      "method": "GetValue",
+      "static": false,
+      "returnType": "object",
+      "parameters": [
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ],
+      "rva": 54528624,
+      "parameterByRef": [
+        false
+      ],
+      "role": "array_value",
+      "hook": false,
+      "bodyBytes": 336,
+      "bodySha256": "6ba826af9f778c721c684b38aef536ba7a7ba9afcbd44babac28f4410fa9fd03",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "i32",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 18,
+          "bytes": "8bfa",
+          "instruction": "index from edx"
+        },
+        {
+          "offset": 20,
+          "bytes": "488bd9",
+          "instruction": "array this from rcx"
+        },
+        {
+          "offset": 258,
+          "bytes": "498b441820",
+          "instruction": "reference array element returned in rax; index is computed from edx"
+        }
+      ]
+    },
+    {
+      "role": "cached_ptr",
+      "rva": 77976208,
+      "bodyBytes": 16,
+      "bodySha256": "23e3fbd38e26d342091a520519a74acb875245b08aa0d80bfc1dfb4c319fb14a",
+      "boundary": "direct: reviewed Win64 machine argument carriers",
+      "abiEntryProbes": [
+        {
+          "offset": 2,
+          "bytes": "488b4110",
+          "instruction": "RCX managed self; cached native pointer at +16"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer",
+        "hiddenReturnBytes": 0
+      },
+      "hook": false,
+      "index": 359561,
+      "type": "UnityEngine.Object",
+      "method": "GetCachedPtr",
+      "static": false,
+      "returnType": "nint",
+      "parameters": [],
+      "parameterByRef": []
+    },
+    {
+      "role": "physics_simulate",
+      "rva": 84419008,
+      "bodyBytes": 26,
+      "bodySha256": "1149367f5b492f12e89192ee92535d17defefb86a876f0d36220af78e9336da9",
+      "boundary": "direct: reviewed Win64 machine argument carriers",
+      "abiEntryProbes": [
+        {
+          "offset": 0,
+          "bytes": "894c2408",
+          "instruction": "ECX PhysicsScene handle copied to stack"
+        },
+        {
+          "offset": 8,
+          "bytes": "4533c0",
+          "instruction": "R8 MethodInfo cleared for injected call"
+        },
+        {
+          "offset": 11,
+          "bytes": "488d4c2430",
+          "instruction": "RCX points at four-byte PhysicsScene; XMM1 step forwarded unchanged"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "u32",
+          "f32",
+          "pointer"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      },
+      "hook": false,
+      "index": 438751,
+      "type": "UnityEngine.Physics",
+      "method": "Simulate_Internal",
+      "static": true,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "physicsScene",
+          "type": "UnityEngine.PhysicsScene"
+        },
+        {
+          "name": "step",
+          "type": "float"
+        }
+      ],
+      "parameterByRef": [
+        false,
+        false
+      ]
+    }
+  ],
+  "types": [
+    {
+      "type": "System.String",
+      "index": 36039,
+      "value": false,
+      "size": null,
+      "fields": [
+        {
+          "name": "_stringLength",
+          "type": "int",
+          "offset": 16
+        },
+        {
+          "name": "_firstChar",
+          "type": "char",
+          "offset": 20
+        }
+      ]
+    },
+    {
+      "type": "UnityEngine.Matrix4x4",
+      "index": 43716,
+      "value": true,
+      "size": 64,
+      "fields": [
+        {
+          "name": "m00",
+          "type": "float",
+          "offset": 0
+        },
+        {
+          "name": "m10",
+          "type": "float",
+          "offset": 4
+        },
+        {
+          "name": "m20",
+          "type": "float",
+          "offset": 8
+        },
+        {
+          "name": "m30",
+          "type": "float",
+          "offset": 12
+        },
+        {
+          "name": "m01",
+          "type": "float",
+          "offset": 16
+        },
+        {
+          "name": "m11",
+          "type": "float",
+          "offset": 20
+        },
+        {
+          "name": "m21",
+          "type": "float",
+          "offset": 24
+        },
+        {
+          "name": "m31",
+          "type": "float",
+          "offset": 28
+        },
+        {
+          "name": "m02",
+          "type": "float",
+          "offset": 32
+        },
+        {
+          "name": "m12",
+          "type": "float",
+          "offset": 36
+        },
+        {
+          "name": "m22",
+          "type": "float",
+          "offset": 40
+        },
+        {
+          "name": "m32",
+          "type": "float",
+          "offset": 44
+        },
+        {
+          "name": "m03",
+          "type": "float",
+          "offset": 48
+        },
+        {
+          "name": "m13",
+          "type": "float",
+          "offset": 52
+        },
+        {
+          "name": "m23",
+          "type": "float",
+          "offset": 56
+        },
+        {
+          "name": "m33",
+          "type": "float",
+          "offset": 60
+        },
+        {
+          "name": "identityMatrix",
+          "type": "UnityEngine.Matrix4x4",
+          "offset": 48
+        }
+      ]
+    },
+    {
+      "type": "UnityEngine.Vector3",
+      "index": 43717,
+      "value": true,
+      "size": 12,
+      "fields": [
+        {
+          "name": "x",
+          "type": "float",
+          "offset": 0
+        },
+        {
+          "name": "y",
+          "type": "float",
+          "offset": 4
+        },
+        {
+          "name": "z",
+          "type": "float",
+          "offset": 8
+        }
+      ]
+    },
+    {
+      "type": "UnityEngine.Vector2",
+      "index": 43720,
+      "value": true,
+      "size": 8,
+      "fields": [
+        {
+          "name": "x",
+          "type": "float",
+          "offset": 0
+        },
+        {
+          "name": "y",
+          "type": "float",
+          "offset": 4
+        }
+      ]
+    },
+    {
+      "type": "UnityEngine.Quaternion",
+      "index": 43718,
+      "value": true,
+      "size": 16,
+      "fields": [
+        {
+          "name": "x",
+          "type": "float",
+          "offset": 0
+        },
+        {
+          "name": "y",
+          "type": "float",
+          "offset": 4
+        },
+        {
+          "name": "z",
+          "type": "float",
+          "offset": 8
+        },
+        {
+          "name": "w",
+          "type": "float",
+          "offset": 12
+        }
+      ]
+    },
+    {
+      "type": "Beyond.ELogChannel",
+      "index": 55865,
+      "value": true,
+      "size": 1,
+      "fields": [
+        {
+          "name": "value__",
+          "type": "byte",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Resource.RootCategory",
+      "index": 31998,
+      "value": true,
+      "size": 1,
+      "fields": [
+        {
+          "name": "value__",
+          "type": "byte",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Resource.EResourceRequestPriority",
+      "index": 32044,
+      "value": true,
+      "size": 4,
+      "fields": [
+        {
+          "name": "value__",
+          "type": "uint",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Resource.FAssetProxyHandle",
+      "index": 32023,
+      "value": true,
+      "size": 20,
+      "fields": [
+        {
+          "name": "m_untrackedHandle",
+          "type": "Beyond.Resource.FAssetProxyUntrackedHandle",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Resource.StringPathHash",
+      "index": 32028,
+      "value": true,
+      "size": 8,
+      "fields": [
+        {
+          "name": "hash",
+          "type": "long",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DynamicScene.ElementDealContext",
+      "index": 13038,
+      "value": true,
+      "size": 32,
+      "fields": [
+        {
+          "name": "elementId",
+          "type": "ulong",
+          "offset": 0
+        },
+        {
+          "name": "groupId",
+          "type": "ulong",
+          "offset": 8
+        },
+        {
+          "name": "gridIndex",
+          "type": "int",
+          "offset": 16
+        },
+        {
+          "name": "gridId",
+          "type": "uint",
+          "offset": 20
+        },
+        {
+          "name": "hotSlot",
+          "type": "ushort",
+          "offset": 24
+        },
+        {
+          "name": "coldSlot",
+          "type": "ushort",
+          "offset": 26
+        },
+        {
+          "name": "forceSync",
+          "type": "bool",
+          "offset": 28
+        },
+        {
+          "name": "holdLoad",
+          "type": "bool",
+          "offset": 29
+        },
+        {
+          "name": "holdUnload",
+          "type": "bool",
+          "offset": 30
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DynamicScene.ModelCompData",
+      "index": 13096,
+      "value": true,
+      "size": 20,
+      "fields": [
+        {
+          "name": "rootGridIndex",
+          "type": "uint",
+          "offset": 0
+        },
+        {
+          "name": "currentLod",
+          "type": "int",
+          "offset": 4
+        },
+        {
+          "name": "asyncInstantiateHandle",
+          "type": "uint",
+          "offset": 8
+        },
+        {
+          "name": "status",
+          "type": "Beyond.Gameplay.Core.DynamicScene.ELoadStatus",
+          "offset": 12
+        },
+        {
+          "name": "enableState",
+          "type": "bool",
+          "offset": 13
+        },
+        {
+          "name": "invalid",
+          "type": "bool",
+          "offset": 14
+        },
+        {
+          "name": "hasLoad",
+          "type": "bool",
+          "offset": 15
+        },
+        {
+          "name": "m_pad0",
+          "type": "byte",
+          "offset": 16
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneModel",
+      "index": 13206,
+      "value": true,
+      "size": 32,
+      "fields": [
+        {
+          "name": "__p",
+          "type": "Google.FlatBuffers.Struct",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "type": "Google.FlatBuffers.Struct",
+      "index": 57387,
+      "value": true,
+      "size": 32,
+      "fields": [
+        {
+          "name": "<bb_pos>k__BackingField",
+          "type": "int",
+          "offset": 0
+        },
+        {
+          "name": "<bb>k__BackingField",
+          "type": "Google.FlatBuffers.ByteBuffer",
+          "offset": 8
+        }
+      ]
+    },
+    {
+      "type": "Google.FlatBuffers.ByteBuffer",
+      "index": 57376,
+      "value": true,
+      "size": 24,
+      "fields": [
+        {
+          "name": "_buffer",
+          "type": "Google.FlatBuffers.ByteData",
+          "offset": 0
+        },
+        {
+          "name": "_pos",
+          "type": "int",
+          "offset": 16
+        }
+      ]
+    },
+    {
+      "type": "Google.FlatBuffers.ByteData",
+      "index": 57375,
+      "value": true,
+      "size": 16,
+      "fields": [
+        {
+          "name": "_buffer",
+          "type": "byte*",
+          "offset": 0
+        },
+        {
+          "name": "_length",
+          "type": "int",
+          "offset": 8
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase",
+      "index": 13150,
+      "value": false,
+      "size": null,
+      "fields": [
+        {
+          "name": "manager",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+          "offset": 16
+        },
+        {
+          "name": "m_realTickRatio",
+          "type": "float",
+          "offset": 24
+        },
+        {
+          "name": "m_systemEnableLoad",
+          "type": "bool",
+          "offset": 28
+        },
+        {
+          "name": "m_compBridge",
+          "type": "Beyond.Gameplay.Core.DynamicScene.CompEntityBridge",
+          "offset": 32
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "index": 13181,
+      "value": false,
+      "size": null,
+      "fields": [
+        {
+          "name": "m_setContextManager",
+          "type": "Beyond.Gameplay.Core.MemFriendSetContextManager`1<ulong>",
+          "offset": 16
+        },
+        {
+          "name": "m_stringManager",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneRuntimeStringManager",
+          "offset": 24
+        },
+        {
+          "name": "m_gameplayManager",
+          "type": "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager",
+          "offset": 32
+        },
+        {
+          "name": "m_tickWatcher",
+          "type": "System.Diagnostics.Stopwatch",
+          "offset": 40
+        },
+        {
+          "name": "m_watcher",
+          "type": "Beyond.Gameplay.Core.DynamicScene.TimeWatcher",
+          "offset": 48
+        },
+        {
+          "name": "m_gridDealer",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneGridDealer",
+          "offset": 56
+        },
+        {
+          "name": "m_lodProxyDealer",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneLodProxyDealer",
+          "offset": 64
+        },
+        {
+          "name": "<visibilityNeedRefresh>k__BackingField",
+          "type": "bool",
+          "offset": 72
+        },
+        {
+          "name": "m_lastVisibilityCenter",
+          "type": "UnityEngine.Vector2",
+          "offset": 76
+        },
+        {
+          "name": "m_loadMode",
+          "type": "Beyond.Gameplay.Core.DynamicScene.EDynamicStreamingLoadMode",
+          "offset": 84
+        },
+        {
+          "name": "m_useTransHandle",
+          "type": "int",
+          "offset": 88
+        },
+        {
+          "name": "m_transTimeHandle",
+          "type": "int",
+          "offset": 92
+        },
+        {
+          "name": "m_ecsRoot",
+          "type": "UnityEngine.Transform",
+          "offset": 96
+        },
+        {
+          "name": "m_modelRoot",
+          "type": "UnityEngine.Transform",
+          "offset": 104
+        },
+        {
+          "name": "m_effectRoot",
+          "type": "UnityEngine.Transform",
+          "offset": 112
+        },
+        {
+          "name": "gameScene",
+          "type": "Beyond.Gameplay.View.BaseGameScene",
+          "offset": 120
+        },
+        {
+          "name": "m_activeSceneStateIndices",
+          "type": "System.Collections.Generic.HashSet`1<int>",
+          "offset": 128
+        },
+        {
+          "name": "m_activeAreaIds",
+          "type": "System.Collections.Generic.HashSet`1<int>",
+          "offset": 136
+        },
+        {
+          "name": "m_sceneHasCreated",
+          "type": "bool",
+          "offset": 144
+        },
+        {
+          "name": "m_sceneHasStarted",
+          "type": "bool",
+          "offset": 145
+        },
+        {
+          "name": "m_couldTick",
+          "type": "bool",
+          "offset": 146
+        },
+        {
+          "name": "m_curValid",
+          "type": "bool",
+          "offset": 147
+        },
+        {
+          "name": "m_currentMapId",
+          "type": "string",
+          "offset": 152
+        },
+        {
+          "name": "m_versionBanSet",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet",
+          "offset": 160
+        },
+        {
+          "name": "<lifecyclePhase>k__BackingField",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneLifecyclePhase",
+          "offset": 168
+        },
+        {
+          "name": "m_externalTickCount",
+          "type": "int",
+          "offset": 172
+        },
+        {
+          "name": "m_hasInitFastLoad",
+          "type": "bool",
+          "offset": 176
+        },
+        {
+          "name": "m_wasIdle",
+          "type": "bool",
+          "offset": 177
+        },
+        {
+          "name": "m_dataLoaderList",
+          "type": "Beyond.SparseList`1<Beyond.Gameplay.Core.DynamicScene.DynamicDataLoader>",
+          "offset": 184
+        },
+        {
+          "name": "m_runtimeMapData",
+          "type": "Beyond.Gameplay.Core.SparseNativeArray`1<Beyond.Gameplay.Core.DynamicScene.RuntimeMapData>",
+          "offset": 192
+        },
+        {
+          "name": "m_validLoaderSet",
+          "type": "System.Collections.Generic.HashSet`1<uint>",
+          "offset": 200
+        },
+        {
+          "name": "m_dataLoaderTrackMap",
+          "type": "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene+DataLoaderTrackState>",
+          "offset": 208
+        },
+        {
+          "name": "m_physicGridToLogicGridSet",
+          "type": "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.Core.RuntimeCombineSet>",
+          "offset": 216
+        },
+        {
+          "name": "m_logicGridToPhysicGridSet",
+          "type": "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.Core.RuntimeCombineSet>",
+          "offset": 224
+        },
+        {
+          "name": "m_gridIdVirtualRefCountMap",
+          "type": "System.Collections.Generic.Dictionary`2<uint,int>",
+          "offset": 232
+        },
+        {
+          "name": "m_uniqueIdToLoaderHandlerMap",
+          "type": "System.Collections.Generic.Dictionary`2<string,uint>",
+          "offset": 240
+        },
+        {
+          "name": "m_loaderToChunkHandleMap",
+          "type": "System.Collections.Generic.Dictionary`2<uint,System.Collections.Generic.Dictionary`2<int,uint>>",
+          "offset": 248
+        },
+        {
+          "name": "m_cacheGridSet",
+          "type": "System.Collections.Generic.HashSet`1<uint>",
+          "offset": 256
+        },
+        {
+          "name": "m_mainLoader",
+          "type": "int",
+          "offset": 264
+        },
+        {
+          "name": "m_logicIdToExtraSceneUniqueId",
+          "type": "System.Collections.Generic.Dictionary`2<ulong,string>",
+          "offset": 272
+        },
+        {
+          "name": "m_extraSceneLoadedCallbacks",
+          "type": "System.Collections.Generic.Dictionary`2<ulong,System.Action`1<ulong>>",
+          "offset": 280
+        },
+        {
+          "name": "m_gridRefCount",
+          "type": "System.Collections.Generic.Dictionary`2<uint,int>",
+          "offset": 288
+        },
+        {
+          "name": "m_currentHasEnteredGridSet",
+          "type": "System.Collections.Generic.HashSet`1<uint>",
+          "offset": 296
+        },
+        {
+          "name": "m_deactivatingGrids",
+          "type": "System.Collections.Generic.HashSet`1<uint>",
+          "offset": 304
+        },
+        {
+          "name": "m_deactivatingColdSlots",
+          "type": "System.Collections.Generic.HashSet`1<ushort>",
+          "offset": 312
+        },
+        {
+          "name": "m_gridSlotManager",
+          "type": "Beyond.Gameplay.Core.DynamicScene.GridSlotManager",
+          "offset": 320
+        },
+        {
+          "name": "m_cachedFbChunks",
+          "type": "Beyond.Gameplay.Core.DynamicScene.IndexedArray`1<Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData>",
+          "offset": 328
+        },
+        {
+          "name": "m_cachedFbGrids",
+          "type": "Beyond.Gameplay.Core.DynamicScene.IndexedArray`1<Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid>",
+          "offset": 336
+        },
+        {
+          "name": "m_rootPool",
+          "type": "Beyond.Gameplay.Core.NativeSegmentPool`1<Beyond.Gameplay.Core.DynamicScene.RootCompData>",
+          "offset": 344
+        },
+        {
+          "name": "m_rootGridHandles",
+          "type": "Beyond.Gameplay.Core.DynamicScene.IndexedArray`1<Beyond.Gameplay.Core.SegmentHandle>",
+          "offset": 352
+        },
+        {
+          "name": "m_rootGridStarts",
+          "type": "Beyond.Gameplay.Core.DynamicScene.IndexedArray`1<int>",
+          "offset": 360
+        },
+        {
+          "name": "m_proxyMap",
+          "type": "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.Core.DynamicScene.IDynamicSceneLodProxy>",
+          "offset": 368
+        },
+        {
+          "name": "m_systems",
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase[]",
+          "offset": 376
+        },
+        {
+          "name": "m_systemEnable",
+          "type": "bool[]",
+          "offset": 384
+        },
+        {
+          "name": "m_validSystems",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase>",
+          "offset": 392
+        },
+        {
+          "name": "m_systemTickBudget",
+          "type": "System.Collections.Generic.List`1<float>",
+          "offset": 400
+        },
+        {
+          "name": "m_isSystemEnableStateDirty",
+          "type": "bool",
+          "offset": 408
+        },
+        {
+          "name": "m_invalidSystemSet",
+          "type": "System.Collections.Generic.HashSet`1<int>",
+          "offset": 416
+        },
+        {
+          "name": "m_anyProgressLastTickSystem",
+          "type": "bool",
+          "offset": 424
+        },
+        {
+          "name": "m_sceneLifecycleCallbacks",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DynamicScene.ISceneLifecycle>",
+          "offset": 432
+        },
+        {
+          "name": "m_gridLifecycleCallbacks",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DynamicScene.IGridLifecycle>",
+          "offset": 440
+        },
+        {
+          "name": "m_byDataType",
+          "type": "Beyond.Gameplay.Core.DynamicScene.IGridLifecycle[]",
+          "offset": 448
+        },
+        {
+          "name": "m_eventMasks",
+          "type": "ulong[]",
+          "offset": 456
+        },
+        {
+          "name": "m_prio0Mask",
+          "type": "ulong",
+          "offset": 464
+        },
+        {
+          "name": "m_modelApplier",
+          "type": "Beyond.Gameplay.Core.DynamicScene.ModelPresentationApplier",
+          "offset": 472
+        }
+      ]
+    },
+    {
+      "index": 55628,
+      "type": "UnityEngine.PhysicsScene",
+      "value": true,
+      "size": 4,
+      "fields": [
+        {
+          "name": "m_Handle",
+          "type": "int",
+          "offset": 0
+        }
+      ]
+    }
+  ],
+  "abiReference": "https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention",
+  "evidenceBoundary": {
+    "exact": "Selected metadata signatures, unboxed sizes, field offsets, bounded native entry bodies and argument-capture instructions. Explicit Win64 GP/stack signatures include MethodInfo and hidden return buffers.",
+    "conditional": "Originals return normally; separately timed root/child snapshots run on the original main thread after selected instantiation returns. Enumeration is bounded and includes inactive children.",
+    "unresolved": "Retail provenance and completed-step coverage still require capture; IFix branch selection, cooked native geometry and contact pairs are not established by offline validation.",
+    "runtimeProvenance": "direct: serialized identity and filename table read under the native manager critical section; runtime-created objects may have no serialized entry",
+    "physicsSnapshots": "conditional: requested separately timed snapshots after original manual Physics.Simulate_Internal and exactly one authenticated native completion return normally; no contact pair claim",
+    "nativeMemory": "structuralOnly: bounded opaque native memory windows; pointer values and readable regions are observed, allocation/type/PhysX ownership and geometry equivalence remain unresolved",
+    "contactReports": "direct: finalized header copied after its native writer returns at either reviewed caller, before dispatch/cleanup. Pair stride and removed-shape flag location are native anchored; remaining pair field names use matching public PhysX layout, retained raw bytes remain structuralOnly until a selected native consumer is authenticated. Missing reports do not prove absence of collisions or contacts; callback notification flags are unchanged.",
+    "queryCapture": "conditional: separate query-native contract authenticates ABI and requested-name/cache/caller routes. Live binding gates result admission; filter decisions and reporting guards are copied without changing game behavior."
+  },
+  "publicApis": [
+    {
+      "role": "il2cpp_object_get_class",
+      "rva": 621552,
+      "bodyBytes": 4,
+      "bodySha256": "92ca7142687bd5513bea360e328ca1c00c3c3a9b71ffdda7bfc2407de7693978",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "role": "il2cpp_class_get_name",
+      "rva": 593152,
+      "bodyBytes": 5,
+      "bodySha256": "01b97d2da374096b4359dfb781da44ea9eb61ba0541de9f2d557cfad9adef8d3",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "role": "il2cpp_class_get_namespace",
+      "rva": 646816,
+      "bodyBytes": 5,
+      "bodySha256": "0c6b8858e139e1a255688dfc8b1fca61c89ccea689e8da8bcd4276a9918f1dbe",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "role": "il2cpp_class_get_parent",
+      "rva": 658080,
+      "bodyBytes": 5,
+      "bodySha256": "091f5e45f0be74d7ee4478154027e057c5c9d8b9d8f3ce62e44700ee355c23de",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "role": "il2cpp_class_get_image",
+      "rva": 621552,
+      "bodyBytes": 4,
+      "bodySha256": "92ca7142687bd5513bea360e328ca1c00c3c3a9b71ffdda7bfc2407de7693978",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "role": "il2cpp_class_from_name",
+      "rva": 85488,
+      "bodyBytes": 64,
+      "bodySha256": "3219f8ea9d6393afc6c59b23e9b83b8d2822023fa61717a3d99506570d13b11e",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 18,
+          "bytes": "498bf0",
+          "instruction": "name from r8"
+        },
+        {
+          "offset": 21,
+          "bytes": "488bea",
+          "instruction": "namespace from rdx"
+        },
+        {
+          "offset": 24,
+          "bytes": "488bd9",
+          "instruction": "image from rcx"
+        }
+      ]
+    },
+    {
+      "role": "il2cpp_class_get_type",
+      "rva": 653600,
+      "bodyBytes": 5,
+      "bodySha256": "a8adead0a89e8bcc0f6079669194e35b31c483df478a1515e46c55a9cf74fb51",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": []
+    },
+    {
+      "role": "il2cpp_type_get_object",
+      "rva": 749248,
+      "bodyBytes": 5,
+      "bodySha256": "ca4a559abbf8fd891e3cde0c8a08f63de44016f688a4ceb38cbe4e314779485e",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      },
+      "abiEntryProbes": [],
+      "codeWindows": [
+        {
+          "rva": 28784,
+          "bodyBytes": 128,
+          "sha256": "4c211cb0a983c88a68dfd3e1e4b4110c9140a9acf40a6bb8c9f40de9698f3850",
+          "boundary": "Direct tail target; bounded native implementation window"
+        }
+      ]
+    },
+    {
+      "role": "il2cpp_gchandle_new",
+      "rva": 113808,
+      "bodyBytes": 32,
+      "bodySha256": "c5256daa6d849e4542ee9e1d04eaae9564cfb8c4b925ace24a3bbf6bce5c73f9",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "bool"
+        ],
+        "returnMode": "u32"
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 0,
+          "bytes": "0fb6c2",
+          "instruction": "pinned from dl"
+        },
+        {
+          "offset": 3,
+          "bytes": "4c8bc1",
+          "instruction": "object from rcx"
+        }
+      ],
+      "codeWindows": [
+        {
+          "rva": 2692256,
+          "bodyBytes": 128,
+          "sha256": "88df57fc02a1a1500ca71760cee161eb0c36b19e747763119c25420526ac7d1a",
+          "boundary": "Direct tail target; bounded native implementation window"
+        }
+      ]
+    },
+    {
+      "role": "il2cpp_gchandle_free",
+      "rva": 168208,
+      "bodyBytes": 32,
+      "bodySha256": "ff22535652ec9d27b8843e0ab89db2b2e04994ce1fceff0334cf24251c04b473",
+      "abi": {
+        "arguments": [
+          "u32"
+        ],
+        "returnMode": "void"
+      },
+      "abiEntryProbes": [
+        {
+          "offset": 10,
+          "bytes": "8bd1",
+          "instruction": "handle from ecx"
+        }
+      ]
+    },
+    {
+      "role": "il2cpp_gchandle_get_target",
+      "rva": 11091312,
+      "bodyBytes": 5,
+      "bodySha256": "e432c9635b78e4ed2fc86fa6f87c805671d12be4d1e10602fa0ed47e838db1e9",
+      "boundary": "direct: public export tail-calls locked handle table query",
+      "abiEntryProbes": [
+        {
+          "offset": 0,
+          "bytes": "e93b9a59ff",
+          "instruction": "tail target; ECX uint32 handle unchanged"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "u32"
+        ],
+        "returnMode": "pointer"
+      },
+      "codeWindows": [
+        {
+          "rva": 186288,
+          "bodyBytes": 377,
+          "sha256": "bb178653664ff0b7f594a570b7e5e02f33cf95bf2f9d59cf5057856c67923823",
+          "boundary": "direct: ECX uint32 handle decoded; locked table lookup; RAX managed target"
+        }
+      ]
+    }
+  ],
+  "childSnapshots": {
+    "maxComponents": 256,
+    "maxColliders": 64,
+    "includeInactive": true,
+    "selection": "Exactly one direct SetParent root captured inside selected instantiation; query after original normal return on main thread.",
+    "componentType": "UnityEngine.Component",
+    "boundary": "direct: separately timed post-instantiation child reads plus native serialized provenance; later retained-object snapshots have their own completion and lifetime gates."
+  },
+  "playerMethods": [
+    {
+      "role": "read_lock",
+      "rva": 5803568,
+      "bodyBytes": 7,
+      "bodySha256": "8847022e033dfdc3c104cf9726c25b135a5088002de106187d623c6f86d5d991",
+      "boundary": "direct: tail jump through EnterCriticalSection import",
+      "abiEntryProbes": [
+        {
+          "offset": 0,
+          "bytes": "48ff2559252d01",
+          "instruction": "RCX lock address passed unchanged"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "hook": false
+    },
+    {
+      "role": "serialized_identity",
+      "rva": 1256384,
+      "bodyBytes": 291,
+      "bodySha256": "94b2d9c3c7fb98939783a54579a57afc302c99ee3e04cdd8705e5f245bebc5fb",
+      "boundary": "direct: read-only instance-ID lookup; bool AL; 16-byte file index/PathID output; cold range lookup separately pinned",
+      "abiEntryProbes": [
+        {
+          "offset": 11,
+          "bytes": "4d8bd8",
+          "instruction": "R8 output pointer"
+        },
+        {
+          "offset": 14,
+          "bytes": "448bd2",
+          "instruction": "EDX instance ID"
+        },
+        {
+          "offset": 286,
+          "bytes": "e9e5dcd800",
+          "instruction": "cold range lookup tail jump"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "i32",
+          "pointer"
+        ],
+        "returnMode": "bool"
+      },
+      "hook": false
+    },
+    {
+      "role": "physics_complete",
+      "rva": 3979792,
+      "bodyBytes": 92,
+      "bodySha256": "eeedff58bba5cc073d9fbfa3d5f67f70710deb86318a19110880804e402e80c2",
+      "boundary": "direct: physics native completion/event drain; only admit the authenticated simulation-core return address",
+      "abiEntryProbes": [
+        {
+          "offset": 6,
+          "bytes": "488bd9",
+          "instruction": "RCX native scene saved"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "hook": true
+    },
+    {
+      "role": "identity_range",
+      "rva": 15469000,
+      "bodyBytes": 38,
+      "bodySha256": "c3fc87ce2f0fb20724f119abc9f55f2e7069d47509a4561ba293e7c0921589ac",
+      "boundary": "direct: cold identity lookup produces file index and PathID without loading",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "manager_constructor",
+      "rva": 3968176,
+      "bodyBytes": 142,
+      "bodySha256": "cfa260e5d57781f52057181e86df0047227863a14f58cf41a05c7a389e8af7ef",
+      "boundary": "exact: concrete vtable, filename vector and singleton store",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "identity_consumer",
+      "rva": 19377116,
+      "bodyBytes": 137,
+      "bodySha256": "3e23480c6a47e6a6280dcf2507c00cc1f51bcdbc60610b080e22bcedf40349cd",
+      "boundary": "direct: instance ID consumer calls hash lookup under manager read lock",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "pathid_consumer",
+      "rva": 20976264,
+      "bodyBytes": 122,
+      "bodySha256": "93cd0de7212b655900249e6ba28ad797359bb34ff00212b0926b4598ae7eb00e",
+      "boundary": "direct: AssetBundle GetSerializedObjectId returns identity output +8",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "filename_writer",
+      "rva": 724240,
+      "bodyBytes": 324,
+      "bodySha256": "23eb76b140cae75a489cd0ace86134052ee9c9f0c0e074276429e0ea318aef1a",
+      "boundary": "direct: returns old vector count as file index; appends 40-byte filename; updates count",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "filename_consumer",
+      "rva": 748352,
+      "bodyBytes": 111,
+      "bodySha256": "7801a05454ea80d9fc484c86c9076664da2c6aa94b042cdf8376b28e89c8d6a6",
+      "boundary": "direct: concrete vtable +32 indexes filename vector at file index *40",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "string_reader",
+      "rva": 5803440,
+      "bodyBytes": 14,
+      "bodySha256": "b644439d1d34cd961556d3bb123b15940fcd6bde68bce1b98fa6f36ef6be331f",
+      "boundary": "direct: tag 1 inline data, otherwise pointer +0",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "string_copy",
+      "rva": 475536,
+      "bodyBytes": 297,
+      "bodySha256": "f543ae95d17bbf3085c36c57076780822ce276f273feab85e6043bf1bd0e4c17",
+      "boundary": "direct: tag 1 length 24 - signed byte24; otherwise length qword16",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "lock_release_consumer",
+      "rva": 735408,
+      "bodyBytes": 135,
+      "bodySha256": "f90e9770fa71efa6c13000f8137c4261ec94edbf4e7d9937023e4333e42b3f4e",
+      "boundary": "direct: manager +312 read lock released through LeaveCriticalSection import",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "physics_core",
+      "rva": 2842144,
+      "bodyBytes": 2048,
+      "bodySha256": "6ccc64020530ff900bfdf74daacbb8802ba0991ebe68ecd26f30c1de5a756ea2",
+      "boundary": "direct: rejected scene, step and reentrancy paths skip completion; native simulation/result synchronization and completion precede normal return; no contact-pair or cooked-geometry assertion",
+      "abiEntryProbes": [
+        {
+          "offset": 0,
+          "bytes": "89542410",
+          "instruction": "EDX uint32 scene saved"
+        },
+        {
+          "offset": 26,
+          "bytes": "4c8be9",
+          "instruction": "RCX physics manager saved in R13"
+        },
+        {
+          "offset": 39,
+          "bytes": "0f28f2",
+          "instruction": "XMM2 float step saved in XMM6"
+        },
+        {
+          "offset": 42,
+          "bytes": "8bf2",
+          "instruction": "EDX scene saved in ESI"
+        },
+        {
+          "offset": 2047,
+          "bytes": "c3",
+          "instruction": "normal return after completion and scene in-simulation reset"
+        }
+      ],
+      "hook": true,
+      "abi": {
+        "arguments": [
+          "pointer",
+          "u32",
+          "f32"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "physics_icall",
+      "rva": 2844512,
+      "bodyBytes": 17,
+      "bodySha256": "bd225e595dc3695de1b9ed3dd135efc2543dc16f7f33ffcbee6bfb867695655b",
+      "boundary": "direct: PhysicsScene pointer RCX -> scene EDX; XMM1 step -> XMM2; tail core",
+      "abiEntryProbes": []
+    },
+    {
+      "role": "map_consumer",
+      "rva": 1255728,
+      "bodyBytes": 153,
+      "bodySha256": "b16d16f9104e22389ca4dddc1a6a535244b7e25f418d365a01d397282ba4e297",
+      "abiEntryProbes": [],
+      "boundary": "direct: read-lock wrapper obtains instance-ID map before lookup; subsequent file loading is deliberately excluded from the observer query"
+    },
+    {
+      "role": "physics_native_caller",
+      "rva": 13235868,
+      "bodyBytes": 37,
+      "bodySha256": "9db39baec12f7d8c0602df0fd0bd1184e64303a0db89fa0902328022e2e701be",
+      "hook": false,
+      "boundary": "direct: native caller transfers a scalar time step to XMM2, its manager to RCX and its selected scene to EDX before calling the same simulation core; route execution is not established by this stored window",
+      "abiEntryProbes": [
+        {
+          "offset": 19,
+          "bytes": "0f28d6",
+          "instruction": "XMM2 step from saved XMM6"
+        },
+        {
+          "offset": 22,
+          "bytes": "488bcb",
+          "instruction": "RCX manager from RBX"
+        },
+        {
+          "offset": 25,
+          "bytes": "8bd0",
+          "instruction": "EDX selected scene from EAX"
+        },
+        {
+          "offset": 27,
+          "bytes": "e8646761ff",
+          "instruction": "direct call to reviewed simulation core"
+        }
+      ]
+    },
+    {
+      "role": "contact_finalize",
+      "rva": 7989440,
+      "bodyBytes": 707,
+      "bodySha256": "dfaa8dfc2b458e89e9f497c51dd12b5031d21c0c2e6a831281c128770693f3ef",
+      "hook": true,
+      "abiEntryProbes": [
+        {
+          "offset": 5,
+          "bytes": "48894c2408",
+          "instruction": "save RCX scene"
+        },
+        {
+          "offset": 34,
+          "bytes": "4d8bf9",
+          "instruction": "R9 stream"
+        },
+        {
+          "offset": 42,
+          "bytes": "4d8be8",
+          "instruction": "R8 actor pair"
+        },
+        {
+          "offset": 45,
+          "bytes": "488bf2",
+          "instruction": "RDX header"
+        },
+        {
+          "offset": 94,
+          "bytes": "855c2460",
+          "instruction": "fifth uint32 argument at entry RSP+28 after seven pushes"
+        }
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "u32"
+        ],
+        "returnMode": "void",
+        "hiddenReturnBytes": 0
+      }
+    },
+    {
+      "role": "contact_direct_dispatch",
+      "rva": 7993776,
+      "bodyBytes": 362,
+      "bodySha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee",
+      "hook": false,
+      "abiEntryProbes": []
+    },
+    {
+      "role": "contact_split_headers",
+      "rva": 7997728,
+      "bodyBytes": 373,
+      "bodySha256": "448a850910be2bd44a70420f477b675a3729458872c1c8d7d4b9906ad6a55f4d",
+      "hook": false,
+      "abiEntryProbes": []
+    }
+  ],
+  "runtimeProvenance": {
+    "singletonRva": 30911992,
+    "vtableRva": 25626840,
+    "lockOffset": 312,
+    "mapOffset": 88,
+    "filesOffset": 480,
+    "countOffset": 496,
+    "entryBytes": 40,
+    "maxFiles": 1048576,
+    "maxFilenameBytes": 512,
+    "stringTagOffset": 32,
+    "stringLengthOffset": 16,
+    "stringInlineRemainingOffset": 24,
+    "stringInlineCapacity": 24,
+    "identityBytes": 16,
+    "identityFileIndexOffset": 0,
+    "identityPathIdOffset": 8,
+    "readLockImportRva": 25539472,
+    "releaseLockImportRva": 25539480,
+    "boundary": "direct: runtime instance-ID map and native serialized filename table read in one critical-section scope; absent entries remain unjoined; filenames retained verbatim",
+    "fieldWitnesses": [
+      {
+        "field": "singletonRva",
+        "role": "manager_constructor",
+        "instructionOffset": 125,
+        "prefix": "48891d",
+        "encoding": "rip32"
+      },
+      {
+        "field": "vtableRva",
+        "role": "manager_constructor",
+        "instructionOffset": 66,
+        "prefix": "488d05",
+        "encoding": "rip32"
+      },
+      {
+        "field": "lockOffset",
+        "role": "identity_consumer",
+        "instructionOffset": 31,
+        "prefix": "4881c1",
+        "encoding": "disp32"
+      },
+      {
+        "field": "mapOffset",
+        "role": "map_consumer",
+        "instructionOffset": 64,
+        "prefix": "488b4e",
+        "encoding": "disp8"
+      },
+      {
+        "field": "filesOffset",
+        "role": "filename_consumer",
+        "instructionOffset": 16,
+        "prefix": "488b81",
+        "encoding": "disp32"
+      },
+      {
+        "field": "countOffset",
+        "role": "filename_writer",
+        "instructionOffset": 134,
+        "prefix": "4c8b87",
+        "encoding": "disp32"
+      }
+    ],
+    "lockMode": "try_critical_section_nonblocking"
+  },
+  "physicsSnapshots": {
+    "maxRetainedColliders": 64,
+    "completedStepOrdinals": [
+      1,
+      60,
+      600
+    ],
+    "completionReturnRva": 2844138,
+    "completionRole": "physics_complete",
+    "selection": "Main-thread selected child colliders; retain pinned Collider and root GameObject; cached native pointers and instance IDs must still match; completed simulation entry must be later than enrollment",
+    "boundary": "conditional: later completed-step snapshots plus retained lifetime until quiescent stop; contact reports are separately observed before cleanup, not inferred from completed steps",
+    "simulationRole": "physics_core",
+    "retainUntilStop": true
+  },
+  "nativeMemory": {
+    "format": "endfield.native-memory-windows.v3",
+    "roots": [
+      "collider",
+      "sharedMesh"
+    ],
+    "windowBytes": 4096,
+    "pointerScanBytes": 1024,
+    "maxDepth": 4,
+    "maxNodes": 128,
+    "maxMicroseconds": 2000,
+    "maxTotalBytes": 134217728,
+    "maxTotalBlocks": 32768,
+    "regionPolicy": "committed_private_or_mapped_nonexecutable",
+    "boundary": "structuralOnly: bounded, separately timed opaque windows, not allocation extents or atomic snapshots. Object checkpoints traverse plausible pointer edges; report captures prioritize header extra data and pair streams, skip removed sides, and copy typed live shape-to-actor edges. Selected contact Collider windows traverse only the current attachment, with explicit read/queue/time/session limits.",
+    "reportRoots": [
+      "contactHeader",
+      "contactPair"
+    ],
+    "spanRoots": [
+      "source",
+      "meshIds"
+    ],
+    "detailSpanRoots": [
+      "geometryVertices",
+      "geometryIndices"
+    ],
+    "solverOwnerSpans": {
+      "actorBytes": 256,
+      "shapeBytes": 256
+    }
+  },
+  "contactCapture": {
+    "role": "contact_finalize",
+    "headerBytes": 48,
+    "pairBytes": 64,
+    "maxPairsPerHeader": 128,
+    "maxPairSamples": 2048,
+    "retainUntilStop": true,
+    "removedFlagsMask": 3,
+    "returnRvas": [
+      7993998,
+      7998001
+    ],
+    "fieldWitnesses": [
+      {
+        "field": "headerActor0",
+        "role": "contact_finalize",
+        "offset": 293,
+        "bytes": "48890e",
+        "path": "header.actors.0",
+        "operandOffset": 2,
+        "implicitZero": true
+      },
+      {
+        "field": "headerActor1",
+        "role": "contact_finalize",
+        "offset": 304,
+        "bytes": "48894e08",
+        "path": "header.actors.1",
+        "operandOffset": 3
+      },
+      {
+        "field": "headerFlags",
+        "role": "contact_finalize",
+        "offset": 434,
+        "bytes": "6689461a",
+        "path": "header.flags",
+        "operandOffset": 3
+      },
+      {
+        "field": "headerCount",
+        "role": "contact_finalize",
+        "offset": 441,
+        "bytes": "894628",
+        "path": "header.count",
+        "operandOffset": 2
+      },
+      {
+        "field": "headerPairs",
+        "role": "contact_finalize",
+        "offset": 444,
+        "bytes": "4c896620",
+        "path": "header.pairs",
+        "operandOffset": 3
+      },
+      {
+        "field": "headerExtra",
+        "role": "contact_finalize",
+        "offset": 479,
+        "bytes": "48894610",
+        "path": "header.extra",
+        "operandOffset": 3
+      },
+      {
+        "field": "headerExtraSize",
+        "role": "contact_finalize",
+        "offset": 686,
+        "bytes": "66895618",
+        "path": "header.extraSize",
+        "operandOffset": 3
+      },
+      {
+        "field": "pairFlags",
+        "role": "contact_finalize",
+        "offset": 122,
+        "bytes": "4d8d4c2430",
+        "path": "pair.flags",
+        "operandOffset": 4
+      },
+      {
+        "field": "pairStride",
+        "role": "contact_finalize",
+        "offset": 251,
+        "bytes": "4983c140",
+        "path": "pairBytes",
+        "operandOffset": 3
+      }
+    ],
+    "header": {
+      "actors": [
+        0,
+        8
+      ],
+      "extra": 16,
+      "extraSize": 24,
+      "flags": 26,
+      "pairs": 32,
+      "count": 40
+    },
+    "pair": {
+      "shapes": [
+        0,
+        8
+      ],
+      "patches": 16,
+      "points": 24,
+      "impulses": 32,
+      "requiredBufferSize": 40,
+      "contactCount": 44,
+      "patchCount": 45,
+      "streamSize": 46,
+      "flags": 48,
+      "events": 50
+    },
+    "sources": [
+      "https://raw.githubusercontent.com/NVIDIAGameWorks/PhysX/4.1/physx/include/PxSimulationEventCallback.h",
+      "https://raw.githubusercontent.com/NVIDIAGameWorks/PhysX/4.1/physx/source/simulationcontroller/src/ScScene.cpp"
+    ],
+    "evidenceBoundary": "direct: finalized header copied after its native writer returns at either reviewed caller, before dispatch/cleanup. Pair stride and removed-shape flag location are native anchored; remaining pair field names use matching public PhysX layout, retained raw bytes remain structuralOnly until a selected native consumer is authenticated. Missing reports do not prove absence of collisions or contacts; callback notification flags are unchanged.",
+    "maxUnselectedSamples": 128
+  },
+  "ecsObserver": "collision_ecs_capture_native.json",
+  "queryCallerPolicy": "reviewed-native-callee-and-live-cache",
+  "transport": {
+    "eventFormat": "endfield.collision-event-json.v2",
+    "queueCapacity": 32768,
+    "batchRows": 512,
+    "maxBatchBytes": 4194304,
+    "flushMillis": 1000
+  },
+  "stageObserver": "collision_physics_stage_native.json",
+  "dispatchObserver": "collision_solver_dispatch_native.json",
+  "detailObserver": "collision_geometry_state_native.json",
+  "bodyObserver": "collision_body_state_native.json",
+  "pairObserver": "collision_pair_filter_native.json",
+  "lifecycleObserver": "collision_pair_step_native.json",
+  "liveBodyObserver": "collision_live_body_native.json",
+  "activationObserver": "collision_activation_capture_native.json",
+  "solverTaskObserver": "collision_solver_task_native.json"
+}

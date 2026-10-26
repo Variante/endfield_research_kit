@@ -28,8 +28,10 @@ def decode_param_tail(
         return None
     id_ref, param_source, path_size = struct.unpack_from("<iii", payload, cursor)
     cursor += 12
-    # A negative source is only ever the getter-reference marker, and that form
-    # carries no path. Its id may be absent, spelled -1 exactly as the default
+    # This bounded codec currently admits only the proved getter-reference
+    # marker among negative source selectors; other negative declarations
+    # require independent route/child evidence. The admitted form carries no
+    # path. Its id may be absent, spelled -1 exactly as the default
     # tail spells an absent id -- so the id is bounded above and left open
     # below, where ``id_ref < -1`` already refuses anything further out.
     getter_reference = param_source == -1 and id_ref <= 0x10000 and path_size == -1

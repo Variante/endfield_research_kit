@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from scripts.game_data.atmospheric_npc_binary import frame_atmospheric_npc_table
 from scripts.game_data.spawner_binary import frame_spawner_named
+from scripts.game_data.string_pool import export_string_pool
 from scripts.game_data.schemas.map_config import decode_map_config
 from scripts.webui.data_inspector.contract import source_descriptor
 
@@ -49,7 +50,10 @@ def spawner_record(path: Path, export_root: Path) -> dict[str, Any]:
 
 def atmospheric_npc_record(path: Path, export_root: Path) -> dict[str, Any]:
     return _record(
-        path, export_root, reader=frame_atmospheric_npc_table, family="atmospheric-npc",
+        path, export_root, family="atmospheric-npc",
+        reader=lambda raw: frame_atmospheric_npc_table(
+            raw, strings=export_string_pool(export_root / "game" / "Json")
+        ),
         fact_keys=("entryCount", "namedNpcRuntimeProxyCount", "namedLevelEntityPrefixCount", "bytesConsumed"),
     )
 

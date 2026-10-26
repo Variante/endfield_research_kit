@@ -1,0 +1,645 @@
+{
+  "schema": "endfield.levelscript-param-value-native.v1",
+  "status": "reviewed-conditional-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "evidenceBoundary": {
+    "exact": "Recorded current-build bytes and registered selected closed Int32 entries.",
+    "direct": "The selected TryGetValue path writes the loaded DWORD through its explicit byref output before returning AL=1.",
+    "conditional": "Given compatible unchanged parameter storage, initialized/ready context branches and ordinary call/frame conditions, GetValue<int> returns the constant DWORD or its incoming fallback on the recorded alternatives.",
+    "unresolved": "Runtime object and MethodInfo identity, provider selection, nonconstant evaluation, formatter cursor integration and executed actions."
+  },
+  "entries": {
+    "value": {
+      "definition": [
+        39021,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "GetValue"
+      ],
+      "methodSpecIndex": 520460,
+      "methodSpec": [
+        39021,
+        -1,
+        81
+      ],
+      "window": {
+        "startRva": 66662288,
+        "endRva": 66662453,
+        "sha256": "DA412B4DCB6D86E5050900BC926FE50F699272B24F07122299CB9435A30429B5"
+      },
+      "instructions": [
+        [
+          66662288,
+          "48895C2410"
+        ],
+        [
+          66662293,
+          "48896C2418"
+        ],
+        [
+          66662298,
+          "4889742420"
+        ],
+        [
+          66662303,
+          "57"
+        ],
+        [
+          66662304,
+          "4883EC20"
+        ],
+        [
+          66662308,
+          "4983793800"
+        ],
+        [
+          66662313,
+          "498BD9"
+        ],
+        [
+          66662316,
+          "410FB6F0"
+        ],
+        [
+          66662320,
+          "8BEA"
+        ],
+        [
+          66662322,
+          "488BF9"
+        ],
+        [
+          66662325,
+          "7466"
+        ],
+        [
+          66662327,
+          "C744243000000000"
+        ],
+        [
+          66662335,
+          "4885FF"
+        ],
+        [
+          66662338,
+          "7469"
+        ],
+        [
+          66662340,
+          "488B4338"
+        ],
+        [
+          66662344,
+          "488B5008"
+        ],
+        [
+          66662348,
+          "48837A2000"
+        ],
+        [
+          66662353,
+          "745E"
+        ],
+        [
+          66662355,
+          "488B5338"
+        ],
+        [
+          66662359,
+          "488BCF"
+        ],
+        [
+          66662362,
+          "488B5208"
+        ],
+        [
+          66662366,
+          "E8AD64FEFF"
+        ],
+        [
+          66662371,
+          "84C0"
+        ],
+        [
+          66662373,
+          "7540"
+        ],
+        [
+          66662375,
+          "488B4338"
+        ],
+        [
+          66662379,
+          "488D542430"
+        ],
+        [
+          66662384,
+          "440FB6C6"
+        ],
+        [
+          66662388,
+          "488BCF"
+        ],
+        [
+          66662391,
+          "4C8B4810"
+        ],
+        [
+          66662395,
+          "E870FCFFFF"
+        ],
+        [
+          66662400,
+          "84C0"
+        ],
+        [
+          66662402,
+          "7429"
+        ],
+        [
+          66662404,
+          "8B442430"
+        ],
+        [
+          66662408,
+          "488B5C2438"
+        ],
+        [
+          66662413,
+          "488B6C2440"
+        ],
+        [
+          66662418,
+          "488B742448"
+        ],
+        [
+          66662423,
+          "4883C420"
+        ],
+        [
+          66662427,
+          "5F"
+        ],
+        [
+          66662428,
+          "C3"
+        ],
+        [
+          66662429,
+          "488BCB"
+        ],
+        [
+          66662432,
+          "E86BBF0BFC"
+        ],
+        [
+          66662437,
+          "EB90"
+        ],
+        [
+          66662439,
+          "837F24FF"
+        ],
+        [
+          66662443,
+          "75BA"
+        ],
+        [
+          66662445,
+          "8BC5"
+        ],
+        [
+          66662447,
+          "EBD7"
+        ],
+        [
+          66662449,
+          "FF12"
+        ],
+        [
+          66662451,
+          "EB9E"
+        ]
+      ]
+    },
+    "getterPredicate": {
+      "definition": [
+        38993,
+        "Beyond.Gameplay.Actions.Param`1",
+        "get_useGetter"
+      ],
+      "methodSpecIndex": 320893,
+      "methodSpec": [
+        38993,
+        81,
+        -1
+      ],
+      "window": {
+        "startRva": 66557072,
+        "endRva": 66557090,
+        "sha256": "74A87224AA344B084B739693344E1E0A434A1B83BA737F108B8341E6B82A2C28"
+      },
+      "instructions": [
+        [
+          66557072,
+          "837910FF"
+        ],
+        [
+          66557076,
+          "7409"
+        ],
+        [
+          66557078,
+          "837910FE"
+        ],
+        [
+          66557082,
+          "7403"
+        ],
+        [
+          66557084,
+          "32C0"
+        ],
+        [
+          66557086,
+          "C3"
+        ],
+        [
+          66557087,
+          "B001"
+        ],
+        [
+          66557089,
+          "C3"
+        ]
+      ]
+    },
+    "tryConstant": {
+      "definition": [
+        39025,
+        "Beyond.Gameplay.Actions.ParamExtensions",
+        "TryGetValue"
+      ],
+      "methodSpecIndex": 520575,
+      "methodSpec": [
+        39025,
+        -1,
+        81
+      ],
+      "window": {
+        "startRva": 66661488,
+        "endRva": 66661647,
+        "sha256": "B09063CE3EA0077FB086DAAD03668AC68885AD2A473319646423724E49702F62"
+      },
+      "instructions": [
+        [
+          66661488,
+          "48895C2418"
+        ],
+        [
+          66661493,
+          "4889542410"
+        ],
+        [
+          66661498,
+          "56"
+        ],
+        [
+          66661499,
+          "57"
+        ],
+        [
+          66661500,
+          "4154"
+        ],
+        [
+          66661502,
+          "4156"
+        ],
+        [
+          66661504,
+          "4157"
+        ],
+        [
+          66661506,
+          "4881ECD0000000"
+        ],
+        [
+          66661513,
+          "498BF9"
+        ],
+        [
+          66661516,
+          "450FB6F0"
+        ],
+        [
+          66661520,
+          "488BF2"
+        ],
+        [
+          66661523,
+          "488BD9"
+        ],
+        [
+          66661526,
+          "4983793800"
+        ],
+        [
+          66661531,
+          "7472"
+        ],
+        [
+          66661533,
+          "33C0"
+        ],
+        [
+          66661535,
+          "4889842418010000"
+        ],
+        [
+          66661543,
+          "4889842400010000"
+        ],
+        [
+          66661551,
+          "0F57C0"
+        ],
+        [
+          66661554,
+          "0F118424A0000000"
+        ],
+        [
+          66661562,
+          "0F118424B0000000"
+        ],
+        [
+          66661570,
+          "48898424C0000000"
+        ],
+        [
+          66661578,
+          "4885DB"
+        ],
+        [
+          66661581,
+          "0F849C4FC200"
+        ],
+        [
+          66661587,
+          "488B4738"
+        ],
+        [
+          66661591,
+          "488B4808"
+        ],
+        [
+          66661595,
+          "4883792000"
+        ],
+        [
+          66661600,
+          "0F84F045C200"
+        ],
+        [
+          66661606,
+          "837B1000"
+        ],
+        [
+          66661610,
+          "0F8533010000"
+        ],
+        [
+          66661616,
+          "8B4320"
+        ],
+        [
+          66661619,
+          "8906"
+        ],
+        [
+          66661621,
+          "B001"
+        ],
+        [
+          66661623,
+          "488B9C2410010000"
+        ],
+        [
+          66661631,
+          "4881C4D0000000"
+        ],
+        [
+          66661638,
+          "415F"
+        ],
+        [
+          66661640,
+          "415E"
+        ],
+        [
+          66661642,
+          "415C"
+        ],
+        [
+          66661644,
+          "5F"
+        ],
+        [
+          66661645,
+          "5E"
+        ],
+        [
+          66661646,
+          "C3"
+        ]
+      ]
+    }
+  },
+  "wrapper": {
+    "type": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_int_ForMemoryPack",
+    "holder": "__instance",
+    "holderOffset": 16,
+    "wrappedType": "Beyond.Gameplay.Actions.Param`1<int>",
+    "slots": {
+      "paramSource": 16,
+      "constValue": 32,
+      "idRef": 36
+    },
+    "methods": {
+      "GetValue": {
+        "definition": [
+          125320,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_int_ForMemoryPack",
+          "GetValue"
+        ],
+        "window": {
+          "startRva": 40763056,
+          "endRva": 40763061,
+          "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+        },
+        "instructions": [
+          [
+            40763056,
+            "488B4110"
+          ],
+          [
+            40763060,
+            "C3"
+          ]
+        ]
+      },
+      "set___constValue__": {
+        "definition": [
+          125322,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_int_ForMemoryPack",
+          "set___constValue__"
+        ],
+        "window": {
+          "startRva": 84402984,
+          "endRva": 84403011,
+          "sha256": "D24438FB86BBBD9FD0C34D135F2C504A811300504C431F02A5F13D6DEC6D8263"
+        },
+        "instructions": [
+          [
+            84402984,
+            "4883EC28"
+          ],
+          [
+            84402988,
+            "488B4110"
+          ],
+          [
+            84402992,
+            "4885C0"
+          ],
+          [
+            84402995,
+            "7506"
+          ],
+          [
+            84402997,
+            "E8DA00A3FB"
+          ],
+          [
+            84403002,
+            "CC"
+          ],
+          [
+            84403003,
+            "895020"
+          ],
+          [
+            84403006,
+            "4883C428"
+          ],
+          [
+            84403010,
+            "C3"
+          ]
+        ]
+      },
+      "set___idRef__": {
+        "definition": [
+          125323,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_int_ForMemoryPack",
+          "set___idRef__"
+        ],
+        "window": {
+          "startRva": 84402828,
+          "endRva": 84402855,
+          "sha256": "C92DF47A1C9E8A0A6407D1E7915A49F6B260B0B872522C60BBF22EBBF555023B"
+        },
+        "instructions": [
+          [
+            84402828,
+            "4883EC28"
+          ],
+          [
+            84402832,
+            "488B4110"
+          ],
+          [
+            84402836,
+            "4885C0"
+          ],
+          [
+            84402839,
+            "7506"
+          ],
+          [
+            84402841,
+            "E87601A3FB"
+          ],
+          [
+            84402846,
+            "CC"
+          ],
+          [
+            84402847,
+            "895024"
+          ],
+          [
+            84402850,
+            "4883C428"
+          ],
+          [
+            84402854,
+            "C3"
+          ]
+        ]
+      },
+      "set___paramSource__": {
+        "definition": [
+          125324,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_int_ForMemoryPack",
+          "set___paramSource__"
+        ],
+        "window": {
+          "startRva": 84403284,
+          "endRva": 84403311,
+          "sha256": "1D0235940505D2D31AB38C3D2CB1338358663CE5D0072523397F1A4EE627B2AF"
+        },
+        "instructions": [
+          [
+            84403284,
+            "4883EC28"
+          ],
+          [
+            84403288,
+            "488B4110"
+          ],
+          [
+            84403292,
+            "4885C0"
+          ],
+          [
+            84403295,
+            "7506"
+          ],
+          [
+            84403297,
+            "E8AEFFA2FB"
+          ],
+          [
+            84403302,
+            "CC"
+          ],
+          [
+            84403303,
+            "895010"
+          ],
+          [
+            84403306,
+            "4883C428"
+          ],
+          [
+            84403310,
+            "C3"
+          ]
+        ]
+      }
+    }
+  }
+}

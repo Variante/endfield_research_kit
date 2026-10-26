@@ -1,0 +1,568 @@
+{
+  "schema": "endfield.collision-activation-capture-native.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "codeWindows": [
+    {
+      "role": "load_data",
+      "rva": 59364608,
+      "bytes": 25,
+      "sha256": "8b2a39752bb08d13c0936cb3525c29ca6b539cfb063878c99408760189c77ece",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "load_data_part_1",
+      "rva": 59364633,
+      "bytes": 956,
+      "sha256": "f0b956e9a4325d91ea03c9376b39e598d51a71539b856736a5f16d084a946601",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "load_data_part_2",
+      "rva": 59365589,
+      "bytes": 180,
+      "sha256": "fb73d598798c22863907a759886e51a8001d777c4e3c5f33316f204fe2082192",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "load_data_part_3",
+      "rva": 59365769,
+      "bytes": 110,
+      "sha256": "8eaf1097fdc459630be09585264161295eb06efc600d2f4f3f876a88ede754e6",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "load_data_part_4",
+      "rva": 82139982,
+      "bytes": 147,
+      "sha256": "f289ae667f27ff6ee3c8ddf140fb96569c1e5bd21c5a087af5412fe13d0b1063",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "interactive_break",
+      "rva": 102749652,
+      "bytes": 974,
+      "sha256": "c7b409d0ed3f2153ad3d1e35d9da65a394c1521aee3c933e7278b6574226ac80",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "prepare_attack",
+      "rva": 71878976,
+      "bytes": 29,
+      "sha256": "8950042e44030fa9766ce4b0eda92edbcf2cd11f0ef322e7fe5fc688e3c489ed",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "prepare_attack_part_1",
+      "rva": 71879005,
+      "bytes": 214,
+      "sha256": "e682ca9a0907f850ccb35777b19205160b87a9f91b627d691253d5a0a2215579",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "prepare_attack_part_2",
+      "rva": 71879219,
+      "bytes": 48,
+      "sha256": "abc27fdbc49d58fb5742b2c30888c35f0e006802d2f11518343dc58f97827947",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "prepare_attack_part_3",
+      "rva": 71879267,
+      "bytes": 6,
+      "sha256": "8f1e72cd9a4b547b55095a2952efab1871cdd1dce0d9c73a6f4fa0f709372064",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "prepare_attack_part_4",
+      "rva": 83717776,
+      "bytes": 137,
+      "sha256": "5c0828c1bd132f4d0141f0eb6d37ee9202e67874b07f413228168edb34a15988",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "attack_callback",
+      "rva": 59374320,
+      "bytes": 33,
+      "sha256": "afc37cabaee343983d011a922c63e4c2864812b68b841a7e4a4ddd0953e3c2a7",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "attack_callback_part_1",
+      "rva": 59374353,
+      "bytes": 440,
+      "sha256": "ec43b38b0f144b81a858df6f4ec41230d856c892d48e7b1739d42f25ae4745a8",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "attack_callback_part_2",
+      "rva": 59374793,
+      "bytes": 36,
+      "sha256": "c00cfda00bbb38edccbd21e5a14e05cb621dee693563ac62dc844f97d900bc80",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "attack_callback_part_3",
+      "rva": 59374829,
+      "bytes": 6,
+      "sha256": "a9d1c3918db5ee58ab46dec1a2a798aeec57cc72d23b28721a425f6c95cffe9f",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "attack_callback_part_4",
+      "rva": 82141326,
+      "bytes": 65,
+      "sha256": "60aa98281e34e15b915618ff0d49da962468b74752dd653b5894450befb70022",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "manager_submit",
+      "rva": 71770464,
+      "bytes": 31,
+      "sha256": "4cf1b6d26028f525d7bc13d407298ed51df0b6a54b1424df688b1a126fb8fbff",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "manager_submit_part_1",
+      "rva": 71770495,
+      "bytes": 282,
+      "sha256": "1b94919e1ccc1d3440d62924f7ee9aedd4746a4a36001e84e12734772c18faac",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "manager_submit_part_2",
+      "rva": 71770777,
+      "bytes": 72,
+      "sha256": "1cb8944c97b2cbe651d7322ca16012767aa4db1122a830ca9cfe67bc4386fbcb",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "manager_submit_part_3",
+      "rva": 71770849,
+      "bytes": 6,
+      "sha256": "1a0ebe8388e404e4b695cb3c261f4b3e1ca358170474adeaa57ec75bbb292b1a",
+      "module": "gameAssembly"
+    },
+    {
+      "role": "manager_submit_part_4",
+      "rva": 83704284,
+      "bytes": 205,
+      "sha256": "339ace94baa946d2e76e6f0d67f75cfd5f90805f60276f7a253a0165e2bbc34b",
+      "module": "gameAssembly"
+    }
+  ],
+  "codeFamilies": [
+    {
+      "role": "load_data",
+      "rva": 59364608,
+      "runtimeRanges": [
+        [
+          59364608,
+          59364633,
+          212939464
+        ],
+        [
+          59364633,
+          59365589,
+          212939472
+        ],
+        [
+          59365589,
+          59365769,
+          212939516
+        ],
+        [
+          59365769,
+          59365879,
+          212939532
+        ],
+        [
+          82139982,
+          82140129,
+          212939576
+        ]
+      ]
+    },
+    {
+      "role": "interactive_break",
+      "rva": 102749652,
+      "runtimeRanges": [
+        [
+          102749652,
+          102750626,
+          215075140
+        ]
+      ]
+    },
+    {
+      "role": "prepare_attack",
+      "rva": 71878976,
+      "runtimeRanges": [
+        [
+          71878976,
+          71879005,
+          214004800
+        ],
+        [
+          71879005,
+          71879219,
+          214004812
+        ],
+        [
+          71879219,
+          71879267,
+          214004840
+        ],
+        [
+          71879267,
+          71879273,
+          214004856
+        ],
+        [
+          83717776,
+          83717913,
+          214004884
+        ]
+      ]
+    },
+    {
+      "role": "attack_callback",
+      "rva": 59374320,
+      "runtimeRanges": [
+        [
+          59374320,
+          59374353,
+          212940564
+        ],
+        [
+          59374353,
+          59374793,
+          212940580
+        ],
+        [
+          59374793,
+          59374829,
+          212940620
+        ],
+        [
+          59374829,
+          59374835,
+          212940636
+        ],
+        [
+          82141326,
+          82141391,
+          212940676
+        ]
+      ]
+    },
+    {
+      "role": "manager_submit",
+      "rva": 71770464,
+      "runtimeRanges": [
+        [
+          71770464,
+          71770495,
+          213994536
+        ],
+        [
+          71770495,
+          71770777,
+          213994548
+        ],
+        [
+          71770777,
+          71770849,
+          213994568
+        ],
+        [
+          71770849,
+          71770855,
+          213994584
+        ],
+        [
+          83704284,
+          83704489,
+          213994604
+        ]
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "kind": 94,
+      "role": "load_data",
+      "module": "gameAssembly",
+      "rva": 59364608,
+      "method": [
+        51670,
+        "Beyond.Gameplay.View.DestructiblePhysicsMono",
+        "_LoadData",
+        59364608
+      ],
+      "parameters": [],
+      "static": false,
+      "returnType": "void",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "40554881ec80000000803ddb61600a00"
+    },
+    {
+      "kind": 95,
+      "role": "interactive_break",
+      "module": "gameAssembly",
+      "rva": 102749652,
+      "method": [
+        71137,
+        "Beyond.Gameplay.Core.InteractivePhysicsDestructibleComponent",
+        "Break",
+        102749652
+      ],
+      "parameters": [],
+      "static": false,
+      "returnType": "void",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "488bc448895808488968104889701848"
+    },
+    {
+      "kind": 96,
+      "role": "prepare_attack",
+      "module": "gameAssembly",
+      "rva": 71878976,
+      "method": [
+        51664,
+        "Beyond.Gameplay.View.DestructiblePhysicsMono",
+        "PrepareBreakFromAttack",
+        71878976
+      ],
+      "parameters": [
+        {
+          "name": "attackPos",
+          "type": "UnityEngine.Vector3"
+        }
+      ],
+      "static": false,
+      "returnType": "void",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "48895c2418554883ec50803d966da109"
+    },
+    {
+      "kind": 97,
+      "role": "attack_callback",
+      "module": "gameAssembly",
+      "rva": 59374320,
+      "method": [
+        51666,
+        "Beyond.Gameplay.View.DestructiblePhysicsMono",
+        "_BreakFromAttack",
+        59374320
+      ],
+      "parameters": [
+        {
+          "name": "attackPos",
+          "type": "UnityEngine.Vector3"
+        }
+      ],
+      "static": false,
+      "returnType": "void",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "48895c242041564881ecd0000000803d"
+    },
+    {
+      "kind": 98,
+      "role": "manager_submit",
+      "module": "gameAssembly",
+      "rva": 71770464,
+      "method": [
+        13755,
+        "Beyond.Gameplay.DestructiblePhysicsManager",
+        "SubmitObject",
+        71770464
+      ],
+      "parameters": [
+        {
+          "name": "destructible",
+          "type": "Beyond.Gameplay.Core.DestructiblePhysicHandle"
+        }
+      ],
+      "static": false,
+      "returnType": "bool",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "bool"
+      },
+      "entryHex": "48895c2410574883ec20803de049a309"
+    }
+  ],
+  "types": [
+    {
+      "role": "mono",
+      "index": 8610,
+      "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
+      "fields": [
+        {
+          "name": "physicsSettings",
+          "type": "Beyond.Gameplay.View.DestructiblePhysicsMono+LevelEditorDestructiblePhysicsTable",
+          "offset": 112,
+          "alias": "settings"
+        },
+        {
+          "name": "colliderCount",
+          "type": "int",
+          "offset": 172,
+          "alias": "colliderCount"
+        },
+        {
+          "name": "m_timerId",
+          "type": "int",
+          "offset": 232,
+          "alias": "timerId"
+        }
+      ]
+    },
+    {
+      "role": "settings",
+      "index": 8606,
+      "type": "Beyond.Gameplay.View.DestructiblePhysicsMono+LevelEditorDestructiblePhysicsTable",
+      "fields": [
+        {
+          "name": "physicsItems",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.View.DestructiblePhysicsMono+LevelEditorDestructiblePhysicsTableItem>",
+          "offset": 32,
+          "alias": "items"
+        }
+      ]
+    },
+    {
+      "role": "interactive",
+      "index": 11305,
+      "type": "Beyond.Gameplay.Core.InteractivePhysicsDestructibleComponent",
+      "fields": [
+        {
+          "name": "m_desMono",
+          "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
+          "offset": 152,
+          "alias": "mono"
+        },
+        {
+          "name": "m_handle",
+          "type": "Beyond.Gameplay.Core.DestructiblePhysicHandle",
+          "offset": 184,
+          "alias": "handle"
+        },
+        {
+          "name": "m_isBreak",
+          "type": "bool",
+          "offset": 160,
+          "alias": "broken"
+        }
+      ]
+    },
+    {
+      "role": "manager",
+      "index": 2233,
+      "type": "Beyond.Gameplay.DestructiblePhysicsManager",
+      "fields": [
+        {
+          "name": "m_currentColliderCount",
+          "type": "int",
+          "offset": 144,
+          "alias": "count"
+        }
+      ]
+    },
+    {
+      "role": "handle",
+      "index": 11302,
+      "type": "Beyond.Gameplay.Core.DestructiblePhysicHandle",
+      "fields": [
+        {
+          "name": "<destructiblePhysicsMono>k__BackingField",
+          "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
+          "offset": 16,
+          "alias": "mono"
+        },
+        {
+          "name": "<isValid>k__BackingField",
+          "type": "bool",
+          "offset": 24,
+          "alias": "valid"
+        }
+      ]
+    },
+    {
+      "role": "list",
+      "index": 37521,
+      "type": "System.Collections.Generic.List`1",
+      "fields": [
+        {
+          "name": "_size",
+          "type": "int",
+          "offset": 24,
+          "alias": "count"
+        }
+      ]
+    }
+  ],
+  "limits": {
+    "maxEventsPerStage": 2048,
+    "maxItems": 4096
+  },
+  "evidenceBoundary": "Direct original activation-stage calls and manager return; separately timed typed field/provenance reads. No inferred IFix selection, budget branch, physical activation or solver contact from an upstream entry.",
+  "listCountAccessor": {
+    "type": "System.Collections.Generic.List`1<Beyond.Gameplay.View.DestructiblePhysicsMono+LevelEditorDestructiblePhysicsTableItem>",
+    "offset": 24,
+    "reads": [
+      {
+        "windowRole": "load_data",
+        "offset": 16
+      },
+      {
+        "windowRole": "load_data_part_1",
+        "offset": 92
+      },
+      {
+        "windowRole": "load_data_part_1",
+        "offset": 105
+      },
+      {
+        "windowRole": "load_data_part_1",
+        "offset": 815
+      }
+    ],
+    "evidenceBoundary": "direct: original receiver -> physicsSettings -> concrete physicsItems list -> int32 size, assigned to receiver.colliderCount. The open generic field offset is a placeholder and is not used."
+  }
+}

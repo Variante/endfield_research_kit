@@ -1122,7 +1122,8 @@ def _cross_check(
         if got is None:
             failures.append({"row": key, "gate": "present", "actual": None})
             continue
-        if got["tag"] != row.get("tag"):
+        # v5 rows are keyed by wrapper name; their tag is per build.
+        if "tag" in row and got["tag"] != row.get("tag"):
             failures.append({
                 "row": key, "gate": "tag",
                 "expected": row.get("tag"), "actual": got["tag"],

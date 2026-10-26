@@ -85,14 +85,20 @@ def _dependencies(contract: dict[str, Any]) -> tuple[dict[str, Any], ...]:
     query = json.loads((CONTRACTS_DIR / contract["queryReaderContract"]).read_bytes())
     profile = json.loads((CONTRACTS_DIR / contract["queryProfileContract"]).read_bytes())
     header = json.loads((CONTRACTS_DIR / contract["headerHelperContract"]).read_bytes())
-    if (query.get("schemaVersion") != 1
-            or profile.get("schemaVersion") != 1
-            or header.get("schema") != "endfield.buff-selector-validator-zero-native-contract.v1"
-            or tuple(profile.get("anonymousReadOrder", {}).get("query-profile", ()))
-            != ("scalar32", "counted-scalar32")
-            or tuple(query.get("anonymousReadOrder", {}).get("queryReader", ()))
-            != ("header2", "scalar32", "nullable count", "count times four-byte array")):
-        raise ValueError(f"{LABEL}.contract:query-dependencies")
+    checks = (
+        (contract['queryReaderContract'], 'schemaVersion', 1, query.get('schemaVersion')),
+        (contract['queryProfileContract'], 'schemaVersion', 1, profile.get('schemaVersion')),
+        (contract['headerHelperContract'], 'schema', 'endfield.buff-selector-validator-zero-native-contract.v2', header.get('schema')),
+        (contract['queryProfileContract'], 'query-profile', ('scalar32', 'counted-scalar32'),
+         tuple(profile.get('anonymousReadOrder', {}).get('query-profile', ()))),
+        (contract['queryReaderContract'], 'queryReader', ('header2', 'scalar32', 'nullable count', 'count times four-byte array'),
+         tuple(query.get('anonymousReadOrder', {}).get('queryReader', ()))),
+    )
+    for filename, check, expected, actual in checks:
+        if actual != expected:
+            detail = {'validator': LABEL, 'check': check, 'source': (CONTRACTS_DIR / filename).as_posix(),
+                      'expected': str(expected)[:512], 'actual': str(actual)[:512]}
+            raise ValueError(f'{LABEL}.contract:query-dependencies:' + json.dumps(detail, sort_keys=True))
     return base, catalog, query, profile, header
 
 

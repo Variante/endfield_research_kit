@@ -7,6 +7,7 @@ from scripts.game_data.memorypack import buff_selector_finder_character_team as 
 from scripts.game_data.memorypack import buff_selector_finder_owner_spawned as owner
 from scripts.game_data.memorypack import buff_selector_geometry as geometry
 from scripts.game_data.memorypack import buff_selector_random_point_finder as random_point
+from scripts.game_data.memorypack import buff_selector_point_finder as point_finder
 from scripts.game_data.memorypack import buff_selector_shape_finder as shape_finder
 from scripts.game_data.memorypack import buff_selector_fixed_point_finder as fixed_point
 from scripts.game_data.memorypack import buff_selector_zero_finders as zero_finders
@@ -28,6 +29,7 @@ def decode_selector(data,source,digest,start,end,children,*,target_decoder=None,
     elif f['unionTag']==team.TAG:finder=team.decode_character_team_finder_span(data,**kw,native_validation=children['characterTeamFinder'])
     elif f['unionTag']==owner.TAG:finder=owner.decode_owner_spawned_finder_span(data,**kw,native_validation=children['ownerSpawnedFinder'])
     elif f['unionTag']==random_point.TAG:finder=random_point.decode_finder(data,source=source,digest=digest,start=f['start'],end=f['end'],context=children)
+    elif f['unionTag']==point_finder.TAG:finder=point_finder.decode_finder(data,source=source,digest=digest,start=f['start'],end=f['end'],context=children)
     elif f['unionTag'] in shape_finder.finder_tags():finder=shape_finder.decode_finder(data,source=source,digest=digest,start=f['start'],end=f['end'],context=children)
     elif f['unionTag'] in fixed_point.finder_tags():finder=fixed_point.decode_finder(data,source=source,digest=digest,start=f['start'],end=f['end'],context=children)
     elif f['unionTag'] in zero_finders.finder_tags():

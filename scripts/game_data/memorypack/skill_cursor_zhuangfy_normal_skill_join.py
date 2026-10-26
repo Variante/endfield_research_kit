@@ -15,6 +15,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.memorypack import skill_timeline_shared_sequence as shared
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, verify_current_report_inputs
@@ -174,14 +175,14 @@ def verify_selected_normal_skill(*, selection_path: Path = SELECTION) -> dict[st
              "prior-action-sequence-count")
     prior_sequence = next((row for row in sequences if row.get("virtualPath") == target_path), None)
     _require(isinstance(prior_sequence, Mapping)
-             and prior_sequence.get("nextStopTag") == "0x0197"
+             and prior_sequence.get("nextStopTag") == _AT("Core_VoiceInterruptAction_VoiceInterruptActionData")
              and prior_sequence.get("wholeStoredFileExpected") is False
              and [row.get("tag") for row in prior_sequence.get("actions", ())]
-             == ["0x0038", "0x0146"],
+             == [_AT("Core_CheckAbilityEntityCurDuration_Data"), _AT("Core_SetAbilityEntityDuration_Data")],
              "prior-action-sequence-drift")
     new_action = selection.get("newAction")
     _require(isinstance(new_action, Mapping)
-             and new_action.get("tag") == "0x0197"
+             and new_action.get("tag") == _AT("Core_VoiceInterruptAction_VoiceInterruptActionData")
              and type(new_action.get("start")) is int
              and type(new_action.get("end")) is int
              and prior_sequence["actions"][-1]["end"] < new_action["start"]

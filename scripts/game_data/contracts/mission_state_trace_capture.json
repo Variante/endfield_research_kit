@@ -1,0 +1,4065 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v8",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "StartQuest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "isNewQuest",
+          "type": "bool"
+        }
+      ],
+      "name": "mission.StartQuest",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "isNewQuest",
+          "argument": "isNewQuest",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "SucceedQuest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        }
+      ],
+      "name": "mission.SucceedQuest",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "FailQuest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        }
+      ],
+      "name": "mission.FailQuest",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "AvailableMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "isNewAvailable",
+          "type": "bool"
+        }
+      ],
+      "name": "mission.AvailableMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "isNewAvailable",
+          "argument": "isNewAvailable",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "StartMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "stateChanged",
+          "type": "bool"
+        },
+        {
+          "name": "prevState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState"
+        }
+      ],
+      "name": "mission.StartMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "stateChanged",
+          "argument": "stateChanged",
+          "type": "bool",
+          "role": "state"
+        },
+        {
+          "label": "prevState",
+          "argument": "prevState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "CompleteMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "succeedId",
+          "type": "int"
+        }
+      ],
+      "name": "mission.CompleteMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "succeedId",
+          "argument": "succeedId",
+          "type": "int",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "FailMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        }
+      ],
+      "name": "mission.FailMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "RaiseMissionStateChangeEvent",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "oldState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState"
+        },
+        {
+          "name": "newState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState"
+        },
+        {
+          "name": "succeedId",
+          "type": "int"
+        }
+      ],
+      "name": "mission.RaiseMissionStateChangeEvent",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "oldState",
+          "argument": "oldState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "role": "state"
+        },
+        {
+          "label": "newState",
+          "argument": "newState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "role": "state"
+        },
+        {
+          "label": "succeedId",
+          "argument": "succeedId",
+          "type": "int",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "RunQuestAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "action",
+          "type": "Beyond.Gameplay.QuestAction"
+        }
+      ],
+      "name": "mission.RunQuestAction",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "action",
+          "argument": "action",
+          "type": "Beyond.Gameplay.QuestAction",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "FinishDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "tDialogId",
+          "type": "string"
+        },
+        {
+          "name": "finishId",
+          "type": "int"
+        },
+        {
+          "name": "finishType",
+          "type": "Beyond.Gameplay.DialogEnums+DialogFinishType"
+        }
+      ],
+      "name": "dialog.FinishDialog",
+      "fields": [
+        {
+          "label": "tDialogId",
+          "argument": "tDialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "finishId",
+          "argument": "finishId",
+          "type": "int",
+          "role": "identity"
+        },
+        {
+          "label": "finishType",
+          "argument": "finishType",
+          "type": "Beyond.Gameplay.DialogEnums+DialogFinishType",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "_DoPlayDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialog._DoPlayDialog",
+      "fields": [],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+      "method": "_OnConditionResultChanged",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "newResult",
+          "type": "bool"
+        }
+      ],
+      "name": "taskCondition._OnConditionResultChanged",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sceneNumId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelNum",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey",
+              "type": "Beyond.Gameplay.Core.ScriptTaskPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "entryIsCompleted",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted",
+              "type": "bool"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "progressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::progressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "maxProgressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::maxProgressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "newResult",
+          "argument": "newResult",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "semanticRole": "named entry observation",
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_QuestStateUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_QUEST_STATE_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_QuestStateUpdate",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_STATE_UPDATE::questId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "questState",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_STATE_UPDATE::questState_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "bRollback",
+          "argument": "msg",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_STATE_UPDATE::bRollback_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_MissionStateUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_MISSION_STATE_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_MissionStateUpdate",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::missionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "missionState",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::missionState_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "succeedId",
+          "argument": "msg",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::succeedId_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "externalSystemType",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::externalSystemType_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "externalSystemId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::externalSystemId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "acceptTime",
+          "argument": "msg",
+          "type": "long",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::acceptTime_",
+              "type": "long"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_QuestObjectiveUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_QUEST_OBJECTIVES_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_QuestObjectiveUpdate",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_OBJECTIVES_UPDATE::questId_",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_SyncAllMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SYNC_ALL_MISSION"
+        }
+      ],
+      "name": "missionNotify.Handle_SyncAllMission",
+      "fields": [
+        {
+          "label": "trackMissionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::trackMissionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "dailyMissionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::dailyMissionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "curMainMissionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::curMainMissionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "earlyAcceptMissionChapters",
+          "argument": "msg",
+          "type": "ulong",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::earlyAcceptMissionChapters_",
+              "type": "ulong"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "RefreshObjectiveProgress",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "objectiveIdx",
+          "type": "int"
+        }
+      ],
+      "name": "mission.RefreshObjectiveProgress",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "objectiveIdx",
+          "argument": "objectiveIdx",
+          "type": "int",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "quest objective progress refresh request",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem+ObjectiveData",
+      "method": "Copy",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "Proto.QUEST_OBJECTIVE"
+        }
+      ],
+      "name": "objective.Copy",
+      "fields": [
+        {
+          "label": "incomingConditionId",
+          "argument": "src",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.QUEST_OBJECTIVE::conditionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "incomingIsComplete",
+          "argument": "src",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.QUEST_OBJECTIVE::isComplete_",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "incomingDescriptionIndex",
+          "argument": "src",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.QUEST_OBJECTIVE::descriptionIndex_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryConditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionSystem+ObjectiveData::conditionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryIsCompleted",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "per-object incoming objective copy",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.GameCondition",
+      "method": "Activate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "conditionSource",
+          "type": "string"
+        }
+      ],
+      "name": "condition.Activate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "progressToCompare",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progressToCompare>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "conditionSource",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "condition lifecycle and pre-entry identity/progress",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.GameCondition",
+      "method": "Deactivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "condition.Deactivate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "progressToCompare",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progressToCompare>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "condition lifecycle and pre-entry identity/progress",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionRuntimeAsset",
+      "method": "RunQuestAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "questAction",
+          "type": "Beyond.Gameplay.QuestAction"
+        }
+      ],
+      "name": "missionAsset.RunQuestAction",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "questAction",
+          "argument": "questAction",
+          "type": "Beyond.Gameplay.QuestAction",
+          "role": "state"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::actionMap",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "mission asset quest-action entry",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionRuntimeAsset",
+      "method": "_RunActionInMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "startNodeID",
+          "type": "int"
+        }
+      ],
+      "name": "missionAsset._RunActionInMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "startNodeID",
+          "argument": "startNodeID",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::actionMap",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "mission asset start-node entry",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "OnActivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialogCondition.OnActivate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedDialogId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog-finish condition activation entry",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "Check",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialogCondition.Check",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedDialogId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog-finish condition check entry",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "OnDeactivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialogCondition.OnDeactivate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedDialogId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog-finish condition deactivation entry",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "OnSubConditionProgressChanged",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "subCondition",
+          "type": "Beyond.Gameplay.GameCondition"
+        },
+        {
+          "name": "progress",
+          "type": "int"
+        }
+      ],
+      "name": "mission.OnSubConditionProgressChanged",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "subCondition",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "suppliedProgress",
+          "argument": "progress",
+          "type": "int",
+          "role": "progress",
+          "observation": "Supplied entry argument; no completed update or server acceptance is observed."
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "subCondition",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ],
+          "observation": "Stored condition context at entry; null or unequal context is retained without inferred ownership."
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "observation": "Pre-entry base-storage snapshot; distinct from suppliedProgress."
+        },
+        {
+          "label": "entryAdvancedProgress",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_advancedProgress",
+              "type": "int"
+            }
+          ],
+          "observation": "Pre-entry advanced-progress cache; not a computed result."
+        },
+        {
+          "label": "entryAdvancedMaxProgress",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_advancedMaxProgress",
+              "type": "int"
+            }
+          ],
+          "observation": "Pre-entry advanced-progress maximum cache; not a computed result."
+        }
+      ],
+      "semanticRole": "named per-condition numeric progress request entry",
+      "evidenceBoundary": {
+        "direct": "Supplied quest/condition identities and signed numeric entry argument, with separate typed pre-entry condition cache fields on the selected build.",
+        "unresolved": "Entry does not prove the invocation source, live IFix selection, successful request construction/send, server acceptance, numeric incoming objective-map contents, result evaluation or the condition's actual runtime subtype. The separately reviewed current default-body request construction is not proved by capture preparation or carried across builds by this role label."
+      }
+    },
+    {
+      "name": "snapshot.NotifyIdentifyGroupSuccess",
+      "type": "Beyond.Gameplay.SnapshotSystem",
+      "method": "NotifyIdentifyGroupSuccess",
+      "parameters": [
+        {
+          "name": "identifyGroupId",
+          "type": "string"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "identifyGroupId",
+          "argument": "identifyGroupId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "name": "condition.snapshot.OnActivate",
+      "type": "Beyond.Gameplay.CheckSnapshotIdentifySuccess",
+      "method": "OnActivate",
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "name": "condition.snapshot.GetResult",
+      "type": "Beyond.Gameplay.CheckSnapshotIdentifySuccess",
+      "method": "GetResult",
+      "parameters": [
+        {
+          "name": "eventData",
+          "type": "Beyond.EventData`1<string>"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "suppliedIdentifyGroupId",
+          "argument": "eventData",
+          "type": "string",
+          "role": "identity",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 8,
+            "nativeProof": "stringEqualityArgument"
+          },
+          "path": [
+            {
+              "field": "Beyond.EventData`1<string>::value",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Named snapshot-condition entry with typed stored condition/quest/objective identities, pre-entry state/result/progress and the supplied eventData string group ID. The closed single-reference value layout is re-proved against selected metadata.",
+        "unresolved": "The bound identify-group Param<string> is not read. Supplied event payload and stored condition context form an explicit entry association, but do not prove a bound-group comparison, callback return/result, IFix selection, progression or server acceptance."
+      }
+    },
+    {
+      "method": "OnActivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CheckQuestState",
+      "name": "state.quest.OnActivate",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "questId.param",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.Param`1<string>",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_questId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity",
+          "paramIdentityWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+        },
+        {
+          "label": "questId.paramSource",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_questId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::paramSource",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "questId.idRef",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_questId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::idRef",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "questId.constValue",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_questId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::constValue",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "questId.path",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_questId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::path",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.param",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity",
+          "paramIdentityWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+        },
+        {
+          "label": "comparer.paramSource",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::paramSource",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.idRef",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::idRef",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.constValue",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::constValue",
+              "type": "Beyond.GEnums.CompareOperator",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.path",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::path",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetQuestState.param",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_targetQuestState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity",
+          "paramIdentityWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack"
+        },
+        {
+          "label": "targetQuestState.paramSource",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_targetQuestState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>::paramSource",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetQuestState.idRef",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_targetQuestState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>::idRef",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetQuestState.constValue",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+QuestState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_targetQuestState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>::constValue",
+              "type": "Beyond.Gameplay.MissionSystem+QuestState",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetQuestState.path",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::_targetQuestState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>::path",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "resolvedId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_questId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedComparer",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_comparer",
+              "type": "Beyond.GEnums.CompareOperator"
+            }
+          ]
+        },
+        {
+          "label": "resolvedTarget",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+QuestState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_targetQuestState",
+              "type": "Beyond.Gameplay.MissionSystem+QuestState"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "OnDeactivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CheckQuestState",
+      "name": "state.quest.OnDeactivate",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_questId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedComparer",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_comparer",
+              "type": "Beyond.GEnums.CompareOperator"
+            }
+          ]
+        },
+        {
+          "label": "resolvedTarget",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+QuestState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_targetQuestState",
+              "type": "Beyond.Gameplay.MissionSystem+QuestState"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "_OnQuestStateChange",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "data",
+          "type": "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+QuestState>"
+        }
+      ],
+      "type": "Beyond.Gameplay.CheckQuestState",
+      "name": "state.quest.OnStateChange",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_questId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedComparer",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_comparer",
+              "type": "Beyond.GEnums.CompareOperator"
+            }
+          ]
+        },
+        {
+          "label": "resolvedTarget",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+QuestState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckQuestState::m_targetQuestState",
+              "type": "Beyond.Gameplay.MissionSystem+QuestState"
+            }
+          ]
+        },
+        {
+          "label": "incoming.value0",
+          "argument": "data",
+          "type": "string",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16,
+            "nativeProof": "stateEventCallback"
+          },
+          "path": [
+            {
+              "field": "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+QuestState>::value0",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "incoming.value1",
+          "argument": "data",
+          "type": "Beyond.Gameplay.MissionSystem+QuestState",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16,
+            "nativeProof": "stateEventCallback"
+          },
+          "path": [
+            {
+              "field": "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+QuestState>::value1",
+              "type": "Beyond.Gameplay.MissionSystem+QuestState"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "OnActivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CheckMissionState",
+      "name": "state.mission.OnActivate",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "missionId.param",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.Param`1<string>",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_missionId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity",
+          "paramIdentityWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+        },
+        {
+          "label": "missionId.paramSource",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_missionId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::paramSource",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "missionId.idRef",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_missionId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::idRef",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "missionId.constValue",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_missionId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::constValue",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "missionId.path",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_missionId",
+              "type": "Beyond.Gameplay.Actions.Param`1<string>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<string>::path",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.param",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity",
+          "paramIdentityWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+        },
+        {
+          "label": "comparer.paramSource",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::paramSource",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.idRef",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::idRef",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.constValue",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::constValue",
+              "type": "Beyond.GEnums.CompareOperator",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "comparer.path",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_comparer",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>::path",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetMissionState.param",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_targetMissionState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity",
+          "paramIdentityWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack"
+        },
+        {
+          "label": "targetMissionState.paramSource",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_targetMissionState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>::paramSource",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetMissionState.idRef",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_targetMissionState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>::idRef",
+              "type": "int",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetMissionState.constValue",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_targetMissionState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>::constValue",
+              "type": "Beyond.Gameplay.MissionSystem+MissionState",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "targetMissionState.path",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::_targetMissionState",
+              "type": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>::path",
+              "type": "string",
+              "paramWitness": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack"
+            }
+          ]
+        },
+        {
+          "label": "resolvedId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedComparer",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_comparer",
+              "type": "Beyond.GEnums.CompareOperator"
+            }
+          ]
+        },
+        {
+          "label": "resolvedTarget",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_targetMissionState",
+              "type": "Beyond.Gameplay.MissionSystem+MissionState"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "OnDeactivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CheckMissionState",
+      "name": "state.mission.OnDeactivate",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedComparer",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_comparer",
+              "type": "Beyond.GEnums.CompareOperator"
+            }
+          ]
+        },
+        {
+          "label": "resolvedTarget",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_targetMissionState",
+              "type": "Beyond.Gameplay.MissionSystem+MissionState"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "_OnMissionStateChange",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "data",
+          "type": "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+MissionState>"
+        }
+      ],
+      "type": "Beyond.Gameplay.CheckMissionState",
+      "name": "state.mission.OnStateChange",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "resolvedComparer",
+          "argument": "this",
+          "type": "Beyond.GEnums.CompareOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_comparer",
+              "type": "Beyond.GEnums.CompareOperator"
+            }
+          ]
+        },
+        {
+          "label": "resolvedTarget",
+          "argument": "this",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckMissionState::m_targetMissionState",
+              "type": "Beyond.Gameplay.MissionSystem+MissionState"
+            }
+          ]
+        },
+        {
+          "label": "incoming.value0",
+          "argument": "data",
+          "type": "string",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16,
+            "nativeProof": "stateEventCallback"
+          },
+          "path": [
+            {
+              "field": "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+MissionState>::value0",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "incoming.value1",
+          "argument": "data",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16,
+            "nativeProof": "stateEventCallback"
+          },
+          "path": [
+            {
+              "field": "Beyond.EventData`2<string,Beyond.Gameplay.MissionSystem+MissionState>::value1",
+              "type": "Beyond.Gameplay.MissionSystem+MissionState"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "set_result",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "Beyond.Gameplay.ConditionResult"
+        }
+      ],
+      "type": "Beyond.Gameplay.GameCondition",
+      "name": "condition.set_result",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "requestedResult",
+          "argument": "value",
+          "type": "Beyond.Gameplay.ConditionResult"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "OnActivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CombineCondition",
+      "name": "ast.OnActivate",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "expression",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::conditionEvalString",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "ast",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AST",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "ast.root",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ASTNode",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.AST::rootNode",
+              "type": "Beyond.Gameplay.ASTNode"
+            }
+          ]
+        },
+        {
+          "label": "ast.subConditionCount",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.AST::subConditionCount",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "Evaluate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CombineCondition",
+      "name": "ast.Evaluate",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "expression",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::conditionEvalString",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "ast",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AST",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "ast.root",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ASTNode",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.AST::rootNode",
+              "type": "Beyond.Gameplay.ASTNode"
+            }
+          ]
+        },
+        {
+          "label": "ast.subConditionCount",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.AST::subConditionCount",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "_EvaluateNode",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "node",
+          "type": "Beyond.Gameplay.ASTNode"
+        },
+        {
+          "name": "useProgress",
+          "type": "bool"
+        }
+      ],
+      "type": "Beyond.Gameplay.CombineCondition",
+      "name": "ast._EvaluateNode",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "node",
+          "argument": "node",
+          "type": "Beyond.Gameplay.ASTNode",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "useProgress",
+          "argument": "useProgress",
+          "type": "bool"
+        },
+        {
+          "label": "node.logicOperator",
+          "argument": "node",
+          "type": "Beyond.Gameplay.LogicOperator",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.ASTNode::logicOperator",
+              "type": "Beyond.Gameplay.LogicOperator"
+            }
+          ]
+        },
+        {
+          "label": "node.conditionIdx",
+          "argument": "node",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.ASTNode::conditionIdx",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "node.completed",
+          "argument": "node",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.ASTNode::completed",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "Parse",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "expr",
+          "type": "string"
+        }
+      ],
+      "type": "Beyond.Gameplay.AST",
+      "name": "ast.Parse",
+      "fields": [
+        {
+          "label": "expression",
+          "argument": "expr",
+          "type": "string"
+        },
+        {
+          "label": "rootNode",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ASTNode",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AST::rootNode",
+              "type": "Beyond.Gameplay.ASTNode"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "subConditionCount",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AST::subConditionCount",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    },
+    {
+      "method": "GetResultByProgress",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [],
+      "type": "Beyond.Gameplay.CombineCondition",
+      "name": "ast.GetResultByProgress",
+      "fields": [
+        {
+          "label": "uniqueId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "parent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.CombineCondition",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parent",
+              "type": "Beyond.Gameplay.CombineCondition"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "cachedResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "context",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionContext",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<context>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionContext"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "conditionState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<source>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "expression",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::conditionEvalString",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "ast",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AST",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "ast.root",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ASTNode",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.AST::rootNode",
+              "type": "Beyond.Gameplay.ASTNode"
+            }
+          ]
+        },
+        {
+          "label": "ast.subConditionCount",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CombineCondition::ast",
+              "type": "Beyond.Gameplay.AST",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.AST::subConditionCount",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+        "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior. Lazy progress evaluation is separate from activation/cache-result evaluation; returning child progress getters remain opaque.",
+        "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+      },
+      "observationMode": "paired"
+    }
+  ],
+  "coverageGaps": [
+    "Focused state/AST profile excludes many daily interactive, SNS and script observers from the general recipe.",
+    "State predicates may be stored but never locally activated; retained definitions are not activation evidence.",
+    "No Param getter is invoked or detoured; configured cells and post-activation cached values are observed separately.",
+    "No collection traversal or effective IFix selection observer; unused child snapshots, live subscription handles and JSON creator selection remain unresolved.",
+    "Progress AST calls are observed separately; they do not prove state predicate activation, subscription or quest handoff."
+  ],
+  "evidenceBoundary": {
+    "direct": "Typed entry/return field snapshots and synchronous invocation nesting on the selected process/thread.",
+    "conditional": "Unique named GP-only method ABI, readable receiver lifetime, bounded snapshots; effective live IFix path remains observed behavior.",
+    "unresolved": "Reads are sequential, not atomic; no server admission, unobserved children, inter-thread causal order or source-to-instance constructor join."
+  }
+}

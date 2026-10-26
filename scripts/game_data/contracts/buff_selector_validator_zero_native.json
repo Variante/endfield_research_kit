@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.buff-selector-validator-zero-native-contract.v1",
+  "schema": "endfield.buff-selector-validator-zero-native-contract.v2",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -35,8 +35,18 @@
         "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack"
       },
       "methods": [
-        [166915, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPackFormatter", "Deserialize", 69209872],
-        [166914, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack", "Deserialize", 69209968]
+        [
+          166915,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPackFormatter",
+          "Deserialize",
+          69209872
+        ],
+        [
+          166914,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack",
+          "Deserialize",
+          69209968
+        ]
       ],
       "setterMethods": [],
       "codeWindows": [
@@ -54,8 +64,15 @@
         }
       ],
       "readOrder": {
-        "headerCall": [69210018, "E8B978AAFE", 46827616],
-        "zeroMemberTest": [69210083, "4084FF"]
+        "headerCall": [
+          69210018,
+          "E8B978AAFE",
+          46827616
+        ],
+        "zeroMemberTest": [
+          69210083,
+          "4084FF"
+        ]
       }
     },
     {
@@ -78,8 +95,18 @@
         "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack"
       },
       "methods": [
-        [166961, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPackFormatter", "Deserialize", 66118176],
-        [166960, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack", "Deserialize", 66118272]
+        [
+          166961,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPackFormatter",
+          "Deserialize",
+          66118176
+        ],
+        [
+          166960,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack",
+          "Deserialize",
+          66118272
+        ]
       ],
       "setterMethods": [],
       "codeWindows": [
@@ -97,17 +124,92 @@
         }
       ],
       "readOrder": {
-        "sourceByteRead": [66118337, "0FB630"],
-        "sourceAdvance": [66118352, "48FF4350"],
-        "nullMarkerCompare": [66118365, "4080FEFF"],
-        "zeroMemberTest": [66118418, "4084F6"]
+        "sourceByteRead": [
+          66118337,
+          "0FB630"
+        ],
+        "sourceAdvance": [
+          66118352,
+          "48FF4350"
+        ],
+        "nullMarkerCompare": [
+          66118365,
+          "4080FEFF"
+        ],
+        "zeroMemberTest": [
+          66118418,
+          "4084F6"
+        ]
+      }
+    },
+    {
+      "unionTag": 10,
+      "wrappedType": "Beyond.Gameplay.Core.Selector+SkillCastIdValidator+Data",
+      "serializedMemberCount": 0,
+      "dispatcher": {
+        "unionTag": 10,
+        "switchTableRva": 66919388,
+        "switchEntryCount": 13,
+        "switchTableSha256": "C738323AAA09F0D3E1BA108B8FFD20300DB9249389D6CFAA684B8D2FC206C11F",
+        "switchTargetRva": 66918465,
+        "routeWindow": {
+          "startRva": 66918465,
+          "endRva": 66918484,
+          "sha256": "7D7723EDBA91D93DFD28E3CCF1BEC9E97F9A4EA3F3FC7B25A53C80AF5DC2EA6A",
+          "boundary": "actual selected tag-10 route through the wrapper type-usage load"
+        },
+        "usageCellRva": 217991552,
+        "usageRawHex": "7544032000000000",
+        "registeredTypeIndex": 107066,
+        "wrapperTypeDefinition": 23017,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack"
+      },
+      "methods": [
+        [
+          166972,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPackFormatter",
+          "Deserialize",
+          71332880
+        ],
+        [
+          166971,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack",
+          "Deserialize",
+          71332976
+        ]
+      ],
+      "setterMethods": [],
+      "codeWindows": [
+        {
+          "startRva": 71332880,
+          "endRva": 71332973,
+          "sha256": "05B11A051A283C03C931B2A517230FB601545593659298036D8C6AB71BED00C3",
+          "boundary": "method 166972 formatter forwarding and initialization rejoin"
+        },
+        {
+          "startRva": 71332976,
+          "endRva": 71333111,
+          "sha256": "DE00C0DF537D19291C456EB99B9F3DB5BD47E64CEC957EDBB4BB6F90A0DBC41E",
+          "boundary": "method 166971 selected normal path through RET (vector reader also contains its FF branch)"
+        }
+      ],
+      "sourceContract": "buff_b2_native.json",
+      "readOrder": {
+        "headerCall": [
+          71333026,
+          "E8B9138AFE",
+          46827616
+        ],
+        "zeroMemberTest": [
+          71333091,
+          "4084FF"
+        ]
       }
     }
   ],
   "evidenceBoundary": {
-    "exact": "Selected SelectorValidator switch tags 5 and 9 resolve to ExcludeOwnerValidator.Data and MainCharacterValidator.Data. Both generated wrappers have no serialized members; their pinned readers consume one wrapper header, accept FF as null and zero as the only nonnull member count.",
-    "direct": "The current BuffData validatorData list bounds contain one selected union element and the tag-plus-zero-header child ends at the independently fixed list boundary.",
-    "structuralOnly": "Stored validator identities do not establish runtime predicate evaluation or which target passes.",
-    "unresolved": "TagValidator tag 11 contains a nested GameplayTagQuery and needs its own selected parent-to-child read/store witness; other validator types and whole BuffData remain open."
+    "exact": "Selected current ExcludeOwner, MainCharacter and SkillCastId routes, zero-member wrapper plans and authenticated header/empty-body source programs.",
+    "conditional": "The parent validator list and every element must consume their own exact original spans. Full Buff roots require a complete family gate and original-root replay.",
+    "unresolved": "Live formatter selection and all runtime validator predicates, including which context provides the skill cast identity."
   }
 }

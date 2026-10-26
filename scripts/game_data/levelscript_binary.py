@@ -2146,11 +2146,12 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>") -> dict[s
                 "validator": reader.__name__, "check": "stored-profile",
                 "source": source, "sourceSha256": source_hash,
                 "expected": "maintained stored owner profile",
-                "actual": str(exc)[:500],
+                "actual": str(exc)[:1500],
+                "diagnostics": getattr(exc, "diagnostics", [])[:8],
             })
             continue
         framed = {**result, "reader": f"scripts.game_data.levelscript_binary.{reader.__name__}"}
-        if framed.get("schemaStatus") != "named_exact" and refusals:
+        if refusals:
             framed["readerRefusals"] = refusals
         return framed
     raise LevelScriptNamedFramingError(refusals)

@@ -13,6 +13,7 @@ from difflib import SequenceMatcher
 from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path
 from pathlib import Path as _RadioContPath
+from scripts.game_data.codecs.levelscript.record_hints import LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID
 from scripts.webui.search import linked_file_search_text
 from scripts.webui.story.kite_station_tasks import project_kite_station_tasks
 from scripts.webui.story.mission_rewards import (
@@ -18943,10 +18944,7 @@ def build_language_bundle(
                 occurrence.get("recordClass") == "preload_cutscene"
                 and occurrence.get("actionName") == "PreloadCutsceneAction"
                 and occurrence.get("nativeMappingId")
-                == (
-                    "gameassembly-2026-07-11-cr-0x18b9217d0-"
-                    "actionbase-0x0000-0x0520"
-                )
+                == LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID
             ):
                 preload_occurrences.append(occurrence)
                 continue

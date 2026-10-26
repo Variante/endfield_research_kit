@@ -1512,23 +1512,20 @@ def collect_buff_play_sound_actions(
     """
 
     if decoder is None:
-        from scripts.game_data.memorypack.buff import (
-            BUFF_PLAY_SOUND_ACTION_TAG,
-            consume_buff_play_sound_action,
-        )
+        from scripts.game_data.memorypack.buff import consume_buff_play_sound_action
         from scripts.game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
         from scripts.game_data import levelscript_union_tags
 
         play_sound_pair = levelscript_union_tags.pair(
             "AbilityActionData", "Core_PlaySoundAction_PlaySoundActionData"
         )
-        if (
-            not isinstance(play_sound_pair[0], int)
-            or play_sound_pair[0] != BUFF_PLAY_SOUND_ACTION_TAG
-        ):
-            raise ValueError("Buff PlaySound action union pair is unavailable for the selected build")
-        member_count = play_sound_pair[1]
-        signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(BUFF_PLAY_SOUND_ACTION_TAG).to_bytes(2, "little") + bytes([member_count])
+        if not isinstance(play_sound_pair[0], int):
+            raise ValueError(
+                "Buff PlaySound action union pair is unavailable for the selected build"
+                + levelscript_union_tags.unavailable_note()
+            )
+        tag, member_count = play_sound_pair
+        signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(tag).to_bytes(2, "little") + bytes([member_count])
 
         def decoder(_path: Path, data: bytes, _size: int) -> list[tuple[dict[str, Any], dict[str, Any], dict[str, Any]]]:
             """Find locally self-bounded single-item PlaySound timeline records.

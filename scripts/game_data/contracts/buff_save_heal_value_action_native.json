@@ -1,0 +1,139 @@
+{
+  "schema": "endfield.buff-save-heal-value-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "saveHealValue": {
+      "sourceContract": "buff_89_native.json",
+      "wrapperTypeDefinition": 16727,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_SaveHealValue_DataForMemoryPack",
+      "runtimeTypeDefinition": 13589,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.SaveHealValue+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        124903,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_SaveHealValue_DataForMemoryPack",
+        "Deserialize",
+        72304464
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 72304608,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72304631,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84000100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72304649,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72304671,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84D70000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 72304636
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72304682,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72304704,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84B60000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72304715,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72304737,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84950000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "finalHealKey",
+          "declaredType": "string",
+          "setterMethodIndex": 124899,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 72304748,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72304767,
+            "targetRva": 72304896,
+            "methodIndex": 124899
+          },
+          "sourceToDestinationHex": "4885F674784533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "realHealKey",
+          "declaredType": "string",
+          "setterMethodIndex": 124900,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 72304778,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72304797,
+            "targetRva": 72304944,
+            "methodIndex": 124900
+          },
+          "sourceToDestinationHex": "4885DB745A4533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "137": "saveHealValue"
+  },
+  "stringSourceContract": "memorypack_utf8_source_helper_native.json",
+  "evidenceBoundary": {
+    "exact": "Selected named source/setter joins and independently framed null, empty or valid UTF-8 strings on complete action spans.",
+    "unresolved": "Blackboard lookup, assignment, healing amount interpretation, provider selection, containing root closure and runtime execution."
+  }
+}

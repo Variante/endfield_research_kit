@@ -1,0 +1,847 @@
+{
+  "schema": "endfield.buff-move-to-subspeed-source-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceSupplements": [
+    "buff_164_native.json"
+  ],
+  "records": {
+    "subSpeed": {
+      "sourceContract": "buff_f6_native.json",
+      "wrapperTypeDefinition": 22451,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+      "runtimeTypeDefinition": 9603,
+      "runtimeTypeName": "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "subSpeedMember5",
+      "readerMethod": [
+        163008,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+        "Deserialize",
+        54731344
+      ],
+      "members": [
+        {
+          "fieldName": "fixedSpeed",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 163001,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 54731468,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 54731495,
+            "rawHex": "48894118",
+            "fieldOffset": 24,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9603
+          },
+          "sourceToDestinationHex": "4885F60F8453010000488B4E104885C90F8446010000",
+          "sourceContextInstructionRva": 54731455,
+          "directDataStore": {
+            "mode": "reference-return",
+            "argumentProgram": [
+              [
+                54731455,
+                "488B155A23BC09"
+              ],
+              [
+                54731462,
+                "488BCB"
+              ],
+              [
+                54731465,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                54731473,
+                "4885F6"
+              ],
+              [
+                54731476,
+                "0F8453010000"
+              ],
+              [
+                54731482,
+                "488B4E10"
+              ],
+              [
+                54731486,
+                "4885C9"
+              ],
+              [
+                54731489,
+                "0F8446010000"
+              ],
+              [
+                54731495,
+                "48894118"
+              ]
+            ],
+            "postStoreProgram": [
+              [
+                54731499,
+                "4883C118"
+              ],
+              [
+                54731503,
+                "E84C48BFFC"
+              ]
+            ],
+            "postStoreCall": {
+              "rva": 54731503,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "rootMotionAnimKey",
+          "declaredType": "string",
+          "setterMethodIndex": 163002,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 54731514,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 54731541,
+            "rawHex": "48894128",
+            "fieldOffset": 40,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9603
+          },
+          "sourceToDestinationHex": "4885F60F8425010000488B4E104885C90F8418010000",
+          "directDataStore": {
+            "mode": "reference-return",
+            "argumentProgram": [
+              [
+                54731508,
+                "488B37"
+              ],
+              [
+                54731511,
+                "488BCB"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                54731519,
+                "4885F6"
+              ],
+              [
+                54731522,
+                "0F8425010000"
+              ],
+              [
+                54731528,
+                "488B4E10"
+              ],
+              [
+                54731532,
+                "4885C9"
+              ],
+              [
+                54731535,
+                "0F8418010000"
+              ],
+              [
+                54731541,
+                "48894128"
+              ]
+            ],
+            "postStoreProgram": [
+              [
+                54731545,
+                "4883C128"
+              ],
+              [
+                54731549,
+                "E81E48BFFC"
+              ]
+            ],
+            "postStoreCall": {
+              "rva": 54731549,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "rootMotionScale",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 163003,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 54731567,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 54731594,
+            "rawHex": "48894130",
+            "fieldOffset": 48,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9603
+          },
+          "sourceToDestinationHex": "4885F60F84F0000000488B4E104885C90F84E3000000",
+          "sourceContextInstructionRva": 54731554,
+          "directDataStore": {
+            "mode": "reference-return",
+            "argumentProgram": [
+              [
+                54731554,
+                "488B15F722BC09"
+              ],
+              [
+                54731561,
+                "488BCB"
+              ],
+              [
+                54731564,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                54731572,
+                "4885F6"
+              ],
+              [
+                54731575,
+                "0F84F0000000"
+              ],
+              [
+                54731581,
+                "488B4E10"
+              ],
+              [
+                54731585,
+                "4885C9"
+              ],
+              [
+                54731588,
+                "0F84E3000000"
+              ],
+              [
+                54731594,
+                "48894130"
+              ]
+            ],
+            "postStoreProgram": [
+              [
+                54731598,
+                "4883C130"
+              ],
+              [
+                54731602,
+                "E8E947BFFC"
+              ]
+            ],
+            "postStoreCall": {
+              "rva": 54731602,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "speedCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 163004,
+          "kind": "curve",
+          "sourceCall": {
+            "rva": 54731620,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 54731647,
+            "rawHex": "48894120",
+            "fieldOffset": 32,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9603
+          },
+          "sourceToDestinationHex": "4885F60F84BB000000488B4E104885C90F84AE000000",
+          "sourceContextInstructionRva": 54731607,
+          "directDataStore": {
+            "mode": "reference-return",
+            "argumentProgram": [
+              [
+                54731607,
+                "488B15EAB0CB09"
+              ],
+              [
+                54731614,
+                "488BCB"
+              ],
+              [
+                54731617,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                54731625,
+                "4885F6"
+              ],
+              [
+                54731628,
+                "0F84BB000000"
+              ],
+              [
+                54731634,
+                "488B4E10"
+              ],
+              [
+                54731638,
+                "4885C9"
+              ],
+              [
+                54731641,
+                "0F84AE000000"
+              ],
+              [
+                54731647,
+                "48894120"
+              ]
+            ],
+            "postStoreProgram": [
+              [
+                54731651,
+                "4883C120"
+              ],
+              [
+                54731655,
+                "E8B447BFFC"
+              ]
+            ],
+            "postStoreCall": {
+              "rva": 54731655,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "speedType",
+          "declaredType": "Beyond.Gameplay.Core.MoveToAction+SpeedType",
+          "setterMethodIndex": 163005,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 54731673,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 54731696,
+            "rawHex": "894110",
+            "fieldOffset": 16,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9603
+          },
+          "sourceToDestinationHex": "4885FF0F8486000000488B4F104885C9747D",
+          "sourceContextInstructionRva": 54731660,
+          "directDataStore": {
+            "mode": "dword-return",
+            "argumentProgram": [
+              [
+                54731660,
+                "488B155D46BD09"
+              ],
+              [
+                54731667,
+                "488BCB"
+              ],
+              [
+                54731670,
+                "488B3F"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                54731678,
+                "4885FF"
+              ],
+              [
+                54731681,
+                "0F8486000000"
+              ],
+              [
+                54731687,
+                "488B4F10"
+              ],
+              [
+                54731691,
+                "4885C9"
+              ],
+              [
+                54731694,
+                "747D"
+              ],
+              [
+                54731696,
+                "894110"
+              ]
+            ]
+          },
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          }
+        }
+      ],
+      "directDataSource": {
+        "mode": "reader-rbx-wrapper-ref-rdi-reference-stores-final-dword",
+        "instanceFieldName": "__instance",
+        "parentProgram": [
+          [
+            54731344,
+            "48895C2408"
+          ],
+          [
+            54731349,
+            "48896C2410"
+          ],
+          [
+            54731354,
+            "4889742418"
+          ],
+          [
+            54731359,
+            "57"
+          ],
+          [
+            54731360,
+            "4883EC20"
+          ],
+          [
+            54731364,
+            "803D6C9AA70A00"
+          ],
+          [
+            54731371,
+            "488BFA"
+          ],
+          [
+            54731374,
+            "488BD9"
+          ],
+          [
+            54731377,
+            "0F8462010000"
+          ],
+          [
+            54731383,
+            "837B3001"
+          ],
+          [
+            54731387,
+            "0F8CDF899601"
+          ],
+          [
+            54731393,
+            "488B4350"
+          ],
+          [
+            54731397,
+            "0FB628"
+          ],
+          [
+            54731400,
+            "8B7330"
+          ],
+          [
+            54731403,
+            "83EE01"
+          ],
+          [
+            54731406,
+            "0F88E2899601"
+          ],
+          [
+            54731412,
+            "48FF4350"
+          ],
+          [
+            54731416,
+            "FF4340"
+          ],
+          [
+            54731419,
+            "FF4344"
+          ],
+          [
+            54731422,
+            "897330"
+          ],
+          [
+            54731425,
+            "4080FDFF"
+          ],
+          [
+            54731429,
+            "0F841D010000"
+          ],
+          [
+            54731435,
+            "48833F00"
+          ],
+          [
+            54731439,
+            "0F84DB899601"
+          ],
+          [
+            54731445,
+            "4080FD05"
+          ],
+          [
+            54731449,
+            "0F85048A9601"
+          ],
+          [
+            54731455,
+            "488B155A23BC09"
+          ],
+          [
+            54731462,
+            "488BCB"
+          ],
+          [
+            54731465,
+            "488B37"
+          ],
+          [
+            54731468,
+            "E8BF3997FF"
+          ],
+          [
+            54731473,
+            "4885F6"
+          ],
+          [
+            54731476,
+            "0F8453010000"
+          ],
+          [
+            54731482,
+            "488B4E10"
+          ],
+          [
+            54731486,
+            "4885C9"
+          ],
+          [
+            54731489,
+            "0F8446010000"
+          ],
+          [
+            54731495,
+            "48894118"
+          ],
+          [
+            54731499,
+            "4883C118"
+          ],
+          [
+            54731503,
+            "E84C48BFFC"
+          ],
+          [
+            54731508,
+            "488B37"
+          ],
+          [
+            54731511,
+            "488BCB"
+          ],
+          [
+            54731514,
+            "E8016487FF"
+          ],
+          [
+            54731519,
+            "4885F6"
+          ],
+          [
+            54731522,
+            "0F8425010000"
+          ],
+          [
+            54731528,
+            "488B4E10"
+          ],
+          [
+            54731532,
+            "4885C9"
+          ],
+          [
+            54731535,
+            "0F8418010000"
+          ],
+          [
+            54731541,
+            "48894128"
+          ],
+          [
+            54731545,
+            "4883C128"
+          ],
+          [
+            54731549,
+            "E81E48BFFC"
+          ],
+          [
+            54731554,
+            "488B15F722BC09"
+          ],
+          [
+            54731561,
+            "488BCB"
+          ],
+          [
+            54731564,
+            "488B37"
+          ],
+          [
+            54731567,
+            "E85C3997FF"
+          ],
+          [
+            54731572,
+            "4885F6"
+          ],
+          [
+            54731575,
+            "0F84F0000000"
+          ],
+          [
+            54731581,
+            "488B4E10"
+          ],
+          [
+            54731585,
+            "4885C9"
+          ],
+          [
+            54731588,
+            "0F84E3000000"
+          ],
+          [
+            54731594,
+            "48894130"
+          ],
+          [
+            54731598,
+            "4883C130"
+          ],
+          [
+            54731602,
+            "E8E947BFFC"
+          ],
+          [
+            54731607,
+            "488B15EAB0CB09"
+          ],
+          [
+            54731614,
+            "488BCB"
+          ],
+          [
+            54731617,
+            "488B37"
+          ],
+          [
+            54731620,
+            "E8273997FF"
+          ],
+          [
+            54731625,
+            "4885F6"
+          ],
+          [
+            54731628,
+            "0F84BB000000"
+          ],
+          [
+            54731634,
+            "488B4E10"
+          ],
+          [
+            54731638,
+            "4885C9"
+          ],
+          [
+            54731641,
+            "0F84AE000000"
+          ],
+          [
+            54731647,
+            "48894120"
+          ],
+          [
+            54731651,
+            "4883C120"
+          ],
+          [
+            54731655,
+            "E8B447BFFC"
+          ],
+          [
+            54731660,
+            "488B155D46BD09"
+          ],
+          [
+            54731667,
+            "488BCB"
+          ],
+          [
+            54731670,
+            "488B3F"
+          ],
+          [
+            54731673,
+            "E8126387FF"
+          ],
+          [
+            54731678,
+            "4885FF"
+          ],
+          [
+            54731681,
+            "0F8486000000"
+          ],
+          [
+            54731687,
+            "488B4F10"
+          ],
+          [
+            54731691,
+            "4885C9"
+          ],
+          [
+            54731694,
+            "747D"
+          ],
+          [
+            54731696,
+            "894110"
+          ]
+        ],
+        "postStoreHelperRva": 158528
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Current five generated names, declaration order, typed MethodSpec loads, physical source calls and declared Data fields.",
+    "conditional": "Complete incoming reader/ref-wrapper aliases, deliberate final wrapper load, RAX/EAX null-guarded owned stores and following slot-address helper calls under coherent declared references and ordinary Win64 returns. Buffered final DWORD source is independently checked.",
+    "exact": "Selected native bytes and field/type declarations on the pinned inputs; physical root-motion string helper validates stored UTF8 framing separately.",
+    "unresolved": "Physical generic callee identity, runtime provider/MethodInfo selection, post-store helper effects, failure/refill behavior, child grammar admission, complete SubSpeed/MoveTo/root and actual movement."
+  }
+}

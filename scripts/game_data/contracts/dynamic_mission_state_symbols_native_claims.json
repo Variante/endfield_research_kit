@@ -1,0 +1,25 @@
+{
+  "schema": "endfield.dynamic-mission-state-symbols-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_state_cache_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-cache-native-claims.v1",
+      "status": "reviewed"
+    }
+  ],
+  "methodRoles": [
+    "missionState",
+    "questState"
+  ],
+  "evidenceBoundary": {
+    "direct": "explicit static metadata enum default declarations tied to actual qualified getter return definitions",
+    "conditional": "symbolic interpretation of a compared Int32 requires the selected Mission or Quest return domain; unlisted values remain anonymous and aliases are retained",
+    "unresolved": [
+      "runtime state or transitions",
+      "query miss as observed enum value",
+      "a universal cache enum",
+      "authored State-to-symbol source association"
+    ]
+  }
+}

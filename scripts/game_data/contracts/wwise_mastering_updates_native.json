@@ -1,0 +1,1132 @@
+{
+  "schema": "endfield.wwise-mastering-updates-native.v4",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "direct",
+  "meaningBoundary": "Complete signed-low-word dispatch and anonymous payload transformations, with every update selector joined to a serialized bulk-loader source. Symbolic integer flow proves byte zero/nonzero semantics, mask remainders and cached record selection for the authenticated loader. Public control names, DSP meanings and live invocation remain unresolved. Every normal dispatch exit writes the common completion byte.",
+  "classId": "0x00ba0003",
+  "vtableSlot": 8,
+  "method": {
+    "rva": "0x249a50",
+    "bodyLength": 1405,
+    "bodySha256": "8891f6d055f1b0b9a3afed1282f7550868e7c4fbe4413ab7fd4ce68d005e95e6"
+  },
+  "higherRangeOffset": 358,
+  "upperTailOffset": 891,
+  "codeByteLength": 925,
+  "tables": [
+    {
+      "targetOffset": 928,
+      "targetCount": 8,
+      "selectorOffset": 960,
+      "selectorCount": 164
+    },
+    {
+      "targetOffset": 1124,
+      "targetCount": 19,
+      "selectorOffset": 1200,
+      "selectorCount": 205
+    }
+  ],
+  "handlers": [
+    {
+      "bodyOffset": 86,
+      "byteLength": 38,
+      "sha256": "df7bfb82c60136a0ba399eac49fd8fba171451055c3c23dc5a6c78d160cd0195",
+      "parameterIds": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "inverseMask",
+        "receiverOffset": 12,
+        "selectorBias": 0
+      }
+    },
+    {
+      "bodyOffset": 124,
+      "byteLength": 11,
+      "sha256": "040455675ece6485b7c8e6f16e23df68a4b43f07c1a5a0c814799b25384a6ff3",
+      "parameterIds": [
+        100
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 24,
+        "receiverRegister": "rcx"
+      }
+    },
+    {
+      "bodyOffset": 135,
+      "byteLength": 57,
+      "sha256": "2545f640c4f086602eebed3f7c21cdead1a27435a3a536cb6928584f87de7470",
+      "parameterIds": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "maskAndRefresh",
+        "selectorBias": 101
+      }
+    },
+    {
+      "bodyOffset": 192,
+      "byteLength": 44,
+      "sha256": "52db7382eb4e23bd951b5cf1f61776ca872d9fdf3222e8998259d8e62e5ada8a",
+      "parameterIds": [
+        110,
+        120,
+        130,
+        140,
+        150,
+        160
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "cacheAndRefresh",
+        "selectorBias": 110
+      }
+    },
+    {
+      "bodyOffset": 236,
+      "byteLength": 36,
+      "sha256": "d1d2a18a1ae27feb8f1d82c89813a6f12501fe75b6025e5ed9b69d4f79f85271",
+      "parameterIds": [
+        111,
+        121,
+        131,
+        141,
+        151,
+        161
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 111,
+        "receiverOffset": 36,
+        "recordStride": 16
+      }
+    },
+    {
+      "bodyOffset": 272,
+      "byteLength": 36,
+      "sha256": "00df3458a163ca5b78a884eeac378abc64095ea1249df82aff1edc2add2da6ce",
+      "parameterIds": [
+        112,
+        122,
+        132,
+        142,
+        152,
+        162
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 112,
+        "receiverOffset": 40,
+        "recordStride": 16
+      }
+    },
+    {
+      "bodyOffset": 308,
+      "byteLength": 36,
+      "sha256": "2d6c5194d9af1877c116afde2226a154ac5afc76d32002af8324b53d008cbbf1",
+      "parameterIds": [
+        113,
+        123,
+        133,
+        143,
+        153,
+        163
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 113,
+        "receiverOffset": 44,
+        "recordStride": 16
+      }
+    },
+    {
+      "bodyOffset": 344,
+      "byteLength": 14,
+      "sha256": "781d19b1b39533604f894f61fb32c4f8beb6b259140ec90f9e75782f9fb9691f",
+      "parameterIds": [
+        200
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 136,
+        "receiverRegister": "rcx"
+      }
+    },
+    {
+      "bodyOffset": 426,
+      "byteLength": 14,
+      "sha256": "bd4f67bd4249f66eac2cd1159a19d32347fdcbf0ef4e6f26dc73b8160e44893f",
+      "parameterIds": [
+        201
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 140,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 440,
+      "byteLength": 14,
+      "sha256": "6c1320cd3d221b4716973d562cdfbf02ec8a8eb5f15537810a54475bf9124e2b",
+      "parameterIds": [
+        202
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 144,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 454,
+      "byteLength": 19,
+      "sha256": "a10dacb495fd852c4a7efc61ff5a1627e9a6818f7c757e4c0348ee3605163a63",
+      "parameterIds": [
+        203
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "booleanWord",
+        "receiverOffset": 148
+      }
+    },
+    {
+      "bodyOffset": 473,
+      "byteLength": 51,
+      "sha256": "60df30ef32cf8f246e10c64539604cd8b211c35dcf74aa4f75be627d47cd56e0",
+      "parameterIds": [
+        204,
+        205,
+        206,
+        207
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "inverseMask",
+        "receiverOffset": 152,
+        "selectorBias": 204
+      }
+    },
+    {
+      "bodyOffset": 524,
+      "byteLength": 22,
+      "sha256": "e8bdf7fa9317cd756c73f05083f5ae92be7ec409eba952ae58bb5eddd3b59879",
+      "parameterIds": [
+        208,
+        209,
+        210
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "arrayWord",
+        "selectorBias": 208,
+        "receiverOffset": 164
+      }
+    },
+    {
+      "bodyOffset": 546,
+      "byteLength": 43,
+      "sha256": "af55b181027bcdcd6bb13fec8f20141446cdbddb24964e4d352a9441163aca64",
+      "parameterIds": [
+        220,
+        230,
+        240,
+        250
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 220,
+        "receiverOffset": 176,
+        "recordStride": 24
+      }
+    },
+    {
+      "bodyOffset": 589,
+      "byteLength": 43,
+      "sha256": "c0d81007543231adaa2662549371c78ec3e1b187799e2e24880c91655ecb5cbc",
+      "parameterIds": [
+        221,
+        231,
+        241,
+        251
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 221,
+        "receiverOffset": 180,
+        "recordStride": 24
+      }
+    },
+    {
+      "bodyOffset": 632,
+      "byteLength": 43,
+      "sha256": "6204647a6eb75cd471b600b00411e48b781cf5802cdefa3abff14dad2fe94d23",
+      "parameterIds": [
+        222,
+        232,
+        242,
+        252
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 222,
+        "receiverOffset": 184,
+        "recordStride": 24
+      }
+    },
+    {
+      "bodyOffset": 675,
+      "byteLength": 43,
+      "sha256": "447cdea0f76d26900baedd1adbd885c22fcb8aed47c65771274a792d68d17446",
+      "parameterIds": [
+        223,
+        233,
+        243,
+        253
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 223,
+        "receiverOffset": 188,
+        "recordStride": 24
+      }
+    },
+    {
+      "bodyOffset": 718,
+      "byteLength": 43,
+      "sha256": "2239e5c0ee2eaa6d592da26e28217665e33fc10bf6bb7d5b3a8b15c46d765264",
+      "parameterIds": [
+        224,
+        234,
+        244,
+        254
+      ],
+      "completionBranchBytes": 5,
+      "payload": {
+        "kind": "biasedRecordWord",
+        "selectorBias": 224,
+        "receiverOffset": 192,
+        "recordStride": 24,
+        "recordBias": 8
+      }
+    },
+    {
+      "bodyOffset": 761,
+      "byteLength": 40,
+      "sha256": "645b2cb619692452db7434e7b978b17734ab070f525d43c6d41c9b2b96aac024",
+      "parameterIds": [
+        225,
+        235,
+        245,
+        255
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "recordWord",
+        "selectorBias": 225,
+        "receiverOffset": 196,
+        "recordStride": 24
+      }
+    },
+    {
+      "bodyOffset": 801,
+      "byteLength": 19,
+      "sha256": "1d6f227151266fa149d86841b37cd547f480652ebb04e265d497c42ec023f647",
+      "parameterIds": [
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "arrayWord",
+        "selectorBias": 300,
+        "receiverOffset": 280
+      }
+    },
+    {
+      "bodyOffset": 820,
+      "byteLength": 11,
+      "sha256": "38a5847f46fba278eb892f01151371d72b09672a9ece3426e170b487afe31f20",
+      "parameterIds": [
+        400
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 344,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 831,
+      "byteLength": 11,
+      "sha256": "b93632db2e413bda3190dbc2a4aac0a45da1876575861ad77f20b7505022a20d",
+      "parameterIds": [
+        401
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 348,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 842,
+      "byteLength": 11,
+      "sha256": "06d776d605de5267f21491f18d46a1fb38545f3440d4d85b301dd35b66bf144c",
+      "parameterIds": [
+        402
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 352,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 853,
+      "byteLength": 11,
+      "sha256": "4e90063e80896c5f55b70e4f56072f1ee26d1531113bf9aa7c835f50723b671b",
+      "parameterIds": [
+        403
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 356,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 864,
+      "byteLength": 11,
+      "sha256": "4f0878bec1a74158f3b0e821cb03f519689acb9d4a957d8a8f0002d4f4565cde",
+      "parameterIds": [
+        404
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "copyWord",
+        "receiverOffset": 360,
+        "receiverRegister": "rbx"
+      }
+    },
+    {
+      "bodyOffset": 875,
+      "byteLength": 16,
+      "sha256": "c994d19e84b8f8bf117507882159f88830c61e64ba62c91e9987081773207aeb",
+      "parameterIds": [
+        405
+      ],
+      "completionBranchBytes": 2,
+      "payload": {
+        "kind": "booleanWord",
+        "receiverOffset": 364
+      }
+    }
+  ],
+  "completion": {
+    "successReturnCode": 1,
+    "invalidReturnCode": 31,
+    "flagReceiverOffset": 376,
+    "flagValue": 1
+  },
+  "maskedWordHelper": {
+    "rva": "0x0024a550",
+    "bodyLength": 46,
+    "bodySha256": "a0aa13528b15d0159c96a7cd2b8c7b510a03e942d275339bfee2baad3911c673",
+    "layout": {
+      "maskOffset": 404,
+      "cachedWordsOffset": 380,
+      "recordBias": 2
+    },
+    "directCallBodyOffsets": [
+      182,
+      226
+    ]
+  },
+  "bulkWordJoins": {
+    "receiverWitnessBodyOffset": 15,
+    "receiverWitnessHex": "488bf9",
+    "rows": [
+      {
+        "serializedOffset": 4,
+        "storeBodyOffset": 115,
+        "storeInstructionHex": "894718",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 24
+      },
+      {
+        "serializedOffset": 14,
+        "storeBodyOffset": 259,
+        "storeInstructionHex": "898f7c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 380
+      },
+      {
+        "serializedOffset": 18,
+        "storeBodyOffset": 271,
+        "storeInstructionHex": "f30f114724",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 36
+      },
+      {
+        "serializedOffset": 22,
+        "storeBodyOffset": 282,
+        "storeInstructionHex": "f30f114f2c",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 44
+      },
+      {
+        "serializedOffset": 26,
+        "storeBodyOffset": 291,
+        "storeInstructionHex": "894728",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 40
+      },
+      {
+        "serializedOffset": 30,
+        "storeBodyOffset": 310,
+        "storeInstructionHex": "898f80010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 384
+      },
+      {
+        "serializedOffset": 34,
+        "storeBodyOffset": 328,
+        "storeInstructionHex": "f30f114734",
+        "bridgeInstructionHex": "4184d2",
+        "receiverOffset": 52
+      },
+      {
+        "serializedOffset": 38,
+        "storeBodyOffset": 339,
+        "storeInstructionHex": "f30f114f3c",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 60
+      },
+      {
+        "serializedOffset": 42,
+        "storeBodyOffset": 348,
+        "storeInstructionHex": "894738",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 56
+      },
+      {
+        "serializedOffset": 46,
+        "storeBodyOffset": 358,
+        "storeInstructionHex": "898f84010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 388
+      },
+      {
+        "serializedOffset": 50,
+        "storeBodyOffset": 376,
+        "storeInstructionHex": "f30f114744",
+        "bridgeInstructionHex": "4184d0",
+        "receiverOffset": 68
+      },
+      {
+        "serializedOffset": 54,
+        "storeBodyOffset": 387,
+        "storeInstructionHex": "f30f114f4c",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 76
+      },
+      {
+        "serializedOffset": 58,
+        "storeBodyOffset": 396,
+        "storeInstructionHex": "894748",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 72
+      },
+      {
+        "serializedOffset": 62,
+        "storeBodyOffset": 406,
+        "storeInstructionHex": "898f88010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 392
+      },
+      {
+        "serializedOffset": 66,
+        "storeBodyOffset": 424,
+        "storeInstructionHex": "f30f114754",
+        "bridgeInstructionHex": "f6c210",
+        "receiverOffset": 84
+      },
+      {
+        "serializedOffset": 70,
+        "storeBodyOffset": 435,
+        "storeInstructionHex": "f30f114f5c",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 92
+      },
+      {
+        "serializedOffset": 74,
+        "storeBodyOffset": 444,
+        "storeInstructionHex": "894758",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 88
+      },
+      {
+        "serializedOffset": 78,
+        "storeBodyOffset": 454,
+        "storeInstructionHex": "898f8c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 396
+      },
+      {
+        "serializedOffset": 82,
+        "storeBodyOffset": 472,
+        "storeInstructionHex": "f30f114764",
+        "bridgeInstructionHex": "f6c220",
+        "receiverOffset": 100
+      },
+      {
+        "serializedOffset": 86,
+        "storeBodyOffset": 483,
+        "storeInstructionHex": "f30f114f6c",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 108
+      },
+      {
+        "serializedOffset": 90,
+        "storeBodyOffset": 492,
+        "storeInstructionHex": "894768",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 104
+      },
+      {
+        "serializedOffset": 94,
+        "storeBodyOffset": 502,
+        "storeInstructionHex": "898f90010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 400
+      },
+      {
+        "serializedOffset": 98,
+        "storeBodyOffset": 517,
+        "storeInstructionHex": "f30f114774",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 116
+      },
+      {
+        "serializedOffset": 102,
+        "storeBodyOffset": 528,
+        "storeInstructionHex": "f30f114f7c",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 124
+      },
+      {
+        "serializedOffset": 106,
+        "storeBodyOffset": 537,
+        "storeInstructionHex": "894778",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 120
+      },
+      {
+        "serializedOffset": 110,
+        "storeBodyOffset": 547,
+        "storeInstructionHex": "898788000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 136
+      },
+      {
+        "serializedOffset": 114,
+        "storeBodyOffset": 557,
+        "storeInstructionHex": "89878c000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 140
+      },
+      {
+        "serializedOffset": 118,
+        "storeBodyOffset": 571,
+        "storeInstructionHex": "f30f118790000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 144
+      },
+      {
+        "serializedOffset": 127,
+        "storeBodyOffset": 678,
+        "storeInstructionHex": "8987a4000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 164
+      },
+      {
+        "serializedOffset": 131,
+        "storeBodyOffset": 691,
+        "storeInstructionHex": "8987a8000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 168
+      },
+      {
+        "serializedOffset": 135,
+        "storeBodyOffset": 704,
+        "storeInstructionHex": "8987ac000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 172
+      },
+      {
+        "serializedOffset": 139,
+        "storeBodyOffset": 717,
+        "storeInstructionHex": "8987b0000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 176
+      },
+      {
+        "serializedOffset": 143,
+        "storeBodyOffset": 732,
+        "storeInstructionHex": "f30f1187b4000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 180
+      },
+      {
+        "serializedOffset": 147,
+        "storeBodyOffset": 749,
+        "storeInstructionHex": "f30f118fb8000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 184
+      },
+      {
+        "serializedOffset": 151,
+        "storeBodyOffset": 766,
+        "storeInstructionHex": "f30f1187bc000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 188
+      },
+      {
+        "serializedOffset": 155,
+        "storeBodyOffset": 783,
+        "storeInstructionHex": "f30f118fc0000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 192
+      },
+      {
+        "serializedOffset": 159,
+        "storeBodyOffset": 800,
+        "storeInstructionHex": "f30f1187c4000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 196
+      },
+      {
+        "serializedOffset": 163,
+        "storeBodyOffset": 817,
+        "storeInstructionHex": "f30f118fc8000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 200
+      },
+      {
+        "serializedOffset": 167,
+        "storeBodyOffset": 834,
+        "storeInstructionHex": "f30f1187cc000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 204
+      },
+      {
+        "serializedOffset": 171,
+        "storeBodyOffset": 851,
+        "storeInstructionHex": "f30f118fd0000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 208
+      },
+      {
+        "serializedOffset": 175,
+        "storeBodyOffset": 868,
+        "storeInstructionHex": "f30f1187d4000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 212
+      },
+      {
+        "serializedOffset": 179,
+        "storeBodyOffset": 885,
+        "storeInstructionHex": "f30f118fd8000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 216
+      },
+      {
+        "serializedOffset": 183,
+        "storeBodyOffset": 902,
+        "storeInstructionHex": "f30f1187dc000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 220
+      },
+      {
+        "serializedOffset": 187,
+        "storeBodyOffset": 919,
+        "storeInstructionHex": "f30f118fe0000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 224
+      },
+      {
+        "serializedOffset": 191,
+        "storeBodyOffset": 936,
+        "storeInstructionHex": "f30f1187e4000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 228
+      },
+      {
+        "serializedOffset": 195,
+        "storeBodyOffset": 953,
+        "storeInstructionHex": "f30f118fe8000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 232
+      },
+      {
+        "serializedOffset": 199,
+        "storeBodyOffset": 970,
+        "storeInstructionHex": "f30f1187ec000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 236
+      },
+      {
+        "serializedOffset": 203,
+        "storeBodyOffset": 987,
+        "storeInstructionHex": "f30f118ff0000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 240
+      },
+      {
+        "serializedOffset": 207,
+        "storeBodyOffset": 1004,
+        "storeInstructionHex": "f30f1187f4000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 244
+      },
+      {
+        "serializedOffset": 211,
+        "storeBodyOffset": 1021,
+        "storeInstructionHex": "f30f118ff8000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 248
+      },
+      {
+        "serializedOffset": 215,
+        "storeBodyOffset": 1038,
+        "storeInstructionHex": "f30f1187fc000000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 252
+      },
+      {
+        "serializedOffset": 219,
+        "storeBodyOffset": 1055,
+        "storeInstructionHex": "f30f118f00010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 256
+      },
+      {
+        "serializedOffset": 223,
+        "storeBodyOffset": 1072,
+        "storeInstructionHex": "f30f118704010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 260
+      },
+      {
+        "serializedOffset": 227,
+        "storeBodyOffset": 1089,
+        "storeInstructionHex": "f30f118f08010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 264
+      },
+      {
+        "serializedOffset": 231,
+        "storeBodyOffset": 1104,
+        "storeInstructionHex": "89870c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 268
+      },
+      {
+        "serializedOffset": 235,
+        "storeBodyOffset": 1117,
+        "storeInstructionHex": "898718010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 280
+      },
+      {
+        "serializedOffset": 239,
+        "storeBodyOffset": 1130,
+        "storeInstructionHex": "89871c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 284
+      },
+      {
+        "serializedOffset": 243,
+        "storeBodyOffset": 1143,
+        "storeInstructionHex": "898720010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 288
+      },
+      {
+        "serializedOffset": 247,
+        "storeBodyOffset": 1156,
+        "storeInstructionHex": "898724010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 292
+      },
+      {
+        "serializedOffset": 251,
+        "storeBodyOffset": 1169,
+        "storeInstructionHex": "898728010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 296
+      },
+      {
+        "serializedOffset": 255,
+        "storeBodyOffset": 1182,
+        "storeInstructionHex": "89872c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 300
+      },
+      {
+        "serializedOffset": 259,
+        "storeBodyOffset": 1195,
+        "storeInstructionHex": "898730010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 304
+      },
+      {
+        "serializedOffset": 263,
+        "storeBodyOffset": 1208,
+        "storeInstructionHex": "898734010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 308
+      },
+      {
+        "serializedOffset": 267,
+        "storeBodyOffset": 1221,
+        "storeInstructionHex": "898738010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 312
+      },
+      {
+        "serializedOffset": 271,
+        "storeBodyOffset": 1234,
+        "storeInstructionHex": "89873c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 316
+      },
+      {
+        "serializedOffset": 275,
+        "storeBodyOffset": 1247,
+        "storeInstructionHex": "898740010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 320
+      },
+      {
+        "serializedOffset": 279,
+        "storeBodyOffset": 1265,
+        "storeInstructionHex": "898744010000",
+        "bridgeInstructionHex": "488b742410",
+        "receiverOffset": 324
+      },
+      {
+        "serializedOffset": 283,
+        "storeBodyOffset": 1285,
+        "storeInstructionHex": "898758010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 344
+      },
+      {
+        "serializedOffset": 287,
+        "storeBodyOffset": 1300,
+        "storeInstructionHex": "f30f11875c010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 348
+      },
+      {
+        "serializedOffset": 291,
+        "storeBodyOffset": 1317,
+        "storeInstructionHex": "f30f118f60010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 352
+      },
+      {
+        "serializedOffset": 295,
+        "storeBodyOffset": 1334,
+        "storeInstructionHex": "f30f118764010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 356
+      },
+      {
+        "serializedOffset": 299,
+        "storeBodyOffset": 1349,
+        "storeInstructionHex": "898768010000",
+        "bridgeInstructionHex": "",
+        "receiverOffset": 360
+      }
+    ]
+  },
+  "bulkByteJoins": {
+    "evidenceBoundary": "direct",
+    "rows": [
+      {
+        "parameterId": 0,
+        "serializedOffset": 0,
+        "receiverOffset": 12,
+        "maskBit": 0,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 1,
+        "serializedOffset": 1,
+        "receiverOffset": 12,
+        "maskBit": 1,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 2,
+        "serializedOffset": 2,
+        "receiverOffset": 12,
+        "maskBit": 2,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 3,
+        "serializedOffset": 3,
+        "receiverOffset": 12,
+        "maskBit": 3,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 101,
+        "serializedOffset": 8,
+        "receiverOffset": 404,
+        "maskBit": 0,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 102,
+        "serializedOffset": 9,
+        "receiverOffset": 404,
+        "maskBit": 1,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 103,
+        "serializedOffset": 10,
+        "receiverOffset": 404,
+        "maskBit": 2,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 104,
+        "serializedOffset": 11,
+        "receiverOffset": 404,
+        "maskBit": 3,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 105,
+        "serializedOffset": 12,
+        "receiverOffset": 404,
+        "maskBit": 4,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 106,
+        "serializedOffset": 13,
+        "receiverOffset": 404,
+        "maskBit": 5,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 203,
+        "serializedOffset": 122,
+        "receiverOffset": 148,
+        "kind": "nonzeroBooleanWord"
+      },
+      {
+        "parameterId": 204,
+        "serializedOffset": 123,
+        "receiverOffset": 152,
+        "maskBit": 0,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 205,
+        "serializedOffset": 124,
+        "receiverOffset": 152,
+        "maskBit": 1,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 206,
+        "serializedOffset": 125,
+        "receiverOffset": 152,
+        "maskBit": 2,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 207,
+        "serializedOffset": 126,
+        "receiverOffset": 152,
+        "maskBit": 3,
+        "kind": "inverseZeroMask"
+      },
+      {
+        "parameterId": 405,
+        "serializedOffset": 303,
+        "receiverOffset": 364,
+        "kind": "nonzeroBooleanWord"
+      }
+    ],
+    "maskRemainders": [
+      {
+        "receiverOffset": 12,
+        "firstBit": 4,
+        "kind": "zero"
+      },
+      {
+        "receiverOffset": 152,
+        "firstBit": 4,
+        "kind": "zero"
+      },
+      {
+        "receiverOffset": 404,
+        "firstBit": 6,
+        "kind": "preserveInitial"
+      }
+    ]
+  }
+}

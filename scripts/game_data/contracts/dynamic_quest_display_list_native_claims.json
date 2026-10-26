@@ -1,0 +1,78 @@
+{
+  "schema": "endfield.dynamic-quest-display-list-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "getter": {
+      "type": "Beyond.Gameplay.MissionSystem+MissionData",
+      "image": "Gameplay.Beyond.dll",
+      "method": "GetDisplayQuestIds",
+      "callAbi": "instance",
+      "returnType": "System.Collections.Generic.List`1<string>",
+      "parameters": []
+    },
+    "refresh": {
+      "type": "Beyond.Gameplay.MissionSystem+MissionData",
+      "image": "Gameplay.Beyond.dll",
+      "method": "RefreshIfDirty",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": []
+    }
+  },
+  "field": {
+    "name": "m_displayQuestIds",
+    "offset": 88
+  },
+  "programs": [
+    [
+      "push rbx",
+      "sub rsp, 0x20",
+      "mov rbx, rcx",
+      "xor edx, edx",
+      "mov ecx, 0x3c6e",
+      "call *",
+      "xor edx, edx",
+      "test al, al",
+      "jcc *",
+      "mov rcx, rbx",
+      "call *",
+      "mov rax, [rbx+0x58]",
+      "add rsp, 0x20",
+      "pop rbx",
+      "ret"
+    ],
+    [
+      "mov ecx, 0x3c6e",
+      "call *",
+      "test rax, rax",
+      "jne *",
+      "call *",
+      "int3",
+      "xor r8d, r8d",
+      "mov rdx, rbx",
+      "mov rcx, rax",
+      "call *",
+      "nop",
+      "jmp *"
+    ]
+  ],
+  "evidenceBoundary": {
+    "direct": "Selected false-patch getter requests actual RefreshIfDirty then returns concrete List<String> field pointer.",
+    "conditional": [
+      "Actual selected IFix AL zero; valid original receiver; RefreshIfDirty returns normally under ordinary Win64 and preserves watched receiver/frame storage."
+    ],
+    "exact": "Ordinary closed reference definition/argument identity of getter return and actual instance field, complete selected primary grammar and declared cold unwind membership.",
+    "unresolved": [
+      "RefreshIfDirty algorithm and list mutation/contents/ordering/selection.",
+      "Live invocation, patch execution and cache freshness."
+    ],
+    "structuralOnly": "Reference representation does not determine managed List object size."
+  }
+}

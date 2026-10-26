@@ -1,0 +1,252 @@
+{
+  "schema": "endfield.buff-camera-descriptor-cache-lookup-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_descriptor_composition_native.json",
+  "function": {
+    "entryRva": 165456,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 165456,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            165456,
+            165502,
+            211676768
+          ],
+          "tableRowRva": 251735408,
+          "runtimeTripleRawHex": "508602007E86020060EE9D0C",
+          "codeBytes": 46,
+          "unwindRawHex": "010D04000D5209F007500630",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        },
+        {
+          "runtimeTriple": [
+            165502,
+            165837,
+            211676780
+          ],
+          "tableRowRva": 251735420,
+          "runtimeTripleRawHex": "7E860200CD8702006CEE9D0C",
+          "codeBytes": 335,
+          "unwindRawHex": "214C0A004CE4040039D405001FC40D0010740C0005640B00508602007E86020060EE9D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                165502,
+                165837,
+                211676780
+              ],
+              "parent": [
+                165456,
+                165502,
+                211676768
+              ]
+            }
+          ]
+        },
+        {
+          "runtimeTriple": [
+            165837,
+            165872,
+            211676816
+          ],
+          "tableRowRva": 251735432,
+          "runtimeTripleRawHex": "CD870200F087020090EE9D0C",
+          "codeBytes": 35,
+          "unwindRawHex": "21000A0000E4040000D4050000C40D0000740C0000640B00508602007E86020060EE9D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                165837,
+                165872,
+                211676816
+              ],
+              "parent": [
+                165456,
+                165502,
+                211676768
+              ]
+            }
+          ]
+        },
+        {
+          "runtimeTriple": [
+            165872,
+            165889,
+            211676852
+          ],
+          "tableRowRva": 251735444,
+          "runtimeTripleRawHex": "F087020001880200B4EE9D0C",
+          "codeBytes": 17,
+          "unwindRawHex": "21000000508602007E86020060EE9D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                165872,
+                165889,
+                211676852
+              ],
+              "parent": [
+                165456,
+                165502,
+                211676768
+              ]
+            }
+          ]
+        },
+        {
+          "runtimeTriple": [
+            3079670,
+            3079722,
+            211676868
+          ],
+          "tableRowRva": 251924252,
+          "runtimeTripleRawHex": "F6FD2E002AFE2E00C4EE9D0C",
+          "codeBytes": 52,
+          "unwindRawHex": "21000A0000E4040000D4050000C40D0000740C0000640B00508602007E86020060EE9D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                3079670,
+                3079722,
+                211676868
+              ],
+              "parent": [
+                165456,
+                165502,
+                211676768
+              ]
+            }
+          ]
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 165456,
+        "endRva": 165502,
+        "sha256": "1A6F350E7973E7119DE11C5D4BAC227B62C3A4851F9F0A6DF4546CAE0EA1AE73"
+      },
+      {
+        "startRva": 165502,
+        "endRva": 165837,
+        "sha256": "A91540CE34AD612B3E52792585463BE0CE79E1A257D310ED18D9630AAEF9FB10"
+      },
+      {
+        "startRva": 165837,
+        "endRva": 165872,
+        "sha256": "A394F8C72DECC694F16BBF37F24B2A7476A266B94B6F79C401D75FEAAB9E3C90"
+      },
+      {
+        "startRva": 165872,
+        "endRva": 165889,
+        "sha256": "FC56A1C04F3DEB5C828D6EF2FA88DA36063F5A176371E4506E6CB458E5387317"
+      },
+      {
+        "startRva": 3079670,
+        "endRva": 3079722,
+        "sha256": "EB76DA0CD898790AB499F56E23FBB143C8952A4FDCADE7E8F88C8F0CCC8F6226"
+      }
+    ],
+    "checkedInstructionCount": 129
+  },
+  "segments": {
+    "primary": [
+      165456,
+      165889
+    ],
+    "coldProbe": [
+      3079670,
+      3079722
+    ]
+  },
+  "labels": {
+    "mask": 165605,
+    "afterSentinel": 165677,
+    "miss": 165765,
+    "sentinelMismatch": 165861,
+    "sentinelTest": 165673,
+    "coldProbe": 3079670,
+    "matching": 165686,
+    "advance": 165748,
+    "choose": 165759,
+    "queryMismatch": 165868,
+    "queryTest": 165744,
+    "hit": 165837,
+    "epilogue": 165790,
+    "empty": 165872
+  },
+  "globals": {
+    "auxiliaryCount": 233437944,
+    "storedCount": 233437952,
+    "marker": 233437968,
+    "begin": 233437984,
+    "sentinelTriple": 233437976,
+    "capacity": 233437960,
+    "table": 233437888,
+    "probeData": 233437928
+  },
+  "calls": {
+    "emptyHandler": 3175796,
+    "probeHelper": 269376
+  },
+  "parentArgumentSegments": {
+    "lookupArguments": [
+      166629,
+      166662
+    ],
+    "insertionArguments": [
+      166731,
+      166756
+    ],
+    "selectResult": [
+      166662,
+      166696
+    ]
+  },
+  "parentInsertionRva": 164720,
+  "evidenceBoundary": {
+    "exact": "Selected native bytes, complete exception family and semantic branch labels",
+    "direct": "Zero-flag explicit probe hit compares all three QWORDs; iterator output stores current/end; caller frame joins temporary key and output. Delegated empty output is excluded.",
+    "structuralOnly": "Anonymous marker/global container representation and first key pointee DWORD used by hash",
+    "conditional": "Coherent readable table/key/zero-flag wrapper and disjoint writable output; normal nonvolatile/stack-preserving callees; local key preserved across opaque calls",
+    "unresolved": "Empty/probe helper effects including R9/R10/R11 clobbering, termination, insertion, concurrency, later pointee stability, actual runtime cold target and positive camera grammar; all caller hits satisfy triple equality is not proved"
+  }
+}

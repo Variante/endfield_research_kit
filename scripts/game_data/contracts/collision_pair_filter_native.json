@@ -1,0 +1,946 @@
+{
+  "schema": "endfield.collision-pair-filter-native.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "evidenceBoundary": "direct: complete original compiled selected shader, layer and ignore helpers, scene packet construction, shader-call ABI and upstream body-mode exclusion. Conditional: saved typed scene shader addresses and shape words may select these rules. No pair invocation, coexisting pair, overlap, layer matrix, scene modes, report delivery or solver contact is inferred.",
+  "layout": {
+    "scene": {
+      "shader": 4016,
+      "pairCallback": 4024,
+      "kinematicKinematicMode": 4032,
+      "kinematicStaticMode": 4036,
+      "publicDelta": -16,
+      "notification": 4240,
+      "notificationSlot": 24
+    },
+    "manager": {
+      "cell": 30506600,
+      "matrix": 120
+    },
+    "ignoreList": {
+      "begin": 96,
+      "end": 104
+    },
+    "bodyEmbedding": {
+      "scb": 96,
+      "core": 32,
+      "coreFlags": 44,
+      "publicFlags": 172,
+      "modeMask": 1
+    },
+    "shapeSim": {
+      "actor": 8,
+      "core": 64
+    },
+    "actorSim": {
+      "core": 80
+    },
+    "actorCore": {
+      "type": 13
+    },
+    "shapeCore": {
+      "flags": 64,
+      "filters": 16,
+      "publicOffset": 80,
+      "geometry": 72
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "shader",
+      "rva": 4848240,
+      "bytes": 351,
+      "sha256": "5433a893c7b0499853d3cfbdd1459b5e059c4277f098a09227c158c0b88ab880",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "shader_cold_1",
+      "rva": 15939304,
+      "bytes": 7,
+      "sha256": "831fd382c28ff32e5ae8a43877ec09a8d341935b03a48781c1735982f3bafb6a",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "layer_exclusion",
+      "rva": 4848592,
+      "bytes": 62,
+      "sha256": "fcff2b706ce159df51c0aefd31af9f6a11085a29f86a861a4f9fdebc14817c81",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "layer_exclusion_cold_1",
+      "rva": 15939312,
+      "bytes": 85,
+      "sha256": "0c1b451f08f42d8c5d6fffe5b97b89d490b5cac98e3093ade3300b18cec8fcd7",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "object_exclusion",
+      "rva": 4848656,
+      "bytes": 132,
+      "sha256": "a88343218cf2d04eda1f78cdffcbe0be05193d7e225a39422e7f25f36e94a83e",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "object_exclusion_cold_1",
+      "rva": 15939398,
+      "bytes": 48,
+      "sha256": "e5a7fe70063f377015dfd8e8cca0fadc43dc23df44728d403ccdd6237bc2614d",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "pair_prefilter",
+      "rva": 8083632,
+      "bytes": 440,
+      "sha256": "aa4a0bebcbb7294276dfe615416edbd5469fb5dfde2e206a67244b6a85f572fd",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "pair_prefilter_cold_1",
+      "rva": 8084072,
+      "bytes": 60,
+      "sha256": "3dea234022595b46ebc9456934df0facc279c8e021ac8b2746505e14bdf855da",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "pair_prefilter_cold_2",
+      "rva": 8084132,
+      "bytes": 134,
+      "sha256": "4675b8abeb30d1e7b8d0bab4abce05f70b7d8add072cd81544b1a79356a8e508",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "shader_dispatch",
+      "rva": 8104032,
+      "bytes": 902,
+      "sha256": "9829587d39d9acf63b45e8824e800fb160a137b2e237c5e27563a2dca69b2efd",
+      "boundary": "complete unwind-family member"
+    },
+    {
+      "role": "key_decode",
+      "rva": 4848800,
+      "bytes": 39,
+      "sha256": "9c757ddc0b01701602795a96f26e502d4cad5e47879dd6fb687a36a12c706992",
+      "boundary": "complete leaf instructions through both returns"
+    },
+    {
+      "role": "scene_packet",
+      "rva": 8092528,
+      "bytes": 548,
+      "sha256": "a706559c901cfff99f3eb4aca869e4a42fbceeb26ac7e6b57616c3ba6c799349",
+      "boundary": "contiguous original packet-construction caller through return"
+    },
+    {
+      "role": "scene_mode_constructor",
+      "rva": 7943744,
+      "bytes": 20,
+      "sha256": "b18bc5e332ebaaf6394de4e37a1be0f532ce2ef3fffe811a2f30b43f24f9300a",
+      "boundary": "reviewed descriptor-to-public-scene mode copy"
+    },
+    {
+      "role": "scene_filter_constructor",
+      "rva": 7951784,
+      "bytes": 22,
+      "sha256": "a84967b92653820c65648e1d884c0e7edc9750abb57a7d273ed5c83c8d7cc5d0",
+      "boundary": "reviewed descriptor-to-public-scene filter slots"
+    },
+    {
+      "role": "dynamic_constructor",
+      "rva": 7701456,
+      "bytes": 130,
+      "sha256": "8cd1fad5d4a499456e203c3f558039c4e2ce6de7d40a2ddf5d302f66f0a979e4",
+      "boundary": "reviewed embedding/committed-getter route; buffering remains separate"
+    },
+    {
+      "role": "scb_core_constructor",
+      "rva": 7699424,
+      "bytes": 34,
+      "sha256": "a4bacc65e1cd4c8a96f0e812af17e4aa0c3244f1fbd709d357ae94fb7113ebf3",
+      "boundary": "reviewed embedding/committed-getter route; buffering remains separate"
+    },
+    {
+      "role": "public_committed_flags",
+      "rva": 7725430,
+      "bytes": 22,
+      "sha256": "c56a0d040a1a78370661537d1ea223bed93075cba4cb3ded770266afe17c373f",
+      "boundary": "reviewed embedding/committed-getter route; buffering remains separate"
+    },
+    {
+      "role": "body_from_shape",
+      "rva": 7996768,
+      "bytes": 38,
+      "sha256": "38b21b64556a49a1df1493fdf190a982579f711a32f5b0bdde1e0b3271b5564c",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "shape_core_cleanup",
+      "rva": 7921080,
+      "bytes": 9,
+      "sha256": "d64d628e8aab355b152d0610d638fb402065f521ccd7724ed688e24942a21590",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "shape_core_kind",
+      "rva": 7997632,
+      "bytes": 3,
+      "sha256": "14d2e8b3dcd0a2753bc4042ef2a619a16aca125d7b94e01c745b6071a7986c05",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "public_scene_from_internal",
+      "rva": 8141936,
+      "bytes": 5,
+      "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "notification_guard",
+      "rva": 7993776,
+      "bytes": 24,
+      "sha256": "9da24fee6c8165fd3674c6aff53909c16f70c09416cebbb1a08eef12377b18e1",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "static_constructor",
+      "rva": 7776912,
+      "bytes": 48,
+      "sha256": "9be936afc2c77157b78f58cd6d19e8c912b761e6300f06d025688698664bafac",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "static_core_constructor",
+      "rva": 7807616,
+      "bytes": 49,
+      "sha256": "54fbb9200e3dc200bd8dcabfc96c4bd2b076e6673dfa0414d7cac7ddff052db8",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "public_scene_constructor",
+      "rva": 7807216,
+      "bytes": 54,
+      "sha256": "3749e203159eea271b0e3c2c2202543eee8bc4e380e1c966e6b36203adde49d9",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "internal_scene_constructor",
+      "rva": 8138928,
+      "bytes": 32,
+      "sha256": "44fa753aff5849285c4d44c2336b72e568af19a2bceb651367a6c8a54724be42",
+      "boundary": "reviewed pointer-base, embedding or callback read route"
+    },
+    {
+      "role": "notification_dispatch",
+      "rva": 7993776,
+      "bytes": 362,
+      "sha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee"
+    },
+    {
+      "role": "fast_pair_dispatch",
+      "rva": 8084272,
+      "bytes": 134,
+      "sha256": "6d16b1488518f8e5af318d251607176ff9d023bfc9e166f10e66b34e466690b5",
+      "boundary": "complete fast caller; ignores native dispatcher RAX and consumes out fields"
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "shader",
+      "offset": 46,
+      "prefix": "488b0d",
+      "mode": "rip32",
+      "field": "manager.cell"
+    },
+    {
+      "role": "layer_exclusion",
+      "offset": 40,
+      "prefix": "488b41",
+      "mode": "u8",
+      "field": "manager.matrix"
+    },
+    {
+      "role": "object_exclusion",
+      "offset": 86,
+      "prefix": "498b53",
+      "mode": "u8",
+      "field": "ignoreList.begin"
+    },
+    {
+      "role": "object_exclusion",
+      "offset": 90,
+      "prefix": "498b43",
+      "mode": "u8",
+      "field": "ignoreList.end"
+    },
+    {
+      "role": "scene_packet",
+      "offset": 90,
+      "prefix": "488b81",
+      "mode": "u32",
+      "field": "scene.shader"
+    },
+    {
+      "role": "scene_packet",
+      "offset": 124,
+      "prefix": "488b81",
+      "mode": "u32",
+      "field": "scene.pairCallback"
+    },
+    {
+      "role": "scene_packet",
+      "offset": 148,
+      "prefix": "8b81",
+      "mode": "u32",
+      "field": "scene.kinematicKinematicMode"
+    },
+    {
+      "role": "scene_packet",
+      "offset": 158,
+      "prefix": "8b81",
+      "mode": "u32",
+      "field": "scene.kinematicStaticMode"
+    },
+    {
+      "role": "dynamic_constructor",
+      "offset": 89,
+      "prefix": "488d4f",
+      "mode": "u8",
+      "field": "bodyEmbedding.scb"
+    },
+    {
+      "role": "scb_core_constructor",
+      "offset": 25,
+      "prefix": "4883c1",
+      "mode": "u8",
+      "field": "bodyEmbedding.core"
+    },
+    {
+      "role": "pair_prefilter",
+      "offset": 107,
+      "prefix": "0fb648",
+      "mode": "u8",
+      "field": "bodyEmbedding.coreFlags"
+    },
+    {
+      "role": "public_committed_flags",
+      "offset": 0,
+      "prefix": "0fb789",
+      "mode": "u32",
+      "field": "bodyEmbedding.publicFlags"
+    },
+    {
+      "role": "pair_prefilter",
+      "offset": 111,
+      "prefix": "80e1",
+      "mode": "u8",
+      "field": "bodyEmbedding.modeMask"
+    },
+    {
+      "role": "public_scene_from_internal",
+      "offset": 0,
+      "prefix": "488d41",
+      "mode": "i8",
+      "field": "scene.publicDelta"
+    },
+    {
+      "role": "notification_guard",
+      "offset": 12,
+      "prefix": "4883b9",
+      "mode": "u32",
+      "field": "scene.notification"
+    },
+    {
+      "role": "body_from_shape",
+      "offset": 0,
+      "prefix": "488b51",
+      "mode": "u8",
+      "field": "shapeSim.actor"
+    },
+    {
+      "role": "shader_dispatch",
+      "offset": 34,
+      "prefix": "498b40",
+      "mode": "u8",
+      "field": "shapeSim.core"
+    },
+    {
+      "role": "body_from_shape",
+      "offset": 4,
+      "prefix": "488b42",
+      "mode": "u8",
+      "field": "actorSim.core"
+    },
+    {
+      "role": "body_from_shape",
+      "offset": 8,
+      "prefix": "0fb648",
+      "mode": "u8",
+      "field": "actorCore.type"
+    },
+    {
+      "role": "shader_dispatch",
+      "offset": 53,
+      "prefix": "440fb650",
+      "mode": "u8",
+      "field": "shapeCore.flags"
+    },
+    {
+      "role": "shader_dispatch",
+      "offset": 126,
+      "prefix": "448b68",
+      "mode": "u8",
+      "field": "shapeCore.filters"
+    },
+    {
+      "role": "shape_core_cleanup",
+      "offset": 0,
+      "prefix": "488d4b",
+      "mode": "u8",
+      "field": "shapeCore.publicOffset"
+    },
+    {
+      "role": "shape_core_kind",
+      "offset": 0,
+      "prefix": "8b41",
+      "mode": "u8",
+      "field": "shapeCore.geometry"
+    },
+    {
+      "role": "notification_dispatch",
+      "offset": 247,
+      "prefix": "ff50",
+      "mode": "u8",
+      "field": "scene.notificationSlot"
+    },
+    {
+      "role": "static_constructor",
+      "offset": 36,
+      "prefix": "488d4f",
+      "mode": "u8",
+      "field": "bodyEmbedding.scb"
+    },
+    {
+      "role": "static_core_constructor",
+      "offset": 40,
+      "prefix": "4883c1",
+      "mode": "u8",
+      "field": "bodyEmbedding.core"
+    }
+  ],
+  "targetOperands": [
+    {
+      "role": "shader",
+      "offset": 72,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 4848592
+    },
+    {
+      "role": "shader",
+      "offset": 86,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 4848656
+    },
+    {
+      "role": "shader",
+      "offset": 103,
+      "prefix": "0f85",
+      "mode": "rel32",
+      "targetRva": 15939304
+    },
+    {
+      "role": "object_exclusion",
+      "offset": 33,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 4848800
+    },
+    {
+      "role": "object_exclusion",
+      "offset": 54,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 4848800
+    },
+    {
+      "role": "pair_prefilter_cold_1",
+      "offset": 46,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8104032
+    },
+    {
+      "role": "scene_packet",
+      "offset": 205,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8083632
+    },
+    {
+      "role": "dynamic_constructor",
+      "offset": 101,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7699424
+    },
+    {
+      "role": "public_scene_constructor",
+      "offset": 49,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8138928
+    },
+    {
+      "role": "internal_scene_constructor",
+      "offset": 27,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7942832
+    },
+    {
+      "role": "fast_pair_dispatch",
+      "offset": 41,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8104032
+    }
+  ],
+  "probes": [
+    {
+      "role": "shader",
+      "offset": 32,
+      "hex": "418b30498bf8488b5c24704c8bf1488b0dc3838701458be94c8b7c2478400fb6d6448b23450fb6c4e813010000"
+    },
+    {
+      "role": "shader",
+      "offset": 162,
+      "hex": "c1ee0841c1ec0866410bf4f64424582066418937750bb90104000041f6c5207405b914040000660bf1498bc76689300fb747080fb74b088bd0c1ea0223d1c1e90223c80bd183e2f3f7da661bc06625010866410907f70700020000755132c9f70300020000754b32c084c9754984c0754533c0"
+    },
+    {
+      "role": "shader_cold_1",
+      "offset": 0,
+      "hex": "b101e9f0c356ff"
+    },
+    {
+      "role": "key_decode",
+      "offset": 0,
+      "hex": "440fb6c98bc14180e101458808448bc249c1e0204584c97504490bc0c3b9feffffff4823c1ebf2"
+    },
+    {
+      "role": "scene_packet",
+      "offset": 148,
+      "hex": "8b81c00f0000894424688b81c40f0000488d8c24c80000008944246c488d8424c0"
+    },
+    {
+      "role": "pair_prefilter",
+      "offset": 149,
+      "hex": "41837e2c0074324885ed741a4885f67528488b45500fb7482c66c1e90980e101745232c0eb504885f67449488b46500fb7482c66c1e909eb3241837e2800746a84c9746684d274624885ed7411488b45500fb6482d80e101740432c0eb184885f67411488b46500fb6482d80e101740432c0eb02b00184c07430"
+    },
+    {
+      "role": "pair_prefilter",
+      "offset": 301,
+      "hex": "c70702000000c74704ffffffffe9f1000000"
+    },
+    {
+      "role": "pair_prefilter_cold_2",
+      "offset": 14,
+      "hex": "4885ed7425488b4d50f6412c01741b4885f67416488b4e50f6412c01740ca8017408b9feff00006623c166894702"
+    },
+    {
+      "role": "shader_dispatch",
+      "offset": 268,
+      "hex": "8b431089442438488b43084889442430488d45d7894dbf894dd7498d4f0248894c2428488d4d578955c3448945c78955db418bd6448945df4c8d45ef4889442420ff130fb7"
+    },
+    {
+      "role": "static_constructor",
+      "offset": 36,
+      "hex": "488d4f60488907e8c0770000"
+    },
+    {
+      "role": "static_core_constructor",
+      "offset": 40,
+      "hex": "4883c120e82fea0300"
+    },
+    {
+      "role": "public_scene_constructor",
+      "offset": 45,
+      "hex": "4883c110e88a0f0500"
+    },
+    {
+      "role": "internal_scene_constructor",
+      "offset": 21,
+      "hex": "488bea488bd9e8e001fdff"
+    }
+  ],
+  "codeFamilies": [
+    {
+      "role": "shader",
+      "rva": 4848240,
+      "runtimeRanges": [
+        [
+          4848240,
+          4848591,
+          28965576
+        ],
+        [
+          15939304,
+          15939311,
+          28965604
+        ]
+      ]
+    },
+    {
+      "role": "layer_exclusion",
+      "rva": 4848592,
+      "runtimeRanges": [
+        [
+          4848592,
+          4848654,
+          28550080
+        ],
+        [
+          15939312,
+          15939397,
+          28965620
+        ]
+      ]
+    },
+    {
+      "role": "object_exclusion",
+      "rva": 4848656,
+      "runtimeRanges": [
+        [
+          4848656,
+          4848788,
+          28560104
+        ],
+        [
+          15939398,
+          15939446,
+          28965636
+        ]
+      ]
+    },
+    {
+      "role": "pair_prefilter",
+      "rva": 8083632,
+      "runtimeRanges": [
+        [
+          8083632,
+          8084072,
+          29122408
+        ],
+        [
+          8084072,
+          8084132,
+          29122432
+        ],
+        [
+          8084132,
+          8084266,
+          29122452
+        ]
+      ]
+    },
+    {
+      "role": "shader_dispatch",
+      "rva": 8104032,
+      "runtimeRanges": [
+        [
+          8104032,
+          8104934,
+          29385604
+        ]
+      ]
+    }
+  ],
+  "abi": {
+    "result": "RCX pointer to 16-bit filter result; returned in RAX",
+    "attribute0": "EDX u32",
+    "filterData0": "R8 pointer to four u32 words",
+    "attribute1": "R9D u32",
+    "filterData1": "entry RSP+0x28 pointer to four u32 words",
+    "pairFlags": "entry RSP+0x30 pointer to 16-bit output",
+    "constantBlock": "entry RSP+0x38 pointer; selected shader does not read",
+    "constantBlockBytes": "entry RSP+0x40 u32; selected shader does not read"
+  },
+  "rules": {
+    "layerWord": 0,
+    "layerLowBits": 8,
+    "layerLimit": 32,
+    "invalidLayerExclusion": false,
+    "keyLowWord": 1,
+    "keyHighWord": 3,
+    "tagMask": 1,
+    "policyWord": 2,
+    "forcedExclusionMask": 16,
+    "bothExclusionMask": 32,
+    "resultDefault": 0,
+    "resultExcluded": 2,
+    "pairFlagWord": 0,
+    "pairFlagShift": 8,
+    "pairFlagWidth": 16,
+    "triggerAttributeMask": 32,
+    "defaultPairFlags": 1025,
+    "triggerPairFlags": 1044,
+    "notificationLowBits": 16,
+    "notificationShift": 2,
+    "notificationClearMask": 12,
+    "notificationPairFlags": 2049,
+    "modifierWordMask": 512,
+    "modifierPairFlags": 2
+  },
+  "upstream": {
+    "sceneModes": "Nonzero mode excludes kinematic-static or both-kinematic non-trigger pairs unless the corresponding body-core override bit is present; zero bypasses that exclusion. Kinematic-static tests bit9; both-kinematic accepts bit8 on either body. Other body/joint exclusions remain separate.",
+    "bodyFlags": "The dynamic constructor embeds the SCB at the reviewed public offset, whose constructor embeds the core; the sum of those offsets plus coreFlags equals the public getter committed-flags field. The pair path consumes that core field directly, while the public getter may select buffered flags. Saved public flags are not borrowed into an unobserved pair.",
+    "postShader": "For two body cores with bit0 set, the ordinary pair path clears pairFlags bit0 after the shader, when result bits0/1 are clear. Shader flags alone cannot prove solving.",
+    "callback": "The selected shader only returns 0 or 2 and never requests pairCallback bit2; a nonzero notification callback is a separate report-dispatch condition."
+  },
+  "ruleOperands": [
+    {
+      "field": "layerLimit",
+      "role": "layer_exclusion",
+      "offset": 21,
+      "prefix": "83fa",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "tagMask",
+      "role": "key_decode",
+      "offset": 6,
+      "prefix": "4180e1",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "forcedExclusionMask",
+      "role": "shader",
+      "offset": 100,
+      "prefix": "f6c1",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "bothExclusionMask",
+      "role": "shader",
+      "offset": 114,
+      "prefix": "83e0",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "resultExcluded",
+      "role": "shader",
+      "offset": 313,
+      "prefix": "6641c706",
+      "width": 2,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "pairFlagShift",
+      "role": "shader",
+      "offset": 162,
+      "prefix": "c1ee",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "triggerAttributeMask",
+      "role": "shader",
+      "offset": 173,
+      "prefix": "f6442458",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "defaultPairFlags",
+      "role": "shader",
+      "offset": 184,
+      "prefix": "b9",
+      "width": 4,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "triggerPairFlags",
+      "role": "shader",
+      "offset": 195,
+      "prefix": "b9",
+      "width": 4,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "notificationShift",
+      "role": "shader",
+      "offset": 219,
+      "prefix": "c1ea",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "notificationClearMask",
+      "role": "shader",
+      "offset": 231,
+      "prefix": "83e2",
+      "width": 1,
+      "signed": true,
+      "invert32": true
+    },
+    {
+      "field": "notificationPairFlags",
+      "role": "shader",
+      "offset": 239,
+      "prefix": "6625",
+      "width": 2,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "modifierWordMask",
+      "role": "shader",
+      "offset": 247,
+      "prefix": "f707",
+      "width": 4,
+      "signed": false,
+      "invert32": false
+    },
+    {
+      "field": "modifierPairFlags",
+      "role": "shader",
+      "offset": 344,
+      "prefix": "6641830f",
+      "width": 1,
+      "signed": false,
+      "invert32": false
+    }
+  ],
+  "hooks": [
+    {
+      "kind": 77,
+      "role": "pair_prefilter",
+      "windowRole": "pair_prefilter",
+      "entryHex": "48896c2410488974241848897c242041",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "u32",
+          "pointer",
+          "bool"
+        ],
+        "returnMode": "pointer"
+      }
+    },
+    {
+      "kind": 78,
+      "role": "shader",
+      "windowRole": "shader",
+      "entryHex": "48895c240848896c2418488974242089",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "u32",
+          "pointer",
+          "u32",
+          "pointer",
+          "pointer",
+          "pointer",
+          "u32"
+        ],
+        "returnMode": "pointer"
+      }
+    },
+    {
+      "kind": 79,
+      "role": "layer_exclusion",
+      "windowRole": "layer_exclusion",
+      "entryHex": "4883ec7885d20f88143ba9004585c00f",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "i32",
+          "i32"
+        ],
+        "returnMode": "bool"
+      }
+    },
+    {
+      "kind": 80,
+      "role": "object_exclusion",
+      "windowRole": "object_exclusion",
+      "entryHex": "48894c24084883ec288b4a044d8bd08b",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "bool"
+      }
+    },
+    {
+      "kind": 83,
+      "role": "shader_dispatch",
+      "windowRole": "shader_dispatch",
+      "entryHex": "4c894c24204889542410555356574154",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "u32",
+          "bool"
+        ],
+        "returnMode": "void"
+      }
+    }
+  ],
+  "limits": {
+    "maxPairs": 2048,
+    "maxShaders": 4096,
+    "maxLayerChecks": 8192,
+    "maxObjectChecks": 8192,
+    "maxPolicies": 2048,
+    "maxOwners": 32768,
+    "sampleEvery": 16,
+    "initialSamples": 64,
+    "maxIgnoreKeys": 24,
+    "maxDispatches": 4096
+  },
+  "representation": {
+    "sceneOffsetBase": "internal_scene",
+    "packetBytes": 48,
+    "coreBytes": 64,
+    "policyBytes": 96,
+    "matrixBytes": 128,
+    "ownerKind": 82,
+    "policyKind": 81
+  },
+  "recordLayout": {
+    "pair": "args=out,packet,shapeSim0,shapeSim1,priorPairId,triggerOut,invokeCallback,caller; before=packet[48],readMask u32,trigger u8; after=packet[48],original result[8],trigger u8,padding[3],readMask u32; sourceContext=two before core frames[64]; query=two after core frames[64], step[40] at128, original clocks at176/184.",
+    "core": "<4QHBBII4x2Q: shapeSim,actorSim,actorCore,shapeCore,committedBodyFlags,shapeFlags,actorType,geometryType,state,padding,nativeActor,nativeShape; derived public pointers require reviewed embedding, concrete vtable and attached-actor edge.",
+    "shader": "args match all eight original ABI arguments; before/after=two filter words[16] each,flags at32,result at34,readMask u32 at36,caller Q at40; query original clocks at176/184.",
+    "layer": "args=manager,layer0,layer1,caller; before/after=<3Q4I:manager,matrix,rowAddress,row,readMask,layer0,layer1; original bool result is independent of separately timed row snapshots.",
+    "object": "args=unused original RCX,data0,data1,caller; sourceContext/after=filterWords[32],<5Q4I:keys[2],begin,end,count,readMask,taggedMask,prefixCount,spare; ecsBefore/ecsAfter contain bounded ignore-list prefixes (not ECS observations); query original clocks at176/184.",
+    "policy": "args=internalScene,ownerCall,actor,shape,sourceKind,sourcePhase; sourceContext/after=<10Q4I:internalScene,publicScene,publicTag,shader,pairCallback,notification,notificationVtable,notificationTarget,manager,matrix,kinKinMode,kinStaticMode,readMask,spare; before first64 echo; ecsBefore/ecsAfter first128 contain matrix rows; not ECS observations.",
+    "owner": "args=nativeActor,nativeShape,pairCall,side,actorCore,shapeCore; body-frame/filter/ECS fields use bodyCapture layout, query original read interval at176/184; passive pair-bound reads, not geometry-getter calls.",
+    "dispatcher": "kind83 uses pair frames with no trigger read: args=out,packet,shapeSim0,shapeSim1,priorPairId,invokeCallback,caller; before readMask max1, after max3, no return value; caller input/output is otherwise preserved."
+  }
+}

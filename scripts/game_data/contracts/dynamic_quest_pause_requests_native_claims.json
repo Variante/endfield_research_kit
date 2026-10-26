@@ -1,0 +1,207 @@
+{
+  "schema": "endfield.dynamic-quest-pause-requests-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "pause": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "method": "PauseQuest",
+      "parameters": [
+        "String"
+      ]
+    },
+    "handle": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "method": "Handle_UpdateQuestPauseState",
+      "parameters": [
+        "Proto.SC_UPDATE_QUEST_PAUSE_STATE"
+      ]
+    },
+    "stop": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "method": "_StopQuestListening",
+      "parameters": [
+        "String"
+      ]
+    },
+    "start": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "method": "StartQuest",
+      "parameters": [
+        "String",
+        "Boolean"
+      ]
+    }
+  },
+  "fields": {
+    "messageKey": {
+      "name": "questId_",
+      "offset": 24
+    },
+    "messagePaused": {
+      "name": "isPaused_",
+      "offset": 32
+    }
+  },
+  "programs": {
+    "pause": [
+      "mov [rsp+0x8], rbx",
+      "push rdi",
+      "sub rsp, 0x20",
+      "mov rbx, rdx",
+      "mov rdi, rcx",
+      "xor edx, edx",
+      "mov ecx, 0x6403",
+      "call *",
+      "test al, al",
+      "jne *",
+      "xor r8d, r8d",
+      "mov rdx, rbx",
+      "mov rcx, rdi",
+      "call *",
+      "jmp *",
+      "xor edx, edx",
+      "mov ecx, 0x6403",
+      "call *",
+      "test rax, rax",
+      "jne *",
+      "call *",
+      "int3",
+      "xor r9d, r9d",
+      "mov r8, rbx",
+      "mov rdx, rdi",
+      "mov rcx, rax",
+      "call *",
+      "mov rbx, [rsp+0x30]",
+      "add rsp, 0x20",
+      "pop rdi",
+      "ret"
+    ],
+    "handle": [
+      "mov [rsp+0x8], rbx",
+      "mov [rsp+0x10], rsi",
+      "push rdi",
+      "sub rsp, 0x20",
+      "cmp [rip+*",
+      "mov rbx, rdx",
+      "mov rdi, rcx",
+      "jne *",
+      "lea rcx, [rip+*",
+      "call *",
+      "mov [rip+*",
+      "and [rsp+0x48], 0x0",
+      "mov esi, 0x6439",
+      "mov ecx, esi",
+      "xor edx, edx",
+      "call *",
+      "test al, al",
+      "jcc *",
+      "test rbx, rbx",
+      "jcc *",
+      "mov rcx, rdi",
+      "mov rdx, [rbx+0x18]",
+      "cmp [rbx+0x20], al",
+      "jne *",
+      "xor r9d, r9d",
+      "xor r8d, r8d",
+      "call *",
+      "jmp *",
+      "xor r8d, r8d",
+      "call *",
+      "mov rdx, [rbx+0x18]",
+      "xor r8d, r8d",
+      "mov rcx, rdi",
+      "call *",
+      "mov rcx, [rdi+0xd0]",
+      "xor r8d, r8d",
+      "mov rdx, rax",
+      "mov rsi, rax",
+      "call *",
+      "mov rcx, [rdi+0xd8]",
+      "test rcx, rcx",
+      "je *",
+      "mov r9, [rip+*",
+      "lea r8, [rsp+0x48]",
+      "mov rdx, rsi",
+      "call *",
+      "test al, al",
+      "je *",
+      "mov rdx, [rbx+0x18]",
+      "cmp [rbx+0x20], 0x0",
+      "mov rcx, [rsp+0x48]",
+      "jne *",
+      "test rcx, rcx",
+      "je *",
+      "xor r8d, r8d",
+      "call *",
+      "mov rcx, [rsp+0x48]",
+      "test rcx, rcx",
+      "je *",
+      "mov rdx, [rbx+0x18]",
+      "xor r8d, r8d",
+      "call *",
+      "jmp *",
+      "test rcx, rcx",
+      "je *",
+      "xor r8d, r8d",
+      "call *",
+      "mov rcx, [rsp+0x48]",
+      "test rcx, rcx",
+      "je *",
+      "mov rdx, [rbx+0x18]",
+      "xor r8d, r8d",
+      "call *",
+      "jmp *",
+      "xor edx, edx",
+      "mov ecx, esi",
+      "call *",
+      "test rax, rax",
+      "jne *",
+      "call *",
+      "int3",
+      "xor r9d, r9d",
+      "mov r8, rbx",
+      "mov rdx, rdi",
+      "mov rcx, rax",
+      "call *",
+      "mov rbx, [rsp+0x30]",
+      "mov rsi, [rsp+0x38]",
+      "add rsp, 0x20",
+      "pop rdi",
+      "ret"
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "False-patch PauseQuest forwards original receiver/String to actual _StopQuestListening. Handler reads typed message byte and selects actual StartQuest(String,false) for zero or PauseQuest(String) for nonzero.",
+    "conditional": [
+      "Actual selected IFix result has AL zero. Normal returning callees follow ordinary Win64 and do not disturb watched frame/register storage.",
+      "Handler message is valid and nonnull; it is the same message for the selected field reads.",
+      "Nested PauseQuest-to-stop composition additionally requires its independent false-patch selection."
+    ],
+    "unresolved": [
+      "Live pause or quest state, registration and message execution.",
+      "Complete handler normal return and post-dispatch dictionary/callback effects.",
+      "GetMissionData/String generic sharing and mutation implementation."
+    ],
+    "exact": "Complete owned primary byte partitions and selected branch/call identities; ordinary concrete method/field ABI.",
+    "structuralOnly": "Boolean metadata does not prove message byte normalization."
+  }
+}

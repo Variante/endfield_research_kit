@@ -9,12 +9,14 @@ import argparse
 import json
 import re
 from collections.abc import Iterable
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import Body, BodyIndex, ClaimError, evaluate
+from scripts.game_data.il2cpp.context import generic_type_carrier
 from scripts.game_data.il2cpp.native_image import NativeImage, read_reviewed_contract
 from scripts.game_data.il2cpp.protocol import runtime_type_name
 from scripts.repo_paths import REPO_ROOT
@@ -56,6 +58,100 @@ class OwnedBodyIndex(BodyIndex):
                 result.extend((int(row.get("offset") or 0), name)
                               for name in self.names_of(int(match[1], 16)))
         return result
+
+
+class ConditionSelectors:
+    """Join stored classes to reviewed default virtual getters by inheritance.
+
+    ``reviewed`` must come from a receipt authenticated against the selected
+    native inputs and current claims contract. The join proves applicability
+    of that getter, never condition-specific Check behavior or live selection.
+    """
+
+    def __init__(self, image: NativeImage, reviewed: dict[str, dict[str, Any]]) -> None:
+        self.image, self.reviewed = image, reviewed
+        self.by_name: dict[str, list[Any]] = defaultdict(list)
+        for row in image.metadata.types:
+            self.by_name[image.metadata.type_full_name(row)].append(row)
+
+    def _unique(self, name: str) -> Any:
+        rows = self.by_name.get(name, [])
+        if len(rows) != 1:
+            raise ValueError(f"condition_selector.type: expected one {name}; actual={len(rows)}")
+        return rows[0]
+
+    def _getters(self, owner: Any) -> list[Any]:
+        if owner.method_count == 0:
+            return []
+        if not 0 <= owner.method_start <= len(self.image.metadata.methods)-owner.method_count:
+            raise ValueError("condition_selector.methods: selected owner range escapes metadata")
+        return [method for method in self.image.metadata.methods[owner.method_start:owner.method_start+owner.method_count]
+                if self.image.metadata.string(method.name_index) == "get_conditionType"]
+
+    def resolve(self, type_name: str) -> dict[str, Any]:
+        row: dict[str, Any] = {"type": type_name, "status": "unresolved", "defaultClientLeafSelection": None,
+                              "liveActivationProved": False, "specificCheckBehaviorProved": False}
+        try:
+            image, metadata, pe = self.image, self.image.metadata, self.image.pe
+            owner = self._unique(type_name)
+            chain, visited, getter = [], set(), None
+            table = int(image.registration["types"], 16)
+            for _ in range(64):
+                if owner.index in visited:
+                    raise ValueError("condition_selector.inheritance: cycle")
+                visited.add(owner.index)
+                name = metadata.type_full_name(owner)
+                chain.append(name)
+                candidates = self._getters(owner)
+                if getter is None and candidates:
+                    if len(candidates) != 1:
+                        raise ValueError("condition_selector.getter: duplicate declaration")
+                    if candidates[0].declaring_type != owner.index:
+                        raise ValueError("condition_selector.getter: declaration belongs to a different owner")
+                    getter = candidates[0]
+                if name == "Beyond.Gameplay.GameCondition":
+                    break
+                if owner.parent_index == -1:
+                    row.update(status="not_condition", inheritance=chain)
+                    return row
+                if not 0 <= owner.parent_index < image.registration["typesCount"]:
+                    raise ValueError("condition_selector.parent: selected type index out of bounds")
+                pointer = pe.u64_at_va(table+owner.parent_index*8)
+                raw = pe.bytes_at_va(pointer, 16)
+                definition = int.from_bytes(raw[:8], "little")
+                if raw[10] == 0x15:
+                    carrier = pe.bytes_at_va(definition, 32)
+                    base_pointer = int.from_bytes(carrier[:8], "little")
+                    selection = generic_type_carrier(raw, carrier, pe.bytes_at_va(base_pointer, 16),
+                        type_pointer=pointer, type_count=len(metadata.types), source=str(image.gameassembly))
+                    instance = image.instantiations.resolve_pointer(selection["classInstantiationPointerVa"])
+                    row.setdefault("genericParents", []).append({"definition": metadata.type_full_name(metadata.types[selection["baseDefinitionIndex"]]),
+                        "classArguments": [runtime_type_name(pe, metadata, argument.type_pointer_va) for argument in instance.arguments],
+                        "boundary": "Selected stored class context only; no field layout or instantiated method body inferred."})
+                    definition = selection["baseDefinitionIndex"]
+                elif raw[10] not in (0x11, 0x12) or not 0 <= definition < len(metadata.types):
+                    raise ValueError("condition_selector.parent: unsupported concrete/generic parent")
+                owner = metadata.types[definition]
+            else:
+                raise ValueError("condition_selector.inheritance: depth exceeds 64")
+            base = self._getters(owner)
+            if (getter is None or len(base) != 1 or getter.slot != base[0].slot or getter.slot == 0xffff or
+                    getter.flags & 0x10 or not getter.flags & 0x40 or getter.parameter_count != 0):
+                raise ValueError("condition_selector.getter: instance no-argument virtual getter must match GameCondition's slot")
+            getter_owner = metadata.types[getter.declaring_type]
+            symbol = metadata.type_full_name(getter_owner)+".get_conditionType"
+            row.update(status="unreviewed_default_getter", inheritance=chain, getter=symbol, getterSlot=getter.slot)
+            review = self.reviewed.get(symbol)
+            if review is None:
+                return row
+            returned = runtime_type_name(pe, metadata, pe.u64_at_va(table+getter.return_type*8))
+            if returned != review["enumType"]:
+                raise ValueError(f"condition_selector.return_type: expected={review['enumType']} actual={returned}")
+            row.update(status="conditional_reviewed_selector", conditionType=review["member"],
+                       defaultClientLeafSelection=review["member"] == "ClientOnly", reviewedClaim=review)
+        except (ValueError, KeyError, IndexError, AttributeError, OSError) as exc:
+            row.update(status="unresolved", detail=str(exc)[:600])
+        return row
 
 
 def _gate_row(gate: Any) -> dict[str, Any]:

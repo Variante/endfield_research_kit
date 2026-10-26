@@ -1,0 +1,162 @@
+{
+  "schema": "endfield.buff-camera-descriptor-cache-insertion-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_descriptor_cache_helpers_native.json",
+  "function": {
+    "entryRva": 164720,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 164720,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            164720,
+            165455,
+            211676668
+          ],
+          "tableRowRva": 251735396,
+          "runtimeTripleRawHex": "708302004F860200FCED9D0C",
+          "codeBytes": 735,
+          "unwindRawHex": "111F0D001F641E001F541D001F341C001F01160018F016E014D012C010700000AC541900",
+          "unwindVersion": 1,
+          "unwindFlags": 2,
+          "frameByte": 0,
+          "parentChain": []
+        },
+        {
+          "runtimeTriple": [
+            3079360,
+            3079670,
+            211676752
+          ],
+          "tableRowRva": 251924240,
+          "runtimeTripleRawHex": "C0FC2E00F6FD2E0050EE9D0C",
+          "codeBytes": 310,
+          "unwindRawHex": "21000000708302004F860200FCED9D0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                3079360,
+                3079670,
+                211676752
+              ],
+              "parent": [
+                164720,
+                165455,
+                211676668
+              ]
+            }
+          ]
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 164720,
+        "endRva": 165455,
+        "sha256": "D1269AF58813D36E37355A4E66A7928BED209FE57584197C896EFC4FF7CEB669"
+      },
+      {
+        "startRva": 3079360,
+        "endRva": 3079670,
+        "sha256": "6CD3D03429F03D7A50A81DC678A1876FB325F47EBA24DFE7031461AE2281C1DD"
+      }
+    ],
+    "checkedInstructionCount": 254
+  },
+  "segments": {
+    "primary": [
+      164720,
+      165455
+    ],
+    "cold": [
+      3079360,
+      3079670
+    ]
+  },
+  "labels": {
+    "loadCount": 164770,
+    "initialization": 3079360,
+    "countTrap": 3079371,
+    "growth": 165306,
+    "hash": 164828,
+    "mask": 164912,
+    "afterSentinel": 164983,
+    "selectNewSlot": 165083,
+    "sentinelMismatch": 165292,
+    "sentinelTest": 164979,
+    "probeCandidate": 3079517,
+    "matching": 164992,
+    "markerMatched": 165014,
+    "advance": 165006,
+    "chooseExisting": 165066,
+    "queryMismatch": 165299,
+    "queryTest": 165062,
+    "newCapacityCheck": 165092,
+    "existingOutput": 3079569,
+    "sizeTrap": 3079614,
+    "probeReplacement": 3079625,
+    "incrementCount": 165126,
+    "writeEntry": 165136,
+    "output": 165205,
+    "floatGrowth": 3079382,
+    "buildReplacement": 165393,
+    "reloadAfterGrowth": 165436,
+    "unsignedFloat": 3079420,
+    "floatScale": 3079441,
+    "floatToInteger": 3079486
+  },
+  "globals": {
+    "initializationFlag": 233437912,
+    "storedCount": 233437952,
+    "table": 233437888,
+    "capacity": 233437960,
+    "begin": 233437984,
+    "sentinelTriple": 233437976,
+    "marker": 233437968,
+    "auxiliaryCount": 233437944,
+    "probeData": 233437928,
+    "floatFactor": 233437908,
+    "floatThreshold": 176958456
+  },
+  "calls": {
+    "probe": 269376,
+    "initializationCandidate": 2921784,
+    "errorCandidate": 1678344,
+    "capacityCandidate": 35968,
+    "replacementCandidate": 792192,
+    "publishCandidate": 774720,
+    "releaseCandidate": 1708640
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native bytes, complete exception-owned insertion graph and all branch labels",
+    "direct": "New-entry DWORD/QWORD stores, existing/new flag-byte return, output low-QWORD/vector transport and actual probe effects",
+    "structuralOnly": "Growth FP/capacity/helper routing and anonymous container counters without allocation-policy interpretation",
+    "conditional": "Coherent readable wrapper/key/table and disjoint writable entry/output/frame storage; valid capacities/indices and normal opaque callees",
+    "unresolved": "Initialization/resize/release/helper effects, FP environment/numeric growth policy, termination, caller pointer adoption, concurrency, later descriptor contents and positive camera grammar"
+  }
+}

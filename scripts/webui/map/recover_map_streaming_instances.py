@@ -37,7 +37,11 @@ ROOT = REPO_ROOT
 from scripts.webui.map.audit_map_asset_closure import iter_asset_entries, sha256_file
 from scripts.common import resolve_installed_game_data_root
 from scripts.game_data.inverted_lz4 import decompress_inverted_lz4
-from scripts.webui.map.map_recovery_sources import authored_streaming_scene
+from scripts.webui.map.map_recovery_sources import (
+    LEVEL_CONFIG_ROOT,
+    LevelConfigSourceError,
+    authored_streaming_scene,
+)
 
 DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
 DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
@@ -697,16 +701,34 @@ def recover_many(
     return [by_id[level_id.lower()] for level_id in level_ids]
 
 
+class PublishedSceneResolutionError(ValueError):
+    """Published maps exist but none resolves to an authored streaming scene."""
+
+
 def published_streaming_scene_ids(maps_root: Path) -> list[str]:
-    """Resolve published maps to the exact streaming scenes they declare."""
+    """Resolve published maps to the exact streaming scenes they declare.
+
+    Maps without an authored streaming path are skipped, but published maps
+    that resolve to no scene at all fail closed with counts and the first
+    unreadable map: that shape means the LevelConfig input or its reader
+    drifted, not that the world has no streaming scenes.
+    """
     scene_ids: set[str] = set()
-    for path in sorted(maps_root.glob("*.json")):
+    map_paths = sorted(maps_root.glob("*.json"))
+    unreadable: list[str] = []
+    for path in map_paths:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, json.JSONDecodeError):
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            unreadable.append(f"{path}: {exc}")
             continue
         level_id = str(payload.get("levelId") or payload.get("id") or path.stem)
-        authored = authored_streaming_scene(level_id)
+        try:
+            authored = authored_streaming_scene(level_id)
+        except LevelConfigSourceError as exc:
+            raise PublishedSceneResolutionError(
+                f"published map {path.name} (level {level_id}): unreadable LevelConfig: {exc}"
+            ) from exc
         if not authored:
             continue
         scene_id = str(authored["sceneId"]).lower()
@@ -717,6 +739,12 @@ def published_streaming_scene_ids(maps_root: Path) -> list[str]:
             scene_ids.add(level_id.lower())
         else:
             scene_ids.add(scene_id)
+    if map_paths and not scene_ids:
+        detail = f"; first unreadable map: {unreadable[0]}" if unreadable else ""
+        raise PublishedSceneResolutionError(
+            f"{len(map_paths)} published maps under {maps_root} resolved to 0 authored streaming "
+            f"scenes ({len(unreadable)} unreadable) from LevelConfig root {LEVEL_CONFIG_ROOT}{detail}"
+        )
     return sorted(scene_ids)
 
 
@@ -735,10 +763,13 @@ def main() -> int:
     parser.add_argument("--mesh-root", type=Path, default=DEFAULT_MESH_ROOT)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     args = parser.parse_args()
-    level_ids = list(dict.fromkeys([
-        *args.level,
-        *(published_streaming_scene_ids(args.published_maps_root) if args.all_published_map_scenes else []),
-    ]))
+    level_ids = list(dict.fromkeys(args.level))
+    if args.all_published_map_scenes:
+        try:
+            published = published_streaming_scene_ids(args.published_maps_root)
+        except PublishedSceneResolutionError as exc:
+            raise SystemExit(f"error: --all-published-map-scenes: {exc}") from exc
+        level_ids = list(dict.fromkeys([*level_ids, *published]))
     if not level_ids:
         parser.error("provide --level at least once or use --all-published-map-scenes")
     for level_id in level_ids:

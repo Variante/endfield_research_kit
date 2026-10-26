@@ -117,6 +117,13 @@ from scripts.game_data.leveldata_binary import (
     frame_leveldata_terminal_suffix,
 )
 from scripts.game_data.levelconfig_binary import LevelConfigDecodeError, decode_level_config
+from scripts.game_data.string_pool import (
+    PAGE_RE as STRING_POOL_PAGE_RE,
+    StringPool,
+    StringPoolDecodeError,
+    decode_string_pool_page,
+    export_string_pool,
+)
 from scripts.game_data.levelscript_binary import (
     LevelScriptTopLevelFramingError,
     frame_levelscript_named,
@@ -2238,7 +2245,23 @@ def _run_reader(
     return True, summary, None
 
 
-def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
+def _classify_binary(
+    relative: str, family: str, data: bytes, strings: StringPool | None = None
+) -> dict[str, Any]:
+    if family == "StringPool":
+        page = STRING_POOL_PAGE_RE.fullmatch(PurePosixPath(relative).name)
+        if page:
+            ok, detail, diagnostic = _run_reader(
+                lambda payload: {"entryCount": len(decode_string_pool_page(payload, int(page.group(1))))},
+                data,
+                (StringPoolDecodeError, ValueError),
+            )
+            return {
+                "status": "schema_decoded" if ok else "unclassified_binary",
+                "reader": "scripts.game_data.string_pool" if ok else None,
+                "detail": detail,
+                "diagnostic": diagnostic,
+            }
     if family == "LipSync":
         ok, detail, diagnostic = _run_reader(
             decode_lipsync_memorypack, data, (LipSyncDecodeError, ValueError)
@@ -2437,7 +2460,9 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if family == "LevelConfig":
         ok, detail, diagnostic = _run_reader(
-            decode_level_config, data, (LevelConfigDecodeError, ValueError)
+            lambda payload: decode_level_config(payload, strings=strings),
+            data,
+            (LevelConfigDecodeError, ValueError),
         )
         return {
             "status": "schema_decoded" if ok else "unclassified_binary",
@@ -2463,7 +2488,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if family == "AtmosphericNpcData":
         ok, detail, diagnostic = _run_reader(
-            frame_atmospheric_npc_table,
+            lambda payload: frame_atmospheric_npc_table(payload, strings=strings),
             data,
             (AtmosphericNpcFramingError, ValueError),
         )
@@ -2482,7 +2507,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if relative == "NonGeneratedConfigs/BambooRaftTaskTable.json":
         decoded = decode_bamboo_raft_task_table_memorypack(
-            BAMBOO_RAFT_TASK_TABLE_REL, data, len(data)
+            BAMBOO_RAFT_TASK_TABLE_REL, data, len(data), strings=strings
         )
         return {
             "status": "schema_decoded" if decoded is not None else "unclassified_binary",
@@ -2499,7 +2524,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if relative == "NonGeneratedConfigs/MatrixShockWaveBeatConfigTable.json":
         ok, detail, diagnostic = _run_reader(
-            decode_matrix_shockwave_table,
+            lambda payload: decode_matrix_shockwave_table(payload, strings=strings),
             data,
             (MatrixShockWaveDecodeError, ValueError),
         )
@@ -2511,7 +2536,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if relative == "GameplayConfig/AetherEnergyLockConfigTable.json":
         ok, detail, diagnostic = _run_reader(
-            decode_aether_energy_lock_table,
+            lambda payload: decode_aether_energy_lock_table(payload, strings=strings),
             data,
             (AetherEnergyLockDecodeError, ValueError),
         )
@@ -2527,12 +2552,16 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         "GPUISystemConfig/outscreen_target.json",
     }:
         ok, detail, diagnostic = _run_reader(
-            decode_gpu_ui_root16, data, (GpuUiFramingError, ValueError)
+            lambda payload: decode_gpu_ui_root16(payload, strings=strings),
+            data,
+            (GpuUiFramingError, ValueError),
         )
         reader = "scripts.game_data.gpu_ui_binary.decode_gpu_ui_root16"
         if not ok:
             ok, detail, diagnostic = _run_reader(
-                frame_gpu_ui_root16_prefix, data, (GpuUiFramingError, ValueError)
+                lambda payload: frame_gpu_ui_root16_prefix(payload, strings=strings),
+                data,
+                (GpuUiFramingError, ValueError),
             )
             reader = "scripts.game_data.gpu_ui_binary.frame_gpu_ui_root16_prefix"
         return {
@@ -2547,13 +2576,17 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if relative == DAMAGE_TEXT_REL.removeprefix("Json/"):
         ok, detail, diagnostic = _run_reader(
-            decode_damage_text, data, (GpuUiFramingError, ValueError)
+            lambda payload: decode_damage_text(payload, strings=strings),
+            data,
+            (GpuUiFramingError, ValueError),
         )
         reader = "scripts.game_data.gpu_ui_binary.decode_damage_text"
         schema_exact = ok
         if not ok:
             ok, detail, framing_diagnostic = _run_reader(
-                frame_damage_text, data, (GpuUiFramingError, ValueError)
+                lambda payload: frame_damage_text(payload, strings=strings),
+                data,
+                (GpuUiFramingError, ValueError),
             )
             reader = "scripts.game_data.gpu_ui_binary.frame_damage_text"
             if not ok:
@@ -2565,7 +2598,9 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
             "diagnostic": diagnostic,
         }
     if relative == DIALOG_ID_TABLE_REL.removeprefix("Json/"):
-        decoded = decode_dialog_id_table_memorypack(DIALOG_ID_TABLE_REL, data, len(data))
+        decoded = decode_dialog_id_table_memorypack(
+            DIALOG_ID_TABLE_REL, data, len(data), strings=strings
+        )
         return {
             "status": "schema_decoded" if decoded is not None else "unclassified_binary",
             "reader": "scripts.game_data.memorypack.tables.decode_dialog_id_table_memorypack" if decoded is not None else None,
@@ -2583,7 +2618,9 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
     if relative in compact_readers:
         reader, success_status = compact_readers[relative]
         ok, detail, diagnostic = _run_reader(
-            reader, data, (GameplayCompactDecodeError, ValueError)
+            lambda payload: reader(payload, strings=strings),
+            data,
+            (GameplayCompactDecodeError, ValueError),
         )
         return {
             "status": success_status if ok else "unclassified_binary",
@@ -2609,7 +2646,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
             }
     if family == "GameplayConfig" and relative.endswith("TeleportValidationDataTable.json"):
         ok, detail, diagnostic = _run_reader(
-            decode_teleport_validation_table,
+            lambda payload: decode_teleport_validation_table(payload, strings=strings),
             data,
             (TeleportValidationDecodeError, ValueError),
         )
@@ -2621,7 +2658,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if relative.startswith("Interactive/ModelViewStateControllerData/"):
         ok, detail, diagnostic = _run_reader(
-            decode_model_view_state_controller,
+            lambda payload: decode_model_view_state_controller(payload, strings=strings),
             data,
             (InteractiveBinaryDecodeError, ValueError),
         )
@@ -2633,7 +2670,7 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
         }
     if relative == "Interactive/InteractiveTable.json":
         ok, detail, diagnostic = _run_reader(
-            decode_interactive_table,
+            lambda payload: decode_interactive_table(payload, strings=strings),
             data,
             (InteractiveBinaryDecodeError, ValueError),
         )
@@ -2694,6 +2731,7 @@ def build_report(
     expected = expected_input_set_sha256.upper()
     export_root = export_root.resolve()
     game_root, json_folder = _json_game_folder(export_root)
+    strings = export_string_pool(export_root)
     outer, _header, ledger_rows, provenance = _read_outer_and_ledger(
         outer_path, ledger_path, expected_input_set_sha256=expected
     )
@@ -2948,7 +2986,7 @@ def build_report(
                 "diagnostic": None,
             }
             if is_json
-            else _classify_binary(relative, family, data)
+            else _classify_binary(relative, family, data, strings)
             )
         if not is_json and family in family_evidence:
             evidence = family_evidence[family][virtual_path]

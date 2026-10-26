@@ -1,0 +1,771 @@
+{
+  "schema": "endfield.buff-shared-reference-list-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methodDefinition": [
+    428795,
+    "MemoryPack.Formatters.ListFormatter`1",
+    "Deserialize"
+  ],
+  "classArguments": [
+    "object"
+  ],
+  "methodArguments": [],
+  "registeredSharedEntry": {
+    "pointer": 6489279504,
+    "methodSpecIndex": 215495,
+    "registration": {
+      "tableIndex": 203779,
+      "va": 6641931152,
+      "methodSpecIndex": 215495,
+      "rawHex": "C7490300C61A030042630000FFFFFFFF",
+      "indices": [
+        203462,
+        25410,
+        -1
+      ]
+    },
+    "classInstantiation": {
+      "index": 75,
+      "table_slot_va": 6625974776,
+      "record_va": 6626910416,
+      "argument_vector_va": 6669037504,
+      "padding_hex": "00000000",
+      "arguments": [
+        {
+          "index": 0,
+          "type_pointer_va": 6664879512,
+          "raw_type_record_hex": "068E00000000000000001C0000000000"
+        }
+      ]
+    },
+    "methodInstantiation": {
+      "index": -1,
+      "table_slot_va": null,
+      "record_va": null,
+      "argument_vector_va": null,
+      "padding_hex": "",
+      "arguments": []
+    },
+    "methodDefinitionIndices": [
+      428795
+    ],
+    "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+  },
+  "unwindFamily": {
+    "schema": "endfield.amd64-unwind-chain-family.v1",
+    "selectedPrimaryRva": 46828560,
+    "tableRva": 251727872,
+    "tableBytes": 8097252,
+    "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+    "tableRowsChecked": 674771,
+    "unwindVersionRows": {
+      "1": 674768,
+      "2": 3
+    },
+    "completeParentTriplesChecked": true,
+    "allParentChainsTerminated": true,
+    "chainFrameBytesMatched": true,
+    "ranges": [
+      {
+        "runtimeTriple": [
+          46828560,
+          46828705,
+          211693256
+        ],
+        "tableRowRva": 253048376,
+        "runtimeTripleRawHex": "108CCA02A18CCA02C82E9E0C",
+        "codeBytes": 145,
+        "unwindRawHex": "0110080010340F0010520CE00AC0087007600650",
+        "unwindVersion": 1,
+        "unwindFlags": 0,
+        "frameByte": 0,
+        "parentChain": []
+      },
+      {
+        "runtimeTriple": [
+          46828705,
+          46829399,
+          211693276
+        ],
+        "tableRowRva": 253048388,
+        "runtimeTripleRawHex": "A18CCA02578FCA02DC2E9E0C",
+        "codeBytes": 694,
+        "unwindRawHex": "210A04000AD40C0005F40E00108CCA02A18CCA02C82E9E0C",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              46828705,
+              46829399,
+              211693276
+            ],
+            "parent": [
+              46828560,
+              46828705,
+              211693256
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          46829399,
+          46829524,
+          211693300
+        ],
+        "tableRowRva": 253048400,
+        "runtimeTripleRawHex": "578FCA02D48FCA02F42E9E0C",
+        "codeBytes": 125,
+        "unwindRawHex": "21000000108CCA02A18CCA02C82E9E0C",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              46829399,
+              46829524,
+              211693300
+            ],
+            "parent": [
+              46828560,
+              46828705,
+              211693256
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          46829524,
+          46829536,
+          211693316
+        ],
+        "tableRowRva": 253048412,
+        "runtimeTripleRawHex": "D48FCA02E08FCA02042F9E0C",
+        "codeBytes": 12,
+        "unwindRawHex": "2100040000F40E0000D40C00108CCA02A18CCA02C82E9E0C",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              46829524,
+              46829536,
+              211693316
+            ],
+            "parent": [
+              46828560,
+              46828705,
+              211693256
+            ]
+          }
+        ]
+      }
+    ],
+    "unwindOperationsOrFixedAllocationSemanticsProved": false,
+    "handlerLanguageDataProved": false,
+    "wholeManagedMethodProgramProved": false,
+    "runtimeExecutionKnown": false,
+    "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+  },
+  "function": {
+    "entryRva": 46828560,
+    "ownedWindows": [
+      {
+        "startRva": 46828560,
+        "endRva": 46828705,
+        "rawHex": "48895C2420555657415441564883EC304533E4498BE9837A3004498BF04C8BF24C896424207D104533C0BA04000000498BCEE81505A606498B4650486338897C2468418B5E3083EB047911BA04000000498BCEE8D894E20284C0751349834650044183464004418346440441895E3049634644498B4E18482BC8483BCF0F8C3703000083FFFF0F95C084C00F84C7020000",
+        "sha256": "0A8877C3E5A4F716AFF6259B75E98539DE3BC65E7FFF6C38BE71AF9147A6205F"
+      },
+      {
+        "startRva": 46828705,
+        "endRva": 46829399,
+        "rawHex": "4C897C24704C896C24604C8D3DCE33F50A488B45204C39267441488B90C0000000488B1E488B42104C3960207511488B4520488B90C0000000488B4210FF10488B4520488BCB488B90C0000000488B5210E889200C00E9BD000000488B88C0000000488B01F68038010000017508488BC8E8298739FD488BC8E841D337FD488BD84885C00F84AF020000488B4D20488B91C0000000488B4A084C3961207511488B4D20488B91C0000000488B4A08FF11488B45208BD7488BCB4C8B80C00000004D8B4008E856660C004439259B641F0B48891E74434C8BC649C1E80C4181E0FFFF1F00418BC048C1E8064183E03F498D14C70F0D8AF06A0400660F1F440000488B82F06A0400488BC84C0FABC1F0480FB18AF06A040075E7488B0D3068440A4439A1E00000007505E8F2D437FD488B4520488B88C0000000488B4918E87EB40F004C8BE8458BFC85FF0F8E5D0100004C896424204D85ED0F84DC010000498B4D00E889BD35FD498B45004C8D442420498BD6498BCD4C8B8898010000FF9090010000488B1E4C8B6424204885DB0F84A6010000488B4520488B88C0000000488B413048837820007511488B4520488B88C0000000488B4130FF10488B452048635318488B88C0000000488B7930FF431C488B4B104885C90F845C0100003B51187243488B47204C8B80C0000000498B405848837820007511488B47204C8B80C0000000498B4058FF10488B4720498BD4488BCB4C8B80C00000004D8B4058E8DC538600EB738D42018943183B51180F83FF000000833D30631F0B004C8964D12074564883C1204C8D04D149C1E80C488D0D8A31F50A4181E0FFFF1F00418BC048C1E8064183E03F488D14C10F0D8AF06A04000F1F4000660F1F840000000000488B82F06A0400488BC84C0FABC1F0480FB18AF06A040075E741FFC741BC00000000443B7C24680F8CA3FEFFFF4C8B6C24604C8B7C2470",
+        "sha256": "E88C68FA8E9312C067A2E4F68BC88CAD01EFD0FE7E5A450BB6C174739C32903F"
+      },
+      {
+        "startRva": 46829399,
+        "endRva": 46829524,
+        "rawHex": "488B5C24784883C430415E415C5F5E5DC34439259D621F0B4C892674E348C1EE0C488D0D0131F50A81E6FFFF1F008BC648C1E80683E63F488D14C10F0D8AF06A04000F1F8000000000488B82F06A0400488BC8480FABF1F0480FB18AF06A040075E7488B5C24784883C430415E415C5F5E5DC333D28BCFE8C121A606CC",
+        "sha256": "050CB93ABCF0906609637F22A60350F39A06D95C2E1CE2E66BE264BB60F8E963"
+      },
+      {
+        "startRva": 46829524,
+        "endRva": 46829536,
+        "rawHex": "E8E79436FDCCE8199B5DFDCC",
+        "sha256": "970B436425485980AE7E28CF973C188021D9894AA5E09798BB52E43DDE59E037"
+      }
+    ],
+    "calls": [
+      {
+        "siteRva": 46828610,
+        "kind": "call",
+        "target": 6600823132
+      },
+      {
+        "siteRva": 46828643,
+        "kind": "call",
+        "target": 6537683264
+      },
+      {
+        "siteRva": 46828766,
+        "kind": "registerCall",
+        "memoryAddress": {
+          "base": "rax",
+          "index": null,
+          "scale": 1,
+          "displacement": 0,
+          "ripRelative": false,
+          "addressBits": 64
+        }
+      },
+      {
+        "siteRva": 46828786,
+        "kind": "call",
+        "target": 6490074496
+      },
+      {
+        "siteRva": 46828818,
+        "kind": "call",
+        "target": 6442718272
+      },
+      {
+        "siteRva": 46828826,
+        "kind": "call",
+        "target": 6442606688
+      },
+      {
+        "siteRva": 46828879,
+        "kind": "registerCall",
+        "memoryAddress": {
+          "base": "rcx",
+          "index": null,
+          "scale": 1,
+          "displacement": 0,
+          "ripRelative": false,
+          "addressBits": 64
+        }
+      },
+      {
+        "siteRva": 46828901,
+        "kind": "call",
+        "target": 6490092480
+      },
+      {
+        "siteRva": 46829001,
+        "kind": "call",
+        "target": 6442607296
+      },
+      {
+        "siteRva": 46829021,
+        "kind": "call",
+        "target": 6490309216
+      },
+      {
+        "siteRva": 46829058,
+        "kind": "call",
+        "target": 6442470288
+      },
+      {
+        "siteRva": 46829085,
+        "kind": "registerCall",
+        "memoryAddress": {
+          "base": "rax",
+          "index": null,
+          "scale": 1,
+          "displacement": 400,
+          "ripRelative": false,
+          "addressBits": 64
+        }
+      },
+      {
+        "siteRva": 46829145,
+        "kind": "registerCall",
+        "memoryAddress": {
+          "base": "rax",
+          "index": null,
+          "scale": 1,
+          "displacement": 0,
+          "ripRelative": false,
+          "addressBits": 64
+        }
+      },
+      {
+        "siteRva": 46829224,
+        "kind": "registerCall",
+        "memoryAddress": {
+          "base": "rax",
+          "index": null,
+          "scale": 1,
+          "displacement": 0,
+          "ripRelative": false,
+          "addressBits": 64
+        }
+      },
+      {
+        "siteRva": 46829247,
+        "kind": "call",
+        "target": 6498083488
+      },
+      {
+        "siteRva": 46829518,
+        "kind": "call",
+        "target": 6600831380
+      },
+      {
+        "siteRva": 46829524,
+        "kind": "call",
+        "target": 6442525888
+      },
+      {
+        "siteRva": 46829530,
+        "kind": "call",
+        "target": 6445083384
+      }
+    ],
+    "localBranches": [
+      {
+        "siteRva": 46828597,
+        "kind": "conditional",
+        "target": 6489279559,
+        "conditionCode": 13,
+        "predicate": "SF=OF"
+      },
+      {
+        "siteRva": 46828633,
+        "kind": "conditional",
+        "target": 6489279596,
+        "conditionCode": 9,
+        "predicate": "SF=0"
+      },
+      {
+        "siteRva": 46828650,
+        "kind": "conditional",
+        "target": 6489279615,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46828685,
+        "kind": "conditional",
+        "target": 6489280458,
+        "conditionCode": 12,
+        "predicate": "SF!=OF"
+      },
+      {
+        "siteRva": 46828699,
+        "kind": "conditional",
+        "target": 6489280360,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46828729,
+        "kind": "conditional",
+        "target": 6489279740,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46828749,
+        "kind": "conditional",
+        "target": 6489279712,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46828791,
+        "kind": "jump",
+        "target": 6489279929
+      },
+      {
+        "siteRva": 46828813,
+        "kind": "conditional",
+        "target": 6489279767,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46828837,
+        "kind": "conditional",
+        "target": 6489280474,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46828862,
+        "kind": "conditional",
+        "target": 6489279825,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46828916,
+        "kind": "conditional",
+        "target": 6489279929,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46828983,
+        "kind": "conditional",
+        "target": 6489279904,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46828999,
+        "kind": "conditional",
+        "target": 6489279950,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46829034,
+        "kind": "conditional",
+        "target": 6489280333,
+        "conditionCode": 14,
+        "predicate": "ZF=1 or SF!=OF"
+      },
+      {
+        "siteRva": 46829048,
+        "kind": "conditional",
+        "target": 6489280474,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46829102,
+        "kind": "conditional",
+        "target": 6489280474,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46829128,
+        "kind": "conditional",
+        "target": 6489280091,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46829176,
+        "kind": "conditional",
+        "target": 6489280474,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46829185,
+        "kind": "conditional",
+        "target": 6489280198,
+        "conditionCode": 2,
+        "predicate": "CF=1"
+      },
+      {
+        "siteRva": 46829207,
+        "kind": "conditional",
+        "target": 6489280170,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46829252,
+        "kind": "jump",
+        "target": 6489280313
+      },
+      {
+        "siteRva": 46829263,
+        "kind": "conditional",
+        "target": 6489280468,
+        "conditionCode": 3,
+        "predicate": "CF=0"
+      },
+      {
+        "siteRva": 46829281,
+        "kind": "conditional",
+        "target": 6489280313,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46829367,
+        "kind": "conditional",
+        "target": 6489280288,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      },
+      {
+        "siteRva": 46829383,
+        "kind": "conditional",
+        "target": 6489279984,
+        "conditionCode": 12,
+        "predicate": "SF!=OF"
+      },
+      {
+        "siteRva": 46829426,
+        "kind": "conditional",
+        "target": 6489280343,
+        "conditionCode": 4,
+        "predicate": "ZF=1"
+      },
+      {
+        "siteRva": 46829495,
+        "kind": "conditional",
+        "target": 6489280416,
+        "conditionCode": 5,
+        "predicate": "ZF=0"
+      }
+    ],
+    "returnRvas": [
+      46829415,
+      46829513
+    ],
+    "trapRvas": [
+      46829523,
+      46829529,
+      46829535
+    ]
+  },
+  "selectedMemoryInstructions": {
+    "countBufferLoad": {
+      "rva": 46828615,
+      "facts": {
+        "direction": "load",
+        "register": "rax",
+        "backingRegister": "rax",
+        "registerBits": 64,
+        "registerBitOffset": 0,
+        "memoryBytes": 8,
+        "address": {
+          "base": "r14",
+          "index": null,
+          "scale": 1,
+          "displacement": 80,
+          "ripRelative": false,
+          "addressBits": 64
+        },
+        "valueExtension": null,
+        "upperRegisterEffect": "replaced full register",
+        "requiredAlignmentBytes": 1,
+        "nonTemporalHint": false,
+        "writesFlags": false
+      }
+    },
+    "countSignedLoad": {
+      "rva": 46828619,
+      "facts": {
+        "destinationRegister": "rdi",
+        "destinationBits": 64,
+        "sourceRegister": null,
+        "sourceAddress": {
+          "base": "rax",
+          "index": null,
+          "scale": 1,
+          "displacement": 0,
+          "ripRelative": false,
+          "addressBits": 64
+        },
+        "sourceBits": 32,
+        "memoryReadBytes": 4,
+        "writesFlags": false
+      }
+    },
+    "countStackSave": {
+      "rva": 46828622,
+      "facts": {
+        "direction": "store",
+        "register": "edi",
+        "backingRegister": "rdi",
+        "registerBits": 32,
+        "registerBitOffset": 0,
+        "memoryBytes": 4,
+        "address": {
+          "base": "rsp",
+          "index": null,
+          "scale": 1,
+          "displacement": 104,
+          "ripRelative": false,
+          "addressBits": 64
+        },
+        "valueExtension": null,
+        "upperRegisterEffect": "preserved",
+        "requiredAlignmentBytes": 1,
+        "nonTemporalHint": false,
+        "writesFlags": false
+      }
+    },
+    "elementSlotReset": {
+      "rva": 46829040,
+      "facts": {
+        "direction": "store",
+        "register": "r12",
+        "backingRegister": "r12",
+        "registerBits": 64,
+        "registerBitOffset": 0,
+        "memoryBytes": 8,
+        "address": {
+          "base": "rsp",
+          "index": null,
+          "scale": 1,
+          "displacement": 32,
+          "ripRelative": false,
+          "addressBits": 64
+        },
+        "valueExtension": null,
+        "upperRegisterEffect": "preserved",
+        "requiredAlignmentBytes": 1,
+        "nonTemporalHint": false,
+        "writesFlags": false
+      }
+    },
+    "elementOutputAddress": {
+      "rva": 46829067,
+      "facts": {
+        "destination": "r8",
+        "destinationBits": 64,
+        "zeroExtendsTo64": false,
+        "writesFlags": false,
+        "readsMemory": false,
+        "base": "rsp",
+        "index": null,
+        "scale": 1,
+        "displacement": 32,
+        "ripRelative": false,
+        "addressBits": 64
+      }
+    },
+    "elementCallback": {
+      "rva": 46829085,
+      "facts": {
+        "kind": "registerCall",
+        "memoryAddress": {
+          "base": "rax",
+          "index": null,
+          "scale": 1,
+          "displacement": 400,
+          "ripRelative": false,
+          "addressBits": 64
+        }
+      }
+    },
+    "elementSlotLoad": {
+      "rva": 46829094,
+      "facts": {
+        "direction": "load",
+        "register": "r12",
+        "backingRegister": "r12",
+        "registerBits": 64,
+        "registerBitOffset": 0,
+        "memoryBytes": 8,
+        "address": {
+          "base": "rsp",
+          "index": null,
+          "scale": 1,
+          "displacement": 32,
+          "ripRelative": false,
+          "addressBits": 64
+        },
+        "valueExtension": null,
+        "upperRegisterEffect": "replaced full register",
+        "requiredAlignmentBytes": 1,
+        "nonTemporalHint": false,
+        "writesFlags": false
+      }
+    },
+    "inlineArrayStore": {
+      "rva": 46829276,
+      "facts": {
+        "direction": "store",
+        "register": "r12",
+        "backingRegister": "r12",
+        "registerBits": 64,
+        "registerBitOffset": 0,
+        "memoryBytes": 8,
+        "address": {
+          "base": "rcx",
+          "index": "rdx",
+          "scale": 8,
+          "displacement": 32,
+          "ripRelative": false,
+          "addressBits": 64
+        },
+        "valueExtension": null,
+        "upperRegisterEffect": "preserved",
+        "requiredAlignmentBytes": 1,
+        "nonTemporalHint": false,
+        "writesFlags": false
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected Object compiled registration, complete unwind-owned byte partition, every local edge, ordinary RSP frames and selected instruction-width/address projections.",
+    "direct": "The selected body loads and sign-extends a DWORD count, saves a DWORD count, addresses an eight-byte output slot, reads a QWORD from that slot and has an indexed QWORD store with scale eight. The complete prefix and selected loop slices additionally prove count/null/error routing, four-byte local cursor updates, callback arguments and the saved-bound reload. The nonnull branch calls its provider candidate before testing whether count is positive.",
+    "structuralOnly": "Other field/layout roles, helper and indirect-call effects, generic context contents and GC bitmap update meaning are not established by the CFG.",
+    "conditional": "Frame/control continuations require ordinary returning Win64 callees; selected projections describe their individual native instructions and do not establish value preservation through opaque calls, stable pointees or valid writable storage. A -1 count clears the output only after the preceding count guard passes, with normal Win64 nonvolatile preservation and valid output storage; opaque helper effects and bitmap-loop progress remain unproved. Native cursor arithmetic wraps at its operand widths; the sign flag after the wrapped remaining-DWORD subtraction selects the alternate advance call. The total-minus-consumed comparison uses a wrapped QWORD interpreted as signed64 and does not itself prove valid byte bounds.",
+    "unresolved": "Concrete camera/DamageType instantiation, actual runtime formatter and callback selection, element wire width, collection read semantics, loop termination and whole-root admission. There is no demonstrated explicit count-below--1 rejection in these slices; a constructor/helper may still reject such input. Exact callback count needs stable saved-bound/output storage, valid references, normal helpers and terminating synchronization."
+  },
+  "headerAndLoopProtocol": {
+    "labels": {
+      "readCount": 46828615,
+      "inlineAdvance": 46828652,
+      "afterAdvance": 46828671,
+      "countError": 46829514,
+      "nullOutput": 46829416,
+      "providerReady": 46829006,
+      "finishLoop": 46829389,
+      "loopStart": 46829040,
+      "nullError": 46829530
+    },
+    "readerLayout": {
+      "buffer": 80,
+      "remaining": 48,
+      "advanced": 64,
+      "consumed": 68,
+      "total": 24
+    },
+    "calls": {
+      "shortSegmentCandidate": 158372188,
+      "advanceCandidate": 95232320,
+      "providerInitCandidate": 156352,
+      "providerLookupCandidate": 47858272,
+      "callbackPrepCandidate": 19344,
+      "countErrorCandidate": 158380436
+    },
+    "globals": {
+      "providerInitClass": 219084272
+    },
+    "windows": {
+      "header": {
+        "startRva": 46828560,
+        "endRva": 46828705
+      },
+      "providerAndCount": {
+        "startRva": 46828985,
+        "endRva": 46829040
+      },
+      "callback": {
+        "startRva": 46829040,
+        "endRva": 46829091
+      },
+      "loopBack": {
+        "startRva": 46829369,
+        "endRva": 46829389
+      },
+      "countError": {
+        "startRva": 46829514,
+        "endRva": 46829524
+      }
+    },
+    "nullStoreRva": 46829423
+  }
+}

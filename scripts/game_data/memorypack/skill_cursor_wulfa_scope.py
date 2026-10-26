@@ -15,6 +15,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, verify_current_report_inputs
 from scripts.game_data.memorypack.skill import frame_skill_exact_timeline_action_group_profile
 from scripts.game_data.memorypack.skill_sparse_corpus_compose import (
@@ -108,7 +109,7 @@ def validate_current_scope(
         old_contract.read_bytes(), current_contract.read_bytes(),
         old_contract_ref, _fingerprint(current_contract),
     )
-    _controls_unreached_routes(controls["files"], {0x0012, 0x008B})
+    _controls_unreached_routes(controls["files"], {_A("Core_AnimEventReceiver_Data"), _A("Core_ContinuousSetAnimTimeScale_Data")})
     parser_rows = [
         _fingerprint(current_parser) if Path(row["path"]).name == SHARED_SOURCE else row
         for row in basis["provenance"]["parser"]

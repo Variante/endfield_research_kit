@@ -1,0 +1,1103 @@
+{
+  "schema": "endfield.ecs-collision-native.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "layout": {
+    "header": {
+      "bytes": 40,
+      "position": 0,
+      "rotation": 12,
+      "kind": 28,
+      "reserved": 30,
+      "layer": 32,
+      "tag": 36
+    },
+    "multi": {
+      "bytes": 64,
+      "countOffsets": {
+        "complexMesh": 40,
+        "box": 44,
+        "capsule": 48,
+        "sphere": 52,
+        "triangleMesh": 56,
+        "convexMesh": 60
+      },
+      "strides": {
+        "complexMesh": 24,
+        "box": 52,
+        "capsule": 48,
+        "sphere": 28,
+        "triangleMesh": 56,
+        "convexMesh": 56
+      }
+    },
+    "singleBytes": {
+      "box": 64,
+      "capsule": 60,
+      "sphere": 56,
+      "mesh": 68,
+      "terrain": 64
+    },
+    "actor": {
+      "taggedUserdata": 16,
+      "tagMask": 7
+    },
+    "userdata": {
+      "entity": 16,
+      "physicsId": 24,
+      "physicsVersion": 28
+    },
+    "registry": {
+      "rows": 0,
+      "capacity": 12,
+      "stride": 16,
+      "version": 4,
+      "actor": 8
+    },
+    "entity": {
+      "bytes": 8,
+      "globalIndex": 0,
+      "version": 4
+    },
+    "shapeUserdata": {
+      "gameplayOptions": 0,
+      "tagConfig": 4,
+      "surfaceType": 8,
+      "secondaryFlag": 12
+    },
+    "packedParameters": {
+      "defaultSurfaceShift": 2,
+      "complexSurfaceShift": 1,
+      "complexAttachmentGateEncoded": false
+    }
+  },
+  "kinds": {
+    "1": "box",
+    "2": "capsule",
+    "3": "sphere",
+    "4": "mesh",
+    "5": "multi",
+    "6": "terrain"
+  },
+  "limits": {
+    "maxRecords": 65536,
+    "maxBytes": 16777216
+  },
+  "codeWindows": [
+    {
+      "role": "decode_core",
+      "rva": 1880272,
+      "bytes": 2326,
+      "sha256": "f5289fa678ec8c74d91595ad4e54f4e4a459e7591221adf84c3a269e97eb7e6c"
+    },
+    {
+      "role": "decode_wrapper_candidate",
+      "rva": 2730336,
+      "bytes": 110,
+      "sha256": "b57dc839c6c7dea7448520fb02afd534e3a3a8593c08b99247f628c6e3bdd889"
+    },
+    {
+      "role": "actor_userdata",
+      "rva": 13236000,
+      "bytes": 17,
+      "sha256": "d92a2d4ccbbd6d160b61cbdda16dac6b912f2de34f1cfc9b341e20f1b3284479"
+    },
+    {
+      "role": "get_id_candidate",
+      "rva": 4978896,
+      "bytes": 27,
+      "sha256": "95aad5d6ce6882c17a6071cfeb1e3579d701264b2e9b26e8db598c72180e63d7"
+    },
+    {
+      "role": "get_version_candidate",
+      "rva": 4978864,
+      "bytes": 27,
+      "sha256": "e61f15bc138f353712edca022a2d8cf9f129123f1ca7ac52958ab732765646d9"
+    },
+    {
+      "role": "record_entity_candidate",
+      "rva": 4967136,
+      "bytes": 31,
+      "sha256": "d49c556e418939b4934431461e525766ace461900a4181a8e6240d81a73fd389"
+    },
+    {
+      "role": "get_entity_candidate",
+      "rva": 5290352,
+      "bytes": 23,
+      "sha256": "76e8327ad9bd5726c6b98c336d01f0366d684b4d109203caba964a640c22ada5"
+    },
+    {
+      "role": "entity_resolve",
+      "rva": 5290384,
+      "bytes": 175,
+      "sha256": "a6eddae80ea98079dd67460404abadaa6a573825c2000a178634bd12629b5fbf"
+    },
+    {
+      "role": "registry_valid_candidate",
+      "rva": 4098368,
+      "bytes": 62,
+      "sha256": "7e85ee3900dc10b9a31ccf4a76aa5841a91b9dce711e4619aa3a0fe2ef38b81b"
+    },
+    {
+      "role": "hit_writer",
+      "rva": 2835504,
+      "bytes": 360,
+      "sha256": "8216cd445967da411f6dd49c10a19d555a1077c58547f228e4f118740abcdd34"
+    },
+    {
+      "role": "producer_321f50",
+      "rva": 3284816,
+      "bytes": 579,
+      "sha256": "610a5fe0366a2a4e14eb3d9f478333733165099839cdb41335e1c0b404f606f7"
+    },
+    {
+      "role": "producer_e25d2a",
+      "rva": 14834986,
+      "bytes": 397,
+      "sha256": "19930f2de164ffd0c51228cfcbe01b1db1d1c08470f318313039c6666d8ae392"
+    },
+    {
+      "role": "producer_e3bf00",
+      "rva": 14925568,
+      "bytes": 281,
+      "sha256": "da6ef34a00780d743ecee72c8b6e01a6644ab31f0fbb7bf8cdc9b4af56b970d4"
+    },
+    {
+      "role": "producer_e3c020",
+      "rva": 14925856,
+      "bytes": 281,
+      "sha256": "60b1b32e996d50d1e2ca80cef12ff554898dfc1b0d022bf17c50da1772c75d2a"
+    },
+    {
+      "role": "producer_e3d9b0",
+      "rva": 14932400,
+      "bytes": 1739,
+      "sha256": "e0c0c949b52774c6e3839ff4bb32a5ae3fde5348957d9b9d931d71bfe7202bd6"
+    },
+    {
+      "role": "producer_e3e1b0",
+      "rva": 14934448,
+      "bytes": 745,
+      "sha256": "1b08342902de7f692b43b5c8504c34d9a53859505d3a46cf32768987a3d6b214"
+    },
+    {
+      "role": "producer_e3e7a0",
+      "rva": 14935968,
+      "bytes": 745,
+      "sha256": "ec1375f38b4329848113a082ef163d94f03fe6a5f1e8ab3bdb36c63fa5c54064"
+    },
+    {
+      "role": "producer_e3edc0",
+      "rva": 14937536,
+      "bytes": 281,
+      "sha256": "471af7031a78ea73b8e01bcc6879dec45a86d50e9e7a3d92113ba703d0f9104f"
+    },
+    {
+      "role": "producer_e3ef40",
+      "rva": 14937920,
+      "bytes": 340,
+      "sha256": "51e05a59eef74cf13ddec234ffd7cf848d3e4695d75e6fcb5612b484a7decf24"
+    },
+    {
+      "role": "producer_e3f0a0",
+      "rva": 14938272,
+      "bytes": 2349,
+      "sha256": "1ab4ee0d6e419168419077a7c4cfc6e5a464356142ce6ec58a23d1a4d1ab408e"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "rva": 13234144,
+      "bytes": 784,
+      "sha256": "a43629ec65c1e0f5df4f2669a30580d4104d1316cb2773f5af689c235c589ac4"
+    },
+    {
+      "role": "shape_userdata_lookup",
+      "rva": 13236672,
+      "bytes": 184,
+      "sha256": "16c00af52014ab848d51abf5bb90be6b823792313d691f0b2ec75b8274690e96"
+    },
+    {
+      "role": "gameplay_options_getter_candidate",
+      "rva": 4300928,
+      "bytes": 293,
+      "sha256": "68756a125f2e583ca70386ae236e018b66ce17762e51a3ca8bf84c58e8fa3618"
+    },
+    {
+      "role": "surface_type_getter_candidate",
+      "rva": 5175040,
+      "bytes": 375,
+      "sha256": "5225fe446a1f12eafd24483e99379251e0e0243aa22436ab34bd9fcd4ed2459a"
+    },
+    {
+      "role": "parameter_box_forward",
+      "rva": 13227227,
+      "bytes": 155,
+      "sha256": "167277bf9d9ab409e189296c4415cdf1dfde808fdd70a8a938448863508540b9"
+    },
+    {
+      "role": "complex_mesh_parameter_constructor",
+      "rva": 13228336,
+      "bytes": 955,
+      "sha256": "9ae0cc6f83ddb0b3e9e6007266622288844ad5a60b3ebb2b0b7d766abcbc5349"
+    }
+  ],
+  "probes": [
+    {
+      "role": "decode_core",
+      "offset": 198,
+      "hex": "488d510c",
+      "layoutField": "header.rotation",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 202,
+      "hex": "448b4120",
+      "layoutField": "header.layer",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 194,
+      "hex": "448b4924",
+      "layoutField": "header.tag",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 214,
+      "hex": "0fbf591c",
+      "layoutField": "header.kind",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 840,
+      "hex": "8b4f28",
+      "layoutField": "multi.countOffsets.complexMesh",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 847,
+      "hex": "448b672c",
+      "layoutField": "multi.countOffsets.box",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 843,
+      "hex": "448b6f30",
+      "layoutField": "multi.countOffsets.capsule",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 828,
+      "hex": "8b4734",
+      "layoutField": "multi.countOffsets.sphere",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 854,
+      "hex": "8b4738",
+      "layoutField": "multi.countOffsets.triangleMesh",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 837,
+      "hex": "8b573c",
+      "layoutField": "multi.countOffsets.convexMesh",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1153,
+      "hex": "488d5b34",
+      "layoutField": "multi.strides.box",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1283,
+      "hex": "488d5b30",
+      "layoutField": "multi.strides.capsule",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1400,
+      "hex": "488d5b1c",
+      "layoutField": "multi.strides.sphere",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1525,
+      "hex": "488d7638",
+      "layoutField": "multi.strides.triangleMesh",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1769,
+      "hex": "488d7638",
+      "layoutField": "multi.strides.convexMesh",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "actor_userdata",
+      "offset": 8,
+      "hex": "488b4110",
+      "layoutField": "actor.taggedUserdata",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "actor_userdata",
+      "offset": 12,
+      "hex": "4883e0f8"
+    },
+    {
+      "role": "get_id_candidate",
+      "offset": 14,
+      "hex": "8b4018",
+      "layoutField": "userdata.physicsId",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "get_version_candidate",
+      "offset": 14,
+      "hex": "8b401c",
+      "layoutField": "userdata.physicsVersion",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "record_entity_candidate",
+      "offset": 22,
+      "hex": "48894810",
+      "layoutField": "userdata.entity",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "entity_resolve",
+      "offset": 152,
+      "hex": "488b4010",
+      "layoutField": "userdata.entity",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "producer_e25d2a",
+      "offset": 332,
+      "hex": "48895810",
+      "layoutField": "userdata.entity",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "producer_e3bf00",
+      "offset": 249,
+      "hex": "48895810",
+      "layoutField": "userdata.entity",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "producer_e3d9b0",
+      "offset": 1655,
+      "hex": "48897810",
+      "layoutField": "userdata.entity",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "producer_e3e1b0",
+      "offset": 665,
+      "hex": "48895810",
+      "layoutField": "userdata.entity",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "actor_userdata",
+      "offset": 12,
+      "hex": "4883e0f8",
+      "layoutField": "actor.tagMask",
+      "operandOffset": 3,
+      "mode": "andMaskComplement8"
+    },
+    {
+      "role": "producer_e3bf00",
+      "offset": 85,
+      "hex": "c1ea02"
+    },
+    {
+      "role": "producer_e3bf00",
+      "offset": 81,
+      "hex": "488d4804"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "offset": 723,
+      "hex": "8b4d5089088b4d58"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "offset": 728,
+      "hex": "8b4d58894804",
+      "layoutField": "shapeUserdata.tagConfig",
+      "operandOffset": 5,
+      "mode": "u8"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "offset": 737,
+      "hex": "44886008",
+      "layoutField": "shapeUserdata.surfaceType",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "offset": 741,
+      "hex": "4488780c",
+      "layoutField": "shapeUserdata.secondaryFlag",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "offset": 745,
+      "hex": "4883c80148894110"
+    },
+    {
+      "role": "gameplay_options_getter_candidate",
+      "offset": 146,
+      "hex": "8bd7488bcbe8a45888004885c074108b00"
+    },
+    {
+      "role": "surface_type_getter_candidate",
+      "offset": 146,
+      "hex": "8bd7488bcbe824027b004885c074120fb64008"
+    },
+    {
+      "role": "decode_core",
+      "offset": 329,
+      "hex": "8b4738894424308b4734c1f9020fb6c989442428894c242049"
+    },
+    {
+      "role": "parameter_box_forward",
+      "offset": 87,
+      "hex": "8b8424f0000000f30f5fd00fc6db55894424280f54d98b8424e8000000f30f5fd8f30f11642464f30f1154246cc74424600300000089442420f30f115c"
+    },
+    {
+      "role": "decode_core",
+      "offset": 339,
+      "hex": "c1f902",
+      "layoutField": "packedParameters.defaultSurfaceShift",
+      "mode": "u8",
+      "operandOffset": 2
+    },
+    {
+      "role": "decode_core",
+      "offset": 1035,
+      "hex": "d1fe",
+      "layoutField": "packedParameters.complexSurfaceShift",
+      "mode": "fixedSarOne",
+      "operandOffset": 0
+    },
+    {
+      "role": "decode_core",
+      "offset": 1003,
+      "hex": "83f901754c8b4744488d4de78b774841be16000000448b6f408945eb488b456fd1fe8b18895de7e81915000084c0741d8b45eb4c8d474c89442428448bce8bd344896c2420498bcfe82824ad00448b6d67"
+    },
+    {
+      "role": "complex_mesh_parameter_constructor",
+      "offset": 878,
+      "hex": "8b4d67807d7f008848088b4d6f89088b4d77894804"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected decoder field offsets, group strides and actor userdata consumers match native bytes. Strict stored projections require bounded counts and exact EOF; the native consumer itself does not prove these bounds.",
+    "direct": "The native hit writer copies physics ID/version from masked actor userdata. A distinct registry resolver reads the recorded packed entity. The shape ordinal is not a component-type bit index.",
+    "structuralOnly": "Authored packed collider definitions and mesh-reference slot order; anonymous flag/mesh words retain raw bits.",
+    "conditional": "API labels on UnityPlayer candidate wrappers come from paired-table framing and managed requested names; live registration and execution require a caller/cache or direct-call witness.",
+    "unresolved": "Saved query hit actors lack userdata/registry snapshots, so physics IDs cannot be joined to live owning entities or CAB/PathID; definitions do not prove live instance selection."
+  },
+  "managedTypes": [
+    {
+      "type": "UnityEngine.HyperGryph.ECS.Entity",
+      "bytes": 8,
+      "fields": {
+        "globalIndex": 0,
+        "version": 4
+      }
+    },
+    {
+      "type": "UnityEngine.ECSColliderResultProxy",
+      "bytes": 24,
+      "fields": {
+        "m_Actor": 0,
+        "m_EcsId": 8,
+        "m_EcsVersion": 12,
+        "m_Collider": 16,
+        "m_ComponentIndex": 20
+      }
+    },
+    {
+      "type": "UnityEngine.HyperGryph.ECS.ECSColliderComponent",
+      "bytes": 16,
+      "fields": {
+        "actor": 0,
+        "ecsId": 8,
+        "ecsVersion": 12
+      }
+    }
+  ],
+  "directCalls": [
+    {
+      "role": "producer_321f50",
+      "offset": 401,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e25d2a",
+      "offset": 188,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3bf00",
+      "offset": 88,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3c020",
+      "offset": 88,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3d9b0",
+      "offset": 1503,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3e1b0",
+      "offset": 509,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3e7a0",
+      "offset": 509,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3edc0",
+      "offset": 88,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3ef40",
+      "offset": 147,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "producer_e3f0a0",
+      "offset": 1981,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "parameter_box_forward",
+      "offset": 150,
+      "targetRole": "shape_userdata_constructor"
+    },
+    {
+      "role": "gameplay_options_getter_candidate",
+      "offset": 151,
+      "targetRole": "shape_userdata_lookup"
+    },
+    {
+      "role": "surface_type_getter_candidate",
+      "offset": 151,
+      "targetRole": "shape_userdata_lookup"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1075,
+      "targetRole": "complex_mesh_parameter_constructor"
+    }
+  ],
+  "producerBoundary": "Direct native producers call the same decoder; covered bodies record packed entities inline after decoder return, bypassing the managed RecordEntity entry. Several read a byte-length-prefixed buffer then shift length right by two for the decoder word-count argument. A decoder-return-only snapshot is too early for these subsequent entity writes; retail route selection and source-container identity remain unresolved.",
+  "decoderABI": {
+    "arguments": [
+      "pointer",
+      "i32",
+      "pointer",
+      "i32",
+      "i32"
+    ],
+    "returnMode": "pointer",
+    "lengthUnit": "u32-words",
+    "meshElementBytes": 4,
+    "heightmapArgument": "resolved native object instance ID"
+  },
+  "enums": {
+    "Beyond.Gameplay.Core.ColliderOptions": {
+      "type": "Beyond.Gameplay.Core.ColliderOptions",
+      "storageType": "int",
+      "valueBits": 32,
+      "signed": true,
+      "members": [
+        {
+          "value": 1,
+          "name": "MovableBase",
+          "fieldIndex": 47598,
+          "token": "0x0400b9ef",
+          "dataIndex": 38708,
+          "encodedBytes": "02"
+        },
+        {
+          "value": 2,
+          "name": "IgnoreCamera",
+          "fieldIndex": 47599,
+          "token": "0x0400b9f0",
+          "dataIndex": 38709,
+          "encodedBytes": "04"
+        },
+        {
+          "value": 4,
+          "name": "IgnoreSkillSelect",
+          "fieldIndex": 47600,
+          "token": "0x0400b9f1",
+          "dataIndex": 38710,
+          "encodedBytes": "08"
+        },
+        {
+          "value": 8,
+          "name": "Unwalkable",
+          "fieldIndex": 47601,
+          "token": "0x0400b9f2",
+          "dataIndex": 38711,
+          "encodedBytes": "10"
+        },
+        {
+          "value": 16,
+          "name": "IgnoreCollider",
+          "fieldIndex": 47602,
+          "token": "0x0400b9f3",
+          "dataIndex": 38712,
+          "encodedBytes": "20"
+        },
+        {
+          "value": 32,
+          "name": "Destructible",
+          "fieldIndex": 47603,
+          "token": "0x0400b9f4",
+          "dataIndex": 38713,
+          "encodedBytes": "40"
+        },
+        {
+          "value": 64,
+          "name": "AirWall",
+          "fieldIndex": 47604,
+          "token": "0x0400b9f5",
+          "dataIndex": 38714,
+          "encodedBytes": "8080"
+        },
+        {
+          "value": 128,
+          "name": "NeedStepEvent",
+          "fieldIndex": 47605,
+          "token": "0x0400b9f6",
+          "dataIndex": 38716,
+          "encodedBytes": "8100"
+        },
+        {
+          "value": 256,
+          "name": "IgnoreProjectile",
+          "fieldIndex": 47606,
+          "token": "0x0400b9f7",
+          "dataIndex": 38718,
+          "encodedBytes": "8200"
+        },
+        {
+          "value": 512,
+          "name": "IgnoreBomb",
+          "fieldIndex": 47607,
+          "token": "0x0400b9f8",
+          "dataIndex": 38720,
+          "encodedBytes": "8400"
+        },
+        {
+          "value": 1024,
+          "name": "DynamicBattleShape",
+          "fieldIndex": 47608,
+          "token": "0x0400b9f9",
+          "dataIndex": 38722,
+          "encodedBytes": "8800"
+        },
+        {
+          "value": 2048,
+          "name": "Unclimbable",
+          "fieldIndex": 47609,
+          "token": "0x0400b9fa",
+          "dataIndex": 38724,
+          "encodedBytes": "9000"
+        },
+        {
+          "value": 4096,
+          "name": "IgnoreEnemyFloor",
+          "fieldIndex": 47610,
+          "token": "0x0400b9fb",
+          "dataIndex": 38726,
+          "encodedBytes": "a000"
+        },
+        {
+          "value": 8192,
+          "name": "UseTraceDither",
+          "fieldIndex": 47611,
+          "token": "0x0400b9fc",
+          "dataIndex": 38728,
+          "encodedBytes": "c0004000"
+        },
+        {
+          "value": 16384,
+          "name": "UseOverlapDither",
+          "fieldIndex": 47612,
+          "token": "0x0400b9fd",
+          "dataIndex": 38732,
+          "encodedBytes": "c0008000"
+        },
+        {
+          "value": 32768,
+          "name": "IgnoreEnemyCollision",
+          "fieldIndex": 47613,
+          "token": "0x0400b9fe",
+          "dataIndex": 38736,
+          "encodedBytes": "c0010000"
+        },
+        {
+          "value": 65536,
+          "name": "IgnoreTravelPoleBlock",
+          "fieldIndex": 47614,
+          "token": "0x0400b9ff",
+          "dataIndex": 38740,
+          "encodedBytes": "c0020000"
+        },
+        {
+          "value": 131072,
+          "name": "Stairs",
+          "fieldIndex": 47615,
+          "token": "0x0400ba00",
+          "dataIndex": 38744,
+          "encodedBytes": "c0040000"
+        },
+        {
+          "value": 262144,
+          "name": "IgnoreFollow",
+          "fieldIndex": 47616,
+          "token": "0x0400ba01",
+          "dataIndex": 38748,
+          "encodedBytes": "c0080000"
+        },
+        {
+          "value": 524288,
+          "name": "IgnoreWater",
+          "fieldIndex": 47617,
+          "token": "0x0400ba02",
+          "dataIndex": 38752,
+          "encodedBytes": "c0100000"
+        },
+        {
+          "value": 1048576,
+          "name": "QuickSlide",
+          "fieldIndex": 47618,
+          "token": "0x0400ba03",
+          "dataIndex": 38756,
+          "encodedBytes": "c0200000"
+        },
+        {
+          "value": 2097152,
+          "name": "IgnorePlunge",
+          "fieldIndex": 47619,
+          "token": "0x0400ba04",
+          "dataIndex": 38760,
+          "encodedBytes": "c0400000"
+        },
+        {
+          "value": 4194304,
+          "name": "InvisibleBridge",
+          "fieldIndex": 47620,
+          "token": "0x0400ba05",
+          "dataIndex": 38764,
+          "encodedBytes": "c0800000"
+        },
+        {
+          "value": 8388608,
+          "name": "AllyBlockableMoveCollider",
+          "fieldIndex": 47621,
+          "token": "0x0400ba06",
+          "dataIndex": 38768,
+          "encodedBytes": "c1000000"
+        },
+        {
+          "value": 16777216,
+          "name": "WallRunSupport",
+          "fieldIndex": 47622,
+          "token": "0x0400ba07",
+          "dataIndex": 38772,
+          "encodedBytes": "c2000000"
+        },
+        {
+          "value": 33554432,
+          "name": "PushChargingCharacter",
+          "fieldIndex": 47623,
+          "token": "0x0400ba08",
+          "dataIndex": 38776,
+          "encodedBytes": "c4000000"
+        },
+        {
+          "value": 67108864,
+          "name": "DeformSnow",
+          "fieldIndex": 47624,
+          "token": "0x0400ba09",
+          "dataIndex": 38780,
+          "encodedBytes": "c8000000"
+        },
+        {
+          "value": 64,
+          "name": "IgnoreFromBakeNavmesh",
+          "fieldIndex": 47625,
+          "token": "0x0400ba0a",
+          "dataIndex": 38784,
+          "encodedBytes": "f000000080"
+        },
+        {
+          "value": -2147483648,
+          "name": "UseComplexMeshBakeNavmesh",
+          "fieldIndex": 47626,
+          "token": "0x0400ba0b",
+          "dataIndex": 38789,
+          "encodedBytes": "ff"
+        }
+      ],
+      "source": "selected metadata default blob and native MetadataRegistration.types"
+    },
+    "UnityEngine.ColliderSurfaceType": {
+      "type": "UnityEngine.ColliderSurfaceType",
+      "storageType": "int",
+      "valueBits": 32,
+      "signed": true,
+      "members": [
+        {
+          "value": 0,
+          "name": "Default",
+          "fieldIndex": 285088,
+          "token": "0x04000019",
+          "dataIndex": 597503,
+          "encodedBytes": "00"
+        },
+        {
+          "value": 1,
+          "name": "Concrete",
+          "fieldIndex": 285089,
+          "token": "0x0400001a",
+          "dataIndex": 597504,
+          "encodedBytes": "02"
+        },
+        {
+          "value": 2,
+          "name": "Wood",
+          "fieldIndex": 285090,
+          "token": "0x0400001b",
+          "dataIndex": 597505,
+          "encodedBytes": "04"
+        },
+        {
+          "value": 3,
+          "name": "Dirt",
+          "fieldIndex": 285091,
+          "token": "0x0400001c",
+          "dataIndex": 597506,
+          "encodedBytes": "06"
+        },
+        {
+          "value": 4,
+          "name": "Grass",
+          "fieldIndex": 285092,
+          "token": "0x0400001d",
+          "dataIndex": 597507,
+          "encodedBytes": "08"
+        },
+        {
+          "value": 5,
+          "name": "Stone",
+          "fieldIndex": 285093,
+          "token": "0x0400001e",
+          "dataIndex": 597508,
+          "encodedBytes": "0a"
+        },
+        {
+          "value": 6,
+          "name": "Water",
+          "fieldIndex": 285094,
+          "token": "0x0400001f",
+          "dataIndex": 597509,
+          "encodedBytes": "0c"
+        },
+        {
+          "value": 7,
+          "name": "Flesh",
+          "fieldIndex": 285095,
+          "token": "0x04000020",
+          "dataIndex": 597510,
+          "encodedBytes": "0e"
+        },
+        {
+          "value": 8,
+          "name": "Metal",
+          "fieldIndex": 285096,
+          "token": "0x04000021",
+          "dataIndex": 597511,
+          "encodedBytes": "10"
+        },
+        {
+          "value": 9,
+          "name": "Crystal",
+          "fieldIndex": 285097,
+          "token": "0x04000022",
+          "dataIndex": 597512,
+          "encodedBytes": "12"
+        },
+        {
+          "value": 10,
+          "name": "Rubber",
+          "fieldIndex": 285098,
+          "token": "0x04000023",
+          "dataIndex": 597513,
+          "encodedBytes": "14"
+        },
+        {
+          "value": 11,
+          "name": "Sand",
+          "fieldIndex": 285099,
+          "token": "0x04000024",
+          "dataIndex": 597514,
+          "encodedBytes": "16"
+        },
+        {
+          "value": 12,
+          "name": "Gravel",
+          "fieldIndex": 285100,
+          "token": "0x04000025",
+          "dataIndex": 597515,
+          "encodedBytes": "18"
+        },
+        {
+          "value": 13,
+          "name": "Moss",
+          "fieldIndex": 285101,
+          "token": "0x04000026",
+          "dataIndex": 597516,
+          "encodedBytes": "1a"
+        },
+        {
+          "value": 14,
+          "name": "Custom",
+          "fieldIndex": 285102,
+          "token": "0x04000027",
+          "dataIndex": 597517,
+          "encodedBytes": "1c"
+        },
+        {
+          "value": 15,
+          "name": "Snow",
+          "fieldIndex": 285103,
+          "token": "0x04000028",
+          "dataIndex": 597518,
+          "encodedBytes": "1e"
+        },
+        {
+          "value": 16,
+          "name": "Mud",
+          "fieldIndex": 285104,
+          "token": "0x04000029",
+          "dataIndex": 597519,
+          "encodedBytes": "20"
+        },
+        {
+          "value": 17,
+          "name": "Cardboard",
+          "fieldIndex": 285105,
+          "token": "0x0400002a",
+          "dataIndex": 597520,
+          "encodedBytes": "22"
+        },
+        {
+          "value": 18,
+          "name": "Plastic",
+          "fieldIndex": 285106,
+          "token": "0x0400002b",
+          "dataIndex": 597521,
+          "encodedBytes": "24"
+        },
+        {
+          "value": 19,
+          "name": "Ice",
+          "fieldIndex": 285107,
+          "token": "0x0400002c",
+          "dataIndex": 597522,
+          "encodedBytes": "26"
+        },
+        {
+          "value": 20,
+          "name": "Wet",
+          "fieldIndex": 285108,
+          "token": "0x0400002d",
+          "dataIndex": 597523,
+          "encodedBytes": "28"
+        },
+        {
+          "value": 128,
+          "name": "WaterV2",
+          "fieldIndex": 285109,
+          "token": "0x0400002e",
+          "dataIndex": 597524,
+          "encodedBytes": "8100"
+        }
+      ],
+      "source": "selected metadata default blob and native MetadataRegistration.types"
+    }
+  },
+  "parameterInterpretation": {
+    "direct": "The covered primitive forward path passes first word to shape userdata+0, second word to +4, shifted low flag byte to +8 and secondary flag to +12. Getter candidate bodies resolve the same userdata helper and return the option dword or surface byte. Candidate API registration and live runtime values remain separate.",
+    "exact": "Metadata enum defaults are authenticated independently from native shape-userdata source/return operands. All raw parameter words remain preserved. Aliased enum values retain every label.",
+    "conditional": "Shared descriptor parameter order is applied as a stored default-decoder interpretation; complex-mesh activation and actual per-shape assignment remain separate.",
+    "unresolved": "High packed flag bits beyond the shifted byte, arbitrary future enum values, semantic tag-config hash lookup and live callback/branch selection.",
+    "complexMesh": "The optional complex record consumes one ordered mesh slot. Its source flags shift right by one for the surface byte, not two. The covered entry has no packed bit-zero attachment test; mesh ID validation, allocation and later runtime ownership remain conditional. Do not classify its clear bit zero as a disabled shape."
+  }
+}

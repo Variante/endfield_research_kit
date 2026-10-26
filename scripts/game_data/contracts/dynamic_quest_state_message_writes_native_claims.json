@@ -1,0 +1,97 @@
+{
+  "schema": "endfield.dynamic-quest-state-message-writes-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_state_cache_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-cache-native-claims.v1",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "handler": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "Handle_QuestStateUpdate",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": [
+        "Proto.SC_QUEST_STATE_UPDATE"
+      ]
+    },
+    "constructor": {
+      "type": "Beyond.Gameplay.MissionSystem+QuestData",
+      "image": "Gameplay.Beyond.dll",
+      "method": ".ctor",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": []
+    }
+  },
+  "fields": {
+    "messageKey": {
+      "name": "questId_",
+      "offset": 24,
+      "type": "String"
+    },
+    "messageState": {
+      "name": "questState_",
+      "offset": 32,
+      "type": "Int32"
+    },
+    "recordKey": {
+      "name": "questId",
+      "offset": 16,
+      "type": "String"
+    },
+    "recordState": {
+      "name": "questState",
+      "offset": 24,
+      "type": "enum"
+    }
+  },
+  "programs": {
+    "constructed": [
+      "mov rcx, [rip+*",
+      "call *",
+      "mov rbx, rax",
+      "test rax, rax",
+      "jcc *",
+      "xor edx, edx",
+      "mov rcx, rbx",
+      "call *",
+      "mov r14, [rdi+0x18]",
+      "mov [rbx+0x10], r14",
+      "lea rcx, [rbx+0x10]",
+      "call *",
+      "mov r9d, [rdi+0x20]",
+      "mov [rbx+0x18], r9d"
+    ],
+    "localRecord": [
+      "mov rbx, [rsp+0x58]",
+      "test rbx, rbx",
+      "jcc *",
+      "mov r12d, [rbx+0x18]",
+      "mov [rsp+0x38], r12d",
+      "mov r14d, [rdi+0x20]",
+      "test rbx, rbx",
+      "jcc *",
+      "mov [rbx+0x18], r14d"
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "Source message String reference and Int32 bits are copied into concrete QuestData fields; local-record path saves previous state bits and writes new source bits.",
+    "exact": "Actual constructor identity, ordinary field/underlying ABI, on-disk TypeInfo usage definition and bounded owned block byte/register flow.",
+    "conditional": [
+      "Blocks are reached with valid compatible message in RDI and a valid normal caller frame.",
+      "Constructed block needs normally returning opaque type-context and barrier calls, a compatible nonnull QuestData constructor receiver, and ordinary returning Win64 callees preserving watched registers/storage.",
+      "Local-record block needs the loaded caller-local reference to be valid compatible nonnull QuestData. Its producing dictionary implementation/type resolution remains outside the claim.",
+      "The on-disk TypeInfo lane is not evidence of live resolution or successful object allocation."
+    ],
+    "unresolved": [
+      "Complete handler entry/return route, _CheckQuestAsset internals and Assets selection.",
+      "String-sharing dictionary lookup/insertion identity and mutation, successful allocation, live message execution/state changes.",
+      "Meaning or validity of arbitrary message Int32 bits as enum values, source association/order/callback effects."
+    ]
+  }
+}

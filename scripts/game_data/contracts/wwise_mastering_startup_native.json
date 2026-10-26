@@ -1,0 +1,1079 @@
+{
+  "schema": "endfield.wwise-mastering-startup-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "pe": {
+    "optionalHeaderRva": "0x138",
+    "entryPointFieldOffset": 16
+  },
+  "methods": {
+    "entry": {
+      "rva": "0x25c2b8",
+      "bodyLength": 61,
+      "bodySha256": "bd3a708d620d45e1fb5ef343dbddbe4c1910a7abd4919d582d90fd3083b86503",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c24084889742410574883ec20498bf88bda488bf183fa017505"
+        },
+        {
+          "offset": 28,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c744"
+        },
+        {
+          "offset": 33,
+          "bytesHex": "4c8bc78bd3488bce488b5c2430488b7424384883c4205f"
+        },
+        {
+          "offset": 56,
+          "prefixHex": "e9",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "dllStart"
+        }
+      ]
+    },
+    "dllStart": {
+      "rva": "0x25c190",
+      "bodyLength": 296,
+      "bodySha256": "ee5da9544a76c6c272f847709db0d89322e5fe7def298041292c1132b4268a6d",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc4488958204c89401889501048894808565741564883ec40498bf08bfa4c8bf185d2750f"
+        },
+        {
+          "offset": 38,
+          "prefixHex": "3915",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference349284"
+        },
+        {
+          "offset": 44,
+          "bytesHex": "7f0733c0e9e50000008d42ff83f8017740"
+        },
+        {
+          "offset": 61,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference2dc478"
+        },
+        {
+          "offset": 68,
+          "bytesHex": "4885c075058d5801eb08"
+        },
+        {
+          "offset": 78,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardTargetPointer"
+        },
+        {
+          "offset": 84,
+          "bytesHex": "8bd8895c243085db0f84ae0000004c8bc68bd7498bce"
+        },
+        {
+          "offset": 106,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "reasonRoute"
+        },
+        {
+          "offset": 111,
+          "bytesHex": "8bd88944243085c00f84930000004c8bc68bd7498bce"
+        },
+        {
+          "offset": 133,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external3e8d0"
+        },
+        {
+          "offset": 138,
+          "bytesHex": "8bd88944243083ff01753685c075324c8bc633d2498bce"
+        },
+        {
+          "offset": 161,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external3e8d0"
+        },
+        {
+          "offset": 166,
+          "bytesHex": "4885f60f95c1"
+        },
+        {
+          "offset": 172,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c110"
+        },
+        {
+          "offset": 177,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference2dc478"
+        },
+        {
+          "offset": 184,
+          "bytesHex": "4885c0740e4c8bc633d2498bce"
+        },
+        {
+          "offset": 197,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardTargetPointer"
+        },
+        {
+          "offset": 203,
+          "bytesHex": "85ff740583ff03753c4c8bc68bd7498bce"
+        },
+        {
+          "offset": 220,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "reasonRoute"
+        },
+        {
+          "offset": 225,
+          "bytesHex": "8bd88944243085c07425"
+        },
+        {
+          "offset": 235,
+          "prefixHex": "488b05",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference2dc478"
+        },
+        {
+          "offset": 242,
+          "bytesHex": "4885c075058d5801eb104c8bc68bd7498bce"
+        },
+        {
+          "offset": 260,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardTargetPointer"
+        },
+        {
+          "offset": 266,
+          "bytesHex": "8bd8895c2430eb0633db895c24308bc3488b5c24784883c440415e5f5ec3"
+        }
+      ]
+    },
+    "reasonRoute": {
+      "rva": "0x25bfa8",
+      "bodyLength": 80,
+      "bodySha256": "95a7d033572a91ede6e3864bc93fed57353b6f0334727c296d129ecbc53a5b90",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4883ec2885d2743983ea01742883ea01741683fa01740ab8010000004883c428c3"
+        },
+        {
+          "offset": 33,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25b8f4"
+        },
+        {
+          "offset": 38,
+          "bytesHex": "eb05"
+        },
+        {
+          "offset": 40,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25b8cc"
+        },
+        {
+          "offset": 45,
+          "bytesHex": "0fb6c04883c428c3498bd04883c428"
+        },
+        {
+          "offset": 60,
+          "prefixHex": "e9",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "processAttach"
+        },
+        {
+          "offset": 65,
+          "bytesHex": "4d85c00f95c14883c428"
+        },
+        {
+          "offset": 75,
+          "prefixHex": "e9",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c110"
+        }
+      ]
+    },
+    "processAttach": {
+      "rva": "0x25bff8",
+      "bodyLength": 278,
+      "bodySha256": "39f4e4d22a8582d463a636c0ecf0ce66f73ad0126729d0c24b1da66eaa869612",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c2408488974241048897c242041564883ec20488bf24c8bf133c9"
+        },
+        {
+          "offset": 29,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25b9b0"
+        },
+        {
+          "offset": 34,
+          "bytesHex": "84c00f84c8000000"
+        },
+        {
+          "offset": 42,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25b844"
+        },
+        {
+          "offset": 47,
+          "bytesHex": "8ad88844244040b701"
+        },
+        {
+          "offset": 56,
+          "prefixHex": "833d",
+          "suffixHex": "00",
+          "targetKind": "reference",
+          "target": "reference349230"
+        },
+        {
+          "offset": 63,
+          "bytesHex": "0f85c5000000"
+        },
+        {
+          "offset": 69,
+          "prefixHex": "c705",
+          "suffixHex": "01000000",
+          "targetKind": "reference",
+          "target": "reference349230"
+        },
+        {
+          "offset": 79,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25b8b4"
+        },
+        {
+          "offset": 84,
+          "bytesHex": "84c0744f"
+        },
+        {
+          "offset": 88,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c830"
+        },
+        {
+          "offset": 93,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c7f0"
+        },
+        {
+          "offset": 98,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c80c"
+        },
+        {
+          "offset": 103,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference28be20"
+        },
+        {
+          "offset": 110,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference28bdf0"
+        },
+        {
+          "offset": 117,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "errorInitializerWalk"
+        },
+        {
+          "offset": 122,
+          "bytesHex": "85c07529"
+        },
+        {
+          "offset": 126,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25b880"
+        },
+        {
+          "offset": 131,
+          "bytesHex": "84c07420"
+        },
+        {
+          "offset": 135,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "initializerEnd"
+        },
+        {
+          "offset": 142,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "initializerBegin"
+        },
+        {
+          "offset": 149,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "initializerWalk"
+        },
+        {
+          "offset": 154,
+          "prefixHex": "c705",
+          "suffixHex": "02000000",
+          "targetKind": "reference",
+          "target": "reference349230"
+        },
+        {
+          "offset": 164,
+          "bytesHex": "4032ff8acb"
+        },
+        {
+          "offset": 169,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25bb10"
+        },
+        {
+          "offset": 174,
+          "bytesHex": "4084ff753f"
+        },
+        {
+          "offset": 179,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c828"
+        },
+        {
+          "offset": 184,
+          "bytesHex": "488bd8488338007424488bc8"
+        },
+        {
+          "offset": 196,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25ba78"
+        },
+        {
+          "offset": 201,
+          "bytesHex": "84c074184c8bc6ba02000000498bce488b03"
+        },
+        {
+          "offset": 219,
+          "prefixHex": "4c8b0d",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardTargetPointer"
+        },
+        {
+          "offset": 226,
+          "bytesHex": "41ffd1"
+        },
+        {
+          "offset": 229,
+          "prefixHex": "ff05",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "reference349284"
+        },
+        {
+          "offset": 235,
+          "bytesHex": "b801000000eb0233c0488b5c2430488b742438488b7c24484883c420415ec3b907000000"
+        },
+        {
+          "offset": 271,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "external25c464"
+        },
+        {
+          "offset": 276,
+          "bytesHex": "90cc"
+        }
+      ]
+    },
+    "initializerWalk": {
+      "rva": "0x27903c",
+      "bodyLength": 65,
+      "bodySha256": "821ddfe7b93b890b9f51d61665377f0453b79afcc56b4a2557609f4f03b6dc8f",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "483bca743b48895c2408574883ec20488bfa488bd9488b034885c0741049ba7048da56963ef185"
+        },
+        {
+          "offset": 39,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardDispatchPointer"
+        },
+        {
+          "offset": 45,
+          "bytesHex": "4883c308483bdf75df488b5c24304883c4205fc3"
+        }
+      ]
+    },
+    "guardThunk": {
+      "rva": "0x2894d0",
+      "bodyLength": 6,
+      "bodySha256": "a967c55598b7207bd5e980ea250fffd26f2347b6879f06593e7228071423c252",
+      "program": [
+        {
+          "offset": 0,
+          "prefixHex": "ff25",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardTargetPointer"
+        }
+      ]
+    },
+    "guardTarget": {
+      "rva": "0x2894b0",
+      "bodyLength": 2,
+      "bodySha256": "b5916d40205265465cce91e2cd0704bf6e1e36263acfe53c729a06f296e9f353",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "ffe0"
+        }
+      ]
+    },
+    "errorInitializerWalk": {
+      "rva": "0x279080",
+      "bodyLength": 71,
+      "bodySha256": "f3881921d67c778790b052455aabb00f0b5f538d5d267e4fba72a8217fc7088f",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c2408574883ec20488bfa488bd9483bca7425488b034885c0741449ba7030525e472705d3"
+        },
+        {
+          "offset": 39,
+          "prefixHex": "ff15",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "guardDispatchPointer"
+        },
+        {
+          "offset": 45,
+          "bytesHex": "85c0750b4883c308483bdfebd933c0488b5c24304883c4205fc3"
+        }
+      ]
+    },
+    "fmaInitialize": {
+      "rva": "0x27c770",
+      "bodyLength": 112,
+      "bodySha256": "82a10fc413715b45bf7427fbb1e362d19d221852afdc21aa460779f92fae1a60",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "40534883ec104533c033c9"
+        },
+        {
+          "offset": 11,
+          "prefixHex": "448905",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "cpuAvailability"
+        },
+        {
+          "offset": 18,
+          "bytesHex": "458d4801418bc10fa2890424b800100018894c240823c8895c24048954240c3bc8752c33c90f01d048c1e220480bd04889542420488b442420"
+        },
+        {
+          "offset": 75,
+          "prefixHex": "448b05",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "cpuAvailability"
+        },
+        {
+          "offset": 82,
+          "bytesHex": "24063c06450f44c1"
+        },
+        {
+          "offset": 90,
+          "prefixHex": "448905",
+          "suffixHex": "",
+          "targetKind": "reference",
+          "target": "cpuAvailability"
+        },
+        {
+          "offset": 97,
+          "prefixHex": "448905",
+          "suffixHex": "",
+          "targetKind": "scalarSelector",
+          "target": "runtimeSelector"
+        },
+        {
+          "offset": 104,
+          "bytesHex": "33c04883c4105bc3"
+        }
+      ]
+    }
+  },
+  "references": {
+    "reference349284": {
+      "rva": "0x349284"
+    },
+    "reference2dc478": {
+      "rva": "0x2dc478"
+    },
+    "guardTargetPointer": {
+      "rva": "0x28b498"
+    },
+    "reference349230": {
+      "rva": "0x349230"
+    },
+    "reference28be20": {
+      "rva": "0x28be20"
+    },
+    "reference28bdf0": {
+      "rva": "0x28bdf0"
+    },
+    "initializerEnd": {
+      "rva": "0x28bdd8"
+    },
+    "initializerBegin": {
+      "rva": "0x28b4c0"
+    },
+    "guardDispatchPointer": {
+      "rva": "0x28b4a0"
+    },
+    "cpuAvailability": {
+      "rva": "0x34a128"
+    }
+  },
+  "externals": {
+    "external25c744": {
+      "rva": "0x25c744",
+      "evidenceBoundary": "unresolved"
+    },
+    "external3e8d0": {
+      "rva": "0x3e8d0",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25c110": {
+      "rva": "0x25c110",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25b8f4": {
+      "rva": "0x25b8f4",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25b8cc": {
+      "rva": "0x25b8cc",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25b9b0": {
+      "rva": "0x25b9b0",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25b844": {
+      "rva": "0x25b844",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25b8b4": {
+      "rva": "0x25b8b4",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25c830": {
+      "rva": "0x25c830",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25c7f0": {
+      "rva": "0x25c7f0",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25c80c": {
+      "rva": "0x25c80c",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25b880": {
+      "rva": "0x25b880",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25bb10": {
+      "rva": "0x25bb10",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25c828": {
+      "rva": "0x25c828",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25ba78": {
+      "rva": "0x25ba78",
+      "evidenceBoundary": "unresolved"
+    },
+    "external25c464": {
+      "rva": "0x25c464",
+      "evidenceBoundary": "unresolved"
+    }
+  },
+  "initializerTable": {
+    "byteLength": 2328,
+    "entries": [
+      null,
+      "0x1000",
+      "0x1060",
+      "0x1030",
+      "0x1110",
+      "0x10e0",
+      "0x1140",
+      "0x1160",
+      "0x1150",
+      "0x1180",
+      "0x1190",
+      "0x11b0",
+      "0x11a0",
+      "0x11c0",
+      "0x11d0",
+      "0x1230",
+      "0x11f0",
+      "0x1220",
+      "0x1210",
+      "0x1200",
+      "0x11e0",
+      "0x1240",
+      "0x1290",
+      "0x12a0",
+      "0x12b0",
+      "0x12c0",
+      "0x12d0",
+      "0x1330",
+      "0x1310",
+      "0x1320",
+      "0x1380",
+      "0x1390",
+      "0x13c0",
+      "0x13b0",
+      "0x13a0",
+      "0x1410",
+      "0x14b0",
+      "0x14a0",
+      "0x1450",
+      "0x1420",
+      "0x1490",
+      "0x1460",
+      "0x14c0",
+      "0x14f0",
+      "0x1530",
+      "0x14d0",
+      "0x15a0",
+      "0x15b0",
+      "0x1570",
+      "0x15d0",
+      "0x15c0",
+      "0x15e0",
+      "0x15f0",
+      "0x1600",
+      "0x1620",
+      "0x1610",
+      "0x1630",
+      "0x1640",
+      "0x1690",
+      "0x1680",
+      "0x16b0",
+      "0x1650",
+      "0x16a0",
+      "0x16e0",
+      "0x16d0",
+      "0x1720",
+      "0x1710",
+      "0x1730",
+      "0x1760",
+      "0x1770",
+      "0x1780",
+      "0x17e0",
+      "0x1800",
+      "0x17c0",
+      "0x1840",
+      "0x17a0",
+      "0x1820",
+      "0x1860",
+      "0x1870",
+      "0x1890",
+      "0x18b0",
+      "0x18d0",
+      "0x18f0",
+      "0x1940",
+      "0x1900",
+      "0x1920",
+      "0x1950",
+      "0x19b0",
+      "0x19e0",
+      "0x1a40",
+      "0x1aa0",
+      "0x1ac0",
+      "0x1ae0",
+      "0x1b00",
+      "0x1b20",
+      "0x1b40",
+      "0x1b60",
+      "0x1b80",
+      "0x1ba0",
+      "0x1bc0",
+      "0x1be0",
+      "0x1c00",
+      "0x1c20",
+      "0x1c40",
+      "0x1c60",
+      "0x1c80",
+      "0x1ca0",
+      "0x1cc0",
+      "0x1ce0",
+      "0x1d00",
+      "0x1d20",
+      "0x1d40",
+      "0x1d70",
+      "0x1da0",
+      "0x1e30",
+      "0x1e20",
+      "0x1e10",
+      "0x1df0",
+      "0x1dc0",
+      "0x1ec0",
+      "0x1ed0",
+      "0x1ee0",
+      "0x1f00",
+      "0x1ef0",
+      "0x1f20",
+      "0x1f10",
+      "0x1f30",
+      "0x1f50",
+      "0x1f70",
+      "0x1f90",
+      "0x1e60",
+      "0x1e70",
+      "0x1e80",
+      "0x1e40",
+      "0x1e50",
+      "0x1e90",
+      "0x1ea0",
+      "0x1eb0",
+      "0x2030",
+      "0x2040",
+      "0x2050",
+      "0x2070",
+      "0x2060",
+      "0x2090",
+      "0x2080",
+      "0x20a0",
+      "0x20c0",
+      "0x20e0",
+      "0x2100",
+      "0x1fd0",
+      "0x1fe0",
+      "0x1ff0",
+      "0x1fb0",
+      "0x1fc0",
+      "0x2000",
+      "0x2010",
+      "0x2020",
+      "0x21a0",
+      "0x21b0",
+      "0x21c0",
+      "0x21e0",
+      "0x21d0",
+      "0x2200",
+      "0x21f0",
+      "0x2210",
+      "0x2230",
+      "0x2250",
+      "0x2270",
+      "0x2140",
+      "0x2150",
+      "0x2160",
+      "0x2120",
+      "0x2130",
+      "0x2170",
+      "0x2180",
+      "0x2190",
+      "0x2310",
+      "0x2320",
+      "0x2330",
+      "0x2350",
+      "0x2340",
+      "0x2370",
+      "0x2360",
+      "0x2380",
+      "0x23a0",
+      "0x23c0",
+      "0x23e0",
+      "0x22b0",
+      "0x22c0",
+      "0x22d0",
+      "0x2290",
+      "0x22a0",
+      "0x22e0",
+      "0x22f0",
+      "0x2300",
+      "0x2480",
+      "0x2490",
+      "0x24a0",
+      "0x24c0",
+      "0x24b0",
+      "0x24e0",
+      "0x24d0",
+      "0x24f0",
+      "0x2510",
+      "0x2530",
+      "0x2550",
+      "0x2420",
+      "0x2430",
+      "0x2440",
+      "0x2400",
+      "0x2410",
+      "0x2450",
+      "0x2460",
+      "0x2470",
+      "0x25f0",
+      "0x2600",
+      "0x2610",
+      "0x2630",
+      "0x2620",
+      "0x2650",
+      "0x2640",
+      "0x2660",
+      "0x2680",
+      "0x26a0",
+      "0x26c0",
+      "0x2590",
+      "0x25a0",
+      "0x25b0",
+      "0x2570",
+      "0x2580",
+      "0x25c0",
+      "0x25d0",
+      "0x25e0",
+      "0x2760",
+      "0x2770",
+      "0x2780",
+      "0x27a0",
+      "0x2790",
+      "0x27c0",
+      "0x27b0",
+      "0x27d0",
+      "0x27f0",
+      "0x2810",
+      "0x2830",
+      "0x2700",
+      "0x2710",
+      "0x2720",
+      "0x26e0",
+      "0x26f0",
+      "0x2730",
+      "0x2740",
+      "0x2750",
+      "0x28d0",
+      "0x28e0",
+      "0x28f0",
+      "0x2910",
+      "0x2900",
+      "0x2930",
+      "0x2920",
+      "0x2940",
+      "0x2960",
+      "0x2980",
+      "0x29a0",
+      "0x2870",
+      "0x2880",
+      "0x2890",
+      "0x2850",
+      "0x2860",
+      "0x28a0",
+      "0x28b0",
+      "0x28c0",
+      "0x2a40",
+      "0x2a50",
+      "0x2a60",
+      "0x2a80",
+      "0x2a70",
+      "0x2aa0",
+      "0x2a90",
+      "0x2ab0",
+      "0x2ad0",
+      "0x2af0",
+      "0x2b10",
+      "0x29e0",
+      "0x29f0",
+      "0x2a00",
+      "0x29c0",
+      "0x29d0",
+      "0x2a10",
+      "0x2a20",
+      "0x2a30",
+      "0x2b30"
+    ],
+    "selectedInitializerJoins": [
+      {
+        "name": "logBaseScale",
+        "tableByteOffset": 1976
+      },
+      {
+        "name": "powerBaseScale",
+        "tableByteOffset": 1984
+      },
+      {
+        "name": "logPolynomialA",
+        "tableByteOffset": 1952
+      },
+      {
+        "name": "logPolynomialB",
+        "tableByteOffset": 1960
+      },
+      {
+        "name": "logPolynomialC",
+        "tableByteOffset": 1968
+      },
+      {
+        "name": "expPolynomialA",
+        "tableByteOffset": 1992
+      },
+      {
+        "name": "expPolynomialB",
+        "tableByteOffset": 2000
+      },
+      {
+        "name": "expPolynomialC",
+        "tableByteOffset": 2008
+      },
+      {
+        "name": "bandZero",
+        "tableByteOffset": 1864
+      },
+      {
+        "name": "gainDbScale",
+        "tableByteOffset": 1872
+      },
+      {
+        "name": "kneeHalf",
+        "tableByteOffset": 1880
+      },
+      {
+        "name": "powerDbScale",
+        "tableByteOffset": 1896
+      },
+      {
+        "name": "bandUnity",
+        "tableByteOffset": 1888
+      },
+      {
+        "name": "negativePowerFallback",
+        "tableByteOffset": 1912
+      },
+      {
+        "name": "exponentBias",
+        "tableByteOffset": 1920
+      },
+      {
+        "name": "exponentMask",
+        "tableByteOffset": 1928
+      },
+      {
+        "name": "mantissaMask",
+        "tableByteOffset": 1936
+      },
+      {
+        "name": "mantissaOne",
+        "tableByteOffset": 1944
+      },
+      {
+        "name": "clipZero",
+        "tableByteOffset": 2016
+      },
+      {
+        "name": "clipUnity",
+        "tableByteOffset": 2040
+      },
+      {
+        "name": "clipNegativeUnity",
+        "tableByteOffset": 2056
+      }
+    ]
+  },
+  "meaningBoundary": "Static process-attach entry route invokes an earlier half-open error-returning initializer table, then the non-null Mastering SIMD initializer pointer range through file-default indirect dispatch. The earlier table contains the CPU-selector initializer: it tests declared CPUID/XGETBV bits and writes zero or one to the power/time helper selector, returning zero. Other prerequisite gates and earlier initializer returns, unchanged loader dispatch and no later selector/constant overwrite remain conditions. No live invocation, public CPU capability name, complete effects of other initializers, loader-patched guard implementation, thread/reinitialization/lifetime or whole CRT semantics established.",
+  "cpuInitialization": {
+    "tableBeginReference": "reference28bdf0",
+    "tableEndReference": "reference28be20",
+    "tableByteLength": 48,
+    "entries": [
+      null,
+      "0x25e8f8",
+      "0x269164",
+      "0x27c770",
+      "0x287d50",
+      "0x288c58"
+    ],
+    "selectedTableByteOffset": 24,
+    "cpuidLeaf": 1,
+    "requiredEcxMask": "0x18001000",
+    "xgetbvIndex": 0,
+    "requiredXcr0Mask": 6,
+    "predicate": "ECX contains every required CPUID bit and XCR0 contains both required bits",
+    "selectorValues": {
+      "unavailable": 0,
+      "available": 1
+    },
+    "methodMeaning": "Availability cell is reset before the test; selector is assigned after the test; the method returns zero. No leaf-seven or AVX2 augmentation appears in this method.",
+    "prerequisites": "Earlier non-null initializers must return zero; the walker aborts on the first nonzero return. Later initializer effects and any later selector overwrite remain unproved."
+  }
+}

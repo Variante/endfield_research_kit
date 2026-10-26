@@ -17,6 +17,66 @@ Many evidence contracts are shared by several pages or exist before any page
 projection: overlay behavior, binary framing, native build gates,
 runtime/static distinctions, and cross-domain graph provenance.
 
+## Understanding the running game
+
+The current recovery target is understanding the binary implementation of
+combat well enough to support a lightweight simulator for better combat
+decisions. This stage recovers game data and executable rules; it does not yet
+build the simulator. Exact file decoding, an architectural explanation and a
+predictive combat model have different completion criteria. The four evidence
+levels below organise proofs; the following map provides wider game context.
+These are explanatory layers, not the client's exact module boundaries.
+
+| System layer | Existing model and its evidence owner | Architectural gap |
+| --- | --- | --- |
+| Resources and versions | VFS overlay selects definitions and assets; native code and IFix supply consumers. See `install_and_vfs.md`, `unity_assets.md` and `ifix_patch.md` in the detail index. | Effective session loading and patch selection; these need not be observed again for every conditional explanation. |
+| Configuration and assembly | Character/growth/weapon keys select skills; level, talent and potential processing precede Skill/Ability initialization and Blackboard layers. Enemy templates select AI configurations and authored graphs. See [Gameplay](game_data/gameplay_semantics.md) and [ExtendData](game_data/extend_data.md). | Unjoined constructors, override paths and genuinely different configuration types. |
+| State and ownership | AbilitySystem, Attributes, Skill and Buff carry local combat state; scene controllers consume world state. See Gameplay and [DynamicStreaming](game_data/world_dynamic_streaming.md). | Cross-system identity, which owner writes each state, and client/server authority. |
+| Behaviour and scheduling | Action/Sequence, Buff lifecycle, skill timelines, LevelScript and AI graphs provide triggers and execution structures. See Gameplay, ExtendData and [Story carriers](game_data/story_carriers.md). | A unified explanation of updates, synchronous reentry, deferred work, cancellation, death and unloading. |
+| Evaluation and settlement | Attribute stages and the default healing pipeline are explained; damage and Poise have reviewed intermediate routes. See Gameplay. | Complete hit-to-damage-to-state/event chain and exceptional settlement paths. |
+| World and persistence | Quest/mission/map-variable conditions feed scene-state visibility; interaction and Story have separate activation carriers. Factory definitions and blueprints describe authored layouts. See DynamicStreaming, Story carriers and Gameplay. | Production operation, persistent state transitions and server decisions; a definition is not a running producer. |
+| Presentation and synchronization | Asset/controller/clip references, Wwise request and graph routes, Story playback carriers and selected protocol handoffs explain local interfaces. See Unity assets, [Audio](game_data/audio_overview.md) and Story carriers. | Cross-system ownership and feedback; a request or client message does not prove playback or server acceptance. |
+
+Three existing vertical chains provide the starting point for synthesis:
+
+| Chain | What can already be explained | Keep the real break visible |
+| --- | --- | --- |
+| Character configuration → Skill/Blackboard → Buff/action → attributes and healing → events | Configuration processing, parameter precedence, lifecycle/reentry, staged attributes, requested versus actual healing, and two event channels. | Other action semantics, shared scheduling and full damage settlement; historical scalar recovery is separate, while relevant listeners remain simulation requirements. |
+| Enemy message/template → AIConfig → blackboard/graph → task | Selected default template/config/graph identity and a task's field consumption. | Spawner library identity is not proved to become the protocol template identity; graph scheduling and task-to-skill execution need separate joins. |
+| Quest/mission/variables → MapConfig scene state → streaming visibility; LevelScript → interaction/Story | Conditional state calculation reaches state controllers; typed playback and callback carriers identify local interfaces. | Visibility is not a proof of interaction or Story activation. Mission transition ownership and server callback decisions remain separate. |
+
+For each subsystem, design understanding is sufficient when its definitions,
+state owner and instance lifetime, triggers, main branches, state changes,
+outputs and neighbouring interfaces can be explained under stated conditions.
+Use existing examples of a normal path and a materially different branch, and
+resolve contradictory evidence. This does not require every configuration,
+listener, transient scalar or branch to be observed, nor behavioural parity.
+Reviewed static synthesis remains `conditional` where appropriate; it must not
+be relabelled as observed execution or `exact` proof.
+
+The current work order follows combat prediction: loadout and enemy inputs;
+damage/Poise settlement and snapshot-versus-dynamic evaluation; Buff state,
+stacking and event effects; combat time, skill/resource/cooldown transitions;
+then target/hit and enemy behaviour where they change the selected scenario.
+Client/server corrections matter where they change these outcomes. World,
+mission, factory, rendering and audio recovery are separate work, rather than
+prerequisites for the lightweight combat model. First connect existing bytes,
+typed consumers and retained observations into these rules. The default
+Buff/healing architecture is explained, but this alone does not certify its
+complete executable semantics for simulation.
+
+A new investigation should state which combat prediction changes with its
+result. Prioritise reusable rules and required scenario inputs over an
+unrecoverable historical value. Capture is warranted when existing data, code
+and retained observations cannot resolve a necessary timing/input/transition
+or distinguish competing implementations, the result changes supported combat
+predictions, and a minimal scenario has acceptance and stop criteria. Relevant
+listeners, snapshot rules and timing cannot be dismissed as details when they
+alter a supported character's simulation. Reopen an understood mechanism for
+contradictory evidence, new control logic, relevant build drift or a predictive
+requirement it does not cover. Missing historical inputs alone do not justify
+collecting a new run: that run supplies new inputs, not the historical ones.
+
 ## Refresh and evidence rules
 
 ```bat
@@ -37,6 +97,10 @@ Run `--from-game` only when the user asks for an installed refresh.
   byte-backed enum as a signed compressed `Int32` invents negative IDs. Resolve
   the backing type from the selected MetadataRegistration first; the native
   enum helper supports reviewed byte and `Int32` cases and fails closed.
+  The separate `il2cpp/enum64_defaults.py` reader handles authenticated
+  Int64/UInt64 enum defaults as bounded raw eight-byte values; both the backing
+  and each member's primitive must agree. Damage masks use that reader and
+  must not be truncated or sent through the compressed Int32 decoder.
 - A source-only classifier does not inherit the native gate because native
   evidence once motivated it. Direct gate callers are runtime-capture identity,
   metadata enum reads, and consumers of pinned methods, code windows, field
@@ -53,6 +117,11 @@ Run `--from-game` only when the user asks for an installed refresh.
   its inputs.
 - A field name, code address, registration order, hash collision, filename,
   proximity, or available asset is not ownership or runtime execution.
+- A typed usage context and its registered entry do not establish a different
+  actual call target. Keep that registration as provenance until an independent
+  body/ABI/caller join proves the target. An exact scalar read and its typed
+  wrapper-property store can establish stored-byte composition separately;
+  it does not prove generic sharing, internal field layout or live dispatch.
 - Preserve source root, logical path, file hash, record offset, parser/schema
   version and validation status through every join.
 - Exact parsers require bounded positive fixtures, malformed/truncated/trailing
@@ -73,6 +142,83 @@ an upper bound rather than a proven length; re-resolution restores identity
 only, so the old contract's conclusions about the bytes stay unvalidated until
 re-derived. Prefer build-independent claims contracts
 (`il2cpp/body_claims.py`) for new consumer claims.
+
+Fully qualified type names can repeat in different managed images, including
+IFix wrapper owners. A name-keyed dictionary's selected row does not establish
+the concrete owner. Enumerate candidates, qualify the managed image and ordinary
+signature, and bind the actual decoded call pointer to that method. Reject a
+remaining ambiguity; a name-only claim is supplementary to this identity join.
+
+[`il2cpp/unwind_chains.py`](../scripts/game_data/il2cpp/unwind_chains.py)
+reuses the declared PE exception directory and complete parent triples to
+establish selected-primary code-range membership. The
+[AMD64 chained-unwind format](https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64)
+allows multiple and noncontiguous fragments. Membership does not prove a
+managed control-flow path, unwind operations or fixed-allocation consistency;
+the owning consumer still checks its complete byte program and frame conditions.
+
+Native data-flow checks must retain instruction width and register writes,
+not just the printed mnemonic. The shared x64 subset distinguishes the
+ordinary 32-bit `FF` INC/DEC forms from their REX.W 64-bit forms and from
+the 64-bit default of near indirect CALL/JMP and PUSH. An INC/DEC register
+destination invalidates its previous pointer or argument origin, including
+when the write is to its 32-bit alias. Unsupported decorated/extended-index
+forms remain one unknown instruction boundary, and truncated addressing
+bytes cannot supply a call or field witness. These decoder facts establish
+neither a complete method path nor the runtime value of a loop counter;
+those require the owning consumer's independent byte and path checks.
+The admitted register-only 16-bit AND-immediate form consumes its two-byte
+immediate without swallowing following instructions and preserves the upper
+48 bits. Its conservative full-register origin invalidation does not assert
+zero extension. Other decorated immediate-group forms retain one unknown
+boundary, including their actual immediate width; truncated addresses and
+immediates cannot supply a witness.
+
+RIP-relative operands of the admitted immediate groups use the end of the
+entire instruction, including the immediate bytes. The shared subset retains
+the full address/immediate boundary for `80`/`81`/`83` and `C6`/`C7`, refuses
+truncated forms, and keeps unsupported prefixes or extended SIB indices
+unknown. An admitted REX.W `C7` sign-extends its four-byte immediate into the
+64-bit operand; an ordinary `C7` register write clears the upper 32 bits.
+These facts establish the selected operand address and stored width, not
+the identity or runtime value at that address.
+
+The selected [`MOVZX` subset](https://cdrdv2-public.intel.com/782151/253667-sdm-vol-2b.pdf)
+records its eight- or sixteen-bit source and
+zero extension into the ordinary 32- or 64-bit destination. Admitted register
+sources retain their actual byte or word name, while conservative origin
+invalidation prevents a partial source from carrying its full pointer origin.
+The same rule applies to memory sources: a byte or word read cannot restore
+the full pointer previously spilled to that stack slot. Exact read operands
+and widths remain available to independent typed consumer checks.
+Unsupported extended SIB indices, destination prefixes and legacy high-byte
+forms retain one complete unknown boundary
+and invalidate the destination's prior origin. They cannot establish a
+printed source register or a field-flow witness. Truncated addressing is
+terminal unknown data; a consumer needing another form must prove it
+independently before using its register or memory meaning.
+
+The admitted ordinary MOV/LEA and SSE memory forms retain REX.X's SIB index
+extension independently of REX.B's base extension. R12 is an index when the
+extension bit is set; it is not the absent-index encoding. In the selected
+64-bit address mode, an absent-base SIB displacement is sign-extended, and
+incomplete SIB/displacement bytes remain terminal unknown data. These
+[instruction-format rules](https://cdrdv2-public.intel.com/858446/253666-088-sdm-vol-2a.pdf)
+establish the operand expression only. They do not name an indexed field,
+prove array bounds or supply the runtime address; the narrower MOVZX and
+decorated-group admission boundaries above still apply.
+Address-size overrides of these forms remain unknown complete instructions,
+with conservative destination-origin invalidation. They cannot reuse a
+64-bit expression for wrapped 32-bit addressing. The admitted shift-immediate
+form also includes its trailing immediate when calculating a RIP operand;
+decorated, extended-index and truncated shifts supply no semantic witness.
+
+An AOT body's `call qword [rip+disp32]` indirect slot is not a pointer but an
+IL2CPP metadata **key**: `key = (prefix << 24) | (2 * index + 1)`, prefixes `0x60`
+methods, `0xc0` methodSpecs, `0xa0` stringLiteral, `0x20`/`0x40` Il2CppType.
+Decoding it names an otherwise unresolved call site;
+`scratch/reverse_engineering/network_analysis/20261013T135400637/msgb1/dis_keys.py`
+is the annotating disassembler.
 
 ## Installed-data model
 
@@ -606,8 +752,11 @@ Revisitable probes belong in `scratch/<topic>/`; disposable intermediates in
 
 ## Recovery queue
 
-In priority order. Offline work first; request a live capture only for a
-residual that cannot be resolved offline.
+The system work order above takes precedence when the goal is understanding
+the game. The family list below is the format-recovery backlog, not a demand
+to finish every stored field or runtime detail before explaining the system.
+Offline work first; capture requests additionally obey the model-discrimination
+criteria above.
 
 Recovery work is corpus-first. Choose the next shared reader, child grammar,
 provider rule or cross-format join by the authenticated files and distinct
@@ -698,16 +847,118 @@ runtime question may improve understanding without decoding another file.
    classes with their own fields, complete call arguments and evaluated mask
    predicates require separate proofs.
 2. **LevelScript.** Native/source receipts feed the shared named reader. Only
-   a complete owner at physical EOF can be promoted by the combined JsonData
-   gate; closing an action may expose a later first stop. Rerank with
+   a complete owner at physical EOF can close the stored schema; the combined
+   JsonData gate owns WebUI classification. The independent `levelscript_corpus`
+   authenticates both complete LevelScript families against current logical VFS
+   bytes and existing exports without Buff/Skill family receipts. It retains
+   the native, CLI/chunk and complete raw-package reader gates, and cannot
+   replace the combined registry or a WebUI publication. Saved family receipt
+   verification closes its logical-read interval with physical input and
+   overlay/path-set rechecks; publication also rechecks physical fingerprints
+   after its final logical reads. A changed input rejects the new result and
+   preserves the earlier successful receipt. Complete-reader drift can occur
+   with unchanged native and VFS bytes when another raw-format lane adds a
+   source or contract. A finished decode sweep from that refused run supplies
+   no new published counts; the retained receipt still belongs to its earlier
+   reader scope. Independently validated targeted results keep their own
+   narrower evidence boundaries. `levelscript_receipt_compare` checks saved
+   complete artifacts against their supplied hashes, compares identical source
+   and selected-native identities, and rejects recorded schema regressions.
+   A retained CLI path can change the audit-run identity with the same logical
+   source bytes and selected native files. Comparison across those runs needs
+   explicit opt-in and records both audit identities; complete path sets,
+   each source's length and hashes, native identities and recorded named EOF
+   still have to agree. This does not authenticate either run as current.
+   Decoded rows must record named EOF; partial cursor changes are not measured.
+   Its historical comparison does not authenticate current inputs or carry
+   either receipt's reader scope into a later run. The independent
+   `levelscript_param_value_native` consumer authenticates selected closed Int32
+   evaluator entries, physical caller targets and explicit byref output. Its
+   constant path copies the compatible parameter's DWORD through the caller
+   local into the Int32 return; alternate selected paths retain the incoming
+   fallback. Generated typed wrapper setters provide a conditional slot view.
+   These proofs do not establish runtime receiver/provider selection, close a
+   stored formatter cursor or authorize a new serialized source alternative.
+   The separate `levelscript_long_param_value_native` named claims are evaluated
+   against the explicit selected build, retaining complete Int64 fallback and
+   output bits. Its generated typed setter view and ordinary byref output join
+   the same concrete parameter definition; reciprocal class/method variable
+   ownership and sole-argument arity are required. The independent Boolean
+   consumer proves an unchanged single-byte constant transfer and complete
+   caller return, without assuming that the storage byte is normalized to
+   `0/1`. Its success byte is distinct from the transferred value. The scalar
+   consumers share declared-type primitives; the Boolean and Int64 readers also
+   share qualified registration and generated wrapper proofs, while their
+   widths and control programs remain independent. Runtime selection and the
+   stored cursor join stay unresolved. A changed unprovable claim is pending
+   review.
+   The Single variant additionally requires the complete primary/cold unwind
+   join and actual cross-fragment branches. It preserves the original low
+   Single fallback bits or the current local output, including the full XMM6
+   restore; constant transfer and success remain separate, with no arithmetic
+   or conversion on those selected transfers.
+   A separate `levelscript_long_param_storage_consumer_native` composition
+   cross-joins the validated stored Int64 wrapper and named evaluator through
+   actual concrete holder/getter/setter identities and disjoint field byte
+   intervals. Only its ready `CONST` path transports the stored constant to
+   the full-width return. The output-slot wrapper, holder and constant/source
+   storage must remain compatible and stable throughout field population and
+   use; opaque callees and concurrent writers are not proved harmless. The
+   actual UTF8 dependency and selected Unity image are authenticated alongside
+   the native pair and proof sources. This conditional association does not
+   establish runtime object/provider choice or positive enclosing owner
+   admission.
+   The separate global-variable callback proof joins fresh Param field loads
+   and actual loaded generic contexts to two signed Int64-to-Single conversions,
+   the ordinary comparison request and a `ConditionResult` enum setter request.
+   Its complete selected original paths retain the full frame. The explicit
+   byref event QWORD remains anonymous because the generic declaration does
+   not prove concrete field placement; shared enum implementation compatibility,
+   MXCSR conditions, opaque comparison/setter effects and live event order
+   remain separate obligations.
+   Failure-companion publication
+   also rechecks the current reader path set and output/input aliases; an
+   unsafe companion stays untouched and the CLI retains both the original
+   failure and the publication refusal. Closing an action may
+   expose a later first stop. Rerank with
    `scripts.game_data.levelscript_first_stop_census` after a gate, then recover
-   the highest-value refusals in validated batches. Unlock, travel-pole and
+   the highest-value refusals in validated batches. A reached unsupported module
+   is ranked by its raw tag/member count and current authenticated union type,
+   with its source key/index/offset retained separately. The union type names
+   the selected stored alternative; it does not supply the missing formatter
+   grammar or an expected member count. Unlock, travel-pole and
    laser-event headers, string/entity getters and click-enable inputs now have
    reviewed stored routes. These compose through the existing typed child
    grammars; event activation, resolved outputs and provider/cache selection
    remain open. Damage-event filters, integer-list getters and movement and
    navigation stop inputs now have independently reviewed parent routes too; complete
    owners still require EOF, and a closed route can expose a later module gap.
+   System-unlock override and duration-based rotation routes also retain their
+   named operands and separately authenticated enum backings. The corresponding
+   unlock-override removal and the enemy-patrol and pressure-board-sequence-failure
+   headers have separate parent reader proofs. The module output parameter is
+   only a source selector and path, not a serialized manual module value.
+   The spline-movement route now composes an independently authenticated
+   `Param<SplinePtr>` child: its constant contains one four-byte signed ID,
+   followed by source selector/reference/path fields. This is a stored
+   parameter identity, not a resolved spline or observed movement. Reached
+   terminal suffixes with opaque prefixes retain their partial classification.
+   CameraShake stays
+   refused until its configuration wrapper's owned value slot, string store and
+   optimized final-path receiver have an independent child composition proof.
+   The same authenticated first-stop census also supports
+   `LevelScriptTemplateData`, with separate owner and report identities;
+   template property/task refusals retain their diagnostics. A replayed EOF
+   from a prior partial cohort remains provisional until the complete gate.
+   GameCondition routes have their own dispatcher and native gate. The union
+   atlas keeps them separate from Action and server-condition routes even when
+   numeric tags coincide; a type-table cell address is not the dereferenced
+   type pointer. Atlas publication rechecks the selected native pair and proof
+   sources, preserving its prior report on a refusal with contract/row context.
+   Contract bytes read during the audit must match its initial proof snapshot;
+   the output cannot alias a contract, proof source or selected native input,
+   including through file identity. Repeated physical branch/usage bytes do not
+   merge independently qualified dispatcher/tag proofs.
    Promotion rules and wire conclusions live in
    [`game_data/serialization_memorypack.md`](game_data/serialization_memorypack.md).
 3. **SkillData.** Historical cursor receipts can be rebound only to unchanged
@@ -728,13 +979,233 @@ runtime question may improve understanding without decoding another file.
    proven statically ([`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md));
    receiver identity, live invocation, subtype selection, patch state,
    provider values and final damage remain unresolved.
+   Selected named numerical paths also preserve the actual rounding order:
+   some multiply in Single before widening, while others widen before a Double
+   product or round an intermediate Double to Single. Typed fields and named
+   getter ABIs identify the inputs, but getter internals and live values remain
+   open. These conditional rules cannot be replaced with algebraically similar
+   real-number formulas; their floating environment and normal completion are
+   explicit conditions. A branch-linked physical code range supplies byte and
+   control-flow evidence, not a shared managed unwind identity.
+   Damage snapshot consumers additionally have build-independent named claims
+   and a bounded consumer program. Under its selected false-patch and snapshot
+   guards, the incoming instance's cache and incoming index reach a closed
+   Double getter, whose normal return reaches the complete CalcResult output.
+   Producer-to-consumer index/value correspondence remains unresolved; this
+   consumer path is not a complete snapshot formula. A
+   separate simple producer fragment transfers the widened scalar-times-attack
+   value, cache and closed Add context to a compiled helper. That physical target
+   remains distinct from the registered Add entry. Its selected physical fast
+   path separately proves an eight-byte store and anonymous counter/count
+   updates; the consumer's physical getter checks its bounds and returns the
+   corresponding eight bytes. Their value correspondence is conditional on
+   the same receiver, array, index and unchanged storage. The guarded producer
+   reset path writes zero to that same anonymous count slot; a null selected
+   target instead returns without those stores. These physical proofs do not
+   establish a general List implementation, actual append/index selection or
+   runtime snapshot execution.
+   Constructor and OnCreate proofs separately connect typed allocation requests,
+   the incoming action cache pointer store and the snapshot entry. The tail
+   helper has only a bounded reachable-entry proof; pointer preservation needs
+   its actual derived write range to be disjoint from the field and normal,
+   noninterfering execution. The zero snapshot flag skips an append request and
+   reaches the shared Int32 iteration increment, without establishing cache
+   order or consumer-index equality. Separate checked connections now join zero
+   initialization, a positive signed bound and the selected unit/skip/simple
+   backedge. Under every selected guard, normal returns and valid noninterfering
+   storage, a conditional compact-cache recurrence counts simple appends rather
+   than source iterations; a prior skip makes those positions differ. Actual
+   count/array/action-slot disjointness and the consumer's incoming index are
+   still unobserved. Runtime ABI gates inspect raw type records
+   as well as names, since names alone discard reference qualifiers.
+   A separate ByType caller path now forwards its incoming Int32 index and unit
+   reference to the normal consumer's exact ABI slots, then returns its low64
+   result bits through complete MOVQ transfers and an owned return path.
+   Unnamed predicate calls supply only selected zero-AL guards. The actual
+   ProcessDamage stack-probe helper independently preserves RAX on its checked
+   complete normal graph; page-write/frame disjointness and normal execution
+   condition its restoring return and the caller's allocation arithmetic.
+   Neither proof establishes ProcessDamage's later frame continuity, local
+   index writers or correspondence with the compact cache.
+   Independently checked ProcessDamage fragments also transfer an anonymous
+   local Int32 index to the normal consumer, preserve its returned low64 bits,
+   and join selected modulo-32-bit increments to one signed bound guard. The
+   actual collection target's complete normal path checks unsigned bounds and
+   returns an eight-byte indexed load. Its caller's static context separately
+   requests `List<DamageUnit>.get_Item`; the folded Object implementation and
+   an absent registered closed entry remain distinct. Compatible live context,
+   valid derived storage, returned Unit identity and continuity between the
+   independently entered fragments remain conditions or unresolved joins.
+   A separate continuation reads the explicit Boolean output byte; its selected
+   zero branch clears AL and reaches a complete restoring return epilogue.
+   This conditional ProcessDamage false return does not determine earlier
+   side effects, the other branch or final damage.
+   The normal consumer's selected simple, non-snapshot path separately stores
+   the ordinary Float provider result in the typed pack's `atkScale` field,
+   loads an anonymous Double slot through its `attackerAttributes` carrier,
+   converts the Float to Double and multiplies into the same CalcResult return.
+   Heap layout, slot meaning, provider values and floating-point environment
+   remain conditions or unresolved; this is not a final-damage formula.
+   A selected MultiplyAttribute path separately checks ordinary Float
+   multiplier/addition requests, the Double attribute request and exact SSE
+   operand order into the same concrete CalcResult return. Its nonzero source
+   branch replaces the incoming source and override array with the defender
+   inputs before the common request. These are actual branch-linked physical
+   ranges; adjacency does not establish a managed unwind family. A selected
+   Poise continuation writes a full vector while replacing its low Double
+   bits and preserving the freshly read upper bits, then copies the typed pack
+   to a new buffer. The producing dispatch and debug targets remain opaque;
+   the raw transfer is exact, while its named field view additionally depends
+   on the stated boxed-to-unboxed layout adjustment, which is not independently
+   proved by that transfer.
+   The attribute-store path now joins its selected zero-index guard, array
+   carrier transfer, ordinary Double request and old-index store into one
+   conditional loop. The same actual provider's selected entry-to-cached-return
+   path establishes receiver/index transfers and saved-state restoration;
+   its nested cache/header names, other branches and live selection stay open.
+   Compatible frame/storage, normal returns and noninterference condition
+   both joins, without proving live damage or Poise settlement.
+   The selected Poise modifier getter separately retains its direction enum,
+   anonymous Double input, SSE comparisons/multiplication and normal returns;
+   its caller converts the returned Double to Single before the setter request.
+   The setter's selected tail compares the actual post-call Single carrier with
+   the field value loaded at that point, then either writes the typed Poise
+   field or returns without that local store. Raw comparison flags, including
+   unordered floating-point cases, remain explicit. The anonymous helper is
+   not identified as a clamp, and the no-local-store branch does not establish
+   noninterference from earlier opaque calls or complete live settlement.
 5. **World.** DynamicStreaming now has selected-native scalar and inline-vector
    component layouts and a direct authored MissionCondition string-slot join;
    Data exposes these only after native, current-roster and raw-byte checks.
    Authored RootComp-to-DataIndex-to-component-instance ownership also closes
-   under the raw-source and template gates. Indirect child assignment, spatial
+   under the raw-source and template gates. Selected nested component DataGroup
+   layouts now resolve explicit same-grid type/index/count spans with original
+   parent and child byte ranges; cross-grid targets and control behavior remain
+   unresolved. A same-source template-checked join additionally retains every
+   authored RootComp candidate through the containing component to each indirect
+   child; missing direct root references stay explicit gaps. Live child assignment, spatial
    units and live condition evaluation remain separate joins in
    [`game_data/world_dynamic_streaming.md`](game_data/world_dynamic_streaming.md).
+   Selected Erosion consumers additionally connect PosList index/count to
+   supplied-grid Vector3 axis values and the original typed List's value
+   arguments, and return the stored CoreId getter result unchanged. The proxy
+   reference ABI stays separate from ordinary primitives and the Unity value
+   ABI. Successful insertion, runtime grid/file selection, CoreId target and
+   spatial units remain unresolved.
+   Selected MissionCondition consumers independently read State/IsSame from
+   the same supplied record: literal IsSame equal to one selects equality to
+   a provider Int32 value, and other values select inequality. The update's
+   anonymous cache byte returns whether it changed, rather than the predicate
+   itself. Valid selected-record/index arithmetic, stable frame/storage and
+   normal calls remain conditions. A selected usage-cell/MethodSpec and
+   reciprocal generic-owner proof now bind the provider's actual typed
+   Dictionary<Int32,Int32> TryGetValue request. Its success path returns the
+   Int32 output slot and its miss path zero; null receivers follow an error
+   path. Key-carrier meaning, authored-group/cache ownership, live dictionary
+   contents and condition truth still need their own joins.
+   A separate source-owned key lane connects the authored Id consumer's
+   GetStrKey returned Int32 to a bounded slot write and the query's matching
+   dictionary-key read. Composition requires the same pool, slot selectors,
+   returned storage and unchanged contents; key allocation, deduplication,
+   stability and live dictionary ownership remain unresolved.
+   Names-based ready claims separately connect the typed GamePlayer mission
+   field to its concrete getter through complete selected entry and return
+   paths. Under false patch checks, nonnull receivers and normally returning
+   initialization helpers, the getter returns constant true. It reads no
+   readiness state field; actual invocation and live readiness stay unresolved.
+   Independent string-provider claims check the ordinary String length field,
+   the complete selected typed Dictionary<UInt64,Int32> lookup request and
+   its Boolean/referenced-output return. Null or empty input returns false
+   and writes minus one. A separate Int32 counter resets negative input
+   before incrementing modulo 32 bits; wraparound prevents interpreting its
+   method name as global uniqueness. Hash computation, retained mapping,
+   synchronization and live key identity remain unresolved.
+   The complete selected GetStrKey paths separately return the successful
+   lookup's Int32 output, the counter candidate sent to the same typed map
+   setter, or minus one when an anonymous carrier lane is zero. The lane's
+   zero test does not identify a span length or prove empty-string semantics;
+   these paths require the original Boolean false and normal returning callees.
+   Selected Mission/Quest callbacks additionally request their ordinary state
+   getters and forward the returned Int32 enum bits to the concrete cache
+   setter. The successful lookup's same local key reaches that setter and an
+   enqueue request under explicit frame and noninterference conditions.
+   The generic event carrier's instance fields remain anonymous; this does
+   not prove its first pointer's named field, a retained live cache value or
+   a condition's runtime truth.
+   Independent string enqueue claims join a concrete lookup context to the
+   same local value copy and an actual typed owner request. The copy's width
+   does not establish the managed value's size, fields or full indirect ABI.
+   A selected Mission getter separately returns its actual MissionData enum
+   field or null-reference zero bits. Concrete getter-return enum declarations
+   and aliases are authenticated independently; neither a zero miss nor a
+   declared symbol is an observed live state or a universal cache label.
+   A selected authored IsQuest result equal to one skips the concrete
+   HashSet<Int32>.Add request; other returned bits send the preserved GetStrKey
+   result to that request. Its typed context and bounded argument flow do not
+   establish actual set mutation or runtime selection. The other branch clears
+   only SIL's low byte, so it does not prove the whole ESI value is zero.
+   Named pause methods independently prove selected byte writes to the returned
+   MissionData's ordinary Boolean field. PauseMission writes one; the update
+   handler's state-return-bits-not-two path copies the message field's raw byte
+   without normalization. The state-two branch reuses SIL and is excluded from
+   that pointer-preservation path. A predicate lookup and the returned write
+   receiver need not be the same object; their join requires separate stable
+   selection evidence. Live paused state, message execution, network effects
+   and complete post-write return behavior remain unresolved.
+   Quest pause recovery separately identifies named pause/listening requests
+   and the message-field branch selecting StartQuest or PauseQuest. Selected
+   MissionData methods write its typed dirty byte; RefreshIfDirty has a proved
+   zero-byte early return and a guarded clear-byte normal return with opaque
+   helpers and anonymous reference-lane integers. GetDisplayQuestIds requests
+   that refresh and returns the same receiver's typed List<String> reference.
+   These rules do not name anonymous lanes as list counts or prove collection
+   mutation, complete refresh semantics or live display contents.
+   Completion predicates independently return Boolean low-byte results:
+   a null MissionData yields false, otherwise its typed state is compared to
+   the authenticated Completed enum value; Quest completion compares the
+   actual typed getter return to its own enum domain. All declared aliases
+   remain visible. These complete selected normal returns establish neither
+   full-register zero extension nor live completion, mission order or stable
+   repeated lookup selection.
+   Quest state-message blocks separately transfer the sender's ordinary Int32
+   bits and String reference into a compatible, concretely typed QuestData
+   receiver, and spill its old state before a new typed enum-field write.
+   The sender field is not an enum; its bits do not inherit target-domain
+   labels. The selected type-context request and actual constructor identity
+   do not establish allocation success, dictionary ownership or mutation, or
+   reachability from the complete handler entry.
+   The selected GetQuestState value policy independently returns the direct
+   compatible QuestData state or maps a compatible MissionData state after a
+   returned-String request and length check. Comparison and output constants
+   are authenticated in their respective enum domains, retaining aliases.
+   Ordinary Dictionary representation and complete selected normal returns
+   do not identify the String-sharing API, establish a mission hierarchy,
+   prove stable record selection or observe live state. The owning
+   `dynamic_quest_state_value_source_native` claims keep those joins explicit.
+   The returned-String producer separately proves selected normal returns:
+   an actual ordinary IndexOf result selects a Substring request on the original
+   String, with zero start and that result as length, then the preserved local
+   result reaches the return after an opaque request. Other selected paths
+   return a compatible local or global pointer. The typed String methods,
+   comparison-enum declarations and Dictionary<String,String> representation
+   do not prove delimiter contents, cache semantics, String algorithms or
+   hierarchy; `dynamic_quest_parent_string_source_native` owns this boundary.
+   The independent `dynamic_quest_action_requests_native` consumer proves a
+   selected SucceedQuest suffix's typed remove/safe-run requests and the direct
+   SafeRunQuestAction branches: a normal nonzero Boolean return from the actual
+   level-availability request selects RunQuestAction with the original String,
+   same system reference and QuestAction bits. The recipient enum declarations
+   retain all aliases. Complete SucceedQuest entry reachability, collection
+   mutation, opaque helper register effects and actual action execution remain
+   separate joins.
+   The Objective completion consumer independently normalizes the compatible
+   ObjectiveData completion byte to the ordinary Boolean low return byte. The
+   concrete QuestData/List/ObjectiveData representation and actual typed context
+   descriptor do not identify the indexed API or prove item selection. An
+   anonymous signed bound lane cannot be named as List size from an open generic
+   layout, and the comparison does not establish a valid index. Compatible
+   returned records, normal opaque requests and live state stay explicit
+   conditions or gaps in `dynamic_quest_objective_boolean_native`.
    Streaming needs independent record-end evidence or a bounded
    runtime carrier witness before field names; keep selector9, Marker13 gap
    profiles and Marker17 bodies anonymous; slot-7 field 0 is each group's
@@ -777,7 +1248,12 @@ runtime question may improve understanding without decoding another file.
    attachment success distinct from a prepared source; the native frame adapter
    adds initial silence when that preparation step is omitted. Prioritize
    authored owner/bus selection and effect values, varying pitch/rate
-   and actual endpoint selection/real COM execution. Original conditional
+   and actual endpoint selection. Clean paired live evidence now admits the
+   selected mixed-bus post-processing/master/render-client path, including
+   bit-exact bounded AVX EQ output and separate master/sink gain comparisons.
+   Reuse that accepted branch. Individual Event contribution through the
+   multi-source mix, other effect/rate branches, allocation generations and
+   physical audibility remain open. Original conditional
    sink negotiation now selects/falls back channel formats, tries Windows rate
    conversion before native resampler setup, checks event/device capacity and
    initial silence release, and allocates the sink buffer. The matched-format
@@ -811,7 +1287,18 @@ runtime question may improve understanding without decoding another file.
    byte-exact copied sink prefixes and actual successful Windows release results.
    Mixer capture adds real row/descriptor inputs and completed output conversion
    with exact first-channel constant-gain prefix checks. The initial owner serial
-   read used a neighboring word; it is excluded and a corrected repeat is prepared.
+   read used a neighboring word and is excluded. Its corrected repeat now
+   supplies unique managed serial candidates beside PCM and complete local
+   owner/source transport tuples for a subset. Source storage reuse still
+   prevents whole frame attribution. Paired bus input/output and unsampled
+   publication/source/reset capture now narrow current source identity into
+   actual mixer inputs within observed intervals. Incoming gain/matrix/filter
+   processing and later device-frame identity remain the next numeric gaps.
+   Numeric operands are captured, but that session's queue loss withholds its
+   interval joins; completed numeric/device pairs and earlier loss-free frame
+   scopes stay separate. Attribution/address corrections are tested and both
+   saved frame sessions replayed. Numerical operands, frame handoff and bounded
+   recording scope require review and design before another capture request.
    Whole source-to-mixed-frame attribution and continuous allocation generations
    still need the targeted evidence specified in
    [`runtime_capture_requirements.md`](runtime_capture_requirements.md#audio-event-owner-listener-and-output-selection).

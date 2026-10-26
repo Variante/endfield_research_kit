@@ -1,0 +1,300 @@
+{
+  "schema": "endfield.buff-name-cache-allocator-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-conditional-allocator-wrapper-and-helper-control",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "allocatorProxy": {
+      "entryRva": 1709936,
+      "ownershipKind": "directTailProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 1709936,
+          "endRva": 1709941,
+          "sha256": "89F1DB987D65BE75D8F8E7DBC0D1ACFDE3A805DC8AC36CCA8230ADDA532FCC54"
+        }
+      ],
+      "ownedWindows": [],
+      "actualParentCall": {
+        "siteRva": 436346,
+        "targetRva": 1709936
+      }
+    },
+    "allocatorWrapper": {
+      "entryRva": 1826112,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1826112,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1826112,
+              1826206,
+              214471720
+            ],
+            "tableRowRva": 251825564,
+            "runtimeTripleRawHex": "40DD1B009EDD1B002894C80C",
+            "codeBytes": 94,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1826112,
+          "endRva": 1826206,
+          "sha256": "93A6C71273C8BFE063F12D93D04533254479D900C74BC8767DF685A35AC2B324"
+        }
+      ],
+      "ownedWindows": [
+        {
+          "startRva": 1826112,
+          "endRva": 1826206,
+          "sha256": "93A6C71273C8BFE063F12D93D04533254479D900C74BC8767DF685A35AC2B324"
+        }
+      ],
+      "actualParentTail": {
+        "siteRva": 1709936,
+        "targetRva": 1826112
+      }
+    },
+    "retryGate": {
+      "entryRva": 1894320,
+      "ownershipKind": "closedNoCallProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 1894320,
+          "endRva": 1894328,
+          "sha256": "C7880F70909045D311888199A1123EE9AAF187166BFDCE3857B80AEC04640464"
+        }
+      ],
+      "ownedWindows": [],
+      "actualParentCall": {
+        "siteRva": 1826141,
+        "targetRva": 1894320,
+        "instructionHex": "E84E0A0100"
+      }
+    },
+    "retryHandler": {
+      "entryRva": 1819856,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1819856,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1819856,
+              1819907,
+              214471360
+            ],
+            "tableRowRva": 251824940,
+            "runtimeTripleRawHex": "D0C41B0003C51B00C092C80C",
+            "codeBytes": 51,
+            "unwindRawHex": "010A04000A3406000A320670",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1819856,
+          "endRva": 1819907,
+          "sha256": "5D800A2A70CFBECB1F07BD795AE4E67D67F451EE520B98C6C742BA6C37D89311"
+        }
+      ],
+      "ownedWindows": [
+        {
+          "startRva": 1819856,
+          "endRva": 1819907,
+          "sha256": "5D800A2A70CFBECB1F07BD795AE4E67D67F451EE520B98C6C742BA6C37D89311"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1826153,
+        "targetRva": 1819856,
+        "instructionHex": "E862E7FFFF"
+      }
+    },
+    "errorCell": {
+      "entryRva": 1679216,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1679216,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1679216,
+              1679251,
+              211637472
+            ],
+            "tableRowRva": 251819960,
+            "runtimeTripleRawHex": "709F1900939F1900E0549D0C",
+            "codeBytes": 35,
+            "unwindRawHex": "0104010004420000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1679216,
+          "endRva": 1679251,
+          "sha256": "FC08017D2A7D5C2A8D0D833967FAE945DF581DEB146A75FECD14E1C1257EE86E"
+        }
+      ],
+      "ownedWindows": [
+        {
+          "startRva": 1679216,
+          "endRva": 1679251,
+          "sha256": "FC08017D2A7D5C2A8D0D833967FAE945DF581DEB146A75FECD14E1C1257EE86E"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1826187,
+        "targetRva": 1679216,
+        "instructionHex": "E8E0C1FDFF"
+      }
+    }
+  },
+  "globals": {
+    "heapHandleCell": 230666768,
+    "retryGateCell": 230666788,
+    "errorFallback": 217652480
+  },
+  "constants": {
+    "maxRequest": 18446744073709551584,
+    "errorWord": 12,
+    "errorContextOffset": 32
+  },
+  "externalCalls": {
+    "handlerGetter": 1819936,
+    "callbackDispatch": 3009760,
+    "errorContext": 1822376
+  },
+  "externalCallSites": {
+    "handlerGetter": {
+      "siteRva": 1819869,
+      "targetRva": 1819936,
+      "instructionHex": "E83E000000"
+    },
+    "callbackDispatch": {
+      "siteRva": 1819884,
+      "targetRva": 3009760,
+      "instructionHex": "E8EF271200"
+    },
+    "errorContext": {
+      "siteRva": 1679220,
+      "targetRva": 1822376,
+      "instructionHex": "E82F2F0200"
+    }
+  },
+  "heapImport": {
+    "slotRva": 176354560,
+    "descriptorRva": 217639872,
+    "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+    "libraryNameRva": 217644624,
+    "libraryName": "KERNEL32.dll",
+    "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+    "originalThunkRva": 217640168,
+    "firstThunkRva": 176353352,
+    "thunkIndex": 151,
+    "actualThunkCount": 181,
+    "terminatedLookupBytes": 1456,
+    "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+    "lookupEntryRva": 217641376,
+    "lookupEntryHex": "92 08 f9 0c 00 00 00 00",
+    "iatEntryHex": "92 08 f9 0c 00 00 00 00",
+    "hintNameRva": 217647250,
+    "hint": 892,
+    "hintHex": "7c 03",
+    "symbolName": "HeapAlloc",
+    "symbolNameHex": "48 65 61 70 41 6c 6c 6f 63 00",
+    "onDiskUnboundIatEqualsLookupProved": true,
+    "liveIatValueOrCalleeSelected": false
+  },
+  "conditionalDomain": {
+    "control": "Stable valid code/import/global cells and disjoint valid frames; normal ABI-compatible helper/import returns preserving nonvolatile registers.",
+    "retry": "Fresh retry-gate reads and callback results select each iteration. No finite retry bound or eventual nonzero allocation is assumed or proved.",
+    "errorStorage": "The error-context child returns zero or a valid nonwrapping context whose offset field is writable; the mapped static fallback is writable. Error store may still alias external/cache storage unless separately excluded.",
+    "api": "If the live IAT is the declared standard HeapAlloc and the heap handle/state is valid, its documented normal-success result supplies at least requested storage; no live binding, heap state or success is observed.",
+    "cache": "Unknown handler/context/import effects may reach globals or aliased memory. Cache noninterference remains an explicit constructor postcondition."
+  },
+  "apiReference": {
+    "url": "https://learn.microsoft.com/en-us/windows/win32/api/heapapi/nf-heapapi-heapalloc",
+    "boundary": "API specification only under a proved/assumed standard live binding and valid heap; inherited heap exception settings also matter. Zero flags do not request zero initialization."
+  },
+  "evidenceBoundary": {
+    "exact": "Proxy tail, whole wrapper/handler/error helper exception families, closed gate program, actual parent/child joins and uniquely owned on-disk named import declaration.",
+    "direct": "Unsigned size guard, zero-to-one byte count, heap handle cell read and zero flags/size arguments; fresh DWORD retry gate, handler size/callback boolean result, error-context offset/static fallback and DWORD error write before null return.",
+    "conditional": "Under normal compatible completion and valid error storage, nonzero heap output is returned unchanged; failed heap output may retry or return null. Bounded hypothetical failure/success traces are not observed executions.",
+    "structuralOnly": "On-disk KERNEL32.dll!HeapAlloc declaration selects no live IAT binding or imported implementation behavior; external getter/dispatcher/context child bodies remain separate joins.",
+    "unresolved": "Heap success/state/binding, unknown callback/context effects and cache alias isolation, retry termination, insertion population/history, named primitive class identity and complete positive stored parent/root admission."
+  }
+}

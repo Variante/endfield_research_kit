@@ -1,0 +1,808 @@
+{
+  "schema": "endfield.wwise-mastering-time-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "dynamicsHelper": "coefficientHelper",
+  "method": {
+    "bodyLength": 679,
+    "bodySha256": "f4735e5a2c02509cd6b529b8629f54c33a6928a26e5b9e0087946b1dde716c24",
+    "references": [
+      {
+        "offset": 4,
+        "prefixHex": "833d",
+        "suffixHex": "00",
+        "targetKind": "runtime",
+        "target": "selector"
+      },
+      {
+        "offset": 25,
+        "prefixHex": "3b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinity"
+      },
+      {
+        "offset": 41,
+        "prefixHex": "660f281d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "scale"
+      },
+      {
+        "offset": 53,
+        "prefixHex": "660f2f1d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "upper"
+      },
+      {
+        "offset": 67,
+        "prefixHex": "660f2f1d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "lower"
+      },
+      {
+        "offset": 85,
+        "prefixHex": "4c8d15",
+        "suffixHex": "",
+        "targetKind": "table",
+        "target": "table"
+      },
+      {
+        "offset": 96,
+        "prefixHex": "660f2815",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "step"
+      },
+      {
+        "offset": 134,
+        "prefixHex": "660f281d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "sixth"
+      },
+      {
+        "offset": 150,
+        "prefixHex": "660f581d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "half"
+      },
+      {
+        "offset": 231,
+        "prefixHex": "448b05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "zeroFlag"
+      },
+      {
+        "offset": 238,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "method",
+        "target": "special"
+      },
+      {
+        "offset": 256,
+        "prefixHex": "0f280d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinity"
+      },
+      {
+        "offset": 267,
+        "prefixHex": "448b05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinityFlag"
+      },
+      {
+        "offset": 274,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "method",
+        "target": "special"
+      },
+      {
+        "offset": 324,
+        "prefixHex": "3b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinity"
+      },
+      {
+        "offset": 332,
+        "prefixHex": "3b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "negativeInfinity"
+      },
+      {
+        "offset": 340,
+        "prefixHex": "0b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "quietBit"
+      },
+      {
+        "offset": 350,
+        "prefixHex": "448b05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "nanFlag"
+      },
+      {
+        "offset": 357,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "method",
+        "target": "special"
+      },
+      {
+        "offset": 376,
+        "prefixHex": "3b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinity"
+      },
+      {
+        "offset": 392,
+        "prefixHex": "c5fb591d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "scale"
+      },
+      {
+        "offset": 400,
+        "prefixHex": "c5f92f1d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "upper"
+      },
+      {
+        "offset": 414,
+        "prefixHex": "c5f92e1d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "lower"
+      },
+      {
+        "offset": 428,
+        "prefixHex": "4c8d15",
+        "suffixHex": "",
+        "targetKind": "table",
+        "target": "table"
+      },
+      {
+        "offset": 439,
+        "prefixHex": "c4e2f1bd05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "step"
+      },
+      {
+        "offset": 470,
+        "prefixHex": "c5f9281d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "sixth"
+      },
+      {
+        "offset": 482,
+        "prefixHex": "c4e2f1a91d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "half"
+      },
+      {
+        "offset": 552,
+        "prefixHex": "448b05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "zeroFlag"
+      },
+      {
+        "offset": 559,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "method",
+        "target": "special"
+      },
+      {
+        "offset": 576,
+        "prefixHex": "c5f8280d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinity"
+      },
+      {
+        "offset": 588,
+        "prefixHex": "448b05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinityFlag"
+      },
+      {
+        "offset": 595,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "method",
+        "target": "special"
+      },
+      {
+        "offset": 628,
+        "prefixHex": "3b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "infinity"
+      },
+      {
+        "offset": 640,
+        "prefixHex": "3b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "negativeInfinity"
+      },
+      {
+        "offset": 652,
+        "prefixHex": "0b15",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "quietBit"
+      },
+      {
+        "offset": 662,
+        "prefixHex": "448b05",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "nanFlag"
+      },
+      {
+        "offset": 669,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "method",
+        "target": "special"
+      }
+    ]
+  },
+  "specialHandler": {
+    "rva": "0x27d68c",
+    "bodyLength": 167,
+    "bodySha256": "f00e492545de9c0e343a2e0a600ad3ff536e98afa6286c85e9b9d3941c62b25a",
+    "references": [
+      {
+        "offset": 120,
+        "prefixHex": "488d0d",
+        "suffixHex": "",
+        "targetKind": "data",
+        "target": "name"
+      },
+      {
+        "offset": 149,
+        "prefixHex": "e8",
+        "suffixHex": "",
+        "targetKind": "external",
+        "target": "errorHandler"
+      }
+    ]
+  },
+  "scalarTableSymbol": "__two_to_jby64_table",
+  "data": {
+    "infinity": {
+      "rva": "0x2df720",
+      "byteLength": 16
+    },
+    "scale": {
+      "rva": "0x2df750",
+      "byteLength": 16
+    },
+    "upper": {
+      "rva": "0x2df730",
+      "byteLength": 16
+    },
+    "lower": {
+      "rva": "0x2df740",
+      "byteLength": 16
+    },
+    "step": {
+      "rva": "0x2df760",
+      "byteLength": 16
+    },
+    "sixth": {
+      "rva": "0x2df770",
+      "byteLength": 16
+    },
+    "half": {
+      "rva": "0x2df780",
+      "byteLength": 16
+    },
+    "negativeInfinity": {
+      "rva": "0x2df790",
+      "byteLength": 4
+    },
+    "quietBit": {
+      "rva": "0x2df794",
+      "byteLength": 4
+    },
+    "nanFlag": {
+      "rva": "0x2df79c",
+      "byteLength": 4
+    },
+    "zeroFlag": {
+      "rva": "0x2df7a0",
+      "byteLength": 4
+    },
+    "infinityFlag": {
+      "rva": "0x2df7a4",
+      "byteLength": 4
+    },
+    "name": {
+      "rva": "0x2e52bc",
+      "byteLength": 5
+    }
+  },
+  "externals": {
+    "errorHandler": "0x27ccb0"
+  },
+  "paths": {
+    "scalar": {
+      "start": 37,
+      "end": 204,
+      "overflow": 256,
+      "underflow": 224
+    },
+    "fma": {
+      "start": 388,
+      "end": 531,
+      "overflow": 576,
+      "underflow": 544
+    }
+  },
+  "controlOffsets": {
+    "frame": {
+      "method": "helper",
+      "offset": 0
+    },
+    "selector": {
+      "method": "helper",
+      "offset": 4
+    },
+    "scalarAbsolute": {
+      "method": "helper",
+      "offset": 17
+    },
+    "fmaAbsolute": {
+      "method": "helper",
+      "offset": 368
+    },
+    "scalarUnderflowSeed": {
+      "method": "helper",
+      "offset": 224
+    },
+    "fmaUnderflowSeed": {
+      "method": "helper",
+      "offset": 544
+    },
+    "scalarOverflowArgument": {
+      "method": "helper",
+      "offset": 263
+    },
+    "fmaOverflowArgument": {
+      "method": "helper",
+      "offset": 584
+    },
+    "scalarQuietCandidate": {
+      "method": "helper",
+      "offset": 346
+    },
+    "fmaQuietCandidate": {
+      "method": "helper",
+      "offset": 658
+    },
+    "zeroReturn": {
+      "method": "helper",
+      "offset": 288
+    },
+    "unchangedReturn": {
+      "method": "helper",
+      "offset": 304
+    },
+    "scalarSpecialInput": {
+      "method": "helper",
+      "offset": 320
+    },
+    "fmaSpecialInput": {
+      "method": "helper",
+      "offset": 624
+    },
+    "specialSave": {
+      "method": "special",
+      "offset": 7
+    },
+    "specialFlags": {
+      "method": "special",
+      "offset": 21
+    },
+    "specialReturn": {
+      "method": "special",
+      "offset": 154
+    }
+  },
+  "branches": [
+    {
+      "offset": 11,
+      "opcodeHex": "0f85",
+      "width": 4,
+      "targetOffset": 368
+    },
+    {
+      "offset": 31,
+      "opcodeHex": "0f8d",
+      "width": 4,
+      "targetOffset": 320
+    },
+    {
+      "offset": 61,
+      "opcodeHex": "0f83",
+      "width": 4,
+      "targetOffset": 256
+    },
+    {
+      "offset": 75,
+      "opcodeHex": "0f82",
+      "width": 4,
+      "targetOffset": 224
+    },
+    {
+      "offset": 243,
+      "opcodeHex": "eb",
+      "width": 1,
+      "targetOffset": 304
+    },
+    {
+      "offset": 279,
+      "opcodeHex": "eb",
+      "width": 1,
+      "targetOffset": 304
+    },
+    {
+      "offset": 330,
+      "opcodeHex": "74",
+      "width": 1,
+      "targetOffset": 304
+    },
+    {
+      "offset": 338,
+      "opcodeHex": "74",
+      "width": 1,
+      "targetOffset": 288
+    },
+    {
+      "offset": 362,
+      "opcodeHex": "eb",
+      "width": 1,
+      "targetOffset": 304
+    },
+    {
+      "offset": 382,
+      "opcodeHex": "0f8d",
+      "width": 4,
+      "targetOffset": 624
+    },
+    {
+      "offset": 408,
+      "opcodeHex": "0f83",
+      "width": 4,
+      "targetOffset": 576
+    },
+    {
+      "offset": 422,
+      "opcodeHex": "72",
+      "width": 1,
+      "targetOffset": 544
+    },
+    {
+      "offset": 564,
+      "opcodeHex": "eb",
+      "width": 1,
+      "targetOffset": 602
+    },
+    {
+      "offset": 600,
+      "opcodeHex": "eb",
+      "width": 1,
+      "targetOffset": 602
+    },
+    {
+      "offset": 611,
+      "opcodeHex": "eb",
+      "width": 1,
+      "targetOffset": 531
+    },
+    {
+      "offset": 634,
+      "opcodeHex": "0f84",
+      "width": 4,
+      "targetOffset": 304
+    },
+    {
+      "offset": 646,
+      "opcodeHex": "0f84",
+      "width": 4,
+      "targetOffset": 288
+    },
+    {
+      "offset": 674,
+      "opcodeHex": "e9",
+      "width": 4,
+      "targetOffset": 304
+    }
+  ],
+  "classificationEdges": {
+    "selector": {
+      "offset": 11,
+      "targetRole": "fmaAbsolute"
+    },
+    "scalarSpecial": {
+      "offset": 31,
+      "targetRole": "scalarSpecialInput"
+    },
+    "fmaSpecial": {
+      "offset": 382,
+      "targetRole": "fmaSpecialInput"
+    },
+    "scalarPositiveInfinity": {
+      "offset": 330,
+      "targetRole": "unchangedReturn"
+    },
+    "scalarNegativeInfinity": {
+      "offset": 338,
+      "targetRole": "zeroReturn"
+    },
+    "fmaPositiveInfinity": {
+      "offset": 634,
+      "targetRole": "unchangedReturn"
+    },
+    "fmaNegativeInfinity": {
+      "offset": 646,
+      "targetRole": "zeroReturn"
+    }
+  },
+  "symbolWitness": {
+    "symbol": "expf",
+    "libraryFromScalarWitness": true,
+    "objectMemberOffset": 23367888,
+    "objectSha256": "03b8a032e9aeffe105cd4c6f2071b66c444d3f3a971b45188c3e4b1dc9e76448",
+    "symbols": [
+      {
+        "symbol": "expf_sse2",
+        "section": 10,
+        "bodyLength": 362,
+        "bodySha256": "59e8036362b3332912720e266032e7d69fd7a27f107aa69bc06d05cdaf0f2ab0"
+      },
+      {
+        "symbol": "expf",
+        "section": 16,
+        "bodyLength": 346,
+        "bodySha256": "d4936548794cc097dabe7901b6c30991258883f52a2cdd156e580adeea329607"
+      }
+    ],
+    "regions": [
+      {
+        "nativeOffset": 17,
+        "byteLength": 8,
+        "symbol": "expf_sse2",
+        "symbolOffset": 0,
+        "normalizedSha256": "8dce6a78c64eeac84160a2f71810c7d54c8ec4dcb052c381b5acf817b11f719b",
+        "relativeOperands": []
+      },
+      {
+        "nativeOffset": 81,
+        "byteLength": 15,
+        "symbol": "expf_sse2",
+        "symbolOffset": 36,
+        "normalizedSha256": "2ed289165d835f9babbe02a41998d1720203dcb6a844feea37e38e33fa670997",
+        "relativeOperands": [
+          [
+            7,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 104,
+        "byteLength": 30,
+        "symbol": "expf_sse2",
+        "symbolOffset": 59,
+        "normalizedSha256": "8e56ec3b975b33fb1264e956bceab1208c235522a3fb95e21e3ffd971e5e89fe",
+        "relativeOperands": []
+      },
+      {
+        "nativeOffset": 142,
+        "byteLength": 8,
+        "symbol": "expf_sse2",
+        "symbolOffset": 97,
+        "normalizedSha256": "a3656597515ade8cae563d3c10b7b10d726d361059a860b74b1369cc357cfef7",
+        "relativeOperands": []
+      },
+      {
+        "nativeOffset": 158,
+        "byteLength": 46,
+        "symbol": "expf_sse2",
+        "symbolOffset": 113,
+        "normalizedSha256": "0d7542093f1e44519660754c893f2e45e1f1fa57709b03ffb0e477fa26aa68b0",
+        "relativeOperands": []
+      },
+      {
+        "nativeOffset": 224,
+        "byteLength": 14,
+        "symbol": "expf_sse2",
+        "symbolOffset": 224,
+        "normalizedSha256": "8f378e9549fb33b6a196379d1682f6a09b85667a042efc0369e5d2c0667fc5bc",
+        "relativeOperands": [
+          [
+            10,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 256,
+        "byteLength": 18,
+        "symbol": "expf_sse2",
+        "symbolOffset": 256,
+        "normalizedSha256": "d8d7d70ddb51b631f8fd1eee04914c5008a9d63fb27dfb6d8bed14037c36787b",
+        "relativeOperands": [
+          [
+            3,
+            4
+          ],
+          [
+            14,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 346,
+        "byteLength": 11,
+        "symbol": "expf_sse2",
+        "symbolOffset": 346,
+        "normalizedSha256": "fe31067b72c2df17074c01fde4fc501994819c12613182f5c83d20b8e8589474",
+        "relativeOperands": [
+          [
+            7,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 368,
+        "byteLength": 8,
+        "symbol": "expf",
+        "symbolOffset": 13,
+        "normalizedSha256": "edbb476bc572cca4ef19de7a4a94cb2edc95f87f9dfac1fa99d3d339b24dd318",
+        "relativeOperands": []
+      },
+      {
+        "nativeOffset": 382,
+        "byteLength": 18,
+        "symbol": "expf",
+        "symbolOffset": 27,
+        "normalizedSha256": "8d1dfdd4f3ccfe58a0653a66935e5c48f46a8dcf34b25a4554b03a49606bdae1",
+        "relativeOperands": [
+          [
+            2,
+            4
+          ],
+          [
+            14,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 424,
+        "byteLength": 46,
+        "symbol": "expf",
+        "symbolOffset": 45,
+        "normalizedSha256": "6d84160f3e9d2fa357db44d44245cc1dced1759c369a58ddd9207f2ddaef6910",
+        "relativeOperands": [
+          [
+            7,
+            4
+          ],
+          [
+            20,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 478,
+        "byteLength": 53,
+        "symbol": "expf",
+        "symbolOffset": 99,
+        "normalizedSha256": "80131f507460625f8cf0438c1563a2457db196a4cec18dc96412617f39757f7f",
+        "relativeOperands": [
+          [
+            9,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 544,
+        "byteLength": 15,
+        "symbol": "expf",
+        "symbolOffset": 224,
+        "normalizedSha256": "507879e2ad38c296222467836958bb968400b50bc5f1c17ec510abfb84270abb",
+        "relativeOperands": [
+          [
+            11,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 576,
+        "byteLength": 19,
+        "symbol": "expf",
+        "symbolOffset": 256,
+        "normalizedSha256": "4cb22b2662051bbf0d14d1bd19ab3dba6d83e50f7f7e0e77db30311097a086bf",
+        "relativeOperands": [
+          [
+            4,
+            4
+          ],
+          [
+            15,
+            4
+          ]
+        ]
+      },
+      {
+        "nativeOffset": 658,
+        "byteLength": 11,
+        "symbol": "expf",
+        "symbolOffset": 330,
+        "normalizedSha256": "58441fd147f5951fbd5fdc4e7b0463e0bb9ff8dd637ab5ae975056416a077779",
+        "relativeOperands": [
+          [
+            7,
+            4
+          ]
+        ]
+      }
+    ],
+    "tableObject": {
+      "symbol": "__two_to_jby64_table",
+      "memberOffset": 25110738,
+      "objectSha256": "85edc33b605d74f4825059309deafbf15f521937a335b684d50a183435280904",
+      "section": 3,
+      "value": 0,
+      "sectionSize": 512,
+      "sha256": "88c233557c8c42e92e6e0af7bd1704fcad9d649c3c5aeef5a87004915d81d98f"
+    }
+  },
+  "wholeFunctionEquivalent": false,
+  "arithmetic": {
+    "index": "round-MXCSR(x*scale)",
+    "tableIndex": "n & 63",
+    "exponent": "(n-tableIndex)>>6",
+    "polynomial": "r + r*r*(half+sixth*r)",
+    "ordinaryDomain": "finite input; lower <= x*scale < upper",
+    "output": "float32((table[index]*(1+polynomial))*2**exponent)",
+    "rounding": "per-instruction binary64, then binary32; FMA has one rounding per fused operation"
+  },
+  "meaningBoundary": "Both finite scalar and FMA expression paths, their range predicates, referenced constants and shared CRT table/selector joins are authenticated against the selected native triplet. The normal output preserves instruction order rather than substituting mathematical exp. Partial named CRT expf/expf_sse2 code and exact named-table correspondence support family identity; the shipped merged method differs. Special paths select zero, infinity or quieted input-NaN candidates. NaN flag one bypasses the external error routine; finite underflow/overflow flags two/three call it, retaining the candidate under callee-saved ABI preservation. Runtime selector initialization, error/errno callbacks, trap behavior, nondefault MXCSR, arbitrary-input math equivalence and live DSP invocation remain open."
+}

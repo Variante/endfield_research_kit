@@ -15,12 +15,20 @@ The four dispatcher domains stay separate: identical scalar layouts never
 merge a header, getter, action or condition row, and an outer wrapper never
 licenses parsing past a nested polymorphic member it does not own.
 
-Tiers. Reviewed rows in `action_map_layouts.json` are `exact`: each carries
-its `nativeIdentity` (dispatcher switch target, registered type usage,
-generated setter order). Every reviewed row, through any entry point, is
-refused on a build whose native inputs differ from the contract's
-`nativeInputs` (tags renumber per build, so the same pair could name another
-type there); `decode_reviewed_node` also accepts an explicit game root, and
+Tiers. Reviewed rows in `action_map_layouts.json`
+(`endfield.action-map-layouts.v5`) are `exact` layouts keyed by
+`wrapperName`: reviewed `memberCount` and typed `fields` (generated setter
+order), no per-build tag and no `nativeInputs`. A union tag is the type's
+rank among its family's wrappers and renumbers per build, so `_resolved`
+attaches the current tag at load from
+`scripts.game_data.contracts/levelscript_union_tags.json` through
+`scripts.game_data.levelscript_union_tags` (`GetterBase` rows resolve in the
+`PureGetter` family, conditions in `GameCondition`, short name from the
+wrapper). The whole table fails closed (no row, `actionMap.unionTags` error)
+unless that contract validates the installed build; a row whose wrapper is
+missing or whose current member count differs is dropped and listed by
+`layout_resolution_audit()`. `decode_reviewed_node` also accepts an explicit
+game root, checked against the union-tags contract's build, and
 `python -m scripts.game_data.levelscript_route_deserialize_native` re-checks
 the rows' Deserialize order on a selected build. A caller that passes the
 derived `Declarations` from `scripts.game_data.levelscript_union_layouts`
@@ -101,47 +109,105 @@ class ActionMapCodecError(ValueError):
     """The next declared field has no proven exact cursor."""
 
 
+LAYOUT_SCHEMA = "endfield.action-map-layouts.v5"
+# The layout contract names the PureGetter dispatcher's members `GetterBase`;
+# the union-tags contract keeps the dispatcher's own family name.
+_UNION_TAG_FAMILY = {"GetterBase": "PureGetter"}
+
+
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
     contract = json.loads(CONTRACT_PATH.read_bytes())
-    if contract.get("schema") != "endfield.action-map-layouts.v3":
+    if contract.get("schema") != LAYOUT_SCHEMA:
         raise ActionMapCodecError("actionMap.layoutContract:unsupported-schema")
     return contract
 
 
+def _union_tags():
+    from scripts.game_data import levelscript_union_tags
+
+    return levelscript_union_tags
+
+
+def _resolve_rows(rows: list[dict[str, Any]], default_family: str | None,
+                  unresolved: list[str]) -> list[dict[str, Any]]:
+    """Attach the installed build's tag to each reviewed row, by wrapper name.
+
+    A row whose wrapper is absent from the current union, or whose current
+    member count differs from the reviewed one, is left out and named in
+    `unresolved`: its reviewed field order does not describe this build.
+    """
+    tags = _union_tags()
+    resolved = []
+    for row in rows:
+        family = row.get("family") or default_family
+        name = tags.short_name(str(row.get("wrapperName") or ""))
+        current = tags.pair(_UNION_TAG_FAMILY.get(family, family), name)
+        if not isinstance(current[0], int):
+            unresolved.append(f"{family}:{name}:unknown")
+            continue
+        if current[1] != row.get("memberCount"):
+            unresolved.append(f"{family}:{name}:memberCount={current[1]}!={row.get('memberCount')}")
+            continue
+        if tags.wrapper_name(_UNION_TAG_FAMILY.get(family, family), name) not in ("", row.get("wrapperName")):
+            unresolved.append(f"{family}:{name}:wrapper")
+            continue
+        resolved.append({**row, "family": family, "tag": current[0]})
+    return resolved
+
+
+@lru_cache(maxsize=1)
+def _resolved() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """Reviewed rows with current tags, plus the audit of that resolution.
+
+    Fails closed as a whole: unless the union-tags contract validates the
+    installed build, no row resolves and the audit carries its status.
+    """
+    audit = _union_tags().union_tags_audit()
+    if audit.get("status") != "validated":
+        return [], [], {"status": audit.get("status") or "unavailable",
+                        "detail": f"levelscript_union_tags: {str(audit.get('detail') or '')[:300]}",
+                        "unresolved": []}
+    contract = _contract()
+    unresolved: list[str] = []
+    layouts = _resolve_rows(contract["layouts"], None, unresolved)
+    conditions = _resolve_rows(contract.get("conditionLayouts", []), "GameCondition", unresolved)
+    return layouts, conditions, {"status": "validated", "detail": "", "unresolved": unresolved}
+
+
+def layout_resolution_audit() -> dict[str, Any]:
+    """Union-tag gate status and the reviewed rows that did not resolve."""
+    return dict(_resolved()[2])
+
+
 @lru_cache(maxsize=1)
 def _layouts() -> dict[tuple[str, int], dict[str, Any]]:
-    return {(row["family"], row["tag"]): row for row in _contract()["layouts"]}
+    return {(row["family"], row["tag"]): row for row in _resolved()[0]}
 
 
 @lru_cache(maxsize=1)
 def _condition_layouts() -> dict[int, dict[str, Any]]:
-    return {row["tag"]: row for row in _contract().get("conditionLayouts", [])}
+    return {row["tag"]: row for row in _resolved()[1]}
 
 
-@lru_cache(maxsize=1)
 def _layout_build_status() -> tuple[str, str]:
-    """The installed build against the layout contract, checked once per process."""
-    inputs = _contract()["nativeInputs"]
-    native = check_installed_native_inputs(
-        inputs["gameAssembly"]["sha256"], inputs["metadata"]["sha256"],
-    )
-    return native.status, native.detail
+    """The union-tag gate that resolved the reviewed rows' current tags."""
+    audit = _resolved()[2]
+    return audit["status"], audit["detail"]
 
 
 def _require_layout_build() -> None:
-    """Refuse every reviewed row on a build other than the contract's.
+    """Refuse every reviewed row unless its tag was resolved on this build.
 
     A union tag is its type's rank among the family's wrappers, so a client
-    update renumbers it: on another build a reviewed `(tag, memberCount)` pair
-    can name a different type and would decode plausibly. Rows with their own
-    `nativeGate` are re-proved per route; this gate covers every other row.
+    update renumbers it; rows therefore carry no tag and are resolved by
+    wrapper name through the build-gated union-tags contract. Rows with their
+    own `nativeGate` are re-proved per route; this gate covers every row.
     """
     status, detail = _layout_build_status()
     if status != "validated":
         raise ActionMapCodecError(
-            f"actionMap.installed_native_inputs: expected=validated, "
-            f"actual={status}, detail={detail}"
+            f"actionMap.unionTags: expected=validated, actual={status}, detail={detail}"
         )
 
 
@@ -1539,7 +1605,7 @@ def _required_native_gates() -> dict[tuple[str, int], str]:
     """Read selected route identities from their reviewed contracts."""
     required: dict[tuple[str, int], str] = {}
     for filename, schema, gate in (
-        ("levelscript_stored_routes_native.json", "endfield.levelscript-route-deserialize-native.v3", "levelscript_stored_routes_native"),
+        ("levelscript_stored_routes_native.json", "endfield.levelscript-route-deserialize-native.v4", "levelscript_stored_routes_native"),
         ("levelscript_get_client_map_var_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_get_client_map_var_native"),
         ("levelscript_get_squad_in_fight_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_get_squad_in_fight_native"),
         ("levelscript_header_native.json", "endfield.levelscript-header-native-contract.v1", "levelscript_header_native"),
@@ -1704,8 +1770,20 @@ def _required_native_gates() -> dict[tuple[str, int], str]:
         for route in routes:
             if not isinstance(route, dict):
                 raise ActionMapCodecError(f"actionMap.nativeGate:contract-route={filename}")
-            key = (route.get("codecFamily", route.get("family")), route.get("tag"))
-            if key in required or not isinstance(key[0], str) or not isinstance(key[1], int):
+            family = route.get("codecFamily", route.get("family"))
+            wrapper = route.get("wrapperName")
+            if not isinstance(family, str) or not isinstance(wrapper, str):
+                raise ActionMapCodecError(f"actionMap.nativeGate:contract-identity={filename}")
+            # The route's recorded tag pins the build it was proved on; key it
+            # by name at the installed build's tag so a renumbered union can
+            # never attach this gate to a different type.  An unresolved name
+            # adds no requirement: the route's own audit still fails closed.
+            tags = _union_tags()
+            current = tags.pair(_UNION_TAG_FAMILY.get(family, family), tags.short_name(wrapper))
+            if not isinstance(current[0], int):
+                continue
+            key = (family, current[0])
+            if key in required:
                 raise ActionMapCodecError(f"actionMap.nativeGate:contract-identity={filename}")
             required[key] = gate
     return required
@@ -1713,8 +1791,11 @@ def _required_native_gates() -> dict[tuple[str, int], str]:
 
 def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> None:
     """Keep selected native routes unavailable on build or body drift."""
-    reviewed = _layouts().get((family, tag))
+    reviewed = (_condition_layouts().get(tag) if family == 'GameCondition'
+                else _layouts().get((family, tag)))
     if reviewed is None:
+        if family == 'GameCondition' and _required_native_gates().get((family, tag)) is not None:
+            raise ActionMapCodecError(f'actionMap.nativeContract:missing-reviewed-condition-layout=0x{tag:04x}')
         return
     native_gate = reviewed.get("nativeGate")
     required = _required_native_gates().get((family, tag))
@@ -1736,6 +1817,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> N
                          if (row.get("family"), row.get("tag")) == (family, tag)), None)
         if (audit.get("status") != "validated" or selected is None
                 or selected.get("wrapperName") != reviewed.get("wrapperName")
+                or (family == 'GameCondition' and selected.get('memberCount') != reviewed.get('memberCount'))
                 or selected.get("fields") != reviewed.get("fields")
                 or layout.get("wrapperName") != reviewed.get("wrapperName")
                 or layout.get("fields") != reviewed.get("fields")):
@@ -3358,6 +3440,10 @@ class _Cursor:
                 raise ActionMapCodecError(
                     f"{field}:unsupported-gameplay-tag-param-members={marker}"
                 )
+            from scripts.game_data.levelscript_gameplay_tag_param_native import validate_gameplay_tag_param_native_contract
+            audit = validate_gameplay_tag_param_native_contract(game_root=self.game_root)
+            if (audit.get("status"), audit.get("codecKind"), audit.get("rawSize")) != ("validated", kind, 4):
+                raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_gameplay_tag_param_native,status={audit.get('status')},detail={str(audit.get('detail', ''))[:500]}")
             return self.param_tail(
                 {"tagId": self.i32(field + ".value.tagId")}, field
             )
@@ -3445,16 +3531,20 @@ class _Cursor:
             "Param<GameAction.EAudioBattleMusicIntensityState>",
             "Param<GameAction.EAudioBattleMusicState>",
             "Param<CompareOperator>",
+            "Param<ServerGameVarEnum>",
+            "Param<MovementSettingName>",
             "Param<ECharTutorialStepState>",
             "Param<ShowUIToast.ShowToastType>",
             "Param<ForbidType>",
             "Param<GeneralAbilityType>",
+            "Param<UnlockSystemType>",
             "Param<GeneralAbilitySystem.TempAbilityActiveState>",
             "Param<CastTargetType>",
             "Param<PlayerController.InputActionType>",
             "Param<ScriptEndReason>",
             "Param<Gender>",
             "Param<RollingStoneController.ManipulateLauncherOp>",
+            "Param<CinematicOptionBrain.EOperation>",
         ):
             kind = "Param<int>"
         # Both AudioBlackScreenBehaviour enums explicitly use Byte as their
@@ -3465,19 +3555,24 @@ class _Cursor:
         ):
             kind = "Param<byte>"
         if kind in (
-            "Param<byte>", "Param<uint>", "Param<ulong>",
+            "Param<byte>", "Param<uint>", "Param<ulong>", "Param<long>",
             "Param<float>", "Param<Vector2>", "Param<Vector3>",
         ):
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
+            if kind == "Param<long>":
+                from scripts.game_data.levelscript_long_param_native import validate_long_param_native_contract
+                audit = validate_long_param_native_contract(game_root=self.game_root)
+                if (audit.get('status'), audit.get('codecKind'), audit.get('rawSize'), audit.get('primitiveType')) != ('validated', kind, 8, 'long'):
+                    raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_long_param_native,status={audit.get('status')},detail={str(audit.get('detail', ''))[:500]}")
             if kind in ("Param<Vector2>", "Param<Vector3>"):
                 return self.param_tail(
                     self.value(kind[6:-1], field + ".value"), field
                 )
             fmt = {
                 "Param<byte>": "<B", "Param<uint>": "<I",
-                "Param<ulong>": "<Q", "Param<float>": "<f",
+                "Param<ulong>": "<Q", "Param<long>": "<q", "Param<float>": "<f",
             }[kind]
             size = struct.calcsize(fmt)
             self.need(size, field + ".value")
@@ -3486,12 +3581,29 @@ class _Cursor:
             if not all(math.isfinite(value) for value in values):
                 raise ActionMapCodecError(f"{field}:non-finite")
             return self.param_tail(values[0], field)
+        if kind == "Param<SplinePtr>":
+            marker = self.byte(field + ".memberCount")
+            if marker != 4:
+                raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
+            from scripts.game_data.levelscript_spline_ptr_native import validate_spline_ptr_native_contract
+            audit = validate_spline_ptr_native_contract(game_root=self.game_root)
+            if (audit.get("status"), audit.get("codecKind"), audit.get("rawSize"), audit.get("idType")) != ("validated", kind, 4, "int32"):
+                raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_spline_ptr_native,status={audit.get('status')},detail={str(audit.get('detail', ''))[:500]}")
+            self.need(4, field + ".value.id")
+            value = struct.unpack_from("<i", self.data, self.offset)[0]
+            self.offset += 4
+            return self.param_tail({"id": value}, field)
         if kind in ("Param<LsmPtr>", "Param<FunctionAreaPtr>", "Param<SpawnerPtr>", "Param<WaterVolumePtr>"):
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(
                     f"{field}:unsupported-member-count={marker}"
                 )
+            if kind == "Param<WaterVolumePtr>":
+                from scripts.game_data.levelscript_water_volume_ptr_param_native import validate_water_volume_ptr_param_native_contract
+                audit = validate_water_volume_ptr_param_native_contract(game_root=self.game_root)
+                if (audit.get("status"), audit.get("codecKind"), audit.get("rawSize")) != ("validated", kind, 8):
+                    raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_water_volume_ptr_param_native,status={audit.get('status')},detail={str(audit.get('detail', ''))[:500]}")
             self.need(8, field + ".value.id")
             value = struct.unpack_from("<Q", self.data, self.offset)[0]
             self.offset += 8
@@ -4190,11 +4302,23 @@ class _Cursor:
                     f"check=contract-identity,expected=reviewed route identity,actual={str(error)[:240]}"
                 ) from error
         members = self.byte(field + ".memberCount")
+        if family == "ActionBase" and _union_tags().type_name_for_tag(family, tag) == "PreloadCutsceneAction":
+            from .current_action_sequence import _preload_cutscene_layout
+
+            try:
+                _preload_cutscene_layout(members)
+            except ValueError as error:
+                refusal = ActionMapCodecError(str(error))
+                refusal.diagnostics = error.diagnostics
+                raise refusal from error
         layout = _layouts().get((family, tag))
         if layout is not None:
             _require_layout_build()
         elif self.declarations is not None:
             layout = self.declarations.layouts.get((family, tag))
+        else:
+            # No reviewed row: name the union-tag gate when it emptied them.
+            _require_layout_build()
         if layout is None or members != layout["memberCount"]:
             raise ActionMapCodecError(
                 f"{field}:unsupported-union=0x{tag:04x},memberCount={members},offset={start}"
@@ -4301,11 +4425,14 @@ class _Cursor:
             _require_layout_build()
         elif self.declarations is not None:
             layout = self.declarations.layouts.get(("GameCondition", tag))
+        else:
+            _require_layout_build()
         if layout is None or members != layout["memberCount"]:
             raise ActionMapCodecError(
                 f"{field}:unsupported-condition-union=0x{tag:04x},"
                 f"memberCount={members},offset={start}"
             )
+        _require_selected_native('GameCondition', tag, layout)
         values = {
             name: self.value(kind, field + "." + name)
             for name, kind in layout["fields"]
@@ -4403,17 +4530,19 @@ def decode_reviewed_node(
     data: bytes, offset: int, family: str, *, game_root: Path | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode one reviewed union at a declared cursor, with a selected-build gate."""
-    inputs = _contract()["nativeInputs"]
-    native = check_installed_native_inputs(
-        inputs["gameAssembly"]["sha256"], inputs["metadata"]["sha256"],
-        gameassembly=game_root.parent / "GameAssembly.dll" if game_root else None,
-        metadata=game_root / "il2cpp_data/Metadata/global-metadata.dat" if game_root else None,
-    )
-    if native.status != "validated":
-        raise ActionMapCodecError(
-            f"actionMap.installed_native_inputs: expected=validated, "
-            f"actual={native.status}, detail={native.detail}"
+    if game_root is not None:
+        inputs = _union_tags().contract_native_inputs()
+        native = check_installed_native_inputs(
+            inputs["gameAssemblySha256"], inputs["metadataSha256"],
+            gameassembly=game_root.parent / "GameAssembly.dll",
+            metadata=game_root / "il2cpp_data/Metadata/global-metadata.dat",
         )
+        if native.status != "validated":
+            raise ActionMapCodecError(
+                f"actionMap.installed_native_inputs: expected=validated, "
+                f"actual={native.status}, detail={native.detail}"
+            )
+    _require_layout_build()
     if family not in ("ActionBase", "GetterBase", "ActionHeader"):
         raise ActionMapCodecError(f"actionMap:unsupported-family={family}")
     cursor = _Cursor(data, offset, game_root=game_root)

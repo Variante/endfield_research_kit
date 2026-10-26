@@ -1,0 +1,829 @@
+{
+  "schema": "endfield.collision-solver-dispatch-native.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "evidenceBoundary": "direct: selected CPU factories, separate scene context members, virtual update and zero-active-island early return. Conditional: saved same-call typed scene/context fields may identify a backend and checkpoint population. Checkpoint values do not prove update-time branches, worker scheduling, contact constraints or solver participation.",
+  "layout": {
+    "scene": {
+      "islandManager": 1880,
+      "dynamicsContext": 1888,
+      "simulationController": 1904,
+      "publicSceneDelta": -16,
+      "vtableRva": 25970208
+    },
+    "context": {
+      "pgsVtableRva": 25999344,
+      "tgsVtableRva": 26001192,
+      "cpuControllerVtableRva": 25994040,
+      "pgsPoolOffset": 400,
+      "tgsPoolOffset": 432
+    },
+    "islandManager": {
+      "accurateIsland": 224
+    },
+    "accurateIsland": {
+      "activeIslands": 328,
+      "rigidBodies": 160,
+      "kinematics": 192,
+      "articulations": 176,
+      "contactManagers": 232,
+      "constraints": 236
+    },
+    "wrapper": {
+      "scene": 8
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "controller_factory",
+      "rva": 8547072,
+      "bytes": 82,
+      "sha256": "001777ddb9cc416ef594ffb8b0c9a4590ab3af6eabf54c7806ab68939f94fe3f",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "pgs_factory",
+      "rva": 8770896,
+      "bytes": 278,
+      "sha256": "033c383b40756d9ee305061d0339be131af7e8a4e822f3bb0c03a60705d3ac59",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "tgs_factory",
+      "rva": 8905776,
+      "bytes": 260,
+      "sha256": "6dd61d7e3a72dae8b2371aade87ef618bedef6454afcddc1869988db8a96952c",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "pgs_constructor",
+      "rva": 8740752,
+      "bytes": 1304,
+      "sha256": "22c0baa893ec5f62d4f482c3423f40fafef5c269499f9b2a61765ef4f18e5c6c",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "tgs_constructor",
+      "rva": 8894992,
+      "bytes": 1171,
+      "sha256": "731539b4981d4a089efa27f37ee4ba4fb55359c5fd0d965a72a32c539958e6c7",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "scene_update",
+      "rva": 8051248,
+      "bytes": 515,
+      "sha256": "3323cb4753bfc93aa61a7fa5b6850e41af872a247a27f30438eec3498bd3f7b6",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "pgs_update",
+      "rva": 8886176,
+      "bytes": 2047,
+      "sha256": "65d69221c8c2cfbbe475bca55beb637fb2fcd6c9caa6810b682091273f4623d4",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "tgs_update",
+      "rva": 8931808,
+      "bytes": 2352,
+      "sha256": "9c023e31284cc9534f34c8ab3f6fc0dda0e534f4b1a88a7936cdc937fc3f3aab",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "scene_select",
+      "rva": 7950269,
+      "bytes": 350,
+      "sha256": "d012f3d3aa41a7d840d327129b708554e9a1707d7b891067e5108abe1b692a6c",
+      "boundary": "selected constructor instructions"
+    },
+    {
+      "role": "pgs_factory_thunk",
+      "rva": 8771904,
+      "bytes": 41,
+      "sha256": "da2309c5ec99a0eb035b975b231916c0ee5c6aa9b90ae79c5f54619e0eddbe17",
+      "boundary": "complete explicit leaf"
+    },
+    {
+      "role": "tgs_factory_thunk",
+      "rva": 8908304,
+      "bytes": 32,
+      "sha256": "7cefbe469214d3ed72c1400b57f57df35f3a79aa564221f3f85c969fd2b669ad",
+      "boundary": "complete explicit leaf"
+    },
+    {
+      "role": "controller_task",
+      "rva": 8038832,
+      "bytes": 22,
+      "sha256": "b07951f3e533175e8564c59eae5945f98b7bef0222d44a4a9a6a38bb748e3c06",
+      "boundary": "complete explicit leaf"
+    },
+    {
+      "role": "update_task",
+      "rva": 8038912,
+      "bytes": 13,
+      "sha256": "1711f2906730ad7b974ed6c428960635127214520f09d410a60e1b4a6d3bb36f",
+      "boundary": "complete explicit leaf"
+    },
+    {
+      "role": "empty_return",
+      "rva": 503632,
+      "bytes": 3,
+      "sha256": "b6cbececf1b07e74f37d57710c68c31f0b92cb08d51093252b321b07542e177b",
+      "boundary": "complete explicit leaf"
+    },
+    {
+      "role": "scb_to_public_scene",
+      "rva": 8141936,
+      "bytes": 5,
+      "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6",
+      "boundary": "selected constructor instructions"
+    },
+    {
+      "role": "scene_cleanup_prefix",
+      "rva": 7814720,
+      "bytes": 44,
+      "sha256": "727de2b7a36e35612a39decec8cdfd943264a143bc15f835f4aefd4883906f1f",
+      "boundary": "selected constructor instructions"
+    },
+    {
+      "role": "physics_scene_pointer",
+      "rva": 2842144,
+      "bytes": 2048,
+      "sha256": "6ccc64020530ff900bfdf74daacbb8802ba0991ebe68ecd26f30c1de5a756ea2",
+      "boundary": "selected constructor instructions"
+    },
+    {
+      "role": "flush_thunk",
+      "rva": 7620160,
+      "bytes": 7,
+      "sha256": "9e9c9512023c447b0e333851f0d22486147bad5eb0d6d0220c913cc884277e27",
+      "boundary": "complete explicit leaf"
+    },
+    {
+      "role": "task_run_virtual_dispatch",
+      "rva": 7894864,
+      "bytes": 52,
+      "sha256": "3f5f103f8fcf8c5977197524542c95f3e2f9a67805dd3853cc7db5648844181a",
+      "boundary": "complete unwind family; saved floating-point control state and virtual task run call; task receiver and step generation are not captured"
+    }
+  ],
+  "probes": [
+    {
+      "role": "scene_select",
+      "offset": 40,
+      "hex": "4139be84000000755c"
+    },
+    {
+      "role": "scene_select",
+      "offset": 236,
+      "hex": "48898660070000"
+    },
+    {
+      "role": "scene_select",
+      "offset": 343,
+      "hex": "48898670070000"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 148,
+      "hex": "418b85d0000000458b9d480100004d8b8dc800000044899c24480100"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 442,
+      "hex": "39ac24480100000f841d060000"
+    },
+    {
+      "role": "tgs_update",
+      "offset": 148,
+      "hex": "418b8424d0000000458b9c24480100004d8b8c24c800000044899d9f000000"
+    },
+    {
+      "role": "tgs_update",
+      "offset": 442,
+      "hex": "4439b59f0000000f844e070000"
+    },
+    {
+      "role": "task_run_virtual_dispatch",
+      "offset": 31,
+      "hex": "ff5038"
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "scene_update",
+      "offset": 342,
+      "prefix": "498b95",
+      "mode": "u32",
+      "field": "scene.islandManager"
+    },
+    {
+      "role": "scene_update",
+      "offset": 319,
+      "prefix": "4d8b9d",
+      "mode": "u32",
+      "field": "scene.dynamicsContext"
+    },
+    {
+      "role": "controller_task",
+      "offset": 8,
+      "prefix": "488b88",
+      "mode": "u32",
+      "field": "scene.simulationController"
+    },
+    {
+      "role": "pgs_constructor",
+      "offset": 197,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "context.pgsVtableRva"
+    },
+    {
+      "role": "tgs_constructor",
+      "offset": 187,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "context.tgsVtableRva"
+    },
+    {
+      "role": "controller_factory",
+      "offset": 56,
+      "prefix": "488d0d",
+      "mode": "rip32",
+      "field": "context.cpuControllerVtableRva"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 116,
+      "prefix": "4c8daa",
+      "mode": "u32",
+      "field": "islandManager.accurateIsland"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 155,
+      "prefix": "458b9d",
+      "mode": "u32",
+      "field": "accurateIsland.activeIslands"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 696,
+      "prefix": "458ba5",
+      "mode": "u32",
+      "field": "accurateIsland.rigidBodies"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 668,
+      "prefix": "418bb5",
+      "mode": "u32",
+      "field": "accurateIsland.kinematics"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 703,
+      "prefix": "418b85",
+      "mode": "u32",
+      "field": "accurateIsland.articulations"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 1491,
+      "prefix": "458ba5",
+      "mode": "u32",
+      "field": "accurateIsland.contactManagers"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 1515,
+      "prefix": "41039d",
+      "mode": "u32",
+      "field": "accurateIsland.constraints"
+    },
+    {
+      "role": "scb_to_public_scene",
+      "offset": 0,
+      "prefix": "488d41",
+      "mode": "i8",
+      "field": "scene.publicSceneDelta"
+    },
+    {
+      "role": "scene_cleanup_prefix",
+      "offset": 24,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "scene.vtableRva"
+    },
+    {
+      "role": "physics_scene_pointer",
+      "offset": 114,
+      "prefix": "4c8b70",
+      "mode": "u8",
+      "field": "wrapper.scene"
+    },
+    {
+      "role": "pgs_update",
+      "offset": 341,
+      "prefix": "488b8f",
+      "mode": "u32",
+      "field": "context.pgsPoolOffset"
+    },
+    {
+      "role": "tgs_update",
+      "offset": 348,
+      "prefix": "488b8f",
+      "mode": "u32",
+      "field": "context.tgsPoolOffset"
+    }
+  ],
+  "targetOperands": [
+    {
+      "role": "scene_select",
+      "offset": 134,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8771904
+    },
+    {
+      "role": "scene_select",
+      "offset": 210,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8908304
+    },
+    {
+      "role": "pgs_factory_thunk",
+      "offset": 36,
+      "prefix": "e9",
+      "mode": "rel32",
+      "targetRva": 8770896
+    },
+    {
+      "role": "tgs_factory_thunk",
+      "offset": 27,
+      "prefix": "e9",
+      "mode": "rel32",
+      "targetRva": 8905776
+    },
+    {
+      "role": "pgs_factory",
+      "offset": 240,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8740752
+    },
+    {
+      "role": "tgs_factory",
+      "offset": 225,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8894992
+    },
+    {
+      "role": "update_task",
+      "offset": 8,
+      "prefix": "e9",
+      "mode": "rel32",
+      "targetRva": 8051248
+    },
+    {
+      "role": "flush_thunk",
+      "offset": 0,
+      "prefix": "48ff25",
+      "mode": "rip32",
+      "targetRva": 25540096
+    },
+    {
+      "role": "pgs_update",
+      "offset": 356,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7620160
+    },
+    {
+      "role": "tgs_update",
+      "offset": 363,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7620160
+    }
+  ],
+  "vtableSlots": [
+    {
+      "tableRva": 25999344,
+      "slot": 1,
+      "role": "pgs_update"
+    },
+    {
+      "tableRva": 26001192,
+      "slot": 1,
+      "role": "tgs_update"
+    },
+    {
+      "tableRva": 25994040,
+      "slot": 13,
+      "role": "empty_return"
+    }
+  ],
+  "virtualDispatches": [
+    {
+      "role": "scene_update",
+      "offset": 438,
+      "prefix": "41ff52",
+      "width": 1,
+      "slot": 1,
+      "tableRva": 25999344,
+      "targetRole": "pgs_update",
+      "boundary": "conditional on observed dynamics context vtable"
+    },
+    {
+      "role": "scene_update",
+      "offset": 438,
+      "prefix": "41ff52",
+      "width": 1,
+      "slot": 1,
+      "tableRva": 26001192,
+      "targetRole": "tgs_update",
+      "boundary": "conditional on observed dynamics context vtable"
+    },
+    {
+      "role": "controller_task",
+      "offset": 18,
+      "prefix": "48ff60",
+      "width": 1,
+      "slot": 13,
+      "tableRva": 25994040,
+      "targetRole": "empty_return",
+      "boundary": "CPU factory route only"
+    }
+  ],
+  "unwindFamilies": [
+    {
+      "role": "controller_factory",
+      "rva": 8547072,
+      "runtimeRanges": [
+        [
+          8547072,
+          8547154,
+          28546068
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "pgs_factory",
+      "rva": 8770896,
+      "runtimeRanges": [
+        [
+          8770896,
+          8771174,
+          28562296
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "tgs_factory",
+      "rva": 8905776,
+      "runtimeRanges": [
+        [
+          8905776,
+          8906036,
+          28582396
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "pgs_constructor",
+      "rva": 8740752,
+      "runtimeRanges": [
+        [
+          8740752,
+          8740787,
+          29149468
+        ],
+        [
+          8740787,
+          8741021,
+          29161140
+        ],
+        [
+          8741021,
+          8741118,
+          29161176
+        ],
+        [
+          8741118,
+          8741138,
+          29161196
+        ],
+        [
+          8741138,
+          8741477,
+          29161212
+        ],
+        [
+          8741477,
+          8741979,
+          29161244
+        ],
+        [
+          8741979,
+          8742056,
+          29161264
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "tgs_constructor",
+      "rva": 8894992,
+      "runtimeRanges": [
+        [
+          8894992,
+          8895138,
+          29154520
+        ],
+        [
+          8895138,
+          8895216,
+          29166220
+        ],
+        [
+          8895216,
+          8895313,
+          29166252
+        ],
+        [
+          8895313,
+          8895333,
+          29166272
+        ],
+        [
+          8895333,
+          8895703,
+          29166288
+        ],
+        [
+          8895703,
+          8896163,
+          29166316
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "scene_update",
+      "rva": 8051248,
+      "runtimeRanges": [
+        [
+          8051248,
+          8051763,
+          28575620
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "pgs_update",
+      "rva": 8886176,
+      "runtimeRanges": [
+        [
+          8886176,
+          8886524,
+          29161000
+        ],
+        [
+          8886524,
+          8888223,
+          29161024
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "tgs_update",
+      "rva": 8931808,
+      "runtimeRanges": [
+        [
+          8931808,
+          8932163,
+          29166176
+        ],
+        [
+          8932163,
+          8934160,
+          29166200
+        ]
+      ],
+      "boundary": "complete family within window"
+    },
+    {
+      "role": "task_run_virtual_dispatch",
+      "rva": 7894864,
+      "runtimeRanges": [
+        [
+          7894864,
+          7894916,
+          28545412
+        ]
+      ]
+    }
+  ],
+  "typeName": {
+    "rva": 25984216,
+    "ascii": "ScScene.updateDynamics"
+  },
+  "dispatch": {
+    "updateSlot": 1,
+    "controllerRigidBodySolverSlot": 13,
+    "zeroActiveIslands": "update_returns_before_solver_task_allocation",
+    "controllerRigidBodySolver": "cpu_factory_vtable_slot_is_empty_return",
+    "solverTypeSelection": "scene descriptor zero selects PGS; nonzero selects TGS on this constructor route"
+  },
+  "flushImport": {
+    "selectedImports": [
+      {
+        "slotRva": 25540096,
+        "descriptorRva": 29581900,
+        "descriptorHex": "48 66 c3 01 00 00 00 00 00 00 00 00 88 80 c3 01 58 b2 85 01",
+        "libraryNameRva": 29589640,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 29582920,
+        "firstThunkRva": 25539160,
+        "thunkIndex": 117,
+        "actualThunkCount": 230,
+        "terminatedLookupBytes": 1848,
+        "terminatedLookupSha256": "6BC9FBDC85F380519FD4ED762DCAD390FD8A82DF0D12CFEEA208CD1B8892A260",
+        "lookupEntryRva": 29583856,
+        "lookupEntryHex": "3a 92 c3 01 00 00 00 00",
+        "iatEntryHex": "3a 92 c3 01 00 00 00 00",
+        "hintNameRva": 29594170,
+        "hint": 926,
+        "hintHex": "9e 03",
+        "symbolName": "InterlockedFlushSList",
+        "symbolNameHex": "49 6e 74 65 72 6c 6f 63 6b 65 64 46 6c 75 73 68 53 4c 69 73 74 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    ],
+    "importDirectoryRva": 29581900,
+    "importDirectoryBytes": 420,
+    "importDirectoryHeader": {
+      "fileOffset": 488,
+      "rawHex": "4c 62 c3 01 a4 01 00 00"
+    },
+    "iatDirectoryRva": 25538560,
+    "iatDirectoryBytes": 4288,
+    "iatDirectoryHeader": {
+      "fileOffset": 576,
+      "rawHex": "00 b0 85 01 c0 10 00 00"
+    },
+    "walkedDescriptors": 20,
+    "descriptorNullTerminatorRva": 29582300,
+    "actualTerminatedTableOwnershipChecked": true,
+    "completeImportSymbolCatalogProved": false,
+    "liveIatValueOrCalleeSelected": false
+  },
+  "hooks": [
+    {
+      "role": "scene_dynamics_update",
+      "kind": 66,
+      "windowRole": "scene_update",
+      "entryHex": "48895c240848896c2410488974241857",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "pgs_dynamics_update",
+      "kind": 67,
+      "windowRole": "pgs_update",
+      "entryHex": "4c894c24205556574154415541564157",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "u32",
+          "pointer",
+          "u32",
+          "u32",
+          "pointer",
+          "pointer",
+          "f32",
+          "pointer",
+          "u32"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "tgs_dynamics_update",
+      "kind": 68,
+      "windowRole": "tgs_update",
+      "entryHex": "4c894c24204c89442418555657415441",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "pointer",
+          "u32",
+          "pointer",
+          "u32",
+          "u32",
+          "pointer",
+          "pointer",
+          "f32",
+          "pointer",
+          "u32"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "original_island_decision",
+      "kind": 69,
+      "windowRole": "flush_thunk",
+      "entryHex": "48ff25b96f1101",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "pointer"
+      }
+    }
+  ],
+  "limits": {
+    "maxSceneUpdates": 2048,
+    "maxDynamicsUpdates": 4096,
+    "maxDecisions": 4096,
+    "sampleEvery": 32
+  },
+  "decisionSites": [
+    {
+      "backend": "pgs",
+      "kind": 67,
+      "windowRole": "pgs_update",
+      "callRva": 8886532,
+      "returnRva": 8886537,
+      "countFromReturnSlot": 336,
+      "storeRva": 8886345,
+      "storePrefix": "44899c24",
+      "storeDisplacement": 328,
+      "framePointerFromStack": 0,
+      "allocationRva": 8886192,
+      "allocationBytes": 176,
+      "compareRva": 8886618,
+      "zeroReturnRva": 8888196,
+      "branchHex": "39ac24480100000f841d060000",
+      "poolOffset": 400
+    },
+    {
+      "backend": "tgs",
+      "kind": 68,
+      "windowRole": "tgs_update",
+      "callRva": 8932171,
+      "returnRva": 8932176,
+      "countFromReturnSlot": 400,
+      "storeRva": 8931980,
+      "storePrefix": "44899d",
+      "storeDisplacement": 159,
+      "framePointerFromStack": 233,
+      "allocationRva": 8931834,
+      "allocationBytes": 240,
+      "compareRva": 8932250,
+      "zeroReturnRva": 8934133,
+      "branchHex": "4439b59f0000000f844e070000",
+      "poolOffset": 432,
+      "framePointerLeaRva": 8931829,
+      "framePointerLeaHex": "488d6c24f9"
+    }
+  ],
+  "recordLayout": {
+    "snapshot": "before[0:64], after[0:64]: scene,context,islandManager,publicSceneVtable,contextVtable,pool qwords; state,backend,populationMask,reserved u32",
+    "physicsCore": "kind11 query[0:24]: completed wrapper publicScene, typed scene vtable, read QPC; queryState1 only typed projection. Same-thread core ancestry joins only on publicScene equality; worker steps remain unresolved.",
+    "population": "query[0:24] before and [24:48] after: activeIslands,rigidBodies,kinematics,articulations,contactManagers,constraints",
+    "dynamicsArguments": "query[48:160] fourteen positional argument bits; query[160:172] copied gravity; query[176:192] original entry/return clocks",
+    "sceneArguments": "args scene,continuation,originalCaller,sameThreadCoreCall,requestedSceneId,dtBits,priorCompletionCall,priorCompletionWrapper; prior completion is context only",
+    "dynamicsOwner": "args context,islandManager,continuation,lostTouch,sceneUpdateCall,scene,originalCaller,sameThreadCoreCall; sourceContext[0:64] inherited pre-call scene snapshot",
+    "decision": "args pool,originalReturnSite,addressOfReturnSlot,savedCountAddress,dynamicsUpdateCall,sceneUpdateCall,context,scene; before u32 original saved count, u32 readState; after same slots; query[48:56] raw return-address slot; query[176:192] original thunk interval",
+    "boundary": "Original saved count is copied at the reviewed flush call before its unchanged compare on a normally returning update; optional current counts and prior completion never repair a missing decision. Scene/update ancestry is direct; same-thread physics core is distinct from unresolved worker step ownership."
+  }
+}

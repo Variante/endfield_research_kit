@@ -183,6 +183,7 @@ class PendingFile:
     old_text_kind: str | None = None
     store_row: StoreRowRef | None = None
     store_digest: str | None = None
+    export_root: Path | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -450,7 +451,9 @@ def is_text_extension(extension: str) -> bool:
     return extension.lower() in TEXT_EXTENSIONS
 
 
-def textual_form(rel_path: str, raw: bytes) -> tuple[str | None, str]:
+def textual_form(
+    rel_path: str, raw: bytes, *, export_root: Path | None = None
+) -> tuple[str | None, str]:
     """Return the diffable text for one file's bytes, and which form it is.
 
     A serialized payload has no readable text of its own. Rendering it with
@@ -463,7 +466,7 @@ def textual_form(rel_path: str, raw: bytes) -> tuple[str | None, str]:
         return raw.decode("utf-8-sig"), TEXT_KIND_PLAIN
     except UnicodeDecodeError:
         pass
-    decoded = render_decoded_payload(rel_path, raw)
+    decoded = render_decoded_payload(rel_path, raw, export_root=export_root)
     if decoded is None:
         return None, TEXT_KIND_BINARY
     kind = (
@@ -518,7 +521,11 @@ def build_text_diff(
 
 
 def scan_file(
-    path: str, count_lines: bool, capture_text: bool, rel_path: str
+    path: str,
+    count_lines: bool,
+    capture_text: bool,
+    rel_path: str,
+    export_root: Path | None = None,
 ) -> tuple[str, int | None, str | None, str | None]:
     digest = hashlib.blake2b(digest_size=16)
     line_count = 0
@@ -545,6 +552,7 @@ def scan_file(
         last_byte=last_byte,
         has_nul=has_nul,
         captured=None if text_chunks is None else b"".join(text_chunks),
+        export_root=export_root,
     )
 
 
@@ -557,6 +565,7 @@ def finish_text_scan(
     last_byte: bytes | None,
     has_nul: bool,
     captured: bytes | None,
+    export_root: Path | None = None,
 ) -> tuple[str, int | None, str | None, str | None]:
     """The line count, diffable text and text kind of one scanned file's bytes."""
 
@@ -572,7 +581,7 @@ def finish_text_scan(
         if has_nul:
             return digest, None, None, TEXT_KIND_TOO_LARGE
         return digest, line_count, None, None
-    text_content, kind = textual_form(rel_path, captured)
+    text_content, kind = textual_form(rel_path, captured, export_root=export_root)
     if text_content is None:
         return digest, None, None, kind
     if kind != TEXT_KIND_PLAIN:
@@ -626,6 +635,7 @@ def scan_store_row(
     count_lines: bool,
     capture_text: bool,
     rel_path: str,
+    export_root: Path | None = None,
 ) -> tuple[str, int | None, str | None, str | None]:
     """:func:`scan_file` for one store row, whose SHA256 is already known.
 
@@ -644,6 +654,7 @@ def scan_store_row(
         last_byte=data[-1:] or None,
         has_nul=b"\x00" in data,
         captured=data if capture_text else None,
+        export_root=export_root,
     )
 
 
@@ -999,7 +1010,9 @@ def submit_pending_scan(
     stores: ExportStores | None,
 ) -> concurrent.futures.Future:
     if item.store_row is None:
-        return executor.submit(scan_file, item.full_path, item.count_lines, item.capture_text, item.rel_path)
+        return executor.submit(
+            scan_file, item.full_path, item.count_lines, item.capture_text, item.rel_path, item.export_root
+        )
     if stores is None or item.store_digest is None:
         raise RuntimeError(f"store row {item.rel_path} was queued without its store")
     return executor.submit(
@@ -1010,6 +1023,7 @@ def submit_pending_scan(
         item.count_lines,
         item.capture_text,
         item.rel_path,
+        item.export_root,
     )
 
 
@@ -1399,6 +1413,7 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                             old_text_kind=old_text_kind,
                             store_row=scan_entry.store_row,
                             store_digest=scan_entry.store_digest,
+                            export_root=root,
                         )
                     )
                     if len(pending_batch) >= config.hash_batch_size:

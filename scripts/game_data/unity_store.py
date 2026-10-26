@@ -52,8 +52,10 @@ functions ``inflate(data)`` (the document text) and ``doc(data, '$.path')``
 from __future__ import annotations
 
 import argparse
+import bisect
 import fnmatch
 import hashlib
+import io
 import json
 import os
 import re
@@ -127,6 +129,98 @@ _ROW_COLUMNS = "type, name, object_name, path_id, source_file, script_path_id, s
 
 class UnityStoreError(RuntimeError):
     """The store is missing, unreadable, or not this schema."""
+
+
+class _DocumentStream(io.RawIOBase):
+    """Seekable virtual FBX without fetching property chunks being skipped.
+
+    A structural inventory need not inflate every repeated vertex array. This
+    checks all referenced chunk lengths, but does not authenticate skipped
+    chunk contents against their digests; read_bytes remains the full reader.
+    """
+
+    def __init__(self, connection, blob, expected_size):
+        super().__init__()
+        self.connection = connection
+        if blob.startswith(_FBX_SHARED_MAGIC):
+            digest = blob[len(_FBX_SHARED_MAGIC):]
+            row = connection.execute('SELECT data FROM chunks WHERE sha256=?', (digest,)).fetchone()
+            if row is None:
+                raise UnityStoreError('shared FBX document chunk is missing')
+            blob = row[0]
+        self.segments = []
+        self.ends = []
+        self.position = 0
+        self.size = 0
+
+        def append(length, source, offset=0):
+            if length:
+                self.segments.append((self.size, source, offset))
+                self.size += length
+                self.ends.append(self.size)
+
+        if blob.startswith(_FBX_PACKED_MAGIC):
+            inserts, start = _packed_inserts(blob)
+            remainder = zlib.decompress(blob[start:])
+            digests = list({digest for _, digest in inserts})
+            lengths = {}
+            for at in range(0, len(digests), 500):
+                batch = digests[at:at+500]
+                lengths.update(connection.execute(
+                    f'SELECT sha256,length(data) FROM chunks WHERE sha256 IN ({",".join("?" for _ in batch)})', batch))
+            cursor = 0
+            for position, digest in inserts:
+                if not cursor <= position <= len(remainder) or digest not in lengths:
+                    raise UnityStoreError('FBX insert bounds differ or a property chunk is missing')
+                append(position-cursor, remainder, cursor)
+                append(lengths[digest], (digest,))
+                cursor = position
+            append(len(remainder)-cursor, remainder, cursor)
+        else:
+            data = zlib.decompress(blob)
+            append(len(data), data)
+        if self.size != expected_size:
+            raise UnityStoreError(f'document stream length differs: {self.size}/{expected_size}')
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        self._checkClosed()
+        return self.position
+
+    def seek(self, offset, whence=io.SEEK_SET):
+        self._checkClosed()
+        position = offset + (self.position if whence == io.SEEK_CUR else self.size if whence == io.SEEK_END else 0)
+        if whence not in (io.SEEK_SET, io.SEEK_CUR, io.SEEK_END) or position < 0:
+            raise ValueError('invalid document seek')
+        self.position = position
+        return position
+
+    def readinto(self, buffer):
+        self._checkClosed()
+        count = min(len(buffer), max(0, self.size-self.position))
+        copied = 0
+        while copied < count:
+            index = bisect.bisect_right(self.ends, self.position)
+            start, source, offset = self.segments[index]
+            take = min(count-copied, self.ends[index]-self.position)
+            at = self.position-start+offset
+            if isinstance(source, tuple):
+                row = self.connection.execute('SELECT substr(data,?,?) FROM chunks WHERE sha256=?',
+                    (at+1, take, source[0])).fetchone()
+                if row is None or len(row[0]) != take:
+                    raise UnityStoreError('FBX property chunk changed during structural read')
+                data = row[0]
+            else:
+                data = source[at:at+take]
+            buffer[copied:copied+take] = data
+            copied += take
+            self.position += take
+        return copied
 
 
 def is_store_file(name: str) -> bool:
@@ -543,6 +637,22 @@ class UnityObjectStore:
         if found is None:
             raise KeyError(logical_ref(type_name, name))
         return _decode_document(self._connection(), found[0])
+
+    def open_document(self, type_name: str, name: str) -> io.RawIOBase:
+        """A read-only seekable document for bounded structural inventories.
+
+        Close the returned stream before closing this store. Large skipped
+        FBX properties are not fetched or hashed; this is not a full content
+        integrity check. Document and referenced chunk lengths are checked.
+        """
+        connection = self._connection()
+        found = connection.execute('SELECT data,size FROM objects WHERE type=? AND name=?',
+                                   (type_name, name)).fetchone()
+        if found is None:
+            raise KeyError(logical_ref(type_name, name))
+        # Read-ahead would fetch skipped array chunks when reading their node
+        # headers. Structural callers deliberately read exact byte ranges.
+        return _DocumentStream(connection, found[0], found[1])
 
     def read_text(self, type_name: str, name: str) -> str:
         return self.read_bytes(type_name, name).decode("utf-8-sig")

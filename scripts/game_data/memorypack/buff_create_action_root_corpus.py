@@ -21,6 +21,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
 from scripts.common import ROOT, canonical_json_sha256, sha256_file_upper
 from scripts.game_data.memorypack.buff_create_action_root_receipt import (
     decode_single_create_action_root, validate_current_native_contract,
@@ -62,7 +63,7 @@ def _selected_create_candidate(file: dict[str, Any], *, length: int) -> tuple[bo
                      if row.get("kind") == "union"
                      and action_field["start"] <= row.get("start", -1)
                      < action_field["end"]]
-    if len(action_unions) != 1 or action_unions[0].get("tag") != 0x0092:
+    if len(action_unions) != 1 or action_unions[0].get("tag") != _A("Core_CreateBuffAction_Data"):
         return False, False
     named = candidate.get("namedSchemaReceipt") or {}
     blockers = named.get("blockers")

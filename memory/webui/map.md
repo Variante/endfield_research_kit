@@ -40,6 +40,9 @@ LevelConfig before a same-name sidecar: another level may use that name for a
 different art scene. Missing declared art stays unavailable rather than using
 the colliding sidecar. Map01/Map02 member sidecars retain their separate exact
 HLOD key/member-suffix partition.
+Scene selection reads the decoded LevelConfig (through the export's StringPool),
+not its bytes; an undecodable LevelConfig, or published maps resolving to no
+scene at all, stops the streaming-instance step with the failing map named.
 
 ## Primary generated outputs
 

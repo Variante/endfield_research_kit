@@ -154,14 +154,17 @@ def contract_source_paths() -> list[Path]:
                actions.keyword_actions.CONTRACT_PATH, actions.launch_projectile.CONTRACT_PATH, actions.ignite_text.CONTRACT_PATH,
                actions.global_creation.CONTRACT_PATH, actions.switch.CONTRACT_PATH, actions.weapon_visual.CONTRACT_PATH,
                actions.random_point.CONTRACT_PATH, actions.recover_poise.CONTRACT_PATH,
+               actions.point_finder.CONTRACT_PATH,
                actions.spell_infliction.CONTRACT_PATH,
+               actions.target_contains.CONTRACT_PATH,
+               actions.merge_target.CONTRACT_PATH,
                actions.animation_sequences.CONTRACT_PATH,
                actions.custom_event.CONTRACT_PATH, actions.direct_target_actions.CONTRACT_PATH,
                actions.check_distance.CONTRACT_PATH, actions.shape_finder.CONTRACT_PATH,
-               actions.finish_global.CONTRACT_PATH, actions.blow_off.CONTRACT_PATH, actions.cast_skill.CONTRACT_PATH,
+               actions.finish_global.CONTRACT_PATH, actions.blow_off.CONTRACT_PATH, actions.blow_off_action.CONTRACT_PATH, actions.self_rotate_action.CONTRACT_PATH, actions.cast_skill.CONTRACT_PATH,
                actions.animator_param.CONTRACT_PATH, actions.fixed_point.CONTRACT_PATH,
                actions.postprocessors.CONTRACT_PATH, actions.direction_children.CONTRACT_PATH,
-               actions.camera_control_state.CONTRACT_PATH]
+               actions.camera_control_state.CONTRACT_PATH,actions.consume_layer.CONTRACT_PATH,actions.bind_bounty.CONTRACT_PATH,actions.archery_chip.CONTRACT_PATH,actions.continuous_find_target.CONTRACT_PATH,actions.save_heal_value.CONTRACT_PATH,actions.channeling.CONTRACT_PATH]
     def references(value: Any):
         if isinstance(value, dict):
             for child in value.values():
@@ -189,10 +192,10 @@ def validate_recorded_event_children(receipt: dict[str, Any], *, native_validati
                 "effectVectors", "direction", "selector", "characterTeamFinder",
                 "finish", "findSettings", "armor", "armorValues", "directTargetActions",
                 "ownerSpawnedFinder", "zeroValidators", "tagQueryValidator", "ifElse",
-                "compare", "modify", "checkStack", "buffIdActions", "blackboardString", "selectorGeometry", "randomPointFinder", "recoverPoise", "spellInfliction",
-                "checkDistance", "shapeFinder", "colliderShape", "animationSequenceActions", "customAbilityEvent", "finishGlobal", "blowOff", "castSkill", "animatorParamAction", "cameraControlState", "fixedPointFinder", "selectorPostprocessors", "directionTargets",
+                "compare", "modify", "checkStack", "buffIdActions", "blackboardString", "selectorGeometry", "randomPointFinder", "pointFinder", "recoverPoise", "spellInfliction",
+                "checkDistance", "shapeFinder", "colliderShape", "animationSequenceActions", "customAbilityEvent", "finishGlobal", "blowOff", "blowOffAction", "selfRotateAction", "sourceString", "castSkill", "animatorParamAction", "cameraControlState", "fixedPointFinder", "selectorPostprocessors", "directionTargets",
                 "damage", "auraHeal", "skillStackInterrupt", "vitals", "dataTransfer", "probability", "distanceValidator", "entityCount", "passiveUi",
-                "cost", "timedMarker", "superArmorCondition", "debugPrint", "animationCurve", "curveActions", "markerMaskActions", "sequence", "tagSequenceActions", "spawnEntity", "cameraImpulse", "leafActions", "keywordActions", "launchProjectile", "igniteText", "globalCreation", "switch", "weaponVisual")
+                "cost", "timedMarker", "superArmorCondition", "debugPrint", "animationCurve", "curveActions", "markerMaskActions", "sequence", "tagSequenceActions", "spawnEntity", "cameraImpulse", "leafActions", "keywordActions", "launchProjectile", "igniteText", "globalCreation", "switch", "weaponVisual", "mergeTarget", "blackboardInt", "consumeLayer", "bindBounty", "archeryChip", "continuousFindTarget", "saveHealValue", "channeling")
     children = native_validation.get("recursiveActions", {}).get("children", {})
     expected_inputs = root_native.get("nativeInputs") or {}
     failed_children = [key for key in required

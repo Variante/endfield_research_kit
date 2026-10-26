@@ -19,6 +19,11 @@ named schema.  Any other member count, invalid boolean or trailing byte raises
   lists).  The script lists in the larger textual GameplayConfig table are
   derived postprocessing, not serialized members of this root.
 
+Every reader takes ``strings``: builds that ship ``Json/StringPool/`` store
+each string as an i32 global pool index instead of an inline length + UTF-8
+run. The caller selects the encoding (see ``string_pool.export_string_pool``);
+the readers never guess.
+
 These are stored configuration layouts.  They do not show which runtime
 object consumes a row; ``worldEntityBriefInfos`` ids and positions are the
 join target of ``scripts.game_data.map_mark_relations``, not a scene field.
@@ -29,6 +34,8 @@ from __future__ import annotations
 import re
 import struct
 from typing import Any
+
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
 
 
 class GameplayCompactDecodeError(ValueError):
@@ -48,7 +55,16 @@ def _u32(data: bytes, offset: int, field: str) -> tuple[int, int]:
     return struct.unpack_from("<I", data, offset)[0], offset + 4
 
 
-def _string(data: bytes, offset: int, field: str) -> tuple[str | None, int]:
+def _string(
+    data: bytes, offset: int, field: str, strings: StringPool | None = None
+) -> tuple[str | None, int]:
+    if strings is not None:
+        _need(data, offset, 4, f"{field}.poolIndex")
+        index = struct.unpack_from("<i", data, offset)[0]
+        try:
+            return strings.resolve(index), offset + 4
+        except StringPoolDecodeError as exc:
+            raise GameplayCompactDecodeError(f"{field}: {exc}") from exc
     length, offset = _u32(data, offset, f"{field}.length")
     if length == 0xFFFFFFFF:
         return None, offset
@@ -108,7 +124,9 @@ def _tracking_route(data: bytes, offset: int, field: str) -> int:
     return offset + 4
 
 
-def decode_mission_area_table(data: bytes) -> dict[str, Any]:
+def decode_mission_area_table(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     if not data or data[0] != 1:
         raise GameplayCompactDecodeError("MissionAreaTable root member count is not 1")
     level_count, offset = _count(data, 1, "m_areas")
@@ -120,14 +138,14 @@ def decode_mission_area_table(data: bytes) -> dict[str, Any]:
         count, offset = _count(data, offset, f"m_areas[{level_id}]")
         for area_index in range(count):
             field = f"m_areas[{level_id}][{area_index}]"
-            key, offset = _string(data, offset, f"{field}.key")
+            key, offset = _string(data, offset, f"{field}.key", strings)
             if data[offset] != 8:
                 raise GameplayCompactDecodeError(f"{field}: member count is not 8")
             offset += 1
             if data[offset] not in (0, 1):
                 raise GameplayCompactDecodeError(f"{field}.activeOnTravelLine: invalid bool")
             offset += 1
-            mission_id, offset = _string(data, offset, f"{field}.missionAreaId")
+            mission_id, offset = _string(data, offset, f"{field}.missionAreaId", strings)
             if not key or mission_id != key:
                 raise GameplayCompactDecodeError(f"{field}: key/id mismatch")
             if data[offset] not in (0, 1):
@@ -157,7 +175,9 @@ def decode_mission_area_table(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_subgame_table(data: bytes) -> dict[str, Any]:
+def frame_subgame_table(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     if not data or data[0] != 1:
         raise GameplayCompactDecodeError("SubGame table root member count is not 1")
     count, offset = _count(data, 1, "dataTable")
@@ -179,7 +199,7 @@ def frame_subgame_table(data: bytes) -> dict[str, Any]:
         return raw_count, cursor
 
     def string_item(cursor: int, field: str) -> int:
-        _, cursor = _string(data, cursor, field)
+        _, cursor = _string(data, cursor, field, strings)
         return cursor
 
     def u64_item(cursor: int, field: str) -> int:
@@ -189,7 +209,7 @@ def frame_subgame_table(data: bytes) -> dict[str, Any]:
     def task_item(cursor: int, field: str) -> int:
         if data[cursor] != 1:
             raise GameplayCompactDecodeError(f"{field}: member count is not 1")
-        _, cursor = _string(data, cursor + 1, f"{field}.taskId")
+        _, cursor = _string(data, cursor + 1, f"{field}.taskId", strings)
         return cursor
 
     def lang_key(cursor: int, field: str) -> int:
@@ -198,14 +218,14 @@ def frame_subgame_table(data: bytes) -> dict[str, Any]:
             return cursor + 1
         if marker != 1:
             raise GameplayCompactDecodeError(f"{field}: member count is not 1/null")
-        _, cursor = _string(data, cursor + 1, f"{field}.key")
+        _, cursor = _string(data, cursor + 1, f"{field}.key", strings)
         return cursor
 
     rows: list[dict[str, Any]] = []
     task_total = 0
     for row_index in range(count):
         start = offset
-        key, offset = _string(data, offset, f"dataTable[{row_index}].key")
+        key, offset = _string(data, offset, f"dataTable[{row_index}].key", strings)
         if not key or not _KEY_RE.fullmatch(key):
             raise GameplayCompactDecodeError(f"dataTable[{row_index}]: invalid key")
         _need(data, offset, 2, f"dataTable[{row_index}].union")
@@ -216,31 +236,31 @@ def frame_subgame_table(data: bytes) -> dict[str, Any]:
         offset = boolean(offset, "canQuit")
         _need(data, offset, 8, "countDownType/countingType"); offset += 8
         offset = boolean(offset, "disableTracking")
-        _, offset = _string(data, offset, "dungeonMissionId")
+        _, offset = _string(data, offset, "dungeonMissionId", strings)
         _, offset = nullable_list(offset, "extraTasks", task_item)
         offset = lang_key(offset, "failInfo")
         tasks, offset = nullable_list(offset, "failTasks", task_item); task_total += tasks
         _need(data, offset, 4, "gameMechanicsType"); offset += 4
         offset = boolean(boolean(boolean(offset, "hasTimeLimit"), "hasTimer"), "hideStageProgress")
-        row_id, offset = _string(data, offset, "id")
+        row_id, offset = _string(data, offset, "id", strings)
         if row_id != key:
             raise GameplayCompactDecodeError(f"dataTable[{row_index}]: key/id mismatch")
         offset = boolean(offset, "ignoreFinishToast")
         _, offset = nullable_list(offset, "logicIdWhitelist", u64_item)
         tasks, offset = nullable_list(offset, "mainTasks", task_item); task_total += tasks
         offset = boolean(boolean(offset, "manualStartBanner"), "manualSyncTrackingStage")
-        _, offset = _string(data, offset, "modeId")
+        _, offset = _string(data, offset, "modeId", strings)
         _need(data, offset, 4, "modeType"); offset += 4
         offset = boolean(offset, "noFailOnTeamAllDie")
-        _, offset = _string(data, offset, "preparePhaseUIType")
+        _, offset = _string(data, offset, "preparePhaseUIType", strings)
         _, offset = nullable_list(offset, "proxyWhitelist", string_item)
         offset = lang_key(offset, "resetBtnName")
         offset = boolean(offset, "showDesc")
         _need(data, offset, 8, "subDataParentId"); offset += 8
         offset = lang_key(offset, "successInfo")
-        _, offset = _string(data, offset, "taskGoalIconName")
+        _, offset = _string(data, offset, "taskGoalIconName", strings)
         _need(data, offset, 4, "taskGoalStyle"); offset += 4
-        _, offset = _string(data, offset, "teamConfigId")
+        _, offset = _string(data, offset, "teamConfigId", strings)
         _, offset = nullable_list(offset, "teamConfigIds", string_item)
         offset = boolean(boolean(offset, "ignoreFailToastBeforeStart"), "showTimeInfoOnFinishToast")
         spawners, offset = nullable_list(offset, "spawnerIds", u64_item)
@@ -264,14 +284,16 @@ def frame_subgame_table(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_world_entity_registry(data: bytes) -> dict[str, Any]:
+def frame_world_entity_registry(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode the first three named dictionaries and bound the fourth to EOF."""
     if not data or data[0] != 4:
         raise GameplayCompactDecodeError("WorldEntityRegistry root member count is not 4")
     offset = 1
     lut_count, offset = _count(data, offset, "m_npcIdToLogicIdLut")
     for index in range(lut_count):
-        _, offset = _string(data, offset, f"m_npcIdToLogicIdLut[{index}].key")
+        _, offset = _string(data, offset, f"m_npcIdToLogicIdLut[{index}].key", strings)
         _need(data, offset, 8, "m_npcIdToLogicIdLut.value")
         offset += 8
     npc_count, offset = _count(data, offset, "npcProxyBriefInfos")
@@ -281,7 +303,7 @@ def frame_world_entity_registry(data: bytes) -> dict[str, Any]:
         if data[offset] != 4:
             raise GameplayCompactDecodeError(f"npcProxyBriefInfos[{index}]: member count is not 4")
         offset += 1
-        _, offset = _string(data, offset, f"npcProxyBriefInfos[{index}].proxyId")
+        _, offset = _string(data, offset, f"npcProxyBriefInfos[{index}].proxyId", strings)
         _need(data, offset, 20, f"npcProxyBriefInfos[{index}].position/segmentIdGlobal")
         offset += 20
     world_count, offset = _count(data, offset, "worldEntityBriefInfos")
@@ -295,7 +317,7 @@ def frame_world_entity_registry(data: bytes) -> dict[str, Any]:
         if struct.unpack_from("<I", data, offset)[0] == 0xFFFFFFFF:
             offset += 4
         else:
-            _, offset = _string(data, offset, f"worldEntityBriefInfos[{index}].detailId")
+            _, offset = _string(data, offset, f"worldEntityBriefInfos[{index}].detailId", strings)
         _need(data, offset, 28, f"worldEntityBriefInfos[{index}].type/transform")
         offset += 28
     detailed_count, offset = _count(data, offset, "worldEntityConfigInfos")
@@ -314,7 +336,7 @@ def frame_world_entity_registry(data: bytes) -> dict[str, Any]:
             field = f"worldEntityConfigInfos[{detail_index}].propertyList[{property_index}]"
             if data[offset] != 2:
                 raise GameplayCompactDecodeError(f"{field}: member count is not 2")
-            _, offset = _string(data, offset + 1, f"{field}.key")
+            _, offset = _string(data, offset + 1, f"{field}.key", strings)
             if data[offset] != 2:
                 raise GameplayCompactDecodeError(f"{field}.value: member count is not 2")
             offset += 1
@@ -329,7 +351,7 @@ def frame_world_entity_registry(data: bytes) -> dict[str, Any]:
                 offset += 1
                 _need(data, offset, 8, f"{atom}.valueBit64")
                 offset += 8
-                _, offset = _string(data, offset, f"{atom}.valueString")
+                _, offset = _string(data, offset, f"{atom}.valueString", strings)
     if offset != len(data):
         raise GameplayCompactDecodeError(f"WorldEntityRegistry trailing bytes: {len(data) - offset}")
     return {

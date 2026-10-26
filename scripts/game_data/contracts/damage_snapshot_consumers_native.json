@@ -1,0 +1,1262 @@
+{
+  "schema": "endfield.damage-snapshot-consumer-claims.v61",
+  "status": "reviewed",
+  "methods": {
+    "snapshotProducer": {
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_TakeDamageCalculationSnapshot",
+      "contract": "Names independent snapshot providers and field access without promoting call order to value flow.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.AbilityAction.get_owner",
+            "Beyond.Gameplay.Core.AbilityActionUtils.GetActionTarget",
+            "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+            "Beyond.ActionBlackboardExtensions.GetValue",
+            "Beyond.Gameplay.Core.AbilitySystem.get_atk"
+          ]
+        },
+        {
+          "readsField": "Beyond.Gameplay.Core.DamageAction::m_calcResultCache"
+        },
+        {
+          "writesField": "Beyond.Gameplay.Core.DamageAction::m_cachedAttacker"
+        }
+      ]
+    },
+    "normalConsumer": {
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_CalculateDamageResultForNormalEntity",
+      "contract": "Normal entity calculation contains a read of the named result cache and a List item getter.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DamageAction::m_calcResultCache"
+        },
+        {
+          "calls": [
+            "System.Collections.Generic.List`1.get_Item"
+          ]
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "The named snapshot producer contains owner/target resolution, Blackboard scalar resolution and the AbilitySystem attack getter; it writes the cached-attacker field and reads the calculation-result cache. The normal-entity consumer reads the same named cache and calls the List item getter. The independently checked snapshot consumer path carries incoming this to the cache receiver, incoming Int32 index from its entry stack slot into the closed List<Double> getter, and the getter XMM0 bits through a full vector copy to the RAX return of the single-Double CalcResult. A separate bounded simple producer fragment passes its stored scale plus action Blackboard to the Single provider, preserves that result across the Double attack getter, and transfers Double(Single scale)*Double attack in XMM1 with the same action cache in RCX and a static List<Double>.Add MethodSpec in R8 to the physical compiled append helper. The actual compiled append target is checked independently as an exact pdata-owned function. On its nonnull unsigned-capacity fast path, it increments one anonymous DWORD, writes old count+1 into a second DWORD, and stores the incoming Double bits at array payload plus signExtend(old count)*8 before a complete restoring RET. The actual caller target is also the registered closed-Double getter. Its exact pdata-owned normal path checks unsigned count and array bounds plus nonnull carrier, sign-extends the incoming index, reads eight bytes from the same anonymous array/payload slots as the compiled writer, and returns them in XMM0 through a full stack epilogue. The producer entry also proves incoming-this ownership of the cache reset on its checked false-IFix, nonnull carrier/owner and nonnull target-reference/cache path: a full R13D XOR supplies the four-byte zero, retained across normal Win64 calls; another anonymous DWORD is incremented. Null target reference instead reaches a completely checked restoring RET before either cache store. OnCreate now has an exact owned normal-path transfer proof: its false IFix guard preserves the incoming action in nonvolatile RBX, restores that same this into RCX, completely restores its own stack and tail-jumps to the exact previously checked snapshot entry. Both named concrete methods are instance void no-argument methods. The concrete constructor normal path independently matches tagged allocation class requests and constructor MethodSpecs to both reference field types. Its cache request names List<Double>; full allocator RAX bits are preserved in nonvolatile RDI across normal constructor returns and stored into the incoming action cache field before the final slot-address helper tail transfer. The constructor tail helper now has an entry-local complete reachable graph: zero DWORD gate reaches RET; nonzero derives one word address from input-slot bits and a RIP base, then BTS/LOCK CMPXCHG retries or returns. All reachable edges/RET/write widths are checked with no calls or explicit local frame/SP adjustments; RET still pops the return address. The derived word may alias valid stack storage; caller frame or return-slot preservation is not claimed. The snapshot flag skip graph checks the zero flag path through a raw 32-bit iteration increment and signed loop backedge or the same restoring RET, while the nonzero edge and simple append continuation connect to fresh proved fragment boundaries. A separate complete selected fallthrough after the fresh cache reset carries its proved R13D zero through an ordinary false IFix guard and opaque reference guards into a zero local flag and Int32 ESI initialization. The producer count call carries a statically typed SafeCount<DamageUnit> MethodSpec request, checked ordinary Int32 result, ordinary IList<MVAR0> formal and reciprocal method-generic owner. The actual physical helper null-input path has an owned entry prefix and distinct complete owned RET fragment; it returns explicit EAX zero, which the caller carries into R14D and a signed branch to the previously proved producer RET. At the fresh flag graph loop target, the anonymous action-root/child reads checked in the count request feed two unsigned bounds, sign extension of ESI and an exact eight-byte element load into RBX, whose nonnull value reaches the same snapshot-flag instruction. Zero counter initialization reaches the fresh count caller through an exact three-instruction no-counter-clobber interval. Its positive signed Int32 result fallthrough equals the fresh unit-read entry; skip/append continuations and backedge target agree with those fresh proofs. The complete selected ByType entry-to-RET graph forwards its named ordinary Int32 index from the checked incoming stack position into the exact fresh normal consumer stack slot, carries its ordinary unit reference into R9 and retains this/target/attacker through nonvolatile register chains. The normal callee returned low64 bits pass through full MOVQ transfers and a complete restoring RET in three exact adjacent pdata fragments.",
+    "conditional": "The cache read-to-return proof checks the false IFix guard, nonnull unit/cache and nonzero takeAtkSnapshot edge, complete selected instruction paths and epilogue. It assumes valid unchanged live this/frame, normal Win64 call preservation, a valid resolved matching MethodInfo and a normally returning getter. Other method call/field claims remain body-wide inventories, not value-flow proofs. The producer transfer additionally assumes its fragment-entry RDI action, RBX selected DamageUnit, RBP selected AbilitySystem source and R13B zero; it checks the nonzero simpleCalculation and nonnull-cache fallthrough. These register-entry roles and enclosing producer guards/loop are not proved by this fragment. The raw helper write additionally assumes valid unchanged carrier/frame/array storage, nonnegative Int32 array length and no concurrent mutation; slow/failure paths are excluded by checked instruction boundaries and guard edges. Equal consumer index and writer old count, the same receiver/array, valid nonnegative Int32 length/count and no intervening mutation imply the reader returns the stored eight-byte value. Actual index equality and state continuity are not observed. Reset requires valid unchanged frame/action/selection carriers and normally returning Win64 providers; selector and opaque handle meaning are not inferred. Physical slots remain anonymous, and the reset does not certify named List Clear or the entire producer loop. Actual OnCreate invocation, valid live action/class, normally returning Win64 guard and default patch selection remain conditions; the static lifecycle transfer does not observe execution. Constructor requests require valid initialized live ClassInfo/MethodInfo, normal Win64 helpers and valid action/frame/storage. Allocation semantics, folded List/LowLevelList constructor bodies and final slot helper effects remain separate; only the pre-helper pointer store is proved, not final field state or live heap class parity. If the actual eight-byte derived-word write range is disjoint from the actual input field-slot range, addresses/storage are valid and nonwrapping, the helper normally returns and there is no intervening/concurrent interference, the pre-tail cache pointer bits remain unchanged. A RIP base does not establish table backing allocation/extent. The helper has no pdata ownership proof and stays an entry-local graph. Ordinary scalar/reference/value ABI records and generic formal/closed-argument kinds are checked independently of formatted type names; byref, pinned or incompatible kinds fail closed. Skip entry unit/counter/bound registers and valid frame remain conditions; no overflow-free ordinal or producer/consumer index equality follows. This zero-counter path excludes the patch/root-failure/non-null-inner branches; opaque payload meaning, count provider semantics and intervening live memory behavior remain separate. Null-count helper selection requires its anonymous context slot nonzero, incoming collection pointer null, valid initialized live context/frame and normal storage/noninterference. Physical and registered request entries remain independently recorded; nonnull collection/count behavior and live ABI/class parity are not inferred. These unit slots remain anonymous. Nonnegative Int32 bounds, valid nonwrapping array storage, live action/unit class parity and unchanged root/child continuity are conditions; count-provider behavior does not name raw array slots or prove producer-consumer index equality. Under positive Int32 bound, normal Win64 RSI/R14 preservation, valid noninterfering storage/frame and every selected unit guard/skip/simple path, the loop counter visits zero through bound-minus-one without Int32 overflow. Excluded branches invalidate this selected model; no full-producer, raw cache position or actual consumer-index equality follows. A separate compact-cache recurrence composes fresh reset/skip/iteration/actual-writer proofs only under same unchanged action/cache/array identities, normal selected calls/fast paths and explicit noninterference: actual payload writes are disjoint from count storage, all actual helper writes leave action cache slot and carrier array reference intact, and every other store/provider leaves those identities/count unchanged. Selected appends use old raw cache count; any earlier skip makes that count less than the source counter. Storage disjointness, actual count/order/index values and consumer incoming-index equality are not observed. ByType selection requires false ordinary IFix, nonzero anonymous carrier DWORDs and two normally returned unnamed-predicate AL bytes zero. These raw predicates do not establish Bool or target-classification semantics. The explicit Bool reference-proxy store and all callees/providers require storage/frame noninterference: its real byte write must be disjoint from incoming/outgoing index, unit, return and saved-register ranges. Top-level caller index selection, actual cache branch/index correspondence and live final output remain open.",
+    "unresolved": "Actual producer-to-consumer index equality, complete producer loop/order, named generic List/managed array layout, runtime closed class parity, compiled-versus-registered Add identity, helper resizing/throw/failure paths, live provider values and final damage remain unresolved. The checked physical store/getter and conditional same-address relation do not supply a live ownership/index join or whole-body semantics.",
+    "structuralOnly": "The compiled helper slots remain anonymous reviewed raw-carrier structure. Open generic List field offsets do not name these slots or certify a live closed instance or managed array layout."
+  },
+  "cacheReturnProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_CalculateDamageResultForNormalEntity",
+    "cacheField": "Beyond.Gameplay.Core.DamageAction::m_calcResultCache",
+    "snapshotField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::takeAtkSnapshot",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "valueField": "Beyond.Gameplay.Core.CalcResult::value"
+  },
+  "simpleAppendProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "cacheField": "Beyond.Gameplay.Core.DamageAction::m_calcResultCache",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "simpleField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::simpleCalculation",
+    "scaleField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::atkScale",
+    "blackboardGetter": "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "attackGetter": "Beyond.Gameplay.Core.AbilitySystem.get_atk"
+  },
+  "compiledHelperProgram": {
+    "anonymousSlots": {
+      "counterDword": 28,
+      "arrayReference": 16,
+      "countDword": 24,
+      "arrayLengthDword": 24,
+      "arrayPayload": 32
+    }
+  },
+  "getterProgram": {
+    "slotSource": "compiledHelperProof"
+  },
+  "clearProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "opaqueSelectionLoads": {
+      "reference": 32,
+      "selectorDword": 36
+    },
+    "calls": {
+      "patch": "IFix.WrappersManagerImpl.IsPatched",
+      "owner": "Beyond.Gameplay.Core.AbilityAction.get_owner",
+      "handle": "Beyond.Gameplay.Core.AbilitySystem.get_selfTargetHandle",
+      "target": "Beyond.Gameplay.Core.AbilityActionUtils.GetActionTarget"
+    }
+  },
+  "onCreateProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "OnCreate",
+    "targetMethod": "_TakeDamageCalculationSnapshot",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched"
+  },
+  "constructorProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "otherField": "Beyond.Gameplay.Core.DamageAction::m_extraTargets"
+  },
+  "slotHelperProgram": {
+    "bitAddressProgram": {
+      "addressShift": 12,
+      "pageMask": 2097151,
+      "wordShift": 6,
+      "bitMask": 63
+    }
+  },
+  "skipProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "snapshotField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::takeAtkSnapshot",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit"
+  },
+  "counterProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "anonymousOperands": {
+      "opaqueRootPointerDisp8": 80,
+      "opaqueInnerPointerDisp32": 360,
+      "opaquePayloadPointerDisp8": 64,
+      "localVectorDisp8": 80,
+      "localFlagDisp8": 88
+    }
+  },
+  "countProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "countType": "Beyond.CollectionExtensions",
+    "countMethod": "SafeCount",
+    "formalCollectionType": "System.Collections.Generic.IList`1",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "anonymousOperands": {
+      "opaqueActionRootDisp8": 32,
+      "opaqueCollectionDisp8": 56,
+      "helperContextSlotDisp8": 56
+    }
+  },
+  "unitProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "snapshotField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::takeAtkSnapshot",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "anonymousElementSlots": {
+      "carrierCountDwordDisp8": 24,
+      "carrierArrayReferenceDisp8": 16,
+      "arrayBoundDwordDisp8": 24,
+      "arrayPayloadDisp8": 32
+    }
+  },
+  "iterationProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "anonymousInterimOperands": {
+      "localVectorDisp8": 80,
+      "opaqueActionVectorDisp8": 56
+    }
+  },
+  "compactProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_TakeDamageCalculationSnapshot",
+    "evidenceBoundary": "conditional"
+  },
+  "forwardProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_CalculateDamageResultByType",
+    "calleeMethod": "_CalculateDamageResultForNormalEntity",
+    "snapshotField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::takeAtkSnapshot",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "abilityType": "Beyond.Gameplay.Core.AbilitySystem",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "anonymousProgram": {
+      "frameAllocation": 96,
+      "opaqueCarrierDwordDisp32": 224,
+      "opaqueIncomingPointerOneCurrentOffset": 176,
+      "opaqueIncomingPointerTwoCurrentOffset": 168
+    }
+  },
+  "probeProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "evidenceBoundary": "conditional",
+    "anonymousProgram": {
+      "localFrameBytes": 16,
+      "anonymousGsQwordOffset": 16,
+      "lowWordMask": 61440,
+      "pageStep": 4096
+    }
+  },
+  "processLocalProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "calleeMethod": "_CalculateDamageResultForNormalEntity",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "abilityType": "Beyond.Gameplay.Core.AbilitySystem",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "detailsType": "Proto.BATTLE_DAMAGE_DETAIL",
+    "packType": "Beyond.Gameplay.Core.DamagePackData",
+    "anonymousProgram": {
+      "actionReferenceLocalDisp32": 4992,
+      "outBoolLocalDisp8": 114,
+      "opaqueLocalBufferDisp32": 1216,
+      "indexLocalDisp32": 128,
+      "attackerLocalDisp8": 120
+    }
+  },
+  "processLoopProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "indexLocalDisp32": 128,
+    "boundLocalDisp32": 416,
+    "selectedIncrementCount": 3
+  },
+  "processProviderProgram": {
+    "anonymousSlots": {
+      "countDword": 24,
+      "arrayReference": 16,
+      "arrayLengthDword": 24,
+      "arrayPayload": 32
+    }
+  },
+  "processContextProgram": {
+    "collectionType": "System.Collections.Generic.List`1",
+    "getterMethod": "get_Item",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit"
+  },
+  "processBoundProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "anonymousChildDisp8": 56
+  },
+  "processUnitSlotProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "anonymousUnitLocalDisp32": 160
+  },
+  "processZeroReturnProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage"
+  },
+  "normalFormulaProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_CalculateDamageResultForNormalEntity",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "packType": "Beyond.Gameplay.Core.DamagePackData",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "snapshotField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::takeAtkSnapshot",
+    "simpleField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::simpleCalculation",
+    "scaleField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::atkScale",
+    "packScaleField": "Beyond.Gameplay.Core.DamagePackData::atkScale",
+    "packAttributesField": "Beyond.Gameplay.Core.DamagePackData::attackerAttributes",
+    "unboxedHeaderBytes": 16,
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "blackboardGetter": "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "anonymousProgram": {
+      "arrayLengthDword": 24,
+      "anonymousClassDwordDisp32": 224,
+      "anonymousRootPointerDisp32": 184,
+      "anonymousChildPointerDisp8": 24,
+      "anonymousDebugPointerDisp32": 1048,
+      "anonymousDebugByteDisp8": 16,
+      "arrayReadDisp8": 48
+    }
+  },
+  "processPackCopyProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "anonymousSourceLocalDisp32": 1488,
+    "unboxedHeaderBytes": 16
+  },
+  "multiplyFormulaProgram": {
+    "type": "Beyond.Gameplay.Core.MultiplyAttributeCalculation",
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "abilityType": "Beyond.Gameplay.Core.AbilitySystem",
+    "blackboardType": "Beyond.ActionBlackboard",
+    "serverType": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS",
+    "sourceField": "Beyond.Gameplay.Core.MultiplyAttributeCalculation::valueSource",
+    "sourceEnum": "Beyond.Gameplay.Core.ValueSource",
+    "attributeField": "Beyond.Gameplay.Core.MultiplyAttributeCalculation::attributeType",
+    "attributeEnum": "Beyond.GEnums.AttributeType",
+    "multiplierField": "Beyond.Gameplay.Core.MultiplyAttributeCalculation::multiplier",
+    "additionField": "Beyond.Gameplay.Core.MultiplyAttributeCalculation::addition",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "attributeGetter": "Beyond.Gameplay.Core.CalculationBase.GetAttribute"
+  },
+  "poiseCopyProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "packType": "Beyond.Gameplay.Core.PoisePackData",
+    "resultType": "Beyond.Gameplay.Core.CalcResult",
+    "resultField": "Beyond.Gameplay.Core.PoisePackData::calcResult",
+    "unboxedHeaderBytes": 16,
+    "anonymousSourceDisp32": 464,
+    "anonymousDestinationDisp32": 208,
+    "evidenceBoundary": {
+      "rawCopy": "exact",
+      "typedFieldView": "conditional",
+      "headerAdjustment": "reviewed assumption, no independent boxed-to-unboxed bridge"
+    }
+  },
+  "poiseConstructorProgram": {
+    "type": "Beyond.Gameplay.Core.DamageAction",
+    "method": "_ProcessDamage",
+    "packType": "Beyond.Gameplay.Core.PoisePackData",
+    "abilityType": "Beyond.Gameplay.Core.AbilitySystem",
+    "maskType": "Beyond.Gameplay.DamageDecorateMask",
+    "environmentType": "Beyond.Gameplay.Core.IActionEnvironment",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "evidenceBoundary": {
+      "actualNamedRequestAndRawTransfer": "direct",
+      "typedPackView": "conditional"
+    }
+  },
+  "poiseAttributeProgram": {
+    "packType": "Beyond.Gameplay.Core.PoisePackData",
+    "abilityType": "Beyond.Gameplay.Core.AbilitySystem",
+    "attributesType": "Beyond.Gameplay.Core.Attributes",
+    "attributesField": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+    "attributeEnum": "Beyond.GEnums.AttributeType",
+    "providerSymbol": "Beyond.Gameplay.Core.Attributes.GetValue",
+    "anonymousProgram": {
+      "arrayLengthDisp8": 24,
+      "arrayPayloadDisp8": 32,
+      "classDwordDisp32": 224,
+      "staticCarrierDisp32": 184,
+      "arrayCarrierDisp8": 56,
+      "opaqueDwordDisp8": 24,
+      "opaqueSignedLimit": 3580
+    }
+  },
+  "attributeCachedProgram": {
+    "providerSymbol": "Beyond.Gameplay.Core.Attributes.GetValue",
+    "anonymousProgram": {
+      "flagDisp8": 24,
+      "arrayReferenceDisp8": 40,
+      "arrayLengthDisp8": 24,
+      "arrayPayloadDisp8": 32,
+      "classDwordDisp32": 224,
+      "staticCarrierDisp32": 184,
+      "opaqueDwordDisp8": 24,
+      "opaqueSignedLimits": [
+        3581,
+        3582,
+        3583
+      ]
+    }
+  },
+  "publicationBoundary": {
+    "main": "validated reports only",
+    "failure": "independent safe diagnostics companion; previous main untouched; unvalidated rows refused"
+  },
+  "poiseValueCopyConnection": {
+    "claim": "poiseAttributeSelectedCachedBitsToSameOldIndexStore",
+    "sourceProgram": "attributeCachedProgram",
+    "destinationProgram": "poiseAttributeProgram",
+    "evidenceBoundary": {
+      "conditional": "Fresh actual complete cached return and caller store connect old Int32 index bits and unchanged low64 XMM0 to an eight-byte destination write under selected path, valid storage/layout and noninterference.",
+      "unresolved": "Anonymous source and destination array/header interpretation, live index/value and final Poise output."
+    }
+  },
+  "attributeCacheStoreConnection": {
+    "claim": "attributeAnonymousArrayEightBytePublicationAndRestoringReturn",
+    "program": "attributeCachedProgram",
+    "evidenceBoundary": {
+      "exact": "Selected raw forty-byte slice includes an anonymous sixteen-byte receiver-header write and eight-byte array write, followed by identical return bits and the actual restoring-footer jump.",
+      "conditional": "Current compatible receiver/index/XMM6 and valid saved-frame/heap backing; later same-address cached read requires unchanged receiver, array pointer/index and noninterference.",
+      "unresolved": "Entry value production, preceding CFG, header/flag meanings, nested typed layout and live output."
+    }
+  },
+  "attributeCacheReturnBridgeProgram": {
+    "claim": "attributeOpaqueNormalReturnBitsThroughCachePublication",
+    "opaqueSignedLimit": 49966,
+    "evidenceBoundary": {
+      "exact": "Complete direct CALL plus selected caller bytes independently prove low64 XMM0 capture, anonymous BTR64/header preparation and unchanged XMM6 through the fresh store/return witness.",
+      "conditional": "Opaque callee normal return preserves current carriers/frame; selected guards, valid storage and temporary/header/array-write noninterference.",
+      "unresolved": "Callee return type/computation, entry carriers, header/flag meaning, other paths and live output."
+    }
+  },
+  "attributeSecondWordConnection": {
+    "claim": "attributeSecondAnonymousWordBitClearAndSameCacheReturnTail",
+    "program": "attributeCacheReturnBridgeProgram",
+    "evidenceBoundary": {
+      "exact": "Fifteen-byte actual selected edge preserves first qword, BTR64 clears a masked bit of the second and directly joins the authenticated common tail.",
+      "conditional": "Signed index at least64, all other prefix predicates, normal opaque-call return/carriers/frame and valid noninterfering temporary/header/array backing.",
+      "unresolved": "Index below128, semantic flag names, nested layouts, callee computation and live output."
+    }
+  },
+  "attributeSecondReadConnection": {
+    "claim": "attributeSelectedEntrySecondAnonymousWordCachedReturn",
+    "program": "attributeCachedProgram",
+    "evidenceBoundary": {
+      "exact": "Actual signed other-half edge executes a complete TEST64 second-qword and short jump to fresh SETA/common guarded array read/restoring RET.",
+      "conditional": "All remaining entry predicates, signed index at least64, compatible current receiver/index and valid noninterfering heap/frame storage.",
+      "unresolved": "Index below128, flag names, nested layouts, actual values and live output."
+    }
+  },
+  "poiseArrayPublicationConnection": {
+    "claim": "poiseOpaqueNormalPointerPublicationToSelectedArrayCarrier",
+    "program": "poiseAttributeProgram",
+    "evidenceBoundary": {
+      "exact": "Complete direct opaque-call request/returned64 publication and actual post-store call reach the fresh guard/slot-read selected cycle.",
+      "conditional": "Both callees normally return preserving compatible R15/frame; post-store/helper/temporary writes preserve the slot and valid backing, selected guard/provider conditions.",
+      "unresolved": "Allocator/write-barrier semantics, source typeinfo meaning, declared array/nested layout, original receiver origin and live output."
+    }
+  },
+  "poiseConstructorEntryConnection": {
+    "claim": "poiseConstructorEntryFullWidthArgumentCarriersAndFrame",
+    "program": "poiseConstructorProgram",
+    "evidenceBoundary": {
+      "exact": "Complete actual entry saves/pushes/frame and full64 parameter carrier copies with anonymous nonzero-byte fallthrough.",
+      "conditional": "Fresh typed actual named request, valid entry/shadow/frame storage and selected byte predicate; fifth-argument current address derives from ABI entry location plus actual frame.",
+      "unresolved": "Later carrier preservation/full constructor CFG or return, environment load, nested/header layout and live values."
+    }
+  },
+  "poiseConstructorSetupProgram": {
+    "outTemporary": 32,
+    "secondCarrierSlot": 16,
+    "environmentSlot": 40,
+    "maskSlot": 48,
+    "zeroSlot": 32,
+    "evidenceBoundary": {
+      "exact": "Complete selected setup and explicit first-iteration fallthrough links raw out-at-return copies, argument stores, low64 zero, root/static load, pointer publication and guarded array store.",
+      "conditional": "Every opaque callee preserves compatible carrier/frame; valid noninterfering out/header/root/array backing, positive selected signed bound and normal provider. Requested DWORD equals later bound only with unchanged root/class/static/count storage.",
+      "unresolved": "Opaque helper initialization/computation, allocator semantics/returned length, typed header/layout, whole constructor return, other paths and live values."
+    }
+  },
+  "poiseDefenderProgram": {
+    "arrayCarrier": 64,
+    "evidenceBoundary": {
+      "exact": "Complete branch-linked second request/publication, signed guard, defender field/provider/old-index store and matching restoring footer bytes.",
+      "conditional": "First-loop EBX zero and compatible root/carriers, normal opaque/provider returns, unchanged slot/root/static/count and valid noninterfering frame/heap backing. Stable nonnegative signed bound gives finite selected recurrence.",
+      "unresolved": "Returned array length/type, helper allocator/post-store meaning, header/layout, managed unwind ownership, other paths and live output."
+    }
+  },
+  "normalAttackPoiseProgram": {
+    "type": "Beyond.Gameplay.Core.NormalAttackPoiseCalculation",
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "scaleField": "Beyond.Gameplay.Core.NormalAttackPoiseCalculation::atkScale",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "reviewedOperandBits": "00000000",
+    "evidenceBoundary": "conditional selected false-patch normal return; exact selected disk operand bits require runtime operand/body unchanged; Single multiply precedes Double widening; no live final Poise"
+  },
+  "definiteValueProgram": {
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "type": "Beyond.Gameplay.Core.DefiniteValueCalculation",
+    "valueField": "Beyond.Gameplay.Core.DefiniteValueCalculation::value",
+    "scaleField": "Beyond.Gameplay.Core.DefiniteValueCalculation::valueScale",
+    "applyScaleField": "Beyond.Gameplay.Core.DefiniteValueCalculation::applyScale",
+    "doubleGetter": "Beyond.ActionBlackboardExtensions.GetDoubleValue",
+    "evidenceBoundary": "conditional selected false-patch/nonzero-applyScale/null-server return; actual branch-linked physical ranges, not managed unwind identity; Double value times widened Single scale"
+  },
+  "primaryAttrProgram": {
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "type": "Beyond.Gameplay.Core.PrimaryAttrCalculation",
+    "scaleField": "Beyond.Gameplay.Core.PrimaryAttrCalculation::valueScale",
+    "applyScaleField": "Beyond.Gameplay.Core.PrimaryAttrCalculation::applyScale",
+    "attributeGetter": "Beyond.Gameplay.Core.CalculationBase.GetAttribute",
+    "attributeEnum": "Beyond.GEnums.AttributeType",
+    "evidenceBoundary": "conditional actual named-call normal-return fragment plus independent entry-save witness; prefragment typed source/index/receiver/frame continuity open; Double to Single rounding then Single scale and packed-low-lane widening"
+  },
+  "breakingAttackProgram": {
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "type": "Beyond.Gameplay.Core.BreakingAttackCalculation",
+    "multiplierField": "Beyond.Gameplay.Core.BreakingAttackCalculation::multiplier",
+    "scaleField": "Beyond.Gameplay.Core.BreakingAttackCalculation::atkScale",
+    "attributeGetter": "Beyond.Gameplay.Core.CalculationBase.GetAttribute",
+    "attributeEnum": "Beyond.GEnums.AttributeType",
+    "attributeMembers": {
+      "attacker": "Atk",
+      "defender": "BreakingAttackDamageTakenScalar"
+    },
+    "evidenceBoundary": "conditional complete ready/false-patch/null-server selected entry-to-RET; typed incoming actor/override requests; actual mixed Double and Single rounding sequence; no live final output"
+  },
+  "atkScaleProgram": {
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "type": "Beyond.Gameplay.Core.AtkScaleCalculation",
+    "scaleField": "Beyond.Gameplay.Core.AtkScaleCalculation::atkScale",
+    "attackGetter": "Beyond.Gameplay.Core.AbilitySystem.get_atk",
+    "evidenceBoundary": "conditional complete ready/false-patch/null-override/nonnull-attacker/null-server selected path; branch-linked physical cold range; named attack Double times widened Single; no anonymous override array meaning or live output; complete per-instruction unique physical pdata coverage across selected fallthrough ranges, no managed-family identity"
+  },
+  "primarySelectorProgram": {
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "type": "Beyond.Gameplay.Core.PrimaryAttrCalculation",
+    "sourceField": "Beyond.Gameplay.Core.PrimaryAttrCalculation::valueSource",
+    "sourceEnum": "Beyond.Gameplay.Core.ValueSource",
+    "selectorField": "Beyond.Gameplay.Core.PrimaryAttrCalculation::type",
+    "selectorEnum": "Beyond.Gameplay.Core.PrimaryAttrCalculation+PrimaryAttrCalculationType",
+    "evidenceBoundary": "conditional complete ready/false-patch/typed non-Main/non-Sub selected entry-to-RET; exact positive-zero low64 result; no Main/Sub nullable helper/layout or live selection"
+  },
+  "calculationDispatchProgram": {
+    "method": "Evaluate",
+    "baseType": "Beyond.Gameplay.Core.CalculationBase",
+    "returnType": "Beyond.Gameplay.Core.CalcResult",
+    "referenceParameters": {
+      "attacker": "Beyond.Gameplay.Core.AbilitySystem",
+      "defender": "Beyond.Gameplay.Core.AbilitySystem",
+      "blackboard": "Beyond.ActionBlackboard",
+      "context": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "argsForServer": "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+    },
+    "comparisonType": "Beyond.Gameplay.Core.DefiniteValueCalculation",
+    "callerType": "Beyond.Gameplay.Core.DamageAction",
+    "callerMethod": "_CalculateDamageResultForNormalEntity",
+    "unitType": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+    "calculationField": "Beyond.Gameplay.Core.DamageAction+DamageUnit::atkCalculation",
+    "blackboardGetter": "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+    "declaredRuntimeCarrierLayout": {
+      "vtableBaseBytes": 320,
+      "entryStrideBytes": 16,
+      "infoWithinEntryBytes": 8,
+      "boundary": "reviewed runtime carrier layout declaration only; live class layout/parity/MethodInfo/prototype compatibility is conditional, not observed"
+    },
+    "anonymousCallerProgram": {
+      "anonymousContextCarrierDisp8": 24,
+      "anonymousArrayOneDisp8": 120,
+      "anonymousArrayTwoDisp32": 136,
+      "boundary": "actual raw caller carrier operands; no pack/header/array layout or opaque context type inferred"
+    },
+    "evidenceBoundary": {
+      "exact": "actual carrier reloads, observed offsets, pointer comparison, argument forwarding and complete non-equal callback restoring RET",
+      "direct": "comparison LEA target equals selected named DefiniteValue.Evaluate entry; actual CALLR10 uses loaded callback",
+      "conditional": "Evaluate virtual-request explanation requires declared runtime layout, compatible runtime class/prototype/parity/MethodInfo and normal preservation; no runtime subtype observed"
+    }
+  },
+  "calculationInlineProgram": {
+    "type": "Beyond.Gameplay.Core.DefiniteValueCalculation",
+    "method": "Evaluate",
+    "valueField": "Beyond.Gameplay.Core.DefiniteValueCalculation::value",
+    "scaleField": "Beyond.Gameplay.Core.DefiniteValueCalculation::valueScale",
+    "applyScaleField": "Beyond.Gameplay.Core.DefiniteValueCalculation::applyScale",
+    "scalarParameterType": "Beyond.Blackboard+BlackboardDouble",
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "doubleGetter": "Beyond.ActionBlackboardExtensions.GetDoubleValue",
+    "scalarGetter": "Beyond.ActionBlackboardExtensions.GetValue",
+    "blackboardType": "Beyond.ActionBlackboard",
+    "evidenceBoundary": "independent actual helper equal-entry no-scale188B/scaled222B source/control/precision/fullRET; compatible Definite field view conditional, pointer equality is not receiver runtime type; no Definite body reuse"
+  },
+  "poiseDeltaProgram": {
+    "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier",
+    "method": "get_finalDelta",
+    "parameters": [],
+    "returnType": "double",
+    "directionField": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<deltaType>k__BackingField",
+    "valueField": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<value>k__BackingField",
+    "directionEnum": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+    "selectedCompareMember": "Add",
+    "rawNumericalLayout": {
+      "directionDisplacement": 36,
+      "magnitudeDisplacement": 40,
+      "directionWidthBytes": 4,
+      "magnitudeWidthBytes": 8
+    },
+    "conditionalTypedView": {
+      "boxedValueHeaderAdjustmentBytes": 16,
+      "independentlyProved": false,
+      "condition": "selected compatible unboxed Modifier storage view; metadata owner and ordinary field declarations independently gated but do not prove adjustment"
+    },
+    "entryExtentBytes": 192,
+    "entryInstructionLengths": [
+      2,
+      4,
+      3,
+      7,
+      7,
+      2,
+      7,
+      3,
+      3,
+      6,
+      7,
+      6,
+      4,
+      2,
+      5,
+      7,
+      5,
+      7,
+      2,
+      3,
+      4,
+      2,
+      5,
+      5,
+      3,
+      3,
+      4,
+      4,
+      4,
+      5,
+      4,
+      1,
+      1,
+      3,
+      2,
+      5,
+      7,
+      5,
+      5,
+      2,
+      8,
+      2,
+      5,
+      3,
+      2,
+      5,
+      1
+    ],
+    "selectedPaths": [
+      "raw direction == 0 -> positive zero",
+      "raw direction != 0 and ordered magnitude < +0 -> clear +0 then direction multiplier",
+      "raw direction != 0 and JA not taken -> retained magnitude then direction multiplier"
+    ],
+    "callerBoundedRequest": {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+PoiseController",
+      "method": "ModifyPoise",
+      "parameter": "modifier",
+      "referenceTypeKind": 17,
+      "referenceFlags": 32,
+      "requestBytes": 34,
+      "wholeBodyProved": false
+    },
+    "boundary": "Exact/direct only actual raw numerical/branch/frame/lowDouble return and bounded named caller request. Typed direction/value storage interpretation conditional on selected compatible header/storage adjustment; reference parameter ABI separately acknowledged. No applied result, runtime state, virtual setter identity, all branch execution or complete caller body."
+  },
+  "poiseSetterProgram": {
+    "type": "Beyond.Gameplay.Core.AbilitySystem",
+    "method": "set_poise",
+    "poiseField": "Beyond.Gameplay.Core.AbilitySystem::m_poise",
+    "controllerField": "Beyond.Gameplay.Core.AbilitySystem::m_poiseController",
+    "controllerType": "Beyond.Gameplay.Core.AbilitySystem+PoiseController",
+    "entryExtentBytes": 198,
+    "entryInstructionLengths": [
+      2,
+      4,
+      3,
+      5,
+      5,
+      2,
+      3,
+      5,
+      2,
+      6,
+      7,
+      3,
+      6,
+      2,
+      5,
+      2,
+      2,
+      5,
+      2,
+      3,
+      5,
+      7,
+      3,
+      7,
+      2,
+      7,
+      3,
+      3,
+      3,
+      5,
+      8,
+      3,
+      8,
+      5,
+      7,
+      3,
+      2,
+      5,
+      4,
+      1,
+      1,
+      5,
+      8,
+      4,
+      1,
+      1,
+      5,
+      2,
+      5,
+      1
+    ],
+    "providers": {
+      "patch": "IFix.WrappersManagerImpl.IsPatched",
+      "recovery": "Beyond.Gameplay.Core.AbilitySystem+PoiseController.get_inPoiseRecovery",
+      "maxPoise": "Beyond.Gameplay.Core.AbilitySystem.get_maxPoise"
+    },
+    "literalBytes": {
+      "threshold": "acc52737",
+      "mask": "ffffff7fffffff7fffffff7fffffff7f"
+    },
+    "boundary": "Selected named Single setter consumes actual anonymous post-call XMM0.low32 carrier, computes SUBSS/ANDPS/COMISS and selects typed local store/no-local-store by CF, with complete normal returns. Anonymous helper managed prototype/Clamp/min/max semantics and complete invocation preservation remain open; disk literal bits and PE framing are exact, live original operand/code unchanged and normal FP/storage/ABI are conditions."
+  },
+  "maxPoiseProgram": {
+    "type": "Beyond.Gameplay.Core.AbilitySystem",
+    "method": "get_maxPoise",
+    "attributesField": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+    "attributesType": "Beyond.Gameplay.Core.Attributes",
+    "attributeEnum": "Beyond.GEnums.AttributeType",
+    "attributeMember": "MaxPoise",
+    "providerMethod": "Beyond.Gameplay.Core.Attributes.GetValue",
+    "entryExtentBytes": 196,
+    "entryInstructionLengths": [
+      2,
+      4,
+      3,
+      7,
+      7,
+      2,
+      7,
+      3,
+      3,
+      6,
+      7,
+      6,
+      7,
+      2,
+      7,
+      3,
+      3,
+      2,
+      7,
+      6,
+      7,
+      3,
+      2,
+      3,
+      5,
+      3,
+      5,
+      4,
+      4,
+      1,
+      1,
+      5,
+      7,
+      2,
+      5,
+      7,
+      2,
+      8,
+      2,
+      5,
+      8,
+      2,
+      5,
+      5,
+      1
+    ],
+    "callerType": "Beyond.Gameplay.Core.AbilitySystem",
+    "callerMethod": "set_poise",
+    "callerRequestOffset": 69,
+    "callerRequestBytes": 50,
+    "callerRequestLengths": [
+      2,
+      3,
+      5,
+      7,
+      3,
+      7,
+      2,
+      7,
+      3,
+      3,
+      3,
+      5
+    ],
+    "boundary": "Complete selected named MaxPoise attribute enum request -> normal ordinary Double -> CVTSD2SS -> Single normal RET, plus same actual getter Single low32 forwarding into existing selected setter anonymous request. Concrete receiver/field/provider/enum definition indices and ABI/actual targets are checked. Anonymous static guards do not prove ordinary false IsPatched. GetValue internal value/cached selection, helper managed prototype or upper-bound/Clamp identity, live application and all other paths remain open."
+  },
+  "damageScaleFoldProgram": {
+    "type": "Beyond.Gameplay.Core.DamagePackData",
+    "method": "_GetFinalDamageScale",
+    "entryExtentBytes": 284,
+    "entryInstructionLengths": [
+      5,
+      5,
+      5,
+      2,
+      4,
+      3,
+      5,
+      5,
+      2,
+      5,
+      2,
+      6,
+      7,
+      8,
+      7,
+      6,
+      7,
+      7,
+      3,
+      6,
+      7,
+      3,
+      6,
+      4,
+      7,
+      3,
+      5,
+      2,
+      2,
+      2,
+      3,
+      2,
+      3,
+      2,
+      5,
+      7,
+      2,
+      3,
+      5,
+      7,
+      3,
+      7,
+      2,
+      3,
+      3,
+      3,
+      5,
+      2,
+      4,
+      2,
+      2,
+      5,
+      3,
+      5,
+      5,
+      5,
+      5,
+      4,
+      2,
+      1,
+      3,
+      5,
+      7,
+      5,
+      5,
+      2,
+      5,
+      1
+    ],
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "providerMethod": "Beyond.Gameplay.Core.DamagePackData._GetDamageScale",
+    "zoneType": "Beyond.Gameplay.Core.DamageScaleProcessorConfig+Zone",
+    "seedBits": "000000000000f03f",
+    "evidenceBoundary": "Exact complete physical entry grammar, branch targets, precision sequence, saved-state/frame and selected normal RET are independent. Direct named ordinary patch and same-concrete-owner Pack/Zone scale requests are checked; ordinary Double return is a normal ABI condition. Count post-call EAX is only an opaque signed Int32 bound and item post-call RAX is only a raw carrier compatible with the declared Zone request condition; no managed count/item prototype, List<Zone> semantics or heap layout is proved. The selected original PE seed is raw-backed readable nonwritable nonexecutable and has no admitted overlapping relocation, but original runtime operand/code unchanged remains a condition. Positive bound c<=INT32_MAX and retained counter/bound/receiver/storage permit i=0..c-1 with no signed INC overflow. Each MULSD occurs in instruction order under the actual floating environment and normal completion; no reassociation, NaN/Inf/signed-zero simplification or actual live product follows. Normal Win64 callee preservation of nonvolatile registers/XMM6, compatible pack/Zone/context/list/carrier storage, frame/save/return-slot noninterference and no external mutation remain conditions. Initializer, patched, null and throw paths are excluded; scale internals, Buff, actual input values and applied damage remain open."
+  },
+  "finalAttackProgram": {
+    "type": "Beyond.Gameplay.Core.DamagePackData",
+    "method": "GetFinalAttackValue",
+    "entryExtentBytes": 163,
+    "entryInstructionLengths": [
+      2,
+      4,
+      3,
+      5,
+      5,
+      2,
+      5,
+      2,
+      6,
+      4,
+      6,
+      7,
+      7,
+      2,
+      3,
+      2,
+      3,
+      5,
+      2,
+      3,
+      5,
+      7,
+      3,
+      7,
+      4,
+      3,
+      2,
+      7,
+      3,
+      2,
+      4,
+      6,
+      5,
+      3,
+      5,
+      4,
+      1,
+      1,
+      5,
+      2,
+      5,
+      1
+    ],
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "modifierMethod": "Beyond.Gameplay.Core.DamagePackData.ApplyDamageModifer",
+    "foldMethod": "_GetFinalDamageScale",
+    "resultField": "calcResult",
+    "resultType": "Beyond.Gameplay.Core.CalcResult",
+    "damageField": "damageType",
+    "damageEnum": "Beyond.GEnums.DamageType",
+    "excludedDamageMember": "LifeDrain",
+    "timingEnum": "Beyond.Gameplay.Core.DamageProcessorBase+ProcessTiming",
+    "timingMember": "AfterCalculation",
+    "conditionalValueHeaderBytes": 16,
+    "evidenceBoundary": "Exact complete physical partition and selected guards/normal footer; normal ordinary Double fold carrier multiplied first in XMM6 with the actual post-modifier-and-fold lowDouble memory load. Typed pack calcResult/damageType view remains conditional on selected header/storage adjustment16; does not independently prove boxed/unboxed layout. Original code unchanged, compatible receiver/debug carrier/class/storage, both named calls returning normally, actual floating environment and frame/save/return/object/register noninterference are conditions. AfterCalculation and LifeDrain aliases are fresh native enum declarations, not proof of callback execution or modifier semantics. Scale provider values, list/count/item ownership, live inputs/amounts, debug diversion, patched path, initializer and LifeDrain cold path remain open. Freshly executed independent fold proof supplies its selected empty/positive ordinary normal Double request/result evidence within this one row, not a second recovery count. Actual modifier ProcessTiming ID/all aliases and LifeDrain exclusion ID/all aliases, ordinary ABI and same selected-image concrete owners are checked independently; those declarations do not prove modifier effects or runtime invocation. Typed low-Double result field view and raw enum field view are conditional on the declared value-type header/storage adjustment, not independently proved boxed/unboxed layout."
+  },
+  "damageTypeSelectorProgram": {
+    "type": "Beyond.Gameplay.Core.DamagePackData",
+    "method": "_GetAttackerDamageScaleIncreaseFromDamageType",
+    "entryExtentBytes": 260,
+    "codeBytes": 228,
+    "codeInstructionLengths": [
+      2,
+      4,
+      3,
+      2,
+      5,
+      5,
+      2,
+      6,
+      4,
+      3,
+      6,
+      7,
+      7,
+      3,
+      2,
+      4,
+      3,
+      6,
+      4,
+      6,
+      8,
+      4,
+      1,
+      1,
+      4,
+      3,
+      2,
+      4,
+      2,
+      8,
+      4,
+      1,
+      1,
+      4,
+      3,
+      2,
+      4,
+      2,
+      8,
+      4,
+      1,
+      1,
+      4,
+      3,
+      2,
+      4,
+      2,
+      8,
+      4,
+      1,
+      1,
+      4,
+      3,
+      2,
+      4,
+      2,
+      8,
+      4,
+      1,
+      1,
+      5,
+      1,
+      5,
+      1,
+      2
+    ],
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "damageField": "damageType",
+    "damageEnum": "Beyond.GEnums.DamageType",
+    "arrayField": "attackerAttributes",
+    "attributeEnumAnnotation": "Beyond.GEnums.AttributeType",
+    "conditionalValueHeaderBytes": 16,
+    "conditionalArrayLayout": {
+      "countDwordOffset": 24,
+      "payloadOffset": 32,
+      "strideBytes": 8
+    },
+    "normalCases": [
+      {
+        "damageMember": "Physical",
+        "numericAnnotationMember": "PhysicalDamageIncrease"
+      },
+      {
+        "damageMember": "Fire",
+        "numericAnnotationMember": "FireDamageIncrease"
+      },
+      {
+        "damageMember": "Pulse",
+        "numericAnnotationMember": "PulseDamageIncrease"
+      },
+      {
+        "damageMember": "Cryst",
+        "numericAnnotationMember": "CrystDamageIncrease"
+      },
+      {
+        "damageMember": "Natural",
+        "numericAnnotationMember": "NaturalDamageIncrease"
+      }
+    ],
+    "excludedDamageMembers": [
+      "Real",
+      "LifeDrain",
+      "Ether"
+    ],
+    "evidenceBoundary": "Exact complete physical partition separates 228 code bytes from the trailing 32-byte eight-entry UInt32 RVA table. Independent raw grammar checks MOVSXD, unsigned index<=7, RIP imagebase, scaled table address, zeroextended ECX RVA plus imagebase ADD64/JMP, every selected null/unsigned-count guard, eight-byte MOVSD load and complete RBX/frame RET across five normal cases. Three cold targets, patched/default and null/bounds helper exits are explicitly excluded. Whole table has unique complete PE raw backing, readable nonwritable section (executable permitted), no admitted overlapping relocation; original runtime code/table unchanged remains a condition, not observed live protection. Fresh named ordinary Double return, same selected-image concrete Pack/damage-enum declarations and ordinary SZARRAY primitiveDouble element are checked. Typed Pack field view remains conditional on the declared value-header adjustment, and raw count/payload/stride interpretation remains conditional on compatible valid runtime array layout/storage. AttributeType same-ID aliases are only conditional static numeric annotations: the array producer/index-map correspondence, actual attribute values and runtime invocation are unproved. Selected MOVSD-to-XMM0.low64 return preserves raw bits without arithmetic/conversion or NaN/signed-zero filtering, conditional on normal instructions, false ordinary patch return, valid unchanged current receiver/array/frame/return storage and no external interference. No Buff/provider internals or other cold path is recovered."
+  },
+  "dumpAttributesProgram": {
+    "type": "Beyond.Gameplay.Core.DamagePackData",
+    "method": "_DumpAttributes",
+    "entryExtentBytes": 560,
+    "entryInstructionLengths": [
+      5,
+      5,
+      5,
+      5,
+      2,
+      4,
+      3,
+      2,
+      5,
+      5,
+      2,
+      6,
+      7,
+      4,
+      5,
+      2,
+      3,
+      3,
+      6,
+      2,
+      7,
+      6,
+      6,
+      7,
+      2,
+      2,
+      7,
+      4,
+      6,
+      6,
+      7,
+      3,
+      3,
+      6,
+      7,
+      6,
+      7,
+      3,
+      6,
+      3,
+      2,
+      3,
+      5,
+      3,
+      6,
+      3,
+      6,
+      3,
+      2,
+      6,
+      5,
+      7,
+      4,
+      5,
+      3,
+      3,
+      6,
+      7,
+      7,
+      6,
+      7,
+      2,
+      2,
+      7,
+      7,
+      7,
+      6,
+      7,
+      3,
+      3,
+      6,
+      7,
+      6,
+      7,
+      3,
+      6,
+      3,
+      2,
+      3,
+      5,
+      3,
+      6,
+      3,
+      6,
+      3,
+      2,
+      6,
+      5,
+      5,
+      5,
+      5,
+      5,
+      4,
+      2,
+      1,
+      3,
+      5,
+      7,
+      5,
+      5,
+      7,
+      5,
+      3,
+      5,
+      7,
+      5,
+      5,
+      7,
+      5,
+      7,
+      6,
+      5,
+      8,
+      6,
+      5,
+      5,
+      1,
+      5,
+      1
+    ],
+    "patchMethod": "IFix.WrappersManagerImpl.IsPatched",
+    "providerMethod": "Beyond.Gameplay.Core.Attributes.GetValue",
+    "actorType": "Beyond.Gameplay.Core.AbilitySystem",
+    "attributesType": "Beyond.Gameplay.Core.Attributes",
+    "actorAttributesField": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+    "attributeEnum": "Beyond.GEnums.AttributeType",
+    "firstLockStorageField": "attacker",
+    "secondLockStorageField": "defender",
+    "lockStorageDeclarationType": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>",
+    "attackerArrayField": "attackerAttributes",
+    "defenderArrayField": "defenderAttributes",
+    "selectorMethod": "_GetAttackerDamageScaleIncreaseFromDamageType",
+    "conditionalValueHeaderBytes": 16,
+    "conditionalArrayLayout": {
+      "countDwordOffset": 24,
+      "payloadOffset": 32,
+      "strideBytes": 8
+    },
+    "anonymousProgram": {
+      "readyDword": 224,
+      "payloadPointer": 184,
+      "opaqueCountDword": 24,
+      "opaqueSignedLimit": 3580,
+      "coldContinuationPointer": 28672
+    },
+    "selectorJoinConditions": [
+      "samePack caller receiver identity not just same type",
+      "same attackerArray reference through Dump and selector loads",
+      "N greater than selected physical index",
+      "actual property-provider request ordinaryEnum index i and normal Double bits",
+      "all subsequent defender writes/opaquecallee effects/external writes disjoint from retained attacker payload slots",
+      "original code/storage and runtime array/class layout compatible",
+      "no claim that opaque ApplyDamageModifer actually invokes Dump"
+    ],
+    "evidenceBoundary": "Exact complete 119-instruction physical partition and all actual branch targets authenticate a selected false ordinary patch path through two ordered loops and the full RBX/RBP/RSI/RDI/R14/frame normal void return. Both actual named Attributes.GetValue calls use the same fresh ordinary Int32 AttributeType enum/Double declaration and concrete Attributes owner. First EBX32 and second EDI32 start at zero: old index bits enter EDX, the normally returned XMM0.low64 Double passes unchanged through null/unsigned-count guards, old index is signextended before INC32, and exactly eight bytes store at that old index. Anonymous signed bound is reread each iteration; stable N in [0,Int32Max], normal calls and counter preservation are conditions, so index0..N-1 has no signed INC overflow. Both actual Lock requests share one physical entry, but generic Lock managed identity/ABI/typed return are unproved: postcall raw RAX must be compatible AbilitySystem storage before its declared current m_attributes field is interpreted. ObjectPtr generic value field names are structural declarations only. Pack header adjustment and array count/payload/stride interpretation remain conditional. Valid nonwrapping receiver/actor/Attributes/array/frame/return storage, original code, normal Win64 nonvolatile preservation and no opaque callee/external/object/payload interference remain conditions; first-phase EBX index and RSI array are not carried across their later replacement by defender array RBX and second actor RSI. Per-iteration normal GetValue(enum i) bits are established, not provider internals, a coherent-time snapshot or actual values. Conditional connection to the fresh selector additionally requires the same Pack/attackerArray, N covering the slot and no later defender/callee/external overwrite; actual caller invocation/order and a claim that opaque ApplyDamageModifer invokes this producer remain open. Initializer, null/bounds helper, patched and other cold paths are excluded."
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema": "endfield.buff-camera-descriptor-cache-publication-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_descriptor_cache_insertion_native.json",
+  "function": {
+    "entryRva": 774720,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 774720,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            774720,
+            775356,
+            211637472
+          ],
+          "tableRowRva": 251771612,
+          "runtimeTripleRawHex": "40D20B00BCD40B00E0549D0C",
+          "codeBytes": 636,
+          "unwindRawHex": "0104010004420000",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 774720,
+        "endRva": 775356,
+        "sha256": "4C949677DBCC544D187F59B789AEB6ACAC1D235A43AFFD61A6CA4418DBC8A4EF"
+      }
+    ],
+    "checkedInstructionCount": 146
+  },
+  "labels": {
+    "globalFirstUnsigned": 775246,
+    "globalFirstScale": 774999,
+    "globalFirstConvert": 775044,
+    "globalSecondUnsigned": 775275,
+    "globalSecondScale": 775076,
+    "globalSecondConvert": 775103,
+    "recordFirstUnsigned": 775301,
+    "recordFirstScale": 775146,
+    "recordFirstConvert": 775171,
+    "recordSecondUnsigned": 775330,
+    "recordSecondScale": 775199,
+    "recordSecondConvert": 775224
+  },
+  "globals": {
+    "objectBase": 233437888,
+    "floatThreshold": 176958456
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, complete exception-owned call-free publication body and code windows",
+    "direct": "Selected byte/DWORD/QWORD transfers in both directions, byte clears and threshold-store routing",
+    "structuralOnly": "Unmodelled stack-source bytes in the returned packed record block and FP threshold calculations",
+    "conditional": "Disjoint valid record/global/frame storage and coherent source field reads",
+    "unresolved": "Whole-object exact swap, numeric FP policy, atomic publication, source-pointer history, concurrent visibility and runtime selection"
+  }
+}

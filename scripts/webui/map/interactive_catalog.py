@@ -11,6 +11,7 @@ from functools import lru_cache
 import json
 from pathlib import Path
 
+from scripts.game_data.string_pool import StringPoolDecodeError, export_string_pool
 from scripts.game_data.interactive_binary import (
     InteractiveBinaryDecodeError, decode_interactive_table,
 )
@@ -89,8 +90,11 @@ def load_catalog(export_root: Path) -> tuple[dict, dict]:
     table_path = "game/Json/Interactive/InteractiveTable.json"
     audit = {"status": "unavailable", "source": table_path}
     try:
-        table = decode_interactive_table((export_root / table_path).read_bytes())
-    except (OSError, InteractiveBinaryDecodeError) as exc:
+        table = decode_interactive_table(
+            (export_root / table_path).read_bytes(),
+            strings=export_string_pool(export_root / "game" / "Json"),
+        )
+    except (OSError, InteractiveBinaryDecodeError, StringPoolDecodeError) as exc:
         audit["diagnostic"] = str(exc)[:400]
         return {}, audit
     sources = {"table": table_path}

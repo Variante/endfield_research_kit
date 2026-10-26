@@ -1,0 +1,1564 @@
+{
+  "schema": "endfield.wwise-built-in-parameters-native.v5",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "rayArrayBuild",
+      "entryRva": "0x1190e0",
+      "windows": [
+        {
+          "rva": "0x1190e0",
+          "bodyLength": 1224,
+          "bodySha256": "ca600a360470cfde86246c7e145e006e7c6825d0daacfc2e5cc6ab5c5467f7c6",
+          "unwindRva": "0x306cb8",
+          "unwindInfoHex": "01380c2538680500292324c220f01ee01cd01ac01870176016301550",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "rowCount",
+        "rowStride",
+        "rowBase",
+        "distanceOutput",
+        "calculateDistance"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "rowCount",
+          "rva": "0x1193e0",
+          "instructionHex": "8b5628"
+        },
+        {
+          "role": "rowStride",
+          "rva": "0x1193e3",
+          "instructionHex": "4869fa88000000"
+        },
+        {
+          "role": "rowBase",
+          "rva": "0x1193f0",
+          "instructionHex": "48037e20"
+        },
+        {
+          "role": "distanceOutput",
+          "rva": "0x119497",
+          "instructionHex": "4c8bc7"
+        },
+        {
+          "role": "calculateDistance",
+          "rva": "0x119511",
+          "instructionHex": "e8ba56ffff"
+        }
+      ]
+    },
+    {
+      "key": "rayBuiltInPrepare",
+      "entryRva": "0x1195b0",
+      "windows": [
+        {
+          "rva": "0x1195b0",
+          "bodyLength": 21,
+          "bodySha256": "2ebe09f3abe54abdf227e07df74d3159f8716e03b824b4a62e44167d67662e9c",
+          "unwindRva": "0x306d48",
+          "unwindInfoHex": "01130500136416001301120008500000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1195c5",
+          "bodyLength": 153,
+          "bodySha256": "93d312d6c6124ede8b82a7c1a9f0a8d59ad43266ecbf25414f4539457871f57b",
+          "unwindRva": "0x306d58",
+          "unwindInfoHex": "213104003168080004341400b0951100c5951100486d3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x11965e",
+          "bodyLength": 91,
+          "bodySha256": "12af2744793dedea5657787cc1fc919be585491792070067987ac04dd1f3cdf7",
+          "unwindRva": "0x306d70",
+          "unwindInfoHex": "2108020008741500c59511005e961100586d3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1196b9",
+          "bodyLength": 29,
+          "bodySha256": "7c8010a312dbed423d83c6469874b736ea275b0548799ea7a50e6df4e171907f",
+          "unwindRva": "0x306d84",
+          "unwindInfoHex": "21000000c59511005e961100586d3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1196d6",
+          "bodyLength": 39,
+          "bodySha256": "b5bb25642d417014cfdbaf0e0bb97c23e2a34bf0c01648cb6a588decda1cf713",
+          "unwindRva": "0x306d94",
+          "unwindInfoHex": "21000000b0951100c5951100486d3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "buildRays",
+        "selectRay",
+        "selectedIndex",
+        "selectedStride",
+        "selectedBase",
+        "selectedInput",
+        "updateBuiltIns"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "buildRays",
+          "rva": "0x119646",
+          "instructionHex": "e895faffff"
+        },
+        {
+          "role": "selectRay",
+          "rva": "0x119651",
+          "instructionHex": "e80a080000"
+        },
+        {
+          "role": "selectedIndex",
+          "rva": "0x119656",
+          "instructionHex": "8b45ff"
+        },
+        {
+          "role": "selectedStride",
+          "rva": "0x119666",
+          "instructionHex": "4869f888000000"
+        },
+        {
+          "role": "selectedBase",
+          "rva": "0x119671",
+          "instructionHex": "48037820"
+        },
+        {
+          "role": "selectedInput",
+          "rva": "0x1196a9",
+          "instructionHex": "488bd7"
+        },
+        {
+          "role": "updateBuiltIns",
+          "rva": "0x1196ac",
+          "instructionHex": "e87f080000"
+        }
+      ]
+    },
+    {
+      "key": "raySelection",
+      "entryRva": "0x119e60",
+      "windows": [
+        {
+          "rva": "0x119e60",
+          "bodyLength": 30,
+          "bodySha256": "57f779f4d6a4955b55f22b71cb0b317c6d5ecbd8772adbe4cee73ed07cd4b13d",
+          "unwindRva": "0x303e28",
+          "unwindInfoHex": "01080300084204e002300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x119e7e",
+          "bodyLength": 165,
+          "bodySha256": "b391a7c4f3ecabdd0d771cadc37599f86b4dba68a05b8ce690b1256db5fa89fd",
+          "unwindRva": "0x306c88",
+          "unwindInfoHex": "2114080014f404000f740b000a640a0005540800609e11007e9e1100283e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x119f23",
+          "bodyLength": 12,
+          "bodySha256": "bd239e38973bf2f947683ddcdb93732519321c1d2c208d4ba646a8893edc7f20",
+          "unwindRva": "0x306ca8",
+          "unwindInfoHex": "21000000609e11007e9e1100283e3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x119e60",
+          "instructionHex": "4053"
+        }
+      ]
+    },
+    {
+      "key": "rayDistance",
+      "entryRva": "0x10ebd0",
+      "windows": [
+        {
+          "rva": "0x10ebd0",
+          "bodyLength": 708,
+          "bodySha256": "1658eeb0206475880de8d6b8093b77bb6a21536ae80e930e293fd0a06a37de11",
+          "unwindRva": "0x305e48",
+          "unwindInfoHex": "01480b0048a802004298030038880400327805002768060004e20000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "sourcePointX",
+        "sourcePointY",
+        "sourcePointZ",
+        "listenerPointX",
+        "listenerPointY",
+        "listenerPointZ",
+        "normSqrt",
+        "probeOwner",
+        "probeSqrt",
+        "listenerScaling",
+        "sourceScaling",
+        "scaledDistance",
+        "distanceStore"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "sourcePointX",
+          "rva": "0x10ebd4",
+          "instructionHex": "f2410f106018"
+        },
+        {
+          "role": "sourcePointY",
+          "rva": "0x10ebdd",
+          "instructionHex": "f2410f106820"
+        },
+        {
+          "role": "sourcePointZ",
+          "rva": "0x10ebf7",
+          "instructionHex": "f2410f107028"
+        },
+        {
+          "role": "listenerPointX",
+          "rva": "0x10ebe6",
+          "instructionHex": "f20f5c4178"
+        },
+        {
+          "role": "listenerPointY",
+          "rva": "0x10ec20",
+          "instructionHex": "f20f5c8180000000"
+        },
+        {
+          "role": "listenerPointZ",
+          "rva": "0x10ec36",
+          "instructionHex": "f20f5c8188000000"
+        },
+        {
+          "role": "normSqrt",
+          "rva": "0x10ec5d",
+          "instructionHex": "f3440f51c2"
+        },
+        {
+          "role": "probeOwner",
+          "rva": "0x10ebeb",
+          "instructionHex": "488b8198000000"
+        },
+        {
+          "role": "probeSqrt",
+          "rva": "0x10ecd0",
+          "instructionHex": "f30f51d9"
+        },
+        {
+          "role": "listenerScaling",
+          "rva": "0x10ee48",
+          "instructionHex": "f30f108990000000"
+        },
+        {
+          "role": "sourceScaling",
+          "rva": "0x10ee5a",
+          "instructionHex": "f3410f594978"
+        },
+        {
+          "role": "scaledDistance",
+          "rva": "0x10ee7c",
+          "instructionHex": "f30f5ed9"
+        },
+        {
+          "role": "distanceStore",
+          "rva": "0x10ee86",
+          "instructionHex": "f3410f115830"
+        }
+      ]
+    },
+    {
+      "key": "rayBuiltInUpdate",
+      "entryRva": "0x119f30",
+      "windows": [
+        {
+          "rva": "0x119f30",
+          "bodyLength": 500,
+          "bodySha256": "ac4c642e86bad10f13229bf81841cbb216a1d497c9bb82a781170d6605686f49",
+          "unwindRva": "0x306da4",
+          "unwindInfoHex": "01390a0039780500166806000f6413000f3412000fd20b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "distanceEnabled",
+        "distanceInput",
+        "distanceManager",
+        "distanceBinding",
+        "distanceWrite"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "distanceEnabled",
+          "rva": "0x119f46",
+          "instructionHex": "f6414801"
+        },
+        {
+          "role": "distanceInput",
+          "rva": "0x119f7d",
+          "instructionHex": "f30f105a30"
+        },
+        {
+          "role": "distanceManager",
+          "rva": "0x119f87",
+          "instructionHex": "488b0d5aaa2200"
+        },
+        {
+          "role": "distanceBinding",
+          "rva": "0x119f8e",
+          "instructionHex": "ba01000000"
+        },
+        {
+          "role": "distanceWrite",
+          "rva": "0x119f93",
+          "instructionHex": "e8188ffeff"
+        }
+      ]
+    },
+    {
+      "key": "builtInParameterWrite",
+      "entryRva": "0x102eb0",
+      "windows": [
+        {
+          "rva": "0x102eb0",
+          "bodyLength": 72,
+          "bodySha256": "840ab907531a922182df9bba47ad68dcf4eabe12e43f279c84f4769d451807f1",
+          "unwindRva": "0x304ee4",
+          "unwindInfoHex": "010d06000d3411000d9209e007700660",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x102ef8",
+          "bodyLength": 201,
+          "bodySha256": "9a997c770e6c793717d1a69ac76f259e0a2818da642a95fd280c8573f310c6b2",
+          "unwindRva": "0x304ef4",
+          "unwindInfoHex": "2108020008541000b02e1000f82e1000e44e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x102fc1",
+          "bodyLength": 17,
+          "bodySha256": "bcafaaed5dd1823e6e37687322e6fa2cc183fb72ea94d76ba0591d17549e9b70",
+          "unwindRva": "0x304f08",
+          "unwindInfoHex": "21000000b02e1000f82e1000e44e3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "bindingOrdinal",
+        "bindingList",
+        "bindingCount",
+        "packedKey",
+        "keyType",
+        "exactId",
+        "skipOverride",
+        "providedValue",
+        "applyScopedValue"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "bindingOrdinal",
+          "rva": "0x102ec3",
+          "instructionHex": "4883c605"
+        },
+        {
+          "role": "bindingList",
+          "rva": "0x102edd",
+          "instructionHex": "488b1cf1"
+        },
+        {
+          "role": "bindingCount",
+          "rva": "0x102ee1",
+          "instructionHex": "8b44f108"
+        },
+        {
+          "role": "packedKey",
+          "rva": "0x102f10",
+          "instructionHex": "488b0b"
+        },
+        {
+          "role": "keyType",
+          "rva": "0x102f1a",
+          "instructionHex": "0fb6c0"
+        },
+        {
+          "role": "exactId",
+          "rva": "0x102f40",
+          "instructionHex": "394808"
+        },
+        {
+          "role": "skipOverride",
+          "rva": "0x102f64",
+          "instructionHex": "4883782000"
+        },
+        {
+          "role": "providedValue",
+          "rva": "0x102f97",
+          "instructionHex": "896c2470"
+        },
+        {
+          "role": "applyScopedValue",
+          "rva": "0x102f9b",
+          "instructionHex": "e8804d0600"
+        }
+      ]
+    },
+    {
+      "key": "parameterScopedValueApply",
+      "entryRva": "0x167d20",
+      "windows": [
+        {
+          "rva": "0x167d20",
+          "bodyLength": 76,
+          "bodySha256": "a3a788f2586bd26e14ea469917ec7f00a5d461d43252e33db16ee4aaf1af20ad",
+          "unwindRva": "0x30c458",
+          "unwindInfoHex": "0116080016d20ff00dd00bc00970086007300650",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x167d6c",
+          "bodyLength": 335,
+          "bodySha256": "508253fffa6965127e41d040c0e50e901ce1bb3a99825331ed1fc18ca8cc9a76",
+          "unwindRva": "0x30c46c",
+          "unwindInfoHex": "2108020008e41700207d16006c7d160058c43000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x167ebb",
+          "bodyLength": 149,
+          "bodySha256": "7f975d2bc215c7c769f16baa80a763b3c6cbac3daf8c2e2fd5f97bbf7b1e3ad1",
+          "unwindRva": "0x30c480",
+          "unwindInfoHex": "21000000207d16006c7d160058c43000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "scopeCopy0",
+        "scopeCopy1",
+        "scopeCopy2",
+        "notificationDispatch",
+        "valueUpdate",
+        "scopeEntry"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x167d20",
+          "instructionHex": "4c89442418"
+        },
+        {
+          "role": "scopeCopy0",
+          "rva": "0x167d8e",
+          "instructionHex": "0f1006"
+        },
+        {
+          "role": "scopeCopy1",
+          "rva": "0x167d95",
+          "instructionHex": "0f104e10"
+        },
+        {
+          "role": "scopeCopy2",
+          "rva": "0x167da1",
+          "instructionHex": "0f104620"
+        },
+        {
+          "role": "notificationDispatch",
+          "rva": "0x167e5c",
+          "instructionHex": "e8afb7ffff"
+        },
+        {
+          "role": "valueUpdate",
+          "rva": "0x167e10",
+          "instructionHex": "e83b010000"
+        },
+        {
+          "role": "scopeEntry",
+          "rva": "0x167d52",
+          "instructionHex": "e879f4ffff"
+        }
+      ]
+    },
+    {
+      "key": "transitionManagerProcess",
+      "entryRva": "0xec280",
+      "windows": [
+        {
+          "rva": "0xec280",
+          "bodyLength": 56,
+          "bodySha256": "508c3c966a8ce1238bee7bcfdf6ea597f86859ba073b10169801523f2e1d2497",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "firstList",
+        "secondList"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0xec280",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "firstList",
+          "rva": "0xec296",
+          "instructionHex": "e8b5feffff"
+        },
+        {
+          "role": "secondList",
+          "rva": "0xec2a4",
+          "instructionHex": "e8a7feffff"
+        }
+      ]
+    },
+    {
+      "key": "transitionListProcess",
+      "entryRva": "0xec150",
+      "windows": [
+        {
+          "rva": "0xec150",
+          "bodyLength": 39,
+          "bodySha256": "25b46309439253f54a2c57f07924da1e5a64f1a3d759c4b91e80c536f528b3ef",
+          "unwindRva": "0x302e4c",
+          "unwindInfoHex": "010e06000e640b000e320af008c00670",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xec177",
+          "bodyLength": 245,
+          "bodySha256": "aa503500d53d1b55c093c02102cf114d736de80b2a201f602072e62222ce4de3",
+          "unwindRva": "0x302e5c",
+          "unwindInfoHex": "2114060014e40a000a5409000534080050c10e0077c10e004c2e3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xec26c",
+          "bodyLength": 15,
+          "bodySha256": "208344ba79fdd58996bac95877905258ef50a878f0a085c016024ee7eb0b0b96",
+          "unwindRva": "0x302e78",
+          "unwindInfoHex": "2100000050c10e0077c10e004c2e3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "advance",
+        "completionRemove"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0xec150",
+          "instructionHex": "4889742420"
+        },
+        {
+          "role": "advance",
+          "rva": "0xec201",
+          "instructionHex": "e8aaf1ffff"
+        },
+        {
+          "role": "completionRemove",
+          "rva": "0xec22a",
+          "instructionHex": "ff4e08"
+        }
+      ]
+    },
+    {
+      "key": "transitionAdvance",
+      "entryRva": "0xeb3b0",
+      "windows": [
+        {
+          "rva": "0xeb3b0",
+          "bodyLength": 48,
+          "bodySha256": "6b8c3961f6493665640306fc69f395165b908e807e4b3dcd5b374cb762b31ff8",
+          "unwindRva": "0x2f2e1c",
+          "unwindInfoHex": "010a04000a3408000a320670",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeb3e0",
+          "bodyLength": 126,
+          "bodySha256": "99eed38d8c0928d68abe69598094c6d7a129f5a90f665f60139280530da8db43",
+          "unwindRva": "0x302da0",
+          "unwindInfoHex": "2105020005640600b0b30e00e0b30e001c2e2f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xeb45e",
+          "bodyLength": 157,
+          "bodySha256": "5ea9afda961e8d28c5d25e8753b4cc3b507c121d3df25f8b864a569725dc127d",
+          "unwindRva": "0x302db4",
+          "unwindInfoHex": "21000000b0b30e00e0b30e001c2e2f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "completionTarget",
+        "progressFraction",
+        "curveEvaluate",
+        "notifyUsers"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0xeb3b0",
+          "instructionHex": "48895c2418"
+        },
+        {
+          "role": "completionTarget",
+          "rva": "0xeb3cf",
+          "instructionHex": "f30f105b14"
+        },
+        {
+          "role": "progressFraction",
+          "rva": "0xeb42d",
+          "instructionHex": "f30f5ed8"
+        },
+        {
+          "role": "curveEvaluate",
+          "rva": "0xeb447",
+          "instructionHex": "e884030000"
+        },
+        {
+          "role": "notifyUsers",
+          "rva": "0xeb4e7",
+          "instructionHex": "e864060000"
+        }
+      ]
+    },
+    {
+      "key": "transitionNotifyUsers",
+      "entryRva": "0xebb50",
+      "windows": [
+        {
+          "rva": "0xebb50",
+          "bodyLength": 166,
+          "bodySha256": "a2745e387292e7cb7c8c1cf33bc4260e52879d60f9af5e49effcc329597d5873",
+          "unwindRva": "0x302dd4",
+          "unwindInfoHex": "01290d252968020021e40b001a740a00136409000f3408000b23065202500000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "snapshotUsers",
+        "valueAndCompletionCallback"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0xebb50",
+          "instructionHex": "4055"
+        },
+        {
+          "role": "snapshotUsers",
+          "rva": "0xebbb1",
+          "instructionHex": "e85ad91900"
+        },
+        {
+          "role": "valueAndCompletionCallback",
+          "rva": "0xebbd0",
+          "instructionHex": "ff10"
+        }
+      ]
+    },
+    {
+      "key": "transitionValueReceiver",
+      "entryRva": "0x168a10",
+      "windows": [
+        {
+          "rva": "0x168a10",
+          "bodyLength": 153,
+          "bodySha256": "fefc8efed1d2ff5cd36da100103e9da8177b19ffd5399bf667fbaa47d0277fd5",
+          "unwindRva": "0x30c26c",
+          "unwindInfoHex": "010a04000a3410000ad20670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "clearCompletedTransition",
+        "applyCurrentValue"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x168a10",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "clearCompletedTransition",
+          "rva": "0x168a2b",
+          "instructionHex": "48894b10"
+        },
+        {
+          "role": "applyCurrentValue",
+          "rva": "0x168a8d",
+          "instructionHex": "e88ef2ffff"
+        }
+      ]
+    },
+    {
+      "key": "transitionInitialize",
+      "entryRva": "0xeb500",
+      "windows": [
+        {
+          "rva": "0xeb500",
+          "bodyLength": 710,
+          "bodySha256": "ad2d526974ac73786a8f6616e34b843aca2169094bdb99fe38e5fbf1250a86e3",
+          "unwindRva": "0x302dc4",
+          "unwindInfoHex": "010c06000c3409000c32087007600650",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "nativeFrequency",
+        "nativeQuantum",
+        "durationToSeconds",
+        "durationFrequency",
+        "quantumDivision",
+        "durationTicksInteger",
+        "durationTicksStore"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0xeb500",
+          "instructionHex": "48895c2410"
+        },
+        {
+          "role": "nativeFrequency",
+          "rva": "0xeb6b0",
+          "instructionHex": "8b0546432400"
+        },
+        {
+          "role": "nativeQuantum",
+          "rva": "0xeb6c3",
+          "instructionHex": "0fb7053a432400"
+        },
+        {
+          "role": "durationToSeconds",
+          "rva": "0xeb6cd",
+          "instructionHex": "f30f5915236c1a00"
+        },
+        {
+          "role": "durationFrequency",
+          "rva": "0xeb6dc",
+          "instructionHex": "f30f59d0"
+        },
+        {
+          "role": "quantumDivision",
+          "rva": "0xeb6e0",
+          "instructionHex": "f30f5ed1"
+        },
+        {
+          "role": "durationTicksInteger",
+          "rva": "0xeb6e4",
+          "instructionHex": "f3480f2cc2"
+        },
+        {
+          "role": "durationTicksStore",
+          "rva": "0xeb6e9",
+          "instructionHex": "89471c"
+        }
+      ]
+    },
+    {
+      "key": "parameterTransitionApply",
+      "entryRva": "0x165cc0",
+      "windows": [
+        {
+          "rva": "0x165cc0",
+          "bodyLength": 295,
+          "bodySha256": "0fb2ba986af18dc6ab007607727bda37449a29e2a791a8c2a5a9a1edbc5b547e",
+          "unwindRva": "0x30c234",
+          "unwindInfoHex": "0123080023680700125414001234130012f20b70",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x165de7",
+          "bodyLength": 122,
+          "bodySha256": "d003d485b7b77d74ffab1c6d24ce1b652835513e498a07b9f092a4d16dbf8213",
+          "unwindRva": "0x30c248",
+          "unwindInfoHex": "2108020008641200c05c1600e75d160034c23000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x165e61",
+          "bodyLength": 60,
+          "bodySha256": "47cfebdd88a794fd1dcf168beacbaf5e68f0e037c78fa62903c0bc65baa29e6b",
+          "unwindRva": "0x30c25c",
+          "unwindInfoHex": "21000000c05c1600e75d160034c23000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "policyMode",
+        "rateIncrease",
+        "increaseDelta",
+        "increaseRateDivision",
+        "rateDecrease",
+        "decreaseDelta",
+        "decreaseRateDivision",
+        "fixedIncrease",
+        "fixedDecrease",
+        "durationScale",
+        "truncateDuration",
+        "maxRequestedDuration",
+        "positiveDuration"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x165cc0",
+          "instructionHex": "48895c2410"
+        },
+        {
+          "role": "policyMode",
+          "rva": "0x165d32",
+          "instructionHex": "8b10"
+        },
+        {
+          "role": "rateIncrease",
+          "rva": "0x165d4a",
+          "instructionHex": "f30f105004"
+        },
+        {
+          "role": "increaseDelta",
+          "rva": "0x165d57",
+          "instructionHex": "f30f5cc1"
+        },
+        {
+          "role": "increaseRateDivision",
+          "rva": "0x165d5b",
+          "instructionHex": "f30f5ec2"
+        },
+        {
+          "role": "rateDecrease",
+          "rva": "0x165d61",
+          "instructionHex": "f30f105008"
+        },
+        {
+          "role": "decreaseDelta",
+          "rva": "0x165d6e",
+          "instructionHex": "f30f5cc6"
+        },
+        {
+          "role": "decreaseRateDivision",
+          "rva": "0x165d72",
+          "instructionHex": "f30f5ec2"
+        },
+        {
+          "role": "fixedIncrease",
+          "rva": "0x165d82",
+          "instructionHex": "f30f104004"
+        },
+        {
+          "role": "fixedDecrease",
+          "rva": "0x165d89",
+          "instructionHex": "f30f104008"
+        },
+        {
+          "role": "durationScale",
+          "rva": "0x165d8e",
+          "instructionHex": "f30f590552c51200"
+        },
+        {
+          "role": "truncateDuration",
+          "rva": "0x165d96",
+          "instructionHex": "f30f2cc8"
+        },
+        {
+          "role": "maxRequestedDuration",
+          "rva": "0x165da4",
+          "instructionHex": "440f4ec1"
+        },
+        {
+          "role": "positiveDuration",
+          "rva": "0x165da8",
+          "instructionHex": "4585c0"
+        }
+      ]
+    },
+    {
+      "key": "parameterEntryDestructor",
+      "entryRva": "0x165290",
+      "windows": [
+        {
+          "rva": "0x165290",
+          "bodyLength": 186,
+          "bodySha256": "c2572a470a4c275d7b4f68e7707d3e1fb15963ede5496821ede0cb591f45e9d5",
+          "unwindRva": "0x2f0384",
+          "unwindInfoHex": "010f06000f6407000f3406000f320b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "scopedValuesDestroy",
+        "defaultTargetStorage",
+        "defaultTargetFree"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x165290",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "scopedValuesDestroy",
+          "rva": "0x1652f3",
+          "instructionHex": "e8d82e0000"
+        },
+        {
+          "role": "defaultTargetStorage",
+          "rva": "0x165318",
+          "instructionHex": "488b5358"
+        },
+        {
+          "role": "defaultTargetFree",
+          "rva": "0x165326",
+          "instructionHex": "e885baf4ff"
+        }
+      ]
+    },
+    {
+      "key": "scopeEntryFactory",
+      "entryRva": "0x1671d0",
+      "windows": [
+        {
+          "rva": "0x1671d0",
+          "bodyLength": 11,
+          "bodySha256": "846155878a023c70b1c8a4b4db99c11784c575786e6fe12fcd0df890adb98aa4",
+          "unwindRva": "0x30c2e8",
+          "unwindInfoHex": "010b04000b5207c005700460",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1671db",
+          "bodyLength": 380,
+          "bodySha256": "79df923553473339a779ed49e12e8a0db4d9f0a1f0c408ecebbb54f692c2a12f",
+          "unwindRva": "0x30c2f4",
+          "unwindInfoHex": "21200a0020f404001ae4050013d40d000b540c0004340b00d0711600db711600e8c23000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x167357",
+          "bodyLength": 30,
+          "bodySha256": "cfdd835f75eb2c6440637104020079f8dca1fbfdd13b958d2fa326435290ba4c",
+          "unwindRva": "0x30c318",
+          "unwindInfoHex": "21000000d0711600db711600e8c23000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "allocateValueRow",
+        "valueRowStride",
+        "newValueRow",
+        "selectedValueRow"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x1671d0",
+          "instructionHex": "488bc4"
+        },
+        {
+          "role": "allocateValueRow",
+          "rva": "0x16724b",
+          "instructionHex": "e8d0fcffff"
+        },
+        {
+          "role": "valueRowStride",
+          "rva": "0x167263",
+          "instructionHex": "488d0c92"
+        },
+        {
+          "role": "newValueRow",
+          "rva": "0x167276",
+          "instructionHex": "498930"
+        },
+        {
+          "role": "selectedValueRow",
+          "rva": "0x167330",
+          "instructionHex": "488d34c8"
+        }
+      ]
+    },
+    {
+      "key": "scopeTargetBind",
+      "entryRva": "0x155500",
+      "windows": [
+        {
+          "rva": "0x155500",
+          "bodyLength": 44,
+          "bodySha256": "c8cab27a86d1fee1d0a2033e73ccb9ff22c2f58822f6d93d01c6b9407802a57a",
+          "unwindRva": "0x30af44",
+          "unwindInfoHex": "010d06000d340a000d3209e007700660",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x15552c",
+          "bodyLength": 338,
+          "bodySha256": "a9c8035310c71de94b72399f99b650c589c3fd8dc462d947d63088fae7594596",
+          "unwindRva": "0x30af54",
+          "unwindInfoHex": "210d04000d54080005f40900005515002c55150044af3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x15567e",
+          "bodyLength": 14,
+          "bodySha256": "3cc5a14267f899f0fee548706df07195a30b05bfcac0084c2e636a6085e23bab",
+          "unwindRva": "0x30af6c",
+          "unwindInfoHex": "21000000005515002c55150044af3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "scopeGetter",
+        "moveTarget",
+        "removeSourceTarget"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x155500",
+          "instructionHex": "48895c2418"
+        },
+        {
+          "role": "scopeGetter",
+          "rva": "0x155546",
+          "instructionHex": "ff10"
+        },
+        {
+          "role": "moveTarget",
+          "rva": "0x155600",
+          "instructionHex": "0f1003"
+        },
+        {
+          "role": "removeSourceTarget",
+          "rva": "0x155636",
+          "instructionHex": "41ff4e08"
+        }
+      ]
+    },
+    {
+      "key": "scopedValueUpdate",
+      "entryRva": "0x167f50",
+      "windows": [
+        {
+          "rva": "0x167f50",
+          "bodyLength": 573,
+          "bodySha256": "b453199fc5ab731124e1871e2f76ea192bd3bcee748471dab6e597447caac926",
+          "unwindRva": "0x2fdce8",
+          "unwindInfoHex": "011c0c001c6414001c5413001c3412001cb218f016e014d012c01070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "transitionControl",
+        "transitionApply",
+        "changedValue",
+        "notifyValue"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x167f50",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "transitionControl",
+          "rva": "0x167fa1",
+          "instructionHex": "85c0"
+        },
+        {
+          "role": "transitionApply",
+          "rva": "0x1680cc",
+          "instructionHex": "e8efdbffff"
+        },
+        {
+          "role": "changedValue",
+          "rva": "0x168115",
+          "instructionHex": "3b06"
+        },
+        {
+          "role": "notifyValue",
+          "rva": "0x168139",
+          "instructionHex": "e812efffff"
+        }
+      ]
+    },
+    {
+      "key": "subscriberValueDispatch",
+      "entryRva": "0x167050",
+      "windows": [
+        {
+          "rva": "0x167050",
+          "bodyLength": 115,
+          "bodySha256": "917632afdb46510014cf26a0fe3ff7ed832e7683313e4fcc9fb8093d796faa6c",
+          "unwindRva": "0x2f64dc",
+          "unwindInfoHex": "010a04000a340a000a720670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "oldValue",
+        "newValue",
+        "notificationCounter",
+        "dispatch"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x167050",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "oldValue",
+          "rva": "0x16705a",
+          "instructionHex": "418b19"
+        },
+        {
+          "role": "newValue",
+          "rva": "0x167078",
+          "instructionHex": "448b18"
+        },
+        {
+          "role": "notificationCounter",
+          "rva": "0x16707f",
+          "instructionHex": "fe4111"
+        },
+        {
+          "role": "dispatch",
+          "rva": "0x16709d",
+          "instructionHex": "e81ea6ffff"
+        }
+      ]
+    },
+    {
+      "key": "subscriberCallbackDispatch",
+      "entryRva": "0x1616c0",
+      "windows": [
+        {
+          "rva": "0x1616c0",
+          "bodyLength": 184,
+          "bodySha256": "844d9c6a7d8747adf44565399ffd42c11ae006c74b2e11dbd3eb284b8c9262d0",
+          "unwindRva": "0x2f8bb8",
+          "unwindInfoHex": "010f06000f640d000f340c000f920b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "entry",
+        "subscriberPointer",
+        "newValuePointer",
+        "oldValuePointer",
+        "scopePointer",
+        "packedKey",
+        "dispatchCallback",
+        "mutationGuard"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "entry",
+          "rva": "0x1616c0",
+          "instructionHex": "48895c2408"
+        },
+        {
+          "role": "subscriberPointer",
+          "rva": "0x1616f0",
+          "instructionHex": "488b0b"
+        },
+        {
+          "role": "newValuePointer",
+          "rva": "0x1616f3",
+          "instructionHex": "488d5614"
+        },
+        {
+          "role": "oldValuePointer",
+          "rva": "0x1616fa",
+          "instructionHex": "4c8d4e10"
+        },
+        {
+          "role": "scopePointer",
+          "rva": "0x1616fe",
+          "instructionHex": "4c8b4608"
+        },
+        {
+          "role": "packedKey",
+          "rva": "0x16170a",
+          "instructionHex": "488b16"
+        },
+        {
+          "role": "dispatchCallback",
+          "rva": "0x16170d",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "mutationGuard",
+          "rva": "0x161710",
+          "instructionHex": "f6471003"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ownerContract": "wwise_inheritance_native",
+      "ownerSchema": "endfield.wwise-inheritance-native.v1",
+      "groups": [
+        "settingsLoader",
+        "settingsSpecialBinding",
+        "parameterEntryConstructor",
+        "parameterEntryFactory"
+      ]
+    },
+    {
+      "ownerContract": "wwise_effect_lifecycle_native",
+      "ownerSchema": "endfield.wwise-effect-lifecycle-native.v9",
+      "groups": [
+        "gameSyncSubscriberCallback",
+        "gameSyncAddTarget",
+        "gameSyncTargetInsert"
+      ]
+    }
+  ],
+  "callBindings": [
+    {
+      "group": "rayBuiltInUpdate",
+      "role": "distanceWrite",
+      "targetGroup": "builtInParameterWrite"
+    },
+    {
+      "group": "builtInParameterWrite",
+      "role": "applyScopedValue",
+      "targetGroup": "parameterScopedValueApply"
+    },
+    {
+      "group": "rayArrayBuild",
+      "role": "calculateDistance",
+      "targetGroup": "rayDistance"
+    },
+    {
+      "group": "rayBuiltInPrepare",
+      "role": "buildRays",
+      "targetGroup": "rayArrayBuild"
+    },
+    {
+      "group": "rayBuiltInPrepare",
+      "role": "selectRay",
+      "targetGroup": "raySelection"
+    },
+    {
+      "group": "rayBuiltInPrepare",
+      "role": "updateBuiltIns",
+      "targetGroup": "rayBuiltInUpdate"
+    },
+    {
+      "group": "parameterScopedValueApply",
+      "role": "valueUpdate",
+      "targetGroup": "scopedValueUpdate"
+    },
+    {
+      "group": "scopedValueUpdate",
+      "role": "notifyValue",
+      "targetGroup": "subscriberValueDispatch"
+    },
+    {
+      "group": "subscriberValueDispatch",
+      "role": "dispatch",
+      "targetGroup": "subscriberCallbackDispatch"
+    },
+    {
+      "group": "parameterScopedValueApply",
+      "role": "scopeEntry",
+      "targetGroup": "scopeEntryFactory"
+    },
+    {
+      "group": "scopedValueUpdate",
+      "role": "transitionApply",
+      "targetGroup": "parameterTransitionApply"
+    },
+    {
+      "group": "transitionManagerProcess",
+      "role": "firstList",
+      "targetGroup": "transitionListProcess"
+    },
+    {
+      "group": "transitionManagerProcess",
+      "role": "secondList",
+      "targetGroup": "transitionListProcess"
+    },
+    {
+      "group": "transitionListProcess",
+      "role": "advance",
+      "targetGroup": "transitionAdvance"
+    },
+    {
+      "group": "transitionAdvance",
+      "role": "notifyUsers",
+      "targetGroup": "transitionNotifyUsers"
+    },
+    {
+      "group": "transitionValueReceiver",
+      "role": "applyCurrentValue",
+      "targetGroup": "parameterScopedValueApply"
+    }
+  ],
+  "layout": {
+    "sourcePoint": [
+      24,
+      32,
+      40
+    ],
+    "listenerPoint": [
+      120,
+      128,
+      136
+    ],
+    "listenerProbeOwner": 152,
+    "listenerScaling": 144,
+    "sourceScaling": 120,
+    "rayDistance": 48,
+    "enabledBuiltIns": 72,
+    "bindingListBase": 80,
+    "bindingListStride": 16,
+    "bindingRowStride": 8,
+    "distanceBinding": 1,
+    "rayArray": 32,
+    "rayCount": 40,
+    "rayStride": 136,
+    "bindingIndexBias": 5
+  },
+  "evidenceBoundary": {
+    "exact": "Complete selected distance calculation, built-in producer/list consumer and scoped value application bodies; existing STMG loader and special-binding owner reused.",
+    "direct": "The enabled first built-in input reads the ray distance field, selects binding list 1, walks packed ID/type rows and performs exact namespace/key lookup. A retained override suppresses scoped application. The supplied float and 48-byte object scope enter the original value-application path. The component rebuild writes distance into its retained ray-array rows; its preparation routine selects a row from that same base/stride and passes that exact pointer into the built-in updater. This is explicit caller/operand transport, not a shared-offset inference. Original transition processing visits both manager lists, computes progress or selects the final target, snapshots retained user pointers and invokes their value/completion virtual callback. The selected parameter transition receiver clears its retained transition on completion and re-enters scoped value application with the delivered float. Full manager creation, clock advancement and all curve/filter modes remain unexecuted by the immediate-value cohorts. An immediate changed scoped value dispatches old/new floats, scope and the packed control key through each retained subscriber virtual callback slot. Scope creation can migrate matching wildcard subscribers from the default list to a scoped list; notification counters and mutation flags govern traversal/restart. This is separate from the slot-zero observer dispatch.",
+    "conditional": "Distance is a float32 norm of float32 converted double-coordinate differences, optionally recalculated from a retained probe, divided by listener/source scaling under the selected component comparison. This is an internal distance-derived quantity, not a guaranteed raw-world meter distance. Stored binding admission, allocation, scope construction and producer scheduling remain conditions. Nonzero default transition policy can enter a retained transition helper rather than immediate value notification. Complete time-varying smoothing and target migration generations are not executed by this static proof.",
+    "unresolved": "Actual game emitter/listener/probe objects, full scoped notification/destruction lifetime, current physical bank selection and audibility. Approximate historical SDK symbol matches alone are not naming proof."
+  },
+  "fieldBindings": [
+    {
+      "group": "rayDistance",
+      "role": "sourcePointX",
+      "field": "sourcePoint",
+      "index": 0,
+      "operandOffset": 5,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayDistance",
+      "role": "sourcePointY",
+      "field": "sourcePoint",
+      "index": 1,
+      "operandOffset": 5,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayDistance",
+      "role": "sourcePointZ",
+      "field": "sourcePoint",
+      "index": 2,
+      "operandOffset": 5,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayDistance",
+      "role": "listenerPointX",
+      "field": "listenerPoint",
+      "index": 0,
+      "operandOffset": 4,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayDistance",
+      "role": "listenerPointY",
+      "field": "listenerPoint",
+      "index": 1,
+      "operandOffset": 4,
+      "operandBytes": 4
+    },
+    {
+      "group": "rayDistance",
+      "role": "listenerPointZ",
+      "field": "listenerPoint",
+      "index": 2,
+      "operandOffset": 4,
+      "operandBytes": 4
+    },
+    {
+      "group": "rayDistance",
+      "role": "probeOwner",
+      "field": "listenerProbeOwner",
+      "index": null,
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "rayDistance",
+      "role": "listenerScaling",
+      "field": "listenerScaling",
+      "index": null,
+      "operandOffset": 4,
+      "operandBytes": 4
+    },
+    {
+      "group": "rayDistance",
+      "role": "sourceScaling",
+      "field": "sourceScaling",
+      "index": null,
+      "operandOffset": 5,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayDistance",
+      "role": "distanceStore",
+      "field": "rayDistance",
+      "index": null,
+      "operandOffset": 5,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayBuiltInUpdate",
+      "role": "distanceInput",
+      "field": "rayDistance",
+      "index": null,
+      "operandOffset": 4,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayBuiltInUpdate",
+      "role": "distanceEnabled",
+      "field": "enabledBuiltIns",
+      "index": null,
+      "operandOffset": 2,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayBuiltInUpdate",
+      "role": "distanceBinding",
+      "field": "distanceBinding",
+      "index": null,
+      "operandOffset": 1,
+      "operandBytes": 4
+    },
+    {
+      "group": "builtInParameterWrite",
+      "role": "bindingOrdinal",
+      "field": "bindingIndexBias",
+      "index": null,
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayArrayBuild",
+      "role": "rowCount",
+      "field": "rayCount",
+      "index": null,
+      "operandOffset": 2,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayArrayBuild",
+      "role": "rowStride",
+      "field": "rayStride",
+      "index": null,
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "rayArrayBuild",
+      "role": "rowBase",
+      "field": "rayArray",
+      "index": null,
+      "operandOffset": 3,
+      "operandBytes": 1
+    },
+    {
+      "group": "rayBuiltInPrepare",
+      "role": "selectedStride",
+      "field": "rayStride",
+      "index": null,
+      "operandOffset": 3,
+      "operandBytes": 4
+    },
+    {
+      "group": "rayBuiltInPrepare",
+      "role": "selectedBase",
+      "field": "rayArray",
+      "index": null,
+      "operandOffset": 3,
+      "operandBytes": 1
+    }
+  ],
+  "subscriberCallbackOwner": {
+    "ownerContract": "wwise_effect_lifecycle_native",
+    "addressPoint": "subscriberAddressPoint",
+    "dispatchGroup": "subscriberCallbackDispatch",
+    "dispatchRole": "dispatchCallback"
+  },
+  "transition": {
+    "group": "parameterTransitionApply",
+    "prefixStopBeforeRva": "0x165dab",
+    "scaleFactor": {
+      "role": "durationScale",
+      "operandOffset": 4,
+      "rva": "0x2922e8",
+      "word": 1148846080
+    },
+    "modes": [
+      {
+        "mode": 1,
+        "operation": "rate",
+        "increase": "(target - current) / firstFloat",
+        "decrease": "(current - target) / secondFloat"
+      },
+      {
+        "mode": 2,
+        "operation": "fixedDuration",
+        "increase": "firstFloat",
+        "decrease": "secondFloat"
+      }
+    ],
+    "selection": "Multiply float32 duration by the selected factor, truncate to signed integer, then take the signed maximum with requested duration. Nonpositive selection does not enter transition allocation/update.",
+    "evidenceBoundary": "Exact selected original duration prefix and constant; original emulation verifies bounded finite round-nearest cases. Manager allocation, ticking, full curve/schedule and actual live policy remain separate."
+  },
+  "transitionReceiverAddressPoint": {
+    "constructorGroup": "scopedValueUpdate",
+    "leaRva": "0x168039",
+    "leaHex": "488d05582b1300",
+    "rva": "0x29ab98",
+    "slot": 0,
+    "receiverGroup": "transitionValueReceiver",
+    "dispatchGroup": "transitionNotifyUsers",
+    "dispatchRole": "valueAndCompletionCallback"
+  }
+}

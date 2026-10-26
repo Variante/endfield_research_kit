@@ -604,6 +604,65 @@
           ]
         }
       }
+    },
+    "encounterOperaSignalBoundary": {
+      "mappingId": "encounter-opera-signal-boundary-v1",
+      "evidenceBoundary": {
+        "direct": "Selected named bodies contain operand reads, signal comparison, and the V2 server handoff.",
+        "conditional": "These are native paths; stored module configuration, active pending state and patch selection must still be joined.",
+        "unresolved": "Delivery, server handling, callback activation, quest success and relative Story order."
+      },
+      "methods": {
+        "LsmEncounterSendOperaSignal.Execute": {
+          "type": "Beyond.Gameplay.Actions.LsmEncounterSendOperaSignal",
+          "method": "Execute",
+          "contract": "Contains the typed LsmPtr and operaSignal operand reads, their parameter evaluation and module lookup. The interface dispatch and active runtime outcome remain separate joins.",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Actions.LsmEncounterSendOperaSignal::_lsmPtr"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Actions.LsmEncounterSendOperaSignal::_operaSignal"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+                "Beyond.Gameplay.Core.LevelScriptManager.TryGetModule"
+              ]
+            }
+          ]
+        },
+        "EncounterBase.TriggerOperaSignal": {
+          "type": "Beyond.Gameplay.Core.EncounterBase`1",
+          "method": "TriggerOperaSignal",
+          "contract": "Contains signal string comparison and an _OnOperaEnd call on a conditional path. Call presence does not prove that a supplied signal passes the pending-state and mode guards.",
+          "claims": [
+            {
+              "calls": [
+                "System.String.Equals",
+                "Beyond.Gameplay.Core.EncounterBase`1._OnOperaEnd"
+              ]
+            }
+          ]
+        },
+        "EncounterV2Base.OnBattlePartDelayGapFinish": {
+          "type": "Beyond.Gameplay.Core.EncounterV2Base`1",
+          "method": "OnBattlePartDelayGapFinish",
+          "contract": "Loads the CompleteBattlePart literal and hands control to LevelScriptModule.TriggerServerEvent. These body facts do not identify the server response, receiving callback or mission timeline.",
+          "claims": [
+            {
+              "loadsLiterals": [
+                "CompleteBattlePart"
+              ]
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptModule.TriggerServerEvent"
+              ]
+            }
+          ]
+        }
+      }
     }
   },
   "cited": {

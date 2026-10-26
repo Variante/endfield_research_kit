@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack import skill_cursor_scoped_group as scoped
@@ -194,7 +195,7 @@ def verify_selected_sources(
 
         route = chosen.get("selectedRoute")
         if "pograni_ultimate_skill" in path:
-            _require(isinstance(route, Mapping) and route.get("tag") == "0x0152",
+            _require(isinstance(route, Mapping) and route.get("tag") == _AT("Core_SetIgnoreGlobalTimeScaleAction_Data"),
                      "pograni-selected-route")
             action = decode_pograni_action(
                 source, route.get("start"), validation=pograni_validation)

@@ -1,0 +1,62 @@
+{
+  "schema": "endfield.buff-ai-consumer-claims.v6",
+  "status": "reviewed",
+  "claims": {
+    "saveValueServerDestinationKeys": {
+      "mode": "ordered-instance-string-fields-to-guarded-reference-calls",
+      "type": "Beyond.Gameplay.Core.SaveValueFromAIBlackboard+Data",
+      "method": "ConvertToServerDataInternal",
+      "fields": ["skillBBKey", "skillXKey", "skillYKey", "skillZKey"],
+      "lengthField": "_stringLength",
+      "guard": {"type": "IFix.WrappersManagerImpl", "method": "IsPatched", "image": "Gameplay.Beyond.dll"},
+      "destination": {
+        "type": "Proto.BATTLE_ACTION_MULTI_MODIFY_BB_ACTION_DATA",
+        "field": "keys_",
+        "declaredType": "Google.Protobuf.Collections.RepeatedField`1<string>"
+      },
+      "callee": {"type": "Google.Protobuf.Collections.RepeatedField`1", "method": "Add"},
+      "evidenceBoundary": "conditional"
+    },
+    "saveValueAiLookupSelection": {
+      "mode": "closed-data-ai-blackboard-selector-and-null-fallback-lookups",
+      "type": "Beyond.Gameplay.Core.SaveValueFromAIBlackboard",
+      "method": "ExecuteInternal",
+      "dataType": "Beyond.Gameplay.Core.SaveValueFromAIBlackboard+Data",
+      "dataField": "m_data",
+      "enumType": "Beyond.Gameplay.Core.SaveValueFromAIBlackboard+ValueType",
+      "targetField": "bbOwner",
+      "selectorField": "valueType",
+      "keyField": "aiBBKey",
+      "entityField": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+      "enemyAIField": "Beyond.Gameplay.Core.Entity::<enemyAICom>k__BackingField",
+      "methods": {
+        "guard": {"type": "IFix.WrappersManagerImpl", "method": "IsPatched", "image": "Gameplay.Beyond.dll"},
+        "target": {"type": "Beyond.Gameplay.Core.AbilityActionUtils", "method": "GetFirstTarget", "image": "Gameplay.Beyond.dll"},
+        "parentBlackboard": {"type": "Beyond.Gameplay.AI.AIComponent", "method": "GetParentBlackboard", "image": "Gameplay.Beyond.dll"},
+        "nullEquality": {"type": "UnityEngine.Object", "method": "op_Equality", "image": "UnityEngine.CoreModule.dll"},
+        "lookup": {"type": "NodeCanvas.Framework.IBlackboardExtensions", "method": "GetVariable", "image": "ParadoxNotion.dll", "genericArity": 1}
+      },
+      "evidenceBoundary": "conditional"
+    },
+    "aiParentBlackboardFalseInitGetter": {
+      "mode": "guarded-instance-reference-getter-false-boolean-argument",
+      "type": "Beyond.Gameplay.AI.AIComponent",
+      "method": "GetParentBlackboard",
+      "image": "Gameplay.Beyond.dll",
+      "argument": "init",
+      "field": "Beyond.Gameplay.AI.AIComponent::m_parentBlackboard",
+      "fieldType": "NodeCanvas.Framework.AssetBlackboard",
+      "guard": {"type": "IFix.WrappersManagerImpl", "method": "IsPatched", "image": "Gameplay.Beyond.dll"},
+      "evidenceBoundary": "conditional"
+    },
+    "genericAiLookupForwardingAndConditionalTail": {
+      "mode": "registered-generic-lookup-forwarding-with-opaque-reference-tail",
+      "genericLookup": {"type": "NodeCanvas.Framework.IBlackboardExtensions", "method": "GetVariable", "image": "ParadoxNotion.dll", "genericArity": 1},
+      "nongenericLookup": {"type": "NodeCanvas.Framework.IBlackboardExtensions", "method": "GetVariable", "image": "ParadoxNotion.dll", "genericArity": 0},
+      "typeFromHandle": {"type": "System.Type", "method": "GetTypeFromHandle", "image": "mscorlib.dll"},
+      "registeredMethodArguments": ["UnityEngine.Vector3", "float", "int", "bool"],
+      "evidenceBoundary": "conditional"
+    }
+  },
+  "evidenceBoundary": "Named definitions and selected native inputs prove separate conditional programs: four declared String destination keys reaching ordered guarded collection calls; the closed Data/target/entity/AI receiver path, three value-type routes and five static lookup contexts; and the full primary GetParentBlackboard getter on false patch result with init=false, returning the current named m_parentBlackboard reference after the guard and skipping the optional helper. Float mode falls back from float to int to bool only after null lookup returns. Null target or true Unity blackboard-null comparison reaches a matched false return; unsupported selector or final null lookup reaches a separate matched true return. The String call has its own exact static MethodSpec and exact physical caller target, while an absent direct compiled String registration remains an explicit generic-sharing obligation; no object instantiation substitutes for it. The getter does not prove guard side effects, initial field preservation, optional-helper behavior or the owned cold patch path. Live patch/MethodInfo selection, lookup algorithms, variable-value getters, conversions, destination writes and actual gameplay effects remain separate obligations. The complete generic lookup forwarding program is joined through four selected value-type instantiation registrations, its method-owned return parameter and the eight-byte RuntimeTypeHandle ABI. It passes the preserved blackboard/key references and the Type-helper return to the nongeneric overload, then passes that opaque Variable return and a separately reloaded anonymous context-slot helper result to an exact tail program. A null Variable reaches a zero return; a nonnull Variable reaches a same-reference return only when an opaque predicate returns nonzero AL. Anonymous context-slot semantics, requested type identity, helper algorithms and live context selection remain unresolved. No build addresses or hashes are part of this claims contract."
+}

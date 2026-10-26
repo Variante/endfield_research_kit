@@ -1,0 +1,270 @@
+{
+  "schema": "endfield.dynamic-mission-state-cache-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2"
+    }
+  ],
+  "providerRoles": [
+    "lookup",
+    "patch"
+  ],
+  "methods": {
+    "mission": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "method": "_OnMissionStateChanged",
+      "returnType": "Void",
+      "parameters": [
+        "ref Beyond.EventData`4"
+      ],
+      "callAbi": "instance"
+    },
+    "quest": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "method": "_OnQuestStateChange",
+      "returnType": "Void",
+      "parameters": [
+        "ref Beyond.EventData`2"
+      ],
+      "callAbi": "instance"
+    },
+    "missionState": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "GetMissionState",
+      "returnType": "Beyond.Gameplay.MissionSystem+MissionState",
+      "parameters": [
+        "String"
+      ],
+      "callAbi": "instance"
+    },
+    "questState": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "GetQuestState",
+      "returnType": "Beyond.Gameplay.MissionSystem+QuestState",
+      "parameters": [
+        "String"
+      ],
+      "callAbi": "instance"
+    },
+    "managerGetter": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "get_stringManager",
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneRuntimeStringManager",
+      "parameters": [],
+      "callAbi": "instance"
+    },
+    "player": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.GameInstance",
+      "method": "get_player",
+      "returnType": "Beyond.Gameplay.GamePlayer",
+      "parameters": [],
+      "callAbi": "static"
+    },
+    "enqueue": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "method": "_EnqueueCompsForStr",
+      "returnType": "Void",
+      "parameters": [
+        "Int32"
+      ],
+      "callAbi": "instance"
+    }
+  },
+  "cacheField": "m_currentStateMap",
+  "managerField": {
+    "owner": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase",
+    "name": "manager"
+  },
+  "missionField": "mission",
+  "programs": {
+    "mission": {
+      "primary": [
+        "mov [rsp+0x8], rbx",
+        "push rdi",
+        "sub rsp, 0x20",
+        "cmp [rip+*",
+        "mov rbx, rdx",
+        "mov rdi, rcx",
+        "jne *",
+        "lea rcx, [rip+*",
+        "call *",
+        "lea rcx, [rip+*",
+        "call *",
+        "mov [rip+*",
+        "xor edx, edx",
+        "mov [rsp+0x48], 0x0",
+        "mov ecx, 0xf651",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov rcx, [rdi+0x10]",
+        "mov rbx, [rbx]",
+        "test rcx, rcx",
+        "je *",
+        "xor edx, edx",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r9d, r9d",
+        "lea r8, [rsp+0x48]",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov rbx, [rsp+0x30]",
+        "add rsp, 0x20",
+        "pop rdi",
+        "ret",
+        "call *",
+        "int3"
+      ],
+      "cold": [
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "xor ecx, ecx",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "mov rcx, [rax+0x88]",
+        "test rcx, rcx",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "call *",
+        "mov rcx, [rdi+0x38]",
+        "test rcx, rcx",
+        "jcc *",
+        "mov r9, [rip+*",
+        "mov r8d, eax",
+        "mov edx, [rsp+0x48]",
+        "call *",
+        "mov edx, [rsp+0x48]",
+        "xor r8d, r8d",
+        "mov rcx, rdi",
+        "call *",
+        "nop",
+        "jmp *",
+        "xor edx, edx",
+        "mov ecx, 0xf651",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r9d, r9d",
+        "mov r8, rbx",
+        "mov rdx, rdi",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    },
+    "quest": {
+      "primary": [
+        "mov [rsp+0x8], rbx",
+        "push rdi",
+        "sub rsp, 0x20",
+        "cmp [rip+*",
+        "mov rbx, rdx",
+        "mov rdi, rcx",
+        "je *",
+        "xor edx, edx",
+        "mov [rsp+0x48], 0x0",
+        "mov ecx, 0xf654",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov rcx, [rdi+0x10]",
+        "mov rbx, [rbx]",
+        "test rcx, rcx",
+        "je *",
+        "xor edx, edx",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r9d, r9d",
+        "lea r8, [rsp+0x48]",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov rbx, [rsp+0x30]",
+        "add rsp, 0x20",
+        "pop rdi",
+        "ret",
+        "lea rcx, [rip+*",
+        "call *",
+        "lea rcx, [rip+*",
+        "call *",
+        "mov [rip+*",
+        "jmp *",
+        "call *",
+        "int3"
+      ],
+      "cold": [
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "xor ecx, ecx",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "mov rcx, [rax+0x88]",
+        "test rcx, rcx",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "call *",
+        "mov rcx, [rdi+0x38]",
+        "test rcx, rcx",
+        "jcc *",
+        "mov r9, [rip+*",
+        "mov r8d, eax",
+        "mov edx, [rsp+0x48]",
+        "call *",
+        "mov edx, [rsp+0x48]",
+        "xor r8d, r8d",
+        "mov rcx, rdi",
+        "call *",
+        "nop",
+        "jmp *",
+        "xor edx, edx",
+        "mov ecx, 0xf654",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r9d, r9d",
+        "mov r8, rbx",
+        "mov rdx, rdi",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Selected mission/quest callbacks pass the actual typed state getter Int32-underlying enum return to the contextual Dictionary<Int32,Int32>.set_Item request. Successful TryGetStrKey output is the same referenced local supplied to setter and enqueue request.",
+    "conditional": [
+      "Actual IFix false, lookup true, nonnull selected typed receivers, anonymous first pointer is a valid String, normal returning Win64 calls.",
+      "Opaque callees do not interfere with the saved lookup-output local. Composition with query requires same concrete cache, key and retained storage."
+    ],
+    "unresolved": [
+      "The explicit referenced EventData generic instance field layout; its first pointer is not labeled value0.",
+      "Event subscription/dispatch, state getter computation, dictionary mutation, timing, runtime state and enqueue effects."
+    ]
+  }
+}

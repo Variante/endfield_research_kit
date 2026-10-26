@@ -123,7 +123,22 @@ gates (conclusions in the `world_chunk_*.md` files):
 | SpawnerConfig | `spawner_binary` | generated five-field cursor through EOF on every file | positive route-action lists (absent; fail closed) |
 | AnimationConfig, CharInteractPerformCfgs, AtmosphericNpcData | `animation_config_binary`, `char_interact_perform_binary`, `atmospheric_npc_binary` | exact on every current file | runtime selection and use (stored, authored data only) |
 | GPUISystemConfig | `gpu_ui_binary` | ExtendedPrefabGroup roots and DamageText close complete named schemas | prefab selection, GPU addressing, texture-hash identity |
+| StringPool | `string_pool` | every `USPC` page exact: one LZ4 block to EOF, offset table, length-prefixed UTF-8; global index = page x shared page size + slot; `StringPool0` carries a last-page prefix | `StringPoolHashIndex` (`SHPI`) and `StringPoolCounting.json` unread |
 | LevelConfig, NavMesh, TeleportValidation, DialogId, AetherEnergyLock, MatrixShockWave, BambooRaft, MissionArea, SubGame, WorldEntityRegistry | `levelconfig_binary`, `navmesh_binary`, `teleport_validation_binary`, `memorypack.tables`, `aether_energy_lock_binary`, `matrix_shockwave_binary`, `gameplay_compact_binary` | exact | consumers |
+
+Since the StringPool build, LevelConfig stores every string member as an
+`i32` global pool index (`-1` empty, `-2` null; `direct` by corpus
+correspondence with the previous build). The member layout is unchanged, so
+`levelconfig_binary` reads either encoding and the caller selects it by passing
+the export's pool; a reader never guesses. The same holds for every JsonData
+family: the table readers above, `gpu_ui_binary`, and `interactive_binary`
+(InteractiveTable, physics audio, ModelViewStateController) take the pool and
+decode both encodings exactly. A pooled string slot that is null reads `-2`
+where the inline encoding has length `-1`, so a fixed sentinel check is itself
+encoding-dependent. A family still reading inline bytes shows up as an invalid
+string length; a family failing on member counts (LevelScript, LevelData,
+Spawner, NPC, AnimationConfig, SubGameInstance, ModelView behaviours) is
+schema drift, not pooling, and stays fail-closed until re-proven natively.
 
 The selected Lizhiyan combo and Pograni ultimate SkillData copies now close as
 whole stored records through source-specific static and executed-cursor joins.

@@ -1,4 +1,4 @@
-"""Selected Wwise external-package path hashing and keyed table lookup.
+"""Selected Wwise package numeric lookup and external-path hashing.
 
 This gate reuses the decoder-provider validator's opened images. Computed keys
 are conditional static identities; they never admit a captured lookup result.
@@ -9,17 +9,35 @@ import struct
 from pathlib import Path
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
-from scripts.game_data.wwise_source_queue_native import validate_native_group_windows
+from scripts.game_data.wwise_source_queue_native import validate_native_group_windows, validate_native_group_declarations
+from scripts.game_data.wwise_package_transform_native import load_transform_contract
 from scripts.game_data import wwise_owner_carrier_native as carrier
 from scripts.game_data import wwise_decoder_provider_native as preparation
 
 CONTRACT_PATH = CONTRACTS_DIR / 'wwise_external_package_native.json'
-SCHEMA = 'endfield.wwise-external-package-native.v2'
+SCHEMA = 'endfield.wwise-external-package-native.v3'
 
 
 def load_package_contract(path: Path = CONTRACT_PATH) -> dict:
     value, _ = read_reviewed_contract(path, schema=SCHEMA, status='reviewedCurrentBuild', label='wwise-external-package')
     return value
+
+
+def _package_groups(contract: dict, dependency_contract: dict | None = None) -> list[dict]:
+    """Use the existing transform owner on the caller's already opened image."""
+    dependencies = contract.get('nativeGroupDependencies')
+    expected = [{'key':'headerAlignedTransform','ownerContract':'wwise_package_transform_native','ownerGroup':'alignedPackageTransform'}]
+    if dependencies != expected:
+        preparation._fail('packageGroupDependency','nativeGroupDependencies',expected,dependencies)
+    owner = dependency_contract if dependency_contract is not None else load_transform_contract()
+    if owner.get('nativeInputs') != contract['nativeInputs']:
+        preparation._fail('packageGroupDependencyInputs','aligned transform','same selected inputs','different declarations')
+    group = next((g for g in owner.get('nativeGroups',[]) if g.get('key') == dependencies[0]['ownerGroup']),None)
+    if group is None:
+        preparation._fail('packageGroupDependencyMissing','aligned transform',dependencies[0]['ownerGroup'],'missing owner group')
+    groups = list(contract['nativeGroups'])+[{**group,'key':dependencies[0]['key']}]
+    validate_native_group_declarations(groups)
+    return groups
 
 
 def _import_at(image, wanted: int) -> str | None:
@@ -58,9 +76,13 @@ def validate_package_bytes(contract: dict, image, bodies: dict, records: dict, p
         fail('externalPackageSchema', 'contract', SCHEMA, contract.get('schema'))
     if contract['nativeInputs'] != parent['nativeInputs']:
         fail('externalPackageInputs', 'selected inputs', parent['nativeInputs'], contract['nativeInputs'])
-    groups = contract['nativeGroups']
-    if len(groups) != 5 or {g['key'] for g in groups} != {'externalPathHash','externalKeyLookup','packageDescriptorLookup','defaultIoInitialization','defaultIoBatchDispatch'}:
-        fail('externalPackageGroups', 'groups', 'five distinct reviewed groups', [g['key'] for g in groups])
+    owned = contract['nativeGroups']
+    names = {'externalPathHash','externalKeyLookup','packageDescriptorLookup','defaultIoInitialization',
+             'defaultIoBatchDispatch','numericKeyLookup','numericBankKeySearch','packageAdmission',
+             'packageReprioritization','packageRemoval','packageHeaderLoad','packageTableAssignment','packageLanguageSelection'}
+    if len(owned) != len(names) or {g['key'] for g in owned} != names:
+        fail('externalPackageGroups', 'groups', 'distinct reviewed package groups', [g['key'] for g in owned])
+    groups = _package_groups(contract)
     validate_native_group_windows(groups, image, bodies, records)
     witnesses = {g['key']: carrier._witnesses(g) for g in groups}
     rules = contract['hashRules']
@@ -93,6 +115,8 @@ def validate_package_bytes(contract: dict, image, bodies: dict, records: dict, p
             if actual != raw:
                 fail('externalPackageInstruction', owner+'.'+role, raw, actual)
     targets = {g['key']:int(g['entryRva'],16) for g in groups}
+    _validate_numeric_lookup(contract, witnesses, targets, fail)
+    _validate_package_lifecycle(contract, witnesses, targets, fail)
     for role, target in [('hashExternalPath','externalPathHash'),('lookupExternalKey','externalKeyLookup')]:
         row = witnesses['packageDescriptorLookup'][role]
         raw = bytes.fromhex(row['instructionHex'])
@@ -144,6 +168,146 @@ def validate_package_bytes(contract: dict, image, bodies: dict, records: dict, p
             fail('externalPackageIoSlotTarget',slot['targetOwner'],hex(target),raw.hex())
         if slot['targetOwner'] == 'packageDescriptorLookup' and dispatch['lookupSlot']['instructionHex'] != 'ff50'+at.to_bytes(1,'little').hex():
             fail('externalPackageIoLookupSlot','dispatch',at,dispatch['lookupSlot']['instructionHex'])
+
+
+def _validate_numeric_lookup(contract: dict, witnesses: dict, targets: dict, fail) -> None:
+    """Bind numeric table, package-list and result geometry to owned operands."""
+    layout = contract.get('numericLookup')
+    fields = {'bankTablePointer','soundTablePointer','countBytes','rowsOffset','rowBytes','keyBytes',
+              'languageOffset','languageBytes','packageLanguageOffset','packageLanguageBytes',
+              'languageFlagOffset','bankCodecBase','bankCodecLastDelta','loadedPackagesOffset',
+              'nextPackageOffset','packageReferenceOffset','rowLengthOffset','rowBlockOffset',
+              'rowBlockBytesOffset','descriptorLengthOffset','descriptorBlockOffset',
+              'descriptorBlockBytesOffset','descriptorPackageOffset','descriptorByteOffset',
+              'descriptorNumericKeyOffset','allocationFailureStatus'}
+    if not isinstance(layout, dict) or set(layout) != fields or any(type(v) is not int or not 0 <= v <= 127 for v in layout.values()):
+        fail('numericPackageLayout', 'numericLookup', 'complete bounded scalar declarations', layout)
+    if (layout['countBytes'],layout['keyBytes'],layout['languageBytes'],layout['packageLanguageBytes'],
+            layout['rowBytes'],layout['descriptorLengthOffset']) != (4,4,4,2,5*4,0):
+        fail('numericPackageLayout', 'operand widths/stride', 'DWORD count/key/language, WORD package language, five DWORD row, result length at base', layout)
+    byte = lambda key: layout[key].to_bytes(1,'little').hex()
+    negative = lambda key: ((-layout[key])&255).to_bytes(1,'little').hex()
+    expected = {
+        'numericKeyLookup': {
+            'loadCodec':'418b4004','bankCodecZero':'85c0',
+            'bankCodecOffset':'83c0'+negative('bankCodecBase'),
+            'bankCodecRange':'83f8'+byte('bankCodecLastDelta'),
+            'bankTable':'4c8b41'+byte('bankTablePointer'),'bankCount':'41833800',
+            'soundTable':'488b41'+byte('soundTablePointer'),'soundCount':'8b10',
+            'languageFlag':'413859'+byte('languageFlagOffset'),
+            'languageId':'0fb779'+byte('packageLanguageOffset'),
+            'soundRows':'488d70'+byte('rowsOffset'),'soundRowStride':'488d1489',
+            'compareNumericKey':'44391c96','compareLanguage':'41394a'+byte('languageOffset')},
+        'numericBankKeySearch': {
+            'bankRows':'498d78'+byte('rowsOffset'),'languageFlag':'4584c9',
+            'languageId':'0fb759'+byte('packageLanguageOffset'),'bankCount':'458b00',
+            'bankRowStride':'488d1489','compareNumericKey':'44391c97',
+            'compareLanguage':'413949'+byte('languageOffset')},
+        'packageDescriptorLookup': {
+            'loadedPackages':'498b5c24'+byte('loadedPackagesOffset'),
+            'numericId':'418b6e08','passNumericFlags':'4c8bc6','passNumericKey':'8bd5',
+            'packageNext':'488b5b'+byte('nextPackageOffset'),
+            'allocationFailureStatus':'83fe'+byte('allocationFailureStatus'),
+            'allocationFailureStops':'741a',
+            'rowLength':'8b46'+byte('rowLengthOffset'),'rowBlockOffset':'8b4e'+byte('rowBlockOffset'),
+            'rowBlockBytes':'8b46'+byte('rowBlockBytesOffset'),
+            'storeLength':'488901','storeBlockOffset':'488948'+byte('descriptorBlockOffset'),
+            'storeBlockBytes':'8941'+byte('descriptorBlockBytesOffset'),
+            'storePackage':'488958'+byte('descriptorPackageOffset'),
+            'rowByteOffset':'0faf4e'+byte('rowBlockBytesOffset'),
+            'storeByteOffset':'8948'+byte('descriptorByteOffset'),
+            'storeNumericKey':'8968'+byte('descriptorNumericKeyOffset'),
+            'incrementReference':'ff43'+byte('packageReferenceOffset')},
+    }
+    for owner, values in expected.items():
+        for role, raw in values.items():
+            actual = witnesses[owner][role]['instructionHex']
+            if actual != raw:
+                fail('numericPackageInstruction', owner+'.'+role, raw, actual)
+    for owner, role, target, opcode in (
+            ('numericKeyLookup','tailBankSearch','numericBankKeySearch',0xe9),
+            ('packageDescriptorLookup','lookupNumericKey','numericKeyLookup',0xe8)):
+        witness = witnesses[owner][role];raw = bytes.fromhex(witness['instructionHex'])
+        actual = int(witness['rva'],16)+5+struct.unpack_from('<i',raw,1)[0] if len(raw) == 5 and raw[0] == opcode else None
+        if actual != targets[target]:
+            fail('numericPackageEdge', owner+'.'+role, hex(targets[target]), actual)
+
+
+def _validate_package_lifecycle(contract: dict, witnesses: dict, targets: dict, fail) -> None:
+    layout = contract.get('packageLifecycle')
+    fields = {'packageIdOffset','nextPackageOffset','referenceOffset','languageTableOffset',
+              'bankTableOffset','soundTableOffset','externalTableOffset','headerPrefixBytes',
+              'languageSizeOffset','bankSizeOffset','soundSizeOffset','externalSizeOffset',
+              'notificationRegistrationOffset','initialReference','loadedHeadOffset','loadedTailOffset',
+              'loadedCountOffset','packageSourceOffset','languageOffset'}
+    if not isinstance(layout,dict) or set(layout) != fields or any(type(v) is not int or not 0 <= v <= 255 for v in layout.values()):
+        fail('packageLifecycleLayout','packageLifecycle','complete bounded scalar declarations',layout)
+    for numeric, lifecycle in (('bankTablePointer','bankTableOffset'),('soundTablePointer','soundTableOffset'),
+            ('packageLanguageOffset','languageOffset'),('nextPackageOffset','nextPackageOffset'),
+            ('packageReferenceOffset','referenceOffset'),('loadedPackagesOffset','loadedHeadOffset')):
+        if contract['numericLookup'][numeric] != layout[lifecycle]:
+            fail('packageLifecycleJoin',numeric,contract['numericLookup'][numeric],layout[lifecycle])
+    byte = lambda key: layout[key].to_bytes(1,'little').hex()
+    word = lambda key: layout[key].to_bytes(4,'little').hex()
+    expected = {
+        'packageAdmission':{'nextWriteEmpty':'488970'+byte('nextPackageOffset'),
+            'nextWritePopulated':'488948'+byte('nextPackageOffset'),'packageId':'8b40'+byte('packageIdOffset')},
+        'packageReprioritization':{'comparePackageId':'3958'+byte('packageIdOffset'),
+            'nextRead':'488b40'+byte('nextPackageOffset'),'nextWriteEmpty':'488948'+byte('nextPackageOffset'),
+            'nextWritePopulated':'488948'+byte('nextPackageOffset')},
+        'packageRemoval':{'comparePackageId':'3959'+byte('packageIdOffset'),
+            'nextRead':'488b49'+byte('nextPackageOffset'),'releaseReference':'8341'+byte('referenceOffset')+'ff',
+            'destroyIfZero':'ff5008'},
+        'packageHeaderLoad':{'packageIdStore':'8947'+byte('packageIdOffset'),
+            'initialReference':'c747'+byte('referenceOffset')+word('initialReference'),
+            'retainStream':'488947'+byte('packageSourceOffset'),
+            'callbackRegistrationFlag':'80bb'+word('notificationRegistrationOffset')+'00',
+            'acceptPlainMagic':'3d414b504b','acceptEncryptedMagic':'3d3a297844'},
+        'packageTableAssignment':{'bankBytes':'8b42'+byte('bankSizeOffset'),
+            'soundBytes':'418b03','externalBytes':'448b4a'+byte('externalSizeOffset'),
+            'addressLanguageSize':'488d7a'+byte('languageSizeOffset'),
+            'addressSoundSize':'4c8d5a'+byte('soundSizeOffset'),
+            'languageBytes':'8b0f','headerPrefix':'4883c1'+byte('headerPrefixBytes'),
+            'languageTable':'498952'+byte('languageTableOffset'),'bankTable':'498952'+byte('bankTableOffset'),
+            'soundTable':'498952'+byte('soundTableOffset'),'externalTable':'498942'+byte('externalTableOffset')},
+        'packageLanguageSelection':{'resetLanguage':'668941'+byte('languageOffset'),
+            'languageTable':'488b49'+byte('languageTableOffset'),'retainLanguage':'668943'+byte('languageOffset')},
+    }
+    for owner, values in expected.items():
+        for role, raw in values.items():
+            actual = witnesses[owner][role]['instructionHex']
+            if actual != raw:
+                fail('packageLifecycleInstruction',owner+'.'+role,raw,actual)
+    context = int(contract['ioDispatch']['primaryContextRva'],16)
+    for owner, role, field, prefix in (
+            ('packageAdmission','headRead','loadedHeadOffset','488b0d'),
+            ('packageAdmission','headWriteEmpty','loadedHeadOffset','488905'),
+            ('packageAdmission','headWritePopulated','loadedHeadOffset','488905'),
+            ('packageAdmission','tailWriteEmpty','loadedTailOffset','488905'),
+            ('packageAdmission','countIncrement','loadedCountOffset','ff05'),
+            ('packageReprioritization','headRead','loadedHeadOffset','4c8b0d'),
+            ('packageReprioritization','headWritePopulated','loadedHeadOffset','488905'),
+            ('packageReprioritization','countIncrement','loadedCountOffset','ff05'),
+            ('packageRemoval','headRead','loadedHeadOffset','4c8b0d'),
+            ('packageRemoval','headRemove','loadedHeadOffset','4c8905'),
+            ('packageRemoval','tailRemove','loadedTailOffset','488915'),
+            ('packageRemoval','countRemove','loadedCountOffset','ff0d')):
+        row = witnesses[owner][role];raw = bytes.fromhex(row['instructionHex']);head = bytes.fromhex(prefix)
+        actual = int(row['rva'],16)+len(raw)+struct.unpack_from('<i',raw,len(head))[0] if len(raw) == len(head)+4 and raw.startswith(head) else None
+        if actual != context+layout[field]:
+            fail('packageLifecycleGlobal',owner+'.'+role,hex(context+layout[field]),actual)
+    edges = contract.get('lifecycleEdges')
+    expected_edges = {('packageAdmission','loadHeader','packageHeaderLoad'),
+                      ('packageHeaderLoad','headerTransform','headerAlignedTransform'),
+                      ('packageHeaderLoad','tableAssignment','packageTableAssignment'),
+                      ('packageHeaderLoad','languageSelection','packageLanguageSelection')}
+    if not isinstance(edges,list) or len(edges) != len(expected_edges) or {(r['group'],r['role'],r['target']) for r in edges} != expected_edges:
+        fail('packageLifecycleEdges','lifecycleEdges','complete named lifecycle calls',edges)
+    for edge in edges:
+        row = witnesses[edge['group']][edge['role']];raw = bytes.fromhex(row['instructionHex'])
+        actual = int(row['rva'],16)+5+struct.unpack_from('<i',raw,1)[0] if len(raw) == 5 and raw[0] == 0xe8 else None
+        if actual != targets[edge['target']]:
+            fail('packageLifecycleCall',edge['role'],hex(targets[edge['target']]),actual)
 
 
 def observer_spec(contract: dict) -> dict:

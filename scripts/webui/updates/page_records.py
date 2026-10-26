@@ -246,7 +246,7 @@ def _file_comparison(source: str, status: str, roots: list[Path]) -> dict[str, A
             result["text_diff_note"] = "binary_too_large"
             texts.append(None)
             continue
-        text, kind = textual_form(source, path.read_bytes())
+        text, kind = textual_form(source, path.read_bytes(), export_root=root)
         texts.append(text)
         kinds.append(kind)
     if kinds:

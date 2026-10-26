@@ -18,6 +18,7 @@ from pathlib import Path
 
 from scripts.game_data.gpu_ui_binary import decode_damage_text, decode_gpu_ui_root16
 from scripts.game_data.jsondata_corpus import _atomic_write, _safe_export_path
+from scripts.game_data.string_pool import export_string_pool
 from scripts.game_data.memorypack.corpus_gate import (
     DEFAULT_LEDGER, DEFAULT_OUTER, CensusGateError, _guard_output_path,
     _read_outer_and_ledger,
@@ -48,6 +49,7 @@ def audit_gpu_ui(
     seen: set[str] = set()
     results = []
     root = export_root.resolve()
+    strings = export_string_pool(root)
     for row in selected:
         name = row["virtualPath"]
         if (row.get("blockName") != "JsonData" or row.get("blockTypeValue") != 19
@@ -69,9 +71,9 @@ def audit_gpu_ui(
             )
         leaf = name.removeprefix(PREFIX)
         if leaf == "damage_text.json":
-            decoded = decode_damage_text(data)
+            decoded = decode_damage_text(data, strings=strings)
         elif leaf in ROOT16_FILES:
-            decoded = decode_gpu_ui_root16(data)
+            decoded = decode_gpu_ui_root16(data, strings=strings)
         else:
             raise ValueError(f"unsupported GPU UI configuration: {name}")
         if decoded["schemaStatus"] != "named_exact" or decoded["bytesConsumed"] != len(data):

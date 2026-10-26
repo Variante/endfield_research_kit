@@ -15,6 +15,7 @@ import struct
 from typing import Any
 
 from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.string_pool import NULL_INDEX, StringPool, StringPoolDecodeError
 
 
 NULL_COUNT = 0xFFFFFFFF
@@ -177,7 +178,17 @@ def _read_string(
     *,
     max_bytes: int = 2_048,
     allow_null: bool = False,
+    strings: StringPool | None = None,
 ) -> tuple[str | None, int]:
+    if strings is not None:
+        index, offset = _read_i32(data, offset, f"{field}.poolIndex")
+        try:
+            value = strings.resolve(index)
+        except StringPoolDecodeError as exc:
+            raise InteractiveBinaryDecodeError(f"{field}: {exc}") from exc
+        if value is None and not allow_null:
+            raise InteractiveBinaryDecodeError(f"{field}: null string")
+        return value, offset
     length, offset = _read_u32(data, offset, f"{field}.length")
     if length == NULL_COUNT:
         if allow_null:
@@ -194,11 +205,16 @@ def _read_string(
     return value, offset + length
 
 
-def decode_interactive_table(data: bytes) -> dict[str, Any]:
+def decode_interactive_table(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode the exact current two-member ``InteractiveTable``.
 
     The function consumes the entire input, enforces unique keys and one-member
     template references, and rejects references without a core template.
+    ``strings`` selects pooled storage: builds that ship ``Json/StringPool/``
+    store each string as an i32 global pool index. The caller selects the
+    encoding (see ``string_pool.export_string_pool``); the reader never guesses.
     """
     if not data or data[0] != INTERACTIVE_TABLE_MEMBER_COUNT:
         raise InteractiveBinaryDecodeError("InteractiveTable member count changed")
@@ -212,10 +228,14 @@ def decode_interactive_table(data: bytes) -> dict[str, Any]:
     core_paths: dict[str, str] = {}
     for index in range(core_count):
         template_id, offset = _read_string(
-            data, offset, f"coreTemplatePathDict[{index}].key", max_bytes=512
+            data,
+            offset,
+            f"coreTemplatePathDict[{index}].key",
+            max_bytes=512,
+            strings=strings,
         )
         template_path, offset = _read_string(
-            data, offset, f"coreTemplatePathDict[{index}].value"
+            data, offset, f"coreTemplatePathDict[{index}].value", strings=strings
         )
         if not template_id or template_id in core_paths:
             raise InteractiveBinaryDecodeError(
@@ -234,7 +254,11 @@ def decode_interactive_table(data: bytes) -> dict[str, Any]:
     object_to_template: dict[str, str] = {}
     for index in range(interactive_count):
         object_id, offset = _read_string(
-            data, offset, f"interactiveDataDict[{index}].key", max_bytes=512
+            data,
+            offset,
+            f"interactiveDataDict[{index}].key",
+            max_bytes=512,
+            strings=strings,
         )
         if offset >= len(data) or data[offset] != 1:
             marker = data[offset] if offset < len(data) else "truncated"
@@ -247,6 +271,7 @@ def decode_interactive_table(data: bytes) -> dict[str, Any]:
             offset,
             f"interactiveDataDict[{index}].value.templateId",
             max_bytes=512,
+            strings=strings,
         )
         if not object_id or object_id in object_to_template:
             raise InteractiveBinaryDecodeError(
@@ -283,6 +308,7 @@ def _decode_physics_property_value(
     *,
     index: int,
     schema: dict[str, Any],
+    strings: StringPool | None = None,
 ) -> tuple[dict[str, Any], int]:
     field = f"propertyList[{index}].value"
     value_offset = offset
@@ -314,14 +340,17 @@ def _decode_physics_property_value(
                 f"{field}.values[0]: string valueBit64 changed"
             )
         string_tail, offset = _read_string(
-            data, offset, f"{field}.values[0].stringTail"
+            data, offset, f"{field}.values[0].stringTail", strings=strings
         )
         value: Any = string_tail
     else:
+        # The tail is the item's null string slot: inline null length -1, or the
+        # pool's null index when strings are pooled.
+        expected_tail = -1 if strings is None else NULL_INDEX
         tail_int, offset = _read_i32(data, offset, f"{field}.values[0].tailInt")
-        if tail_int != -1:
+        if tail_int != expected_tail:
             raise InteractiveBinaryDecodeError(
-                f"{field}.values[0]: tail int {tail_int}, expected -1"
+                f"{field}.values[0]: tail int {tail_int}, expected {expected_tail}"
             )
         if value_type == PROPERTY_BOOL:
             if value_bits not in (0, 1):
@@ -364,6 +393,8 @@ def _decode_physics_property_value(
 def decode_physics_audio_component(
     data: bytes,
     source_offset: int = 0,
+    *,
+    strings: StringPool | None = None,
 ) -> dict[str, Any]:
     """Decode one exact compact-tag ``PhysicsAudioComponentData`` value."""
     start = source_offset
@@ -395,7 +426,7 @@ def decode_physics_audio_component(
             )
         offset += 1
         key, offset = _read_string(
-            data, offset, f"propertyList[{index}].key", max_bytes=256
+            data, offset, f"propertyList[{index}].key", max_bytes=256, strings=strings
         )
         expected_key = str(schema["authoredKey"])
         if key != expected_key:
@@ -403,7 +434,7 @@ def decode_physics_audio_component(
                 f"propertyList[{index}]: key {key!r}, expected {expected_key!r}"
             )
         decoded_value, offset = _decode_physics_property_value(
-            data, offset, index=index, schema=schema
+            data, offset, index=index, schema=schema, strings=strings
         )
         rows.append({
             "index": index,
@@ -432,7 +463,9 @@ def decode_physics_audio_component(
     }
 
 
-def find_physics_audio_components(data: bytes) -> list[dict[str, Any]]:
+def find_physics_audio_components(
+    data: bytes, *, strings: StringPool | None = None
+) -> list[dict[str, Any]]:
     """Find exact PhysicsAudio components without guessing other union bodies.
 
     The anchor includes the compact union tag and generated property-map entry
@@ -441,19 +474,24 @@ def find_physics_audio_components(data: bytes) -> list[dict[str, Any]]:
     makes current-shape drift visible instead of silently treating the
     component as absent.
     """
-    first_key = str(PHYSICS_AUDIO_PROPERTIES[0]["authoredKey"]).encode("utf-8")
-    first_entry_anchor = b"\x02" + struct.pack("<I", len(first_key)) + first_key
+    first_key = str(PHYSICS_AUDIO_PROPERTIES[0]["authoredKey"])
+    if strings is None:
+        encoded = first_key.encode("utf-8")
+        anchors = [b"\x02" + struct.pack("<I", len(encoded)) + encoded]
+    else:
+        anchors = [b"\x02" + struct.pack("<i", index) for index in strings.indices_of(first_key)]
+    entry_offsets: set[int] = set()
+    for anchor in anchors:
+        cursor = 0
+        while (entry_offset := data.find(anchor, cursor)) >= 0:
+            entry_offsets.add(entry_offset)
+            cursor = entry_offset + 1
     rows: list[dict[str, Any]] = []
-    cursor = 0
-    while True:
-        entry_offset = data.find(first_entry_anchor, cursor)
-        if entry_offset < 0:
-            break
+    for entry_offset in sorted(entry_offsets):
         source_offset = entry_offset - 6  # compact tag + member byte + u32 map count
-        cursor = entry_offset + 1
         if source_offset < 0 or data[source_offset] != PHYSICS_AUDIO_COMPONENT_TAG:
             continue
-        rows.append(decode_physics_audio_component(data, source_offset))
+        rows.append(decode_physics_audio_component(data, source_offset, strings=strings))
     return rows
 
 
@@ -477,7 +515,9 @@ def _decode_animation_curve(data: bytes, offset: int, field: str) -> int:
     return _skip_bytes(data, offset + 1, 12, field)
 
 
-def _decode_model_view_condition_group(data: bytes, offset: int, field: str) -> int:
+def _decode_model_view_condition_group(
+    data: bytes, offset: int, field: str, *, strings: StringPool | None = None
+) -> int:
     if offset < len(data) and data[offset] == 0xFF:
         return offset + 1
     offset = _read_member_count(data, offset, field, 2)
@@ -491,7 +531,7 @@ def _decode_model_view_condition_group(data: bytes, offset: int, field: str) -> 
         offset = _skip_bytes(data, offset, 16, f"{item}.conditionValue")
         _inverted, offset = _read_bool(data, offset, f"{item}.isInvert")
         _key, offset = _read_string(
-            data, offset, f"{item}.key", max_bytes=512, allow_null=True
+            data, offset, f"{item}.key", max_bytes=512, allow_null=True, strings=strings
         )
     _logic, offset = _read_i32(data, offset, f"{field}.logic")
     return offset
@@ -516,7 +556,9 @@ def _decode_model_view_transition_setting(
     return offset
 
 
-def _decode_model_view_transitions(data: bytes, offset: int, field: str) -> int:
+def _decode_model_view_transitions(
+    data: bytes, offset: int, field: str, *, strings: StringPool | None = None
+) -> int:
     count, offset = _read_count(
         data, offset, field, maximum=4_096, allow_null=True
     )
@@ -524,11 +566,11 @@ def _decode_model_view_transitions(data: bytes, offset: int, field: str) -> int:
         item = f"{field}[{index}]"
         offset = _read_member_count(data, offset, item, 4)
         offset = _decode_model_view_condition_group(
-            data, offset, f"{item}.conditionGroup"
+            data, offset, f"{item}.conditionGroup", strings=strings
         )
         _priority, offset = _read_i32(data, offset, f"{item}.priority")
         _target, offset = _read_string(
-            data, offset, f"{item}.targetStateName", max_bytes=512, allow_null=True
+            data, offset, f"{item}.targetStateName", max_bytes=512, allow_null=True, strings=strings
         )
         offset = _decode_model_view_transition_setting(
             data, offset, f"{item}.transitionSetting"
@@ -536,7 +578,9 @@ def _decode_model_view_transitions(data: bytes, offset: int, field: str) -> int:
     return offset
 
 
-def _decode_model_view_clip_segments(data: bytes, offset: int, field: str) -> int:
+def _decode_model_view_clip_segments(
+    data: bytes, offset: int, field: str, *, strings: StringPool | None = None
+) -> int:
     count, offset = _read_count(
         data, offset, field, maximum=4_096, allow_null=True
     )
@@ -544,7 +588,7 @@ def _decode_model_view_clip_segments(data: bytes, offset: int, field: str) -> in
         item = f"{field}[{index}]"
         offset = _read_member_count(data, offset, item, 13)
         _name, offset = _read_string(
-            data, offset, f"{item}.animationClipName", allow_null=True
+            data, offset, f"{item}.animationClipName", allow_null=True, strings=strings
         )
         for name in ("blendIn", "blendOut", "clipIn", "easeIn", "easeOut", "end"):
             _value, offset = _read_f32(data, offset, f"{item}.{name}")
@@ -558,7 +602,7 @@ def _decode_model_view_clip_segments(data: bytes, offset: int, field: str) -> in
 
 
 def _decode_model_view_impulse_definition(
-    data: bytes, offset: int, field: str
+    data: bytes, offset: int, field: str, *, strings: StringPool | None = None
 ) -> int:
     offset = _read_member_count(data, offset, field, 18)
     _value, offset = _read_f32(data, offset, f"{field}.amplitudeGain")
@@ -576,7 +620,7 @@ def _decode_model_view_impulse_definition(
     _value, offset = _read_f32(data, offset, f"{field}.propagationSpeed")
     _value, offset = _read_bool(data, offset, f"{field}.randomize")
     _value, offset = _read_string(
-        data, offset, f"{field}.rawSignalPath", allow_null=True
+        data, offset, f"{field}.rawSignalPath", allow_null=True, strings=strings
     )
     _value, offset = _read_i32(data, offset, f"{field}.repeatMode")
     envelope = f"{field}.timeEnvelope"
@@ -595,6 +639,8 @@ def _decode_model_view_behavior(
     data: bytes,
     offset: int,
     field: str,
+    *,
+    strings: StringPool | None = None,
 ) -> tuple[dict[str, Any] | None, int]:
     start = offset
     if offset + 2 > len(data):
@@ -640,10 +686,10 @@ def _decode_model_view_behavior(
 
     if tag in (1, 2):
         row["audioNodeName"], offset = _read_string(
-            data, offset, f"{field}.audioNodeName", allow_null=True
+            data, offset, f"{field}.audioNodeName", allow_null=True, strings=strings
         )
         row["customAudioId"], offset = _read_string(
-            data, offset, f"{field}.customAudioId", allow_null=True
+            data, offset, f"{field}.customAudioId", allow_null=True, strings=strings
         )
         row["eAudioTriggerState"], offset = _read_i32(
             data, offset, f"{field}.eAudioTriggerState"
@@ -661,13 +707,13 @@ def _decode_model_view_behavior(
         )
     elif tag == 3:
         row["audioNodeName"], offset = _read_string(
-            data, offset, f"{field}.audioNodeName", allow_null=True
+            data, offset, f"{field}.audioNodeName", allow_null=True, strings=strings
         )
         row["audioRTPCSetValue"], offset = _read_f32(
             data, offset, f"{field}.audioRTPCSetValue"
         )
         row["audioRTPCValue"], offset = _read_string(
-            data, offset, f"{field}.audioRTPCValue", allow_null=True
+            data, offset, f"{field}.audioRTPCValue", allow_null=True, strings=strings
         )
         row["rtpcBehaviourType"], offset = _read_i32(
             data, offset, f"{field}.behaviourType"
@@ -679,7 +725,7 @@ def _decode_model_view_behavior(
             data, offset, f"{field}.dependBlackBoard"
         )
         row["dependFloatKey"], offset = _read_string(
-            data, offset, f"{field}.dependFloatKey", allow_null=True
+            data, offset, f"{field}.dependFloatKey", allow_null=True, strings=strings
         )
     elif tag == 4:
         row["continuous"], offset = _read_bool(data, offset, f"{field}.continuous")
@@ -687,7 +733,7 @@ def _decode_model_view_behavior(
             data, offset, f"{field}.dependBlackBoard"
         )
         row["dependFloatKey"], offset = _read_string(
-            data, offset, f"{field}.dependFloatKey", allow_null=True
+            data, offset, f"{field}.dependFloatKey", allow_null=True, strings=strings
         )
         row["directSet"], offset = _read_bool(data, offset, f"{field}.directSet")
         row["targetClosePercentage"], offset = _read_f32(
@@ -706,9 +752,9 @@ def _decode_model_view_behavior(
         offset = _skip_bytes(data, offset, 12, f"{field}.target")
     elif tag == 6:
         offset = _decode_model_view_impulse_definition(
-            data, offset, f"{field}.impulseDefinition"
+            data, offset, f"{field}.impulseDefinition", strings=strings
         )
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
         offset = _skip_bytes(data, offset, 12, f"{field}.positionOffset")
         _value, offset = _read_i64(data, offset, f"{field}.rawSignalHash")
         _value, offset = _read_bool(data, offset, f"{field}.realCameraShake2D")
@@ -718,19 +764,19 @@ def _decode_model_view_behavior(
     elif tag == 8:
         _value, offset = _read_f32(data, offset, f"{field}.duration")
         _value, offset = _read_bool(data, offset, f"{field}.enable")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
         _value, offset = _read_f32(data, offset, f"{field}.target")
         _value, offset = _read_bool(data, offset, f"{field}.useCurve")
-        _value, offset = _read_string(data, offset, f"{field}.curveName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.curveName", allow_null=True, strings=strings)
         _value, offset = _read_i32(data, offset, f"{field}.mode")
-        _value, offset = _read_string(data, offset, f"{field}.parameter", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.parameter", allow_null=True, strings=strings)
     elif tag == 9:
         _value, offset = _read_bool(data, offset, f"{field}.active")
-        _value, offset = _read_string(data, offset, f"{field}.effectName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.effectName", allow_null=True, strings=strings)
         _value, offset = _read_f32(data, offset, f"{field}.alpha")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
         _value, offset = _read_i32(data, offset, f"{field}.mode")
-        _value, offset = _read_string(data, offset, f"{field}.paramName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.paramName", allow_null=True, strings=strings)
         _value, offset = _read_i32(data, offset, f"{field}.paramType")
         for name in ("continuous", "dependBlackBoard", "directSet"):
             _value, offset = _read_bool(data, offset, f"{field}.{name}")
@@ -740,7 +786,7 @@ def _decode_model_view_behavior(
             _value, offset = _read_bool(data, offset, f"{field}.{name}")
         _value, offset = _read_i32(data, offset, f"{field}.effectId")
         for name in ("effectName", "nodeName"):
-            _value, offset = _read_string(data, offset, f"{field}.{name}", allow_null=True)
+            _value, offset = _read_string(data, offset, f"{field}.{name}", allow_null=True, strings=strings)
         for name in ("loop", "releaseOnEnd", "usePool"):
             _value, offset = _read_bool(data, offset, f"{field}.{name}")
         _value, offset = _read_i32(data, offset, f"{field}.space")
@@ -748,48 +794,50 @@ def _decode_model_view_behavior(
             _value, offset = _read_bool(data, offset, f"{field}.{name}")
     elif tag == 11:
         _value, offset = _read_bool(data, offset, f"{field}.active")
-        _value, offset = _read_string(data, offset, f"{field}.effectName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.effectName", allow_null=True, strings=strings)
         for name in ("length", "speed"):
             _value, offset = _read_f32(data, offset, f"{field}.{name}")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
         _value, offset = _read_i32(data, offset, f"{field}.mode")
         for name in ("loop", "release"):
             _value, offset = _read_bool(data, offset, f"{field}.{name}")
-        _value, offset = _read_string(data, offset, f"{field}.paramName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.paramName", allow_null=True, strings=strings)
         _value, offset = _read_bool(data, offset, f"{field}.useCurve")
         _value, offset = _read_f32(data, offset, f"{field}.totalTime")
     elif tag == 12:
         _value, offset = _read_f32(data, offset, f"{field}.emissive")
         _value, offset = _read_i64(data, offset, f"{field}.configHash")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
         for name in ("continuous", "directSet"):
             _value, offset = _read_bool(data, offset, f"{field}.{name}")
     elif tag in (13, 17):
         _value, offset = _read_bool(data, offset, f"{field}.active")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
     elif tag == 14:
         _value, offset = _read_f32(data, offset, f"{field}.amplitude")
         _value, offset = _read_i32(data, offset, f"{field}.axis")
         _value, offset = _read_f32(data, offset, f"{field}.duration")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
         offset = _skip_bytes(data, offset, 12, f"{field}.direction")
         _value, offset = _read_i32(data, offset, f"{field}.mode")
     elif tag == 18:
         _value, offset = _read_bool(data, offset, f"{field}.active")
         for name in ("nodeName", "propertyName"):
-            _value, offset = _read_string(data, offset, f"{field}.{name}", allow_null=True)
+            _value, offset = _read_string(data, offset, f"{field}.{name}", allow_null=True, strings=strings)
         _value, offset = _read_f32(data, offset, f"{field}.speed")
     elif tag == 19:
         for name in ("duration", "target", "totalTime"):
             _value, offset = _read_f32(data, offset, f"{field}.{name}")
-        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True)
+        _value, offset = _read_string(data, offset, f"{field}.nodeName", allow_null=True, strings=strings)
 
     row["endOffset"] = offset
     row["byteLength"] = offset - start
     return (row if tag in MODEL_VIEW_AUDIO_TAGS else None), offset
 
 
-def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
+def decode_model_view_state_controller(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
     """Decode one complete current ``ModelViewStateControllerData`` value.
 
     The full nested graph is consumed so audio members cannot be found by a
@@ -813,7 +861,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
         offset = _read_member_count(data, offset, field, 2)
         _value, offset = _read_i64(data, offset, f"{field}.animationClipHash")
         _value, offset = _read_string(
-            data, offset, f"{field}.animationClipName", allow_null=True
+            data, offset, f"{field}.animationClipName", allow_null=True, strings=strings
         )
 
     effect_count, offset = _read_count(
@@ -821,7 +869,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
     )
     for index in range(effect_count or 0):
         _value, offset = _read_string(
-            data, offset, f"effectIds[{index}]", allow_null=True
+            data, offset, f"effectIds[{index}]", allow_null=True, strings=strings
         )
 
     emissive_count, offset = _read_count(
@@ -851,7 +899,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
             _has_clip, offset = _read_bool(data, offset, f"{layer_field}.hasAnimClip")
             layer_fsm_index, offset = _read_i32(data, offset, f"{layer_field}.index")
             layer_name, offset = _read_string(
-                data, offset, f"{layer_field}.layerName", max_bytes=512, allow_null=True
+                data, offset, f"{layer_field}.layerName", max_bytes=512, allow_null=True, strings=strings
             )
             state_count, offset = _read_count(
                 data, offset, f"{layer_field}.stateDatas", maximum=20_000, allow_null=True
@@ -862,10 +910,10 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
                 state_field = f"{layer_field}.stateDatas[{state_index}]"
                 offset = _read_member_count(data, offset, state_field, 18)
                 _clip_name, offset = _read_string(
-                    data, offset, f"{state_field}.animationClipName", allow_null=True
+                    data, offset, f"{state_field}.animationClipName", allow_null=True, strings=strings
                 )
                 _based_param, offset = _read_string(
-                    data, offset, f"{state_field}.basedParamKey", allow_null=True
+                    data, offset, f"{state_field}.basedParamKey", allow_null=True, strings=strings
                 )
                 count, offset = _read_count(
                     data, offset, f"{state_field}.behaviors", maximum=100_000, allow_null=True
@@ -874,7 +922,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
                 for behavior_index in range(count or 0):
                     behavior_count += 1
                     row, offset = _decode_model_view_behavior(
-                        data, offset, f"{state_field}.behaviors[{behavior_index}]"
+                        data, offset, f"{state_field}.behaviors[{behavior_index}]", strings=strings
                     )
                     if row is not None:
                         row["modelAnimatorIndex"] = model_index
@@ -885,7 +933,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
                         row["behaviorIndex"] = behavior_index
                         state_audio.append(row)
                 offset = _decode_model_view_clip_segments(
-                    data, offset, f"{state_field}.clipSegments"
+                    data, offset, f"{state_field}.clipSegments", strings=strings
                 )
                 for name in (
                     "isComplexAnimation", "isEmpty", "isHaveClip", "isLoop",
@@ -895,15 +943,15 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
                 _value, offset = _read_f32(data, offset, f"{state_field}.smoothTime")
                 _value, offset = _read_f32(data, offset, f"{state_field}.speed")
                 _value, offset = _read_string(
-                    data, offset, f"{state_field}.speedBasedParamKey", allow_null=True
+                    data, offset, f"{state_field}.speedBasedParamKey", allow_null=True, strings=strings
                 )
                 state_name, offset = _read_string(
-                    data, offset, f"{state_field}.stateName", max_bytes=512, allow_null=True
+                    data, offset, f"{state_field}.stateName", max_bytes=512, allow_null=True, strings=strings
                 )
                 state_type, offset = _read_i32(data, offset, f"{state_field}.stateType")
                 _value, offset = _read_f32(data, offset, f"{state_field}.totalTime")
                 offset = _decode_model_view_transitions(
-                    data, offset, f"{state_field}.transitions"
+                    data, offset, f"{state_field}.transitions", strings=strings
                 )
                 for row in state_audio:
                     row["stateName"] = str(state_name or "")
@@ -912,7 +960,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
             _weight, offset = _read_f32(data, offset, f"{layer_field}.weight")
             layer_rows.append((layer_index, layer_fsm_index, str(layer_name or ""), layer_audio))
         model_name, offset = _read_string(
-            data, offset, f"{model_field}.modelName", max_bytes=2_048, allow_null=True
+            data, offset, f"{model_field}.modelName", max_bytes=2_048, allow_null=True, strings=strings
         )
         for _layer_index, _fsm_index, _layer_name, rows in layer_rows:
             for row in rows:
@@ -920,7 +968,7 @@ def decode_model_view_state_controller(data: bytes) -> dict[str, Any]:
                 audio_behaviors.append(row)
 
     model_id, offset = _read_string(
-        data, offset, "modelId", max_bytes=2_048, allow_null=True
+        data, offset, "modelId", max_bytes=2_048, allow_null=True, strings=strings
     )
     pre_tick_animator, offset = _read_bool(data, offset, "preTickAnimator")
     if offset != len(data):

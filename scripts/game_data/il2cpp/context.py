@@ -184,14 +184,17 @@ def usage_method_spec(raw_usage: bytes, records: bytes, method_count: int,
 
 
 def generic_type_carrier(type_raw: bytes, carrier_raw: bytes, base_raw: bytes,
-                         *, type_pointer: int, type_count: int, source: str) -> dict:
+                         *, type_pointer: int, type_count: int, source: str,
+                         base_type_tag: int = 0x12) -> dict:
     """Decode authenticated tag-15 carrier windows, preserving unknown bytes.
 
     The caller must read carrier_raw at type_raw.data and base_raw at its first
     pointer with a raw-backed reader. Instantiation dereferencing is separate.
     The 32-byte window is not a certified allocation extent. Only its two
     leading pointers are interpreted; the remaining 16 bytes stay opaque.
-    No runtime replacement, class initialization or field meaning is implied.
+    The caller selects a class (0x12, default) or value-type (0x11) base;
+    neither silently substitutes for the other. No runtime replacement,
+    class initialization or field meaning is implied.
     """
     for label, raw, size in (('type', type_raw, 16), ('carrier', carrier_raw, 32), ('base', base_raw, 16)):
         if len(raw) != size:
@@ -200,8 +203,10 @@ def generic_type_carrier(type_raw: bytes, carrier_raw: bytes, base_raw: bytes,
         raise ContextError(source, type_pointer, 'bounded type-definition count', type_count)
     carrier_pointer = struct.unpack_from('<Q', type_raw)[0]
     base_pointer, inst_pointer = struct.unpack_from('<QQ', carrier_raw)
-    if type_raw[10] != 0x15 or base_raw[10] != 0x12 or not all((carrier_pointer, base_pointer, inst_pointer)):
-        raise ContextError(source, type_pointer, 'tag-15 carrier with non-null base/class-inst pointers and tag-12 base',
+    if type(base_type_tag) is not int or base_type_tag not in (0x11, 0x12):
+        raise ContextError(source, type_pointer, 'explicit class/value-type base tag (0x12/0x11)', base_type_tag)
+    if type_raw[10] != 0x15 or base_raw[10] != base_type_tag or not all((carrier_pointer, base_pointer, inst_pointer)):
+        raise ContextError(source, type_pointer, f'tag-15 carrier with non-null base/class-inst pointers and tag-{base_type_tag:x} base',
                            (type_raw[10], base_raw[10], carrier_pointer, base_pointer, inst_pointer))
     definition = struct.unpack_from('<Q', base_raw)[0]
     if definition >= type_count:

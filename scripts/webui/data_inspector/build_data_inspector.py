@@ -186,6 +186,7 @@ from scripts.game_data.navmesh_binary import (
     decode_luna_area,
     decode_navmesh_state_container,
 )
+from scripts.game_data.string_pool import StringPool, export_string_pool
 from scripts.game_data.teleport_validation_binary import (
     TeleportValidationDecodeError,
     decode_teleport_validation_json_table,
@@ -425,7 +426,9 @@ def _error_record(
 def _level_config_record(path: Path, export_root: Path) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
     try:
-        decoded = decode_level_config(path.read_bytes())
+        decoded = decode_level_config(
+            path.read_bytes(), strings=export_string_pool(path.parent.parent)
+        )
         status = _reader_status(decoded)
         facts = {
             "id": decoded.get("id"),
@@ -845,28 +848,40 @@ def _level_mount_point_record(path: Path, export_root: Path) -> dict[str, Any]:
         )
 
 
-def _teleport_validation(data: bytes) -> Any:
-    return decode_teleport_validation_table(data)
+ConfigTableReader = Callable[[bytes, "StringPool | None"], Any]
 
 
-def _teleport_validation_json(data: bytes) -> Any:
-    return decode_teleport_validation_json_table(data)
+def _pooled(reader: Callable[..., Any]) -> ConfigTableReader:
+    """Route a reader that stores strings inline or in the export's StringPool."""
+    return lambda data, strings: reader(data, strings=strings)
 
 
-def _dialog_id_table(data: bytes) -> Any:
-    return decode_dialog_id_table_memorypack(DIALOG_ID_TABLE_REL, data, len(data))
+def _inline(reader: Callable[[bytes], Any]) -> ConfigTableReader:
+    """Route a reader whose format has no pooled-string form."""
+    return lambda data, _strings: reader(data)
 
 
-def _bamboo_raft_table(data: bytes) -> Any:
-    return decode_bamboo_raft_task_table_memorypack(
-        BAMBOO_RAFT_TASK_TABLE_REL, data, len(data)
+def _dialog_id_table(data: bytes, strings: StringPool | None) -> Any:
+    return decode_dialog_id_table_memorypack(
+        DIALOG_ID_TABLE_REL, data, len(data), strings=strings
     )
+
+
+def _bamboo_raft_table(data: bytes, strings: StringPool | None) -> Any:
+    return decode_bamboo_raft_task_table_memorypack(
+        BAMBOO_RAFT_TASK_TABLE_REL, data, len(data), strings=strings
+    )
+
+
+_teleport_validation = _pooled(decode_teleport_validation_table)
+_teleport_validation_json = _inline(decode_teleport_validation_json_table)
 
 
 # Single-instance config tables, each with its own exact reader. The key is the
 # path relative to the export's Json root, which is also what routes the reader
-# in ``scripts.game_data.jsondata_corpus``.
-CONFIG_TABLE_READERS: dict[str, tuple[Callable[[bytes], Any], str, str]] = {
+# in ``scripts.game_data.jsondata_corpus``. Each reader receives the export's
+# StringPool (None for builds that store strings inline).
+CONFIG_TABLE_READERS: dict[str, tuple[ConfigTableReader, str, str]] = {
     "GameplayConfig/CinematicTeleportValidationDataTable.json": (
         _teleport_validation, "teleport-validation", "gameplay"),
     "GameplayConfig/CommonSysTeleportValidationDataTable.json": (
@@ -878,22 +893,22 @@ CONFIG_TABLE_READERS: dict[str, tuple[Callable[[bytes], Any], str, str]] = {
     "GameplayConfig/MapTeleportValidationDataTable.json": (
         _teleport_validation, "teleport-validation", "gameplay"),
     "GameplayConfig/AetherEnergyLockConfigTable.json": (
-        decode_aether_energy_lock_table, "aether-energy-lock", "gameplay"),
+        _pooled(decode_aether_energy_lock_table), "aether-energy-lock", "gameplay"),
     "GameplayConfig/DialogIdTable.json": (_dialog_id_table, "dialog-id", "story"),
     "NonGeneratedConfigs/MatrixShockWaveBeatConfigTable.json": (
-        decode_matrix_shockwave_table, "matrix-shockwave", "gameplay"),
+        _pooled(decode_matrix_shockwave_table), "matrix-shockwave", "gameplay"),
     "NonGeneratedConfigs/BambooRaftTaskTable.json": (
         _bamboo_raft_table, "bamboo-raft", "gameplay"),
     "NonGeneratedConfigs/GoldCoinConfigTable.json": (
-        decode_gold_coin_config, "gold-coin", "gameplay"),
+        _inline(decode_gold_coin_config), "gold-coin", "gameplay"),
     "GameplayConfigMissionAreaTable.json": (
-        decode_mission_area_table, "mission-area", "gameplay"),
+        _pooled(decode_mission_area_table), "mission-area", "gameplay"),
     "GameplayConfigSubGameInstanceDataTable.json": (
-        frame_subgame_table, "subgame-instance", "gameplay"),
+        _pooled(frame_subgame_table), "subgame-instance", "gameplay"),
     "GameplayConfigWorldEntityRegistry.json": (
-        frame_world_entity_registry, "world-entity-registry", "gameplay"),
+        _pooled(frame_world_entity_registry), "world-entity-registry", "gameplay"),
     "Interactive/InteractiveTable.json": (
-        decode_interactive_table, "interactive-table", "gameplay"),
+        _pooled(decode_interactive_table), "interactive-table", "gameplay"),
 }
 
 # Config tables the client ships as plaintext UTF-8 JSON rather than as a
@@ -937,7 +952,8 @@ def _config_table_record(path: Path, export_root: Path) -> dict[str, Any]:
     if json_text:
         tags.append("json-text")
     try:
-        decoded = reader(path.read_bytes())
+        json_dir = export_root / "game" / "Json"
+        decoded = reader(path.read_bytes(), export_string_pool(json_dir))
         if decoded is None:
             raise ValueError("current exact table reader rejected payload")
         # The MemoryPack table readers report exactness under `decoded`, while

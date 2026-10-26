@@ -1,0 +1,744 @@
+{
+  "schema": "endfield.wwise-effect-scalar-native.v2",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "meaningBoundary": "Reviewed code regions and referenced constant/table bytes match the named Microsoft CRT powf implementation after explicit relative operands are normalized. The whole implementations differ, including rounding paths. This is partial named implementation correspondence, not complete function equivalence, a live CPU-path witness or exact arbitrary-input DSP parity.",
+  "symbolWitness": {
+    "symbol": "powf",
+    "library": "Windows SDK 10.0.26100.0/ucrt/x64/libucrt.lib",
+    "librarySha256": "ea2ffa5d9b1ebc3fa76f34c364471750db8951b341dbccbc1bef628ef1a20e39",
+    "objectMemberOffset": 24667558,
+    "objectSha256": "8dc9004a1a2ec1385ece68aa828c2f3caa7ac3ce64c539f11110c445106b2990",
+    "section": 10,
+    "symbolBodyLength": 3766,
+    "symbolBodySha256": "1cbcb71c199802292d44de12eda406b78efe8ee1a64ee082c0a0ff4662bc2f73"
+  },
+  "method": {
+    "rva": "0x26a7e0",
+    "bodyLength": 3782,
+    "bodySha256": "a5a880892141e5bdf0381180dd0a8418235c90c62fc3cd180b36b04c15e42200"
+  },
+  "codeCorrespondences": [
+    {
+      "nativeOffset": 0,
+      "symbolOffset": 0,
+      "byteLength": 459,
+      "normalizedSha256": "8c2403dfb7941992a751a9d7b41557e0572c456fb9ca497550de0e043721778a",
+      "relocatedOperands": [
+        {
+          "offset": 18,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 25,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 63,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 74,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 86,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 102,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 115,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 152,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 170,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 181,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 202,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 218,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 234,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 241,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 262,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 268,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 276,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 282,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 294,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 310,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 330,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 346,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 370,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 437,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 443,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 458,
+          "width": 1,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 459,
+      "symbolOffset": 468,
+      "byteLength": 37,
+      "normalizedSha256": "6ce48442cacb2e574c4b31a3df024ec10c6d8e8edfc8c72288798c2323b38982",
+      "relocatedOperands": []
+    },
+    {
+      "nativeOffset": 496,
+      "symbolOffset": 513,
+      "byteLength": 9,
+      "normalizedSha256": "a3c56ecaa64ad801ebc701a42883cfdd4b0b905de9d9673157d7191d6027e281",
+      "relocatedOperands": [
+        {
+          "offset": 5,
+          "width": 4,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 505,
+      "symbolOffset": 526,
+      "byteLength": 155,
+      "normalizedSha256": "64d1190baac8bb2447c95c1c50bf4f1cb0d54ef24dcf1b49a892996fea893447",
+      "relocatedOperands": [
+        {
+          "offset": 3,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 8,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 21,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 38,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 44,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 52,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 68,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 113,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 151,
+          "width": 4,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 672,
+      "symbolOffset": 688,
+      "byteLength": 60,
+      "normalizedSha256": "e5d8772199b3fefd1ae6a5bfd482f3c885a38ba383abe8d2a523e907edd33b7e",
+      "relocatedOperands": [
+        {
+          "offset": 59,
+          "width": 1,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 732,
+      "symbolOffset": 757,
+      "byteLength": 42,
+      "normalizedSha256": "46237d75255d274345245316dd99d53e59e03e44ea1fd5ed8c2a8ffd816ca6bb",
+      "relocatedOperands": []
+    },
+    {
+      "nativeOffset": 774,
+      "symbolOffset": 807,
+      "byteLength": 8,
+      "normalizedSha256": "af0021df302f3858813a14ba4ef1f0cee943800406dd1e51c8c41f52640ea34c",
+      "relocatedOperands": [
+        {
+          "offset": 7,
+          "width": 1,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 782,
+      "symbolOffset": 820,
+      "byteLength": 62,
+      "normalizedSha256": "9ca555e3138359cb81e69a8092c3c2039ef458f1be5b34e6c238b1e772439561",
+      "relocatedOperands": [
+        {
+          "offset": 7,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 28,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 32,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 41,
+          "width": 4,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 848,
+      "symbolOffset": 896,
+      "byteLength": 110,
+      "normalizedSha256": "4d808fefb37e21b378cdb3b093acaa2bd2cb915000adc85f1371d01f2496dc13",
+      "relocatedOperands": [
+        {
+          "offset": 5,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 24,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 32,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 34,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 53,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 58,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 109,
+          "width": 1,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 958,
+      "symbolOffset": 1015,
+      "byteLength": 42,
+      "normalizedSha256": "46237d75255d274345245316dd99d53e59e03e44ea1fd5ed8c2a8ffd816ca6bb",
+      "relocatedOperands": []
+    },
+    {
+      "nativeOffset": 1000,
+      "symbolOffset": 1065,
+      "byteLength": 8,
+      "normalizedSha256": "af0021df302f3858813a14ba4ef1f0cee943800406dd1e51c8c41f52640ea34c",
+      "relocatedOperands": [
+        {
+          "offset": 7,
+          "width": 1,
+          "kind": "controlRelative"
+        }
+      ]
+    },
+    {
+      "nativeOffset": 1008,
+      "symbolOffset": 1078,
+      "byteLength": 29,
+      "normalizedSha256": "ce68a0d2c155c165c85ed8ce899c2fc23df848f0118577a758fc2515cbf34d46",
+      "relocatedOperands": []
+    },
+    {
+      "nativeOffset": 1040,
+      "symbolOffset": 1120,
+      "byteLength": 854,
+      "normalizedSha256": "56285ad0c6ae87ef8465191f272fbc1e90dc86c98a5a33da4ba17003b2512326",
+      "relocatedOperands": [
+        {
+          "offset": 2,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 14,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 26,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 39,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 48,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 53,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 85,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 110,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 118,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 123,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 152,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 165,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 170,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 180,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 193,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 217,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 252,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 257,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 295,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 303,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 319,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 324,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 358,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 371,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 376,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 545,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 550,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 592,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 597,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 632,
+          "width": 1,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 650,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 655,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 692,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 697,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 730,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 735,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 783,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 788,
+          "width": 4,
+          "kind": "controlRelative"
+        },
+        {
+          "offset": 828,
+          "width": 4,
+          "kind": "ripRelative"
+        },
+        {
+          "offset": 833,
+          "width": 4,
+          "kind": "controlRelative"
+        }
+      ]
+    }
+  ],
+  "dataCorrespondences": [
+    {
+      "rva": "0x2def00",
+      "byteLength": 16,
+      "sha256": "b5cd67bdeaed012deed679567e46fa9958e4dfc6ab498e17fc02bef581af4506",
+      "symbol": "L__xexp_bits_xmantissa_bits",
+      "reference": {
+        "nativeBodyOffset": 111,
+        "instructionHex": "660fdb15a9460700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2deee0",
+      "byteLength": 16,
+      "sha256": "898cbf30b93f86082996bca1fad83351f2040d030832bf45ff79f0720efa0fba",
+      "symbol": "L__1_by_2",
+      "reference": {
+        "nativeBodyOffset": 148,
+        "instructionHex": "660feb1564460700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2deef0",
+      "byteLength": 16,
+      "sha256": "b01ff272b19ec7debf12a307807fd2a6ff960a0c32aec046e5bca309645cd4d1",
+      "symbol": "L__1023",
+      "reference": {
+        "nativeBodyOffset": 166,
+        "instructionHex": "660ffb1d62460700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2e4aa0",
+      "byteLength": 2064,
+      "sha256": "27f755979d3d1e9176c146df350a017aaea83b4285eeb1ae184a1be8f2316d8e",
+      "symbol": "__log_F_inv_qword",
+      "reference": {
+        "nativeBodyOffset": 178,
+        "instructionHex": "488d0d07a20700",
+        "displacementOffset": 3
+      }
+    },
+    {
+      "rva": "0x2dee44",
+      "byteLength": 8,
+      "sha256": "9327e29fb26cdc73f5247fe463c0a619d7da9fa1a20ad5dbd8f555090f1a21d6",
+      "symbol": "L__1_by_3",
+      "reference": {
+        "nativeBodyOffset": 198,
+        "instructionHex": "f20f102596450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2deee0",
+      "byteLength": 8,
+      "sha256": "4cfa5b42ca669328764e67cd9a34bb8f90b16ed7ca8d85e8443783d7ccce15ed",
+      "symbol": "L__1_by_2",
+      "reference": {
+        "nativeBodyOffset": 148,
+        "instructionHex": "660feb1564460700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2dee4c",
+      "byteLength": 8,
+      "sha256": "54d8a917cdcca9efc3aee3ea6da0821e22c7a513a8b8b34fbd92ff0912139dc8",
+      "symbol": "L__log2",
+      "reference": {
+        "nativeBodyOffset": 230,
+        "instructionHex": "f20f591d7e450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2def10",
+      "byteLength": 2056,
+      "sha256": "6e3c1a3efc4d537e009d971c928441d68e508b8e09a7de1ef09aa3c5bf740bb4",
+      "symbol": "L__log_256_table",
+      "reference": {
+        "nativeBodyOffset": 238,
+        "instructionHex": "488d0d3b460700",
+        "displacementOffset": 3
+      }
+    },
+    {
+      "rva": "0x2dee54",
+      "byteLength": 8,
+      "sha256": "c0c96171051f5004572fb8c94201972dddf1e4403a4420443129191b9369e9fb",
+      "symbol": "L__max_exp_arg",
+      "reference": {
+        "nativeBodyOffset": 258,
+        "instructionHex": "660f2e056a450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2dee5c",
+      "byteLength": 8,
+      "sha256": "3cd1f7a6ba4326083c0d51cd767015f63f3d423e9397169b029b06937710b699",
+      "symbol": "L__min_exp_arg",
+      "reference": {
+        "nativeBodyOffset": 272,
+        "instructionHex": "660f2e0564450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2deed0",
+      "byteLength": 16,
+      "sha256": "79d48ce335d9c6a303b168ac20dd20f0873da01c5cc3124ace1764bc581f803b",
+      "symbol": "L__real_64_by_log2",
+      "reference": {
+        "nativeBodyOffset": 290,
+        "instructionHex": "660f591dc6450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2dee64",
+      "byteLength": 8,
+      "sha256": "14edc7c0a4a8910e04404dc0716be887d0f6badb0a57b17a40ff89f83d3f616b",
+      "symbol": "L__real_log2_by_64",
+      "reference": {
+        "nativeBodyOffset": 306,
+        "instructionHex": "f20f59154a450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2dee6c",
+      "byteLength": 8,
+      "sha256": "81b6e2a4b36d6e3769d1dbdc98c6acd12183f4009025b003ccd2c203b16c365b",
+      "symbol": "L__1_by_6",
+      "reference": {
+        "nativeBodyOffset": 326,
+        "instructionHex": "f20f101d3e450700",
+        "displacementOffset": 4
+      }
+    },
+    {
+      "rva": "0x2e48a0",
+      "byteLength": 512,
+      "sha256": "88c233557c8c42e92e6e0af7bd1704fcad9d649c3c5aeef5a87004915d81d98f",
+      "symbol": "__two_to_jby64_table",
+      "reference": {
+        "nativeBodyOffset": 367,
+        "instructionHex": "488d0d4a9f0700",
+        "displacementOffset": 3
+      }
+    }
+  ],
+  "wholeFunctionEquivalent": false,
+  "runtimeSelector": {
+    "instructionBodyOffset": 16,
+    "instructionHex": "833d35f90d0000",
+    "cellRva": "0x0034a12c",
+    "comparedValue": 0,
+    "meaningBoundary": "Live branch choice remains unobserved; emulator zero-initialization selects the scalar route."
+  },
+  "interpretation": "powf-family scalar conversion; control names and downstream gain roles remain unresolved"
+}

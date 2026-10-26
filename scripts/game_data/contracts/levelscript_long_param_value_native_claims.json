@@ -1,0 +1,109 @@
+{
+  "schema": "endfield.levelscript-long-param-value-native-claims.v1",
+  "status": "reviewed",
+  "methods": {
+    "value": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Actions.ParamExtensions",
+      "method": "GetValue",
+      "callAbi": "static",
+      "classArguments": [],
+      "methodArguments": [
+        "Int64"
+      ],
+      "parameters": [
+        "Param<methodArgument0> reference",
+        "ordinary methodArgument0",
+        "ordinary Boolean"
+      ],
+      "returnType": "ordinary methodArgument0"
+    },
+    "tryValue": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Actions.ParamExtensions",
+      "method": "TryGetValue",
+      "callAbi": "static",
+      "classArguments": [],
+      "methodArguments": [
+        "Int64"
+      ],
+      "parameters": [
+        "Param<methodArgument0> reference",
+        "explicit byref methodArgument0",
+        "ordinary Boolean"
+      ],
+      "returnType": "ordinary Boolean"
+    },
+    "predicate": {
+      "image": "Gameplay.Beyond.dll",
+      "type": "Beyond.Gameplay.Actions.Param`1",
+      "method": "get_useGetter",
+      "callAbi": "instance",
+      "classArguments": [
+        "Int64"
+      ],
+      "methodArguments": [],
+      "parameters": [],
+      "returnType": "ordinary Boolean"
+    },
+    "wrapperView": {
+      "image": "MemoryPack.Beyond.dll",
+      "type": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_long_ForMemoryPack",
+      "holder": "__instance",
+      "holderType": "Param<Int64> reference",
+      "methods": [
+        "GetValue",
+        "set___constValue__",
+        "set___idRef__",
+        "set___paramSource__"
+      ],
+      "boundary": "Generated typed setter view, with compatible runtime receiver and stored cursor integration independent."
+    }
+  },
+  "claims": {
+    "caller": {
+      "normalPaths": 6,
+      "fallbackArgument": 1,
+      "outputBytes": 8,
+      "calls": [
+        "predicate",
+        "tryValue"
+      ],
+      "return": "ordinary Int64"
+    },
+    "constant": {
+      "selectorMember": "paramSource",
+      "selectorDeclaration": "PARAM_SOURCE_CONST",
+      "sourceMember": "constValue",
+      "outputArgument": 1,
+      "outputBytes": 8,
+      "successfulBooleanBits": 1,
+      "opaqueCallsOnSelectedPath": 0
+    },
+    "predicate": {
+      "selectorMember": "paramSource",
+      "matchesDeclarations": [
+        "PARAM_SOURCE_GETTER",
+        "PARAM_SERVER_GETTER"
+      ],
+      "return": "ordinary Boolean low8"
+    },
+    "wrapper": {
+      "holderMember": "__instance",
+      "sameConcreteParameterDefinition": true,
+      "members": {
+        "constValue": "ordinary Int64",
+        "idRef": "ordinary Int32",
+        "paramSource": "ordinary Int32"
+      }
+    }
+  },
+  "declarations": {
+    "image": "Gameplay.Beyond.dll",
+    "type": "Beyond.Gameplay.Actions.IParam"
+  },
+  "evidenceBoundary": {
+    "conditional": "Actual registered physical calls, ordinary selected closed ABI, compatible storage and explicit normal initialized/ready branches.",
+    "unresolved": "Runtime receiver/MethodInfo/provider selection, nonconstant computation and stored cursor/evaluator integration."
+  }
+}

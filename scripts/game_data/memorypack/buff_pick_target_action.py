@@ -165,10 +165,26 @@ def _pick_setter(image,record,member,selected):
             _fail('pick-reference-tail','selected actual barrier',rows[-1])
     if rows[0][0]!=method[3]:_fail('pick-setter-entry',method,rows[0])
 
+def _validate_integer_image(image,c,string_helpers,*,wrappers=None):
+    """Prove the reusable integer child without a PickTarget/TargetSettings gate."""
+    source=json.loads((CONTRACTS_DIR/c['integerSourceDependency']).read_bytes())
+    record=c['records']['integer']
+    if source.get('schemaVersion')!=1 or record['readerMethod'] not in source['methods']:
+        _fail('integer-owned-source-reader',record['readerMethod'],source.get('methods'))
+    image.check_windows(c['codeWindows'],label=LABEL)
+    offsets=c['readerFieldsUnboxedOffsets'];selected=NativeReferenceContext(image)
+    if offsets!={k:selected.field('MemoryPack.MemoryPackReader::'+k)[2]-16 for k in offsets}:
+        _fail('integer-reader-layout',offsets,'current unboxed reader fields differ')
+    buffered.validate_int32_source(image,c['int32Source'],offsets,fail=_fail)
+    setters.validate_primitive_source(image,{'codeWindows':[c['byteSource']['window']]},c['byteSource']['member'],fail=_fail)
+    _wrapper(image,record,derive_from_image(image) if wrappers is None else wrappers);layout=_integer_layout(image,record)
+    return {**validate_integer_stores(image,record,layout,string_helpers),
+            **validate_integer_header(image,record,offsets)}
+
 def _validate_image(image,c,string_helpers):
     source,_=read_reviewed_contract(CONTRACTS_DIR/c['sourceDependency'],schema='endfield.skill-timeline-pick-target-native-contract.v1',status='exact-current-build',label=LABEL)
     if source['nativeInputs']!=c['nativeInputs'] or source['dispatcher']['unionTag']!=c['unionTag']:_fail('source-build-or-route',c['nativeInputs'],source['nativeInputs'])
-    image.validate_dispatcher(source['dispatcher'],label=LABEL);image.check_windows(c['codeWindows'],label=LABEL)
+    image.validate_dispatcher(source['dispatcher'],label=LABEL)
     integer_source=json.loads((CONTRACTS_DIR/c['integerSourceDependency']).read_bytes())
     if (integer_source.get('schemaVersion')!=1 or c['records']['integer']['readerMethod'] not in integer_source['methods']
         or c['records']['pickTarget']['readerMethod']!=source['methods'][0]):
@@ -177,15 +193,12 @@ def _validate_image(image,c,string_helpers):
     if shared['nativeInputs']!=c['nativeInputs']:_fail('read-value-build',c['nativeInputs'],shared['nativeInputs'])
     read_value._validate_image(image,shared)
     offsets=c['readerFieldsUnboxedOffsets'];selected=NativeReferenceContext(image)
-    if offsets!={k:selected.field('MemoryPack.MemoryPackReader::'+k)[2]-16 for k in offsets} or set(offsets)!={'currentPtr','bufferLength','advancedCount','consumed'}:
+    if set(offsets)!={'currentPtr','bufferLength','advancedCount','consumed'}:
         _fail('reader-layout','four current unboxed cursor fields',offsets)
     header=buffered.validate_object_header_source(image,c['objectHeader'],offsets,fail=_fail)
-    buffered.validate_int32_source(image,c['int32Source'],offsets,fail=_fail)
-    setters.validate_primitive_source(image,{'codeWindows':[c['byteSource']['window']]},c['byteSource']['member'],fail=_fail)
     wrappers=derive_from_image(image)
-    for record in c['records'].values():_wrapper(image,record,wrappers)
-    integer=c['records']['integer'];layout=_integer_layout(image,integer)
-    ints={**validate_integer_stores(image,integer,layout,string_helpers),**validate_integer_header(image,integer,offsets)}
+    _wrapper(image,c['records']['pickTarget'],wrappers)
+    integer=c['records']['integer'];ints=_validate_integer_image(image,c,string_helpers,wrappers=wrappers)
     record=c['records']['pickTarget'];normal=record['window'];proof=record['setterOutputSource']
     setters._parent(image,normal,record,proof,_fail)
     entry=record['entryProgram']
@@ -227,6 +240,11 @@ def _validate_image(image,c,string_helpers):
         _fail('pick-child-identity','separately owned integer and target types',[child,target])
     return {'objectHeader':header,'integer':ints,'pickFieldsForwarded':7,'condition':'selected ordinary branches, coherent non-null wrapper cache and normally returning native calls','runtimeExecutionObserved':False}
 
+def _integer_audit(c,summary,string):
+    return {'status':'validated','nativeInputs':c['nativeInputs'],'integerMemberNames':list(INTEGER_NAMES),
+            'summary':summary,'stringSource':string,'scope':'independent-BlackboardInt-only',
+            'parentPickTargetAdmitted':False,'runtimeExecutionKnown':False}
+
 def validate_current_native_contract(*,children,gameassembly:Path|None=None,metadata:Path|None=None):
     c=_contract();pins=c['nativeInputs'];gate=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gameassembly,metadata=metadata)
     if gate.status!='validated':return {'status':gate.status,'detail':gate.detail,'nativeInputs':pins}
@@ -240,7 +258,54 @@ def validate_current_native_contract(*,children,gameassembly:Path|None=None,meta
     summary=_validate_image(open_native_image(gate.gameassembly,gate.metadata),c,string['sourceHelpers'])
     after=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gate.gameassembly,metadata=gate.metadata)
     if after.status!='validated' or not match():return {'status':after.status if after.status!='validated' else 'mismatched','detail':'native inputs changed during PickTarget validation','nativeInputs':pins}
-    return {'status':'validated','nativeInputs':pins,'unionTag':c['unionTag'],'memberNames':list(FIELD_NAMES),'integerMemberNames':list(INTEGER_NAMES),'summary':summary,'runtimeMeaningExact':False,'evidenceBoundary':c['evidenceBoundary']}
+    return {'status':'validated','nativeInputs':pins,'unionTag':c['unionTag'],'memberNames':list(FIELD_NAMES),'integerMemberNames':list(INTEGER_NAMES),
+        'summary':summary,'integerNative':_integer_audit(c,summary['integer'],string),'runtimeMeaningExact':False,'evidenceBoundary':c['evidenceBoundary']}
+
+def validate_integer_native_contract(*,gameassembly:Path|None=None,metadata:Path|None=None):
+    """Validate only the shared BlackboardInt source/field/primitive programs."""
+    c=_contract();pins=c['nativeInputs']
+    gate=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gameassembly,metadata=metadata)
+    def empty(status,detail):return {'status':status,'detail':detail,'nativeInputs':pins,'integerMemberNames':[],'summary':{}}
+    if gate.status!='validated':return empty(gate.status,gate.detail)
+    unity=Path(gate.gameassembly).parent/'UnityPlayer.dll'
+    def match():return unity.is_file() and hashlib.sha256(unity.read_bytes()).hexdigest().upper()==pins['UnityPlayer.dll']
+    if not match():return empty('mismatched' if unity.is_file() else 'missing','UnityPlayer.dll missing or mismatched')
+    string=strings.validate_current_native_contract(gameassembly=gate.gameassembly,metadata=gate.metadata)
+    if string.get('status')!='validated' or string.get('nativeInputs')!=pins:
+        return empty(string.get('status','unresolved'),'integer key source did not validate')
+    summary=_validate_integer_image(open_native_image(gate.gameassembly,gate.metadata),c,string['sourceHelpers'])
+    after=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gate.gameassembly,metadata=gate.metadata)
+    if after.status!='validated' or not match():return empty(after.status if after.status!='validated' else 'mismatched','native inputs changed during integer validation')
+    return _integer_audit(c,summary,string)
+
+def decode_integer_value(data:bytes,*,source:str,digest:str,start:int,end:int,native_validation:dict):
+    """Replay the independently owned BlackboardInt reader on its exact span."""
+    c=_contract();audit=native_validation
+    if (audit.get('status')!='validated' or audit.get('nativeInputs')!=c['nativeInputs']
+        or audit.get('integerMemberNames')!=list(INTEGER_NAMES)):
+        raise ValueError(f'{LABEL}.integer:native-not-validated')
+    if (not isinstance(data,bytes) or not isinstance(source,str) or not source or not isinstance(digest,str)
+        or type(start)is not int or type(end)is not int or not 0<=start<end<=len(data)
+        or hashlib.sha256(data).hexdigest().upper()!=digest.upper()):
+        raise ValueError(f'{LABEL}.integer:source-range-or-hash')
+    reader=Reader(data,source,end);reader.pos=start;rows=[]
+    null=reader.peek()==255
+    if null:reader.take(1,'null-blackboard-int')
+    else:
+        reader.header(len(INTEGER_NAMES))
+        for member in c['records']['integer']['members']:
+            begin=reader.pos;kind=member['kind']
+            if kind=='byte-payload':reader.byte_payload()
+            elif kind in ('byte','scalar32'):reader.take(1 if kind=='byte' else 4,'blackboard-int.'+member['fieldName'])
+            else:raise ValueError(f'{LABEL}.integer:unsupported-kind')
+            rows.append({'fieldName':member['fieldName'],'kind':kind,'start':begin,'end':reader.pos,
+                         'rawHex':data[begin:reader.pos].hex().upper()})
+    if reader.pos!=end:raise ValueError(f'{LABEL}.integer:required-end expected={end} actual={reader.pos}')
+    return {'schema':'endfield.buff-owned-blackboard-int-value-receipt.v1','source':source,
+        'logicalSha256':digest.upper(),'typeName':c['records']['integer']['runtimeTypeName'],
+        'start':start,'end':end,'isNull':null,'namedFields':rows,'recursiveStoredSchemaExact':True,
+        'valueEvaluated':False,'runtimeExecutionKnown':False}
+
 
 def decode_action(data:bytes,*,source:str,digest:str,start:int,end:int,tag:int,native_validation:dict,target_decoder:Callable,depth:int=0):
     c=_contract();audit=native_validation.get('children',{}).get('pickTarget',{})
@@ -265,16 +330,9 @@ def decode_action(data:bytes,*,source:str,digest:str,start:int,end:int,tag:int,n
                 raw=reader.take(1 if kind=='byte' else 4,'pick-target.'+m['fieldName']);value={'rawHex':raw.hex().upper()}
             elif kind=='byte-payload':reader.byte_payload();value={'rawHex':data[at:reader.pos].hex().upper()}
             elif kind=='integer':
-                rows=[]
-                if reader.peek()==255:reader.take(1,'null-blackboard-int')
-                else:
-                    reader.header(3)
-                    for name,k in zip(INTEGER_NAMES,('byte-payload','byte','scalar32'),strict=True):
-                        begin=reader.pos
-                        if k=='byte-payload':reader.byte_payload()
-                        else:reader.take(1 if k=='byte' else 4,'blackboard-int.'+name)
-                        rows.append({'fieldName':name,'kind':k,'start':begin,'end':reader.pos,'rawHex':data[begin:reader.pos].hex().upper()})
-                value={'child':{'typeName':c['records']['integer']['runtimeTypeName'],'start':at,'end':reader.pos,'isNull':not rows,'namedFields':rows,'recursiveStoredSchemaExact':True,'valueEvaluated':False}}
+                reader.scalar_payload()
+                value={'child':decode_integer_value(data,source=source,digest=digest,start=at,end=reader.pos,
+                                                    native_validation=audit)}
             elif kind=='target':
                 reader.target_profile();extent={'start':at,'end':reader.pos}
                 if data[at]==255:

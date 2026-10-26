@@ -1,0 +1,54 @@
+{
+  "schema": "endfield.buff-selector-marker-surface-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "types": [
+    {
+      "typeName": "Beyond.Gameplay.Core.Selector+SkillCastIdValidator",
+      "declaredMethods": [
+        ".ctor"
+      ],
+      "constructor": [
+        61451,
+        "Beyond.Gameplay.Core.Selector+SkillCastIdValidator",
+        ".ctor",
+        69846464
+      ],
+      "constructorWindow": {
+        "startRva": 69846464,
+        "endRva": 69846467,
+        "sha256": "B6CBECECF1B07E74F37D57710C68C31F0B92CB08D51093252B321B07542E177B",
+        "boundary": "complete immediate RET 0 constructor; following alignment bytes excluded"
+      },
+      "parentTypeName": "Beyond.Gameplay.Core.Selector+Validator",
+      "declaredFieldNames": []
+    },
+    {
+      "typeName": "Beyond.Gameplay.Core.Selector+Validator",
+      "declaredMethods": [
+        ".ctor"
+      ],
+      "constructor": [
+        61416,
+        "Beyond.Gameplay.Core.Selector+Validator",
+        ".ctor",
+        69846464
+      ],
+      "constructorWindow": {
+        "startRva": 69846464,
+        "endRva": 69846467,
+        "sha256": "B6CBECECF1B07E74F37D57710C68C31F0B92CB08D51093252B321B07542E177B",
+        "boundary": "complete immediate RET 0 constructor; following alignment bytes excluded"
+      }
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected metadata method surfaces and complete immediate constructor-return windows. The marker owner has no declared fields; both owners declare only constructors.",
+    "conditional": "The selected constructor body has no instruction before RET 0. This does not establish whether it is invoked or whether external consumers alter state.",
+    "unresolved": "The consumer mapping from SkillCastIdValidator.Data to actual predicate logic and skill-cast context."
+  }
+}

@@ -1,0 +1,278 @@
+{
+  "schema": "endfield.dynamic-level-predicate-value-sources-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "caller": {
+      "type": "Beyond.Gameplay.GameUtil",
+      "image": "Gameplay.Beyond.dll",
+      "method": "IsLevelAvailable",
+      "callAbi": "static",
+      "returnType": "Boolean",
+      "parameters": [
+        "String"
+      ]
+    },
+    "started": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "get_isStarted",
+      "callAbi": "instance",
+      "returnType": "Boolean",
+      "parameters": []
+    },
+    "id": {
+      "type": "Beyond.Gameplay.Core.WorldInfo",
+      "image": "Gameplay.Beyond.dll",
+      "method": "get_curLevelId",
+      "callAbi": "instance",
+      "returnType": "String",
+      "parameters": []
+    },
+    "equals": {
+      "type": "System.String",
+      "image": "mscorlib.dll",
+      "method": "Equals",
+      "callAbi": "static",
+      "returnType": "Boolean",
+      "parameters": [
+        "String",
+        "String"
+      ]
+    }
+  },
+  "fields": {
+    "worldInfo": {
+      "owner": "Beyond.Gameplay.Core.GameWorld",
+      "name": "worldInfo",
+      "role": "static",
+      "type": "Beyond.Gameplay.Core.WorldInfo",
+      "offset": 496
+    },
+    "curLevel": {
+      "owner": "Beyond.Gameplay.Core.WorldInfo",
+      "name": "<curLevel>k__BackingField",
+      "role": "instance",
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "offset": 192
+    },
+    "state": {
+      "owner": "Beyond.Gameplay.Core.GameLevel",
+      "name": "m_state",
+      "role": "instance",
+      "type": "Beyond.Gameplay.Core.GameLevel+State",
+      "offset": 16
+    },
+    "id": {
+      "owner": "Beyond.Gameplay.Core.GameLevel",
+      "name": "<id>k__BackingField",
+      "role": "instance",
+      "type": "String",
+      "offset": 24
+    }
+  },
+  "programs": {
+    "caller": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "mov rbx, rcx",
+        "xor edx, edx",
+        "mov ecx, 0x23cc",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov rax, [rip+*",
+        "mov rdx, [rax+0xb8]",
+        "cmp [rdx+0x1f0], 0x0",
+        "je *",
+        "mov rdx, [rdx+0x1f0]",
+        "cmp [rdx+0xc0], 0x0",
+        "je *",
+        "mov rcx, [rdx+0xc0]",
+        "xor edx, edx",
+        "call *",
+        "test al, al",
+        "jne *",
+        "xor al, al",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "test rbx, rbx",
+        "je *",
+        "cmp [rbx+0x10], 0x0",
+        "jcc *",
+        "mov al, 0x1",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret"
+      ],
+      [
+        "mov rax, [rip+*",
+        "mov rcx, [rax+0xb8]",
+        "mov rcx, [rcx+0x1f0]",
+        "test rcx, rcx",
+        "je *",
+        "xor edx, edx",
+        "call *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "jmp *",
+        "xor edx, edx",
+        "mov ecx, 0x23cc",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *",
+        "call *",
+        "int3"
+      ]
+    ],
+    "started": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "mov rbx, rcx",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "je *",
+        "mov rax, [rcx+0xb8]",
+        "mov rax, [rax]",
+        "test rax, rax",
+        "je *",
+        "cmp [rax+0x18], 0x23cd",
+        "jcc *",
+        "cmp [rbx+0x10], 0x2",
+        "setge al",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "call *",
+        "mov rcx, [rip+*",
+        "jmp *",
+        "cmp [rcx+0x11e88], 0x0",
+        "je *",
+        "jmp *",
+        "call *",
+        "int3"
+      ],
+      [
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "mov rcx, [rip+*",
+        "mov rax, [rcx+0xb8]",
+        "mov rcx, [rax]",
+        "test rcx, rcx",
+        "jcc *",
+        "cmp [rcx+0x18], 0x23cd",
+        "jcc *",
+        "call *",
+        "int3",
+        "xor edx, edx",
+        "mov ecx, 0x23cd",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ],
+    "id": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "mov rbx, rcx",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "je *",
+        "mov rax, [rcx+0xb8]",
+        "mov rdx, [rax]",
+        "test rdx, rdx",
+        "je *",
+        "cmp [rdx+0x18], 0x6ba",
+        "jcc *",
+        "mov rax, [rbx+0xc0]",
+        "test rax, rax",
+        "je *",
+        "mov rax, [rax+0x18]",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "call *",
+        "mov rcx, [rip+*",
+        "jmp *",
+        "cmp [rcx+0x35f0], 0x0",
+        "je *",
+        "jmp *",
+        "call *",
+        "int3"
+      ],
+      [
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "mov rcx, [rip+*",
+        "mov rax, [rcx+0xb8]",
+        "mov rcx, [rax]",
+        "test rcx, rcx",
+        "jcc *",
+        "cmp [rcx+0x18], 0x6ba",
+        "jcc *",
+        "call *",
+        "int3",
+        "xor edx, edx",
+        "mov ecx, 0x6ba",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": [
+      "selected normal branch and typed field value/actual request chain",
+      "normalized Boolean low byte only"
+    ],
+    "conditional": [
+      "compatible independent WorldInfo/GameLevel records and normal callees",
+      "selected anonymous header/inline lanes satisfy raw branch guards",
+      "receiver nonvolatile and frame locations not disturbed by normal callees"
+    ],
+    "unresolved": [
+      "header/static storage bridge",
+      "patch cache/initialization semantics",
+      "same repeated runtime records and stability",
+      "String equality algorithm",
+      "live level availability/id/state and lifecycle order"
+    ]
+  }
+}

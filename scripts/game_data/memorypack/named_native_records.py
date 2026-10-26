@@ -171,6 +171,10 @@ def check_unmanaged_source(image: Any, source: dict[str, Any], member: dict[str,
     if not isinstance(proof, dict):
         fail("unmanaged-source-proof", "reviewed object", proof,
              record=record, field=member["fieldName"])
+    mode=proof.get("mode")
+    if mode not in (None,"dword-with-cursor-call"):
+        fail("unmanaged-source-mode", "reviewed inline DWORD or explicit cursor-call program", mode,
+             record=record, field=member["fieldName"])
     actual = sizes.get(member["declaredType"])
     if (width != 4 or actual != width or proof.get("width") != width
             or member.get("sourceContextInstructionRva") is None):
@@ -201,6 +205,11 @@ def check_unmanaged_source(image: Any, source: dict[str, Any], member: dict[str,
         fail("unmanaged-source-offsets", "four distinct positive-disp8 slots", offsets,
              record=record, field=member["fieldName"])
     buffer, remaining, consumed, segment = offsets
+    if mode=="dword-with-cursor-call":
+        from scripts.game_data.memorypack.unmanaged_cursor_sources import check_dword_cursor_source
+        check_dword_cursor_source(image,source,member,proof,context,offsets,entry,
+            record=record,label=label,fail=fail)
+        return
     if entry["pointer"] != image.pe.image_base + start:
         _check_registered_reader(image, proof, entry, offsets, record=record, field=member["fieldName"],
                                  label=label, fail=fail)
@@ -485,6 +494,14 @@ def validate_named_records(image: Any, source: dict[str, Any], records: dict[str
         if reader not in source["methods"] or reader[1] != wrapper.name or reader[2] != "Deserialize":
             fail("source-reader", record["wrapperTypeName"], reader, record=key)
         normal = next(w for w in source["codeWindows"] if w["startRva"] == reader[3])
+        if record.get("inheritedActionSource") is not None:
+            from scripts.game_data.memorypack import inherited_action_sources
+            inherited_action_sources.validate_inherited_action_sources(image, source, record,
+                fail=lambda check, expected, actual: fail(check, expected, actual, record=key))
+        if record.get("inheritedDirectActionSource") is not None:
+            from scripts.game_data.memorypack import inherited_direct_action_sources
+            inherited_direct_action_sources.validate_inherited_direct_sources(image,source,record,
+                fail=lambda check,expected,actual:fail(check,expected,actual,record=key))
         if record.get("setterOutputSource") is not None:
             from scripts.game_data.memorypack import setter_output_sources
             setter_output_sources.validate_setter_outputs(image, source, record,
@@ -501,6 +518,11 @@ def validate_named_records(image: Any, source: dict[str, Any], records: dict[str
         if wrapper.inherited_members:
             parent_name = image.metadata.metadata_type_name(runtime.parent_index)
             allowed_owners.add(next(t.index for t in image.metadata.types if image.metadata.type_full_name(t) == parent_name))
+        inherited_direct = record.get('inheritedDirectActionSource') or {}
+        if inherited_direct.get('mode') == 'reader-rbx-wrapper-ref-rdi-four-common-direct-stores-through-data-ancestors':
+            # validate_inherited_direct_sources has already checked every parent edge.
+            allowed_owners.add(next(t.index for t in image.metadata.types
+                if image.metadata.type_full_name(t) == inherited_direct['baseDataName']))
         for member, derived in zip(members, wrapper.members, strict=True):
             operation_start = previous
             if member["kind"] == "raw8" and (member.get("unmanagedOutputSource") or {}).get("mode") != "unmanaged-return64-float-pair":
@@ -510,6 +532,7 @@ def validate_named_records(image: Any, source: dict[str, Any], records: dict[str
                 if derived.width is None and member.get("unmanagedSource") is not None:
                     if unmanaged_sizes is None:
                         unmanaged_sizes = unmanaged_value_sizes_from_image(image)
+                    if generic_entries is None:
                         generic_entries = GenericEntries(image)
                     check_unmanaged_source(image, source, member, unmanaged_sizes, generic_entries,
                                            record=key, width=width, label=label, fail=fail)

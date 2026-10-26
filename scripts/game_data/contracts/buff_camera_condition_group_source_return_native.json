@@ -1,0 +1,96 @@
+{
+  "schema": "endfield.buff-camera-condition-group-source-return-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "scope": "guarded-normal-source-return-to-condition-group-setter",
+  "readerMethod": [
+    162729,
+    "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+    "Deserialize",
+    157866072
+  ],
+  "readerWindow": {
+    "startRva": 157866072,
+    "endRva": 157866358,
+    "sha256": "33D008120703EAD1865783CAB750A748944385399BD9F9CC9D3D0E65E1F3B77D",
+    "boundary": "member1 complete reader including init allocation bad-header null and RET"
+  },
+  "sourceCall": {
+    "rva": 157866250,
+    "targetRva": 58849520,
+    "instructionHex": "E8E11F19FA"
+  },
+  "bridge": {
+    "startRva": 157866255,
+    "endRva": 157866275,
+    "rawHex": "4885DB7506E8FB0A42F7CC4533C0488BD0488BCB",
+    "sha256": "E62B70E19D96F5C46E3CDC92D4E7DFCF6F7B4EAE65D9722DF9150F97723F77A0",
+    "errorTargetRva": 11199508
+  },
+  "setterCall": {
+    "rva": 157866275,
+    "targetRva": 153000880,
+    "instructionHex": "E888C2B5FF"
+  },
+  "supersededIncorrectSourceCall": {
+    "rva": 157866260,
+    "targetRva": 11199508
+  },
+  "correctedSourceRecord": {
+    "sourceContract": "buff_08_native.json",
+    "wrapperTypeDefinition": 22419,
+    "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+    "runtimeTypeDefinition": 8490,
+    "runtimeTypeName": "Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd",
+    "inheritedMemberCount": 0,
+    "sourceReadOrder": "member1",
+    "readerMethod": [
+      162729,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+      "Deserialize",
+      157866072
+    ],
+    "members": [
+      {
+        "fieldName": "and",
+        "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionCondition>",
+        "kind": "nullable-member5-list",
+        "setterMethodIndex": 162725,
+        "sourceCall": {
+          "rva": 157866250,
+          "targetRva": 58849520
+        },
+        "assignment": {
+          "kind": "setter",
+          "rva": 157866275,
+          "targetRva": 153000880,
+          "methodIndex": 162725
+        },
+        "sourceToDestinationHex": "4885DB7506E8FB0A42F7CC4533C0488BD0488BCB",
+        "sourceContextInstructionRva": 157866237
+      }
+    ]
+  },
+  "normalBridgeSummary": {
+    "status": "nonnull-receiver-source-return-to-setter-arguments-proved",
+    "bytesChecked": 20,
+    "normalSourceRaxPreservedIntoSetterRdxProved": true,
+    "setterReceiverIsGuardedRbxProved": true,
+    "setterR8dIsZeroProved": true,
+    "zeroReceiverHasNoOrdinarySetterContinuationProved": true,
+    "errorHelperReturnValueCanBeUsedAsSetterInputProved": false,
+    "setterInvokedOrEffectObserved": false,
+    "conditions": "Normal source-helper return and architectural control without INT3 interception; nonzero valid receiver is required for ordinary setter continuation."
+  },
+  "legacySourceContractCorrectionApplied": false,
+  "evidenceBoundary": {
+    "exact": "Selected reader window and actual source/setter/error CALL bytes plus the complete guarded bridge.",
+    "direct": "With a nonzero receiver and normally returned source word, setter RDX receives source RAX, RCX is receiver RBX and R8D is zero. Zero receiver enters error CALL then INT3, not ordinary setter continuation.",
+    "conditional": "Source helper normal completion and valid receiver, without trap interception; source helper algorithm and setter effects remain separate.",
+    "unresolved": "Legacy camera contract correction/adoption, complete source/helper consumer control, positive list grammar/provider selection, whole parents/roots and actual camera evaluation."
+  }
+}

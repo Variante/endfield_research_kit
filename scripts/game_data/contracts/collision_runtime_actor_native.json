@@ -1,0 +1,652 @@
+{
+  "schema": "endfield.collision-runtime-actor-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "evidenceBoundary": "conditional: typed rigid-static actor registration state and public PxScene from same-call saved windows. State IN_SCENE establishes sampled membership, not continuous lifetime, reverse scene-array coverage, contact reports or physical touch. Empty split-results header arrays are not evidence of absent contacts.",
+  "typeName": {
+    "rva": 25939248,
+    "ascii": "PxRigidStatic"
+  },
+  "layout": {
+    "actor": {
+      "vtableRva": 25972808,
+      "scb": 96,
+      "control": 8,
+      "stateShift": 30,
+      "arrayIndex": 88
+    },
+    "scene": {
+      "vtableRva": 25970208,
+      "fromScb": -16,
+      "scb": 16,
+      "actorEntries": 9160,
+      "actorCount": 9168
+    },
+    "collider": {
+      "sceneWrapper": 72
+    },
+    "wrapper": {
+      "scene": 8
+    },
+    "contact": {
+      "queue": 1968,
+      "count": 8,
+      "capacity": 12,
+      "reportCore": 3992,
+      "actorPairs": 8,
+      "actorPairCount": 16
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "actor_cleanup_prefix",
+      "rva": 7819744,
+      "bytes": 25,
+      "sha256": "aa61b837a379b98c2ee93c07dab514ffb533da6d5fbc66e05fc0b696d804585a",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "actor_type_name",
+      "rva": 7861248,
+      "bytes": 8,
+      "sha256": "e566f5d3263ff592ce813a4943d282f2a8aaaa307b3582b208346fd159c7f961",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "static_release",
+      "rva": 7886896,
+      "bytes": 290,
+      "sha256": "263de73e626a1eee853ba1a659fe1115a9b2a3c3951206e7bf7539caa23e24c2",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "actor_scene_thunk",
+      "rva": 7725504,
+      "bytes": 5,
+      "sha256": "1abb3b26c594321a3de9c97050c4fe01da22ab629b030df9b15a5fa86dcd5e8e",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "actor_scene",
+      "rva": 7922656,
+      "bytes": 46,
+      "sha256": "0064f7252c8d070521ccb4ed73034173b75361aa8009f716f2fd9dd33e435d70",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "scb_to_public_scene",
+      "rva": 8141936,
+      "bytes": 5,
+      "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "scene_cleanup_prefix",
+      "rva": 7814720,
+      "bytes": 44,
+      "sha256": "727de2b7a36e35612a39decec8cdfd943264a143bc15f835f4aefd4883906f1f",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "scene_destructor_prefix",
+      "rva": 7819872,
+      "bytes": 20,
+      "sha256": "fe8e5aec83378a0de7add265bcecf027c3e85ae7dcd7313ab19dedd9e36e0b13",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "collider_detach_prefix",
+      "rva": 2812384,
+      "bytes": 49,
+      "sha256": "ce6859d9b31ba02d8da5134c7b24626801a17ca25bca5a75630814f1bcbbbeac",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "physics_scene_pointer",
+      "rva": 2842144,
+      "bytes": 2048,
+      "sha256": "6ccc64020530ff900bfdf74daacbb8802ba0991ebe68ecd26f30c1de5a756ea2",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "fetch_results_start",
+      "rva": 7859280,
+      "bytes": 251,
+      "sha256": "8e93ca2560dd301101803dc2251a80b5c90ad73d5974a2a7f41efdf4650ebe7a",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "build_contact_headers",
+      "rva": 7997728,
+      "bytes": 373,
+      "sha256": "448a850910be2bd44a70420f477b675a3729458872c1c8d7d4b9906ad6a55f4d",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "fetch_results",
+      "rva": 7858656,
+      "bytes": 255,
+      "sha256": "d793a9a2529b35e2259961adaabbf5f3a18d9eaa49ca8874400308c1bca5488a",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "post_callbacks",
+      "rva": 7859008,
+      "bytes": 272,
+      "sha256": "b9ff4ed267a672a3fa8d99c4b68aff0741e1b45f30839b9ad458620dbbae4de2",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "report_stream_cleanup",
+      "rva": 8013888,
+      "bytes": 226,
+      "sha256": "ee23f151cbe03d2217df2c5cbb507f8903d0aeb7b1fab1559eec0ef6603681f6",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "clear_report_actor_pairs",
+      "rva": 8074912,
+      "bytes": 286,
+      "sha256": "94b4c0d9bc3263aad4f6cae4c4aeedfd0a47aa992aed070c49f94009150896dd",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "rva": 7993776,
+      "bytes": 362,
+      "sha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee",
+      "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
+    },
+    {
+      "role": "scene_constructor_part_0",
+      "rva": 7942832,
+      "bytes": 3000,
+      "sha256": "046d29adef0ce6cebfa00a7f0cc1718047fb42cd0e00c8382be023e921180a37",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    },
+    {
+      "role": "scene_constructor_part_1",
+      "rva": 7945832,
+      "bytes": 3000,
+      "sha256": "bfdfd2f104c77b1e6d1bd05bf75cacb41d28df6a29441489c0d530c0c6fc1387",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    },
+    {
+      "role": "scene_constructor_part_2",
+      "rva": 7948832,
+      "bytes": 3001,
+      "sha256": "6edaa690a262ca19e8c37f584cd4c2391e75060313215ff018f3a95620135f06",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    },
+    {
+      "role": "callback_setter_entry",
+      "rva": 8045584,
+      "bytes": 29,
+      "sha256": "2afdf9ca26949b4e426f4f92d45c58b0cea7b5359f4e1212afbbc5cd9de8559f",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    },
+    {
+      "role": "callback_setter_body",
+      "rva": 8045615,
+      "bytes": 88,
+      "sha256": "c746bf8468c6617ca8e3a678033b0a1bdd17b4dbe62e29ef562fda3a95de83cc",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    },
+    {
+      "role": "callback_setter_empty_bodies",
+      "rva": 8045703,
+      "bytes": 9,
+      "sha256": "187f8b564da7d8d64986b12824bd55610f105865d46f697cdbdfe68584973692",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    },
+    {
+      "role": "callback_setter_direct_store",
+      "rva": 8045712,
+      "bytes": 18,
+      "sha256": "5d361cc7125f2363ec37631d63afb9e0d0f331aebc218a2601188bcb5ba92d4e",
+      "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "actor_cleanup_prefix",
+      "offset": 10,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "actor.vtableRva"
+    },
+    {
+      "role": "static_release",
+      "offset": 25,
+      "prefix": "4c8d71",
+      "mode": "u8",
+      "field": "actor.scb"
+    },
+    {
+      "role": "static_release",
+      "offset": 53,
+      "prefix": "418b4e",
+      "mode": "u8",
+      "field": "actor.control"
+    },
+    {
+      "role": "static_release",
+      "offset": 59,
+      "prefix": "c1e8",
+      "mode": "u8",
+      "field": "actor.stateShift"
+    },
+    {
+      "role": "static_release",
+      "offset": 164,
+      "prefix": "8b73",
+      "mode": "u8",
+      "field": "actor.arrayIndex"
+    },
+    {
+      "role": "static_release",
+      "offset": 183,
+      "prefix": "448b88",
+      "mode": "u32",
+      "field": "scene.actorCount"
+    },
+    {
+      "role": "static_release",
+      "offset": 203,
+      "prefix": "488b90",
+      "mode": "u32",
+      "field": "scene.actorEntries"
+    },
+    {
+      "role": "scb_to_public_scene",
+      "offset": 0,
+      "prefix": "488d41",
+      "mode": "i8",
+      "field": "scene.fromScb"
+    },
+    {
+      "role": "scene_cleanup_prefix",
+      "offset": 24,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "scene.vtableRva"
+    },
+    {
+      "role": "fetch_results_start",
+      "offset": 189,
+      "prefix": "488d4e",
+      "mode": "u8",
+      "field": "scene.scb"
+    },
+    {
+      "role": "collider_detach_prefix",
+      "offset": 35,
+      "prefix": "488b49",
+      "mode": "u8",
+      "field": "collider.sceneWrapper"
+    },
+    {
+      "role": "physics_scene_pointer",
+      "offset": 114,
+      "prefix": "4c8b70",
+      "mode": "u8",
+      "field": "wrapper.scene"
+    },
+    {
+      "role": "build_contact_headers",
+      "offset": 34,
+      "prefix": "498db5",
+      "mode": "u32",
+      "field": "contact.queue"
+    },
+    {
+      "role": "fetch_results_start",
+      "offset": 206,
+      "prefix": "8b48",
+      "mode": "u8",
+      "field": "contact.count"
+    },
+    {
+      "role": "build_contact_headers",
+      "offset": 69,
+      "prefix": "8b46",
+      "mode": "u8",
+      "field": "contact.capacity"
+    },
+    {
+      "role": "build_contact_headers",
+      "offset": 48,
+      "prefix": "498b85",
+      "mode": "u32",
+      "field": "contact.reportCore"
+    },
+    {
+      "role": "build_contact_headers",
+      "offset": 62,
+      "prefix": "8b68",
+      "mode": "u8",
+      "field": "contact.actorPairCount"
+    },
+    {
+      "role": "build_contact_headers",
+      "offset": 65,
+      "prefix": "4c8b60",
+      "mode": "u8",
+      "field": "contact.actorPairs"
+    },
+    {
+      "role": "clear_report_actor_pairs",
+      "offset": 234,
+      "prefix": "448973",
+      "mode": "u8",
+      "field": "contact.actorPairCount"
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "offset": 80,
+      "prefix": "488b81",
+      "mode": "u32",
+      "field": "contact.reportCore"
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "offset": 97,
+      "prefix": "8b68",
+      "mode": "u8",
+      "field": "contact.actorPairCount"
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "offset": 100,
+      "prefix": "4c8b70",
+      "mode": "u8",
+      "field": "contact.actorPairs"
+    }
+  ],
+  "targetOperands": [
+    {
+      "role": "actor_type_name",
+      "offset": 0,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "targetRva": 25939248
+    },
+    {
+      "role": "actor_scene_thunk",
+      "offset": 0,
+      "prefix": "e9",
+      "mode": "rel32",
+      "targetRva": 7922656
+    },
+    {
+      "role": "actor_scene",
+      "offset": 37,
+      "prefix": "0f85",
+      "mode": "rel32",
+      "targetRva": 8141936
+    },
+    {
+      "role": "static_release",
+      "offset": 170,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8141936
+    },
+    {
+      "role": "scene_destructor_prefix",
+      "offset": 15,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7814720
+    },
+    {
+      "role": "fetch_results_start",
+      "offset": 193,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7997728
+    },
+    {
+      "role": "fetch_results",
+      "offset": 194,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7993776
+    },
+    {
+      "role": "fetch_results",
+      "offset": 202,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7859008
+    },
+    {
+      "role": "post_callbacks",
+      "offset": 19,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8013888
+    },
+    {
+      "role": "report_stream_cleanup",
+      "offset": 49,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8074912
+    },
+    {
+      "role": "physics_scene_pointer",
+      "offset": 44,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 2834432
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "offset": 217,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 7989440
+    },
+    {
+      "role": "scene_constructor_part_2",
+      "offset": 2759,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8045584
+    }
+  ],
+  "probes": [
+    {
+      "role": "actor_cleanup_prefix",
+      "offset": 20,
+      "hex": "488901"
+    },
+    {
+      "role": "static_release",
+      "offset": 62,
+      "hex": "ffc883f801760433ffeb03498b3e"
+    },
+    {
+      "role": "actor_scene",
+      "offset": 18,
+      "hex": "8b4108c1e81effc883f801770c488b094885c9"
+    },
+    {
+      "role": "actor_scene",
+      "offset": 43,
+      "hex": "33c0c3"
+    },
+    {
+      "role": "scb_to_public_scene",
+      "offset": 4,
+      "hex": "c3"
+    },
+    {
+      "role": "scene_cleanup_prefix",
+      "offset": 39,
+      "hex": "488901"
+    },
+    {
+      "role": "build_contact_headers",
+      "offset": 359,
+      "hex": "488bc6"
+    },
+    {
+      "role": "fetch_results_start",
+      "offset": 17,
+      "hex": "4d8bf04c8bfa488bf1"
+    },
+    {
+      "role": "fetch_results_start",
+      "offset": 206,
+      "hex": "8b480841890e488b00498907"
+    },
+    {
+      "role": "fetch_results",
+      "offset": 188,
+      "hex": "33d2488d4e10"
+    },
+    {
+      "role": "post_callbacks",
+      "offset": 12,
+      "hex": "488bf14883c110"
+    },
+    {
+      "role": "report_stream_cleanup",
+      "offset": 21,
+      "hex": "33d2"
+    },
+    {
+      "role": "clear_report_actor_pairs",
+      "offset": 8,
+      "hex": "4533f6"
+    },
+    {
+      "role": "clear_report_actor_pairs",
+      "offset": 224,
+      "hex": "4084ed488b6c2448750c44897310"
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "offset": 229,
+      "hex": "488d542430448b4c24584c8b442450488b01ff5018"
+    },
+    {
+      "role": "physics_scene_pointer",
+      "offset": 1227,
+      "hex": "498b064533c0b201498bce"
+    },
+    {
+      "role": "scene_constructor_part_0",
+      "offset": 23,
+      "hex": "4c8bf2488bf1"
+    },
+    {
+      "role": "scene_constructor_part_2",
+      "offset": 2752,
+      "hex": "488bce498b5610e8246f0100"
+    },
+    {
+      "role": "scene_constructor_part_2",
+      "offset": 2952,
+      "hex": "498b4638488986b00f0000498b4640488986b80f0000"
+    },
+    {
+      "role": "callback_setter_entry",
+      "offset": 10,
+      "hex": "4883b99010000000488bf2488bd975664885d2"
+    },
+    {
+      "role": "callback_setter_body",
+      "offset": 60,
+      "hex": "4889b390100000"
+    },
+    {
+      "role": "callback_setter_empty_bodies",
+      "offset": 0,
+      "hex": "4889b190100000ebe2"
+    },
+    {
+      "role": "callback_setter_direct_store",
+      "offset": 0,
+      "hex": "4889b190100000"
+    },
+    {
+      "role": "dispatch_contact_callbacks",
+      "offset": 12,
+      "hex": "4883b990100000004c8bf90f8443010000"
+    }
+  ],
+  "vtableSlots": [
+    {
+      "tableRva": 25972808,
+      "slot": 0,
+      "role": "static_release"
+    },
+    {
+      "tableRva": 25972808,
+      "slot": 1,
+      "role": "actor_type_name"
+    },
+    {
+      "tableRva": 25972808,
+      "slot": 3,
+      "role": "actor_cleanup_prefix"
+    },
+    {
+      "tableRva": 25972808,
+      "slot": 6,
+      "role": "actor_scene_thunk"
+    },
+    {
+      "tableRva": 25970208,
+      "slot": 0,
+      "role": "scene_destructor_prefix"
+    },
+    {
+      "tableRva": 25970208,
+      "slot": 54,
+      "role": "fetch_results"
+    },
+    {
+      "tableRva": 25970208,
+      "slot": 55,
+      "role": "fetch_results_start"
+    }
+  ],
+  "virtualDispatches": [
+    {
+      "role": "physics_scene_pointer",
+      "offset": 1238,
+      "prefix": "ff90",
+      "width": 4,
+      "slot": 54,
+      "tableRva": 25970208,
+      "targetRole": "fetch_results"
+    }
+  ],
+  "representation": {
+    "controlStates": {
+      "0": "not_in_scene",
+      "1": "insert_pending",
+      "2": "in_scene",
+      "3": "remove_pending"
+    },
+    "membershipBoundary": "direct: API scene for insert_pending/in_scene only; fully registered claim requires in_scene. Non-null stored scene alone is insufficient.",
+    "contactBoundary": "unresolved: normal fetchResults dispatches raw report pairs directly before post-callback stream/actor-pair cleanup. Split-results headers are built lazily; no recorded event or current touching-pair claim follows from their empty count.",
+    "genericSceneGetterBoundary": "direct: registration-state policy matches the specialized static release. Its generic actor-offset lookup uses unbacked BSS; the reader uses the specialized static offset operand instead of treating that table as captured.",
+    "reportBoundary": "structuralOnly: report core/count/entries consumers are authenticated; actor pair record fields and physical contact semantics are not decoded.",
+    "reportingConfigurationBoundary": "direct conditional: the complete constructor preserves its descriptor argument and sends its callback slot through the reviewed setter; descriptor filter slots are copied to scene fields. The setter writes the callback-consumer field tested by report dispatch. This authenticates the configuration route, not a non-null runtime callback, a selected filter shader, pair flags or delivered reports."
+  },
+  "references": [
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/physx/src/buffering/ScbBase.h",
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/physx/src/NpActor.cpp",
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/physx/src/NpScene.cpp",
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/simulationcontroller/src/ScScene.cpp"
+  ]
+}

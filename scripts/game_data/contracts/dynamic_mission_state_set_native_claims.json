@@ -1,0 +1,91 @@
+{
+  "schema": "endfield.dynamic-mission-state-set-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_scalar_components_native.json",
+      "schema": "endfield.dynamic-scalar-components-native-contract.v3",
+      "status": "validated"
+    },
+    {
+      "path": "dynamic_mission_key_source_native_claims.json",
+      "schema": "endfield.dynamic-mission-key-source-native-claims.v3",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "sourceRecord": "MissionCondition",
+  "sourceField": "IsQuest",
+  "missionSet": {
+    "name": "m_missionStrSet",
+    "offset": 64
+  },
+  "program": [
+    "mov rbx, [r13+0x30]",
+    "test rbx, rbx",
+    "jcc *",
+    "mov r9, [rip+*",
+    "lea r8, [rsp+0x100]",
+    "mov edx, r14d",
+    "mov rcx, rbx",
+    "call *",
+    "test al, al",
+    "jne *",
+    "mov [rsp+0x38], 0x4",
+    "mov r9, [rip+*",
+    "mov r8d, [rsp+0x38]",
+    "mov edx, 0x8",
+    "lea rcx, [rsp+0x100]",
+    "call *",
+    "mov rbx, [r13+0x30]",
+    "test rbx, rbx",
+    "jcc *",
+    "movaps xmm0, [rsp+0x100]",
+    "movdqa [rsp+0x50], xmm0",
+    "mov r9, [rip+*",
+    "lea r8, [rsp+0x50]",
+    "mov edx, r14d",
+    "mov rcx, rbx",
+    "call *",
+    "mov r8, [rip+*",
+    "mov rdx, rdi",
+    "lea rcx, [rsp+0x100]",
+    "call *",
+    "xor edx, edx",
+    "lea rcx, [rsp+0x70]",
+    "call *",
+    "cmp eax, 0x1",
+    "jne *",
+    "movzx esi, al",
+    "jmp *",
+    "xor sil, sil",
+    "mov rbx, [r13+0x40]",
+    "test rbx, rbx",
+    "jcc *",
+    "mov r8, [rip+*",
+    "mov edx, r14d",
+    "mov rcx, rbx",
+    "call *"
+  ],
+  "evidenceBoundary": {
+    "direct": "actual authored IsQuest getter result equals one skips the typed HashSet<Int32>.Add request; all other Int32 results request Add with the preserved actual GetStrKey returned bits",
+    "conditional": [
+      "selected bounded writer continuation is reached",
+      "same valid DynamicSceneMissionControlSystem in R13 and same valid authored condition proxy at caller RSP+0x70",
+      "typed map/set/pool receivers are nonnull when reached",
+      "all opaque callees return normally under Win64 and preserve nonvolatile registers and watched authored proxy/frame storage",
+      "source GetStrKey returns normally; no execution or selected numeric returned key inferred"
+    ],
+    "unresolved": [
+      "complete registration entry/lifecycle",
+      "actual set mutation or runtime state selection",
+      "managed NativeParallelHashSet instance size/parameter ABI in preceding opaque calls",
+      "helper construction/add behavior",
+      "live entity/provider/storage identity"
+    ]
+  }
+}

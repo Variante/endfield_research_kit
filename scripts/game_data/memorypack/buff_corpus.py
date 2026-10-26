@@ -55,6 +55,7 @@ from pathlib import Path
 
 from scripts.game_data.memorypack import corpus_gate as vfs
 from scripts.game_data.memorypack.buff import (
+    _ability_action_tag as _A,
     buff_post_id_result_is_exact_tail,
     decode_buff_post_id_prefix_at,
     decode_buff_pre_id_modifier_prefix,
@@ -675,12 +676,12 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
                   source=str(buff_global_modifier_receipt.CONTRACT_PATH),
                   expected='validated', actual=global_modifier_validation)
     expected_frontier_rows={
-        'residual':[0x21,0x100,0x15F],
-        'frontier6':[0x2A,0x9E,0xD7,0xE4,0x111,0x12F,0x18D],
-        'frontier7':[0xFF,0x106,0x109,0x149,0x162,0x170,0x173,0x195],
-        'frontier8':[0x09,0x14,0x1E,0x2D,0x4D,0x5F,0xAF,0xC2,0xD9,0x107,0x10D,0x114],
-        'frontier9':[0x1D,0x82,0x97,0xB5,0xB8,0xBE,0xC8,0xD1,0xDD,
-                     0xE5,0xE9,0x104,0x108,0x11B,0x141,0x143,0x17D,0x17E,0x191],
+        'residual':[_A("Core_BreakPassingSmallSceneObject_Data"),_A("Core_OnPhysicalNoGuardStart_Data"),_A("Core_ShowComboSkillUI_Data")],
+        'frontier6':[_A("Core_ChangePushBackDistanceFactor_Data"),_A("Core_DisableRootMotionAction_Data"),_A("Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionData"),_A("Core_LockMainCharacterToggleAction_Data"),_A("Core_PausePoiseRecover_Data"),_A("Core_ReplaceAnimationShake_Data"),_A("Core_TyphoeaArcheryBrainToggleRegisterAction_Data")],
+        'frontier7':[_A("Core_ObtainUspInNormalSkill_Data"),_A("Core_OverrideJumpAction_Data"),_A("Core_OverrideStateAnimationWithMontageAction_OverrideStateAnimationActionData"),_A("Core_SetAllowedDamageDecoMask_Data"),_A("Core_ShowTyphoeaHudHint_Data"),_A("Core_StoreAtbValue_Data"),_A("Core_StoreCurSkillExecuteFrame_Data"),_A("Core_UpdateGlobalContextTarget_Data")],
+        'frontier8':[_A("Core_AddDynamicNavmeshObstacle_Data"),_A("Core_AttackClickListenerAction_Data"),_A("Core_BombClearAction_BombClearActionData"),_A("Core_ChangeSkillType_Data"),_A("Core_ComboAction_Data"),_A("Core_Conditions_CheckDungeonCategory_Data"),_A("Core_ExtendBuffAction_Data"),_A("Core_GetPatrolTeleportPos_Data"),_A("Core_JumpToAction_Data"),_A("Core_OverrideMultiDashLimit_Data"),_A("Core_PatrolTeleportToCachePos_Data"),_A("Core_PickTargetAction_Data")],
+        'frontier9':[_A("Core_BlowOffEnemyAction_Data"),_A("Core_Conditions_CheckTwoDirectionAngle_Data"),_A("Core_CrushAction_Data"),_A("Core_FinishBuffByTag_Data"),_A("Core_FootStepChangeAction_FootStepChangeData"),_A("Core_FractureAction_Data"),_A("Core_HurtAnimAction_Data"),_A("Core_ImmuneTextAction_Data"),_A("Core_KnockDownAction_Data"),
+                     _A("Core_LogAction_LogActionData"),_A("Core_MarkInheritSkillCastIdOnNormalAttack_Data"),_A("Core_OverrideCameraFollowAction_OverrideCameraFollowActionData"),_A("Core_OverrideRawAttributeAction_Data"),_A("Core_PreventBuffConsumeAction_Data"),_A("Core_SaveTwoDirectionAngle_Data"),_A("Core_SealAction_Data"),_A("Core_TeleportPosSelectAction_Data"),_A("Core_TemporaryUnlockAction_Data"),_A("Core_TyphoeaArcheryTargetSelect_Data")],
     }
     frontier_validations={}
     for name,expected_rows in expected_frontier_rows.items():

@@ -2,8 +2,12 @@
 
 This companion gates the opt-in source-bridge observer against explicit selected
 files. Its reviewed bytes close descriptor retention through the event queue and
-action argument blob, then a conditional node/source/owner route. Static transport
-does not establish live managed request ownership or pointer lifetime; the classic
+action argument blob, then a conditional node/source/owner route. The bank loader
+joins the serialized source ID to the descriptor match word, and the offline plan
+preserves stored descriptor order and raw argument conversion. Static transport
+also authenticates the posted Event registry key and the Play Action target
+reader/setter/lookup, including a complete unwindless leaf and shared vtable slots.
+It does not establish live managed request ownership or pointer lifetime; the classic
 and source-consumer observer recipes remain unchanged.
 """
 from __future__ import annotations
@@ -25,7 +29,7 @@ from scripts.game_data.wwise_source_native import SourceContractError, _collect_
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_source_queue_native.json"
-SCHEMA = "endfield.wwise-source-queue-native.v1"
+SCHEMA = "endfield.wwise-source-queue-native.v4"
 BRIDGE_ARGUMENT_NAMES = {
     "sourceSelector": {"anonymousNodePointer", "originalSourcePointer", "playbackBlobPointer"},
     "sourceClone": {"originalSourcePointer"},
@@ -42,6 +46,16 @@ BRIDGE_LAYOUT_NAMES = {
     "externalAllocation": {"count", "firstDescriptor", "descriptorStride"},
     "descriptor": {"matchWord", "argumentWord", "wideTextPointer", "memoryPointer", "byteCountWord", "selectionWord"},
     "source": {"matchWord", "dataPointer", "selectionArgumentWord", "cloneBytes"},
+}
+
+# Instruction encodings, not a second build-specific address/layout catalog.
+SELECTION_IMMEDIATES = {
+    "sourceArgumentMask": (b"\x25", 4),
+    "externalArgumentTag": (b"\x3d", 4),
+    "descriptorCodecShift": (b"\xc1\xe1", 1),
+    "successStatus": (b"\xbf", 4),
+    "emptyStatus": (b"\xbf", 4),
+    "cloneFailureStatus": (b"\xbf", 4),
 }
 
 
@@ -69,6 +83,22 @@ def _digest(value: Any, subject: str) -> None:
         _fail("queueDigest", subject, "SHA256", value)
 
 
+def _address_entries(window: dict[str, Any]) -> list[dict[str, Any]]:
+    additional = window.get("additionalEntries", [])
+    if not isinstance(additional, list) or len(additional) > 7:
+        _fail("queueAddressPointEntries", window.get("key", "dataWindow"), "at most7 additional bindings", additional)
+    entries = ([window] if "entrySlot" in window else []) + additional
+    slots: set[int] = set()
+    for entry in entries:
+        slot = entry.get("entrySlot") if isinstance(entry, dict) else None
+        if type(slot) is not int:
+            _fail("queueAddressPointSlot", window.get("key", "dataWindow"), "integer target slot", entry)
+        if slot in slots:
+            _fail("queueAddressPointEntries", window.get("key", "dataWindow"), "distinct integer target slots", entry)
+        slots.add(slot)
+    return entries
+
+
 def load_queue_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     contract, _digest_value = read_reviewed_contract(
         path, schema=SCHEMA, status="reviewedCurrentBuild", label="wwise-source-queue",
@@ -76,11 +106,10 @@ def load_queue_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return contract
 
 
-def validate_queue_declarations(contract: dict[str, Any]) -> None:
-    """Bound declarations before byte reads; require every reviewed role once."""
-    groups = contract.get("nativeGroups")
-    if not isinstance(groups, list) or not 1 <= len(groups) <= 24:
-        _fail("queueGroups", "contract", "1..24 groups", type(groups).__name__)
+def validate_native_group_declarations(groups: Any) -> None:
+    """Bound full native groups and completely covered unwindless leaves."""
+    if not isinstance(groups, list) or not 1 <= len(groups) <= 64:
+        _fail("queueGroups", "contract", "1..64 groups", len(groups) if isinstance(groups, list) else type(groups).__name__)
     names: set[str] = set()
     for group in groups:
         if not isinstance(group, dict):
@@ -103,8 +132,16 @@ def validate_queue_declarations(contract: dict[str, Any]) -> None:
                 _fail("queueWindowExtent", name, "unique start and 1..16384 bytes", f"{start}/{length}")
             starts.add(start)
             _digest(window.get("bodySha256"), name)
-            _rva(window.get("unwindRva"), name)
-            _hex(window.get("unwindInfoHex"), name, 256)
+            kind = window.get("windowKind", "fullExceptionExtent")
+            if kind in ("completeLeafThroughReturn", "completeLeafThroughTailDispatch", "completeLeafThroughIndirectTailDispatch"):
+                limit = 512 if kind == "completeLeafThroughReturn" else 1024
+                if len(windows) != 1 or start != entry or length > limit or "unwindRva" in window or "unwindInfoHex" in window:
+                    _fail("queueLeafExtent", name, f"one entry leaf of at most{limit} bytes without unwind declarations", window)
+            elif kind in ("fullExceptionExtent", "dispatchTableDataWithinExceptionGroup"):
+                _rva(window.get("unwindRva"), name)
+                _hex(window.get("unwindInfoHex"), name, 256)
+            else:
+                _fail("queueWindowKind", name, "exception extent, embedded dispatch table or complete leaf", kind)
         if entry not in starts:
             _fail("queueEntryExtent", name, "entry is a declared start", group.get("entryRva"))
         witnesses = group.get("instructionWitnesses")
@@ -128,6 +165,30 @@ def validate_queue_declarations(contract: dict[str, Any]) -> None:
                 _fail("queueWitnessExtent", role, "inside declared full extent", witness["rva"])
         if roles != set(required):
             _fail("queueTransportRoles", name, sorted(required), sorted(roles))
+        leaf_kind = windows[0].get("windowKind")
+        if leaf_kind in ("completeLeafThroughReturn", "completeLeafThroughTailDispatch", "completeLeafThroughIndirectTailDispatch"):
+            cursor = entry
+            for witness in sorted(witnesses, key=lambda row: int(row["rva"], 16)):
+                if int(witness["rva"], 16) != cursor:
+                    _fail("queueLeafInstructionCoverage", name, hex(cursor), witness["rva"])
+                cursor += len(bytes.fromhex(witness["instructionHex"]))
+            terminal = max(witnesses, key=lambda row: int(row["rva"], 16))
+            encoded_terminal = bytes.fromhex(terminal["instructionHex"])
+            slot_terminal = encoded_terminal[1:] if encoded_terminal[:1] == b"\x48" else encoded_terminal
+            memory_slot_tail = (len(slot_terminal) == 3 and slot_terminal[:2] == b"\xff\x60"
+                                and slot_terminal[2] <= 127 and slot_terminal[2] % 8 == 0)
+            valid_terminal = (encoded_terminal == b"\xc3" if leaf_kind == "completeLeafThroughReturn" else
+                              encoded_terminal in (b"\xff\xe0", b"\x48\xff\xe0") or memory_slot_tail if leaf_kind == "completeLeafThroughIndirectTailDispatch" else
+                              len(encoded_terminal) == 5 and encoded_terminal[:1] == b"\xe9")
+            if cursor != entry + windows[0]["bodyLength"] or not valid_terminal:
+                _fail("queueLeafReturnCoverage", name, "complete contiguous instructions ending in declared RET or tail dispatch", hex(cursor))
+
+
+def validate_queue_declarations(contract: dict[str, Any]) -> None:
+    """Bound declarations before byte reads; require every reviewed role once."""
+    groups = contract.get("nativeGroups")
+    validate_native_group_declarations(groups)
+    names = {group["key"] for group in groups}
     table = contract.get("dispatchTable", {})
     if not isinstance(table, dict):
         _fail("queueDispatchRecord", "dispatchTable", "object", type(table).__name__)
@@ -152,15 +213,15 @@ def validate_queue_declarations(contract: dict[str, Any]) -> None:
         _digest(window.get("sha256"), "dataWindow")
         if window.get("module", "akSoundEngine") not in ("gameAssembly", "akSoundEngine"):
             _fail("queueDataModule", "dataWindow", "declared selected native module", window.get("module"))
-        if "entrySlot" in window:
-            slot = window["entrySlot"]
+        for entry_binding in _address_entries(window):
+            slot = entry_binding["entrySlot"]
             bridge_declaration = contract.get("sourceBridgeObserver")
             functions = bridge_declaration.get("functionRoles", {}) if isinstance(bridge_declaration, dict) else {}
-            source_target = functions.get(window.get("targetGroup"), {}) if isinstance(functions, dict) else {}
+            source_target = functions.get(entry_binding.get("targetGroup"), {}) if isinstance(functions, dict) else {}
             source_target = source_target if isinstance(source_target, dict) else {}
             if (type(slot) is not int or slot < 0 or slot % 8 or slot + 8 > window["bytes"]
                     or window.get("module", "akSoundEngine") != "akSoundEngine"
-                    or window.get("targetGroup") not in names and source_target.get("sourceContractRole") not in ("factory", "constructor")):
+                    or entry_binding.get("targetGroup") not in names and source_target.get("sourceContractRole") not in ("factory", "constructor")):
                 _fail("queueAddressPointSlot", "dataWindow", "aligned bounded slot targeting named group", window)
     managed_windows = contract.get("managedWindows", [])
     if not isinstance(managed_windows, list) or len(managed_windows) > 32:
@@ -276,6 +337,167 @@ def validate_queue_declarations(contract: dict[str, Any]) -> None:
         required_layout = {(name, field) for name, layout in layouts.items() for field in layout}
         if layout_coverage != required_layout:
             _fail("queueBridgeLayoutCoverage", "sourceBridgeObserver", sorted(required_layout), sorted(layout_coverage))
+    validate_source_selection_rules(contract)
+    validate_bank_registration_rules(contract)
+
+
+def validate_bank_registration_rules(contract: dict[str, Any]) -> None:
+    """Bind the bank registration route to reviewed calls and one registry global."""
+    registration = contract.get("bankRegistration")
+    if registration is None:
+        return
+    if not isinstance(registration, dict):
+        _fail("queueBankRegistration", "bankRegistration", "object", registration)
+    groups = {group["key"]: group for group in contract["nativeGroups"]}
+
+    def witness(binding: Any) -> dict[str, Any]:
+        if not isinstance(binding, dict) or not isinstance(binding.get("group"), str) or binding["group"] not in groups:
+            _fail("queueBankRegistrationGroup", "bankRegistration", "named native group", binding)
+        found = next((row for row in groups[binding["group"]]["instructionWitnesses"]
+                      if row["role"] == binding.get("witnessRole")), None)
+        if found is None:
+            _fail("queueBankRegistrationWitness", binding["group"], "named instruction witness", binding)
+        return found
+
+    edges = registration.get("directEdges")
+    if not isinstance(edges, list) or not 1 <= len(edges) <= 32:
+        _fail("queueBankRegistrationEdges", "bankRegistration", "1..32 direct edges", edges)
+    for edge in edges:
+        row = witness(edge)
+        target_name, kind = edge.get("targetGroup"), edge.get("kind")
+        target = groups.get(target_name) if isinstance(target_name, str) else None
+        encoded = bytes.fromhex(row["instructionHex"])
+        opcode = {"call": b"\xe8", "tailJump": b"\xe9"}.get(kind) if isinstance(kind, str) else None
+        actual = int(row["rva"], 16) + 5 + struct.unpack_from("<i", encoded, 1)[0] if len(encoded) == 5 else None
+        if target is None or opcode is None or encoded[:1] != opcode or actual != int(target["entryRva"], 16):
+            _fail("queueBankRegistrationEdge", row["role"], edge.get("targetGroup"), actual)
+    globals_ = registration.get("sharedRegistryWitnesses")
+    if not isinstance(globals_, list) or not 2 <= len(globals_) <= 8:
+        _fail("queueBankRegistryWitnesses", "bankRegistration", "2..8 registry loads", globals_)
+    addresses = set()
+    for binding in globals_:
+        row = witness(binding)
+        encoded = bytes.fromhex(row["instructionHex"])
+        if len(encoded) != 7 or encoded[0] not in (0x48, 0x4c) or encoded[1] != 0x8b or encoded[2] & 0xc7 != 5:
+            _fail("queueBankRegistryInstruction", row["role"], "MOV register, [RIP+disp32]", row["instructionHex"])
+        addresses.add(int(row["rva"], 16) + 7 + struct.unpack_from("<i", encoded, 3)[0])
+    if len(addresses) != 1:
+        _fail("queueBankRegistryGlobal", "bankRegistration", "one shared registry global", [hex(at) for at in sorted(addresses)])
+    table = registration.get("hircDispatch")
+    if not isinstance(table, dict) or not isinstance(table.get("ownerGroup"), str) or table["ownerGroup"] not in groups:
+        _fail("queueBankHircDispatch", "bankRegistration", "named dispatch owner", table)
+    window = next((row for row in contract.get("dataWindows", []) if row.get("key") == table.get("dataWindow")), None)
+    first, count = table.get("firstType"), table.get("entryCount")
+    selected = table.get("selectedTypes")
+    if (window is None or type(first) is not int or not 0 <= first <= 255 or type(count) is not int
+            or not 1 <= count <= 256 - first or window["bytes"] != count * 4
+            or not isinstance(selected, list) or not 1 <= len(selected) <= count):
+        _fail("queueBankHircDispatchExtent", "bankRegistration", "bounded typed DWORD dispatch table", table)
+    owner = groups[table["ownerGroup"]]
+    start = int(window["rva"], 16)
+    if not any(int(row["rva"], 16) <= start and start + count * 4 <= int(row["rva"], 16) + row["bodyLength"] for row in owner["windows"]):
+        _fail("queueBankHircDispatchOwner", "bankRegistration", "table inside authenticated owner", window)
+    seen = set()
+    for branch in selected:
+        if not isinstance(branch, dict) or type(branch.get("type")) is not int or not first <= branch["type"] < first + count or branch["type"] in seen:
+            _fail("queueBankHircDispatchType", "bankRegistration", "distinct in-range object type", branch)
+        seen.add(branch["type"])
+        target = _rva(branch.get("targetRva"), "bankHircDispatch")
+        if not any(int(row["rva"], 16) <= target < int(row["rva"], 16) + row["bodyLength"] for row in owner["windows"]):
+            _fail("queueBankHircDispatchTargetExtent", "bankRegistration", "target inside authenticated owner", branch)
+
+
+def validate_source_selection_rules(contract: dict[str, Any]) -> None:
+    """Tie the optional offline selection plan to authenticated operand bytes."""
+    selection = contract.get("externalSourceSelection")
+    if selection is None:
+        return
+    if not isinstance(selection, dict):
+        _fail("queueSelectionRecord", "externalSourceSelection", "object", selection)
+    groups = {group["key"]: group for group in contract["nativeGroups"]}
+    group = groups.get(selection.get("selectorGroup"))
+    values, bindings = selection.get("values"), selection.get("immediateWitnesses")
+    if (group is None or not isinstance(values, dict) or set(values) != set(SELECTION_IMMEDIATES)
+            or not isinstance(bindings, dict) or set(bindings) != set(SELECTION_IMMEDIATES)):
+        _fail("queueSelectionOperands", "externalSourceSelection", "named group and complete operand bindings", selection)
+    witnesses = {row["role"]: row for row in group["instructionWitnesses"]}
+    for name, (prefix, width) in SELECTION_IMMEDIATES.items():
+        value, witness = values[name], witnesses.get(bindings[name])
+        if type(value) is not int or not 0 <= value < 1 << (width * 8) or witness is None:
+            _fail("queueSelectionOperand", name, f"u{width * 8} with instruction witness", value)
+        expected = prefix + value.to_bytes(width, "little")
+        if bytes.fromhex(witness["instructionHex"]) != expected:
+            _fail("queueSelectionInstruction", name, expected.hex(), witness["instructionHex"])
+    increment = witnesses.get(selection.get("codecIncrementWitness"))
+    if increment is None or increment["instructionHex"] != "ffc1":
+        _fail("queueSelectionCodecIncrement", "descriptor codec", "INC ECX", increment)
+    if not 0 < values["descriptorCodecShift"] < 32 or values["externalArgumentTag"] & ~values["sourceArgumentMask"]:
+        _fail("queueSelectionDomain", "externalSourceSelection", "nonzero shift below32 and tag inside mask", values)
+    bank = selection.get("bankSourceBinding")
+    if not isinstance(bank, dict) or set(bank) != {"loaderGroup", "readerGroup", "infoSetterMethod", "infoSetterCallWitness", "readOrder"}:
+        _fail("queueBankSourceBinding", "externalSourceSelection", "complete named loader/reader/source-method join", bank)
+    loader, reader = groups.get(bank["loaderGroup"]), groups.get(bank["readerGroup"])
+    if loader is None or reader is None or not isinstance(bank["readOrder"], str) or not bank["readOrder"]:
+        _fail("queueBankSourceGroups", "externalSourceSelection", "authenticated loader and reader groups", bank)
+    call = next((row for row in loader["instructionWitnesses"] if row["role"] == bank["infoSetterCallWitness"]), None)
+    if (not isinstance(bank["infoSetterMethod"], str) or not bank["infoSetterMethod"] or call is None
+            or len(bytes.fromhex(call["instructionHex"])) != 5 or not call["instructionHex"].startswith("e8")):
+        _fail("queueBankSourceSetterCall", "externalSourceSelection", "named source method and direct call witness", bank)
+    reader_call = next((row for row in loader["instructionWitnesses"] if row["role"] == "callBankSourceReader"), None)
+    if reader_call is None:
+        _fail("queueBankSourceReaderCall", bank["loaderGroup"], "direct source-reader call", None)
+    encoded = bytes.fromhex(reader_call["instructionHex"])
+    target = (int(reader_call["rva"], 16) + 5 + struct.unpack_from("<i", encoded, 1)[0]
+              if len(encoded) == 5 and encoded[0] == 0xe8 else None)
+    if target != int(reader["entryRva"], 16):
+        _fail("queueBankSourceReaderCall", bank["loaderGroup"], reader["entryRva"], target)
+
+
+def _external_descriptor_plan(selection: dict[str, Any], source_argument: int, source_cookie: int,
+                              descriptors: list[dict[str, int]], *, allocation_present: bool = True,
+                              clone_succeeds: bool = True) -> dict[str, Any]:
+    """Offline plan for the reviewed selector fragment, never a runtime join.
+
+    Use only declarations from a successfully authenticated queue contract.
+    A row ordinal refers to this supplied allocation, not to a media package.
+    A selected setter route still permits path-copy allocation failure and does
+    not establish provider, codec implementation, file, decode or audibility.
+    """
+    values = selection["values"]
+    for name, value in (("source_argument", source_argument), ("source_cookie", source_cookie)):
+        if type(value) is not int or not 0 <= value <= 0xffffffff:
+            raise ValueError(f"{name} must be u32")
+    if type(allocation_present) is not bool or type(clone_succeeds) is not bool:
+        raise ValueError("allocation/clone conditions must be Boolean")
+    if not isinstance(descriptors, list) or len(descriptors) > 4096:
+        raise ValueError("bounded descriptor array required")
+    fields = BRIDGE_LAYOUT_NAMES["descriptor"]
+    for row in descriptors:
+        if not isinstance(row, dict) or set(row) != fields:
+            raise ValueError("complete descriptor fields required")
+        for name, value in row.items():
+            limit = 0xffffffffffffffff if name in ("wideTextPointer", "memoryPointer") else 0xffffffff
+            if type(value) is not int or not 0 <= value <= limit:
+                raise ValueError(f"descriptor {name} outside unsigned field width")
+    result = {"descriptorOrdinal": None, "statusWord": values["successStatus"], "mode": "originalSource"}
+    if source_argument & values["sourceArgumentMask"] != values["externalArgumentTag"]:
+        return result
+    if allocation_present and not clone_succeeds:
+        return {**result, "statusWord": values["cloneFailureStatus"], "mode": "cloneAllocationFailed"}
+    for ordinal, row in enumerate(descriptors if allocation_present else []):
+        if row["matchWord"] != source_cookie:
+            continue
+        if row["selectionWord"]:
+            mode = "wordAndOptionalWideText"
+        elif row["wideTextPointer"]:
+            mode = "wideText"
+        elif row["byteCountWord"] and row["memoryPointer"]:
+            mode = "memory"
+        else:
+            continue
+        argument = ((row["argumentWord"] << values["descriptorCodecShift"]) + 1) & 0xffffffff
+        return {**result, "descriptorOrdinal": ordinal, "mode": mode, "setterArgumentWord24": argument}
+    return {**result, "statusWord": values["emptyStatus"], "mode": "noUsableDescriptor"}
 
 
 def validate_queue_bodies(contract: dict[str, Any], image: Any, bodies: dict[int, bytes], records: dict[int, tuple[int, int, int]], *, source_roles: dict[str, Any] | None = None) -> None:
@@ -315,26 +537,35 @@ def validate_native_group_windows(groups: list[dict[str, Any]], image: Any, bodi
     roots = {start: root(row) for start, row in records.items()}
     for group in groups:
         name, entry = group["key"], int(group["entryRva"], 16)
+        leaf = group["windows"][0].get("windowKind") in ("completeLeafThroughReturn", "completeLeafThroughTailDispatch", "completeLeafThroughIndirectTailDispatch")
         expected_starts = {int(win["rva"], 16) for win in group["windows"]}
         actual_starts = {start for start, owner in roots.items() if owner == entry}
-        if roots.get(entry) != entry or expected_starts != actual_starts:
+        if leaf:
+            end = entry + group["windows"][0]["bodyLength"]
+            overlaps = [row for row in records.values() if row[0] < end and entry < row[1]]
+            if overlaps:
+                _fail("queueLeafPdataOverlap", name, "leaf outside exception extents", overlaps[:4])
+        elif roots.get(entry) != entry or expected_starts != actual_starts:
             _fail("queueUnwindGroup", name, sorted(expected_starts), sorted(actual_starts))
+        selected_bodies: dict[int, bytes] = {}
         for window in group["windows"]:
             start = int(window["rva"], 16)
-            raw = bodies.get(start)
-            if raw is None or len(raw) != window["bodyLength"] or records[start][1] - start != window["bodyLength"]:
+            raw = image.bytes_at_va(image.image_base + start, window["bodyLength"]) if leaf else bodies.get(start)
+            if raw is None or len(raw) != window["bodyLength"] or not leaf and records[start][1] - start != window["bodyLength"]:
                 _fail("queueBodyExtent", name, window["bodyLength"], None if raw is None else len(raw))
+            selected_bodies[start] = raw
             actual = hashlib.sha256(raw).hexdigest()
             if actual != window["bodySha256"].casefold():
                 _fail("queueBodySha256", name, window["bodySha256"], actual)
-            uw, _parent = unwind(records[start])
-            if records[start][2] != int(window["unwindRva"], 16) or uw != bytes.fromhex(window["unwindInfoHex"]):
-                _fail("queueUnwindBytes", name, f"{window['unwindRva']}/{window['unwindInfoHex']}", f"{records[start][2]:x}/{uw.hex()}")
+            if not leaf:
+                uw, _parent = unwind(records[start])
+                if records[start][2] != int(window["unwindRva"], 16) or uw != bytes.fromhex(window["unwindInfoHex"]):
+                    _fail("queueUnwindBytes", name, f"{window['unwindRva']}/{window['unwindInfoHex']}", f"{records[start][2]:x}/{uw.hex()}")
         for witness in group["instructionWitnesses"]:
             address, encoded = int(witness["rva"], 16), bytes.fromhex(witness["instructionHex"])
             window = next(win for win in group["windows"] if int(win["rva"], 16) <= address and address + len(encoded) <= int(win["rva"], 16) + win["bodyLength"])
             offset = address - int(window["rva"], 16)
-            actual = bodies[int(window["rva"], 16)][offset:offset + len(encoded)]
+            actual = selected_bodies[int(window["rva"], 16)][offset:offset + len(encoded)]
             if actual != encoded:
                 _fail("queueTransportWitness", witness["role"], encoded.hex(), actual.hex())
 
@@ -348,16 +579,25 @@ def validate_queue_data_windows(contract: dict[str, Any], image: Any, *, source_
         actual = hashlib.sha256(raw).hexdigest()
         if len(raw) != window["bytes"] or actual != window["sha256"].casefold():
             _fail("queueDataSha256", window.get("key", "dataWindow"), window["sha256"], actual)
-        if "entrySlot" in window:
-            target = next((group for group in contract["nativeGroups"] if group["key"] == window["targetGroup"]), None)
+        for entry_binding in _address_entries(window):
+            target = next((group for group in contract["nativeGroups"] if group["key"] == entry_binding["targetGroup"]), None)
             if target is None:
-                target = (source_roles or {}).get(window["targetGroup"])
+                target = (source_roles or {}).get(entry_binding["targetGroup"])
             if target is None:
-                _fail("queueAddressPointDependency", window["key"], "authenticated existing source endpoint", window["targetGroup"])
+                _fail("queueAddressPointDependency", window["key"], "authenticated existing source endpoint", entry_binding["targetGroup"])
             expected_pointer = image.image_base + int(target["entryRva"], 16)
-            pointer = struct.unpack_from("<Q", raw, window["entrySlot"])[0]
+            pointer = struct.unpack_from("<Q", raw, entry_binding["entrySlot"])[0]
             if pointer != expected_pointer:
                 _fail("queueAddressPointTarget", window["key"], hex(expected_pointer), hex(pointer))
+    registration = contract.get("bankRegistration")
+    if registration is not None:
+        dispatch = registration["hircDispatch"]
+        window = next(row for row in contract["dataWindows"] if row["key"] == dispatch["dataWindow"])
+        raw = image.bytes_at_va(image.image_base + int(window["rva"], 16), window["bytes"])
+        for branch in dispatch["selectedTypes"]:
+            actual = struct.unpack_from("<I", raw, (branch["type"] - dispatch["firstType"]) * 4)[0]
+            if actual != int(branch["targetRva"], 16):
+                _fail("queueBankHircDispatchTarget", str(branch["type"]), branch["targetRva"], hex(actual))
     table = contract["dispatchTable"]
     raw = image.bytes_at_va(image.image_base + int(table["rva"], 16), table["entryCount"] * 4)
     actual = hashlib.sha256(raw).hexdigest()
@@ -390,6 +630,8 @@ def validate_source_role_dependencies(contract: dict[str, Any], managed: NativeI
     """Reuse the source owner's contract on the same opened selected images."""
     bridge = contract.get("sourceBridgeObserver")
     if bridge is None:
+        if "externalSourceSelection" in contract:
+            _fail("queueSelectionSourceDependency", "externalSourceSelection", "authenticated source bridge dependencies", None)
         return {}
     source = source_native.load_source_contract()
     source_native.validate_source_contract(source)
@@ -399,6 +641,15 @@ def validate_source_role_dependencies(contract: dict[str, Any], managed: NativeI
     source_native.validate_source_consumers(source, image, records)
     source_native.validate_source_transports(source, image, bodies)
     source_native.validate_managed_bridges(source, managed)
+    selection = contract.get("externalSourceSelection")
+    if selection is not None:
+        binding = selection["bankSourceBinding"]
+        method = next((row for row in source["methods"] if row["key"] == binding["infoSetterMethod"]), None)
+        loader = next(group for group in contract["nativeGroups"] if group["key"] == binding["loaderGroup"])
+        call = next(row for row in loader["instructionWitnesses"] if row["role"] == binding["infoSetterCallWitness"])
+        actual = int(call["rva"], 16) + 5 + struct.unpack_from("<i", bytes.fromhex(call["instructionHex"]), 1)[0]
+        if method is None or actual != int(method["rva"], 16):
+            _fail("queueBankSourceSetterDependency", binding["infoSetterMethod"], None if method is None else method["rva"], hex(actual))
     transports = source["ownerTransports"]
     if len(transports) != 1:
         _fail("queueSourceOwnerSelection", "source roles", "one reviewed owner transport", len(transports))
@@ -519,9 +770,14 @@ def load_validated_queue_contract(*, gameassembly: Path, metadata: Path, ak_soun
         validate_queue_bodies(contract, source, bodies, records, source_roles=source_roles)
         rows = validate_managed_queue_claims(contract, managed)
         contract = {**contract, "resolvedSourceContractRoles": source_roles}
-        audit.update(status="validated", detail="selected static descriptor/queue/action and conditional source selection validated; runtime ownership/lifetime unresolved", nativeGroups=len(contract["nativeGroups"]), managedClaims=len(rows), resolvedSourceContractRoles=source_roles, evidenceBoundary=contract["evidenceBoundary"])
+        audit.update(status="validated", detail="selected Event/Action/source transport and conditional descriptor selection validated; runtime ownership/lifetime unresolved", nativeGroups=len(contract["nativeGroups"]), managedClaims=len(rows), resolvedSourceContractRoles=source_roles, evidenceBoundary=contract["evidenceBoundary"])
         if relation_spec:
             audit["sourceBridgeRelationSpec"] = relation_spec
+        if "externalSourceSelection" in contract:
+            audit["externalSourceSelection"] = {
+                "status": "conditionalStaticSelection", **contract["externalSourceSelection"],
+                "evidenceBoundary": "Bank-source word to descriptor selection and prepared source argument only; no observed Event branch, managed queue lifetime, provider/codec implementation, file open, decode or audibility.",
+            }
         return contract, audit
     except SourceContractError as error:
         audit.update(status="mismatched", detail=str(error)[:320], diagnostic=error.diagnostic)

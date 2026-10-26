@@ -1,0 +1,872 @@
+{
+  "schema": "endfield.memorypack-blackboard-double-default-native-contract.v1",
+  "status": "exact-current-build",
+  "mode": "normal-try-double-and-double-default-call-chain",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": {
+    "tryDouble": [
+      925,
+      "Beyond.Blackboard",
+      "TryGetDouble",
+      51486832
+    ],
+    "getDoubleOrDefault": [
+      932,
+      "Beyond.Blackboard",
+      "GetDoubleOrDefault",
+      105960852
+    ],
+    "getValueOrDefaultInternal": [
+      978,
+      "Beyond.Blackboard+BlackboardDouble",
+      "GetValueOrDefaultInternal",
+      105954684
+    ],
+    "patchCheck": [
+      102181,
+      "IFix.WrappersManagerImpl",
+      "IsPatched",
+      46758256
+    ],
+    "numberLookup": [
+      936,
+      "Beyond.Blackboard",
+      "_TryGetNumber",
+      47220768
+    ]
+  },
+  "ownedCodeWindows": {
+    "tryDouble": [
+      {
+        "startRva": 51486832,
+        "endRva": 51487109,
+        "sha256": "48BD8AE8587E83AA4271789B8725114205E30EEA277F396869DA102FAAB43F43",
+        "boundary": "exact entry/chained-unwind ownership; discovery only"
+      },
+      {
+        "startRva": 80783612,
+        "endRva": 80783833,
+        "sha256": "D64A4CA7C3405B4F69B5ED381761816725F8C337854D0050984DF5F34325E8F1",
+        "boundary": "exact entry/chained-unwind ownership; discovery only"
+      }
+    ],
+    "getDoubleOrDefault": [
+      {
+        "startRva": 105960852,
+        "endRva": 105961016,
+        "sha256": "7D97D4ED3189B0F7A1E177A9318101B7A979730C6697CF53643C364A41975E16",
+        "boundary": "exact entry/chained-unwind ownership; discovery only"
+      }
+    ],
+    "getValueOrDefaultInternal": [
+      {
+        "startRva": 105954684,
+        "endRva": 105954816,
+        "sha256": "CDCF69414459ED2D460DF07A482D7F0DC73EB5520C4DBEEBF0DC421DD3A79275",
+        "boundary": "actual concrete registered method and complete pdata function extent; discovery only"
+      }
+    ]
+  },
+  "programs": {
+    "tryDirect": {
+      "methodRole": "tryDouble",
+      "program": [
+        [
+          51486832,
+          "48895C2408"
+        ],
+        [
+          51486837,
+          "4889742410"
+        ],
+        [
+          51486842,
+          "57"
+        ],
+        [
+          51486843,
+          "4883EC40"
+        ],
+        [
+          51486847,
+          "488BF1"
+        ],
+        [
+          51486850,
+          "0F57C0"
+        ],
+        [
+          51486853,
+          "488B0D0495ED09"
+        ],
+        [
+          51486860,
+          "498BF8"
+        ],
+        [
+          51486863,
+          "F20F11442430"
+        ],
+        [
+          51486869,
+          "488BDA"
+        ],
+        [
+          51486872,
+          "83B9E000000000"
+        ],
+        [
+          51486879,
+          "0F8492000000"
+        ],
+        [
+          51486885,
+          "488B81B8000000"
+        ],
+        [
+          51486892,
+          "488B10"
+        ],
+        [
+          51486895,
+          "4885D2"
+        ],
+        [
+          51486898,
+          "0F84C7000000"
+        ],
+        [
+          51486904,
+          "817A18CE010000"
+        ],
+        [
+          51486911,
+          "0F8F3708BF01"
+        ],
+        [
+          51486917,
+          "83B9E000000000"
+        ],
+        [
+          51486924,
+          "747A"
+        ],
+        [
+          51486926,
+          "488B81B8000000"
+        ],
+        [
+          51486933,
+          "488B10"
+        ],
+        [
+          51486936,
+          "4885D2"
+        ],
+        [
+          51486939,
+          "0F849E000000"
+        ],
+        [
+          51486945,
+          "817A18C1010000"
+        ],
+        [
+          51486952,
+          "0F8F7908BF01"
+        ],
+        [
+          51486958,
+          "4885DB"
+        ],
+        [
+          51486961,
+          "0F8488000000"
+        ],
+        [
+          51486967,
+          "807B1000"
+        ],
+        [
+          51486971,
+          "751E"
+        ],
+        [
+          51486973,
+          "F30F104314"
+        ],
+        [
+          51486978,
+          "B001"
+        ],
+        [
+          51486980,
+          "0F5AC0"
+        ],
+        [
+          51486983,
+          "F20F1107"
+        ],
+        [
+          51486987,
+          "488B5C2450"
+        ],
+        [
+          51486992,
+          "488B742458"
+        ],
+        [
+          51486997,
+          "4883C440"
+        ],
+        [
+          51487001,
+          "5F"
+        ],
+        [
+          51487002,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 51486832,
+          "endRva": 51487109,
+          "sha256": "48BD8AE8587E83AA4271789B8725114205E30EEA277F396869DA102FAAB43F43",
+          "boundary": "exact entry/chained-unwind ownership; discovery only"
+        },
+        {
+          "startRva": 80783612,
+          "endRva": 80783833,
+          "sha256": "D64A4CA7C3405B4F69B5ED381761816725F8C337854D0050984DF5F34325E8F1",
+          "boundary": "exact entry/chained-unwind ownership; discovery only"
+        }
+      ],
+      "boundary": "Complete selected normal branch from actual registered entry through RET; alternate dispatch/init/failure excluded."
+    },
+    "tryKeyed": {
+      "methodRole": "tryDouble",
+      "program": [
+        [
+          51486832,
+          "48895C2408"
+        ],
+        [
+          51486837,
+          "4889742410"
+        ],
+        [
+          51486842,
+          "57"
+        ],
+        [
+          51486843,
+          "4883EC40"
+        ],
+        [
+          51486847,
+          "488BF1"
+        ],
+        [
+          51486850,
+          "0F57C0"
+        ],
+        [
+          51486853,
+          "488B0D0495ED09"
+        ],
+        [
+          51486860,
+          "498BF8"
+        ],
+        [
+          51486863,
+          "F20F11442430"
+        ],
+        [
+          51486869,
+          "488BDA"
+        ],
+        [
+          51486872,
+          "83B9E000000000"
+        ],
+        [
+          51486879,
+          "0F8492000000"
+        ],
+        [
+          51486885,
+          "488B81B8000000"
+        ],
+        [
+          51486892,
+          "488B10"
+        ],
+        [
+          51486895,
+          "4885D2"
+        ],
+        [
+          51486898,
+          "0F84C7000000"
+        ],
+        [
+          51486904,
+          "817A18CE010000"
+        ],
+        [
+          51486911,
+          "0F8F3708BF01"
+        ],
+        [
+          51486917,
+          "83B9E000000000"
+        ],
+        [
+          51486924,
+          "747A"
+        ],
+        [
+          51486926,
+          "488B81B8000000"
+        ],
+        [
+          51486933,
+          "488B10"
+        ],
+        [
+          51486936,
+          "4885D2"
+        ],
+        [
+          51486939,
+          "0F849E000000"
+        ],
+        [
+          51486945,
+          "817A18C1010000"
+        ],
+        [
+          51486952,
+          "0F8F7908BF01"
+        ],
+        [
+          51486958,
+          "4885DB"
+        ],
+        [
+          51486961,
+          "0F8488000000"
+        ],
+        [
+          51486967,
+          "807B1000"
+        ],
+        [
+          51486971,
+          "751E"
+        ],
+        [
+          51487003,
+          "488B5318"
+        ],
+        [
+          51487007,
+          "4C8D442430"
+        ],
+        [
+          51487012,
+          "4533C9"
+        ],
+        [
+          51487015,
+          "488BCE"
+        ],
+        [
+          51487018,
+          "E8F1E6BEFF"
+        ],
+        [
+          51487023,
+          "F20F10442430"
+        ],
+        [
+          51487029,
+          "EBD0"
+        ],
+        [
+          51486983,
+          "F20F1107"
+        ],
+        [
+          51486987,
+          "488B5C2450"
+        ],
+        [
+          51486992,
+          "488B742458"
+        ],
+        [
+          51486997,
+          "4883C440"
+        ],
+        [
+          51487001,
+          "5F"
+        ],
+        [
+          51487002,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 51486832,
+          "endRva": 51487109,
+          "sha256": "48BD8AE8587E83AA4271789B8725114205E30EEA277F396869DA102FAAB43F43",
+          "boundary": "exact entry/chained-unwind ownership; discovery only"
+        },
+        {
+          "startRva": 80783612,
+          "endRva": 80783833,
+          "sha256": "D64A4CA7C3405B4F69B5ED381761816725F8C337854D0050984DF5F34325E8F1",
+          "boundary": "exact entry/chained-unwind ownership; discovery only"
+        }
+      ],
+      "boundary": "Complete selected normal branch from actual registered entry through RET; alternate dispatch/init/failure excluded."
+    },
+    "defaultFound": {
+      "methodRole": "getDoubleOrDefault",
+      "program": [
+        [
+          105960852,
+          "488BC4"
+        ],
+        [
+          105960855,
+          "48895808"
+        ],
+        [
+          105960859,
+          "48897010"
+        ],
+        [
+          105960863,
+          "57"
+        ],
+        [
+          105960864,
+          "4883EC50"
+        ],
+        [
+          105960868,
+          "488BDA"
+        ],
+        [
+          105960871,
+          "0F2970E8"
+        ],
+        [
+          105960875,
+          "488BF9"
+        ],
+        [
+          105960878,
+          "0F57C0"
+        ],
+        [
+          105960881,
+          "33D2"
+        ],
+        [
+          105960883,
+          "F20F1140D8"
+        ],
+        [
+          105960888,
+          "B9D3010000"
+        ],
+        [
+          105960893,
+          "418AF1"
+        ],
+        [
+          105960896,
+          "0F28F2"
+        ],
+        [
+          105960899,
+          "E8A8A378FC"
+        ],
+        [
+          105960904,
+          "84C0"
+        ],
+        [
+          105960906,
+          "7524"
+        ],
+        [
+          105960908,
+          "4533C9"
+        ],
+        [
+          105960911,
+          "4C8D442430"
+        ],
+        [
+          105960916,
+          "488BD3"
+        ],
+        [
+          105960919,
+          "488BCF"
+        ],
+        [
+          105960922,
+          "E891CAC0FC"
+        ],
+        [
+          105960927,
+          "84C0"
+        ],
+        [
+          105960929,
+          "7505"
+        ],
+        [
+          105960936,
+          "F20F10442430"
+        ],
+        [
+          105960942,
+          "EB33"
+        ],
+        [
+          105960995,
+          "488B5C2460"
+        ],
+        [
+          105961000,
+          "488B742468"
+        ],
+        [
+          105961005,
+          "0F28742440"
+        ],
+        [
+          105961010,
+          "4883C450"
+        ],
+        [
+          105961014,
+          "5F"
+        ],
+        [
+          105961015,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 105960852,
+          "endRva": 105961016,
+          "sha256": "7D97D4ED3189B0F7A1E177A9318101B7A979730C6697CF53643C364A41975E16",
+          "boundary": "exact entry/chained-unwind ownership; discovery only"
+        }
+      ],
+      "boundary": "Complete selected normal branch from actual registered entry through RET; alternate dispatch/init/failure excluded."
+    },
+    "defaultMissing": {
+      "methodRole": "getDoubleOrDefault",
+      "program": [
+        [
+          105960852,
+          "488BC4"
+        ],
+        [
+          105960855,
+          "48895808"
+        ],
+        [
+          105960859,
+          "48897010"
+        ],
+        [
+          105960863,
+          "57"
+        ],
+        [
+          105960864,
+          "4883EC50"
+        ],
+        [
+          105960868,
+          "488BDA"
+        ],
+        [
+          105960871,
+          "0F2970E8"
+        ],
+        [
+          105960875,
+          "488BF9"
+        ],
+        [
+          105960878,
+          "0F57C0"
+        ],
+        [
+          105960881,
+          "33D2"
+        ],
+        [
+          105960883,
+          "F20F1140D8"
+        ],
+        [
+          105960888,
+          "B9D3010000"
+        ],
+        [
+          105960893,
+          "418AF1"
+        ],
+        [
+          105960896,
+          "0F28F2"
+        ],
+        [
+          105960899,
+          "E8A8A378FC"
+        ],
+        [
+          105960904,
+          "84C0"
+        ],
+        [
+          105960906,
+          "7524"
+        ],
+        [
+          105960908,
+          "4533C9"
+        ],
+        [
+          105960911,
+          "4C8D442430"
+        ],
+        [
+          105960916,
+          "488BD3"
+        ],
+        [
+          105960919,
+          "488BCF"
+        ],
+        [
+          105960922,
+          "E891CAC0FC"
+        ],
+        [
+          105960927,
+          "84C0"
+        ],
+        [
+          105960929,
+          "7505"
+        ],
+        [
+          105960931,
+          "0F28C6"
+        ],
+        [
+          105960934,
+          "EB3B"
+        ],
+        [
+          105960995,
+          "488B5C2460"
+        ],
+        [
+          105961000,
+          "488B742468"
+        ],
+        [
+          105961005,
+          "0F28742440"
+        ],
+        [
+          105961010,
+          "4883C450"
+        ],
+        [
+          105961014,
+          "5F"
+        ],
+        [
+          105961015,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 105960852,
+          "endRva": 105961016,
+          "sha256": "7D97D4ED3189B0F7A1E177A9318101B7A979730C6697CF53643C364A41975E16",
+          "boundary": "exact entry/chained-unwind ownership; discovery only"
+        }
+      ],
+      "boundary": "Complete selected normal branch from actual registered entry through RET; alternate dispatch/init/failure excluded."
+    },
+    "scalarDefault": {
+      "methodRole": "getValueOrDefaultInternal",
+      "program": [
+        [
+          105954684,
+          "48895C2408"
+        ],
+        [
+          105954689,
+          "57"
+        ],
+        [
+          105954690,
+          "4883EC40"
+        ],
+        [
+          105954694,
+          "488BDA"
+        ],
+        [
+          105954697,
+          "0F29742430"
+        ],
+        [
+          105954702,
+          "488BF9"
+        ],
+        [
+          105954705,
+          "33D2"
+        ],
+        [
+          105954707,
+          "B9EA010000"
+        ],
+        [
+          105954712,
+          "0F28F2"
+        ],
+        [
+          105954715,
+          "E8D0BB78FC"
+        ],
+        [
+          105954720,
+          "84C0"
+        ],
+        [
+          105954722,
+          "751E"
+        ],
+        [
+          105954724,
+          "4885DB"
+        ],
+        [
+          105954727,
+          "742A"
+        ],
+        [
+          105954729,
+          "488364242000"
+        ],
+        [
+          105954735,
+          "4533C9"
+        ],
+        [
+          105954738,
+          "0F28D6"
+        ],
+        [
+          105954741,
+          "488BD7"
+        ],
+        [
+          105954744,
+          "488BCB"
+        ],
+        [
+          105954747,
+          "E8D4170000"
+        ],
+        [
+          105954752,
+          "EB2E"
+        ],
+        [
+          105954800,
+          "488B5C2450"
+        ],
+        [
+          105954805,
+          "0F28742430"
+        ],
+        [
+          105954810,
+          "4883C440"
+        ],
+        [
+          105954814,
+          "5F"
+        ],
+        [
+          105954815,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 105954684,
+          "endRva": 105954816,
+          "sha256": "CDCF69414459ED2D460DF07A482D7F0DC73EB5520C4DBEEBF0DC421DD3A79275",
+          "boundary": "actual concrete registered method and complete pdata function extent; discovery only"
+        }
+      ],
+      "boundary": "Complete selected normal branch from actual registered entry through RET; alternate dispatch/init/failure excluded."
+    }
+  },
+  "patchIndices": {
+    "getDoubleOrDefault": 467,
+    "getValueOrDefaultInternal": 490
+  },
+  "dispatchLimits": [
+    489,
+    462,
+    449
+  ],
+  "dispatchCellRva": 218051984,
+  "scalarNullBoardTail": [
+    [
+      105954771,
+      "E83C265AFA"
+    ],
+    [
+      105954776,
+      "CC"
+    ]
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected current method identities, all owned entry/chained windows, complete chosen instructions, actual calls/branches and null helper/INT3 edge.",
+    "direct": "Owned selected byte/program reads of scalar cells, argument aliases, temporary, saved Double default and XMM0/AL transfers.",
+    "conditional": "Current complete keyed lookup relation, stable compatible fields/inputs, valid isolated Win64 frames, false patch checks, selected normal class guards, false Burst getter where reached and normally completed SIMD conversions.",
+    "unresolved": "Actual runtime field/list/default/found state, constructor correspondence, public GetValue virtual dispatch and generic context mutation, other dispatch/exception effects, provider and complete actions/roots."
+  }
+}

@@ -1,0 +1,2873 @@
+{
+  "schema": "endfield.buff-move-to-runtime-defaults-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "lifecycle": "buff_move_to_lifecycle_native.json",
+    "blackboardData": "memorypack_blackboard_double_data_native.json",
+    "barrier": "buff_timeline_source_wrappers_native.json"
+  },
+  "records": {
+    "moveTo": {
+      "method": [
+        58961,
+        "Beyond.Gameplay.Core.MoveToAction+Data",
+        ".ctor",
+        54724928
+      ],
+      "fields": [
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::manualTick",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            32
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::moveType",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.Core.MoveToAction+MoveType",
+            36
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::totalTime",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            40
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::updateMoveTarget",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            48
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::updateLatestMainCharacter",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            49
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::directionType",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.Core.MoveToAction+DirectionType",
+            52
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::target",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.Core.TargetSettings",
+            56
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::fixAngle",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "UnityEngine.Vector3",
+            64
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::fixDirectionType",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.DirectionType",
+            76
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::fixPosAngle",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardVector3",
+            80
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::fixPosLength",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            88
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::blockRadius",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            96
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::enableMaxDistanceCheckWhenMoveBack",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            104
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::maxDistanceWhenMoveBack",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            112
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::useExtraBlockRadiusForInt",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            120
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::extraRadiusForInt",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            128
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::counterClockwise",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            136
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::faceToMoveDir",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            137
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::dontClampFaceToMoveDirToXZ",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            138
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::overrideRotateRate",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            139
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::rotateRate",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            144
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::speedType",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.Core.MoveToAction+SpeedType",
+            152
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::speed",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            160
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::speedCurve",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "UnityEngine.AnimationCurve",
+            168
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::rootMotionAnimKey",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "string",
+            176
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::startOffsetFrame",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "int",
+            184
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::autoScaled",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            188
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::rootMotionScale",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Blackboard+BlackboardDouble",
+            192
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::dontClampDirToXZ",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            200
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::enableXAxisMove",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            201
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::xAxisSpeed",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            208
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::enableYAxisMove",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            216
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::yAxisSpeed",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            224
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::limitMoveDirRotateSpeed",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            232
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::moveDirYRotateSpeed",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "float",
+            236
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::disableReachAutoEnd",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            240
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::ignoreNavmesh",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            241
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::ignoreAllCollision",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            242
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::ignoreCollisionLayer",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "UnityEngine.LayerMask",
+            244
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::stopByCliff",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            248
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::overrideStepOffset",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "bool",
+            249
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+Data::stepOffset",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+Data",
+            "float",
+            252
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+          "field": [
+            "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+            "bool",
+            16
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityLevel",
+          "field": [
+            "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+            "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+            20
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityOffset",
+          "field": [
+            "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+            "int",
+            24
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+          "field": [
+            "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+            "int",
+            28
+          ]
+        }
+      ],
+      "typedUsages": [
+        {
+          "instructionRva": 54724941,
+          "instructionHex": "488B0DC465C409",
+          "usageCellRva": 218591000,
+          "usageRawHex": "FB65042000000000",
+          "tag": 1,
+          "typeIndex": 144125,
+          "typeName": "Beyond.Gameplay.Core.TargetSettings",
+          "typeRawHex": "28280000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54724988,
+          "instructionHex": "488B0DE53FC709",
+          "usageCellRva": 218777960,
+          "usageRawHex": "91CE042000000000",
+          "tag": 1,
+          "typeIndex": 157512,
+          "typeName": "Beyond.Blackboard+BlackboardVector3",
+          "typeRawHex": "B0000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725051,
+          "instructionHex": "488B0D3E40C709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725098,
+          "instructionHex": "488B0D0F40C709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725145,
+          "instructionHex": "488B0DE03FC709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725201,
+          "instructionHex": "488B0DA83FC709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725263,
+          "instructionHex": "488B0D6A3FC709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725316,
+          "instructionHex": "488B0D353FC709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725369,
+          "instructionHex": "488B0DC8E2C109",
+          "usageCellRva": 218426824,
+          "usageRawHex": "0916032000000000",
+          "tag": 1,
+          "typeIndex": 101124,
+          "typeName": "UnityEngine.AnimationCurve",
+          "typeRawHex": "FAA90000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725422,
+          "instructionHex": "488B0DCB3EC709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725484,
+          "instructionHex": "488B0D759CC609",
+          "usageCellRva": 218736616,
+          "usageRawHex": "333F052000000000",
+          "tag": 1,
+          "typeIndex": 171929,
+          "typeName": "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+          "typeRawHex": "83250000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54725533,
+          "instructionHex": "488B0D449CC609",
+          "usageCellRva": 218736616,
+          "usageRawHex": "333F052000000000",
+          "tag": 1,
+          "typeIndex": 171929,
+          "typeName": "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+          "typeRawHex": "83250000000000000000120000000000"
+        }
+      ],
+      "literals": [
+        {
+          "instructionRva": 54725169,
+          "instructionHex": "F30F100D03244907",
+          "dataRva": 176959036,
+          "rawHex": "0000A040"
+        },
+        {
+          "instructionRva": 54725225,
+          "instructionHex": "F30F100D07224907",
+          "dataRva": 176958584,
+          "rawHex": "0000C03F"
+        },
+        {
+          "instructionRva": 54725446,
+          "instructionHex": "F30F100D9A214907",
+          "dataRva": 176958696,
+          "rawHex": "0000803F"
+        }
+      ],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 54724928,
+            "endRva": 54725617,
+            "sha256": "77FC84DE93C9AEC20BAE5AE0214909753C98293B61965BABCB8805B6449163C2",
+            "boundary": "genuine primary pdata entry; inventory only, effects unproved"
+          }
+        ],
+        "program": [
+          [
+            54724928,
+            "48895C2408"
+          ],
+          [
+            54724933,
+            "57"
+          ],
+          [
+            54724934,
+            "4883EC30"
+          ],
+          [
+            54724938,
+            "488BD9"
+          ],
+          [
+            54724941,
+            "488B0DC465C409"
+          ],
+          [
+            54724948,
+            "E80757BFFC"
+          ],
+          [
+            54724953,
+            "488BF8"
+          ],
+          [
+            54724956,
+            "4885C0"
+          ],
+          [
+            54724959,
+            "0F8486020000"
+          ],
+          [
+            54724965,
+            "33D2"
+          ],
+          [
+            54724967,
+            "488BC8"
+          ],
+          [
+            54724970,
+            "E8B15FADFF"
+          ],
+          [
+            54724975,
+            "488D4B38"
+          ],
+          [
+            54724979,
+            "48897B38"
+          ],
+          [
+            54724983,
+            "E8C461BFFC"
+          ],
+          [
+            54724988,
+            "488B0DE53FC709"
+          ],
+          [
+            54724995,
+            "E8D856BFFC"
+          ],
+          [
+            54725000,
+            "488BF8"
+          ],
+          [
+            54725003,
+            "4885C0"
+          ],
+          [
+            54725006,
+            "0F8457020000"
+          ],
+          [
+            54725012,
+            "0F57DB"
+          ],
+          [
+            54725015,
+            "48C744242000000000"
+          ],
+          [
+            54725024,
+            "0F57D2"
+          ],
+          [
+            54725027,
+            "0F57C9"
+          ],
+          [
+            54725030,
+            "488BC8"
+          ],
+          [
+            54725033,
+            "E8726DADFF"
+          ],
+          [
+            54725038,
+            "488D4B50"
+          ],
+          [
+            54725042,
+            "48897B50"
+          ],
+          [
+            54725046,
+            "E88561BFFC"
+          ],
+          [
+            54725051,
+            "488B0D3E40C709"
+          ],
+          [
+            54725058,
+            "E89956BFFC"
+          ],
+          [
+            54725063,
+            "488BF8"
+          ],
+          [
+            54725066,
+            "4885C0"
+          ],
+          [
+            54725069,
+            "0F8418020000"
+          ],
+          [
+            54725075,
+            "33D2"
+          ],
+          [
+            54725077,
+            "488BC8"
+          ],
+          [
+            54725080,
+            "E83370ADFF"
+          ],
+          [
+            54725085,
+            "488D4B58"
+          ],
+          [
+            54725089,
+            "48897B58"
+          ],
+          [
+            54725093,
+            "E85661BFFC"
+          ],
+          [
+            54725098,
+            "488B0D0F40C709"
+          ],
+          [
+            54725105,
+            "E86A56BFFC"
+          ],
+          [
+            54725110,
+            "488BF8"
+          ],
+          [
+            54725113,
+            "4885C0"
+          ],
+          [
+            54725116,
+            "0F84E9010000"
+          ],
+          [
+            54725122,
+            "33D2"
+          ],
+          [
+            54725124,
+            "488BC8"
+          ],
+          [
+            54725127,
+            "E80470ADFF"
+          ],
+          [
+            54725132,
+            "488D4B60"
+          ],
+          [
+            54725136,
+            "48897B60"
+          ],
+          [
+            54725140,
+            "E82761BFFC"
+          ],
+          [
+            54725145,
+            "488B0DE03FC709"
+          ],
+          [
+            54725152,
+            "E83B56BFFC"
+          ],
+          [
+            54725157,
+            "488BF8"
+          ],
+          [
+            54725160,
+            "4885C0"
+          ],
+          [
+            54725163,
+            "0F84BA010000"
+          ],
+          [
+            54725169,
+            "F30F100D03244907"
+          ],
+          [
+            54725177,
+            "4533C0"
+          ],
+          [
+            54725180,
+            "488BC8"
+          ],
+          [
+            54725183,
+            "E83CE8FFFF"
+          ],
+          [
+            54725188,
+            "488D4B70"
+          ],
+          [
+            54725192,
+            "48897B70"
+          ],
+          [
+            54725196,
+            "E8EF60BFFC"
+          ],
+          [
+            54725201,
+            "488B0DA83FC709"
+          ],
+          [
+            54725208,
+            "E80356BFFC"
+          ],
+          [
+            54725213,
+            "488BF8"
+          ],
+          [
+            54725216,
+            "4885C0"
+          ],
+          [
+            54725219,
+            "0F8482010000"
+          ],
+          [
+            54725225,
+            "F30F100D07224907"
+          ],
+          [
+            54725233,
+            "4533C0"
+          ],
+          [
+            54725236,
+            "488BC8"
+          ],
+          [
+            54725239,
+            "E804E8FFFF"
+          ],
+          [
+            54725244,
+            "488D8B80000000"
+          ],
+          [
+            54725251,
+            "4889BB80000000"
+          ],
+          [
+            54725258,
+            "E8B160BFFC"
+          ],
+          [
+            54725263,
+            "488B0D6A3FC709"
+          ],
+          [
+            54725270,
+            "E8C555BFFC"
+          ],
+          [
+            54725275,
+            "488BF8"
+          ],
+          [
+            54725278,
+            "4885C0"
+          ],
+          [
+            54725281,
+            "0F8444010000"
+          ],
+          [
+            54725287,
+            "33D2"
+          ],
+          [
+            54725289,
+            "488BC8"
+          ],
+          [
+            54725292,
+            "E85F6FADFF"
+          ],
+          [
+            54725297,
+            "488D8B90000000"
+          ],
+          [
+            54725304,
+            "4889BB90000000"
+          ],
+          [
+            54725311,
+            "E87C60BFFC"
+          ],
+          [
+            54725316,
+            "488B0D353FC709"
+          ],
+          [
+            54725323,
+            "E89055BFFC"
+          ],
+          [
+            54725328,
+            "488BF8"
+          ],
+          [
+            54725331,
+            "4885C0"
+          ],
+          [
+            54725334,
+            "0F840F010000"
+          ],
+          [
+            54725340,
+            "33D2"
+          ],
+          [
+            54725342,
+            "488BC8"
+          ],
+          [
+            54725345,
+            "E82A6FADFF"
+          ],
+          [
+            54725350,
+            "488D8BA0000000"
+          ],
+          [
+            54725357,
+            "4889BBA0000000"
+          ],
+          [
+            54725364,
+            "E84760BFFC"
+          ],
+          [
+            54725369,
+            "488B0DC8E2C109"
+          ],
+          [
+            54725376,
+            "E85B55BFFC"
+          ],
+          [
+            54725381,
+            "488BF8"
+          ],
+          [
+            54725384,
+            "4885C0"
+          ],
+          [
+            54725387,
+            "0F84DA000000"
+          ],
+          [
+            54725393,
+            "33D2"
+          ],
+          [
+            54725395,
+            "488BC8"
+          ],
+          [
+            54725398,
+            "E855FAFFFF"
+          ],
+          [
+            54725403,
+            "488D8BA8000000"
+          ],
+          [
+            54725410,
+            "4889BBA8000000"
+          ],
+          [
+            54725417,
+            "E81260BFFC"
+          ],
+          [
+            54725422,
+            "488B0DCB3EC709"
+          ],
+          [
+            54725429,
+            "E82655BFFC"
+          ],
+          [
+            54725434,
+            "488BF8"
+          ],
+          [
+            54725437,
+            "4885C0"
+          ],
+          [
+            54725440,
+            "0F84A5000000"
+          ],
+          [
+            54725446,
+            "F30F100D9A214907"
+          ],
+          [
+            54725454,
+            "4533C0"
+          ],
+          [
+            54725457,
+            "488BC8"
+          ],
+          [
+            54725460,
+            "E827E7FFFF"
+          ],
+          [
+            54725465,
+            "488D8BC0000000"
+          ],
+          [
+            54725472,
+            "4889BBC0000000"
+          ],
+          [
+            54725479,
+            "E8D45FBFFC"
+          ],
+          [
+            54725484,
+            "488B0D759CC609"
+          ],
+          [
+            54725491,
+            "E8E854BFFC"
+          ],
+          [
+            54725496,
+            "488BF8"
+          ],
+          [
+            54725499,
+            "4885C0"
+          ],
+          [
+            54725502,
+            "746B"
+          ],
+          [
+            54725504,
+            "33D2"
+          ],
+          [
+            54725506,
+            "488BC8"
+          ],
+          [
+            54725509,
+            "E806FCFFFF"
+          ],
+          [
+            54725514,
+            "488D8BD0000000"
+          ],
+          [
+            54725521,
+            "4889BBD0000000"
+          ],
+          [
+            54725528,
+            "E8A35FBFFC"
+          ],
+          [
+            54725533,
+            "488B0D449CC609"
+          ],
+          [
+            54725540,
+            "E8B754BFFC"
+          ],
+          [
+            54725545,
+            "488BF8"
+          ],
+          [
+            54725548,
+            "4885C0"
+          ],
+          [
+            54725551,
+            "743A"
+          ],
+          [
+            54725553,
+            "33D2"
+          ],
+          [
+            54725555,
+            "488BC8"
+          ],
+          [
+            54725558,
+            "E8D5FBFFFF"
+          ],
+          [
+            54725563,
+            "488D8BE0000000"
+          ],
+          [
+            54725570,
+            "4889BBE0000000"
+          ],
+          [
+            54725577,
+            "E8725FBFFC"
+          ],
+          [
+            54725582,
+            "C683F100000001"
+          ],
+          [
+            54725589,
+            "C683F800000001"
+          ],
+          [
+            54725596,
+            "C6431001"
+          ],
+          [
+            54725600,
+            "488B5C2440"
+          ],
+          [
+            54725605,
+            "4883C430"
+          ],
+          [
+            54725609,
+            "5F"
+          ],
+          [
+            54725610,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "subSpeed": {
+      "method": [
+        58950,
+        "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+        ".ctor",
+        54724496
+      ],
+      "fields": [
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+SubSpeed::speedType",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            "Beyond.Gameplay.Core.MoveToAction+SpeedType",
+            16
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+SubSpeed::fixedSpeed",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            "Beyond.Blackboard+BlackboardDouble",
+            24
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+SubSpeed::speedCurve",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            "UnityEngine.AnimationCurve",
+            32
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+SubSpeed::rootMotionAnimKey",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            "string",
+            40
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.MoveToAction+SubSpeed::rootMotionScale",
+          "field": [
+            "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+            "Beyond.Blackboard+BlackboardDouble",
+            48
+          ]
+        }
+      ],
+      "typedUsages": [
+        {
+          "instructionRva": 54724509,
+          "instructionHex": "488B0D5C42C709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54724533,
+          "instructionHex": "488B0D5C8FC909",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        },
+        {
+          "instructionRva": 54724573,
+          "instructionHex": "488B0DE4E5C109",
+          "usageCellRva": 218426824,
+          "usageRawHex": "0916032000000000",
+          "tag": 1,
+          "typeIndex": 101124,
+          "typeName": "UnityEngine.AnimationCurve",
+          "typeRawHex": "FAA90000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54724630,
+          "instructionHex": "488B0DE341C709",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 54724650,
+          "instructionHex": "488B0DE78EC909",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        }
+      ],
+      "literals": [],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 54724496,
+            "endRva": 54724719,
+            "sha256": "DCB22EE5CC2B3D1FA6C7A8263B18623B9032EAD643012F3F805BAC2355C0DA18",
+            "boundary": "genuine primary pdata entry; inventory only, effects unproved"
+          },
+          {
+            "startRva": 158528,
+            "endRva": 158594,
+            "sha256": "85A795057E58E98740A956859813BDF24BFF40D4E306B91068C21127D79711A8"
+          }
+        ],
+        "program": [
+          [
+            54724496,
+            "48895C2408"
+          ],
+          [
+            54724501,
+            "57"
+          ],
+          [
+            54724502,
+            "4883EC20"
+          ],
+          [
+            54724506,
+            "488BD9"
+          ],
+          [
+            54724509,
+            "488B0D5C42C709"
+          ],
+          [
+            54724516,
+            "E8B758BFFC"
+          ],
+          [
+            54724521,
+            "488BF8"
+          ],
+          [
+            54724524,
+            "4885C0"
+          ],
+          [
+            54724527,
+            "0F84B4000000"
+          ],
+          [
+            54724533,
+            "488B0D5C8FC909"
+          ],
+          [
+            54724540,
+            "83B9E000000000"
+          ],
+          [
+            54724547,
+            "0F848F000000"
+          ],
+          [
+            54724553,
+            "488D4B18"
+          ],
+          [
+            54724557,
+            "C7471400000000"
+          ],
+          [
+            54724564,
+            "48897B18"
+          ],
+          [
+            54724568,
+            "E86363BFFC"
+          ],
+          [
+            54724573,
+            "488B0DE4E5C109"
+          ],
+          [
+            54724580,
+            "E87758BFFC"
+          ],
+          [
+            54724585,
+            "488BF8"
+          ],
+          [
+            54724588,
+            "4885C0"
+          ],
+          [
+            54724591,
+            "7478"
+          ],
+          [
+            54724593,
+            "488B05C0D5A70A"
+          ],
+          [
+            54724600,
+            "4885C0"
+          ],
+          [
+            54724603,
+            "0F840FA39601"
+          ],
+          [
+            54724609,
+            "33C9"
+          ],
+          [
+            54724611,
+            "FFD0"
+          ],
+          [
+            54724613,
+            "48894710"
+          ],
+          [
+            54724617,
+            "488D4B20"
+          ],
+          [
+            54724621,
+            "48897B20"
+          ],
+          [
+            54724625,
+            "E82A63BFFC"
+          ],
+          [
+            54724630,
+            "488B0DE341C709"
+          ],
+          [
+            54724637,
+            "E83E58BFFC"
+          ],
+          [
+            54724642,
+            "488BF8"
+          ],
+          [
+            54724645,
+            "4885C0"
+          ],
+          [
+            54724648,
+            "743F"
+          ],
+          [
+            54724650,
+            "488B0DE78EC909"
+          ],
+          [
+            54724657,
+            "83B9E000000000"
+          ],
+          [
+            54724664,
+            "7428"
+          ],
+          [
+            54724666,
+            "C747140000803F"
+          ],
+          [
+            54724673,
+            "488D4B30"
+          ],
+          [
+            54724677,
+            "48897B30"
+          ],
+          [
+            54724681,
+            "488B5C2430"
+          ],
+          [
+            54724686,
+            "4883C420"
+          ],
+          [
+            54724690,
+            "5F"
+          ],
+          [
+            54724691,
+            "E9E862BFFC"
+          ],
+          [
+            158528,
+            "833DC586E70D00"
+          ],
+          [
+            158535,
+            "4C8BC1"
+          ],
+          [
+            158538,
+            "7435"
+          ],
+          [
+            158593,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "blackboardZero": {
+      "method": [
+        973,
+        "Beyond.Blackboard+BlackboardDouble",
+        ".ctor",
+        49314320
+      ],
+      "parameterTypes": [],
+      "fields": [],
+      "typedUsages": [
+        {
+          "instructionRva": 49314329,
+          "instructionHex": "488B0DF81C1C0A",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        }
+      ],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 49314320,
+            "endRva": 49314363,
+            "sha256": "5C51EB7C65E080D7A1646992474039DFBBAFE988AFDFEFDB30A044D8729B3DED",
+            "boundary": "actual callee inventory, effects unproved"
+          }
+        ],
+        "program": [
+          [
+            49314320,
+            "4053"
+          ],
+          [
+            49314322,
+            "4883EC20"
+          ],
+          [
+            49314326,
+            "488BD9"
+          ],
+          [
+            49314329,
+            "488B0DF81C1C0A"
+          ],
+          [
+            49314336,
+            "83B9E000000000"
+          ],
+          [
+            49314343,
+            "740B"
+          ],
+          [
+            49314345,
+            "33C0"
+          ],
+          [
+            49314347,
+            "894314"
+          ],
+          [
+            49314350,
+            "4883C420"
+          ],
+          [
+            49314354,
+            "5B"
+          ],
+          [
+            49314355,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "blackboardSingle": {
+      "method": [
+        974,
+        "Beyond.Blackboard+BlackboardDouble",
+        ".ctor",
+        54719104
+      ],
+      "parameterTypes": [
+        "float"
+      ],
+      "fields": [],
+      "typedUsages": [
+        {
+          "instructionRva": 54719118,
+          "instructionHex": "488B0D83A4C909",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        }
+      ],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 54719104,
+            "endRva": 54719160,
+            "sha256": "7FB99C15E3CE95092E37B0999F925BBF1374FA3151DC448D247A2A936AA5C19E",
+            "boundary": "actual callee inventory, effects unproved"
+          }
+        ],
+        "program": [
+          [
+            54719104,
+            "4053"
+          ],
+          [
+            54719106,
+            "4883EC30"
+          ],
+          [
+            54719110,
+            "488BD9"
+          ],
+          [
+            54719113,
+            "0F29742420"
+          ],
+          [
+            54719118,
+            "488B0D83A4C909"
+          ],
+          [
+            54719125,
+            "0F28F1"
+          ],
+          [
+            54719128,
+            "83B9E000000000"
+          ],
+          [
+            54719135,
+            "7410"
+          ],
+          [
+            54719137,
+            "F30F117314"
+          ],
+          [
+            54719142,
+            "0F28742420"
+          ],
+          [
+            54719147,
+            "4883C430"
+          ],
+          [
+            54719151,
+            "5B"
+          ],
+          [
+            54719152,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "target": {
+      "method": [
+        61543,
+        "Beyond.Gameplay.Core.TargetSettings",
+        ".ctor",
+        49309984
+      ],
+      "parameterTypes": [],
+      "fields": [
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::targetSource",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.TargetSource",
+            16
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::targetGroupKey",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "string",
+            24
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::selectorOwner",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.ActionTargetType",
+            32
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::ownerContextKey",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "string",
+            40
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::centerType",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.ActionTargetType",
+            48
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::centerContextKey",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "string",
+            56
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::centerToGround",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "bool",
+            64
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::selectorData",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.Core.Selector+SelectorData",
+            72
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::enableAdvancedDirection",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "bool",
+            80
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::advancedDirection",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.Core.DirectionSettings",
+            88
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::selectorDirection",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.DirectionType",
+            96
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::target",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "Beyond.Gameplay.ActionTargetType",
+            100
+          ]
+        },
+        {
+          "qualified": "Beyond.Gameplay.Core.TargetSettings::targetContextKey",
+          "field": [
+            "Beyond.Gameplay.Core.TargetSettings",
+            "string",
+            104
+          ]
+        }
+      ],
+      "typedUsages": [
+        {
+          "instructionRva": 49310004,
+          "instructionHex": "488B0D15D2170A",
+          "usageCellRva": 218643280,
+          "usageRawHex": "7981032000000000",
+          "tag": 1,
+          "typeIndex": 114876,
+          "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+          "typeRawHex": "2A280000000000000000120000000000"
+        }
+      ],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 49309984,
+            "endRva": 49310114,
+            "sha256": "BE8B67D3886CD7AE96B621465814D0353D212A551AEEB9CAEA35B71C4D3AC296",
+            "boundary": "actual callee inventory, effects unproved"
+          }
+        ],
+        "program": [
+          [
+            49309984,
+            "48895C2410"
+          ],
+          [
+            49309989,
+            "57"
+          ],
+          [
+            49309990,
+            "4883EC20"
+          ],
+          [
+            49309994,
+            "488BF9"
+          ],
+          [
+            49309997,
+            "C7412001000000"
+          ],
+          [
+            49310004,
+            "488B0D15D2170A"
+          ],
+          [
+            49310011,
+            "E820F711FD"
+          ],
+          [
+            49310016,
+            "4885C0"
+          ],
+          [
+            49310019,
+            "7457"
+          ],
+          [
+            49310021,
+            "833DC088F90A00"
+          ],
+          [
+            49310028,
+            "C6403101"
+          ],
+          [
+            49310032,
+            "48894758"
+          ],
+          [
+            49310036,
+            "743B"
+          ],
+          [
+            49310097,
+            "488B5C2438"
+          ],
+          [
+            49310102,
+            "4883C420"
+          ],
+          [
+            49310106,
+            "5F"
+          ],
+          [
+            49310107,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "curve": {
+      "method": [
+        355483,
+        "UnityEngine.AnimationCurve",
+        ".ctor",
+        54723952
+      ],
+      "parameterTypes": [],
+      "fields": [
+        {
+          "qualified": "UnityEngine.AnimationCurve::m_Ptr",
+          "field": [
+            "UnityEngine.AnimationCurve",
+            "nint",
+            16
+          ]
+        }
+      ],
+      "typedUsages": [],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 54723952,
+            "endRva": 54724017,
+            "sha256": "AA1709B0319E5AEACBE4866F5552AFDA0DE4FF296FCA355EBFD77CCA634DDBD8",
+            "boundary": "actual callee inventory, effects unproved"
+          }
+        ],
+        "program": [
+          [
+            54723952,
+            "4053"
+          ],
+          [
+            54723954,
+            "4883EC20"
+          ],
+          [
+            54723958,
+            "488B053BD8A70A"
+          ],
+          [
+            54723965,
+            "488BD9"
+          ],
+          [
+            54723968,
+            "4885C0"
+          ],
+          [
+            54723971,
+            "740E"
+          ],
+          [
+            54723973,
+            "33C9"
+          ],
+          [
+            54723975,
+            "FFD0"
+          ],
+          [
+            54723977,
+            "48894310"
+          ],
+          [
+            54723981,
+            "4883C420"
+          ],
+          [
+            54723985,
+            "5B"
+          ],
+          [
+            54723986,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "vector": {
+      "method": [
+        995,
+        "Beyond.Blackboard+BlackboardVector3",
+        ".ctor",
+        49313568
+      ],
+      "parameterTypes": [
+        "float",
+        "float",
+        "float"
+      ],
+      "fields": [
+        {
+          "qualified": "Beyond.Blackboard+BlackboardVector3::x",
+          "field": [
+            "Beyond.Blackboard+BlackboardVector3",
+            "Beyond.Blackboard+BlackboardDouble",
+            16
+          ]
+        },
+        {
+          "qualified": "Beyond.Blackboard+BlackboardVector3::y",
+          "field": [
+            "Beyond.Blackboard+BlackboardVector3",
+            "Beyond.Blackboard+BlackboardDouble",
+            24
+          ]
+        },
+        {
+          "qualified": "Beyond.Blackboard+BlackboardVector3::z",
+          "field": [
+            "Beyond.Blackboard+BlackboardVector3",
+            "Beyond.Blackboard+BlackboardDouble",
+            32
+          ]
+        }
+      ],
+      "typedUsages": [
+        {
+          "instructionRva": 49313617,
+          "instructionHex": "488B0DA8D2190A",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 49313641,
+          "instructionHex": "488B0DA81F1C0A",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        },
+        {
+          "instructionRva": 49313755,
+          "instructionHex": "488B0D1ED2190A",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 49313779,
+          "instructionHex": "488B0D1E1F1C0A",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        },
+        {
+          "instructionRva": 49313883,
+          "instructionHex": "488B1D9ED1190A",
+          "usageCellRva": 218778112,
+          "usageRawHex": "77CE042000000000",
+          "tag": 1,
+          "typeIndex": 157499,
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "typeRawHex": "AD000000000000000000120000000000"
+        },
+        {
+          "instructionRva": 49314115,
+          "instructionHex": "488B0DCE1D1C0A",
+          "usageCellRva": 218928920,
+          "usageRawHex": "E1D5002000000000",
+          "tag": 1,
+          "typeIndex": 27376,
+          "typeName": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+          "typeRawHex": "F87B338D010000000000150000000000"
+        }
+      ],
+      "proof": {
+        "codeWindows": [
+          {
+            "startRva": 49313568,
+            "endRva": 49314311,
+            "sha256": "1CBC0E9DF70D6CD9A26BDC641DE138E2818AC08205FC7796B9760568AD9F3A01",
+            "boundary": "actual callee inventory, effects unproved"
+          }
+        ],
+        "program": [
+          [
+            49313568,
+            "48895C2410"
+          ],
+          [
+            49313573,
+            "48896C2418"
+          ],
+          [
+            49313578,
+            "4889742420"
+          ],
+          [
+            49313583,
+            "57"
+          ],
+          [
+            49313584,
+            "4883EC70"
+          ],
+          [
+            49313588,
+            "0F29742460"
+          ],
+          [
+            49313593,
+            "0F297C2450"
+          ],
+          [
+            49313598,
+            "440F29442440"
+          ],
+          [
+            49313604,
+            "0F28F3"
+          ],
+          [
+            49313607,
+            "0F28FA"
+          ],
+          [
+            49313610,
+            "440F28C1"
+          ],
+          [
+            49313614,
+            "488BF1"
+          ],
+          [
+            49313617,
+            "488B0DA8D2190A"
+          ],
+          [
+            49313624,
+            "E803E911FD"
+          ],
+          [
+            49313629,
+            "488BD8"
+          ],
+          [
+            49313632,
+            "4885C0"
+          ],
+          [
+            49313635,
+            "0F8492020000"
+          ],
+          [
+            49313641,
+            "488B0DA81F1C0A"
+          ],
+          [
+            49313648,
+            "83B9E000000000"
+          ],
+          [
+            49313655,
+            "7505"
+          ],
+          [
+            49313662,
+            "C7431400000000"
+          ],
+          [
+            49313669,
+            "48895E10"
+          ],
+          [
+            49313673,
+            "488D2DF048CF0A"
+          ],
+          [
+            49313680,
+            "833D757AF90A00"
+          ],
+          [
+            49313687,
+            "7442"
+          ],
+          [
+            49313755,
+            "488B0D1ED2190A"
+          ],
+          [
+            49313762,
+            "E879E811FD"
+          ],
+          [
+            49313767,
+            "488BD8"
+          ],
+          [
+            49313770,
+            "4885C0"
+          ],
+          [
+            49313773,
+            "0F840E020000"
+          ],
+          [
+            49313779,
+            "488B0D1E1F1C0A"
+          ],
+          [
+            49313786,
+            "83B9E000000000"
+          ],
+          [
+            49313793,
+            "7505"
+          ],
+          [
+            49313800,
+            "C7431400000000"
+          ],
+          [
+            49313807,
+            "48895E18"
+          ],
+          [
+            49313811,
+            "833DF279F90A00"
+          ],
+          [
+            49313818,
+            "743F"
+          ],
+          [
+            49313883,
+            "488B1D9ED1190A"
+          ],
+          [
+            49313890,
+            "F6833801000002"
+          ],
+          [
+            49313897,
+            "7534"
+          ],
+          [
+            49313951,
+            "48837B6000"
+          ],
+          [
+            49313956,
+            "740D"
+          ],
+          [
+            49313971,
+            "F6833801000020"
+          ],
+          [
+            49313978,
+            "750A"
+          ],
+          [
+            49313980,
+            "488BCB"
+          ],
+          [
+            49313983,
+            "E83CF511FD"
+          ],
+          [
+            49313988,
+            "EB1C"
+          ],
+          [
+            49314018,
+            "488BF8"
+          ],
+          [
+            49314021,
+            "F6833901000002"
+          ],
+          [
+            49314028,
+            "7430"
+          ],
+          [
+            49314078,
+            "F6057B90FA0A80"
+          ],
+          [
+            49314085,
+            "740B"
+          ],
+          [
+            49314098,
+            "488BCB"
+          ],
+          [
+            49314101,
+            "E886E911FD"
+          ],
+          [
+            49314106,
+            "4885FF"
+          ],
+          [
+            49314109,
+            "0F84BE000000"
+          ],
+          [
+            49314115,
+            "488B0DCE1D1C0A"
+          ],
+          [
+            49314122,
+            "83B9E000000000"
+          ],
+          [
+            49314129,
+            "7505"
+          ],
+          [
+            49314136,
+            "C7471400000000"
+          ],
+          [
+            49314143,
+            "48897E20"
+          ],
+          [
+            49314147,
+            "833DA278F90A00"
+          ],
+          [
+            49314154,
+            "743F"
+          ],
+          [
+            49314219,
+            "488B4610"
+          ],
+          [
+            49314223,
+            "4885C0"
+          ],
+          [
+            49314226,
+            "744D"
+          ],
+          [
+            49314228,
+            "F3440F114014"
+          ],
+          [
+            49314234,
+            "488B4618"
+          ],
+          [
+            49314238,
+            "4885C0"
+          ],
+          [
+            49314241,
+            "743E"
+          ],
+          [
+            49314243,
+            "F30F117814"
+          ],
+          [
+            49314248,
+            "488B4620"
+          ],
+          [
+            49314252,
+            "4885C0"
+          ],
+          [
+            49314255,
+            "7430"
+          ],
+          [
+            49314257,
+            "F30F117014"
+          ],
+          [
+            49314262,
+            "4C8D5C2470"
+          ],
+          [
+            49314267,
+            "498B5B18"
+          ],
+          [
+            49314271,
+            "498B6B20"
+          ],
+          [
+            49314275,
+            "498B7328"
+          ],
+          [
+            49314279,
+            "0F28742460"
+          ],
+          [
+            49314284,
+            "0F287C2450"
+          ],
+          [
+            49314289,
+            "450F2843D0"
+          ],
+          [
+            49314294,
+            "498BE3"
+          ],
+          [
+            49314297,
+            "5F"
+          ],
+          [
+            49314298,
+            "C3"
+          ]
+        ]
+      },
+      "classFlagTests": [
+        [
+          49313890,
+          "F6833801000002"
+        ],
+        [
+          49313971,
+          "F6833801000020"
+        ],
+        [
+          49314021,
+          "F6833901000002"
+        ],
+        [
+          49314078,
+          "F6057B90FA0A80"
+        ]
+      ]
+    },
+    "preparation": {
+      "method": [
+        121321,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack",
+        "OnDeserialized",
+        153774340
+      ],
+      "typedUsages": [
+        {
+          "instructionRva": 153774398,
+          "instructionHex": "488B1593FFD503",
+          "usageCellRva": 218130648,
+          "usageRawHex": "1D3F052000000000",
+          "tag": 1,
+          "typeIndex": 171918,
+          "typeName": "Beyond.Gameplay.Core.MoveToAction+Data",
+          "typeRawHex": "84250000000000000000120000000000"
+        },
+        {
+          "instructionRva": 153774420,
+          "instructionHex": "488B157DFFD503",
+          "usageCellRva": 218130648,
+          "usageRawHex": "1D3F052000000000",
+          "tag": 1,
+          "typeIndex": 171918,
+          "typeName": "Beyond.Gameplay.Core.MoveToAction+Data",
+          "typeRawHex": "84250000000000000000120000000000"
+        }
+      ],
+      "proofs": {
+        "cacheNonNull": {
+          "codeWindows": [
+            {
+              "startRva": 153774340,
+              "endRva": 153774452,
+              "sha256": "115D022852F5E398FD86C2E66C0ECC302827A7428BFEF73316531AE14A492F4B",
+              "boundary": "actual callee inventory, effects unproved"
+            }
+          ],
+          "program": [
+            [
+              153774340,
+              "48895C2408"
+            ],
+            [
+              153774345,
+              "57"
+            ],
+            [
+              153774346,
+              "4883EC20"
+            ],
+            [
+              153774350,
+              "33DB"
+            ],
+            [
+              153774352,
+              "488BF9"
+            ],
+            [
+              153774355,
+              "381D80A9C204"
+            ],
+            [
+              153774361,
+              "7513"
+            ],
+            [
+              153774382,
+              "48395F18"
+            ],
+            [
+              153774386,
+              "7535"
+            ],
+            [
+              153774441,
+              "488B5C2430"
+            ],
+            [
+              153774446,
+              "4883C420"
+            ],
+            [
+              153774450,
+              "5F"
+            ],
+            [
+              153774451,
+              "C3"
+            ]
+          ]
+        },
+        "baseNull": {
+          "codeWindows": [
+            {
+              "startRva": 153774340,
+              "endRva": 153774452,
+              "sha256": "115D022852F5E398FD86C2E66C0ECC302827A7428BFEF73316531AE14A492F4B",
+              "boundary": "actual callee inventory, effects unproved"
+            }
+          ],
+          "program": [
+            [
+              153774340,
+              "48895C2408"
+            ],
+            [
+              153774345,
+              "57"
+            ],
+            [
+              153774346,
+              "4883EC20"
+            ],
+            [
+              153774350,
+              "33DB"
+            ],
+            [
+              153774352,
+              "488BF9"
+            ],
+            [
+              153774355,
+              "381D80A9C204"
+            ],
+            [
+              153774361,
+              "7513"
+            ],
+            [
+              153774382,
+              "48395F18"
+            ],
+            [
+              153774386,
+              "7535"
+            ],
+            [
+              153774388,
+              "48395F10"
+            ],
+            [
+              153774392,
+              "742F"
+            ],
+            [
+              153774441,
+              "488B5C2430"
+            ],
+            [
+              153774446,
+              "4883C420"
+            ],
+            [
+              153774450,
+              "5F"
+            ],
+            [
+              153774451,
+              "C3"
+            ]
+          ]
+        },
+        "refresh": {
+          "codeWindows": [
+            {
+              "startRva": 153774340,
+              "endRva": 153774452,
+              "sha256": "115D022852F5E398FD86C2E66C0ECC302827A7428BFEF73316531AE14A492F4B",
+              "boundary": "actual callee inventory, effects unproved"
+            }
+          ],
+          "program": [
+            [
+              153774340,
+              "48895C2408"
+            ],
+            [
+              153774345,
+              "57"
+            ],
+            [
+              153774346,
+              "4883EC20"
+            ],
+            [
+              153774350,
+              "33DB"
+            ],
+            [
+              153774352,
+              "488BF9"
+            ],
+            [
+              153774355,
+              "381D80A9C204"
+            ],
+            [
+              153774361,
+              "7513"
+            ],
+            [
+              153774382,
+              "48395F18"
+            ],
+            [
+              153774386,
+              "7535"
+            ],
+            [
+              153774388,
+              "48395F10"
+            ],
+            [
+              153774392,
+              "742F"
+            ],
+            [
+              153774394,
+              "488B5F10"
+            ],
+            [
+              153774398,
+              "488B1593FFD503"
+            ],
+            [
+              153774405,
+              "488BCB"
+            ],
+            [
+              153774408,
+              "E8D3CED5F6"
+            ],
+            [
+              153774413,
+              "48894718"
+            ],
+            [
+              153774417,
+              "488BCB"
+            ],
+            [
+              153774420,
+              "488B157DFFD503"
+            ],
+            [
+              153774427,
+              "E8C0CED5F6"
+            ],
+            [
+              153774432,
+              "488D4F18"
+            ],
+            [
+              153774436,
+              "E8D701D8F6"
+            ],
+            [
+              153774441,
+              "488B5C2430"
+            ],
+            [
+              153774446,
+              "4883C420"
+            ],
+            [
+              153774450,
+              "5F"
+            ],
+            [
+              153774451,
+              "C3"
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "directionFields": [
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::directionType",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "Beyond.Gameplay.Core.DirectionSettings+DirectionType",
+        16
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::source",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "Beyond.Gameplay.Core.TargetSettings",
+        24
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::target",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "Beyond.Gameplay.Core.TargetSettings",
+        32
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::sourceMountPoint",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "Beyond.Gameplay.MountPoint",
+        40
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::targetMountPoint",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "Beyond.Gameplay.MountPoint",
+        44
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::customSourceAndTarget",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "bool",
+        48
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::clampToXZ",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "bool",
+        49
+      ]
+    },
+    {
+      "qualified": "Beyond.Gameplay.Core.DirectionSettings::invertDirection",
+      "field": [
+        "Beyond.Gameplay.Core.DirectionSettings",
+        "bool",
+        50
+      ]
+    }
+  ],
+  "blackboardFloatCell": {
+    "runtimeTypeDefinition": 173,
+    "valueOffset": 20,
+    "typeName": "float",
+    "meaning": "same concrete cell as the reviewed closed value setter"
+  },
+  "calls": {
+    "allocation": 155744,
+    "inlineAllocation": 159232,
+    "barrier": 158528,
+    "getterCast": 14368,
+    "classInitializer": 156352
+  },
+  "evidenceBoundary": {
+    "exact": "Selected complete runtime-constructor and ready OnDeserialized programs, explicit scalar defaults and recursive allocation/reference stores.",
+    "direct": "Nested constructor calls and the cached engine factory return stored in AnimationCurve m_Ptr.",
+    "conditional": "Ready class/usage flags, disabled barriers, required allocation/class flag branches, non-null typed allocations and normal engine factory returns. Ordinary Win64 preservation remains required.",
+    "structuralOnly": "Unwritten fields and allocator-zero assumptions are not constructor defaults. The cached engine function pointer and returned native handles remain anonymous runtime values.",
+    "unresolved": "Allocation and engine factory effects, class/global initialization slow paths, failures, enabled barriers, provider/MethodInfo choice, final accumulated action/root state and runtime execution."
+  },
+  "classInitializerReady": {
+    "codeWindows": [
+      {
+        "startRva": 156352,
+        "endRva": 157164,
+        "sha256": "BBF14E17715D22C77EAE008CD3261776B96596850A2DE670DB81FFDCC803C324",
+        "boundary": "actual class-init or inline-allocation callee inventory only"
+      }
+    ],
+    "program": [
+      [
+        156352,
+        "48895C2418"
+      ],
+      [
+        156357,
+        "4889742420"
+      ],
+      [
+        156362,
+        "55"
+      ],
+      [
+        156363,
+        "57"
+      ],
+      [
+        156364,
+        "4154"
+      ],
+      [
+        156366,
+        "4156"
+      ],
+      [
+        156368,
+        "4157"
+      ],
+      [
+        156370,
+        "488BEC"
+      ],
+      [
+        156373,
+        "4883EC70"
+      ],
+      [
+        156377,
+        "0F29742460"
+      ],
+      [
+        156382,
+        "488BF1"
+      ],
+      [
+        156385,
+        "4533F6"
+      ],
+      [
+        156388,
+        "44897530"
+      ],
+      [
+        156392,
+        "4439B1E0000000"
+      ],
+      [
+        156399,
+        "752C"
+      ],
+      [
+        156445,
+        "4C8D5C2470"
+      ],
+      [
+        156450,
+        "498B5B40"
+      ],
+      [
+        156454,
+        "498B7348"
+      ],
+      [
+        156458,
+        "0F28742460"
+      ],
+      [
+        156463,
+        "498BE3"
+      ],
+      [
+        156466,
+        "415F"
+      ],
+      [
+        156468,
+        "415E"
+      ],
+      [
+        156470,
+        "415C"
+      ],
+      [
+        156472,
+        "5F"
+      ],
+      [
+        156473,
+        "5D"
+      ],
+      [
+        156474,
+        "C3"
+      ]
+    ]
+  },
+  "curveResolverKey": {
+    "instructionRva": 54723987,
+    "instructionHex": "488D0DC6C04307",
+    "dataRva": 176604768,
+    "rawHex": "556E697479456E67696E652E416E696D6174696F6E43757276653A3A496E7465726E616C5F43726561746528556E697479456E67696E652E4B65796672616D655B5D2900",
+    "text": "UnityEngine.AnimationCurve::Internal_Create(UnityEngine.Keyframe[])"
+  }
+}

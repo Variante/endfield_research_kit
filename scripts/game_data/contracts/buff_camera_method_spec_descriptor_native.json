@@ -1,0 +1,139 @@
+{
+  "schema": "endfield.buff-camera-method-spec-descriptor-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_camera_context_slot_publication_native.json",
+  "selectedMethodSpecIndex": 280277,
+  "function": {
+    "entryRva": 2984944,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 2984944,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            2984944,
+            2984978,
+            211737380
+          ],
+          "tableRowRva": 251914580,
+          "runtimeTripleRawHex": "F08B2D00128C2D0024DB9E0C",
+          "codeBytes": 34,
+          "unwindRawHex": "0106020006320270",
+          "unwindVersion": 1,
+          "unwindFlags": 0,
+          "frameByte": 0,
+          "parentChain": []
+        },
+        {
+          "runtimeTriple": [
+            2984978,
+            2985081,
+            217622752
+          ],
+          "tableRowRva": 251914592,
+          "runtimeTripleRawHex": "128C2D00798C2D00E0A8F80C",
+          "codeBytes": 103,
+          "unwindRawHex": "2105020005340600F08B2D00128C2D0024DB9E0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                2984978,
+                2985081,
+                217622752
+              ],
+              "parent": [
+                2984944,
+                2984978,
+                211737380
+              ]
+            }
+          ]
+        },
+        {
+          "runtimeTriple": [
+            2985081,
+            2985091,
+            217622772
+          ],
+          "tableRowRva": 251914604,
+          "runtimeTripleRawHex": "798C2D00838C2D00F4A8F80C",
+          "codeBytes": 10,
+          "unwindRawHex": "21000000F08B2D00128C2D0024DB9E0C",
+          "unwindVersion": 1,
+          "unwindFlags": 4,
+          "frameByte": 0,
+          "parentChain": [
+            {
+              "child": [
+                2985081,
+                2985091,
+                217622772
+              ],
+              "parent": [
+                2984944,
+                2984978,
+                211737380
+              ]
+            }
+          ]
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 2984944,
+        "endRva": 2984978,
+        "sha256": "58AEECD1D6787DA519A37F3857FB40F3950BED75D3A9A0A6AEC81DEE32569AA4"
+      },
+      {
+        "startRva": 2984978,
+        "endRva": 2985081,
+        "sha256": "F1D27E8325CBBCF568E89D23C9280969ADAB6DEE2CEDE13E0FD1F1CBCB762470"
+      },
+      {
+        "startRva": 2985081,
+        "endRva": 2985091,
+        "sha256": "087CD1A1ECF2C15B53BC8CA47F008DFACD7DB6E1579D1AD1C3A77D500224D68C"
+      }
+    ]
+  },
+  "globals": {
+    "cache": 233439352,
+    "metadataRegistration": 233507288
+  },
+  "calls": {
+    "definition": 304272,
+    "composition": 166496
+  },
+  "evidenceBoundary": {
+    "exact": "Complete descriptor getter exception ranges, all conditional branches and ordinary returns, actual method-slot CALL and current selected MethodSpec/generic-instantiation pointer-table layout.",
+    "direct": "The signed index addresses a twelve-byte MethodSpec record. Its definition reaches the plain helper; class/method indices independently load eight-byte instantiation slots or zero on -1. These arguments reach composition, its return is stored in the selected cache cell, and the ordinary return re-reads that cell.",
+    "conditional": "Valid nonnegative in-range signed index, compatible stable registration/tables, readable/writable descriptor cache and normal ABI-preserving definition/composition helpers.",
+    "structuralOnly": "The selected static inherited-ctor row and argument pointers do not establish the returned descriptor object layout or live cache contents.",
+    "unresolved": "Definition/composition helper effects, actual descriptor identity and cache mutation/history, argument-vector substitution, populated runtime slot seven and actual cold target/gameplay execution."
+  }
+}

@@ -19,6 +19,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.common import ROOT, canonical_json_sha256, sha256_file_upper
 from scripts.game_data.memorypack.buff_action_receipts import (
     selected_candidate, certified_action_spans,
@@ -177,7 +178,7 @@ def build_report(
         files_with_effect += local > 0
     if action_by_source:
         _fail("unmatched-action-sources", detail=f"remaining={len(action_by_source)}")
-    expected_actions = action["summary"]["byTag"]["0x00A2"]["actionSpans"]
+    expected_actions = action["summary"]["byTag"][_AT("Core_EffectAction_EffectActionData")]["actionSpans"]
     if len(rows) != expected_actions:
         _fail("effect-action-count", detail=f"expected={expected_actions} actual={len(rows)}")
     return {

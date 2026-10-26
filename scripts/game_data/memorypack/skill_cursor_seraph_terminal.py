@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack import skill_cursor_seraph_capture as capture
 from scripts.game_data.memorypack import skill_timeline_shared_sequence as shared
@@ -62,10 +64,10 @@ def _selected_action(
     source: bytes, selection: Mapping[str, Any],
     validation: Mapping[str, Any], route: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Admit only the reviewed 0x009F route during this local source replay."""
+    """Admit only the reviewed DispelAction route during this local source replay."""
     chosen = selection.get("selectedAction")
     _require(isinstance(chosen, Mapping)
-             and chosen.get("tag") == "0x009F"
+             and chosen.get("tag") == _AT("Core_DispelAction_Data")
              and type(chosen.get("timelineIndex")) is int
              and type(chosen.get("start")) is int
              and type(chosen.get("end")) is int
@@ -90,7 +92,7 @@ def _selected_action(
                        if row.get("index") == chosen["timelineIndex"]), None)
         _require(isinstance(record, Mapping), "selected-timeline-index")
         actions = [action for action in record.get("actionData", ())
-                   if isinstance(action, Mapping) and action.get("tag") == 0x9F]
+                   if isinstance(action, Mapping) and action.get("tag") == _A("Core_DispelAction_Data")]
         _require(len(actions) == 1
                  and (actions[0].get("start"), actions[0].get("end"))
                  == (chosen["start"], chosen["end"]),
@@ -160,11 +162,11 @@ def verify_selected_seraph_terminal(
     validation = context.get("dispelNativeValidation")
     _require(isinstance(validation, Mapping)
              and validation.get("status") == "validated"
-             and validation.get("unionTag") == 0x9F,
+             and validation.get("unionTag") == _A("Core_DispelAction_Data"),
              "dispel-native-validation-drift")
     dispel = _dispel_contract()
     _require(dispel.get("selectedSource") == target
-             and dispel.get("unionTag") == 0x9F
+             and dispel.get("unionTag") == _A("Core_DispelAction_Data")
              and dispel.get("serializedMemberCount") == 9,
              "dispel-contract-source-drift")
     route = {"tag": selection["selectedAction"]["tag"],
@@ -188,7 +190,7 @@ def verify_selected_seraph_terminal(
         "field0Through42Exact": True,
         **joined,
         "selectedAction": {"timelineIndex": selection["selectedAction"]["timelineIndex"],
-                           "tag": "0x009F", "start": action["action"]["start"],
+                           "tag": _AT("Core_DispelAction_Data"), "start": action["action"]["start"],
                            "end": action["action"]["end"]},
         "provenance": {
             "receipt": receipt_fingerprint,

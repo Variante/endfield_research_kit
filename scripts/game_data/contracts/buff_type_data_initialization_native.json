@@ -1,0 +1,514 @@
+{
+  "schema": "endfield.buff-type-data-initialization-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-registration-and-type-initialization-control-with-conditional-record-pointer-writeback",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "publication": {
+      "entryRva": 89232,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 89232,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              89232,
+              94065,
+              211663348
+            ],
+            "tableRowRva": 251731364,
+            "runtimeTripleRawHex": "905C0100716F0100F4B99D0C",
+            "codeBytes": 4833,
+            "unwindRawHex": "11210B0021645D0021345A002101540012F010E00EC00C700B500000AC541900",
+            "unwindVersion": 1,
+            "unwindFlags": 2,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 89232,
+          "endRva": 94065,
+          "sha256": "EDCF30D6AEC6E2E98B7329DCA27C14DB36C754FADC8841648EDC02ADF5726023"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    },
+    "metadataEntry": {
+      "entryRva": 76992,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 76992,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              76992,
+              78185,
+              211660980
+            ],
+            "tableRowRva": 251730716,
+            "runtimeTripleRawHex": "C02C010069310100B4B09D0C",
+            "codeBytes": 1193,
+            "unwindRawHex": "110F06000F3414000FD2087007600650AC541900",
+            "unwindVersion": 1,
+            "unwindFlags": 2,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              3073752,
+              3073846,
+              211661116
+            ],
+            "tableRowRva": 251923340,
+            "runtimeTripleRawHex": "D8E62E0036E72E003CB19D0C",
+            "codeBytes": 94,
+            "unwindRawHex": "21000000C02C010069310100B4B09D0C",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  3073752,
+                  3073846,
+                  211661116
+                ],
+                "parent": [
+                  76992,
+                  78185,
+                  211660980
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 76992,
+          "endRva": 78184,
+          "sha256": "680D0E10C366E14F2F0593BA2AF469CD7D8D37BFE36BEE468B2353EDF7083AB3"
+        },
+        {
+          "startRva": 3073752,
+          "endRva": 3073845,
+          "sha256": "471383A5D65EEDD610F44A4D5120CD885BEA080AEE3BF2BAD5F2D0C4596D6C0E"
+        }
+      ],
+      "paddingWindows": [
+        {
+          "startRva": 78184,
+          "endRva": 78185,
+          "sha256": "9E076CEAF246B6003D9C2680A2B4CF0BFFD069805902B0B5EDEEBF49039FE4BD",
+          "rawHex": "90"
+        },
+        {
+          "startRva": 3073845,
+          "endRva": 3073846,
+          "sha256": "1DD8312636F6A0BF3D21FA2855E63072507453E93A5CED4301B364E91C9D87D6",
+          "rawHex": "CC"
+        }
+      ],
+      "tableWindows": []
+    },
+    "terminalHelper": {
+      "entryRva": 1733500,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1733500,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1733500,
+              1733547,
+              211641408
+            ],
+            "tableRowRva": 251821964,
+            "runtimeTripleRawHex": "7C731A00AB731A0040649D0C",
+            "codeBytes": 47,
+            "unwindRawHex": "0104010004620000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1733500,
+          "endRva": 1733547,
+          "sha256": "9E22BF251EC5050498A88757C146F0FA7F6F7C412F2A6B5DA9CD87A89A880916"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    },
+    "metadataInitializer": {
+      "entryRva": 104736,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 104736,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              104736,
+              105023,
+              211637472
+            ],
+            "tableRowRva": 251732024,
+            "runtimeTripleRawHex": "209901003F9A0100E0549D0C",
+            "codeBytes": 287,
+            "unwindRawHex": "0104010004420000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 104736,
+          "endRva": 105023,
+          "sha256": "2C721039144969B6667F761E2429D5D38D8F107138D1601F53690A9DE1E02BE3"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": [],
+      "oldOwnedWindows": [
+        {
+          "startRva": 104736,
+          "endRva": 105023,
+          "sha256": "2C721039144969B6667F761E2429D5D38D8F107138D1601F53690A9DE1E02BE3"
+        }
+      ]
+    },
+    "typeLoop": {
+      "entryRva": 2986080,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 2986080,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              2986080,
+              2986101,
+              211637216
+            ],
+            "tableRowRva": 251914676,
+            "runtimeTripleRawHex": "60902D0075902D00E0539D0C",
+            "codeBytes": 21,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              2986101,
+              2986210,
+              217622712
+            ],
+            "tableRowRva": 251914688,
+            "runtimeTripleRawHex": "75902D00E2902D00B8A8F80C",
+            "codeBytes": 109,
+            "unwindRawHex": "21110400117407000564060060902D0075902D00E0539D0C",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  2986101,
+                  2986210,
+                  217622712
+                ],
+                "parent": [
+                  2986080,
+                  2986101,
+                  211637216
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              2986210,
+              2986258,
+              217622736
+            ],
+            "tableRowRva": 251914700,
+            "runtimeTripleRawHex": "E2902D0012912D00D0A8F80C",
+            "codeBytes": 48,
+            "unwindRawHex": "2100000060902D0075902D00E0539D0C",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  2986210,
+                  2986258,
+                  217622736
+                ],
+                "parent": [
+                  2986080,
+                  2986101,
+                  211637216
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 2986080,
+          "endRva": 2986101,
+          "sha256": "1EF16A5AF16C05343D6A31675261FCF886B94626420714D6FC303E5B336E881B"
+        },
+        {
+          "startRva": 2986101,
+          "endRva": 2986210,
+          "sha256": "25D878ED2ECA0C014DCC6D4BC0A9DDCBD74E84310933E103659754215369D215"
+        },
+        {
+          "startRva": 2986210,
+          "endRva": 2986216,
+          "sha256": "B13C2122A4910AD1C7F40207D9561E5A2D3418BF2BC40C490E3F913641FD2989"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": [
+        {
+          "startRva": 2986216,
+          "endRva": 2986228,
+          "sha256": "E7A5C1AC9F06B0C6E9C6404F36FB36AA795BCCAB418D56AF35607102564A2AAC"
+        },
+        {
+          "startRva": 2986228,
+          "endRva": 2986258,
+          "sha256": "86F6714CB81EE0036F78F6C1D8C9B09773F86B9F141E68078F1326DB99F17BB1"
+        }
+      ]
+    },
+    "recordFixup": {
+      "entryRva": 2986016,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 2986016,
+          "endRva": 2986067,
+          "sha256": "AEF6FC62975BF7B86537073730C049A5AA764685FB70B34B3ACC2AAF7CC25106"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    },
+    "alternateFixup": {
+      "entryRva": 2985968,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 2985968,
+          "endRva": 2986016,
+          "sha256": "399043D7BC31B9843F57DE012897B00C8EE66DDCEB62BA1EB2A29A40EA2F7B1E"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    }
+  },
+  "globals": {
+    "codeRegistration": 233507280,
+    "metadataRegistration": 233507288,
+    "codeRegistrationAlias": 233507256,
+    "metadataRegistrationAlias": 233507264,
+    "options": 233507248,
+    "metadataHeader": 233439216,
+    "metadataBase": 233439208
+  },
+  "staticRegistrations": {
+    "codeRva": 176744000,
+    "metadataRva": 176744544,
+    "optionsRva": 176743984
+  },
+  "publicationProjection": {
+    "window": {
+      "startRva": 89676,
+      "endRva": 89737,
+      "sha256": "AF4D03733A378E202A423E9CD8AF6E6147104D206CF3E1F9D1CB7F2B3CBAC4FC"
+    }
+  },
+  "dispatch": {
+    "maxKindIndex": 29,
+    "targetCount": 3,
+    "targetsRva": 2986216,
+    "selectorRva": 2986228,
+    "targetsHex": "B9902D00C0902D00CC902D00",
+    "selectorHex": "000000000000000000000000000002020000010202000200000202000201",
+    "targetRvas": [
+      2986169,
+      2986176,
+      2986188
+    ]
+  },
+  "layout": {
+    "typesCount": 48,
+    "typesPointer": 56,
+    "typePointerStride": 8,
+    "typeKind": 10,
+    "loopFrameBytes": 32,
+    "savedRsi": 48,
+    "savedRdi": 56
+  },
+  "actualCalls": {
+    "metadataInitializerCall": 77007,
+    "typeLoopCall": 105009
+  },
+  "terminalCallProgram": {
+    "callSiteRva": 78179,
+    "unreachableTrailingNopDeclaredAsPadding": true,
+    "noReturnMustBeProvedFromActualHelperProgram": true
+  },
+  "fixups": {
+    "recordFixup": {
+      "role": "recordFixup",
+      "multiplyKind": "imul",
+      "recordBytes": 92,
+      "headerOffsetField": 160
+    },
+    "alternateFixup": {
+      "role": "alternateFixup",
+      "multiplyKind": "shift",
+      "recordBytes": 16,
+      "shift": 4,
+      "headerOffsetField": 104
+    }
+  },
+  "recordGeometry": {
+    "recordBytes": 92,
+    "headerOffsetField": 160
+  },
+  "selectedDamageType": {
+    "typePointerVa": 6664703528,
+    "byvalTypeIndex": 113665,
+    "kindByte": 17,
+    "selectedDispatchTargetRva": 2986169,
+    "selectedHelperEntryRva": 2986016,
+    "storedSignedIndex": 33942,
+    "conditionalRecordOffsetFromLoadedMetadataBase": 49916692,
+    "overlappingStaticWritebackSlots": [
+      113665
+    ],
+    "loadedMetadataIdentityKnown": false,
+    "runtimeInitializationObserved": false,
+    "liveClassIdentityProved": false,
+    "selectedRegistrationGlobalIdentityProved": false
+  },
+  "evidenceBoundary": {
+    "exact": "Complete exception-family code/table/padding partitions and closed ordinary fixup entries; every normal local edge, call frame and explicit write.",
+    "direct": "Static code/metadata registration LEAs write the actual runtime global cells before the selected metadata-entry call; actual child and type-loop calls and kind17 dispatch.",
+    "conditional": "Entered selected registration block, regular finite ABI calls or traps, selected registration table retained, loaded metadata/header/base equal to the selected current file, valid stable disjoint source/table/target/frame storage and valid signed record indices.",
+    "structuralOnly": "Static DamageType record stores an index; selected type-table slot and raw write destination are independent of a live execution receipt.",
+    "unresolved": "Runtime invocation/loaded source/global stability and unknown child aliases; live class/element identity, concrete DamageType normalization/sharing/provider, positive parent spans and whole-root admission."
+  }
+}

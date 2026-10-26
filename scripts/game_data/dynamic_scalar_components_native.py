@@ -126,7 +126,8 @@ def _builder_struct_declarations(raw: bytes) -> list[tuple[int, int, int]]:
     """Recover the selected struct argument pair, including retained alignment."""
     direct = [(hit.start(), hit[1][0], hit[2][0]) for hit in re.finditer(b"\x41\x8d\x51(.)\x45\x8d\x41(.)", raw, re.DOTALL)]
     retained = [(hit.start(), hit[1][0], hit[2][0]) for hit in re.finditer(b"\x41\x8d\x69(.)\x8b\xd5\x45\x8d\x41(.)", raw, re.DOTALL)]
-    return sorted(direct + retained)
+    shared = [(hit.start(), hit[1][0], hit[1][0]) for hit in re.finditer(b"\x41\x8d\x51(.)\x44\x8b\xc2", raw, re.DOTALL)]
+    return sorted(direct + retained + shared)
 
 
 def _validate_record(record: dict[str, Any], methods: dict[int, dict[str, Any]], raw: dict[int, bytes], *, inline_types: dict[str, dict[str, Any]] | None = None, carriers: dict[str, dict[str, Any]] | None = None) -> None:

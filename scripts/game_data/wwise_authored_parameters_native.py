@@ -1,0 +1,165 @@
+"""Authenticate authored Sound properties and their native PCM consumers.
+
+The codec gate supplies one already opened, authenticated image. This module
+does not load a bank, decode audio, change engine state or activate a device.
+"""
+from __future__ import annotations
+
+import hashlib
+import struct
+
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp.native_image import read_reviewed_contract
+from scripts.game_data import wwise_codec_factory_native as codec
+from scripts.game_data.wwise_source_queue_native import (
+    _digest, _hex, _rva, validate_native_group_declarations, validate_native_group_windows,
+)
+from scripts.game_data.wwise_voice_pipeline_native import _instruction
+
+CONTRACT_PATH = CONTRACTS_DIR / "wwise_authored_parameters_native.json"
+SCHEMA = "endfield.wwise-authored-parameters-native.v1"
+OWNERS = ("wwise_source_queue_native", "wwise_voice_pipeline_native", "wwise_voice_routing_native")
+
+
+def load_authored_parameters_contract(path=CONTRACT_PATH):
+    value, _ = read_reviewed_contract(path, schema=SCHEMA, status="reviewedCurrentBuild", label="wwise-authored-parameters")
+    return value
+
+
+def collect_groups(contract, owners):
+    groups = list(contract["nativeGroups"])
+    for row in codec._rows(contract.get("nativeGroupDependencies"), "parameter dependencies", 32):
+        key, owner_key = row.get("key"), row.get("ownerContract")
+        owner = owners.get(owner_key) if owner_key in OWNERS else None
+        if owner is None or contract.get("nativeInputs") != owner.get("nativeInputs"):
+            codec._fail("authoredParameterOwnerInputs", str(owner_key), "same selected native triplet", "missing or different owner")
+        group = next((g for g in owner.get("nativeGroups", []) if g.get("key") == row.get("ownerGroup")), None)
+        if group is None or key != row.get("ownerGroup"):
+            codec._fail("authoredParameterOwnerGroup", str(key), row.get("ownerGroup"), "missing or aliased group")
+        groups.append(group)
+    validate_native_group_declarations(groups)
+    return groups
+
+
+def collect_data(contract, owners):
+    data = list(contract["dataWindows"])
+    for row in codec._rows(contract.get("dataWindowDependencies"), "parameter data dependencies", 8):
+        owner_key = row.get("ownerContract")
+        owner = owners.get(owner_key) if owner_key in OWNERS else None
+        if owner is None or contract.get("nativeInputs") != owner.get("nativeInputs"):
+            codec._fail("authoredParameterDataOwner", str(owner_key), "same selected native triplet", "missing or different owner")
+        window = next((w for w in owner.get("dataWindows", []) if w.get("key") == row.get("ownerDataWindow")), None)
+        if window is None or row.get("key") != row.get("ownerDataWindow"):
+            codec._fail("authoredParameterDataDependency", str(row.get("key")), row.get("ownerDataWindow"), "missing or aliased data")
+        data.append(window)
+    return data
+
+
+def validate_authored_parameters_bytes(contract, image, bodies, records, owners):
+    fail = codec._fail
+    if contract.get("schema") != SCHEMA or contract.get("status") != "reviewedCurrentBuild":
+        fail("authoredParameterSchema", "contract", SCHEMA, contract.get("schema"))
+    all_groups = collect_groups(contract, owners)
+    validate_native_group_windows(all_groups, image, bodies, records)
+    groups = {g["key"]: g for g in all_groups}
+    for row in codec._rows(contract.get("directEdges"), "parameter direct edges", 96):
+        raw = _instruction(image, groups, row.get("group"), row.get("rva"), 5)
+        opcode = {"call": b"\xe8", "tailJump": b"\xe9"}.get(row.get("kind"))
+        target = groups.get(row.get("targetGroup"))
+        actual = _rva(row.get("rva"), "edge") + 5 + struct.unpack_from("<i", raw, 1)[0]
+        if opcode is None or raw[:1] != opcode or target is None or actual != _rva(target["entryRva"], "target"):
+            fail("authoredParameterEdge", str(row.get("rva")), row.get("targetGroup"), hex(actual))
+    seen = set()
+    for row in codec._rows(contract.get("instructionBindings"), "parameter instruction bindings", 64):
+        pair = (row.get("group"), row.get("rva"))
+        raw = _hex(row.get("instructionHex"), str(pair), 15)
+        actual = _instruction(image, groups, pair[0], pair[1], len(raw))
+        if pair in seen or actual != raw:
+            fail("authoredParameterInstruction", str(pair), raw.hex(), actual.hex())
+        seen.add(pair)
+    windows = {}
+    for row in codec._rows(collect_data(contract, owners), "parameter data windows", 16):
+        key, length = row.get("key"), row.get("bytes")
+        if not isinstance(key, str) or not key or key in windows or type(length) is not int or not 1 <= length <= 4096:
+            fail("authoredParameterDataExtent", str(key), "unique bounded data window", length)
+        _digest(row.get("sha256"), key)
+        raw = image.bytes_at_va(image.image_base + _rva(row.get("rva"), key), length)
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest != row["sha256"]:
+            fail("authoredParameterDataBytes", key, row["sha256"], digest)
+        if "hex" in row and raw != _hex(row["hex"], key, 4096):
+            fail("authoredParameterDataHex", key, row["hex"], raw.hex())
+        windows[key] = (row, raw)
+    for row in codec._rows(contract.get("virtualBindings"), "parameter virtual bindings", 16):
+        key, slot = row.get("dataWindow"), row.get("slot")
+        target = groups.get(row.get("targetGroup"))
+        if key not in windows or type(slot) is not int or slot < 0 or slot % 8 or slot + 8 > len(windows[key][1]) or target is None:
+            fail("authoredParameterVirtualDeclaration", str(key), "bounded slot and checked target", row)
+        actual_target = struct.unpack_from("<Q", windows[key][1], slot)[0] - image.image_base
+        if actual_target != _rva(target["entryRva"], "virtual target"):
+            fail("authoredParameterVirtualTarget", str(slot), target["entryRva"], hex(actual_target))
+        raw = _hex(row.get("instructionHex"), str(slot), 15)
+        expected = b"\xff\x90" + slot.to_bytes(4, "little")
+        if raw != expected or _instruction(image, groups, row.get("group"), row.get("rva"), len(raw)) != raw:
+            fail("authoredParameterVirtualCall", str(slot), expected.hex(), raw.hex())
+    mapping = contract.get("propertyMapping", {})
+    key = mapping.get("dataWindow")
+    if key not in windows:
+        fail("authoredParameterMappingWindow", str(key), "checked property map", "absent")
+    raw_map = windows[key][1]
+    slots = mapping.get("slots")
+    if not isinstance(slots, list) or not 1 <= len(slots) <= 64 or len(raw_map) != len(slots) * 4:
+        fail("authoredParameterMappingExtent", str(key), "bounded DWORD slot map", slots)
+    actual_slots = list(struct.unpack("<" + str(len(slots)) + "I", raw_map))
+    ignored = mapping.get("ignoredSlot")
+    if type(ignored) is not int or not 1 <= ignored <= 64 or any(type(slot) is not int or not 0 <= slot <= ignored for slot in slots) or actual_slots != slots or mapping.get("outputSlotBytes") != 4:
+        fail("authoredParameterMappingSlots", str(key), slots, actual_slots)
+    raw = _instruction(image, groups, mapping.get("group"), mapping.get("loadRva"), 7)
+    prefix = _hex(mapping.get("instructionPrefixHex"), "mapping prefix", 3)
+    address = _rva(mapping.get("loadRva"), "mapping load") + 7 + struct.unpack_from("<i", raw, 3)[0]
+    if prefix != b"\x4c\x8d\x35" or raw[:3] != prefix or address != _rva(windows[key][0]["rva"], key):
+        fail("authoredParameterMappingLoad", str(key), windows[key][0]["rva"], hex(address))
+    seen = set()
+    for row in codec._rows(mapping.get("properties"), "named parameter mappings", 32):
+        prop, offset = row.get("id"), row.get("outputByteOffset")
+        if type(prop) is not int or not 0 <= prop < len(slots) or prop in seen or type(offset) is not int or slots[prop] == ignored or offset != slots[prop] * 4:
+            fail("authoredParameterMappingProperty", str(row.get("name")), "unique mapped native output offset", row)
+        seen.add(prop)
+    for row in codec._rows(contract.get("jumpTableBindings"), "parameter jump tables", 8):
+        key, owner = row.get("dataWindow"), groups.get(row.get("group"))
+        targets, selected = row.get("targets"), row.get("selectedIndex")
+        if key not in windows or owner is None or not isinstance(targets, list) or not 1 <= len(targets) <= 32 or len(windows[key][1]) != len(targets) * 4 or type(selected) is not int or not 0 <= selected < len(targets):
+            fail("authoredParameterJumpDeclaration", str(key), "bounded table and selected branch", row)
+        expected = [_rva(t, key) for t in targets]
+        actual = list(struct.unpack("<" + str(len(targets)) + "I", windows[key][1]))
+        if actual != expected or any(not any(_rva(w["rva"], key) <= t < _rva(w["rva"], key) + w["bodyLength"] for w in owner["windows"]) for t in actual):
+            fail("authoredParameterJumpTargets", key, expected, actual)
+        raw = _hex(row.get("instructionPrefixHex"), key, 8) + _rva(windows[key][0]["rva"], key).to_bytes(4, "little")
+        if _instruction(image, groups, row.get("group"), row.get("loadRva"), len(raw)) != raw:
+            fail("authoredParameterJumpLoad", key, raw.hex(), "different operand")
+        call_at = _rva(row.get("selectedCallRva"), key)
+        if not expected[selected] <= call_at < expected[selected] + 32:
+            fail("authoredParameterJumpSelectedBranch", key, "call inside selected short branch", hex(call_at))
+        raw = _instruction(image, groups, row.get("group"), row.get("selectedCallRva"), 5)
+        target = groups.get(row.get("targetGroup"))
+        actual_target = call_at + 5 + struct.unpack_from("<i", raw, 1)[0]
+        if raw[:1] != b"\xe8" or target is None or actual_target != _rva(target["entryRva"], key):
+            fail("authoredParameterJumpSelectedCall", key, row.get("targetGroup"), hex(actual_target))
+
+
+def validate_optional_authored_parameters(image, bodies, records, voice, queue, routing):
+    try:
+        contract = load_authored_parameters_contract()
+        owners = dict(zip(OWNERS, (queue, voice, routing)))
+        validate_authored_parameters_bytes(contract, image, bodies, records, owners)
+        return {"status": "validated", "detail": "conditional authored Sound property collection, filter and gain consumers validated",
+                "selectedContractSchema": contract["schema"], "ownedNativeGroups": len(contract["nativeGroups"]),
+                "nativeGroups": len(contract["nativeGroups"]) + len(contract["nativeGroupDependencies"]),
+                "nativeGroupDependencies": contract["nativeGroupDependencies"], "evidenceBoundary": contract["evidenceBoundary"]}
+    except codec.SourceContractError as error:
+        return {"status": "mismatched", "detail": str(error)[:320], "diagnostic": error.diagnostic}
+    except FileNotFoundError as error:
+        return {"status": "missing", "detail": str(error)[:320]}
+    except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError, OverflowError, StopIteration) as error:
+        return {"status": "mismatched", "detail": str(error)[:320],
+                "diagnostic": {"failedCheck": "authoredParameters", "actual": str(error)[:160]}}

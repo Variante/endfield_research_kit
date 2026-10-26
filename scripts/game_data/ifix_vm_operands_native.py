@@ -19,7 +19,16 @@ dumps (``--input``, repeatable):
   ``argsCount``. For ``CallExtern`` the signed upper half rewinds that many
   12-byte evaluation-stack slots to the external argument base; ``Newobj``
   uses the same rewind when the resolved constructor's declaring-type base is
-  not ``System.MulticastDelegate`` (the delegate path is separate).
+  not ``System.MulticastDelegate``. The selected delegate path instead consumes
+  two slots and leaves one result, with an Integer-tag wrapper/factory path
+  and a separate MethodInfo/reflection path; its result tail preserves Type.
+  The Integer path's dispatcher is joined to the named CreateDelegate interface
+  and image-qualified implementations. Generic fallback selection checks the
+  delegate-Type cache, predicate-taking Any signature, rejection callback and
+  Action/Func array choice. Separate rules authenticate the lazy catalog recipe
+  and declared arities, parameter-Type projection with Func return Type last,
+  MakeGenericMethod forwarding and captured closure arguments. Runtime manager
+  selection, reflection arrays, cached values and reflection success remain open.
   ``CallExtern``'s encoded MethodDef delegate target and the conditional
   reflected-result path through ``ReflectionMethodInvoker.Invoke`` and
   ``Call.PushObjectAsResult`` are validated too.
@@ -33,17 +42,62 @@ dumps (``--input``, repeatable):
   ``Ldloc``/``Ldloca``/``Stloc``, named ``Ldarg`` slots without assuming a
   runtime argument count (with coverage under authored recursive call edges),
   and whether ``Ret`` selects a stack value.
+- conditional ``Ldarg``/``Ldloc``/``Stloc``/``Dup`` copy/store tag paths and
+  negative static-field indexes (bitwise complement of the signed operand).
+  Negative ``Ldfld``/``Stfld`` select AnonymousStorey with the same complement;
+  store removes two Value slots without an explicit consumed-reference clear.
+  Separate alias rules derive same-slot/shared-index copy/store consequences
+  under stable whole-slot storage hypotheses. Separate byte-overlap equations
+  preserve the post-copy tag guard and post-rebase store index read. Live alias
+  selection stays open.
+  StackReference encoding and one-hop resolution are authenticated separately,
+  as are UpdateReference's conditional target requests, recursive chain reads
+  and outward writeback, new-field hash-key storage/default/initializer requests,
+  complete object conversion programs and reference-address constructors.
+  Anonymous-storey rules authenticate the normal loader record loop and
+  reflection-sized interface slots, plain field initialization and Newanon's
+  argument copies, recursive request and saved-object restore. Nonzero raw
+  framing still requires runtime reflection method counts and order.
+  Concrete storage, reflection/helper results and live alias selection stay open.
 - the loader's six ``ReadInt32`` calls and field stores per 24-byte exception
   record: handler type, catch-type id, instruction boundary indices and their
   bounds against the VM method.
+- conditional literal, null, discard and no-op effects; ``Conv_I8`` selects
+  Integer, Long, Float, Double or the runtime exception route after
+  ``resolveStackReference`` returns normally. Hardware exception state and
+  complete stack semantics of the older joins stay open.
+  The remaining conversion and comparison programs have separate conditional
+  proofs, including Ceq's bit equality, left-tag relational selection and the
+  unsigned stack-reference pointer shortcut. A complete ordinary-loop enum
+  dispatcher authenticates the shared default request family separately from
+  the entry frame header.
+  Array and bitwise/unary routes have conditional typed width/tag programs.
+  Long/double literal payloads and packed Switch tables retain physical
+  instruction indexes as InlineData; Switch leaves its inspected slot in place.
+  Starg authenticates argument store followed by source physical clearing.
+  Volatile selects the common PC caller, whose later loop/exception join stays open.
+- ``Ldftn``/``Ldvirtftn`` whole signed external-method indices, with Object
+  slot push/replacement; ``Ldvirtftn2``'s unsigned low-half anonymous-storey
+  VTable slot and Integer method-slot rewrite. Runtime receiver compatibility,
+  concrete unequal-type resolver results and actual VTable values stay open.
+  The unequal-type rule validates the Type/base-definition cache keys, cached
+  null hits, GetMember candidate matching, BaseType traversal and null caching;
+  its flags omit DeclaredOnly, so no nearest-declared-override claim is made.
+- the non-generic zero-argument GenericDelegate Action bridge stores VM/method
+  id/target, derives receiver flags from target non-nullness, optionally pushes
+  the bound object, and forwards extraArgNum with zero refCount to Execute.
+  Registered all-object generic Action/Func contexts prove ordered arguments,
+  N+extraArgNum, and Func's saved-reference GetObject result/physical-slot clear
+  followed by its last generic-context type/cast request. Actual invocation,
+  reflection-selected context, method-id validity and Call.Begin capacity stay open.
 
 Supplying ``--outer-summary``, ``--outer-ledger`` and
 ``--expected-input-set-sha256`` together requires the current VFS audit and
 every IFix patch file's verified length and MD5; without them the report
 covers caller-supplied bytes only. It writes the ``--output`` report
 (conventionally ``reports/animestudio/ifix_vm_operands_current.json``). These
-are authored control-flow edges, not an execution trace; the negative
-field-operand path and execution remain open.
+are authored control-flow edges, not an execution trace; runtime storage,
+runtime opcode values, callee outcomes and execution remain open.
 """
 
 from __future__ import annotations
@@ -70,6 +124,73 @@ from scripts.game_data.ifix_vm_instruction_native import (
     decode_patch_opcodes,
     selected_opcode_layout,
 )
+from scripts.game_data.ifix_vm_delegate_rules import validate_delegate_rules
+from scripts.game_data.ifix_vm_generic_delegate_rules import validate_generic_delegate_rules
+from scripts.game_data.ifix_vm_generic_catalog_rules import validate_generic_catalog_rules
+from scripts.game_data.ifix_vm_generic_binding_rules import validate_generic_binding_rules
+from scripts.game_data.ifix_vm_slot_copy_rules import project_slot_copy_rules, validate_slot_copy_rules
+from scripts.game_data.ifix_vm_slot_alias_rules import project_slot_alias_rules, validate_slot_alias_rules
+from scripts.game_data.ifix_vm_negative_field_rules import project_negative_field_rules, validate_negative_field_rules
+from scripts.game_data.ifix_vm_instance_field_rules import project_instance_field_rules, validate_instance_field_rules
+from scripts.game_data.ifix_vm_stack_reference_rules import project_stack_reference_rules, validate_stack_reference_rules
+from scripts.game_data.ifix_vm_reference_update_rules import validate_reference_update_rules
+from scripts.game_data.ifix_vm_chain_field_rules import validate_chain_field_rules
+from scripts.game_data.ifix_vm_new_field_rules import validate_new_field_rules
+from scripts.game_data.ifix_vm_object_conversion_rules import validate_object_conversion_rules
+from scripts.game_data.ifix_vm_reference_address_rules import project_reference_address_rules, validate_reference_address_rules
+from scripts.game_data.ifix_vm_dispatch_rules import validate_dispatch_rules
+from scripts.game_data.ifix_vm_comparison_rules import project_comparison_rules, validate_comparison_rules
+from scripts.game_data.ifix_vm_conversion_opcode_rules import project_conversion_opcode_rules, validate_conversion_opcode_rules
+from scripts.game_data.ifix_vm_anonymous_storey_rules import validate_anonymous_storey_rules
+from scripts.game_data.ifix_vm_array_rules import project_array_rules, validate_array_rules
+from scripts.game_data.ifix_vm_bitwise_rules import project_bitwise_rules, validate_bitwise_rules
+from scripts.game_data.ifix_vm_literal_control_rules import project_literal_control_rules, validate_literal_control_rules
+from scripts.game_data.ifix_vm_array_reference_rules import validate_array_reference_rules
+from scripts.game_data.ifix_vm_indirect_opcode_rules import project_indirect_opcode_rules, validate_indirect_opcode_rules
+from scripts.game_data.ifix_vm_arithmetic_rules import project_arithmetic_rules, validate_arithmetic_rules
+from scripts.game_data.ifix_vm_positive_field_rules import project_positive_field_rules, validate_positive_field_rules
+from scripts.game_data.ifix_vm_branch_rules import project_branch_rules, validate_branch_rules
+from scripts.game_data.ifix_vm_object_opcode_rules import project_object_opcode_rules, validate_object_opcode_rules
+from scripts.game_data.ifix_vm_call_opcode_rules import project_call_opcode_rules, validate_call_opcode_rules
+from scripts.game_data.ifix_vm_init_constrained_rules import project_init_constrained_rules, validate_init_constrained_rules
+from scripts.game_data.ifix_vm_exception_dispatch_rules import project_exception_dispatch_rules, validate_exception_dispatch_rules
+from scripts.game_data.ifix_vm_string_opcode_rules import project_string_opcode_rules, validate_string_opcode_rules
+from scripts.game_data.ifix_vm_static_initializer_rules import validate_static_initializer_rules
+from scripts.game_data.ifix_vm_anonymous_loader_rules import validate_anonymous_loader_rules
+from scripts.game_data.ifix_vm_floating_remainder_rules import validate_floating_remainder_rules
+from scripts.game_data.ifix_vm_stack_construction_rules import validate_stack_construction_rules
+from scripts.game_data.ifix_vm_reference_helper_rules import validate_reference_helper_rules
+from scripts.game_data.ifix_vm_instance_alias_rules import project_instance_alias_rules, validate_instance_alias_rules
+from scripts.game_data.ifix_vm_instance_byte_alias_rules import validate_instance_byte_alias_rules
+from scripts.game_data.ifix_vm_call_zero_rules import validate_call_zero_rules
+from scripts.game_data.ifix_vm_call_push_rules import validate_call_push_rules
+from scripts.game_data.ifix_vm_runtime_exception_rules import validate_runtime_exception_rules
+from scripts.game_data.ifix_vm_exception_funclet_rules import validate_exception_funclet_rules
+from scripts.game_data.ifix_vm_entry_frame_rules import validate_entry_frame_rules
+from scripts.game_data.ifix_vm_anonymous_info_constructor_rules import validate_anonymous_info_constructor_rules
+from scripts.game_data.ifix_vm_reflection_invoker_constructor_rules import validate_reflection_invoker_constructor_rules
+from scripts.game_data.ifix_vm_reflection_invoker_rules import validate_reflection_invoker_rules
+from scripts.game_data.ifix_vm_bridge_dispatch_rules import validate_bridge_dispatch_rules
+from scripts.game_data.ifix_vm_call_reference_update_rules import validate_call_reference_update_rules
+from scripts.game_data.ifix_vm_reflection_cleanup_rules import validate_reflection_cleanup_rules
+from scripts.game_data.ifix_vm_call_scalar_rules import validate_call_scalar_rules
+from scripts.game_data.ifix_vm_generic_reference_get_rules import validate_generic_reference_get_rules
+from scripts.game_data.ifix_vm_generic_scalar_get_rules import validate_generic_scalar_get_rules
+from scripts.game_data.ifix_vm_generic_adjustor_rules import validate_generic_adjustor_rules
+from scripts.game_data.ifix_vm_anonymous_virtual_rules import validate_anonymous_virtual_rules
+from scripts.game_data.ifix_vm_vm_construction_rules import validate_vm_construction_rules
+from scripts.game_data.ifix_vm_vm_table_accessor_rules import validate_vm_table_accessor_rules
+from scripts.game_data.ifix_vm_rule_inventory import build_rule_inventory
+from scripts.game_data.ifix_vm_generic_bridge_rules import validate_generic_bridge_rules
+from scripts.game_data.ifix_vm_delegate_bridge_rules import validate_delegate_bridge_rules
+from scripts.game_data.ifix_vm_wrapper_dispatch_rules import validate_wrapper_dispatch_rules
+from scripts.game_data.ifix_vm_virtual_dispatch_rules import (
+    project_virtual_dispatch_rules, validate_virtual_dispatch_rules,
+)
+from scripts.game_data.ifix_vm_basic_rules import project_basic_rules, validate_basic_rules
+from scripts.game_data.ifix_vm_function_pointer_rules import (
+    project_function_pointer_rules, validate_function_pointer_rules,
+)
 from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.il2cpp.context import unresolved_usage_index
 from scripts.game_data.il2cpp.protocol import (
@@ -82,7 +203,7 @@ from scripts.game_data.il2cpp.protocol import (
 
 
 DEFAULT_CONTRACT = CONTRACTS_DIR / "ifix_vm_operands_native.json"
-SCHEMA = "endfield.ifix-vm-operands-native-contract.v15"
+SCHEMA = "endfield.ifix-vm-operands-native-contract.v31"
 
 
 class VMOperandEvidenceError(ValueError):
@@ -1267,8 +1388,11 @@ def validate_vm_operand_contract(
       to ``EvaluationStackOperation.ToObject``, and on normal return stores
       the object in ``managedStack`` at the slot's evaluation-base index,
       writing that index and the native ``ValueType.Object`` tag.
-    - Negative ``Ldfld``/``Ldsfld``/``Stfld``/``Stsfld`` operands take a
-      different native path that is left unresolved.
+    - Negative static/instance field operands select complemented internal
+      indexes under separate conditional rules. AnonymousStorey field storage,
+      one-hop StackReference resolution, conditional reference-update requests
+      and whole-slot copy/store alias consequences have separate proofs;
+      concrete storage, alias selection and recursive chain writes stay open.
 
     A row join is direct under the selected build and the caller's bytes;
     every stack, slot or resume effect is conditional on the path returning
@@ -1349,6 +1473,8 @@ def validate_vm_operand_contract(
 
     layout = selected_opcode_layout(Path(gameassembly), Path(metadata_path))
     opcode_ids = {row["name"]: row["id"] for row in layout["opcodeEnum"]["members"]}
+    basic_audit = validate_basic_rules(image, contract["basicOpcodeRules"], body, rva, opcode_ids, contract)
+    dispatch_audit = validate_dispatch_rules(image, contract["dispatchRules"], body, rva, opcode_ids, contract, extents)
     exception_control_audit = _validate_exception_control(
         contract["exceptionControl"], body, rva, opcode_ids, arithmetic
     )
@@ -1390,6 +1516,123 @@ def validate_vm_operand_contract(
         image, contract["initobjStackEffect"], contract["constrainedTypeOperand"],
         body, rva, opcode_ids, frame_claims, arithmetic, extents,
     )
+    delegate_audit = validate_delegate_rules(
+        image, contract["delegateConstruction"], body, rva, opcode_ids, contract, extents,
+    )
+    generic_delegate_audit = validate_generic_delegate_rules(
+        image, contract["genericDelegateFactoryRules"], contract, extents,
+    )
+    generic_catalog_audit = validate_generic_catalog_rules(
+        image, contract["genericDelegateCatalogRules"], contract, extents,
+    )
+    generic_binding_audit = validate_generic_binding_rules(
+        image, contract["genericDelegateBindingRules"], contract, extents,
+    )
+    wrapper_dispatch_audit = validate_wrapper_dispatch_rules(
+        image, contract["wrapperDelegateDispatch"], extents,
+        contract["delegateConstruction"]["receiverDispatcher"],
+    )
+    delegate_bridge_audit = validate_delegate_bridge_rules(
+        image, contract["delegateBridgeRules"], contract, extents,
+    )
+    generic_bridge_audit = validate_generic_bridge_rules(
+        image, contract["genericBridgeRules"], contract, extents,
+    )
+    function_pointer_audit = validate_function_pointer_rules(
+        image, contract["functionPointerRules"], body, rva, opcode_ids, contract,
+    )
+    virtual_dispatch_audit = validate_virtual_dispatch_rules(
+        image, contract["virtualDispatchRules"], body, rva, opcode_ids, contract, extents,
+    )
+    slot_copy_audit = validate_slot_copy_rules(
+        image, contract["slotCopyRules"], body, rva, opcode_ids, contract, extents,
+    )
+    negative_field_audit = validate_negative_field_rules(
+        image, contract["negativeFieldRules"], body, rva, opcode_ids, contract, extents,
+    )
+    instance_field_audit = validate_instance_field_rules(
+        image, contract["instanceFieldRules"], body, rva, opcode_ids, contract, extents,
+    )
+    stack_reference_audit = validate_stack_reference_rules(
+        image, contract["stackReferenceRules"], body, rva, opcode_ids, contract, extents,
+    )
+    reference_update_audit = validate_reference_update_rules(
+        image, contract["referenceUpdateRules"], contract, extents,
+    )
+    slot_alias_audit = validate_slot_alias_rules(
+        contract["slotAliasRules"], contract["slotCopyRules"], slot_copy_audit,
+    )
+    chain_field_audit = validate_chain_field_rules(
+        image, contract["chainFieldRules"], contract, extents,
+    )
+    new_field_audit = validate_new_field_rules(
+        image, contract["newFieldRules"], contract, extents,
+    )
+    object_conversion_audit = validate_object_conversion_rules(
+        image, contract["objectConversionRules"], contract, extents,
+    )
+    reference_address_audit = validate_reference_address_rules(
+        image, contract["referenceAddressRules"], body, rva, opcode_ids, contract, extents,
+    )
+    comparison_audit = validate_comparison_rules(image, contract["comparisonRules"], body, rva, opcode_ids, contract, extents)
+    conversion_opcode_audit = validate_conversion_opcode_rules(image, contract["conversionOpcodeRules"], body, rva, opcode_ids, contract, extents)
+    anonymous_storey_audit = validate_anonymous_storey_rules(
+        image, contract["anonymousStoreyRules"], body, rva, loader_body, loader_rva, opcode_ids, contract, extents,
+    )
+    array_audit = validate_array_rules(image, contract["arrayRules"], body, rva, opcode_ids, contract, extents)
+    bitwise_audit = validate_bitwise_rules(image, contract["bitwiseRules"], body, rva, opcode_ids, contract, extents)
+    literal_control_audit = validate_literal_control_rules(image, contract["literalControlRules"], body, rva, opcode_ids, contract, extents)
+    array_reference_audit = validate_array_reference_rules(image, contract["arrayReferenceRules"], contract, extents)
+    indirect_opcode_audit = validate_indirect_opcode_rules(image, contract["indirectOpcodeRules"], body, rva, opcode_ids, contract, extents)
+    arithmetic_audit = validate_arithmetic_rules(image, contract["arithmeticRules"], body, rva, opcode_ids, contract, extents)
+    positive_field_audit = validate_positive_field_rules(image, contract["positiveFieldRules"], body, rva, opcode_ids, contract, extents)
+    branch_audit = validate_branch_rules(image, contract["branchRules"], body, rva, opcode_ids, contract, extents)
+    object_opcode_audit = validate_object_opcode_rules(image, contract["objectOpcodeRules"], body, rva, opcode_ids, contract, extents)
+    call_opcode_audit = validate_call_opcode_rules(image, contract["callOpcodeRules"], body, rva, opcode_ids, contract, extents)
+    call_opcode_audit["recipeOpcodeIds"] = dict(contract["callOpcodeRules"]["opcodeIds"], **{name: opcode_ids[name] for name in ("CallExtern", "Newobj")})
+    call_opcode_audit["recipeSelections"] = {name: "conditional-shared-external-caller;parent-reflectionDispatch-selector" for name in ("CallExtern", "Newobj")}
+    init_constrained_audit = validate_init_constrained_rules(image, contract["initConstrainedRules"], body, rva, opcode_ids, contract, extents)
+    exception_dispatch_audit = validate_exception_dispatch_rules(image, contract["exceptionDispatchRules"], body, rva, opcode_ids, contract, extents)
+    string_opcode_audit = validate_string_opcode_rules(image, contract["stringOpcodeRules"], body, rva, opcode_ids, contract, extents)
+    string_opcode_audit["recipeOpcodeIds"] = {"Ldstr": contract["stringOpcodeRules"]["opcodeId"]}
+    static_initializer_audit = validate_static_initializer_rules(image, contract["staticInitializerRules"], contract, extents)
+    anonymous_loader_audit = validate_anonymous_loader_rules(image, contract["anonymousLoaderRules"], loader_body, loader_rva, contract, extents)
+    floating_remainder_audit = validate_floating_remainder_rules(image, contract["floatingRemainderRules"], contract, extents)
+    stack_construction_audit = validate_stack_construction_rules(image, contract["stackConstructionRules"], contract, extents)
+    reference_helper_audit = validate_reference_helper_rules(image, contract["referenceHelperRules"], contract, extents)
+    instance_alias_audit = validate_instance_alias_rules(contract["instanceAliasRules"], contract["instanceFieldRules"], instance_field_audit)
+    instance_byte_alias_audit = validate_instance_byte_alias_rules(contract["instanceByteAliasRules"], contract["instanceFieldRules"], instance_field_audit)
+    call_zero_audit = validate_call_zero_rules(image, contract["callZeroRules"], contract)
+    call_push_audit = validate_call_push_rules(image, contract["callPushRules"], contract, extents)
+    runtime_exception_audit = validate_runtime_exception_rules(image, contract["runtimeExceptionRules"], contract, extents)
+    exception_funclet_audit = validate_exception_funclet_rules(image, contract["exceptionFuncletRules"], contract, extents)
+    entry_frame_audit = validate_entry_frame_rules(image, contract["entryFrameRules"], body, rva, opcode_ids, contract, extents)
+    anonymous_info_constructor_audit = validate_anonymous_info_constructor_rules(image, contract["anonymousInfoConstructorRules"], contract, extents)
+    reflection_invoker_constructor_audit = validate_reflection_invoker_constructor_rules(image, contract["reflectionInvokerConstructorRules"], contract, extents)
+    reflection_invoker_audit = validate_reflection_invoker_rules(image, contract["reflectionInvokerRules"], contract, extents)
+    bridge_dispatch_audit = validate_bridge_dispatch_rules(image, contract["bridgeDispatchRules"], contract, extents)
+    call_reference_update_audit = validate_call_reference_update_rules(image, contract["callReferenceUpdateRules"], contract, extents)
+    reflection_cleanup_audit = validate_reflection_cleanup_rules(image, contract["reflectionCleanupRules"], contract, extents)
+    call_scalar_audit = validate_call_scalar_rules(image, contract["callScalarRules"], contract, extents)
+    generic_reference_get_audit = validate_generic_reference_get_rules(image, contract["genericReferenceGetRules"], contract, extents)
+    generic_scalar_get_audit = validate_generic_scalar_get_rules(image, contract["genericScalarGetRules"], contract, extents)
+    generic_adjustor_audit = validate_generic_adjustor_rules(image, contract["genericAdjustorRules"], contract, extents)
+    anonymous_virtual_audit = validate_anonymous_virtual_rules(image, contract["anonymousVirtualRules"], contract, extents)
+    vm_construction_audit = validate_vm_construction_rules(image, contract["vmConstructionRules"], contract, extents)
+    vm_table_accessor_audit = validate_vm_table_accessor_rules(image, contract["vmTableAccessorRules"], contract, extents)
+    call_opcode_audit["callZeroRulesRef"] = "audit.callZeroRules"
+    call_push_audit["typedPushRulesRef"] = "audit.objectConversionRules"
+    anonymous_storey_audit["bridgeDispatchRulesRef"] = "audit.bridgeDispatchRules"
+    anonymous_storey_audit["infoConstructorRulesRef"] = "audit.anonymousInfoConstructorRules"
+    reflection_audit["constructorRulesRef"] = "audit.reflectionInvokerConstructorRules"
+    reflection_audit["invokeRulesRef"] = "audit.reflectionInvokerRules"
+    reflection_invoker_audit["cleanupRulesRef"] = "audit.reflectionCleanupRules"
+    anonymous_storey_audit["virtualRulesRef"] = "audit.anonymousVirtualRules"
+    call_push_audit["scalarRulesRef"] = "audit.callScalarRules"
+    generic_reference_get_audit["adjustorCellsRulesRef"] = "audit.genericAdjustorRules"
+    generic_scalar_get_audit["adjustorCellsRulesRef"] = "audit.genericAdjustorRules"
+    instance_alias_audit["byteOverlapRulesRef"] = "audit.instanceByteAliasRules"
+    vm_construction_audit["tableAccessorRulesRef"] = "audit.vmTableAccessorRules"
     for kind, group in (
         ("call", call_claims), ("branch", branch_claims),
         ("table", table_claims), ("frame", frame_claims)
@@ -1498,6 +1741,68 @@ def validate_vm_operand_contract(
         "exceptionHandler": exception_audit,
         "exceptionControl": exception_control_audit,
         "newobjSelector": newobj_audit,
+        "delegateConstruction": delegate_audit,
+        "genericDelegateFactoryRules": generic_delegate_audit,
+        "genericDelegateCatalogRules": generic_catalog_audit,
+        "genericDelegateBindingRules": generic_binding_audit,
+        "slotCopyRules": slot_copy_audit,
+        "negativeFieldRules": negative_field_audit,
+        "instanceFieldRules": instance_field_audit,
+        "stackReferenceRules": stack_reference_audit,
+        "referenceUpdateRules": reference_update_audit,
+        "slotAliasRules": slot_alias_audit,
+        "chainFieldRules": chain_field_audit,
+        "newFieldRules": new_field_audit,
+        "objectConversionRules": object_conversion_audit,
+        "referenceAddressRules": reference_address_audit,
+        "dispatchRules": dispatch_audit,
+        "comparisonRules": comparison_audit,
+        "conversionOpcodeRules": conversion_opcode_audit,
+        "anonymousStoreyRules": anonymous_storey_audit,
+        "arrayRules": array_audit,
+        "bitwiseRules": bitwise_audit,
+        "literalControlRules": literal_control_audit,
+        "arrayReferenceRules": array_reference_audit,
+        "indirectOpcodeRules": indirect_opcode_audit,
+        "arithmeticRules": arithmetic_audit,
+        "positiveFieldRules": positive_field_audit,
+        "branchRules": branch_audit,
+        "objectOpcodeRules": object_opcode_audit,
+        "callOpcodeRules": call_opcode_audit,
+        "initConstrainedRules": init_constrained_audit,
+        "exceptionDispatchRules": exception_dispatch_audit,
+        "stringOpcodeRules": string_opcode_audit,
+        "staticInitializerRules": static_initializer_audit,
+        "anonymousLoaderRules": anonymous_loader_audit,
+        "floatingRemainderRules": floating_remainder_audit,
+        "stackConstructionRules": stack_construction_audit,
+        "referenceHelperRules": reference_helper_audit,
+        "instanceAliasRules": instance_alias_audit,
+        "instanceByteAliasRules": instance_byte_alias_audit,
+        "callZeroRules": call_zero_audit,
+        "callPushRules": call_push_audit,
+        "runtimeExceptionRules": runtime_exception_audit,
+        "exceptionFuncletRules": exception_funclet_audit,
+        "entryFrameRules": entry_frame_audit,
+        "anonymousInfoConstructorRules": anonymous_info_constructor_audit,
+        "reflectionInvokerConstructorRules": reflection_invoker_constructor_audit,
+        "reflectionInvokerRules": reflection_invoker_audit,
+        "bridgeDispatchRules": bridge_dispatch_audit,
+        "callReferenceUpdateRules": call_reference_update_audit,
+        "reflectionCleanupRules": reflection_cleanup_audit,
+        "callScalarRules": call_scalar_audit,
+        "genericReferenceGetRules": generic_reference_get_audit,
+        "genericScalarGetRules": generic_scalar_get_audit,
+        "genericAdjustorRules": generic_adjustor_audit,
+        "anonymousVirtualRules": anonymous_virtual_audit,
+        "vmConstructionRules": vm_construction_audit,
+        "vmTableAccessorRules": vm_table_accessor_audit,
+        "genericBridgeRules": generic_bridge_audit,
+        "wrapperDelegateDispatch": wrapper_dispatch_audit,
+        "delegateBridgeRules": delegate_bridge_audit,
+        "functionPointerRules": function_pointer_audit,
+        "virtualDispatchRules": virtual_dispatch_audit,
+        "basicOpcodeRules": basic_audit,
         "initobjTypeOperand": initobj_audit,
         "initobjStackEffect": initobj_stack_audit,
         "constrainedTypeOperand": constrained_audit,
@@ -1552,7 +1857,47 @@ def project_vm_operands(
 ) -> dict[str, Any]:
     """Join reviewed VM table rows and current-relative branch targets."""
     parsed = parse_ifix_patch(data, source=source)
-    decoded = decode_patch_opcodes(data, layout, source=source)
+    decoded = decode_patch_opcodes(data, layout, source=source, inline_data_rules=contract["literalControlRules"])
+    basic_rules = project_basic_rules(decoded, contract["basicOpcodeRules"])
+    function_pointer_operands = project_function_pointer_rules(decoded, parsed, contract["functionPointerRules"])
+    virtual_dispatch_operands = project_virtual_dispatch_rules(decoded, contract["virtualDispatchRules"])
+    slot_copy_rules = project_slot_copy_rules(decoded, contract["slotCopyRules"])
+    slot_copy_rules = project_slot_alias_rules(slot_copy_rules, contract["slotAliasRules"])
+    negative_field_operands = project_negative_field_rules(decoded, contract["negativeFieldRules"])
+    instance_field_operands = project_instance_field_rules(decoded, contract["instanceFieldRules"])
+    instance_alias_rules = project_instance_alias_rules(decoded, contract["instanceAliasRules"])
+    stack_reference_operands = project_stack_reference_rules(decoded, contract["stackReferenceRules"])
+    reference_address_operands = project_reference_address_rules(decoded, contract["referenceAddressRules"])
+    comparison_rules = project_comparison_rules(decoded, contract["comparisonRules"])
+    array_rules = project_array_rules(decoded, contract["arrayRules"])
+    bitwise_rules = project_bitwise_rules(decoded, contract["bitwiseRules"])
+    literal_control_rules = project_literal_control_rules(decoded, contract["literalControlRules"])
+    arithmetic_rules = project_arithmetic_rules(decoded, contract["arithmeticRules"])
+    branch_rules = project_branch_rules(decoded, contract["branchRules"])
+    call_opcode_rules = project_call_opcode_rules(decoded, contract["callOpcodeRules"])
+    exception_dispatch_rules = project_exception_dispatch_rules(decoded, contract["exceptionDispatchRules"])
+    string_opcode_rules = project_string_opcode_rules(decoded, contract["stringOpcodeRules"])
+    init_constrained_rules = []
+    indirect_opcode_rules = []
+    positive_field_rules = []
+    object_opcode_rules = []
+    conversion_opcode_rules = []
+    for method in decoded["methods"]:
+        for ins in method["instructions"]:
+            projected = project_conversion_opcode_rules([{
+                "opcode": ins["name"], "opcodeId": ins["opcode"],
+                "operand": ins["operandUnsigned"], "operandSigned": ins["operandSigned"],
+            }], contract["conversionOpcodeRules"])
+            conversion_opcode_rules.extend(dict(row, vmMethodIndex=method["index"], instructionIndex=ins["index"], offset=ins["offset"]) for row in projected)
+            projected_indirect = project_indirect_opcode_rules([{
+                "opcode": ins["name"], "opcodeId": ins["opcode"],
+                "operand": ins["operandUnsigned"], "operandSigned": ins["operandSigned"],
+            }], contract["indirectOpcodeRules"])
+            indirect_opcode_rules.extend(dict(row, vmMethodIndex=method["index"], instructionIndex=ins["index"], offset=ins["offset"]) for row in projected_indirect)
+            authored_instruction = [{"opcode": ins["name"], "opcodeId": ins["opcode"], "operand": ins["operandUnsigned"], "operandSigned": ins["operandSigned"]}]
+            positive_field_rules.extend(dict(row, vmMethodIndex=method["index"], instructionIndex=ins["index"], offset=ins["offset"]) for row in project_positive_field_rules(authored_instruction, contract["positiveFieldRules"]))
+            object_opcode_rules.extend(dict(row, vmMethodIndex=method["index"], instructionIndex=ins["index"], offset=ins["offset"]) for row in project_object_opcode_rules(authored_instruction, contract["objectOpcodeRules"]))
+            init_constrained_rules.extend(dict(row, vmMethodIndex=method["index"], instructionIndex=ins["index"], offset=ins["offset"]) for row in project_init_constrained_rules(authored_instruction, contract["initConstrainedRules"]))
     exception_handlers = _project_exception_handlers(data, parsed, contract)
     call_claims = {row["opcode"]: row for row in contract["callClaims"]}
     branch_claims = {row["opcode"]: row for row in contract["branchClaims"]}
@@ -1578,6 +1923,30 @@ def project_vm_operands(
     leaves = []
     endfinallys = []
     type_operands = []
+    covered_names = (set(call_claims) | set(branch_claims) | set(table_claims) | set(frame_claims)
+                     | set(type_claims) | {header_claim["opcode"], return_claim["opcode"],
+                                          exception_control["leave"]["opcode"], exception_control["endfinally"]["opcode"]}
+                     | {row["opcode"] for row in contract["basicOpcodeRules"]["rules"]}
+                     | {row["opcode"] for row in contract["functionPointerRules"]["rules"]}
+                     | {row["opcode"] for row in contract["slotCopyRules"]["rules"]}
+                     | {row["opcode"] for row in contract["instanceFieldRules"]["rules"]}
+                     | {row["opcode"] for row in contract["referenceAddressRules"]["rules"]}
+                     | {row["opcode"] for row in contract["comparisonRules"]["rules"]}
+                     | set(contract["conversionOpcodeRules"]["rules"])
+                     | set(contract["dispatchRules"]["defaultOpcodes"]) | {"Newanon", "InlineData"}
+                     | {row["opcode"] for row in contract["arrayRules"]["rules"]}
+                     | {row["opcode"] for row in contract["bitwiseRules"]["rules"]}
+                     | {row["opcode"] for row in contract["literalControlRules"]["rules"]}
+                     | set(contract["indirectOpcodeRules"]["rules"])
+                     | {row["opcode"] for row in contract["arithmeticRules"]["rules"]}
+                     | set(contract["positiveFieldRules"]["rules"])
+                     | {row["opcode"] for row in contract["branchRules"]["rules"]}
+                     | set(contract["objectOpcodeRules"]["rules"])
+                     | set(contract["callOpcodeRules"]["opcodeIds"])
+                     | {row["opcode"] for row in contract["exceptionDispatchRules"]["rules"]}
+                     | {contract["stringOpcodeRules"]["opcode"]}
+                     | set(contract["initConstrainedRules"]["rules"]))
+    unprojected_counts: dict[str, int] = {}
     for method in decoded["methods"]:
         method_size = len(method["instructions"])
         method_code_offset = parsed["methods"]["records"][method["index"]]["codeOffset"]
@@ -1602,6 +1971,9 @@ def project_vm_operands(
             "executionBoundary": "unobserved",
         })
         for instruction in method["instructions"]:
+            if instruction["name"] not in covered_names:
+                name = instruction["name"]
+                unprojected_counts[name] = unprojected_counts.get(name, 0) + 1
             frame_claim = frame_claims.get(instruction["name"])
             if frame_claim is not None:
                 slot_index = instruction["operandSigned"]
@@ -1913,6 +2285,15 @@ def project_vm_operands(
                     "resolved-declaring-type-base-is-not-System.MulticastDelegate"
                     if claim.get("upper16Meaning") == "conditionalExternStackRewind" else None
                 ),
+                "conditionalDelegateConstruction": (
+                    {"selectedWhen": contract["delegateConstruction"]["selection"],
+                     "inputSlots": contract["delegateConstruction"]["inputSlots"],
+                     "outputSlots": contract["delegateConstruction"]["outputSlots"],
+                     "upper16OperandRole": "unused-by-selected-delegate-path",
+                     "resultTag": contract["delegateConstruction"]["resultTag"],
+                     "evidenceBoundary": "conditional", "executionBoundary": "unobserved"}
+                    if instruction["name"] == "Newobj" else None
+                ),
                 "fileTable": file_table,
                 "fileTableCount": file_count,
                 "fileTableJoin": "direct" if in_range else "out-of-range",
@@ -1970,6 +2351,56 @@ def project_vm_operands(
         "leaves": leaves,
         "endfinallys": endfinallys,
         "typeOperands": type_operands,
+        "basicOpcodeRules": basic_rules,
+        "basicOpcodeRuleCount": len(basic_rules),
+        "functionPointerOperands": function_pointer_operands,
+        "functionPointerOperandCount": len(function_pointer_operands),
+        "virtualDispatchOperands": virtual_dispatch_operands,
+        "virtualDispatchOperandCount": len(virtual_dispatch_operands),
+        "slotCopyRules": slot_copy_rules,
+        "slotCopyRuleCount": len(slot_copy_rules),
+        "negativeFieldOperands": negative_field_operands,
+        "negativeFieldOperandCount": len(negative_field_operands),
+        "instanceFieldOperands": instance_field_operands,
+        "instanceFieldOperandCount": len(instance_field_operands),
+        "instanceAliasRules": instance_alias_rules,
+        "instanceAliasRuleCount": len(instance_alias_rules),
+        "stackReferenceOperands": stack_reference_operands,
+        "stackReferenceOperandCount": len(stack_reference_operands),
+        "referenceAddressOperands": reference_address_operands,
+        "referenceAddressOperandCount": len(reference_address_operands),
+        "comparisonRules": comparison_rules,
+        "comparisonRuleCount": len(comparison_rules),
+        "conversionOpcodeRules": conversion_opcode_rules,
+        "conversionOpcodeRuleCount": len(conversion_opcode_rules),
+        "arrayRules": array_rules,
+        "arrayRuleCount": len(array_rules),
+        "bitwiseRules": bitwise_rules,
+        "bitwiseRuleCount": len(bitwise_rules),
+        "literalControlRules": literal_control_rules,
+        "literalControlRuleCount": len(literal_control_rules),
+        "indirectOpcodeRules": indirect_opcode_rules,
+        "indirectOpcodeRuleCount": len(indirect_opcode_rules),
+        "arithmeticRules": arithmetic_rules,
+        "arithmeticRuleCount": len(arithmetic_rules),
+        "positiveFieldRules": positive_field_rules,
+        "positiveFieldRuleCount": len(positive_field_rules),
+        "branchRules": branch_rules,
+        "branchRuleCount": len(branch_rules),
+        "objectOpcodeRules": object_opcode_rules,
+        "objectOpcodeRuleCount": len(object_opcode_rules),
+        "callOpcodeRules": call_opcode_rules,
+        "callOpcodeRuleCount": len(call_opcode_rules),
+        "exceptionDispatchRules": exception_dispatch_rules,
+        "exceptionDispatchRuleCount": len(exception_dispatch_rules),
+        "stringOpcodeRules": string_opcode_rules,
+        "stringOpcodeRuleCount": len(string_opcode_rules),
+        "initConstrainedRules": init_constrained_rules,
+        "initConstrainedRuleCount": len(init_constrained_rules),
+        "inlineDataRecordCount": decoded["inlineDataRecordCount"],
+        "instructionCount": sum(len(row["instructions"]) for row in decoded["methods"]),
+        "unprojectedOpcodeCounts": dict(sorted(unprojected_counts.items())),
+        "projectionBoundary": "Selected operand joins and conditional basic effects; an empty unprojected opcode inventory does not prove complete stack semantics, runtime validity, or execution.",
     }
 
 
@@ -2008,13 +2439,15 @@ def main(argv: list[str] | None = None) -> int:
             project_vm_operands(path.read_bytes(), layout, contract, source=str(path))
             for path in args.input
         ]
+        rule_inventory = build_rule_inventory(contract, layout, audit)
     except (VMOperandEvidenceError, OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         print(f"ifix-vm-operands: {error}", file=sys.stderr)
         return 1
     report = {
-        "schema": "endfield-ifix-vm-operand-audit-v16",
+        "schema": "endfield-ifix-vm-operand-audit-v33",
         "status": "validated_selected_native_loader_and_consumer",
         "audit": audit,
+        "ruleInventory": rule_inventory,
         "currentVfsJoin": current_vfs_join,
         "files": files,
         "fileCount": len(files),
@@ -2032,6 +2465,32 @@ def main(argv: list[str] | None = None) -> int:
         "leaveCount": sum(row["leaveCount"] for row in files),
         "endfinallyCount": sum(row["endfinallyCount"] for row in files),
         "typeOperandCount": sum(row["typeOperandCount"] for row in files),
+        "basicOpcodeRuleCount": sum(row["basicOpcodeRuleCount"] for row in files),
+        "functionPointerOperandCount": sum(row["functionPointerOperandCount"] for row in files),
+        "virtualDispatchOperandCount": sum(row["virtualDispatchOperandCount"] for row in files),
+        "slotCopyRuleCount": sum(row["slotCopyRuleCount"] for row in files),
+        "negativeFieldOperandCount": sum(row["negativeFieldOperandCount"] for row in files),
+        "instanceFieldOperandCount": sum(row["instanceFieldOperandCount"] for row in files),
+        "instanceAliasRuleCount": sum(row["instanceAliasRuleCount"] for row in files),
+        "stackReferenceOperandCount": sum(row["stackReferenceOperandCount"] for row in files),
+        "referenceAddressOperandCount": sum(row["referenceAddressOperandCount"] for row in files),
+        "comparisonRuleCount": sum(row["comparisonRuleCount"] for row in files),
+        "conversionOpcodeRuleCount": sum(row["conversionOpcodeRuleCount"] for row in files),
+        "arrayRuleCount": sum(row["arrayRuleCount"] for row in files),
+        "bitwiseRuleCount": sum(row["bitwiseRuleCount"] for row in files),
+        "literalControlRuleCount": sum(row["literalControlRuleCount"] for row in files),
+        "indirectOpcodeRuleCount": sum(row["indirectOpcodeRuleCount"] for row in files),
+        "arithmeticRuleCount": sum(row["arithmeticRuleCount"] for row in files),
+        "positiveFieldRuleCount": sum(row["positiveFieldRuleCount"] for row in files),
+        "branchRuleCount": sum(row["branchRuleCount"] for row in files),
+        "objectOpcodeRuleCount": sum(row["objectOpcodeRuleCount"] for row in files),
+        "callOpcodeRuleCount": sum(row["callOpcodeRuleCount"] for row in files),
+        "exceptionDispatchRuleCount": sum(row["exceptionDispatchRuleCount"] for row in files),
+        "stringOpcodeRuleCount": sum(row["stringOpcodeRuleCount"] for row in files),
+        "initConstrainedRuleCount": sum(row["initConstrainedRuleCount"] for row in files),
+        "inlineDataRecordCount": sum(row["inlineDataRecordCount"] for row in files),
+        "instructionCount": sum(row["instructionCount"] for row in files),
+        "projectionBoundary": "Retained patch-byte projections under selected native rules; no runtime receipt or complete-VM claim.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -2044,7 +2503,24 @@ def main(argv: list[str] | None = None) -> int:
         f"{report['frameSlotCount']} frame-slot operands"
         f", {report['exceptionHandlerCount']} exception handlers, "
         f"{report['leaveCount']} leaves, {report['endfinallyCount']} endfinallys, "
-        f"{report['typeOperandCount']} type operands"
+        f"{report['typeOperandCount']} type operands, "
+        f"{report['basicOpcodeRuleCount']} basic opcode rules, "
+        f"{report['functionPointerOperandCount']} method-value operands, "
+        f"{report['virtualDispatchOperandCount']} conditional override operands; "
+        f"{report['slotCopyRuleCount']} conditional slot copies, "
+        f"{report['negativeFieldOperandCount']} negative static-field operands; "
+        f"{report['instanceFieldOperandCount']} negative instance-field operands, "
+        f"{report['stackReferenceOperandCount']} reference producer/consumer projections, "
+        f"{report['referenceAddressOperandCount']} reference-address projections; "
+        f"{report['comparisonRuleCount']} comparisons; {report['conversionOpcodeRuleCount']} other conversions; "
+        f"{report['arrayRuleCount']} arrays; {report['bitwiseRuleCount']} bitwise/unary; "
+        f"{report['literalControlRuleCount']} literal/control rules, {report['inlineDataRecordCount']} inline payload records; "
+        f"{report['indirectOpcodeRuleCount']} indirect, {report['arithmeticRuleCount']} arithmetic, "
+        f"{report['positiveFieldRuleCount']} positive fields, {report['objectOpcodeRuleCount']} object/type, "
+        f"{report['branchRuleCount']} branch recipes; "
+        f"{report['callOpcodeRuleCount']} call/return, {report['exceptionDispatchRuleCount']} exception, "
+        f"{report['stringOpcodeRuleCount']} string, {report['initConstrainedRuleCount']} init/constrained recipes; "
+        f"unprojected opcodes={[row['unprojectedOpcodeCounts'] for row in files]}"
     )
     return 0
 

@@ -1,0 +1,230 @@
+{
+  "schema": "endfield.dynamic-quest-state-value-source-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_state_cache_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-cache-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_stored_state_native_claims.json",
+      "schema": "endfield.dynamic-mission-stored-state-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_state_symbols_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-symbols-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_quest_state_message_writes_native_claims.json",
+      "schema": "endfield.dynamic-quest-state-message-writes-native-claims.v1",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "parentId": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "GetMissionIdByQuestId",
+      "callAbi": "instance",
+      "returnType": "String",
+      "parameters": [
+        "String"
+      ]
+    }
+  },
+  "programs": [
+    [
+      "mov [rsp+0x10], rbx",
+      "push rdi",
+      "sub rsp, 0x30",
+      "mov rdi, rdx",
+      "mov rbx, rcx",
+      "xor edx, edx",
+      "mov ecx, 0x2284",
+      "call *",
+      "xor edx, edx",
+      "test al, al",
+      "jcc *"
+    ],
+    [
+      "mov [rsp+0x40], rsi",
+      "xor esi, esi",
+      "mov ecx, 0x2285",
+      "mov [rsp+0x58], rsi",
+      "call *",
+      "test al, al",
+      "jcc *",
+      "mov rcx, [rbx+0xe0]",
+      "test rcx, rcx",
+      "jcc *",
+      "mov r9, [rip+*",
+      "lea r8, [rsp+0x58]",
+      "mov rdx, rdi",
+      "call *",
+      "test al, al",
+      "je *",
+      "mov rax, [rsp+0x58]",
+      "test rax, rax",
+      "jcc *",
+      "xor r8d, r8d",
+      "mov rdx, rdi",
+      "mov rcx, rbx",
+      "call *",
+      "mov rdi, rax",
+      "test rax, rax",
+      "jcc *",
+      "cmp [rax+0x10], esi",
+      "jcc *",
+      "mov rcx, [rip+*",
+      "mov [rsp+0x58], rsi",
+      "cmp [rcx+0xe0], esi",
+      "jcc *",
+      "mov rax, [rcx+0xb8]",
+      "mov rdx, [rax]",
+      "test rdx, rdx",
+      "jcc *",
+      "cmp [rdx+0x18], 0x2282",
+      "jcc *",
+      "mov rcx, [rbx+0xd8]",
+      "test rcx, rcx",
+      "jcc *",
+      "mov r9, [rip+*",
+      "lea r8, [rsp+0x58]",
+      "mov rdx, rdi",
+      "call *",
+      "test al, al",
+      "je *",
+      "mov rcx, [rsp+0x58]",
+      "test rcx, rcx",
+      "je *",
+      "mov eax, 0x3",
+      "cmp [rcx+0x18], eax",
+      "cmovne eax, esi",
+      "mov rsi, [rsp+0x40]"
+    ],
+    [
+      "mov rbx, [rsp+0x48]",
+      "add rsp, 0x30",
+      "pop rdi",
+      "ret"
+    ],
+    [
+      "mov rsi, [rsp+0x40]",
+      "xor eax, eax",
+      "mov rbx, [rsp+0x48]",
+      "add rsp, 0x30",
+      "pop rdi",
+      "ret"
+    ],
+    [
+      "mov eax, [rax+0x18]",
+      "mov rsi, [rsp+0x40]",
+      "mov rbx, [rsp+0x48]",
+      "add rsp, 0x30",
+      "pop rdi",
+      "ret"
+    ],
+    [
+      "call *",
+      "mov rcx, [rip+*",
+      "jmp *",
+      "cmp [rcx+0x11430], rsi",
+      "jcc *",
+      "jmp *",
+      "call *",
+      "int3",
+      "call *",
+      "int3"
+    ],
+    [
+      "xor edx, edx",
+      "mov ecx, 0x2285",
+      "call *",
+      "test rax, rax",
+      "jcc *",
+      "xor r9d, r9d",
+      "mov [rsp+0x20], rsi",
+      "mov r8, rdi",
+      "mov rdx, rbx",
+      "mov rcx, rax",
+      "call *",
+      "nop",
+      "jmp *",
+      "cmp [rcx+0xe0], esi",
+      "jne *",
+      "call *",
+      "mov rcx, [rip+*",
+      "mov rax, [rcx+0xb8]",
+      "mov rcx, [rax]",
+      "test rcx, rcx",
+      "jcc *",
+      "cmp [rcx+0x18], 0x2282",
+      "jcc *",
+      "call *",
+      "int3",
+      "xor edx, edx",
+      "mov ecx, 0x2282",
+      "call *",
+      "test rax, rax",
+      "jcc *",
+      "xor r9d, r9d",
+      "mov [rsp+0x20], rsi",
+      "mov r8, rdi",
+      "mov rdx, rbx",
+      "mov rcx, rax",
+      "call *",
+      "mov rcx, rax",
+      "jmp *"
+    ],
+    [
+      "mov ecx, 0x2284",
+      "call *",
+      "test rax, rax",
+      "jne *",
+      "call *",
+      "int3",
+      "xor r9d, r9d",
+      "mov r8, rdi",
+      "mov rdx, rbx",
+      "mov rcx, rax",
+      "call *",
+      "nop",
+      "jmp *"
+    ]
+  ],
+  "evidenceBoundary": {
+    "direct": "Selected GetQuestState normal paths read compatible QuestData state field, or map original String through actual parent-id method and conditionally return fixed QuestState bits based on compatible MissionData state field.",
+    "conditional": [
+      "Both actual selected IFix results false; nonnull storage references and normal returning opaque Win64 callees preserve watched registers/frame.",
+      "Anonymous call AL outcomes and their caller-local reference values are selected explicitly; a nonnull value must independently be compatible QuestData for the first call or MissionData for the parent call.",
+      "Parent String and selected cached/class lanes satisfy their stated raw branch conditions.",
+      "Fallback parent-data comparison additionally selects a returned String with nonnull pointer and its actual length lane, interpreted as UInt32, greater than zero; parent class initialization lane is nonzero, cached pointer is nonnull and signed cache lane does not exceed the recorded comparison literal. Missing/zero-lane paths retain their separate zero-return cases."
+    ],
+    "structuralOnly": "String-sharing dictionary API identity and mutation remain unproved; slot compatibility is a condition, not a named provider result.",
+    "exact": "Qualified ordinary getter/parent-id ABI, complete declared-range partitions, field/enum backing identity, controlled constant/zero output relation and all aliases.",
+    "unresolved": [
+      "Live state/transition/order/source association, same-record/key/storage stability and actual dictionary implementation.",
+      "Patch/cache alternatives and all managed program behavior outside selected normal paths."
+    ]
+  },
+  "recordFieldRole": "recordState",
+  "recordDefinitionRole": "constructor",
+  "storageFields": {
+    "direct": {
+      "name": "currentQuests",
+      "offset": 224
+    },
+    "fallback": {
+      "name": "missions",
+      "offset": 216
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "schema": "endfield.wwise-mastering-gain-native-contract.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "classId": "0x00ba0003",
+  "evidenceBoundary": "conditional",
+  "meaningBoundary": "Selected version-four section-two route with successful conversion, initialized state, valid channel mapping and padded sample storage. Public names, live activation, complete buffer admission and other section mathematics remain unresolved.",
+  "sectionIndex": 2,
+  "sectionHeader": "0x01030002",
+  "sectionByteLength": 64,
+  "methods": {
+    "convert": {
+      "rva": "0x2512d0",
+      "bodyLength": 668,
+      "bodySha256": "f7ae405c77fc671a0049986d3eb70e897f757ced285d830adde9870c57c82c49"
+    },
+    "clamp": {
+      "rva": "0x2520e0",
+      "bodyLength": 23,
+      "bodySha256": "1dc0c74e35de48c2bc45f154daf8aad54dccc160db545e7f0d1dc012bae5c2c4"
+    },
+    "init": {
+      "rva": "0x251570",
+      "bodyLength": 112,
+      "bodySha256": "42c393e12ab06342752ab19484a64ebe8adb525449a61532e0b46a6faad19a33"
+    },
+    "apply": {
+      "rva": "0x251640",
+      "bodyLength": 375,
+      "bodySha256": "d1964a979a4e41984f0fd953150ecbf04da65ed23287cc583890a86ab06998c2"
+    },
+    "process": {
+      "rva": "0x2515e0",
+      "bodyLength": 95,
+      "bodySha256": "c8728827b03277cba747742d69113c69ac70e547dab114528bcd4984fd9bc022"
+    },
+    "kernel": {
+      "rva": "0x253b90",
+      "bodyLength": 243,
+      "bodySha256": "88d25b973cef217da344c3bf89c4739075f827e2fe0cbd457db185d7d9d849a7"
+    }
+  },
+  "constants": {
+    "lower": {
+      "rva": "0x2da134",
+      "wordHex": "0000c8c2"
+    },
+    "upper": {
+      "rva": "0x2b9e38",
+      "wordHex": "00004041"
+    },
+    "scale": {
+      "rva": "0x28fc0c",
+      "wordHex": "cdcc4c3d"
+    },
+    "base": {
+      "rva": "0x2922e4",
+      "wordHex": "00002041"
+    }
+  },
+  "conversion": {
+    "version": 4,
+    "valueCount": 12,
+    "valuesOffset": 8,
+    "reservedOffsets": [
+      56,
+      60
+    ],
+    "specialMode": 1,
+    "specialModeEqualOffsets": [
+      8,
+      12
+    ],
+    "clampNaN": "lowerBound",
+    "layoutBoundary": "Header/size equality, matching output revision and zero reserved words are checked before this route; mode-one equality is an unordered-tolerant UCOMISS/JNE test."
+  },
+  "state": {
+    "channelCountOffset": 0,
+    "frameStrideOffset": 4,
+    "mappingOffset": 12,
+    "gainOffset": 72,
+    "flagsOffset": 68,
+    "initializedMask": 1,
+    "firstProcessMask": 2,
+    "descriptorMappingOffset": 24,
+    "descriptorChannelCountOffset": 8,
+    "descriptorStrideOffset": 16
+  },
+  "processing": {
+    "frameCountRange": [
+      1,
+      256
+    ],
+    "channelGroupWidth": 4,
+    "frameGroupWidth": 4,
+    "formula": "output[frame*stride+channel] = float32(input[frame*stride+channel] * gain[channel])",
+    "gainFormula": "partial powf correspondence: helper(10.0f, float32(clampedValue[mapping[channel]] * 0.05f))",
+    "paddingBoundary": "Loops round positive channel and frame counts upward to multiples of four. Caller storage, padded gains, stride and mapping admission are conditions, not proved bounds."
+  },
+  "descriptorAdmission": {
+    "consumerMethod": "engineInit",
+    "sectionDescriptorMethod": "engineInitialize",
+    "evidenceBoundary": "direct",
+    "blockCountRange": [
+      64,
+      256
+    ],
+    "blockCountQuantum": 64,
+    "fixedFrequency": 48000,
+    "maximumChannels": 12,
+    "strideQuantum": 4,
+    "maskMapping": [
+      {
+        "maskBit": 0,
+        "valueIndex": 0,
+        "caseBodyOffset": 361
+      },
+      {
+        "maskBit": 1,
+        "valueIndex": 1,
+        "caseBodyOffset": 354
+      },
+      {
+        "maskBit": 2,
+        "valueIndex": 2,
+        "caseBodyOffset": 347
+      },
+      {
+        "maskBit": 4,
+        "valueIndex": 6,
+        "caseBodyOffset": 340
+      },
+      {
+        "maskBit": 5,
+        "valueIndex": 7,
+        "caseBodyOffset": 333
+      },
+      {
+        "maskBit": 9,
+        "valueIndex": 4,
+        "caseBodyOffset": 365
+      },
+      {
+        "maskBit": 10,
+        "valueIndex": 5,
+        "caseBodyOffset": 435
+      },
+      {
+        "maskBit": 12,
+        "valueIndex": 8,
+        "caseBodyOffset": 428
+      },
+      {
+        "maskBit": 14,
+        "valueIndex": 9,
+        "caseBodyOffset": 421
+      },
+      {
+        "maskBit": 15,
+        "valueIndex": 10,
+        "caseBodyOffset": 414
+      },
+      {
+        "maskBit": 17,
+        "valueIndex": 11,
+        "caseBodyOffset": 407
+      },
+      {
+        "maskBit": 3,
+        "valueIndex": 3,
+        "caseBodyOffset": 465
+      }
+    ],
+    "traversal": "ascending mask-bit order with bit three appended last",
+    "boundsBoundary": "Checked logical channel count is one through twelve; stride is at least this count and a multiple of four. This proves the rounded channel width fits stride. Frame padding and caller allocation remain separate conditions."
+  },
+  "smallFill": {
+    "purpose": "unusedChannelGains",
+    "maximumBytes": 48,
+    "evidenceBoundary": "conditional"
+  }
+}

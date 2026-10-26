@@ -54,36 +54,36 @@
   }
  ],
  "nativeInputs": {
-  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+  "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
  },
  "methods": [
   {
    "id": "level_script_runtime_init",
    "declaringType": "Beyond.Gameplay.Core.LevelScriptRuntime",
    "name": "Init",
-   "va": "0x1836066d0",
-   "fileOffset": 56643792,
-   "bodySize": 304,
-   "bodySha256": "BBC00D33179F2A1DCEFF7893C9C555E17E8353B3EA1ABB724A2A0563DC7EAB02"
+   "va": "0x185b4f090",
+   "fileOffset": 95738000,
+   "bodySize": 272,
+   "bodySha256": "8B6D4802723D49C1CCDC7814CB1F0916AD1DD8061EFF35791A52AE8F0DE5ED68"
   },
   {
    "id": "level_script_runtime_setup",
    "declaringType": "Beyond.Gameplay.Core.LevelScriptRuntime",
    "name": "Setup",
-   "va": "0x1838bcb30",
-   "fileOffset": 59487536,
-   "bodySize": 15472,
-   "bodySha256": "C69DA55CDD013AF44E98788BD3DB0A447ED95A83B3518BA1AC9A35B13C98FAF4"
+   "va": "0x185ca4900",
+   "fileOffset": 97136896,
+   "bodySize": 12128,
+   "bodySha256": "D1A0E0E4FCDE07271A9C3A2BB0F004C7EACEA3DF1397F7D0671A07D115BD967F"
   },
   {
    "id": "reset_action_graph_param_blackboard",
    "declaringType": "Beyond.Gameplay.Core.LevelScriptRuntime",
    "name": "ResetActionGraphParamBlackboard",
-   "va": "0x184153e10",
-   "fileOffset": 68495376,
+   "va": "0x1855eeca0",
+   "fileOffset": 90100896,
    "bodySize": 208,
-   "bodySha256": "09911C4687B96F8ED75764C07EF1E7E1A2C0EE2EA42EED0B199FD5B4A05B4ADF"
+   "bodySha256": "709937E49001BC9487ECFCDE3BCCA9FB00FF9C98FFE60B6AA63B11FF6335037F"
   }
  ]
 }

@@ -1,0 +1,157 @@
+{
+  "schema": "endfield.dynamic-quest-parent-string-source-native-claims.v1",
+  "status": "reviewed",
+  "methods": {
+    "indexOf": {
+      "type": "System.String",
+      "method": "IndexOf",
+      "callAbi": "instance",
+      "returnType": "Int32",
+      "parameters": [
+        "String",
+        "Int32",
+        "Int32",
+        "System.StringComparison"
+      ],
+      "image": "mscorlib.dll"
+    },
+    "substring": {
+      "type": "System.String",
+      "method": "Substring",
+      "callAbi": "instance",
+      "returnType": "String",
+      "parameters": [
+        "Int32",
+        "Int32"
+      ],
+      "image": "mscorlib.dll"
+    }
+  },
+  "cacheField": {
+    "name": "m_idMap",
+    "offset": 112,
+    "representation": "Dictionary<String,String> only"
+  },
+  "programs": [
+    [
+      "mov [rsp+0x8], rbx",
+      "mov [rsp+0x10], rsi",
+      "push rdi",
+      "sub rsp, 0x30",
+      "mov rdi, rdx",
+      "mov rbx, rcx",
+      "xor esi, esi",
+      "xor edx, edx",
+      "mov ecx, 0x1ae0",
+      "mov [rsp+0x58], rsi",
+      "call *",
+      "test al, al",
+      "jcc *",
+      "mov rcx, [rbx+0x70]",
+      "test rcx, rcx",
+      "jcc *",
+      "mov r9, [rip+*",
+      "lea r8, [rsp+0x58]",
+      "mov rdx, rdi",
+      "call *",
+      "test al, al",
+      "je *",
+      "mov rax, [rsp+0x58]",
+      "mov rbx, [rsp+0x40]",
+      "mov rsi, [rsp+0x48]",
+      "add rsp, 0x30",
+      "pop rdi",
+      "ret",
+      "test rdi, rdi",
+      "je *",
+      "mov r9d, [rdi+0x10]",
+      "xor r8d, r8d",
+      "mov rdx, [rip+*",
+      "mov rcx, rdi",
+      "mov [rsp+0x28], rsi",
+      "mov [rsp+0x20], 0x4",
+      "call *",
+      "test eax, eax",
+      "js *",
+      "xor r9d, r9d",
+      "mov r8d, eax",
+      "xor edx, edx",
+      "mov rcx, rdi",
+      "call *",
+      "mov rcx, [rbx+0x70]",
+      "mov [rsp+0x58], rax",
+      "test rcx, rcx",
+      "je *",
+      "mov r9, [rip+*",
+      "mov r8, rax",
+      "mov rdx, rdi",
+      "call *",
+      "jmp *",
+      "mov rax, [rip+*",
+      "mov rbx, [rsp+0x40]",
+      "mov rsi, [rsp+0x48]",
+      "add rsp, 0x30",
+      "pop rdi",
+      "ret",
+      "call *",
+      "int3"
+    ],
+    [
+      "xor edx, edx",
+      "mov ecx, 0x1ae0",
+      "call *",
+      "test rax, rax",
+      "jcc *",
+      "xor r9d, r9d",
+      "mov r8, rdi",
+      "mov rdx, rbx",
+      "mov rcx, rax",
+      "call *",
+      "nop",
+      "jmp *"
+    ]
+  ],
+  "dependencies": [
+    {
+      "path": "dynamic_quest_state_value_source_native_claims.json",
+      "schema": "endfield.dynamic-quest-state-value-source-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "evidenceBoundary": {
+    "conditional": [
+      "patch false",
+      "valid nonnull cache field",
+      "compatible returnedString first-request-AL-nonzero/global values",
+      "normal callee disjoint local frame",
+      "actual IndexOf signed result admitted branches",
+      "normal Substring compatible String return",
+      "normal opaque setter preserves local saved result",
+      "first request AL nonzero supplies an independently compatible String-or-null local value",
+      "first request AL zero and negative result branch global slot supplies independently compatible String-or-null pointer",
+      "first opaque out-address call does not retain a subsequently interfering frame alias",
+      "normal opaque setter does not modify the saved local String pointer",
+      "System.String.Substring normal return is independently compatible String-or-null"
+    ],
+    "unresolved": [
+      "delimiter contents",
+      "IndexOf implementation and ordinary comparison semantics",
+      "Substring internal range rules",
+      "cache lookup/setter API",
+      "cache storage stability",
+      "task hierarchy",
+      "live state"
+    ],
+    "direct": [
+      "actual nonnegative IndexOf returned Int32 bits become actual Substring second Int32 argument; first Int32 argument zero",
+      "actual Substring returned pointer mechanically stored in fixed local before opaque request and restored into RAX at balanced return",
+      "on first-request-AL-nonzero normal branch the same out local pointer is returned without subsequent calls",
+      "signed-negative IndexOf branch returns an anonymous global pointer without admitting its literal identity"
+    ]
+  }
+}

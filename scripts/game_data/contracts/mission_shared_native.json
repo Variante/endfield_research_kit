@@ -186,9 +186,53 @@
               "writesField": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted"
             },
             {
-              "calls": ["System.Collections.Generic.Dictionary`2.Clear", "Google.Protobuf.Collections.MapField`2.GetEnumerator", "System.Collections.Generic.Dictionary`2.Add"]
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.Clear",
+                "Google.Protobuf.Collections.MapField`2.GetEnumerator",
+                "System.Collections.Generic.Dictionary`2.Add"
+              ]
+            },
+            {
+              "passesPackedStringIntPair": {
+                "call": "System.Collections.Generic.Dictionary`2.Add",
+                "classArguments": [
+                  "string",
+                  "int"
+                ]
+              }
+            },
+            {
+              "passesInterfaceCurrentStringIntPairFastPath": {
+                "call": "System.Collections.Generic.Dictionary`2.Add",
+                "classArguments": [
+                  "string",
+                  "int"
+                ]
+              }
+            },
+            {
+              "callsInterfacePairCurrentFastPaths": {
+                "classArguments": [
+                  [
+                    "string",
+                    "int"
+                  ],
+                  [
+                    "string",
+                    "Proto.QUEST_OBJECTIVE_DETAIL"
+                  ],
+                  [
+                    "ulong",
+                    "bool"
+                  ]
+                ]
+              }
+            },
+            {
+              "copiesObjectiveMapsOnDefaultPath": {}
             }
-          ]
+          ],
+          "contract": "The complete normal Copy caller program preserves incoming source/destination aliases through checked usage initialization, clears the values dictionary and loops over the incoming values map, copies the root completion flag, clears extraDetails and allocates a fresh ConditionDetail per incoming detail. Its nested hash loop fills that detail before the outer Add. Every current-helper program, MoveNext interface search/invocation, argument lane, loop backedge and normal cleanup exit is checked with selected field types/offsets and exact passed MethodSpecs. The nested hash transfer preserves low 64-bit return-window arguments from an unsigned source context into Dictionary<long,bool>.Add with no caller arithmetic/range check. The proof is conditional on unpatched dispatch, normal usage/class resolution, valid objects/interface tables/current returns, successful collection/allocation/cleanup calls, Win64 ABI and no external alias mutation. It does not prove closed pair field layout, enumerator/collection/helper bodies, exceptional/fallback behavior, live map values or quest ownership. Copying completion/count data is separate from quest-state handoff."
         },
         "conditionResultParentPropagation": {
           "type": "Beyond.Gameplay.GameCondition",
@@ -230,19 +274,44 @@
           "type": "Beyond.Gameplay.GameCondition",
           "method": "GetResultByProgress",
           "claims": [
-            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_compareOperator"},
-            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progress"},
-            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressToCompare"},
-            {"calls": ["Beyond.TableUtils.DoCompare"]}
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_compareOperator"
+            },
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progress"
+            },
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressToCompare"
+            },
+            {
+              "calls": [
+                "Beyond.TableUtils.DoCompare"
+              ]
+            },
+            {
+              "comparesConditionProgressOnDefaultPath": {}
+            }
           ],
-          "contract": "The default comparison reads the selected receiver's virtual comparison operator, current progress and target, then calls DoCompare. It is separate from cached m_result and does not prove live values or a server completion rule."
+          "contract": "The default comparison reads the selected receiver's virtual comparison operator, current progress and target, then calls DoCompare. It is separate from cached m_result and does not prove live values or a server completion rule. A complete normal base caller program checks the false patch guard and passes virtual comparator/progress/target returns to the typed Int32 comparison, without reading the cached result or querying a quest/mission ID. Overrides and progress provenance remain separate."
         },
         "storedObjectiveValue": {
           "type": "Beyond.Gameplay.MissionSystem+ObjectiveData",
           "method": "GetValue",
           "claims": [
-            {"passesFieldToCall": {"field": "Beyond.Gameplay.MissionSystem+ObjectiveData::conditionId", "call": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault", "register": "rdx"}},
-            {"passesFieldToCall": {"field": "Beyond.Gameplay.MissionSystem+ObjectiveData::values", "call": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault", "register": "rcx"}}
+            {
+              "passesFieldToCall": {
+                "field": "Beyond.Gameplay.MissionSystem+ObjectiveData::conditionId",
+                "call": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault",
+                "register": "rdx"
+              }
+            },
+            {
+              "passesFieldToCall": {
+                "field": "Beyond.Gameplay.MissionSystem+ObjectiveData::values",
+                "call": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault",
+                "register": "rcx"
+              }
+            }
           ],
           "contract": "The default body passes its stored condition id and values dictionary to GetValueOrDefault. This lookup is separate from objective display aggregation and does not attribute an incoming packet to a live condition."
         },
@@ -250,9 +319,17 @@
           "type": "Beyond.Gameplay.CombineCondition",
           "method": "get_progressForShow",
           "claims": [
-            {"readsField": "Beyond.Gameplay.CombineCondition::subConditions"},
-            {"calls": ["System.Collections.Generic.List`1+Enumerator.MoveNext"]},
-            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressForShow"}
+            {
+              "readsField": "Beyond.Gameplay.CombineCondition::subConditions"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.List`1+Enumerator.MoveNext"
+              ]
+            },
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressForShow"
+            }
           ],
           "contract": "The default body enumerates the stored children and dispatches their progress-for-show getter through its selected metadata slot. Accumulation and objective branch selection require the separately reviewed body flow."
         },
@@ -260,9 +337,17 @@
           "type": "Beyond.Gameplay.CombineCondition",
           "method": "get_progressToCompareForShow",
           "claims": [
-            {"readsField": "Beyond.Gameplay.CombineCondition::subConditions"},
-            {"calls": ["System.Collections.Generic.List`1+Enumerator.MoveNext"]},
-            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressToCompareForShow"}
+            {
+              "readsField": "Beyond.Gameplay.CombineCondition::subConditions"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.List`1+Enumerator.MoveNext"
+              ]
+            },
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressToCompareForShow"
+            }
           ],
           "contract": "The default body enumerates the stored children and dispatches their target-for-show getter through its selected metadata slot. This presentation target is distinct from the incoming values dictionary."
         },
@@ -270,10 +355,22 @@
           "type": "Beyond.Gameplay.MissionSystem",
           "method": "_CreateObjectiveShowData",
           "claims": [
-            {"calls": ["Beyond.Gameplay.Objective.get_isShowProgress", "Beyond.Gameplay.Objective.get_progressForShow", "Beyond.Gameplay.Objective.get_progressToCompareForShow"]},
-            {"readsField": "Beyond.Gameplay.Objective::isCompleted"},
-            {"writesField": "Beyond.Gameplay.ObjectiveShowData::progress"},
-            {"writesField": "Beyond.Gameplay.ObjectiveShowData::progressToCompare"}
+            {
+              "calls": [
+                "Beyond.Gameplay.Objective.get_isShowProgress",
+                "Beyond.Gameplay.Objective.get_progressForShow",
+                "Beyond.Gameplay.Objective.get_progressToCompareForShow"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.Objective::isCompleted"
+            },
+            {
+              "writesField": "Beyond.Gameplay.ObjectiveShowData::progress"
+            },
+            {
+              "writesField": "Beyond.Gameplay.ObjectiveShowData::progressToCompare"
+            }
           ],
           "contract": "The owned default body fragments call the objective presentation getters and write separate current and target fields on the display record. Field-offset predicates alone do not prove every receiver or the completion-dependent choice of value."
         }
@@ -596,9 +693,12 @@
               "calls": [
                 "Beyond.Gameplay.CombineCondition.Evaluate"
               ]
+            },
+            {
+              "propagatesConditionResultOnDefaultPath": {}
             }
           ],
-          "contract": "Changed active condition result stores m_result, calls its listener and reevaluates its parent combine condition."
+          "contract": "Complete default active changed decided-result setter caller writes its cache before invoking a returning callback helper with (newResult == True), then evaluates a nonnull parent. Inactive, unchanged and Undecided writes return without updating the cache. Callback helper semantics/purity, reentrant changes, live selection and globally coherent nested caches are separate."
         }
       }
     },
@@ -871,9 +971,10 @@
           "method": "get_conditionType",
           "claims": [
             {
-              "returnsEnumMember": {
+              "returnsEnumAfterFalseCall": {
                 "type": "Beyond.GEnums.ConditionType",
-                "member": "ClientOnly"
+                "member": "ClientOnly",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
               }
             }
           ],
@@ -961,9 +1062,10 @@
           "method": "get_conditionType",
           "claims": [
             {
-              "returnsEnumMember": {
+              "returnsEnumAfterFalseCall": {
                 "type": "Beyond.GEnums.ConditionType",
-                "member": "CheckTalkFinish"
+                "member": "CheckTalkFinish",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
               }
             }
           ],
@@ -974,9 +1076,10 @@
           "method": "get_conditionType",
           "claims": [
             {
-              "returnsEnumMember": {
+              "returnsEnumAfterFalseCall": {
                 "type": "Beyond.GEnums.ConditionType",
-                "member": "CheckLevelScriptProperty"
+                "member": "CheckLevelScriptProperty",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
               }
             }
           ],
@@ -1017,9 +1120,27 @@
           "type": "Beyond.Gameplay.GameplayNetwork",
           "method": "_Handle_SyncLevelScriptProperty",
           "claims": [
-            {"passesFieldToCall": {"field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::scriptId_", "call": "Beyond.Gameplay.Core.LevelScriptPtr..ctor", "register": "rdx"}},
-            {"passesFieldToCall": {"field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::properties_", "call": "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptProperties", "register": "r8"}},
-            {"calls": ["Beyond.Gameplay.Core.LevelScriptPtr..ctor", "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptProperties"], "ordered": true}
+            {
+              "passesFieldToCall": {
+                "field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::scriptId_",
+                "call": "Beyond.Gameplay.Core.LevelScriptPtr..ctor",
+                "register": "rdx"
+              }
+            },
+            {
+              "passesFieldToCall": {
+                "field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::properties_",
+                "call": "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptProperties",
+                "register": "r8"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptPtr..ctor",
+                "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptProperties"
+              ],
+              "ordered": true
+            }
           ],
           "contract": "The default network handler constructs a script pointer from the supplied script id and forwards the supplied property map. The packet's scene field, effective live receiver and upstream writer rule are not established by these claims."
         },
@@ -1027,7 +1148,13 @@
           "type": "Beyond.Gameplay.Core.LevelScriptManager",
           "method": "ServerSyncLevelScriptProperties",
           "claims": [
-            {"calls": ["Beyond.Gameplay.Core.LevelScriptManager.TryGetLevelScript", "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSyncProperties"], "ordered": true}
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptManager.TryGetLevelScript",
+                "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSyncProperties"
+              ],
+              "ordered": true
+            }
           ],
           "contract": "The default manager resolves the supplied script pointer and invokes the property synchronizer on a found runtime. A successful lookup is not observed."
         },
@@ -1035,7 +1162,18 @@
           "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
           "method": "ServerSyncProperties",
           "claims": [
-            {"calls": ["Beyond.Gameplay.Core.LevelScriptRuntime.get_propertyIdToKeyMap", "Beyond.Gameplay.Core.LevelScriptRuntime.get_properties", "Google.Protobuf.Collections.MapField`2.GetEnumerator", "System.Collections.Generic.Dictionary`2.TryGetValue", "Beyond.Gameplay.ParamVariableExtensions.ToVariable", "Beyond.Gameplay.ParamBlackboard.SetVariableValue", "Beyond.Gameplay.ParamVariablePool.Recycle"], "ordered": true}
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptRuntime.get_propertyIdToKeyMap",
+                "Beyond.Gameplay.Core.LevelScriptRuntime.get_properties",
+                "Google.Protobuf.Collections.MapField`2.GetEnumerator",
+                "System.Collections.Generic.Dictionary`2.TryGetValue",
+                "Beyond.Gameplay.ParamVariableExtensions.ToVariable",
+                "Beyond.Gameplay.ParamBlackboard.SetVariableValue",
+                "Beyond.Gameplay.ParamVariablePool.Recycle"
+              ],
+              "ordered": true
+            }
           ],
           "contract": "The reviewed default loop requires the runtime property-id map and blackboard, looks up supplied property ids, converts supplied values, writes mapped keys and recycles temporary variables. Unknown ids, missing maps and conversion failures do not establish a write. Live values and the server's generating rule remain unresolved."
         },
@@ -1043,8 +1181,12 @@
           "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
           "method": "get_propertyIdToKeyMap",
           "claims": [
-            {"readsField": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField"},
-            {"readsField": "Beyond.Gameplay.LevelScriptBriefData::propertyIdToKeyMap"}
+            {
+              "readsField": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField"
+            },
+            {
+              "readsField": "Beyond.Gameplay.LevelScriptBriefData::propertyIdToKeyMap"
+            }
           ],
           "contract": "The reviewed default getter obtains its property-id map from the script brief data; offset predicates alone do not establish both receiver types. The full LevelScriptData graph's nullable property map is a separate stored field."
         }
@@ -1232,6 +1374,1276 @@
         "direct": "Selected named calls and field-offset accesses in bounded bodies and their unwind-owned fragments.",
         "conditional": "Default client consumer paths; loaded-entity and navigation branches have their own conditions.",
         "unresolved": "Incoming map members, copied concrete variable values, actual executed writes, live IFix selection and Mission ownership."
+      }
+    },
+    "commonConditionSelectors": {
+      "methods": {
+        "Beyond.Gameplay.CheckActivityConditionalStageStatus.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckActivityConditionalStageStatus",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckActivityConditionalStageStatus",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckBuildingStateInArea.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckBuildingStateInArea",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckBuildingStateInArea",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckLevelScriptPropertyInt.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckLevelScriptPropertyInt",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckLevelScriptProperty",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckLevelScriptStage.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckLevelScriptStage",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckLevelScriptStage",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckMissionState.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMissionState",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "MissionStateEqual",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckMoney.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMoney",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckMoney",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckQuestState.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckQuestState",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "QuestStateEqual",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckScriptMonsterKilled.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckScriptMonsterKilled",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckScriptMonsterKilledNum",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckUnlockTech.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckUnlockTech",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckUnlockTech",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CombineCondition.get_conditionType": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "Combined",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.GameConditionServerPlaceHolder.get_conditionType": {
+          "type": "Beyond.Gameplay.GameConditionServerPlaceHolder",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "None",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.InteractiveCheckInt.get_conditionType": {
+          "type": "Beyond.Gameplay.InteractiveCheckInt",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckInteractiveInt",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.PlayerHasItem.get_conditionType": {
+          "type": "Beyond.Gameplay.PlayerHasItem",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "PlayerHasItem",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.ReachDestination.get_conditionType": {
+          "type": "Beyond.Gameplay.ReachDestination",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "ReachDestination",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.WeekRaidPlayerHasItem.get_conditionType": {
+          "type": "Beyond.Gameplay.WeekRaidPlayerHasItem",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "WeekRaidPlayerHasItem",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Selected native default getter returns the named ConditionType through its complete normal epilogue after IsPatched returns false. This enum selects the default Mission leaf lane; it does not prove this family's predicate, live IFix selection, server decision or quest handoff. Combined is a traversal container whose children are selected separately; None is a declared sentinel, not absent metadata."
+        },
+        "Beyond.Gameplay.CheckAdventureBookStage.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckAdventureBookStage",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckAdventureBookStage",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckAdventureLevel.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckAdventureLevel",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckAdventureLevel",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckAllImportantCheckinTakenReward.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckAllImportantCheckinTakenReward",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckAllImportantCheckinTakenReward",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckBuildingConnected.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckBuildingConnected",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckBuildingConnected",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckBuildingConnectedSpecify.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckBuildingConnectedSpecify",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckBuildingConnectedSpecify",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckClientGlobalVar.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckClientGlobalVar",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckClientGameVar",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckCutsceneFinish.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckCutsceneFinish",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckTimelineFinish",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckDomainDepotDeliverRecvPackage.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckDomainDepotDeliverRecvPackage",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckDomainDepotDeliverRecvPackage",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckDomainDepotDeliverSendPackage.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckDomainDepotDeliverSendPackage",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckDomainDepotDeliverSendPackage",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckFMVFinish.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckFMVFinish",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckFmvFinish",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckFacSoilPlacedInPanel.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckFacSoilPlacedInPanel",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckFacSoilPlacedInPanel",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckFluidVolume.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckFluidVolume",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckFluidVolume",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckGuideGroupComplete.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckGuideGroupComplete",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "GuideFinish",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckInTimeTableTimeRange.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckInTimeTableTimeRange",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckInTimeTableTimeRange",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckInteractiveDestroyed.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckInteractiveDestroyed",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckInteractiveDestroyed",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckInteractiveIsActivated.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckInteractiveIsActivated",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckInteractiveIsActived",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckInteractiveLock.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckInteractiveLock",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckInteractiveLock",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckInteractiveSubmitSuccess.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckInteractiveSubmitSuccess",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckInteractiveSubmitSuccess",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckLevelScriptStageReachMax.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckLevelScriptStageReachMax",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckLevelScriptStageReachMax",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckLevelScriptTaskFinished.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckLevelScriptTaskFinished",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckScriptTaskAlreadyCompleted",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckLiquidInBag.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckLiquidInBag",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckLiquidInBag",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckMapCollectionNum.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMapCollectionNum",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckMapCollectionNum",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckMissionChapterEarlyAccept.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMissionChapterEarlyAccept",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckMissionChapterEarlyAccept",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckMissionIntProperty.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMissionIntProperty",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckMissionProperty",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckMonsterKilled.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMonsterKilled",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckMonsterKilledNum",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckPRTSUnlocked.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckPRTSUnlocked",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPRTSCollectionUnlock",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckPassGameMechanicsId.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckPassGameMechanicsId",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPassGameMechanicsId",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckPassedSpecifiedShootingRangeSimulationLevelIds.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckPassedSpecifiedShootingRangeSimulationLevelIds",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPassedSpecifiedShootingRangeSimulationLevelIds",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckPerfectlyPassDungeonId.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckPerfectlyPassDungeonId",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPerfectlyPassDungeonId",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckPlayerInMap.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckPlayerInMap",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPlayerInMap",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckPrtsInvestigateNoteReadingDone.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckPrtsInvestigateNoteReadingDone",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPrtsInvestigateNoteReadingDone",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckQuestSubmitItem.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckQuestSubmitItem",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckQuestSubmitItem",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckRemoteCommFinish.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckRemoteCommFinish",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckRemoteCommFinish",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckRepeatableTalkFinish.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckRepeatableTalkFinish",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckRepeatableTalkFinish",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckRichContentReadingDone.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckRichContentReadingDone",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckRichContentReadingDone",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckRiftIsFullFilling.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckRiftIsFullFilling",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckRiftIsFullFilling",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSNSDialogComplete.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSNSDialogComplete",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSNSDialogComplete",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSceneCollectionNum.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSceneCollectionNum",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSceneCollectionNum",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSewageTreatPlantLevel.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSewageTreatPlantLevel",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSewageTreatPlantLevel",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckShootingRangeDailyLevelPass.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckShootingRangeDailyLevelPass",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckShootingRangeDailyLevelPass",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSpaceshipGrowCabinSow.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSpaceshipGrowCabinSow",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSpaceshipGrowCabinSow",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSpaceshipRoomBuilt.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSpaceshipRoomBuilt",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSpaceshipRoomBuilt",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSpaceshipRoomBuiltById.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSpaceshipRoomBuiltById",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSpaceshipRoomBuiltById",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckSpaceshipRoomLevel.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckSpaceshipRoomLevel",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckSpaceshipRoomLevel",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckStatisticValByEnum.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckStatisticValByEnum",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckStatisticValByEnum",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckUnlockTechLayer.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckUnlockTechLayer",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckUnlockTechLayer",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckUnlockWorldLevel.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckUnlockWorldLevel",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckUnlockWorldLevel",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckUnrepeatableRewardIdGot.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckUnrepeatableRewardIdGot",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckUnrepeatableRewardIdGot",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckVersion.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckVersion",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckBranchDataVersion",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckWorldLevel.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckWorldLevel",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckWorldLevel",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.Conditions.CheckCurrentDungeonBoth.get_conditionType": {
+          "type": "Beyond.Gameplay.Conditions.CheckCurrentDungeonBoth",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckPlayerInDungeon",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.FacBuildingCountInScene.get_conditionType": {
+          "type": "Beyond.Gameplay.FacBuildingCountInScene",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "FacBuildingCountInScene",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.FacProducePowerReach.get_conditionType": {
+          "type": "Beyond.Gameplay.FacProducePowerReach",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "FacProducePowerReach",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.FacProducingFormulaCountInScene.get_conditionType": {
+          "type": "Beyond.Gameplay.FacProducingFormulaCountInScene",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "FacProducingFormulaCountInScene",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.FacStatisticItemGen.get_conditionType": {
+          "type": "Beyond.Gameplay.FacStatisticItemGen",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "FacStatisticItemGen",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.HasItemCount.get_conditionType": {
+          "type": "Beyond.Gameplay.HasItemCount",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "HasItemCount",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.PlayerHasItemInItemBag.get_conditionType": {
+          "type": "Beyond.Gameplay.PlayerHasItemInItemBag",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "ItemBagHasItem",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        },
+        "Beyond.Gameplay.CheckMissionBoolProperty.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckMissionBoolProperty",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckMissionProperty",
+                "call": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "Typed named ConditionType and complete normal return after false IsPatched. This selects only the default Mission objective lane; specific predicate behavior, live IFix selection and server policy remain unresolved."
+        }
+      },
+      "evidenceBoundary": {
+        "conditional": "Individually checked named selector getters from the selected objective-condition census, with selected Int32 enum declarations and complete EAX return paths after the named Boolean IFix guard returns false. Inherited applicability additionally requires the exact nearest virtual slot join.",
+        "unresolved": "Specific checks, live receiver/IFix selection, server decisions and ordering of Mission transitions."
+      },
+      "types": {
+        "Beyond.Gameplay.CheckMissionIntProperty": {
+          "parent": "Beyond.Gameplay.GameConditionServer",
+          "absentDeclaredMethods": [
+            "OnActivate",
+            "GetResult",
+            "ActivateClientCondition"
+          ]
+        },
+        "Beyond.Gameplay.CheckMissionBoolProperty": {
+          "parent": "Beyond.Gameplay.GameConditionServer",
+          "absentDeclaredMethods": [
+            "OnActivate",
+            "GetResult",
+            "ActivateClientCondition"
+          ]
+        }
+      }
+    },
+    "questMissionStatePredicates": {
+      "methods": {
+        "Beyond.TableUtils.DoCompare": {
+          "type": "Beyond.TableUtils",
+          "method": "DoCompare",
+          "claims": [
+            {
+              "comparesSignedInt32OnDefaultPath": {}
+            }
+          ],
+          "contract": "Complete selected Int32 default comparison switch: named Equal/NotEqual and signed ordered comparisons; an unknown comparator returns false. Numeric state comparisons are not chronological mission ordering.",
+          "evidenceBoundary": "conditional",
+          "parameters": [
+            "Beyond.GEnums.CompareOperator",
+            "System.Int32",
+            "System.Int32"
+          ]
+        },
+        "Beyond.Gameplay.CheckQuestState._OnQuestStateChange": {
+          "type": "Beyond.Gameplay.CheckQuestState",
+          "method": "_OnQuestStateChange",
+          "claims": [
+            {
+              "comparesStateEventOnDefaultPath": {}
+            }
+          ],
+          "contract": "Complete selected unpatched callback filters incoming raw EventData lane zero by the configured ID; lane eight, cached comparator and target state reach typed Int32 DoCompare, then normalized False/True reaches set_result. A nonmatching ID returns without that setter; callback does not query current state. Closed EventData field layout, actual delivery and callee effects remain separate.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CheckQuestState.OnActivate": {
+          "type": "Beyond.Gameplay.CheckQuestState",
+          "method": "OnActivate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.GetQuestState",
+                "Beyond.TableUtils.DoCompare",
+                "Beyond.Gameplay.GameCondition.set_result"
+              ],
+              "ordered": true
+            },
+            {
+              "calls": [
+                "Beyond.EventManager.BindGlobal"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckQuestState::_questId"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckQuestState::_comparer"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckQuestState::_targetQuestState"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckQuestState::m_questId"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckQuestState::m_comparer"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckQuestState::m_targetQuestState"
+            }
+          ],
+          "contract": "Reviewed default activation resolves stored parameters into cached fields and compares existing client state before/alongside event subscription. Quest activation binds before GetQuestState; mission activation uses GetMissionData state or None when absent, sets its result, then binds. Primitive field/call claims support this reviewed interpretation; complete parameter-resolution, event ABI and current-state getter semantics remain separate. It can succeed from restored state without a new event in the interval.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CheckQuestState.OnDeactivate": {
+          "type": "Beyond.Gameplay.CheckQuestState",
+          "method": "OnDeactivate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.EventManager.UnBindGlobal"
+              ]
+            }
+          ],
+          "contract": "Named default deactivation reaches UnBindGlobal; event lifetime, successful unsubscription and invocation are not established by call presence alone.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CheckMissionState._OnMissionStateChange": {
+          "type": "Beyond.Gameplay.CheckMissionState",
+          "method": "_OnMissionStateChange",
+          "claims": [
+            {
+              "comparesStateEventOnDefaultPath": {}
+            }
+          ],
+          "contract": "Complete selected unpatched callback filters incoming raw EventData lane zero by the configured ID; lane eight, cached comparator and target state reach typed Int32 DoCompare, then normalized False/True reaches set_result. A nonmatching ID returns without that setter; callback does not query current state. Closed EventData field layout, actual delivery and callee effects remain separate.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CheckMissionState.OnActivate": {
+          "type": "Beyond.Gameplay.CheckMissionState",
+          "method": "OnActivate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.GetMissionData",
+                "Beyond.TableUtils.DoCompare",
+                "Beyond.Gameplay.GameCondition.set_result"
+              ],
+              "ordered": true
+            },
+            {
+              "calls": [
+                "Beyond.EventManager.BindGlobal"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckMissionState::_missionId"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckMissionState::_comparer"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckMissionState::_targetMissionState"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckMissionState::m_missionId"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckMissionState::m_comparer"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckMissionState::m_targetMissionState"
+            }
+          ],
+          "contract": "Reviewed default activation resolves stored parameters into cached fields and compares existing client state before/alongside event subscription. Quest activation binds before GetQuestState; mission activation uses GetMissionData state or None when absent, sets its result, then binds. Primitive field/call claims support this reviewed interpretation; complete parameter-resolution, event ABI and current-state getter semantics remain separate. It can succeed from restored state without a new event in the interval.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CheckMissionState.OnDeactivate": {
+          "type": "Beyond.Gameplay.CheckMissionState",
+          "method": "OnDeactivate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.EventManager.UnBindGlobal"
+              ]
+            }
+          ],
+          "contract": "Named default deactivation reaches UnBindGlobal; event lifetime, successful unsubscription and invocation are not established by call presence alone.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.MissionSystem.GetQuestState": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "GetQuestState",
+          "claims": [
+            {
+              "looksUpQuestStateOnDefaultPath": {}
+            }
+          ],
+          "evidenceBoundary": "conditional",
+          "contract": "Complete selected normal caller lookup: a nonnull current quest record returns its typed questState; otherwise GetMissionIdByQuestId selects a mission dictionary lookup. A nonnull mission with Completed state yields QuestState.Completed; absent/empty owner ID, missing mission or another mission state yields None. Caller does not require a quest-state event, and an existing quest record takes precedence over the mission fallback. Unpatched lookup choices, initialized class context, valid String/dictionary/out-slot/patch-table ABI and successful callees are conditions; owner getter, collection bodies, actual records and event timing remain separate."
+        }
+      }
+    },
+    "combinedConditionAst": {
+      "methods": {
+        "Beyond.Gameplay.CombineCondition._EvaluateNode": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "_EvaluateNode",
+          "claims": [
+            {
+              "evaluatesBooleanAstOnDefaultPath": {}
+            },
+            {
+              "evaluatesProgressAstOnDefaultPath": {}
+            }
+          ],
+          "contract": "Complete valid-node default Boolean AST evaluator with useProgress false: selected ConditionIdx reads child result and compares exactly True; Not flips Boolean; And and Or short circuit. False and Undecided both project false at a leaf. This does not claim parser/source-expression equivalence or actual activation. The separately checked useProgress=true path preserves Not/And/Or recursion and short circuits but invokes each visited child virtual GetResultByProgress instead of projecting its cached result.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CombineCondition.Evaluate": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "Evaluate",
+          "claims": [
+            {
+              "gatesCombinedEvaluationOnDefaultPath": {}
+            }
+          ],
+          "contract": "Complete normal outer evaluator waits on any null/Undecided child before invoking _EvaluateNode(rootNode,false). Own Undecided always writes the normalized AST result; an unchanged decided result skips the setter. Thus Boolean AST short circuit cannot bypass an undecided child in this outer lane. Successful collection calls and valid enumerator ABI storage, unpatched entry and inline getters are conditions; server evaluation and observed order remain unresolved.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CombineCondition.OnActivate": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "OnActivate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AST.Parse",
+                "Beyond.Gameplay.AST.get_valid",
+                "Beyond.Gameplay.GameCondition.Activate"
+              ],
+              "ordered": true
+            },
+            {
+              "readsField": "Beyond.Gameplay.CombineCondition::conditionEvalString"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CombineCondition::ast"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CombineCondition::subConditions"
+            }
+          ],
+          "contract": "Reviewed default activation parses the stored conditionEvalString, tests AST validity, and activates children. Call and field claims are direct consumer evidence, not a complete parser equivalence or live execution proof.",
+          "evidenceBoundary": "conditional"
+        },
+        "Beyond.Gameplay.CombineCondition.GetResultByProgress": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "GetResultByProgress",
+          "claims": [
+            {
+              "parsesProgressAstOnDefaultPath": {}
+            }
+          ],
+          "contract": "Complete nonnull default caller checks AST validity, parses the stored expression only when invalid, then evaluates rootNode with useProgress=true and returns that Boolean. It has no outer all-children-decided gate or own result-setter call. Successful parser/evaluator returns, helper effects, selected patches and valid object/virtual dispatch are conditional; no live mission ownership, state predicate activation, callback publication or quest handoff follows.",
+          "evidenceBoundary": "conditional"
+        }
       }
     }
   },

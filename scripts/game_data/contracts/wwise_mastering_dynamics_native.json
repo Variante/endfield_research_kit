@@ -1,0 +1,4318 @@
+{
+  "schema": "endfield.wwise-mastering-dynamics-native-contract.v8",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "classId": "0x00ba0003",
+  "evidenceBoundary": "conditional",
+  "methods": {
+    "processBands": {
+      "rva": "0x24ec50",
+      "bodyLength": 706,
+      "bodySha256": "1a6918bb40ea797d5bea98fc758007affb1e699d62794833f0491fa3989acac9",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4c894424184889542410534154415541574883ec684d8bf84d8be14533c04c8bd2488bd9458be84885c90f84810200004885d20f84780200004d85ff0f846f020000448b9c24b0000000418d43ff3dff0000000f87580200008b4144a8017511b8030226804883c468415f415d415c5bc34c89742450a8027455450fb7c84439017648410fb7d044396b487632450fb7c1f3430f1004820fb7c266ffc24869c89c000000f30f59c00fb7c24903c8f30f11848b680f00003b434872d54533c06641ffc1410fb7c13b0372b8836344fd8b4b48450fb7f04889ac24a8000000488974246048897c245885c90f84bc010000488d7b040f1f40000f1f840000000000498b3424498bd2498bef83f9010f84b5000000664585f67405498b6c2408450fb7fe410fb7f866463b447b5c73744e8d2cbd0000000066660f1f8400000000004d8b4c24104c8bc644895c24300fb7c74903c54869c8d80000008b4304894424284883c1648b034803cb89442420"
+        },
+        {
+          "offset": 366,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "filterEntry"
+        },
+        {
+          "offset": 371,
+          "bytesHex": "85c00f85cb000000498b0c24488bd6448b9c24b0000000483bf1480f44cd66ffc7488bf166423b7c7b5c72a1448be8488d7b04483bea7413458bc3488bcd440faf0741c1e002"
+        },
+        {
+          "offset": 441,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "copyPrimitive"
+        },
+        {
+          "offset": 446,
+          "bytesHex": "4c8bbc24a0000000eb13458bc3498bcf440faf0741c1e002"
+        },
+        {
+          "offset": 470,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "copyPrimitive"
+        },
+        {
+          "offset": 475,
+          "bytesHex": "8b43588bb424b0000000410fb6ce0fa3c8727bf30f104350488d5310410fb7c6448bce4869c8700200008b43544c8bc5894424484881c1e80d00008b434c4803cbf30f11442440894424388b074889542430498bd4894424288b0389442420"
+        },
+        {
+          "offset": 570,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "bandEntry"
+        },
+        {
+          "offset": 575,
+          "bytesHex": "448be885c07427488b7c2458488b742460488bac24a80000004c8b7424504883c468415f415d415c5bc3488d7b04664585f67412448bc6488bd5440faf07498bcf"
+        },
+        {
+          "offset": 640,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "sum"
+        },
+        {
+          "offset": 645,
+          "bytesHex": "8b4b486641ffc6410fb7c63bc173184c8b9424980000004533c0448b9c24b0000000e954feffff418bc5eb95b8010226804883c468415f415d415c5bc3"
+        }
+      ]
+    },
+    "processModes": {
+      "rva": "0x250c90",
+      "bodyLength": 305,
+      "bodySha256": "ffc6e6ce8aed28e7759c554cf736eabf3f0a16a386cf34190f58d577fcc7c0dc",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4883ec484d8bd94d8bc84c8bd14885c90f84110100004885d20f84080100004d85c00f84ff000000448b442470418d40ff3dff0000000f87eb0000008b4144a801750ab8030226804883c448c3a802743233c941390a7626"
+        },
+        {
+          "offset": 88,
+          "prefixHex": "660f6f0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "absoluteMask"
+        },
+        {
+          "offset": 96,
+          "bytesHex": "83f90c7312f30f10048a0f54c1f3410f11848a10010000ffc1413b0a72e241836244fd418b4a4885c9746c83e901743f83f901740ab8050080804883c448c3418b424c498d4a5089442438418b420489442430418b028944242844894424204c8bc2498bd3"
+        },
+        {
+          "offset": 197,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "delayedKernel"
+        },
+        {
+          "offset": 202,
+          "bytesHex": "4883c448c3418b4204498d4a5089442430418b028944242844894424204c8bc2498bd3"
+        },
+        {
+          "offset": 237,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clipEntry"
+        },
+        {
+          "offset": 242,
+          "bytesHex": "4883c448c3418b424c498d4a5089442438418b420489442430418b028944242844894424204c8bc2498bd3"
+        },
+        {
+          "offset": 285,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "peakEntry"
+        },
+        {
+          "offset": 290,
+          "bytesHex": "4883c448c3b8010226804883c448c3"
+        }
+      ]
+    },
+    "bandEntry": {
+      "rva": "0x252370",
+      "bodyLength": 40,
+      "bodySha256": "34ec97d99741018e77706287dea9c8d1bed1375955768f6c47379f8e6308dd78",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4885c9741d4d85c074184181f900010000770f448b5424284183fa0c0f860e000000b801022680c3"
+        }
+      ]
+    },
+    "bandKernel": {
+      "rva": "0x2523a0",
+      "bodyLength": 1905,
+      "bodySha256": "ddb126a8580983fa9610d53039bce652a8ef4010fc60e5f3b0beee26f55dc09b",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc444894820488948085553488da8f8fcffff4881ecf80300004c8960e0488bd94c8b62184c8968d8448bad380300004c8970d04d8bf04c8978c8440f299868ffffff4d85e47440488d4424604c8bc94c2bc8488d54246041b80c00000090498b841110020000488d52084885c0498bcc480f45c848894af84983e80175e0448b8d28030000eb1d0f57c00f114424600f114424700f1145800f1145900f1145a00f1145b0448b95300300004533db"
+        },
+        {
+          "offset": 176,
+          "prefixHex": "440f281d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "bandUnity"
+        },
+        {
+          "offset": 184,
+          "bytesHex": "410fb7d34585d20f84e50000000f57ed0f1f8400000000000fb7c26683c2048bc848c1e9024803c90f1004830f109483500100000f108c83c00000000f105c83600f10a483900000000f1184cdb00000000f108483200100000f118ccd000200000f108c83f00000000f1184cde00000000f108483e00100000f118ccd100100000f1184cd80000000410f28c30f1154cd200f5cc20f119ccda0010000410f28cb0f11a4cd400100000f5ccb0f112ccc0f1144cd50410f28c30f5cc40f118ccdd00100000f108c83b00100000f1184cd700100000f108483800100000fb7c20f114ccdf00f1144cc30413bc20f8226ffffff450fb7fb4585c90f8443050000488b9d400300004889b42418040000418bf34889bc24f00300000f29b424c00300000f29bc24b0030000440f298424a0030000440f298c2490030000440f29942480030000440f29a42460030000"
+        },
+        {
+          "offset": 517,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 526,
+          "bytesHex": "440f29ac2450030000"
+        },
+        {
+          "offset": 535,
+          "prefixHex": "440f282d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "bandZero"
+        },
+        {
+          "offset": 543,
+          "bytesHex": "440f29b42440030000f3440f10b550030000440f29bc2430030000"
+        },
+        {
+          "offset": 570,
+          "prefixHex": "440f283d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "powerDbScale"
+        },
+        {
+          "offset": 578,
+          "bytesHex": "0f1f400066660f1f840000000000410fb7c7450fb7c36683e01f4585d20f8404020000458bcd440fafce6685c0418bc30f85a80100000f1f840000000000410fb7d048c1ea024803d24103c10f1044d5500f5944d430410f101c860f10a4d5800000000f10b4d5e00000000f28ec440f1094d5b00000000f115cd5c0450f28c20f59db0f595cd5200f58d8660f6fc30f115cd430"
+        },
+        {
+          "offset": 726,
+          "prefixHex": "0f5405",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "mantissaMask"
+        },
+        {
+          "offset": 733,
+          "bytesHex": "0f28d3"
+        },
+        {
+          "offset": 736,
+          "prefixHex": "0f5605",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "mantissaOne"
+        },
+        {
+          "offset": 743,
+          "bytesHex": "0f28c8660f72d317"
+        },
+        {
+          "offset": 751,
+          "prefixHex": "0f590d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "logPolynomialA"
+        },
+        {
+          "offset": 758,
+          "prefixHex": "0f541d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "exponentMask"
+        },
+        {
+          "offset": 765,
+          "prefixHex": "660ffa1d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "exponentBias"
+        },
+        {
+          "offset": 773,
+          "bytesHex": "410fc2d501"
+        },
+        {
+          "offset": 778,
+          "prefixHex": "0f580d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "logPolynomialB"
+        },
+        {
+          "offset": 785,
+          "bytesHex": "440f28ca"
+        },
+        {
+          "offset": 789,
+          "prefixHex": "0f5415",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "negativePowerFallback"
+        },
+        {
+          "offset": 796,
+          "bytesHex": "0f59c80f5bc3"
+        },
+        {
+          "offset": 802,
+          "prefixHex": "0f580d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "logPolynomialC"
+        },
+        {
+          "offset": 809,
+          "bytesHex": "0f58c8"
+        },
+        {
+          "offset": 812,
+          "prefixHex": "0f590d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "logBaseScale"
+        },
+        {
+          "offset": 819,
+          "bytesHex": "410f59cf440f55c90f28ce"
+        },
+        {
+          "offset": 830,
+          "prefixHex": "0f590d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "kneeHalf"
+        },
+        {
+          "offset": 837,
+          "bytesHex": "440f56ca0f1094d510010000450f5cd10f28fa0f28c2410f28d90f5cdc410fc2fd00440f59d6450fc2c1010fc2c3020f56f80f28c30f5ec2450f54d0410f28d30f59c8450f55c5410fc2e901450f56d0440f54d70f5cd10f59d30f28df0f58d4410f5cd10f54d5410f55ed0f56d50f55da410f56da"
+        },
+        {
+          "offset": 954,
+          "prefixHex": "0f591d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "gainDbScale"
+        },
+        {
+          "offset": 961,
+          "prefixHex": "0f591d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "powerBaseScale"
+        },
+        {
+          "offset": 968,
+          "bytesHex": "f30f5bcb0f5bc1660f72f1170f5cd80f28c3"
+        },
+        {
+          "offset": 986,
+          "prefixHex": "0f5905",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "expPolynomialA"
+        },
+        {
+          "offset": 993,
+          "prefixHex": "0f5805",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "expPolynomialB"
+        },
+        {
+          "offset": 1000,
+          "bytesHex": "0f59c3"
+        },
+        {
+          "offset": 1003,
+          "prefixHex": "0f5805",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "expPolynomialC"
+        },
+        {
+          "offset": 1010,
+          "bytesHex": "664183c004660ffec1410fb7c00f1104d4413bc20f8274feffff410f28cc450fb7c3410fb7cbeb76660f1f4400004103c1410fb7d048c1ea02664183c0044803d2410f100c86410fb7c00f1044d5500f5944d4300f114cd5c00f59c90f594cd5200f58c80f114cd430413bc272c0450fb7c3e9400100006685c00f852b010000410f28cc458bc3418bcb4585d2743c0f1f40006666660f1f8400000000000fb7c10f28d1f30f1004840f2fc173030f28c80f2fd00fb7d166410f46d066ffc10fb7c1440fb7c2413bc272d38b854803000083e8010f84af00000083f8010f85c8000000410f2fcc0f83be0000000f28d1488d0424f3410f59d6b9030000000fc6d2000f1f40000f1f8400000000000f1110488d40104883e90175f383bd5803000001755a410fb7c0448b0c83418d41fe83f8017649410fb7c8410fbae1008d41010f42c1448bc08bd08d41ff0f42c8418bc048c1e020480bc848c1ea028bc183e10348c1e8024183e003488d0481f30f110c84498d0490f30f110c84eb2d410fb7c0f30f110c84eb220f28c1488d04240fc6c000b9030000000f1f4400000f1100488d40104883e90175f3458bc34585d20f84d7000000410faff5458bcb410fb7f88bc748c1e8024803c00f1054c5f00f1024c40f28c20f5984c5700100000f28dc0f28cc0f59a4c5a00100000f598cc5400100000fc2da010f5994c5d00100000f28eb0f58c80f58e20f55e90f54e30f56ec0f116cc5f00f59acc5000200000f28d50f5954c5c00f1154c5c04d85e47441410fb7d70f28c5418bc90f28cd0fc6c5550fc6cdaa488b44cc60f30f112c90488b44cc680fc6edfff30f110490488b44cc70f30f110c90488b44fc78f30f112c90664183c004428d040e450fb7c8410f111486453bca0f8230ffffff6641ffc7410fb7f73bb5280300000f82bcfbffff440f28bc2430030000440f28b42440030000440f28ac2450030000440f28a42460030000440f28942480030000440f288c2490030000440f288424a00300000f28bc24b00300000f28b424c0030000488bbc24f0030000488bb42418040000488b9d10030000440f289c24700300004c8bbc24d00300004c8bb424d80300004c8bac24e00300004c8ba424e80300004585d2743d0f1f840000000000410fb7cb664183c3048bc148c1e8024803c00f1044c4300f104cc5f0410fb7c30f11848b800100000f118c8bb0010000413bc272cb33c04881c4f80300005b5dc3"
+        }
+      ]
+    },
+    "telemetry": {
+      "rva": "0x252b20",
+      "bodyLength": 284,
+      "bodySha256": "28f38d5c61da481f4c56f0716e2582a0d7430c5ffa53184dfbdc71cb8b9a51de",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4c8b4a184d85c90f84ee000000488b81380300004885c04c0f45c84d8908488b81400300004885c07504488b421849894008488b81480300004885c07504488b421849894010488b81500300004885c07504488b421849894018488b81580300004885c07504488b421849894020488b81600300004885c07504488b421849894028488b81680300004885c07504488b421849894030488b81700300004885c07504488b421849894038488b81780300004885c07504488b421849894040488b81800300004885c07504488b421849894048488b81880300004885c07504488b421849894050488b81900300004885c07504488b421849894058c30f57c0410f1100410f114010410f114020410f114030410f114040410f114050c3"
+        }
+      ]
+    },
+    "clipEntry": {
+      "rva": "0x2535a0",
+      "bodyLength": 5,
+      "bodySha256": "a65105ea97b56a3c23d27b6a7267f9f772929f9edb6e867978655c78d57563c7",
+      "program": [
+        {
+          "offset": 0,
+          "prefixHex": "e9",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clipKernel"
+        }
+      ]
+    },
+    "peakEntry": {
+      "rva": "0x2535b0",
+      "bodyLength": 5,
+      "bodySha256": "cf448959e6294ccdab063f87afcebbb264f8d9678e4e34d85e2eb089edbfd9bb",
+      "program": [
+        {
+          "offset": 0,
+          "prefixHex": "e9",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "peakKernel"
+        }
+      ]
+    },
+    "clipKernel": {
+      "rva": "0x2535c0",
+      "bodyLength": 532,
+      "bodySha256": "d71f4f572753a2cc8ddc54a7d4c1e02394e86625e60e5b685f06e96fd2521f21",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "4056574154415541564881ec100100004c8b6a184d8be04c8d442450498bf14c8bd1"
+        },
+        {
+          "offset": 34,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "telemetry"
+        },
+        {
+          "offset": 39,
+          "bytesHex": "448b9c246801000033ff8bd74585db74280f1f8400000000008bc28bca83c20448c1e9024803c9410f1004820f1184ccb0000000413bd372e0448bb424600100004585f60f849101000048899c24400100004c8bd74889ac24480100004c89bc2450010000448bbc24700100000f29b42400010000"
+        },
+        {
+          "offset": 156,
+          "prefixHex": "0f2835",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipZero"
+        },
+        {
+          "offset": 163,
+          "bytesHex": "0f29bc24f0000000"
+        },
+        {
+          "offset": 171,
+          "prefixHex": "0f283d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipUnity"
+        },
+        {
+          "offset": 178,
+          "bytesHex": "440f298424e0000000"
+        },
+        {
+          "offset": 187,
+          "prefixHex": "440f2805",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipNegativeUnity"
+        },
+        {
+          "offset": 195,
+          "bytesHex": "4585db0f84f60000008bef41b801000000410fafef0f1f840000000000418d40ff448bc88bc8418d40ff03c549c1e9024d03c98bd8410f102c840f28dd0f28e5410f59d80fc2e6010f28c40f55c50f54dc0f56d8420f1084ccb00000000f28c80fc2cb010f28d10f55cb0f54d00f56d10f28ca410f59c80f54cc0f55e20f56cc0f53d50f59d1420f1154cc204d85ed7459488b4ccc500fc2ee000f28c50f54ef0f55c20f56c5420f1144cc20428b44cc204189040a418bc0488b4cc450428b44cc244189040a418d4001488b54c450428b44cc2841890412418d4002488b54c450428b44cc2c418904124183c0040f110c9e418d40ff413bc30f821effffffffc74983c204413bfe0f82f2feffff440f288424e00000000f28bc24f00000000f28b424000100004c8bbc2450010000488bac2448010000488b9c244001000033c04881c410010000415e415d415c5f5ec3"
+        }
+      ]
+    },
+    "peakKernel": {
+      "rva": "0x2537e0",
+      "bodyLength": 941,
+      "bodySha256": "e93d732a77f5bd5d7dc8cba8a99bab1e32c418e2bd5ecf351023ef7d2cf9fb89",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc44c894018555356488da818ffffff4881ecd001000048897808488bf14c896820498bf84c8970e04c8d45b04c8978d84d8be94c8b7a18"
+        },
+        {
+          "offset": 57,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "telemetry"
+        },
+        {
+          "offset": 62,
+          "bytesHex": "448b9d1801000033db"
+        },
+        {
+          "offset": 71,
+          "prefixHex": "0f2825",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipUnity"
+        },
+        {
+          "offset": 78,
+          "bytesHex": "8bd34585db744e6666660f1f8400000000008bc20f28d48bca83c20448c1e9024803c90f1004860f104c86300f1144cd700f104486600f114ccd100f5cd00f108486c00000000f1144cc500f1154cd40413bd372bd448bf3399d100100000f86a1020000"
+        },
+        {
+          "offset": 178,
+          "prefixHex": "0f282d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipNegativeUnity"
+        },
+        {
+          "offset": 185,
+          "bytesHex": "4c8bd34c89a424f8010000448ba5200100000f29b424b0010000"
+        },
+        {
+          "offset": 211,
+          "prefixHex": "0f2835",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipZero"
+        },
+        {
+          "offset": 218,
+          "bytesHex": "0f29bc24a0010000"
+        },
+        {
+          "offset": 226,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 234,
+          "bytesHex": "660f1f440000448bc34585db0f8494000000418bd6410fafd40f1f4000660f1f840000000000428d04020f100c87418bc04183c00448c1e8024803c00f28d90f59dd0f28c10fc2c6010f114cc5800f54d80f55c10f104cc4500f56d80f28c10fc2c3010f5cd90f594cc5400f54d80f55c60f56d80f1044c5700f595cc5100f28d00f58d90f115cc4500fc2d3010f53cb0f59c80f54ca0f55d40f56ca0f114cc420453bc3728083bd28010000010f85aa0000000f28cf448bc34183fb04725c458d4bfd0f1f00418bc0418d50028bca48c1e902f30f104484208d42fff30f5dc10f28c8f30f5d4c8420418d40fe83e003488d0c88f30f5d4c8c20418d40ff4183c00483e0038d4a0148c1e902488d0c88f30f5d4c8c20453bc172ab453bc37327418bc0488d4c2420418bd3412bd0488d0c81f30f1001488d4904f30f5dc10f28c84883ea0175eb0f28c10fc6c0000f294424200f294424300f294424404585db0f84d7000000418bfe41b902000000410faffc0f1f00418d41fe448bc049c1e8024d03c0420f104cc420420f594cc5804d85ff7443488b4cc5b0428b44c4204189040a418d41ff488b54c5b0428b44c42441890412418bc1488b4cc5b0428b44c4284189040a418d4101488b54c5b0428b44c42c418904120f28d1418d41fe0f28d90f59d503c74183c1040fc2de010f28c30f55c10f54d30f56d00f28c20fc2c4010f28c80f55c40f54ca0f56c80f28c10f59c50f54c30f55d90f56c3410f11448500418d41fe420f1144c580413bc30f8240ffffff488bbd0001000041ffc64983c204443bb5100100000f82b5fdffff0f28bc24a00100000f28b424b00100004c8ba424f80100004c8bbc24c00100004c8bb424c80100004c8bac2408020000488bbc24f00100004585db74280f1f8400000000008bc348c1e8024803c08bcb83c3040f1044c4500f11848ec0000000413bdb72e033c04881c4d00100005e5b5dc3"
+        }
+      ]
+    },
+    "sum": {
+      "rva": "0x252100",
+      "bodyLength": 609,
+      "bodySha256": "155bb4e545d83f3e1a7d29f64344c800e24a5791a3a3905abcc12a0eacc422be",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c2408488974241048897c2418418bf8418bd84c8bd24c8bd941b90000000083e7f0766ebe080000000f1f4400008d46fc8bd6410f100483448bc0410f1024828d460483c610410f1014828bc8410f101c920f58e0410f1004930f58d8410f100483418bc14183c1100f58d0410f100c82410f1004830f58c8410f110c83430f112483410f111c93410f11148b443bcf729c8bcb83e1fc443bc973206690418bc14183c104410f100c82410f1004830f58c8410f110c83443bc972e2448bc3452bc1443bcb0f83840100004183f8020f82ca0000008d43ff418bd1498d0c82498d3c83498d0493498d3492483bc17709483bfe0f83a60000004183f8107271418bd08bfb83e20f2bfa418d710890418bc14183c110410f100483410f100c820f58c8410f110c838d46fc410f100483410f100c820f58c8410f110c838d4604410f1004b3410f100cb20f58c8410f110cb383c610410f100483410f100c820f58c8410f110c83443bcf72a383fa02722f4183e0018bcb412bc80f1f440000418bc14183c102f2410f100483f2410f1014820f58d0f2410f111483443bc972df443bcb0f83a70000008bc3458bc1412bc14d2bd383f80472768bc3498d4b04412bc14a8d0c8183e804c1e802ffc08bd0458d0c814d8d04800f1f8000000000f3410f10440afcf30f5841fcf30f1141fcf3410f100c0af30f5809f30f1109f3410f10440a04f30f584104f30f114104f3410f104c0a08f30f584908f30f1149084883c1104883ea0175b5443bcb7321412bd94b8d04838bcbf3410f100402f30f5800f30f11004883c0044883e90175e8488b5c2408488b742410488b7c2418c3"
+        }
+      ]
+    },
+    "delayedKernel": {
+      "rva": "0x252c40",
+      "bodyLength": 2395,
+      "bodySha256": "0c3f95562fbc569cf0efd62445d3eb21eadfa4c9cb1715e357145f2853be7f17",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc44c8948204c894018488950104889480855534155488da818fdffff4881ecd0030000488970e0488bd9488978d8498bf04c8970c84c8d45204c8b7218498bf94c8978c04c8bb930030000440f294088440f29a048ffffff"
+        },
+        {
+          "offset": 90,
+          "prefixHex": "66440f6f25",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "delayedGainBias"
+        },
+        {
+          "offset": 99,
+          "bytesHex": "440f29b028ffffff4c89742438"
+        },
+        {
+          "offset": 112,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "telemetry"
+        },
+        {
+          "offset": 117,
+          "bytesHex": "448bad180300004533d2"
+        },
+        {
+          "offset": 127,
+          "prefixHex": "66440f6f05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 136,
+          "bytesHex": "458bc2"
+        },
+        {
+          "offset": 139,
+          "prefixHex": "66440f6f35",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "laneBits"
+        },
+        {
+          "offset": 148,
+          "bytesHex": "4585ed0f84c400000041b904000000452bcd66660f1f840000000000418bc0418bd048c1ea024803d20f108c83900000000f104483300f1014830f1184d5e00000000f108483c00000000f1194d5b00000000f59d10f1144d5b00f108483f00000000f118cd5100100000f108c8340020000418bc5412bc00f1194d570010000410f57d083f804b80f0000000f1194d5a00100000f114cd4500f1144d5e07306438d0c01d3f8660f6ec04183c004660f70c000410f54c666410f76c60f1184d580000000453bc50f824fffffff8b951003000041b9800000008bca4489542420c1ea0783e17f85c9448bc1458bda450f44c18d420144894424240f45d089951003000085d20f84270700004c89a424b80300008d4aff448ba5200300000f29b424900300000f29bc2480030000440f298c2460030000440f29942450030000440f299c2440030000"
+        },
+        {
+          "offset": 476,
+          "prefixHex": "440f281d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipUnity"
+        },
+        {
+          "offset": 484,
+          "bytesHex": "440f29ac2420030000"
+        },
+        {
+          "offset": 493,
+          "prefixHex": "440f282d",
+          "suffixHex": "",
+          "targetKind": "initializedVector",
+          "target": "clipZero"
+        },
+        {
+          "offset": 501,
+          "bytesHex": "440f29bc2400030000"
+        },
+        {
+          "offset": 510,
+          "prefixHex": "f3440f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 519,
+          "bytesHex": "894c24280f1f440000418bc3410fafc4c1e007488d1486418bf24889542430488d3c8748897c2440443bd97514418bc08985180300004585c00f8478050000eb0844898d1803000090458bc24585ed0f84cb020000448bf6450f57d2450faff4660f1f840000000000438d0406418bd80f10048248c1eb02410f1014874c8bdb4d03db450f28c8440f55c8410f28c80f55ca420f105cddb00fc2cb00420f1184ddd0010000410f28c10fc2c3010f54c8420f1194dd40010000420f548cdd8000000066410f76ca660fd7c13dffff00000f84da0100008bfe418bca83e7fc0f57ff448bcf41ba02000000413bc90f83b10000008d51020f1f008bc1410f28c8410fafc4410f28e0410f28d8410f28d083c1044103c0410f1004878d42ff410fafc40f55c84103c0410f1004878bc2410fafc40f55e04103c0410f1004878d420183c204410fafc40f55d84103c0410f1004870f55d00f28c10fc2c4010f54e00f55c10f56e00f28c30fc2c2010f54d00f28c80f55cb0f28c40f56ca0fc2c1010f28d00f55c40f54d10f56d00f28ca0fc2cf010f54f90f55ca0f56f9413bc90f8255ffffff83c10441b9800000004983ea010f8533ffffff488b542430b80f0000008bce410f28f083e103410f28e00fb3c8410f28e8410f28d0660f6ed88bc7410fafc4660f70db00410f54de66410f76de0f28cb4103c00fc6c900410f1004878d4701410fafc40f55f00f54f10f28cb0fc6c9554103c0410f1004878d4702410fafc40f55e00f54e10f28cb0fc6c9aa4103c0410f1004878d4703410fafc40f55e80f54e90f28cb0fc6c9ff4103c0410f1004870f55d00f28c60fc2c4010f28d80f54d10f55c60f54dc0f56d80f28c50fc2c2010f28c80f55c50f54ca0f56c80f28c30fc2c1010f28d00f55c30f54d10f56d00f28c20fc2c7010f28d80f55c20f54df0f56d80f28c3410fc2c101eb080f28c3410fc2c1020f28c8488bc30f55cb410f54c10f56c84803c00f53d14803db4183c004420f114cddb0410f28c30f5994c5b0000000410f5cd40fc2c2010f28c8410f54c30f55ca0f56c80f114cdd80453bc50f825ffdffff448b5c2420488b9df0020000488b7c24404c8b742438f30f105360410f28c7418bd24183fd040f82ad000000458d55fd8bcaf30f104c8d800f2fc873168bc10f28c148c1e80283e103488d0481f30f10548450448d4202418d40fff30f104c85800f2fc88bc873168bc10f28c148c1e80283e103488d0481f30f105484508d42fe418bc848c1e90283e0034c8d0c88f3420f104c8d800f2fc8730af3420f10548c500f28c1418d48018d42ff48c1e90283e0034c8d0488f3420f104c85800f2fc8730af3420f105484500f28c183c204413bd20f8257ffffff413bd573318bca4c8d4580418bc52bc28bd04d8d0488f3410f10080f2fc87309f30f10548c500f28c148ffc14983c0044883ea0175e083bd280300000175290f28c80f28c20fc6c0000fc6c9000f294424500f294424600f294424700f294d800f294d900f294da04585ed0f8442010000448bd641b802000000450fafd40f1f840000000000418d40fe410f28eb448bc849c1e9024d03c9420f1064cd80420f1054cde00f28cc0fc2ca010f28d90f28c1420f5484cde0000000420f555ccc500f56d80f28c20f5ceb0f59dc0fc2c4010f56c1420f108ccd700100000f59ea0f58eb0f28d90f54e80f55c40f56e8410f28c0420f116ccde0420f59accd100100000f28e5420f59a4cd400100000f28d40f55c4410fc2d5010f28f20f55d1420f54b4cda00100000f56f20fc2d8010f54f30f55dc0f56f34d85f6744d488b44c520418bd3c1e2070f28c503d60fc6c555f30f112c90418d40ff488b44c520f30f1104900f28c5418bc00fc6c5aa0fc6edff488b4cc520418d4001488b44c520f30f110491f30f112c90420f1084cdd0010000418d40fe4103c24183c004410f1104870f113487418d40fe413bc50f82d3feffff8b8518030000ffc6488b54243041ba000000003bf00f8298faffff41b980000000413bc10f8383000000488b8df8020000488b9330030000410fafc44c8b31498bce8bf88d048500000000448bc08bf0"
+        },
+        {
+          "offset": 2029,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "copyPrimitive"
+        },
+        {
+          "offset": 2034,
+          "bytesHex": "488b8b30030000b8800000002b8518030000410fafc4488d14b98bd8448d048500000000"
+        },
+        {
+          "offset": 2070,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "copyPrimitive"
+        },
+        {
+          "offset": 2075,
+          "bytesHex": "488b85f0020000448bc6498bd6488b8030030000488d0c98"
+        },
+        {
+          "offset": 2099,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "copyPrimitive"
+        },
+        {
+          "offset": 2104,
+          "bytesHex": "448b5c242041b980000000488b9df00200004c8b74243841ffc341ba00000000448b4424248b4c2428488bbd08030000488bb50003000044895c2420443b9d100300000f828ff9ffff440f28bc2400030000440f28ac2420030000440f289c2440030000440f28942450030000440f288c24600300000f28bc24800300000f28b424900300004c8ba424b8030000440f28b42410030000440f28a42430030000440f288424700300004c8bbc24a80300004c8bb424b0030000488bbc24c0030000488bb424c80300004585ed744766660f1f840000000000418bc248c1e8024803c00f1044c5b00f104cc450420f118493c00000000f1044c5e0420f118c9340020000420f118493f00000004183c204453bd572c333c04881c4d0030000415d5b5dc3"
+        }
+      ]
+    },
+    "convertPeak": {
+      "rva": "0x2507b0",
+      "bodyLength": 684,
+      "bodySha256": "648cf9b74698d4dcd950ef6334f592b0a659be57bdb2bddf47ac999f68f0febd",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48895c24084889742410574883ec30418bf0488bfa488bd94885c90f84760200004885d20f846d0200008b0981f903000101751b837b04207423b802022680488b5c2440488b7424484883c4305fc381f90300020175e3837b042075dd8b128bc281fa03000101741281fa03000201740a890f8b43048947048bc18b0b0f2974242081f9030001010f85260100003bc10f85870000008b430883f8020f87ee010000837b18000f85e4010000837b1c000f85da010000"
+        },
+        {
+          "offset": 182,
+          "prefixHex": "f30f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakLower"
+        },
+        {
+          "offset": 190,
+          "bytesHex": "0f57d2894708f30f10430c"
+        },
+        {
+          "offset": 201,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 206,
+          "bytesHex": "f30f11470c837b0802740a"
+        },
+        {
+          "offset": 217,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakFirstTimeUpper"
+        },
+        {
+          "offset": 225,
+          "bytesHex": "eb030f57d2f30f1043100f57c9"
+        },
+        {
+          "offset": 238,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 243,
+          "bytesHex": "f30f1147100f57c9"
+        },
+        {
+          "offset": 251,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakSecondTimeUpper"
+        },
+        {
+          "offset": 259,
+          "bytesHex": "f30f104314"
+        },
+        {
+          "offset": 264,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 269,
+          "bytesHex": "f30f1147148b4318894718e9560100003d030002010f85680100008b430883f8020f875c010000837b18000f8552010000837b1c000f8548010000"
+        },
+        {
+          "offset": 328,
+          "prefixHex": "f30f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakLower"
+        },
+        {
+          "offset": 336,
+          "bytesHex": "0f57d2894708f30f10430c"
+        },
+        {
+          "offset": 347,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 352,
+          "bytesHex": "f30f11470c837b0802740a"
+        },
+        {
+          "offset": 363,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakFirstTimeUpper"
+        },
+        {
+          "offset": 371,
+          "bytesHex": "eb030f57d2f30f1043100f57c9"
+        },
+        {
+          "offset": 384,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 389,
+          "bytesHex": "f30f1147100f57c9"
+        },
+        {
+          "offset": 397,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakSecondTimeUpper"
+        },
+        {
+          "offset": 405,
+          "bytesHex": "f30f104314"
+        },
+        {
+          "offset": 410,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 415,
+          "bytesHex": "33c0f30f11471483fe018947180f94c0e9c200000081f9030002010f85d00000003bc10f85c80000008b4b0883f9020f87bc0000008b431c83f8010f87b000000083fe0175083bc60f85a3000000"
+        },
+        {
+          "offset": 493,
+          "prefixHex": "f30f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakLower"
+        },
+        {
+          "offset": 501,
+          "bytesHex": "0f57d2894f080f57f6f30f10430c"
+        },
+        {
+          "offset": 515,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 520,
+          "bytesHex": "f30f11470c837b0802740a"
+        },
+        {
+          "offset": 531,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakFirstTimeUpper"
+        },
+        {
+          "offset": 539,
+          "bytesHex": "eb030f57d2f30f1043100f57c9"
+        },
+        {
+          "offset": 552,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 557,
+          "bytesHex": "f30f1147100f57c9"
+        },
+        {
+          "offset": 565,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakSecondTimeUpper"
+        },
+        {
+          "offset": 573,
+          "bytesHex": "f30f104314"
+        },
+        {
+          "offset": 578,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 583,
+          "bytesHex": "f30f114714837b0802751cf30f10570c0f57c9"
+        },
+        {
+          "offset": 602,
+          "prefixHex": "0f5715",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 609,
+          "bytesHex": "f30f104318"
+        },
+        {
+          "offset": 614,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 619,
+          "bytesHex": "0f28f0f30f1177188b431c89471c33c00f28742420488b5c2440488b7424484883c4305fc3b808008080ebe4488b5c2440b801022680488b7424484883c4305fc3"
+        }
+      ]
+    },
+    "clamp": {
+      "rva": "0x2520e0",
+      "bodyLength": 23,
+      "bodySha256": "1dc0c74e35de48c2bc45f154daf8aad54dccc160db545e7f0d1dc012bae5c2c4",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "0f2fc277050f2fc1730c0f2fc173040f28c1c30f28c2c3"
+        }
+      ]
+    },
+    "applyPeak": {
+      "rva": "0x250dd0",
+      "bodyLength": 1274,
+      "bodySha256": "8a02e8c29dea22e71ff320106357316660a9a274b232d8b9694b3851b6fac250",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc4535641544881ecb00000004d8be1488bf2488bd94885c90f84c90400004885d20f84c004000048896808488978104c8970180f2970d80f2978c8440f2940b8440f2948a8440f2950988b023d030001010f85f9010000"
+        },
+        {
+          "offset": 89,
+          "prefixHex": "f3440f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlScale"
+        },
+        {
+          "offset": 98,
+          "bytesHex": "33ed"
+        },
+        {
+          "offset": 100,
+          "prefixHex": "f3440f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 109,
+          "bytesHex": "448bf5"
+        },
+        {
+          "offset": 112,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 120,
+          "bytesHex": "0f57ff"
+        },
+        {
+          "offset": 123,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "timeFactor"
+        },
+        {
+          "offset": 132,
+          "bytesHex": "0f1f40000f1f8400000000008b4608410f28c2894348896b4cf30f104e0cf3410f59c9418bfe"
+        },
+        {
+          "offset": 170,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 175,
+          "bytesHex": "f30f1144bb508b4b4885c90f84a500000083e9010f848100000083f9010f854c030000c784bb80000000d0913b3df30f1046140f2ec775050f28ceeb238b43400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 259,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 264,
+          "bytesHex": "0f28cef30f5cc8488bcf488bc3f30f118c8bb0000000f30f118cbb90020000c784bb60020000c0988b3c8b4610f30f118cbbc00200008984bb30020000e99f000000c784bb800000000000803fc784bbb00000000000803fe984000000f30f1046100f2ec775050f28ceeb238b43400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 395,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 400,
+          "bytesHex": "0f28cef30f5cc8488bcf488bc3f30f118c8b80000000f30f1046140f2ec7750dc784bbb00000000000803feb2c8b43400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 468,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 473,
+          "bytesHex": "0f28cef30f5cc8f30f118cbbb000000041ffc64183fe0c0f829afeffff4883bb80030000008bf58b3b8b43044c89bc24e8000000440fb67b3c0f8561020000c1e009"
+        },
+        {
+          "offset": 539,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "allocationContext"
+        },
+        {
+          "offset": 546,
+          "bytesHex": "448bf041b970000000498b0424418bd6498bccff5008488983800300004885c00f8524020000be0a008080e9270200003d030002010f85820200008b420833ed"
+        },
+        {
+          "offset": 610,
+          "prefixHex": "f3440f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlScale"
+        },
+        {
+          "offset": 619,
+          "bytesHex": "448bf5"
+        },
+        {
+          "offset": 622,
+          "prefixHex": "f3440f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 631,
+          "bytesHex": "0f57ff"
+        },
+        {
+          "offset": 634,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 642,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "timeFactor"
+        },
+        {
+          "offset": 651,
+          "bytesHex": "8941488b421c89414c0f1f40000f1f840000000000f30f104e0c410f28c2f3410f59c9418bfe"
+        },
+        {
+          "offset": 689,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 694,
+          "bytesHex": "f30f1144bb50410f28c2f30f104e18f3410f59c9"
+        },
+        {
+          "offset": 714,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 719,
+          "bytesHex": "f30f1184bbe00000008b4b4885c90f84a500000083e9010f848100000083f9010f8529010000c784bb80000000d0913b3df30f1046140f2ec775050f28ceeb238b43400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 806,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 811,
+          "bytesHex": "0f28cef30f5cc8488bcf488bc3f30f118c8bb0000000f30f118cbb90020000c784bb60020000c0988b3c8b4610f30f118cbbc00200008984bb30020000e99f000000c784bb800000000000803fc784bbb00000000000803fe984000000f30f1046100f2ec775050f28ceeb238b43400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 942,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 947,
+          "bytesHex": "0f28cef30f5cc8488bcf488bc3f30f118c8b80000000f30f1046140f2ec7750dc784bbb00000000000803feb2c8b43400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 1015,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1020,
+          "bytesHex": "0f28cef30f5cc8f30f118cbbb000000041ffc64183fe0c0f8287feffffe9d8fdffffb805008080440f284c2470440f288424800000000f28bc24900000000f28b424a00000004c8bb424e0000000488bbc24d8000000488bac24d0000000440f285424604881c4b0000000415c5e5bc34d8bc633d2488bc8"
+        },
+        {
+          "offset": 1140,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "fillPrimitive"
+        },
+        {
+          "offset": 1145,
+          "bytesHex": "4180ff014c8bbc24e8000000755185f6754d85ff74499085ed75324883bb88030000007528498b0424"
+        },
+        {
+          "offset": 1186,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "allocationContext"
+        },
+        {
+          "offset": 1193,
+          "bytesHex": "41b97d000000ba00040000498bccff5008488983880300004885c0740dffc53bef72c48bc6e950ffffffbe0a0080808bc6e944ffffffb802022680e93affffffb8010226804881c4b0000000415c5e5bc3"
+        }
+      ]
+    },
+    "initPeak": {
+      "rva": "0x250b30",
+      "bodyLength": 349,
+      "bodySha256": "23a0e0fc595b4cbc1a9ca02b88b8c636840946a89eb20638101b494b2c4cef5c",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "48896c2420564883ec20498be8488bf14885c90f84340100004885d20f842b0100008b420889018b42108941048b42148941080f10421848895c243048897c2438"
+        },
+        {
+          "offset": 65,
+          "prefixHex": "488d3d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "defaultProfilePointer"
+        },
+        {
+          "offset": 72,
+          "bytesHex": "0f11410c4c897424404533f60f104a28418bde0f11491c0f1042380f11412c0fb6424888413c8b028941404489714c660f1f840000000000488b17"
+        },
+        {
+          "offset": 131,
+          "prefixHex": "488d0d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "profileKeyPrefix"
+        },
+        {
+          "offset": 138,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "profileCompare"
+        },
+        {
+          "offset": 143,
+          "bytesHex": "85c0742affc34883c70883fb0172e2b806008080488b7c2438488b5c24304c8b742440488b6c24484883c4205ec38bc34c8bcd488bce4c8d04c0"
+        },
+        {
+          "offset": 201,
+          "prefixHex": "488d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "defaultProfilePrefix"
+        },
+        {
+          "offset": 208,
+          "bytesHex": "488d50044a8d1482468b0480"
+        },
+        {
+          "offset": 220,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "applyPeak"
+        },
+        {
+          "offset": 225,
+          "bytesHex": "85c078be488d8e40010000ba0c000000448971d0c7010000803fc781b00100000000803f4489b1e00100004489b11002000044897130448971604489b1f00000004489b1200100004489b1900000004489b1c0000000488d49044883ea0175b0c7464403000000e956ffffff488b6c2448b8010226804883c4205ec3"
+        }
+      ]
+    },
+    "convertBands": {
+      "rva": "0x24dda0",
+      "bodyLength": 2253,
+      "bodySha256": "38916fa6daf9c2e512f4c0d4870f99601f01a9d89f141202465e90bed8bbde5c",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "405641564881ecc8000000488bf24c8bf14885c90f84a30800004885d20f849a0800008b0981f901000101751741837e04747422b8020226804881c4c8000000415e5ec381f90100020175e841817e049000000075de8b128bc281fa01000101741381fa01000201740b890e418b46048946048bc1418b0e48899c24e00000004889ac24e80000004889bc24f00000004c89bc24c00000000f29b424b00000000f29bc24a0000000440f29842490000000440f298c2480000000440f29542470440f295c2460440f29642450440f296c2440440f29742430440f297c242081f9010001010f85de0400003bc10f8576020000418b460883f8010f82b707000083f8030f87ae070000894608418b461883f80f0f879e07000083f8070f8795070000894618418b460c83f8020f87850700004183f8017509413bc00f857607000089460c418b461483f8010f8766070000"
+        },
+        {
+          "offset": 336,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "percentageUpper"
+        },
+        {
+          "offset": 344,
+          "bytesHex": "0f57c9894614f3410f104610"
+        },
+        {
+          "offset": 356,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 361,
+          "bytesHex": "f30f114610418b461c85c00f853c070000413946200f853207000089461c33ed418b46208bfd8946208b56088d42ff85c0744c"
+        },
+        {
+          "offset": 412,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "crossoverUpper"
+        },
+        {
+          "offset": 420,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 428,
+          "bytesHex": "0f1f40008bdf0f28d60f28cff3410f10449e24"
+        },
+        {
+          "offset": 447,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 452,
+          "bytesHex": "f30f11449e2485ff740e8d47ff0f2f4486240f86da0600008b5608ffc78d42ff3bf872c88bfd85d20f842c010000"
+        },
+        {
+          "offset": 498,
+          "prefixHex": "660f6f3d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "absoluteMask"
+        },
+        {
+          "offset": 506,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandThresholdLower"
+        },
+        {
+          "offset": 515,
+          "prefixHex": "f3440f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "ratioUpper"
+        },
+        {
+          "offset": 524,
+          "prefixHex": "f3440f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 533,
+          "prefixHex": "f3440f101d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 542,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "minimumTime"
+        },
+        {
+          "offset": 550,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakSecondTimeUpper"
+        },
+        {
+          "offset": 559,
+          "prefixHex": "f3440f102d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandOutputUpper"
+        },
+        {
+          "offset": 568,
+          "prefixHex": "f3440f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandOutputLower"
+        },
+        {
+          "offset": 577,
+          "prefixHex": "f3440f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "kneeUpper"
+        },
+        {
+          "offset": 586,
+          "bytesHex": "660f1f4400008bdf0f57d2410f28c84c8d3c5bf3430f1044fe2c"
+        },
+        {
+          "offset": 612,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 617,
+          "bytesHex": "f3420f1144fe2c488d1c5bf3410f1044de30410f28d1410f28ca"
+        },
+        {
+          "offset": 643,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 648,
+          "bytesHex": "f30f1144de30410f28d3f3430f1044fe340f28ce"
+        },
+        {
+          "offset": 668,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 673,
+          "bytesHex": "f3420f1144fe34410f28d4f3430f1044fe380f28ce"
+        },
+        {
+          "offset": 694,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 699,
+          "bytesHex": "f3420f1144fe38410f28d5f3430f1044fe3c410f28ce"
+        },
+        {
+          "offset": 721,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 726,
+          "bytesHex": "f3420f1144fe3c410f28d7f3430f1044fe400f57c9"
+        },
+        {
+          "offset": 747,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 752,
+          "bytesHex": "f3420f104cfe2cf30f58c9f3420f1144fe400f54cf0f2fc17607f3420f114cfe408b5608ffc73bfa0f8232ffffff83fa030f831c0500008bc2488d0440488d4006488d0cc6b8030000002bc28bd06690c741fc0000a0c148c7010000004089690848c7410c0000803f488d49184883ea0175dde9db0400003d010002010f8543050000418b4e088d41ff83f8020f8733050000894e08418b461883f80f0f8723050000894618418b460c83f8020f871305000089460c418b461483f8010f8703050000"
+        },
+        {
+          "offset": 947,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "percentageUpper"
+        },
+        {
+          "offset": 955,
+          "bytesHex": "0f57c9894614f3410f104610"
+        },
+        {
+          "offset": 967,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 972,
+          "bytesHex": "f30f114610418b461c85c00f85d9040000413946200f85cf04000089461c33ed418b46208bfd894620418b56088d42ff85c07449"
+        },
+        {
+          "offset": 1024,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "crossoverUpper"
+        },
+        {
+          "offset": 1032,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 1040,
+          "bytesHex": "8bdf0f28d60f28cff3410f10449e24"
+        },
+        {
+          "offset": 1055,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1060,
+          "bytesHex": "f30f11449e2485ff740e8d47ff0f2f4486240f867a040000418b5608ffc78d42ff3bf872c78bfd85d20f842b010000"
+        },
+        {
+          "offset": 1107,
+          "prefixHex": "660f6f3d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "absoluteMask"
+        },
+        {
+          "offset": 1115,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandThresholdLower"
+        },
+        {
+          "offset": 1124,
+          "prefixHex": "f3440f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "ratioUpper"
+        },
+        {
+          "offset": 1133,
+          "prefixHex": "f3440f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 1142,
+          "prefixHex": "f3440f101d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 1151,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "minimumTime"
+        },
+        {
+          "offset": 1159,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakSecondTimeUpper"
+        },
+        {
+          "offset": 1168,
+          "prefixHex": "f3440f102d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandOutputUpper"
+        },
+        {
+          "offset": 1177,
+          "prefixHex": "f3440f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandOutputLower"
+        },
+        {
+          "offset": 1186,
+          "prefixHex": "f3440f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "kneeUpper"
+        },
+        {
+          "offset": 1195,
+          "bytesHex": "0f1f4400008bc70f57d2410f28c84c8d3c40f3430f1044fe2c488d1c40"
+        },
+        {
+          "offset": 1224,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1229,
+          "bytesHex": "f30f1144de30410f28d1f3410f1044de30410f28ca"
+        },
+        {
+          "offset": 1250,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1255,
+          "bytesHex": "f3420f1144fe34410f28d3f3430f1044fe340f28ce"
+        },
+        {
+          "offset": 1276,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1281,
+          "bytesHex": "f3420f1144fe38410f28d4f3430f1044fe380f28ce"
+        },
+        {
+          "offset": 1302,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1307,
+          "bytesHex": "f3420f1144fe3c410f28d5f3430f1044fe3c410f28ce"
+        },
+        {
+          "offset": 1329,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1334,
+          "bytesHex": "f3420f1144fe40410f28d7f3430f1044fe400f57c9"
+        },
+        {
+          "offset": 1355,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1360,
+          "bytesHex": "f30f104cde30f30f58c9f3420f1144fe440f54cf0f2fc17607f3420f114cfe44418b5608ffc73bfa0f8232ffffff83fa040f83bc0200008bc2488d0c40488d4634488d04c8b9040000002bca0f1f4000c740fc0000a0c148c7000000004089680848c7400c0000803f488d40184883e90175dde97b02000081f9010002010f85e20200003bc10f85da020000418b4e088d41ff83f8030f87ca020000894e08418b461883f80f0f87ba020000894618418b460c83f8020f87aa0200004183f8017509413bc00f859b02000089460c418b461483f8010f878b020000"
+        },
+        {
+          "offset": 1579,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "percentageUpper"
+        },
+        {
+          "offset": 1587,
+          "bytesHex": "0f57c9894614f3410f104610"
+        },
+        {
+          "offset": 1599,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1604,
+          "bytesHex": "f30f114610418b461c85c00f8561020000413946200f855702000089461c33ed418b46208bfd8946208b56088d42ff85c07451"
+        },
+        {
+          "offset": 1655,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "crossoverUpper"
+        },
+        {
+          "offset": 1663,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 1671,
+          "bytesHex": "660f1f8400000000008bdf0f28d60f28cff3410f10449e24"
+        },
+        {
+          "offset": 1695,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1700,
+          "bytesHex": "f30f11449e2485ff740e8d47ff0f2f4486240f86fa0100008b5608ffc78d42ff3bf872c8448bfd85d20f8427010000"
+        },
+        {
+          "offset": 1747,
+          "prefixHex": "660f6f3d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "absoluteMask"
+        },
+        {
+          "offset": 1755,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandThresholdLower"
+        },
+        {
+          "offset": 1764,
+          "prefixHex": "f3440f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "ratioUpper"
+        },
+        {
+          "offset": 1773,
+          "prefixHex": "f3440f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 1782,
+          "prefixHex": "f3440f101d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 1791,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "minimumTime"
+        },
+        {
+          "offset": 1799,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "peakSecondTimeUpper"
+        },
+        {
+          "offset": 1808,
+          "prefixHex": "f3440f102d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandOutputUpper"
+        },
+        {
+          "offset": 1817,
+          "prefixHex": "f3440f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandOutputLower"
+        },
+        {
+          "offset": 1826,
+          "prefixHex": "f3440f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "kneeUpper"
+        },
+        {
+          "offset": 1835,
+          "bytesHex": "0f1f440000418bdf0f57d2410f28c8488d3c5bf3410f1044fe30"
+        },
+        {
+          "offset": 1861,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1866,
+          "bytesHex": "f30f1144fe30488d1c5bf3410f1044de34410f28d1410f28ca"
+        },
+        {
+          "offset": 1891,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1896,
+          "bytesHex": "f30f1144de34410f28d3f3410f1044de380f28ce"
+        },
+        {
+          "offset": 1916,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1921,
+          "bytesHex": "f30f1144de38410f28d4f3410f1044de3c0f28ce"
+        },
+        {
+          "offset": 1941,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1946,
+          "bytesHex": "f30f1144de3c410f28d5f3410f1044de40410f28ce"
+        },
+        {
+          "offset": 1967,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1972,
+          "bytesHex": "f30f1144de40410f28d7f3410f1044de440f57c9"
+        },
+        {
+          "offset": 1992,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "clamp"
+        },
+        {
+          "offset": 1997,
+          "bytesHex": "f30f104cfe30f30f58c9f30f1144de440f54cf0f2fc17606f30f114cde448b560841ffc7443bfa0f8236ffffff83fa0473448bc2488d0c40488d4634488d04c8b9040000002bca0f1f40000f1f840000000000c740fc0000a0c148c7000000004089680848c7400c0000803f488d40184883e90175dd33c0440f28742430440f286c2440440f28642450440f285c2460440f28542470440f288c2480000000440f288424900000000f28bc24a00000000f28b424b00000004c8bbc24c0000000488bbc24f0000000488bac24e8000000488b9c24e0000000440f287c24204881c4c8000000415e5ec3b808008080eb88b8010226804881c4c8000000415e5ec3"
+        }
+      ]
+    },
+    "applyBands": {
+      "rva": "0x24ef20",
+      "bodyLength": 6137,
+      "bodySha256": "b78006e99269009173e970ea895356361299b5d3c7c9884a0ba8a6d45c1a9400",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc44c894820448940185553574154488d68984881ec480100004d8be1488bda488bf94885c90f84ba1700004885d20f84b1170000488970104c8968d84c8970d04c8978c80f2970b80f2978a8440f294098440f294888440f299078ffffff440f299868ffffff440f29a058ffffff440f29a848ffffff440f29b038ffffff8b023d010001010f85f50a00008b520841b902000000"
+        },
+        {
+          "offset": 150,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 158,
+          "bytesHex": "41ba04000000"
+        },
+        {
+          "offset": 164,
+          "prefixHex": "f3440f101d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "powerTimeFactor"
+        },
+        {
+          "offset": 173,
+          "bytesHex": "8951488b430c89414cf30f104310"
+        },
+        {
+          "offset": 187,
+          "prefixHex": "f30f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "minimumTime"
+        },
+        {
+          "offset": 195,
+          "bytesHex": "c744244000100101c744244418000000c7442450f4fd343ff30f1141508b43148941548b431889415833c0448be885d20f84fa050000"
+        },
+        {
+          "offset": 249,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "timeFactor"
+        },
+        {
+          "offset": 258,
+          "bytesHex": "4c8d5140"
+        },
+        {
+          "offset": 262,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlScale"
+        },
+        {
+          "offset": 271,
+          "bytesHex": "450f57c9"
+        },
+        {
+          "offset": 275,
+          "prefixHex": "f3440f102d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 284,
+          "prefixHex": "f3440f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 293,
+          "bytesHex": "4c8955700f1f80000000004d8bfa83fa010f8420010000418bd58bf0488d0c950000000048894c243066908b4748458d75ffffc8443be8750ef3420f1044b32444894c2448eb0ef30f10449324c744244801000000458b0a8bc64803c14c896424284869d0d8000000f30f1144244c4489442420488d4c2440448b074883c2644803d7"
+        },
+        {
+          "offset": 424,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "filterConversion"
+        },
+        {
+          "offset": 429,
+          "bytesHex": "85c00f857b100000488b4c2430ffc6448b858000000041b9020000004c8b5570418bd583fe020f8277ffffff4585ed74758b4748ffc8443be8746b418bc5418bf144894c244866c744475c0400f3420f1044b3244c8bf1f30f1144244c660f1f440000458b0f488d4c2440448b078bc64903c64c896424284869d0d80000008b85800000004883c264894424204803d7"
+        },
+        {
+          "offset": 573,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "filterConversion"
+        },
+        {
+          "offset": 578,
+          "bytesHex": "85c00f85e60f0000ffc683fe0472bfeb09418bc56644894c475c418bc54869f0700200004c8d34404c897d704881c64c0e000048c7442430030000004803f74c8d24406666660f1f840000000000f3460f1054f32cf3440f11569c428b44e3308946ccf3420f1044f334410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 718,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 723,
+          "bytesHex": "0f28cff30f5cc8f30f114efcf3420f1044f338410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 776,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 781,
+          "bytesHex": "0f28cff30f5cc8f30f114e2c410f28c5f3420f104cf33cf3410f59cc"
+        },
+        {
+          "offset": 809,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 814,
+          "bytesHex": "f30f11465c0f28cff3420f1074f3400f28c7f30f11b68c000000f3420f5e4ce330f30f5cc10f57c9f30f1186bc000000410f28c3418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 878,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 883,
+          "bytesHex": "f3410f59f60f28cff30f5cc8f3440f5cd6f30f118eec000000f3440f11967c010000f3460f1054f32cf3440f1156a0428b44e3308946d0f3420f1044f334410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 979,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 984,
+          "bytesHex": "0f28cff30f5cc8f30f110ef3420f1044f338410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 1036,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1041,
+          "bytesHex": "0f28cff30f5cc8f30f114e30410f28c5f3420f104cf33cf3410f59cc"
+        },
+        {
+          "offset": 1069,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 1074,
+          "bytesHex": "f30f1146600f28cff3420f1074f3400f28c7f30f11b690000000f3420f5e4ce330f30f5cc10f57c9f30f1186c0000000410f28c3418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 1138,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1143,
+          "bytesHex": "f3410f59f60f28cff30f5cc8f3440f5cd6f30f118ef0000000f3440f119680010000f3460f1054f32cf3440f1156a4428b44e3308946d4f3420f1044f334410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 1239,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1244,
+          "bytesHex": "0f28cff30f5cc8f30f114e04f3420f1044f338410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 1297,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1302,
+          "bytesHex": "0f28cff30f5cc8f30f114e34410f28c5f3420f104cf33cf3410f59cc"
+        },
+        {
+          "offset": 1330,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 1335,
+          "bytesHex": "f30f1146640f28cff3420f1074f3400f28c7f30f11b694000000f3420f5e4ce330f30f5cc10f57c9f30f1186c4000000410f28c3418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 1399,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1404,
+          "bytesHex": "f3410f59f60f28cff30f5cc8f3440f5cd6f30f118ef4000000f3440f119684010000f3460f1054f32cf3440f1156a8428b44e3308946d8f3420f1044f334410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 1500,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1505,
+          "bytesHex": "0f28cff30f5cc8f30f114e08f3420f1044f338410f2ec175050f28cfeb23418b070f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 1558,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1563,
+          "bytesHex": "0f28cff30f5cc8f30f114e38410f28c5f3420f104cf33cf3410f59cc"
+        },
+        {
+          "offset": 1591,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 1596,
+          "bytesHex": "f30f1146680f28cff3420f1074f3400f28c7f30f11b698000000f3420f5e4ce330f30f5cc10f57c9f30f1186c8000000410f28c3418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 1660,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1665,
+          "bytesHex": "f3410f59f60f28cff30f5cc8f3440f5cd6f30f118ef8000000f3440f1196880100004883c61048836c2430010f85ddfbffff8b574841ffc5443bea731e4c8ba58800000041b902000000448b85800000004d8bd733c0e954faffff83fa040f836710000041b90200000041ba04000000eb044c8d7940"
+        },
+        {
+          "offset": 1783,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "inactiveReleaseFactor"
+        },
+        {
+          "offset": 1791,
+          "bytesHex": "442bd28bc24869f070020000458bf24881c69c0f00004803f74533ed0f1f440000488bde4d8be166660f1f8400000000000f57c944896bcc410f28c3c743fc0000803f418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 1870,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1875,
+          "bytesHex": "0f28cfc7834cfeffff0000a0c1f30f5cc8c7837cfeffff00000040410f28c3f30f114b9c0f57c9418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 1926,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1931,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bacfeffff418b07f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 1964,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 1969,
+          "bytesHex": "0f28cfc7830cffffff0000803ff30f5cc84489ab3cffffffc7836cffffff0000003f410f28c3c7432c0000a0c1f30f118bdcfeffff0f57c944896bd0c7030000803f418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2047,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2052,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114ba00f57c9c78350feffff0000a0c1c78380feffff00000040418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2103,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2108,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bb0feffff418b07f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 2141,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2146,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118be0feffff0f57c9c78310ffffff0000803f4489ab40ffffffc78370ffffff0000003fc743300000a0c144896bd4c743040000803f418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2225,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2230,
+          "bytesHex": "0f28cff30f5cc8f30f114ba4c78354feffff0000a0c10f57c9410f28c3c78384feffff00000040418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2281,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2286,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bb4feffff418b07f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 2319,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2324,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118be4feffff0f57c9c78314ffffff0000803f4489ab44ffffffc78374ffffff0000003fc743340000a0c144896bd8c743080000803f418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2403,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2408,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114ba80f57c9c78358feffff0000a0c1c78388feffff00000040418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2459,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2464,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bb8feffff418b07f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 2497,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2502,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118be8feffff0f57c9c78318ffffff0000803f4489ab48ffffffc78378ffffff0000003fc743380000a0c144896bdcc7430c0000803f418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2581,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2586,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114bac0f57c9c7835cfeffff0000a0c1c7838cfeffff00000040418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2637,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2642,
+          "bytesHex": "0f28cff30f5cc8f30f118bbcfeffff418b070f57d20f28c6f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 2675,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2680,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118becfeffff0f57c9c7831cffffff0000803f4489ab4cffffffc7837cffffff0000003fc7433c0000a0c144896be0c743100000803f418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2759,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2764,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114bb00f57c9c78360feffff0000a0c1c78390feffff00000040418b07f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 2815,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2820,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bc0feffff418b07f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 2853,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 2858,
+          "bytesHex": "0f28cff30f5cc8f30f118bf0feffffc78320ffffff0000803f4489ab50ffffffc743800000003fc743400000a0c14883c3184983ec010f85cafbffff4881c67002000041b9020000004983ee010f85a3fbffffe9ca0b00003d010002010f85500c00008b4a084533f6"
+        },
+        {
+          "offset": 2963,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 2971,
+          "bytesHex": "458bee"
+        },
+        {
+          "offset": 2974,
+          "prefixHex": "f3440f101d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "powerTimeFactor"
+        },
+        {
+          "offset": 2983,
+          "bytesHex": "41b904000000894f488b420c89474cf30f104210"
+        },
+        {
+          "offset": 3003,
+          "prefixHex": "f30f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "minimumTime"
+        },
+        {
+          "offset": 3011,
+          "bytesHex": "c744244000100101c744244418000000c7442450f4fd343ff30f1147508b42148947548b4218ba020000008947584489757085c90f84ba060000"
+        },
+        {
+          "offset": 3069,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "timeFactor"
+        },
+        {
+          "offset": 3078,
+          "bytesHex": "450f57c9"
+        },
+        {
+          "offset": 3082,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlScale"
+        },
+        {
+          "offset": 3091,
+          "prefixHex": "f3440f102d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 3100,
+          "prefixHex": "f3440f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 3109,
+          "bytesHex": "83f9010f841c010000418bf6458bf54e8d3cb5000000000f1f40008b4748ffc8443be87510418d45ff89542448f30f10448324eb12458bf5c744244801000000f3420f1044b324448b4f40488d4c24408bc64903c74c896424284869d0d8000000f30f1144244c4489442420448b074883c2644803d7"
+        },
+        {
+          "offset": 3227,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "filterConversion"
+        },
+        {
+          "offset": 3232,
+          "bytesHex": "85c00f8588050000448b8580000000ffc6ba0200000083fe0272854585ed0f84800000008b4748ffc8443be87476418d45ff6642c744775c0400f30f104483248bf2418bc5f30f1144244c895424484c8d348500000000660f1f840000000000448b4f40488d4c2440448b078bc64903c64c896424284869d0d80000008b85800000004883c264894424204803d7"
+        },
+        {
+          "offset": 3374,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "filterConversion"
+        },
+        {
+          "offset": 3379,
+          "bytesHex": "85c00f85f5040000ffc683fe0472beeb0666428954775c418bcd33d24869f1700200004c8d244948895424304881c60c0f000048c7442438030000004803f74c8d34494c69e99c0000000f1f00f3460f1054e3304e8d3c2af3460f1194bfe80d0000428b44f334428984bf180e0000f3420f1044f338410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 3531,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 3536,
+          "bytesHex": "0f28cff30f5cc8498bcf488bc7f30f118c88480e0000f3420f1044f33c410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 3599,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 3604,
+          "bytesHex": "0f28cff30f5cc8498bcf488bc7410f28c5f30f118c88780e0000f3420f104cf340f3410f59cc"
+        },
+        {
+          "offset": 3642,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 3647,
+          "bytesHex": "f3420f1184bfa80e00000f28cff3420f1074f3440f28c7f3420f11b4bfd80e0000f3420f5e4cf334f30f5cc10f57c9f3420f1184bf080f0000410f28c38b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 3720,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 3725,
+          "bytesHex": "488b4c24300f28cf4903cdf3410f59f6f30f5cc8f3440f5cd6f3420f118cbf380f0000f3460f1194bfc80f00004c8d3c8f428b44e33089848fec0d0000428b44f33489848f1c0e0000f3420f1044f338410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 3839,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 3844,
+          "bytesHex": "0f28cff30f5cc8b94c0e0000498bc7f30f110c01f3420f1044f33c410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 3905,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 3910,
+          "bytesHex": "0f28cff30f5cc8b87c0e0000410f28c5f3420f110c38f3420f104cf340f3410f59cc"
+        },
+        {
+          "offset": 3944,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 3949,
+          "bytesHex": "f30f1146a00f28cff3420f1074f3440f28c7f30f1176d0f3420f5e4cf334f30f5cc10f57c9f30f1106410f28c38b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 4006,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4011,
+          "bytesHex": "0f28cff3410f59f6f30f5cc8f30f114e30f30f1086e0fefffff30f5cc6f30f1186c0000000f3460f1054e330f3440f1196e4feffff428b44f334898614fffffff3420f1044f338410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 4116,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4121,
+          "bytesHex": "0f28cff30f5cc8f30f118e44fffffff3420f1044f33c410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 4177,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4182,
+          "bytesHex": "0f28cff30f5cc8f30f118e74ffffff410f28c5f3420f104cf340f3410f59cc"
+        },
+        {
+          "offset": 4213,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 4218,
+          "bytesHex": "f30f1146a40f28cff3420f1074f3440f28c7f30f1176d4f3420f5e4cf334f30f5cc10f57c9f30f114604410f28c38b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 4276,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4281,
+          "bytesHex": "f3410f59f60f28cff30f5cc8f3440f5cd6f30f114e34f3440f1196c4000000f3460f1054e330f3440f1196e8feffff428b44f334898618fffffff3420f1044f338410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 4380,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4385,
+          "bytesHex": "0f28cff30f5cc8f30f118e48fffffff3420f1044f33c410f2ec175050f28cfeb238b47400f57c9f3480f2ac8f30f59c8410f28c0f30f5ec1"
+        },
+        {
+          "offset": 4441,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4446,
+          "bytesHex": "0f28cff30f5cc8f30f118e78ffffff410f28c5f3420f104cf340f3410f59cc"
+        },
+        {
+          "offset": 4477,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 4482,
+          "bytesHex": "f30f1146a80f28cff3420f1074f3440f28c7f30f1176d8f3420f5e4cf334f30f5cc10f57c9f30f114608410f28c38b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 4540,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4545,
+          "bytesHex": "488b5424300f28cf4883c204f3410f59f64889542430f30f5cc8f3440f5cd6f30f114e38f3440f1196c80000004883c61048836c2438010f8582fbffff448b6d70ba020000008b4f4841ffc54c8ba58800000044896d70443be90f8390000000448b85800000004533f6e9f5f9ffffb805008080440f28ac24b0000000440f28a424c0000000440f289c24d0000000440f289424e0000000440f288c24f0000000440f288424000100000f28bc24100100000f28b424200100004c8bbc24300100004c8bb424380100004c8bac2440010000488bb42478010000440f28b424a00000004881c448010000415c5f5b5dc341b90400000083f9040f838c040000"
+        },
+        {
+          "offset": 4800,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "inactiveReleaseFactor"
+        },
+        {
+          "offset": 4808,
+          "bytesHex": "442bc98bc14869f070020000458bf14881c69c0f00004803f74533ed0f1f40000f1f840000000000488bde4c8bfa66660f1f8400000000000f57c944896bcc410f28c3c743fc0000803f8b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 4894,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4899,
+          "bytesHex": "0f28cfc7834cfeffff0000a0c1f30f5cc8c7837cfeffff00000040410f28c3f30f114b9c0f57c98b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 4950,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4955,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bacfeffff8b4740f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 4988,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 4993,
+          "bytesHex": "0f28cfc7830cffffff0000803ff30f5cc84489ab3cffffffc7836cffffff0000003f410f28c3c7432c0000a0c1f30f118bdcfeffff0f57c944896bd0c7030000803f8b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5071,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5076,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114ba00f57c9c78350feffff0000a0c1c78380feffff000000408b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5127,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5132,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bb0feffff8b4740f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 5165,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5170,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118be0feffff0f57c9c78310ffffff0000803f4489ab40ffffffc78370ffffff0000003fc743300000a0c144896bd4c743040000803f8b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5249,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5254,
+          "bytesHex": "0f28cff30f5cc8f30f114ba4c78354feffff0000a0c10f57c9410f28c3c78384feffff000000408b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5305,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5310,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bb4feffff8b4740f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 5343,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5348,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118be4feffff0f57c9c78314ffffff0000803f4489ab44ffffffc78374ffffff0000003fc743340000a0c144896bd8c743080000803f8b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5427,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5432,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114ba80f57c9c78358feffff0000a0c1c78388feffff000000408b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5483,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5488,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bb8feffff8b4740f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 5521,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5526,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118be8feffff0f57c9c78318ffffff0000803f4489ab48ffffffc78378ffffff0000003fc743380000a0c144896bdcc7430c0000803f8b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5605,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5610,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114bac0f57c9c7835cfeffff0000a0c1c7838cfeffff000000408b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5661,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5666,
+          "bytesHex": "0f28cff30f5cc8f30f118bbcfeffff8b47400f57d20f28c6f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 5699,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5704,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f118becfeffff0f57c9c7831cffffff0000803f4489ab4cffffffc7837cffffff0000003fc7433c0000a0c144896be0c743100000803f8b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5783,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5788,
+          "bytesHex": "0f28cff30f5cc8410f28c3f30f114bb00f57c9c78360feffff0000a0c1c78390feffff000000408b4740f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 5839,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5844,
+          "bytesHex": "0f28cf0f57d2f30f5cc80f28c6f30f118bc0feffff8b4740f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 5877,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 5882,
+          "bytesHex": "0f28cff30f5cc8f30f118bf0feffffc78320ffffff0000803f4489ab50ffffffc743800000003fc743400000a0c14883c3184983ef010f85cafbffff4881c670020000ba020000004983ee010f85a4fbffff448b3f488db7e80d0000440fb66f0c33c04c8bb588000000448be04180fd017551443b6748734b8bd84585ff7444660f1f44000085db75314883be10020000007527498b06"
+        },
+        {
+          "offset": 6033,
+          "prefixHex": "4c8d05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandAllocationContext"
+        },
+        {
+          "offset": 6040,
+          "bytesHex": "41b96a000000ba00040000498bceff5008488986100200004885c0741effc3413bdf72c433c041ffc44881c6700200004183fc047299e962faffffb80a008080e958faffffb802022680e94efaffffb8010226804881c448010000415c5f5b5dc3"
+        }
+      ]
+    },
+    "initBands": {
+      "rva": "0x24e840",
+      "bodyLength": 1026,
+      "bodySha256": "04ba188d92fd350618f65861b3edeb331ae4f7d78a7c5ecfb719ba177859e066",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc448895820564883ec50498bf0488bd94885c90f84d70300004885d20f84ce03000048896808bd0c00000048897810488db9980f00004c8970184533f60f2970e8"
+        },
+        {
+          "offset": 67,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 75,
+          "bytesHex": "0f2978d8"
+        },
+        {
+          "offset": 79,
+          "prefixHex": "f30f103d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "powerTimeFactor"
+        },
+        {
+          "offset": 87,
+          "bytesHex": "440f2940c88b4208"
+        },
+        {
+          "offset": 95,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "inactiveReleaseFactor"
+        },
+        {
+          "offset": 104,
+          "bytesHex": "89018b42108941048b42148941080fb6424888410c0f1042180f1141100f104a280f1149200f1042380f1141308b0289414048c741480400000048c741500000c8424489715866900f57c9448977d00f28c7c7070000803f8b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 204,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 209,
+          "bytesHex": "0f28cec78750feffff0000a0c1f30f5cc8c78780feffff000000400f28c7f30f114fa00f57c98b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 259,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 264,
+          "bytesHex": "0f28ce0f57d2f30f5cc8410f28c0f30f118fb0feffff8b4340f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 298,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 303,
+          "bytesHex": "0f28cec78710ffffff0000803ff30f5cc84489b740ffffffc78770ffffff0000003f0f28c7c747300000a0c1f30f118fe0feffff0f57c94489b740020000c787700200000000803f8b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 387,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 392,
+          "bytesHex": "0f28cef30f5cc80f28c7f30f118f100200000f57c9c787c00000000000a0c1c787f0000000000000408b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 445,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 450,
+          "bytesHex": "0f28ce0f57d2f30f5cc8410f28c0f30f118f200100008b4340f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 484,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 489,
+          "bytesHex": "0f28cef30f5cc80f28c7f30f118f500100000f57c9c787800100000000803f4489b7b0010000c787e00100000000003fc787a00200000000a0c14489b7b0040000c787e00400000000803f8b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 576,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 581,
+          "bytesHex": "0f28cef30f5cc8f30f118f80040000c787300300000000a0c10f57c90f28c7c78760030000000000408b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 634,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 639,
+          "bytesHex": "0f28ce0f57d2f30f5cc8410f28c0f30f118f900300008b4340f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 673,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 678,
+          "bytesHex": "0f28cef30f5cc80f28c7f30f118fc00300000f57c9c787f00300000000803f4489b720040000c787500400000000003fc787100500000000a0c14489b720070000c787500700000000803f8b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 765,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 770,
+          "bytesHex": "0f28cef30f5cc80f28c7f30f118ff00600000f57c9c787a00500000000a0c1c787d0050000000000408b4340f3480f2ac8f30f5ec1"
+        },
+        {
+          "offset": 823,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 828,
+          "bytesHex": "0f28ce0f57d2f30f5cc8410f28c0f30f118f000600008b4340f3480f2ad0f30f5ec2"
+        },
+        {
+          "offset": 862,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "coefficientHelper"
+        },
+        {
+          "offset": 867,
+          "bytesHex": "0f28cef30f5cc8f30f118f30060000c787600600000000803f4489b790060000c787c00600000000003fc787800700000000a0c14883c7044883ed010f850bfdffff440f28442420"
+        },
+        {
+          "offset": 939,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "bandDefaultProfilePrefix"
+        },
+        {
+          "offset": 946,
+          "bytesHex": "0f287c24304c8bce0f2874244041b8ffff00004c8b742470488bcb488b7c2468488b6c2460"
+        },
+        {
+          "offset": 983,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "applyBands"
+        },
+        {
+          "offset": 988,
+          "bytesHex": "85c07817c7434403000000488b5c24784883c4505ec3b801022680488b5c24784883c4505ec3"
+        }
+      ]
+    },
+    "filterConversion": {
+      "rva": "0x251a10",
+      "bodyLength": 395,
+      "bodySha256": "6910b84af06cdf16c32706e8a59808db62d0967e1afc0528124cf756c3f44eb9",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "40534883ec50488bda4c8bd14885c90f846b0100004885d20f84620100004585c00f84590100008b013d001001010f85f40000008b51080f57c985d20f84ae000000f30f10510c0f57c0418bc1f3480f2ac0f30f5ed00f2fd10f8691000000"
+        },
+        {
+          "offset": 95,
+          "prefixHex": "0f2f15",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 102,
+          "bytesHex": "0f8384000000f30f104110"
+        },
+        {
+          "offset": 113,
+          "prefixHex": "0f2f05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "qLower"
+        },
+        {
+          "offset": 120,
+          "bytesHex": "7276"
+        },
+        {
+          "offset": 122,
+          "prefixHex": "0f2f05",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "qUpper"
+        },
+        {
+          "offset": 129,
+          "bytesHex": "776df30f105914488d4c2430f30f11442420"
+        },
+        {
+          "offset": 147,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "method",
+          "target": "filterCoefficients"
+        },
+        {
+          "offset": 152,
+          "bytesHex": "85c00f85e5000000"
+        },
+        {
+          "offset": 160,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 168,
+          "bytesHex": "f30f10442430f30f5ed0f30f11030f28da0f28caf30f595c24380f28e2f30f594c24440f28eaf30f59542434"
+        },
+        {
+          "offset": 212,
+          "prefixHex": "0f571d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 219,
+          "bytesHex": "f30f59642440f30f596c243c"
+        },
+        {
+          "offset": 231,
+          "prefixHex": "0f5715",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 238,
+          "bytesHex": "eb17"
+        },
+        {
+          "offset": 240,
+          "prefixHex": "f30f102d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 248,
+          "bytesHex": "0f57e4c7030000803f0f57db0f57d2f30f11530433c0f30f115b08f30f116b0cf30f116310f30f114b144883c4505bc33d0010010275468b490833c0894a0c418b4a0c894a10418b4a10894a14c7020000803ff3410f104214"
+        },
+        {
+          "offset": 337,
+          "prefixHex": "0f5705",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 344,
+          "bytesHex": "f30f114204f3410f104218"
+        },
+        {
+          "offset": 355,
+          "prefixHex": "0f5705",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 362,
+          "bytesHex": "f30f1142084883c4505bc3b8020226804883c4505bc3b8010226804883c4505bc3"
+        }
+      ]
+    },
+    "filterCoefficients": {
+      "rva": "0x251ba0",
+      "bodyLength": 1292,
+      "bodySha256": "dd8327e2b3eed4780dc32fabade0a02682668e0f7e4712c7f37641df91661477",
+      "program": [
+        {
+          "offset": 0,
+          "bytesHex": "488bc448895808574881ec900000000f2970e80f28ca"
+        },
+        {
+          "offset": 22,
+          "prefixHex": "f30f590d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "angleScale"
+        },
+        {
+          "offset": 30,
+          "bytesHex": "0f57c08bfa488bd90f2978d80f28f3440f2940c8440f28c2440f2948b8f30f10c1440f2950a8440f295898440f296088"
+        },
+        {
+          "offset": 78,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "packedTrigonometricHelper"
+        },
+        {
+          "offset": 83,
+          "prefixHex": "f3440f1025",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarHalf"
+        },
+        {
+          "offset": 92,
+          "bytesHex": "0f28f8f30f108c24c0000000450f28dc440f28d0440fc6d001f3440f5ed9f3440f59df83ff0c0f874b040000"
+        },
+        {
+          "offset": 136,
+          "prefixHex": "488d15",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "imageBase"
+        },
+        {
+          "offset": 143,
+          "prefixHex": "8b8cba",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "coefficientTable",
+          "encoding": "absoluteImageRva"
+        },
+        {
+          "offset": 150,
+          "bytesHex": "4803caffe10f57ff450f57c0450f57c90f57f6450f57d20f57d2e9fa030000"
+        },
+        {
+          "offset": 181,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 189,
+          "bytesHex": "440f28c6f3450f5cc2410f28f8f3410f59fc440f28cfe9c1030000"
+        },
+        {
+          "offset": 216,
+          "prefixHex": "f3440f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeAngleScale"
+        },
+        {
+          "offset": 225,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "approximateEulerBase"
+        },
+        {
+          "offset": 233,
+          "bytesHex": "410f28c8"
+        },
+        {
+          "offset": 237,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 242,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 250,
+          "bytesHex": "0f57ff440f28ca450f57c0f3440f5cc80f57f6"
+        },
+        {
+          "offset": 269,
+          "prefixHex": "0f5705",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 276,
+          "bytesHex": "440f28d0e992030000"
+        },
+        {
+          "offset": 285,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 293,
+          "bytesHex": "410f28faf30f58fe450f28c2f3440f58c6f3410f59fc"
+        },
+        {
+          "offset": 315,
+          "prefixHex": "440f5705",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 323,
+          "bytesHex": "440f28cfe94d030000"
+        },
+        {
+          "offset": 332,
+          "prefixHex": "f3440f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeAngleScale"
+        },
+        {
+          "offset": 341,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "approximateEulerBase"
+        },
+        {
+          "offset": 349,
+          "bytesHex": "410f28c8"
+        },
+        {
+          "offset": 353,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 358,
+          "prefixHex": "f3440f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeHalf"
+        },
+        {
+          "offset": 367,
+          "bytesHex": "0f28c8"
+        },
+        {
+          "offset": 370,
+          "prefixHex": "0f570d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 377,
+          "bytesHex": "0f57ff"
+        },
+        {
+          "offset": 380,
+          "prefixHex": "f30f1015",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 388,
+          "bytesHex": "440f28d1f3410f59c40f57f6440f28c8f3440f5cc0f3450f58cce90c030000"
+        },
+        {
+          "offset": 419,
+          "prefixHex": "f30f5935",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlScale"
+        },
+        {
+          "offset": 427,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 435,
+          "bytesHex": "0f28ce"
+        },
+        {
+          "offset": 438,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 443,
+          "bytesHex": "0f57d20f57c9f30f51d0410f28c30f2ed17404f30f5ec2"
+        },
+        {
+          "offset": 466,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 474,
+          "bytesHex": "450f28c2"
+        },
+        {
+          "offset": 478,
+          "prefixHex": "f3440f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeTwo"
+        },
+        {
+          "offset": 487,
+          "bytesHex": "0f28fef3410f59d3450f28d0440f28caf30f5cfa0f28d0f3440f58cef30f58d6f30f5cf0e99f020000"
+        },
+        {
+          "offset": 528,
+          "prefixHex": "f30f5935",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "quarterControlScale"
+        },
+        {
+          "offset": 536,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 544,
+          "bytesHex": "0f28ce"
+        },
+        {
+          "offset": 547,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 552,
+          "bytesHex": "0f28d80f28f0"
+        },
+        {
+          "offset": 558,
+          "prefixHex": "f30f5835",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 566,
+          "bytesHex": "0f28e00f57ed"
+        },
+        {
+          "offset": 572,
+          "prefixHex": "f30f5c25",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 580,
+          "bytesHex": "f30f51eb440f28c00f28cef3440f58c3f30f59ef0f28d4f3410f59d20f28fef3410f59ca0f28c4"
+        },
+        {
+          "offset": 619,
+          "prefixHex": "f30f592d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "sqrtTwo"
+        },
+        {
+          "offset": 627,
+          "bytesHex": "f30f5cfa"
+        },
+        {
+          "offset": 631,
+          "prefixHex": "f30f5925",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeTwo"
+        },
+        {
+          "offset": 639,
+          "bytesHex": "f30f58f2f30f5cc1440f28cff30f58c9f3440f58cd0f28d6f30f5cfdf30f58d5f3440f59c0f30f5cf5f30f5ce1f3440f59cbf30f59fb440f28d4e9f1010000"
+        },
+        {
+          "offset": 702,
+          "prefixHex": "f30f5935",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "quarterControlScale"
+        },
+        {
+          "offset": 710,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 718,
+          "bytesHex": "0f28ce"
+        },
+        {
+          "offset": 721,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 726,
+          "bytesHex": "0f28d80f28e0"
+        },
+        {
+          "offset": 732,
+          "prefixHex": "f30f5c25",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 740,
+          "bytesHex": "0f57ed0f28f0"
+        },
+        {
+          "offset": 746,
+          "prefixHex": "f30f5835",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 754,
+          "bytesHex": "f30f51eb0f28d40f28c6f3410f59d2f30f59ef0f28faf3410f59c2"
+        },
+        {
+          "offset": 781,
+          "prefixHex": "f30f592d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "sqrtTwo"
+        },
+        {
+          "offset": 789,
+          "bytesHex": "f30f58fef30f5cf2440f28c0f3440f58c4f30f5ce0440f28cff30f5cfdf3440f58cd0f28d6f30f5cf5f3440f59c3f30f58d5f30f58e4f30f59fb"
+        },
+        {
+          "offset": 847,
+          "prefixHex": "f3440f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeTwo"
+        },
+        {
+          "offset": 856,
+          "bytesHex": "f3440f59cb440f28d4e949010000"
+        },
+        {
+          "offset": 870,
+          "prefixHex": "f30f5935",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlScale"
+        },
+        {
+          "offset": 878,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "controlBase"
+        },
+        {
+          "offset": 886,
+          "bytesHex": "0f28ce"
+        },
+        {
+          "offset": 889,
+          "prefixHex": "e8",
+          "suffixHex": "",
+          "targetKind": "external",
+          "target": "powerHelper"
+        },
+        {
+          "offset": 894,
+          "bytesHex": "0f57c9440f28cff30f51c8450f57c0f3450f59cc410f2ec8410f28c17404f30f5ec1"
+        },
+        {
+          "offset": 928,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 936,
+          "bytesHex": "0f28d0"
+        },
+        {
+          "offset": 939,
+          "prefixHex": "f30f593d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeHalf"
+        },
+        {
+          "offset": 947,
+          "bytesHex": "f30f58d6f3440f59c9f30f5cf0f30f59f9e9dd000000"
+        },
+        {
+          "offset": 969,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 977,
+          "bytesHex": "410f28c3"
+        },
+        {
+          "offset": 981,
+          "prefixHex": "0f5705",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "signMask"
+        },
+        {
+          "offset": 988,
+          "bytesHex": "450f28cb0f28f8450f57c0e9ad000000"
+        },
+        {
+          "offset": 1004,
+          "prefixHex": "f3440f100d",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 1013,
+          "bytesHex": "450f28c2"
+        },
+        {
+          "offset": 1017,
+          "prefixHex": "f3440f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeTwo"
+        },
+        {
+          "offset": 1026,
+          "bytesHex": "410f28d3410f28f1f3410f58d1410f28f9f3410f5cf3450f28d0e98e000000"
+        },
+        {
+          "offset": 1057,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 1065,
+          "bytesHex": "410f28d3440f28c8f30f58d0450f28c2f3450f5ccb"
+        },
+        {
+          "offset": 1086,
+          "prefixHex": "f3440f5905",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeTwo"
+        },
+        {
+          "offset": 1095,
+          "bytesHex": "0f28fa410f28f1450f28d0eb5b"
+        },
+        {
+          "offset": 1108,
+          "prefixHex": "f30f1005",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "coefficientThreshold"
+        },
+        {
+          "offset": 1116,
+          "bytesHex": "0f2fc8"
+        },
+        {
+          "offset": 1119,
+          "prefixHex": "f30f1035",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "scalarUnity"
+        },
+        {
+          "offset": 1127,
+          "bytesHex": "760df30f5ec10f57c9f30f51c8eb030f28ce440f28c6f3450f5cc2450f28c8f3440f59c1f3450f59ccf3440f59c9410f28f9410f28d3f30f58d6f3410f5cf3"
+        },
+        {
+          "offset": 1190,
+          "prefixHex": "f3440f5915",
+          "suffixHex": "",
+          "targetKind": "data",
+          "target": "negativeTwo"
+        },
+        {
+          "offset": 1199,
+          "bytesHex": "f30f111333c0f3440f115304f30f117308f3440f114b0cf3440f114310f30f117b14eb05b8020226800f287c24704c8d9c2490000000498b5b10410f2873f0450f2843d0450f284bc0450f2853b0450f285ba0450f286390498be35fc3"
+        }
+      ]
+    }
+  },
+  "data": {
+    "absoluteMask": {
+      "rva": "0x2923f0",
+      "byteLength": 16,
+      "bytesHex": "ffffff7fffffff7fffffff7fffffff7f"
+    },
+    "scalarUnity": {
+      "rva": "0x28f350",
+      "byteLength": 4,
+      "bytesHex": "0000803f"
+    },
+    "delayedGainBias": {
+      "rva": "0x2db7d0",
+      "byteLength": 16,
+      "bytesHex": "c3642a3bc3642a3bc3642a3bc3642a3b"
+    },
+    "signMask": {
+      "rva": "0x292300",
+      "byteLength": 16,
+      "bytesHex": "00000080000000800000008000000080"
+    },
+    "laneBits": {
+      "rva": "0x2db7c0",
+      "byteLength": 16,
+      "bytesHex": "01000000020000000400000008000000"
+    },
+    "peakLower": {
+      "rva": "0x2ba764",
+      "byteLength": 4,
+      "bytesHex": "0000f0c1"
+    },
+    "peakFirstTimeUpper": {
+      "rva": "0x2db6ac",
+      "byteLength": 4,
+      "bytesHex": "66662640"
+    },
+    "peakSecondTimeUpper": {
+      "rva": "0x2922e0",
+      "byteLength": 4,
+      "bytesHex": "0000a040"
+    },
+    "controlScale": {
+      "rva": "0x28fc0c",
+      "byteLength": 4,
+      "bytesHex": "cdcc4c3d"
+    },
+    "controlBase": {
+      "rva": "0x2922e4",
+      "byteLength": 4,
+      "bytesHex": "00002041"
+    },
+    "timeFactor": {
+      "rva": "0x2b82d8",
+      "byteLength": 4,
+      "bytesHex": "cdcc0cc0"
+    },
+    "allocationContext": {
+      "rva": "0x2db1c0",
+      "byteLength": 8,
+      "bytesHex": "433a5c4a656e6b69"
+    },
+    "defaultProfilePointer": {
+      "rva": "0x33a930",
+      "byteLength": 8,
+      "bytesHex": "a8b42d8001000000"
+    },
+    "profileKeyPrefix": {
+      "rva": "0x2db4a8",
+      "byteLength": 8,
+      "bytesHex": "536f6674204c696d"
+    },
+    "defaultProfilePrefix": {
+      "rva": "0x2db688",
+      "byteLength": 8,
+      "bytesHex": "ffff000003000101"
+    },
+    "percentageUpper": {
+      "rva": "0x2923d8",
+      "byteLength": 4,
+      "bytesHex": "0000c842"
+    },
+    "crossoverUpper": {
+      "rva": "0x2db5f4",
+      "byteLength": 4,
+      "bytesHex": "0080bb46"
+    },
+    "bandThresholdLower": {
+      "rva": "0x2b8810",
+      "byteLength": 4,
+      "bytesHex": "000070c2"
+    },
+    "ratioUpper": {
+      "rva": "0x29bd04",
+      "byteLength": 4,
+      "bytesHex": "0000f041"
+    },
+    "scalarHalf": {
+      "rva": "0x28f5d8",
+      "byteLength": 4,
+      "bytesHex": "0000003f"
+    },
+    "minimumTime": {
+      "rva": "0x2922c4",
+      "byteLength": 4,
+      "bytesHex": "0ad7233c"
+    },
+    "bandOutputUpper": {
+      "rva": "0x2db678",
+      "byteLength": 4,
+      "bytesHex": "00009041"
+    },
+    "bandOutputLower": {
+      "rva": "0x2db67c",
+      "byteLength": 4,
+      "bytesHex": "000090c1"
+    },
+    "kneeUpper": {
+      "rva": "0x28fc54",
+      "byteLength": 4,
+      "bytesHex": "0000a041"
+    },
+    "powerTimeFactor": {
+      "rva": "0x2db684",
+      "byteLength": 4,
+      "bytesHex": "0100dcc3"
+    },
+    "inactiveReleaseFactor": {
+      "rva": "0x2db680",
+      "byteLength": 4,
+      "bytesHex": "0000b0c1"
+    },
+    "bandAllocationContext": {
+      "rva": "0x2db130",
+      "byteLength": 8,
+      "bytesHex": "433a5c4a656e6b69"
+    },
+    "bandDefaultProfilePrefix": {
+      "rva": "0x2db604",
+      "byteLength": 8,
+      "bytesHex": "0100010174000000"
+    },
+    "qLower": {
+      "rva": "0x2922c8",
+      "byteLength": 4,
+      "bytesHex": "cdcccc3d"
+    },
+    "qUpper": {
+      "rva": "0x2b9e38",
+      "byteLength": 4,
+      "bytesHex": "00004041"
+    },
+    "angleScale": {
+      "rva": "0x292600",
+      "byteLength": 4,
+      "bytesHex": "db0fc940"
+    },
+    "coefficientTable": {
+      "rva": "0x2520ac",
+      "byteLength": 52,
+      "bytesHex": "3b1c2500551c2500bd1c2500431d25005e1e2500b01d2500781c2500ec1c2500061f2500691f25008c1f2500c11f2500f41f2500"
+    },
+    "negativeAngleScale": {
+      "rva": "0x29ab94",
+      "byteLength": 4,
+      "bytesHex": "db0fc9c0"
+    },
+    "approximateEulerBase": {
+      "rva": "0x2db7b8",
+      "byteLength": 4,
+      "bytesHex": "4df82d40"
+    },
+    "negativeHalf": {
+      "rva": "0x28f5e0",
+      "byteLength": 4,
+      "bytesHex": "000000bf"
+    },
+    "negativeTwo": {
+      "rva": "0x29b8ec",
+      "byteLength": 4,
+      "bytesHex": "000000c0"
+    },
+    "quarterControlScale": {
+      "rva": "0x29df84",
+      "byteLength": 4,
+      "bytesHex": "cdcccc3c"
+    },
+    "sqrtTwo": {
+      "rva": "0x29bcfc",
+      "byteLength": 4,
+      "bytesHex": "f304b53f"
+    },
+    "coefficientThreshold": {
+      "rva": "0x2b4d24",
+      "byteLength": 4,
+      "bytesHex": "3333333f"
+    }
+  },
+  "initializedVectors": {
+    "logBaseScale": {
+      "rva": "0x26e0",
+      "bodyLength": 16,
+      "destinationRva": "0x348f20",
+      "vectorHex": "9b209a3e9b209a3e9b209a3e9b209a3e",
+      "sourceRva": "0x2b8310"
+    },
+    "powerBaseScale": {
+      "rva": "0x26f0",
+      "bodyLength": 16,
+      "destinationRva": "0x348fb0",
+      "vectorHex": "789a5440789a5440789a5440789a5440",
+      "sourceRva": "0x2db560"
+    },
+    "logPolynomialA": {
+      "rva": "0x2700",
+      "bodyLength": 16,
+      "destinationRva": "0x348f00",
+      "vectorHex": "abaaaabeabaaaabeabaaaabeabaaaabe",
+      "sourceRva": "0x2db570"
+    },
+    "logPolynomialB": {
+      "rva": "0x2710",
+      "bodyLength": 16,
+      "destinationRva": "0x348eb0",
+      "vectorHex": "00000040000000400000004000000040",
+      "sourceRva": "0x2db550"
+    },
+    "logPolynomialC": {
+      "rva": "0x2720",
+      "bodyLength": 16,
+      "destinationRva": "0x348f70",
+      "vectorHex": "5555d5bf5555d5bf5555d5bf5555d5bf",
+      "sourceRva": "0x2db580"
+    },
+    "expPolynomialA": {
+      "rva": "0x2730",
+      "bodyLength": 16,
+      "destinationRva": "0x348f50",
+      "vectorHex": "0000803e0000803e0000803e0000803e",
+      "sourceRva": "0x2db530"
+    },
+    "expPolynomialB": {
+      "rva": "0x2740",
+      "bodyLength": 16,
+      "destinationRva": "0x348fc0",
+      "vectorHex": "0000403f0000403f0000403f0000403f",
+      "sourceRva": "0x2db540"
+    },
+    "expPolynomialC": {
+      "rva": "0x2750",
+      "bodyLength": 16,
+      "destinationRva": "0x348ee0",
+      "vectorHex": "0000803f0000803f0000803f0000803f",
+      "sourceRva": "0x2923b0"
+    },
+    "bandZero": {
+      "rva": "0x2760",
+      "bodyLength": 11,
+      "destinationRva": "0x348f60",
+      "vectorHex": "00000000000000000000000000000000",
+      "sourceRva": null
+    },
+    "gainDbScale": {
+      "rva": "0x2770",
+      "bodyLength": 16,
+      "destinationRva": "0x348f30",
+      "vectorHex": "cdcc4c3dcdcc4c3dcdcc4c3dcdcc4c3d",
+      "sourceRva": "0x2db520"
+    },
+    "kneeHalf": {
+      "rva": "0x2780",
+      "bodyLength": 16,
+      "destinationRva": "0x348fa0",
+      "vectorHex": "0000003f0000003f0000003f0000003f",
+      "sourceRva": "0x29dfb0"
+    },
+    "powerDbScale": {
+      "rva": "0x2790",
+      "bodyLength": 16,
+      "destinationRva": "0x348f40",
+      "vectorHex": "00002041000020410000204100002041",
+      "sourceRva": "0x2b8350"
+    },
+    "bandUnity": {
+      "rva": "0x27a0",
+      "bodyLength": 16,
+      "destinationRva": "0x348f10",
+      "vectorHex": "0000803f0000803f0000803f0000803f",
+      "sourceRva": "0x2923b0"
+    },
+    "negativePowerFallback": {
+      "rva": "0x27b0",
+      "bodyLength": 16,
+      "destinationRva": "0x348ea0",
+      "vectorHex": "0000c8c20000c8c20000c8c20000c8c2",
+      "sourceRva": "0x2db590"
+    },
+    "exponentBias": {
+      "rva": "0x27d0",
+      "bodyLength": 17,
+      "destinationRva": "0x348f80",
+      "vectorHex": "7f0000007f0000007f0000007f000000",
+      "sourceRva": "0x2db510"
+    },
+    "exponentMask": {
+      "rva": "0x27f0",
+      "bodyLength": 17,
+      "destinationRva": "0x348f90",
+      "vectorHex": "ff000000ff000000ff000000ff000000",
+      "sourceRva": "0x2b0fb0"
+    },
+    "mantissaMask": {
+      "rva": "0x2810",
+      "bodyLength": 17,
+      "destinationRva": "0x348ef0",
+      "vectorHex": "ffff7f00ffff7f00ffff7f00ffff7f00",
+      "sourceRva": "0x2b82e0"
+    },
+    "mantissaOne": {
+      "rva": "0x2830",
+      "bodyLength": 17,
+      "destinationRva": "0x348ec0",
+      "vectorHex": "0000803f0000803f0000803f0000803f",
+      "sourceRva": "0x2923b0"
+    },
+    "clipZero": {
+      "rva": "0x28d0",
+      "bodyLength": 11,
+      "destinationRva": "0x349090",
+      "vectorHex": "00000000000000000000000000000000",
+      "sourceRva": null
+    },
+    "clipUnity": {
+      "rva": "0x2910",
+      "bodyLength": 16,
+      "destinationRva": "0x349040",
+      "vectorHex": "0000803f0000803f0000803f0000803f",
+      "sourceRva": "0x2923b0"
+    },
+    "clipNegativeUnity": {
+      "rva": "0x2930",
+      "bodyLength": 16,
+      "destinationRva": "0x349000",
+      "vectorHex": "000080bf000080bf000080bf000080bf",
+      "sourceRva": "0x292890"
+    }
+  },
+  "externals": {
+    "filterEntry": {
+      "rva": "0x2519f0",
+      "evidenceBoundary": "direct"
+    },
+    "copyPrimitive": {
+      "rva": "0x289510",
+      "evidenceBoundary": "unresolved"
+    },
+    "powerHelper": {
+      "rva": "0x26a7e0",
+      "evidenceBoundary": "unresolved"
+    },
+    "coefficientHelper": {
+      "rva": "0x26bda0",
+      "evidenceBoundary": "unresolved"
+    },
+    "fillPrimitive": {
+      "rva": "0x289bb0",
+      "evidenceBoundary": "unresolved"
+    },
+    "profileCompare": {
+      "rva": "0x26bb80",
+      "evidenceBoundary": "unresolved"
+    },
+    "packedTrigonometricHelper": {
+      "rva": "0x25c400",
+      "evidenceBoundary": "unresolved"
+    },
+    "imageBase": {
+      "rva": "0x0",
+      "evidenceBoundary": "unresolved"
+    }
+  },
+  "sectionOne": {
+    "sectionIndex": 1,
+    "bandCountOffset": 72,
+    "filterCountOffset": 92,
+    "filterRecordOffset": 100,
+    "filterRecordStride": 216,
+    "filterRecordsPerBand": 4,
+    "bandStateOffset": 3560,
+    "bandStateStride": 624,
+    "bypassMaskOffset": 88,
+    "gainTargetFramePeriod": 32,
+    "powerHistoryOffset": 384,
+    "gainHistoryOffset": 432,
+    "maximumBands": 4,
+    "conversion": {
+      "currentHeader": "0x01020001",
+      "byteLength": 144,
+      "bandRange": [
+        1,
+        4
+      ],
+      "linkRange": [
+        0,
+        2
+      ],
+      "specialMode": 1,
+      "requiredSpecialLink": 1,
+      "percentageRange": [
+        0.0,
+        100.0
+      ],
+      "pairRange": [
+        0,
+        1
+      ],
+      "bypassRange": [
+        0,
+        15
+      ],
+      "zeroWordOffsets": [
+        28,
+        32
+      ],
+      "crossoverOffset": 36,
+      "crossoverRange": [
+        10.0,
+        24000.0
+      ],
+      "strictCrossoverOrder": true,
+      "bandRecordOffset": 48,
+      "bandRecordStride": 24,
+      "bandFieldRanges": [
+        [
+          -60.0,
+          0.0
+        ],
+        [
+          1.0,
+          30.0
+        ],
+        [
+          0.009999999776482582,
+          0.5
+        ],
+        [
+          0.009999999776482582,
+          5.0
+        ],
+        [
+          -18.0,
+          18.0
+        ],
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "kneeUpper": "twiceAbsoluteConvertedThreshold",
+      "inactiveRecord": [
+        -20.0,
+        2.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      "unreadCrossovers": "retainOutputBytes",
+      "clampNaN": "lowerBound"
+    },
+    "application": {
+      "frequencyOffset": 64,
+      "frequencyDescriptorOffset": 0,
+      "percentageScale": 0.009999999776482582,
+      "fieldArrayOffsets": [
+        0,
+        48,
+        96,
+        144,
+        192,
+        240,
+        288,
+        336,
+        480
+      ],
+      "channelCapacity": 12,
+      "timeFactor": -2.200000047683716,
+      "powerTimeFactor": -440.0000305175781,
+      "inactiveReleaseFactor": -22.0,
+      "controlScale": 0.05000000074505806,
+      "controlBase": 10.0,
+      "activeHistories": "retained",
+      "inactivePowerHistory": 0.0,
+      "inactiveGainHistory": 1.0,
+      "singleBandFilterCounts": "retainedUnused",
+      "filterHistories": "retained",
+      "optionalTelemetryRequestBytes": 1024,
+      "optionalTelemetryPointersPerBand": 1,
+      "cutoffStagesPerBoundary": 2,
+      "interiorFilterCount": 4,
+      "outerFilterCount": 2
+    },
+    "coefficients": {
+      "currentHeader": "0x01011000",
+      "rawHeader": "0x02011000",
+      "byteLength": 24,
+      "generatedTypes": [
+        1,
+        2
+      ],
+      "qualityBits": "f4fd343f",
+      "normalizedFrequencyRange": [
+        0.0,
+        0.5
+      ],
+      "qualityRange": [
+        0.10000000149011612,
+        12.0
+      ],
+      "angleScale": 6.2831854820251465,
+      "alpha": "float32(float32(0.5/Q)*packedHelperLane0)",
+      "denominator": [
+        "1+alpha",
+        "-2*packedHelperLane1",
+        "1-alpha"
+      ],
+      "typeOneNumerator": [
+        "0.5*(1-packedHelperLane1)",
+        "1-packedHelperLane1",
+        "0.5*(1-packedHelperLane1)"
+      ],
+      "typeTwoNumerator": [
+        "0.5*(1+packedHelperLane1)",
+        "-(1+packedHelperLane1)",
+        "0.5*(1+packedHelperLane1)"
+      ],
+      "storage": [
+        "a0",
+        "-a1/a0",
+        "-a2/a0",
+        "b0/a0",
+        "b1/a0",
+        "b2/a0"
+      ],
+      "helperNumericalMeaning": "unresolved"
+    },
+    "pairLinking": {
+      "evidenceBoundary": "conditional",
+      "linkMode": 2,
+      "pairOption": 1,
+      "excludedMappedValues": [
+        2,
+        3
+      ],
+      "targetScratchCells": 12,
+      "minimumIndexBits": 16,
+      "indexArithmeticBits": 32,
+      "addressExtension": "unsigned32To64",
+      "minimumSelection": "firstStrictlyLowerFiniteTarget",
+      "evenTargets": [
+        "index",
+        "index+1"
+      ],
+      "oddTargets": [
+        "uint32(index-1)",
+        "index"
+      ],
+      "partnerLookup": false,
+      "partnerBoundsCheck": false,
+      "programWindows": {
+        "sectionDescriptorMapCopy": [
+          104,
+          149
+        ],
+        "sectionMapAndControlForwarding": [
+          499,
+          570
+        ],
+        "kernelMapRead": [
+          439,
+          446
+        ],
+        "minimumAndPairSelection": [
+          1138,
+          1403
+        ]
+      },
+      "boundary": "Finite target minimum below one, link mode two, pair option one, original admitted descriptor map and valid local scratch. Numeric-map parity selects adjacent logical positions without proving partner presence. Zero logical index with an odd nonexcluded map word zero-extends the decremented index into a far positive address. Descriptor admission alone is insufficient to establish pair safety. No host mask selection, live reachability or fault claim."
+    },
+    "storage": {
+      "evidenceBoundary": "conditional",
+      "optionalFlagOffset": 12,
+      "optionalFlagValue": 1,
+      "activeBandCountOffset": 72,
+      "bandStateOffset": 3560,
+      "bandStateStride": 624,
+      "firstTelemetryPointerOffset": 528,
+      "maximumBands": 4,
+      "allocationTag": 106,
+      "requestBytes": 1024,
+      "allocationFailure": "0x8080000a",
+      "requests": "at most one request per active band when logical channels are nonzero",
+      "reuse": "nonnull first pointer retains the band storage",
+      "partialFailure": "failure stops later bands without rolling back prior writes",
+      "boundary": "Complete common band application storage tail with admitted active count, logical channels, stable disjoint state and completing allocator ABI. Enabled byte one permits at most one first-channel shared telemetry request per active band. Existing first pointers suppress requests; returns are stored before null checks. Failure stops later bands and retains earlier control/allocation writes. Other per-channel pointers remain unchanged. Legacy tail entry is joined by the separate legacy application proof. No actual capacity, allocation cleanup, external helper effects, lifetime or runtime selection claim."
+    }
+  },
+  "sectionThree": {
+    "sectionIndex": 3,
+    "modeOffset": 72,
+    "linkOffset": 76,
+    "thresholdOffset": 80,
+    "attackOffset": 128,
+    "releaseOffset": 176,
+    "envelopeOffset": 272,
+    "channelGroupWidth": 4,
+    "frameRounding": false,
+    "modes": {
+      "0": "asymmetricPeakEnvelopeThenUnityClip",
+      "1": "thresholdClip",
+      "2": "delayedWindowPeakAndGainSmoothing"
+    },
+    "delayFrames": 128,
+    "delayPointerOffset": 896,
+    "gainHistoryOffset": 320,
+    "releaseHistoryOffset": 656,
+    "rescanSharesFourLanes": true,
+    "targetGainBias": 0.0026000000070780516,
+    "conversion": {
+      "currentHeader": "0x01020003",
+      "byteLength": 32,
+      "modeRange": [
+        0,
+        2
+      ],
+      "linkRange": [
+        0,
+        1
+      ],
+      "specialMode": 1,
+      "requiredSpecialLink": 1,
+      "wordOffsets": [
+        8,
+        12,
+        16,
+        20,
+        24,
+        28
+      ],
+      "finiteLower": -30.0,
+      "firstTimeUpper": 2.5999999046325684,
+      "secondTimeUpper": 5.0,
+      "delayedFirstTimeForcedZero": true,
+      "otherModesPostWordForcedZero": true,
+      "delayedPostUpper": "negativeConvertedFirstFloat",
+      "clampNaN": "lowerBound"
+    },
+    "application": {
+      "frequencyOffset": 64,
+      "frequencyDescriptorOffset": 0,
+      "controlScale": 0.05000000074505806,
+      "controlBase": 10.0,
+      "timeFactor": -2.200000047683716,
+      "delayRequestShift": 9,
+      "optionalTelemetryRequestBytes": 1024,
+      "delayedAttackBits": "d0913b3d",
+      "delayedAuxiliaryBits": "c0988b3c"
+    },
+    "storage": {
+      "evidenceBoundary": "conditional",
+      "admittedModes": [
+        0,
+        1,
+        2
+      ],
+      "delayPointerOffset": 896,
+      "telemetryPointerOffset": 904,
+      "strideOffset": 4,
+      "requestShift": 9,
+      "requestArithmeticBits": 32,
+      "delayAllocationTag": 112,
+      "telemetryAllocationTag": 125,
+      "telemetryRequestBytes": 1024,
+      "optionalFlagOffset": 60,
+      "optionalFlagValue": 1,
+      "allocationFailure": "0x8080000a",
+      "delayClear": "only newly allocated successful delay storage",
+      "reuse": "nonnull pointers retained without capacity checks",
+      "partialFailure": "earlier control and pointer writes retained",
+      "initialHistoryOffsets": [
+        272,
+        320,
+        752,
+        800,
+        848,
+        368,
+        416,
+        560,
+        608,
+        464,
+        512
+      ],
+      "initialHistoryWords": [
+        0,
+        1065353216,
+        1065353216,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "initialChannelCopies": 12,
+      "initialFlags": 3,
+      "boundary": "Valid old/current mode zero/one/two application with completing helpers, stable disjoint state and allocator ABI. Both revisions reach the same storage tail after coefficient writes. A missing delay pointer requests uint32(stride<<9), stores the return before checking, and clears only a successful new allocation. Optional storage is requested only for byte one and nonzero logical count, at most once; existing storage is retained. Allocation errors retain earlier writes. Initialization resets the listed history arrays only after nonnegative application, then sets flags three. Actual capacity, allocator ownership, helper side effects, retry recovery and runtime selection remain unresolved."
+    }
+  },
+  "meaningBoundary": "Original section-one and all section-three processing modes after recorded leaf SIMD initializers execute and remain unchanged. Current section-one/three conversion and state application join serialized controls. Crossover types one/two have directly proved coefficient arithmetic and history retention; packed trigonometric and scalar helpers retain unresolved numerical boundaries. Other generator types and legacy/default profiles are byte witnesses only. Admitted finite ordinary state, readable structs, valid rounded-channel storage and scratch/telemetry buffers. Copy treated as a primitive. Complete helper equivalence, allocation admission/lifetime, CRT initializer invocation, live constant lifetime, public names and runtime activation are not established. Pair minimum selection, map handoff and unsigned adjacent-index arithmetic are directly joined to the owning descriptor proof. Some admitted sparse maps violate partner presence or local scratch bounds; these are conditional local paths, not observed runtime faults. Every valid old/current section-three mode reaches the same delay/optional storage tail. Newly allocated delay storage is cleared; existing pointers are retained without capacity checks. Allocation failure retains earlier controls and pointers. Initial history resets follow nonnegative default application. Requests, stores and local error paths are proved, not allocator capacity, ownership or retry recovery. Common band telemetry storage visits active bands in order and retains existing first-channel pointers. Each enabled missing first pointer requests a fixed buffer at most once; failures store null, stop later bands and retain earlier writes. Actual capacity and recovery remain unresolved."
+}

@@ -1,0 +1,460 @@
+{
+  "schema": "endfield.collision-runtime-mesh-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "evidenceBoundary": "conditional: Unity Mesh held physics-cache path and concrete PxBVH34TriangleMesh vertex/index getters on pinned native inputs; separately timed captured arrays can be compared to one CAB/PathID-bound stored payload. No PxShape, contacts, allocation extents or atomic snapshot claim.",
+  "typeName": {
+    "rva": 25939192,
+    "ascii": "PxBVH34TriangleMesh"
+  },
+  "layout": {
+    "mesh": {
+      "vtableRva": 27034160,
+      "holderOffset": 296,
+      "heldTriangleOffset": 24
+    },
+    "triangle": {
+      "vtableRva": 26006104,
+      "vertexCount": 32,
+      "triangleCount": 36,
+      "vertices": 40,
+      "triangles": 48,
+      "boundsCenter": 56,
+      "boundsExtents": 68,
+      "edgeFlags": 80,
+      "flags": 92,
+      "faceRemap": 104,
+      "treeOffset": 208,
+      "index16Mask": 2,
+      "midphase": 1
+    },
+    "tree": {
+      "nodeCount": 24,
+      "nodes": 32
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "mesh_delete",
+      "rva": 3414672,
+      "bytes": 44,
+      "sha256": "736e315b87878f7a2680bfac8c31781d593f1d0418e5dd7d5b749f558029c902",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "mesh_cleanup",
+      "rva": 3414720,
+      "bytes": 162,
+      "sha256": "f857c711c772a0dc5cc2614cb10e36ef38d2459ab483193037f967fca65b7af8",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "holder_cleanup",
+      "rva": 3415664,
+      "bytes": 89,
+      "sha256": "14383d686b0c8533963466a6bc1e2cd64a86f81c848e8588d4c6ed8fb3dd780e",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "cache_destructor",
+      "rva": 9162272,
+      "bytes": 139,
+      "sha256": "2e8655d731d4c17ad13ba45e9a14857a19ce061e151710408090648eb234269b",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "bv4_cleanup",
+      "rva": 9296656,
+      "bytes": 105,
+      "sha256": "f7ab299b2e0ece43abaa7ed5173ebf2305a8e22552bf37b4080d548e4172b0a6",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "base_owned_cleanup",
+      "rva": 9160136,
+      "bytes": 194,
+      "sha256": "b8cbfc62c55aff9ad8d96da8db62fb0d2fcae004c64e86fe8ba64fd5a385a934",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "type_name",
+      "rva": 9172624,
+      "bytes": 8,
+      "sha256": "84f85bc3ee629e5224b98d04dcca10035c13164c161dff0db34e588228f5cc85",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "vertex_count",
+      "rva": 5796400,
+      "bytes": 4,
+      "sha256": "07ad3a50b1c271e07fb57fb47d2f0e77f3342d41bfa410990cb1320a45035fb2",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "vertices",
+      "rva": 5786896,
+      "bytes": 5,
+      "sha256": "cff2ef16c7ec552c1f7c9706cb926933e47de8667aaeb590d325e246c3669ef3",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "triangle_count",
+      "rva": 7621744,
+      "bytes": 4,
+      "sha256": "e27121b8816e0aef2ed29676899d26e79f66af7e5ee5aed902be7208122bb635",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "triangles",
+      "rva": 5803712,
+      "bytes": 5,
+      "sha256": "efbd103662ccda4c0f468ab461257f1b371879ef59acc4189da3ceb1394859cc",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "flags",
+      "rva": 9174048,
+      "bytes": 10,
+      "sha256": "a46fa0b9f128911805e4fa1971dd2d9f81d4fd9cef9130d2975348d4ac463f62",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "face_remap",
+      "rva": 5781344,
+      "bytes": 5,
+      "sha256": "fb6bf83d7403f34405349e1715c8966083af4295fe7dc65bad96d9a60589f9aa",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "bounds",
+      "rva": 9172656,
+      "bytes": 137,
+      "sha256": "67a8f3990852f0b7aa833fe8b9b1c3a64629aedc4645f7e842da3097dc3688ad",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "midphase",
+      "rva": 5781104,
+      "bytes": 6,
+      "sha256": "2db31f4e09597946e56e859813bfdad7046d457c32332c3a882654d1e3ffdf67",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "index_select",
+      "rva": 9177376,
+      "bytes": 89,
+      "sha256": "b1692a2347bc535d000e913e049da9b500a4f08a3c166e3e82d3ce062b66c835",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "bounds16_prefix",
+      "rva": 9176608,
+      "bytes": 71,
+      "sha256": "19a9edc0f834aabc4875e18714561ae26bca90ab8cafe91331d22c707e51ef5e",
+      "evidenceBoundary": "direct"
+    },
+    {
+      "role": "bounds32_prefix",
+      "rva": 9176992,
+      "bytes": 69,
+      "sha256": "009d667fe41d4d6fc7ab1e97b8dbfef111fd58dea32db3b65bc3b9f0ec41d344",
+      "evidenceBoundary": "direct"
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "mesh_cleanup",
+      "offset": 6,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "mesh.vtableRva"
+    },
+    {
+      "role": "mesh_cleanup",
+      "offset": 19,
+      "prefix": "4881c1",
+      "mode": "u32",
+      "field": "mesh.holderOffset"
+    },
+    {
+      "role": "holder_cleanup",
+      "offset": 40,
+      "prefix": "488b53",
+      "mode": "u8",
+      "field": "mesh.heldTriangleOffset"
+    },
+    {
+      "role": "cache_destructor",
+      "offset": 10,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "field": "triangle.vtableRva"
+    },
+    {
+      "role": "cache_destructor",
+      "offset": 36,
+      "prefix": "4881c1",
+      "mode": "u32",
+      "field": "triangle.treeOffset"
+    },
+    {
+      "role": "vertex_count",
+      "offset": 0,
+      "prefix": "8b41",
+      "mode": "u8",
+      "field": "triangle.vertexCount"
+    },
+    {
+      "role": "vertices",
+      "offset": 0,
+      "prefix": "488b41",
+      "mode": "u8",
+      "field": "triangle.vertices"
+    },
+    {
+      "role": "triangle_count",
+      "offset": 0,
+      "prefix": "8b41",
+      "mode": "u8",
+      "field": "triangle.triangleCount"
+    },
+    {
+      "role": "triangles",
+      "offset": 0,
+      "prefix": "488b41",
+      "mode": "u8",
+      "field": "triangle.triangles"
+    },
+    {
+      "role": "flags",
+      "offset": 0,
+      "prefix": "0fb641",
+      "mode": "u8",
+      "field": "triangle.flags"
+    },
+    {
+      "role": "face_remap",
+      "offset": 0,
+      "prefix": "488b41",
+      "mode": "u8",
+      "field": "triangle.faceRemap"
+    },
+    {
+      "role": "base_owned_cleanup",
+      "offset": 10,
+      "prefix": "488b79",
+      "mode": "u8",
+      "field": "triangle.edgeFlags"
+    },
+    {
+      "role": "bv4_cleanup",
+      "offset": 57,
+      "prefix": "8943",
+      "mode": "u8",
+      "field": "tree.nodeCount"
+    },
+    {
+      "role": "bv4_cleanup",
+      "offset": 20,
+      "prefix": "488b79",
+      "mode": "u8",
+      "field": "tree.nodes"
+    },
+    {
+      "role": "index_select",
+      "offset": 10,
+      "prefix": "f6415c",
+      "mode": "u8",
+      "field": "triangle.index16Mask"
+    },
+    {
+      "role": "midphase",
+      "offset": 0,
+      "prefix": "b8",
+      "mode": "u32",
+      "field": "triangle.midphase"
+    },
+    {
+      "role": "bounds",
+      "offset": 4,
+      "prefix": "f30f1051",
+      "mode": "u8",
+      "field": "triangle.boundsExtents"
+    },
+    {
+      "role": "bounds",
+      "offset": 53,
+      "prefix": "f30f1079",
+      "mode": "u8",
+      "field": "triangle.boundsCenter"
+    }
+  ],
+  "targetOperands": [
+    {
+      "role": "mesh_delete",
+      "offset": 15,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 3414720
+    },
+    {
+      "role": "mesh_cleanup",
+      "offset": 26,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 3415664
+    },
+    {
+      "role": "cache_destructor",
+      "offset": 43,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 9296656
+    },
+    {
+      "role": "cache_destructor",
+      "offset": 63,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 9160096
+    },
+    {
+      "role": "type_name",
+      "offset": 0,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "targetRva": 25939192
+    },
+    {
+      "role": "index_select",
+      "offset": 14,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "targetRva": 26006456
+    },
+    {
+      "role": "index_select",
+      "offset": 47,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "targetRva": 26006472
+    }
+  ],
+  "probes": [
+    {
+      "role": "holder_cleanup",
+      "offset": 66,
+      "hex": "488b02488bcaff10"
+    },
+    {
+      "role": "index_select",
+      "offset": 45,
+      "hex": "7507"
+    },
+    {
+      "role": "bounds16_prefix",
+      "offset": 56,
+      "hex": "430fb7044b"
+    },
+    {
+      "role": "bounds16_prefix",
+      "offset": 65,
+      "hex": "430fb7444b02"
+    },
+    {
+      "role": "bounds32_prefix",
+      "offset": 56,
+      "hex": "438b048b"
+    },
+    {
+      "role": "bounds32_prefix",
+      "offset": 64,
+      "hex": "438b448b04"
+    }
+  ],
+  "vtableSlots": [
+    {
+      "tableRva": 27034160,
+      "slot": 0,
+      "role": "mesh_delete"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 1,
+      "role": "type_name"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 3,
+      "role": "cache_destructor"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 5,
+      "role": "vertex_count"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 6,
+      "role": "vertices"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 9,
+      "role": "triangle_count"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 10,
+      "role": "triangles"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 11,
+      "role": "flags"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 12,
+      "role": "face_remap"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 14,
+      "role": "bounds"
+    },
+    {
+      "tableRva": 26006104,
+      "slot": 19,
+      "role": "midphase"
+    },
+    {
+      "tableRva": 26006456,
+      "slot": 0,
+      "role": "bounds16_prefix"
+    },
+    {
+      "tableRva": 26006472,
+      "slot": 0,
+      "role": "bounds32_prefix"
+    }
+  ],
+  "representation": {
+    "vertexStride": 12,
+    "triangleIndexWidths": [
+      2,
+      4
+    ],
+    "faceRemapWidth": 4,
+    "auxiliaryBoundary": "structuralOnly: pointer-bound edge, face-remap and BV4 node bytes compared over the stored payload extent; complete runtime BV4 traversal and optional material/adjacency layouts are not decoded"
+  },
+  "references": [
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/geomutils/src/mesh/GuTriangleMesh.h",
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/include/geometry/PxTriangleMesh.h",
+    "https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/geomutils/src/mesh/GuBV4.h"
+  ]
+}

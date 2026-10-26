@@ -1,0 +1,1430 @@
+{
+  "schema": "endfield.wwise-sink-negotiation-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "waveFormatNormalization",
+      "entryRva": "0x1967c0",
+      "windows": [
+        {
+          "rva": "0x1967c0",
+          "bodyLength": 157,
+          "bodySha256": "ada3769a82bbcc8b1881bb35e77b547838953fdad5545ff2b4a41db21c7db425",
+          "unwindRva": "0x2f7cb8",
+          "unwindInfoHex": "0104010004a20000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x1967c9",
+          "instructionHex": "0f11442422"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x1967d1",
+          "instructionHex": "6689442420"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x1967d6",
+          "instructionHex": "0f11442432"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x1967db",
+          "instructionHex": "89442442"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x1967df",
+          "instructionHex": "0f10442420"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x1967e4",
+          "instructionHex": "6689442446"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x1967e9",
+          "instructionHex": "0f104c2430"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x1967ee",
+          "instructionHex": "0f1102"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x1967f1",
+          "instructionHex": "f20f10442440"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x1967f7",
+          "instructionHex": "0f114a10"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x1967fb",
+          "instructionHex": "f20f114220"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x196805",
+          "instructionHex": "0f1001"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x196808",
+          "instructionHex": "663911"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x19680b",
+          "instructionHex": "410f1103"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x196811",
+          "instructionHex": "0f104910"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x196815",
+          "instructionHex": "410f114b10"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x19681a",
+          "instructionHex": "f20f104120"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x19681f",
+          "instructionHex": "f2410f114320"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x19682a",
+          "instructionHex": "66418913"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x19682e",
+          "instructionHex": "488d4c2460"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x196836",
+          "instructionHex": "41c7431016002000"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x19683e",
+          "instructionHex": "e80d240000"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x196843",
+          "instructionHex": "8b08"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x196848",
+          "instructionHex": "41894b14"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x19684c",
+          "instructionHex": "0f1005d55f1000"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x196853",
+          "instructionHex": "410f114318"
+        }
+      ],
+      "readOrder": "Copy an extensible mix format verbatim; for a non-extensible format retain its base fields and fill extensible size/valid bits, derived speaker mask and IEEE-float subtype."
+    },
+    {
+      "key": "sinkFormatSelection",
+      "entryRva": "0x197d40",
+      "windows": [
+        {
+          "rva": "0x197d40",
+          "bodyLength": 568,
+          "bodySha256": "21c3555f9199886a16bd9440b43012e31f29e9fd6d6190bafa10c9c2b1c432aa",
+          "unwindRva": "0x310628",
+          "unwindInfoHex": "011e0a001e7417001e6416001e3415001ef214f012d01050",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26",
+        "instruction27",
+        "instruction28",
+        "instruction29",
+        "instruction30",
+        "instruction31",
+        "instruction32",
+        "instruction33",
+        "instruction34",
+        "instruction35",
+        "instruction36",
+        "instruction37",
+        "instruction38",
+        "instruction39",
+        "instruction40",
+        "instruction41",
+        "instruction42",
+        "instruction43",
+        "instruction44",
+        "instruction45",
+        "instruction46",
+        "instruction47",
+        "instruction48",
+        "instruction49",
+        "instruction50",
+        "instruction51",
+        "instruction52",
+        "instruction53",
+        "instruction54",
+        "instruction55",
+        "instruction56",
+        "instruction57",
+        "instruction58",
+        "instruction59",
+        "instruction60",
+        "instruction61",
+        "instruction62",
+        "instruction63",
+        "instruction64",
+        "instruction65",
+        "instruction66",
+        "instruction67",
+        "instruction68",
+        "instruction69",
+        "instruction70",
+        "instruction71",
+        "instruction72",
+        "instruction73",
+        "instruction74",
+        "instruction75",
+        "instruction76",
+        "instruction77",
+        "instruction78",
+        "instruction79"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x197d40",
+          "instructionHex": "48895c2410"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x197d45",
+          "instructionHex": "4889742418"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x197d4a",
+          "instructionHex": "48897c2420"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x197d63",
+          "instructionHex": "488b4950"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x197d67",
+          "instructionHex": "488d55a0"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x197d70",
+          "instructionHex": "48897da0"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x197d77",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x197d7a",
+          "instructionHex": "ff5040"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x197d85",
+          "instructionHex": "48397da0"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x197d8f",
+          "instructionHex": "488b4da0"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x197d93",
+          "instructionHex": "488d55a8"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x197d9a",
+          "instructionHex": "66897da8"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x197da0",
+          "instructionHex": "0f1145aa"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x197da4",
+          "instructionHex": "8945ca"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x197da7",
+          "instructionHex": "0f1145ba"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x197dab",
+          "instructionHex": "668945ce"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x197daf",
+          "instructionHex": "e80ceaffff"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x197db4",
+          "instructionHex": "488b4da0"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x197db8",
+          "instructionHex": "ff159a360f00"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x197dc0",
+          "instructionHex": "48897da0"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x197de6",
+          "instructionHex": "0fb745aa"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x197dee",
+          "instructionHex": "0f1045a8"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x197df9",
+          "instructionHex": "0f104db8"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x197e00",
+          "instructionHex": "4c8d4da0"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x197e04",
+          "instructionHex": "0f1145d0"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x197e08",
+          "instructionHex": "4c8d45d0"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x197e0e",
+          "instructionHex": "f20f1045c8"
+        },
+        {
+          "role": "instruction27",
+          "rva": "0x197e13",
+          "instructionHex": "0f114de0"
+        },
+        {
+          "role": "instruction28",
+          "rva": "0x197e17",
+          "instructionHex": "8945e4"
+        },
+        {
+          "role": "instruction29",
+          "rva": "0x197e20",
+          "instructionHex": "f20f1145f0"
+        },
+        {
+          "role": "instruction30",
+          "rva": "0x197e25",
+          "instructionHex": "498b4d50"
+        },
+        {
+          "role": "instruction31",
+          "rva": "0x197e29",
+          "instructionHex": "668945d2"
+        },
+        {
+          "role": "instruction32",
+          "rva": "0x197e34",
+          "instructionHex": "668945dc"
+        },
+        {
+          "role": "instruction33",
+          "rva": "0x197e38",
+          "instructionHex": "0faf45d4"
+        },
+        {
+          "role": "instruction34",
+          "rva": "0x197e3c",
+          "instructionHex": "8945d8"
+        },
+        {
+          "role": "instruction35",
+          "rva": "0x197e3f",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction36",
+          "rva": "0x197e42",
+          "instructionHex": "ff5038"
+        },
+        {
+          "role": "instruction37",
+          "rva": "0x197e49",
+          "instructionHex": "0f1045d0"
+        },
+        {
+          "role": "instruction38",
+          "rva": "0x197e4d",
+          "instructionHex": "0f104de0"
+        },
+        {
+          "role": "instruction39",
+          "rva": "0x197e51",
+          "instructionHex": "0f1145a8"
+        },
+        {
+          "role": "instruction40",
+          "rva": "0x197e55",
+          "instructionHex": "f20f1045f0"
+        },
+        {
+          "role": "instruction41",
+          "rva": "0x197e5a",
+          "instructionHex": "f20f1145c8"
+        },
+        {
+          "role": "instruction42",
+          "rva": "0x197e5f",
+          "instructionHex": "0f114db8"
+        },
+        {
+          "role": "instruction43",
+          "rva": "0x197e63",
+          "instructionHex": "891e"
+        },
+        {
+          "role": "instruction44",
+          "rva": "0x197e65",
+          "instructionHex": "e9a6000000"
+        },
+        {
+          "role": "instruction45",
+          "rva": "0x197e6f",
+          "instructionHex": "488b5da0"
+        },
+        {
+          "role": "instruction46",
+          "rva": "0x197e78",
+          "instructionHex": "488d55a8"
+        },
+        {
+          "role": "instruction47",
+          "rva": "0x197e7f",
+          "instructionHex": "e83ce9ffff"
+        },
+        {
+          "role": "instruction48",
+          "rva": "0x197e87",
+          "instructionHex": "ff15cb350f00"
+        },
+        {
+          "role": "instruction49",
+          "rva": "0x197e8d",
+          "instructionHex": "48897da0"
+        },
+        {
+          "role": "instruction50",
+          "rva": "0x197e91",
+          "instructionHex": "488d55a8"
+        },
+        {
+          "role": "instruction51",
+          "rva": "0x197e95",
+          "instructionHex": "488d4d20"
+        },
+        {
+          "role": "instruction52",
+          "rva": "0x197e99",
+          "instructionHex": "e8b20d0000"
+        },
+        {
+          "role": "instruction53",
+          "rva": "0x197e9e",
+          "instructionHex": "8b08"
+        },
+        {
+          "role": "instruction54",
+          "rva": "0x197ea0",
+          "instructionHex": "eb6c"
+        },
+        {
+          "role": "instruction55",
+          "rva": "0x197ea2",
+          "instructionHex": "0fb755aa"
+        },
+        {
+          "role": "instruction56",
+          "rva": "0x197ea6",
+          "instructionHex": "8d42ff"
+        },
+        {
+          "role": "instruction57",
+          "rva": "0x197eae",
+          "instructionHex": "4c8d054b81e6ff"
+        },
+        {
+          "role": "instruction58",
+          "rva": "0x197eb5",
+          "instructionHex": "418b8c80587f1900"
+        },
+        {
+          "role": "instruction59",
+          "rva": "0x197ec0",
+          "instructionHex": "ffe1"
+        },
+        {
+          "role": "instruction60",
+          "rva": "0x197ec7",
+          "instructionHex": "eb2f"
+        },
+        {
+          "role": "instruction61",
+          "rva": "0x197ece",
+          "instructionHex": "eb28"
+        },
+        {
+          "role": "instruction62",
+          "rva": "0x197ed5",
+          "instructionHex": "eb21"
+        },
+        {
+          "role": "instruction63",
+          "rva": "0x197edc",
+          "instructionHex": "eb1a"
+        },
+        {
+          "role": "instruction64",
+          "rva": "0x197ee3",
+          "instructionHex": "eb13"
+        },
+        {
+          "role": "instruction65",
+          "rva": "0x197eea",
+          "instructionHex": "eb0c"
+        },
+        {
+          "role": "instruction66",
+          "rva": "0x197ef1",
+          "instructionHex": "eb05"
+        },
+        {
+          "role": "instruction67",
+          "rva": "0x197f0e",
+          "instructionHex": "890e"
+        },
+        {
+          "role": "instruction68",
+          "rva": "0x197f10",
+          "instructionHex": "0f1045a8"
+        },
+        {
+          "role": "instruction69",
+          "rva": "0x197f19",
+          "instructionHex": "0f104db8"
+        },
+        {
+          "role": "instruction70",
+          "rva": "0x197f1d",
+          "instructionHex": "410f1107"
+        },
+        {
+          "role": "instruction71",
+          "rva": "0x197f21",
+          "instructionHex": "f20f1045c8"
+        },
+        {
+          "role": "instruction72",
+          "rva": "0x197f26",
+          "instructionHex": "410f114f10"
+        },
+        {
+          "role": "instruction73",
+          "rva": "0x197f2b",
+          "instructionHex": "f2410f114720"
+        },
+        {
+          "role": "instruction74",
+          "rva": "0x197f31",
+          "instructionHex": "eb05"
+        },
+        {
+          "role": "instruction75",
+          "rva": "0x197f38",
+          "instructionHex": "4c8d9c2480000000"
+        },
+        {
+          "role": "instruction76",
+          "rva": "0x197f40",
+          "instructionHex": "498b5b28"
+        },
+        {
+          "role": "instruction77",
+          "rva": "0x197f44",
+          "instructionHex": "498b7330"
+        },
+        {
+          "role": "instruction78",
+          "rva": "0x197f48",
+          "instructionHex": "498b7b38"
+        },
+        {
+          "role": "instruction79",
+          "rva": "0x197f55",
+          "instructionHex": "0f1f00"
+        }
+      ],
+      "readOrder": "Obtain and normalize endpoint mix format. Keep a matching requested channel count, or try the requested layout through shared-mode format support; a closest response or rejection falls back to normalized mix/closest channels. Unsupported anonymous channel counts retain an anonymous configuration. Free returned COM format allocations natively."
+    },
+    {
+      "key": "waveChannelConfiguration",
+      "entryRva": "0x198c50",
+      "windows": [
+        {
+          "rva": "0x198c50",
+          "bodyLength": 146,
+          "bodySha256": "3c3572da8a5eb7015129fb7ff788f9f99ce29d1bc71af2e8299cbb5ca1eabbc9",
+          "windowKind": "completeLeafThroughReturn"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20",
+        "instruction21",
+        "instruction22",
+        "instruction23",
+        "instruction24",
+        "instruction25",
+        "instruction26",
+        "instruction27",
+        "instruction28",
+        "instruction29",
+        "instruction30",
+        "instruction31",
+        "instruction32",
+        "instruction33",
+        "instruction34",
+        "instruction35",
+        "instruction36",
+        "instruction37"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x198c50",
+          "instructionHex": "4c8bc9"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x198c53",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x198c56",
+          "instructionHex": "0fb74a02"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x198c5a",
+          "instructionHex": "8d41ff"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x198c5d",
+          "instructionHex": "83f807"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x198c60",
+          "instructionHex": "7752"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x198c62",
+          "instructionHex": "4c8d159773e6ff"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x198c69",
+          "instructionHex": "418b9482e48c1900"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x198c71",
+          "instructionHex": "4903d2"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x198c74",
+          "instructionHex": "ffe2"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x198c76",
+          "instructionHex": "41b804000000"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x198c7c",
+          "instructionHex": "eb36"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x198c7e",
+          "instructionHex": "41b803000000"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x198c84",
+          "instructionHex": "eb2e"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x198c86",
+          "instructionHex": "41b80b000000"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x198c8c",
+          "instructionHex": "eb26"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x198c8e",
+          "instructionHex": "41b803060000"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x198c94",
+          "instructionHex": "eb1e"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x198c96",
+          "instructionHex": "41b807060000"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x198c9c",
+          "instructionHex": "eb16"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x198c9e",
+          "instructionHex": "41b80f060000"
+        },
+        {
+          "role": "instruction21",
+          "rva": "0x198ca4",
+          "instructionHex": "eb0e"
+        },
+        {
+          "role": "instruction22",
+          "rva": "0x198ca6",
+          "instructionHex": "41b837060000"
+        },
+        {
+          "role": "instruction23",
+          "rva": "0x198cac",
+          "instructionHex": "eb06"
+        },
+        {
+          "role": "instruction24",
+          "rva": "0x198cae",
+          "instructionHex": "41b83f060000"
+        },
+        {
+          "role": "instruction25",
+          "rva": "0x198cb4",
+          "instructionHex": "418809"
+        },
+        {
+          "role": "instruction26",
+          "rva": "0x198cb7",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "instruction27",
+          "rva": "0x198cba",
+          "instructionHex": "418121ff000000"
+        },
+        {
+          "role": "instruction28",
+          "rva": "0x198cc1",
+          "instructionHex": "f7d8"
+        },
+        {
+          "role": "instruction29",
+          "rva": "0x198cc3",
+          "instructionHex": "498bc1"
+        },
+        {
+          "role": "instruction30",
+          "rva": "0x198cc6",
+          "instructionHex": "1bc9"
+        },
+        {
+          "role": "instruction31",
+          "rva": "0x198cc8",
+          "instructionHex": "41c1e00c"
+        },
+        {
+          "role": "instruction32",
+          "rva": "0x198ccc",
+          "instructionHex": "81e100010000"
+        },
+        {
+          "role": "instruction33",
+          "rva": "0x198cd2",
+          "instructionHex": "410b09"
+        },
+        {
+          "role": "instruction34",
+          "rva": "0x198cd5",
+          "instructionHex": "81e1ff0f0000"
+        },
+        {
+          "role": "instruction35",
+          "rva": "0x198cdb",
+          "instructionHex": "410bc8"
+        },
+        {
+          "role": "instruction36",
+          "rva": "0x198cde",
+          "instructionHex": "418909"
+        },
+        {
+          "role": "instruction37",
+          "rva": "0x198ce1",
+          "instructionHex": "c3"
+        }
+      ],
+      "readOrder": "Derive packed channel configuration from channel count through the bounded conventional mask table; unknown counts use anonymous channels."
+    },
+    {
+      "key": "availableFrameRequest",
+      "entryRva": "0x197b60",
+      "windows": [
+        {
+          "rva": "0x197b60",
+          "bodyLength": 188,
+          "bodySha256": "469235692c1f5e88f80fbff5905108a3d4f0bd44749abc69282903257e040240",
+          "unwindRva": "0x2f29e8",
+          "unwindInfoHex": "010a04000a3407000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "instruction0",
+        "instruction1",
+        "instruction2",
+        "instruction3",
+        "instruction4",
+        "instruction5",
+        "instruction6",
+        "instruction7",
+        "instruction8",
+        "instruction9",
+        "instruction10",
+        "instruction11",
+        "instruction12",
+        "instruction13",
+        "instruction14",
+        "instruction15",
+        "instruction16",
+        "instruction17",
+        "instruction18",
+        "instruction19",
+        "instruction20"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "instruction0",
+          "rva": "0x197b60",
+          "instructionHex": "48895c2410"
+        },
+        {
+          "role": "instruction1",
+          "rva": "0x197b6a",
+          "instructionHex": "0fb68165020000"
+        },
+        {
+          "role": "instruction2",
+          "rva": "0x197b7f",
+          "instructionHex": "488b4950"
+        },
+        {
+          "role": "instruction3",
+          "rva": "0x197b83",
+          "instructionHex": "488d542430"
+        },
+        {
+          "role": "instruction4",
+          "rva": "0x197b88",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction5",
+          "rva": "0x197b8b",
+          "instructionHex": "ff5030"
+        },
+        {
+          "role": "instruction6",
+          "rva": "0x197b92",
+          "instructionHex": "488b4b08"
+        },
+        {
+          "role": "instruction7",
+          "rva": "0x197b96",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "instruction8",
+          "rva": "0x197b99",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "instruction9",
+          "rva": "0x197b9c",
+          "instructionHex": "488b08"
+        },
+        {
+          "role": "instruction10",
+          "rva": "0x197b9f",
+          "instructionHex": "488b5110"
+        },
+        {
+          "role": "instruction11",
+          "rva": "0x197ba6",
+          "instructionHex": "ffd2"
+        },
+        {
+          "role": "instruction12",
+          "rva": "0x197ba8",
+          "instructionHex": "0fb78b18010000"
+        },
+        {
+          "role": "instruction13",
+          "rva": "0x197bb6",
+          "instructionHex": "8b8390000000"
+        },
+        {
+          "role": "instruction14",
+          "rva": "0x197bc0",
+          "instructionHex": "2b442430"
+        },
+        {
+          "role": "instruction15",
+          "rva": "0x197bc8",
+          "instructionHex": "f6836702000002"
+        },
+        {
+          "role": "instruction16",
+          "rva": "0x197bd4",
+          "instructionHex": "8b8b44010000"
+        },
+        {
+          "role": "instruction17",
+          "rva": "0x197bdf",
+          "instructionHex": "8b9338010000"
+        },
+        {
+          "role": "instruction18",
+          "rva": "0x197bfa",
+          "instructionHex": "8907"
+        },
+        {
+          "role": "instruction19",
+          "rva": "0x197c01",
+          "instructionHex": "488b5c2438"
+        },
+        {
+          "role": "instruction20",
+          "rva": "0x197c0c",
+          "instructionHex": "488b5c2438"
+        }
+      ],
+      "readOrder": "If sink state is valid and current-padding query succeeds, compute whole available quanta from device capacity minus padding and frame/resampler capacity; optionally restrict by ring occupancy. Return success with the count, including zero when full. Invalid state or failed padding query returns failure without an admitted count."
+    }
+  ],
+  "nativeGroupDependencies": [
+    {
+      "key": "sinkConstructor",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkConstructor"
+    },
+    {
+      "key": "sinkServiceSetup",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkServiceSetup"
+    }
+  ],
+  "dataWindows": [
+    {
+      "key": "audioClientIid",
+      "rva": "0x29c7d8",
+      "bytes": 16,
+      "sha256": "7bab557d1ab7507d8b8c219ebe8370a73a1520e2a717232b068dd77416acec30",
+      "hex": "4cadb91cfadb324cb178c2f568a703b2"
+    },
+    {
+      "key": "sessionManager2Iid",
+      "rva": "0x29c7e8",
+      "bytes": 16,
+      "sha256": "209198ddf73eecf4875a575f8ed35ca0f9d7c107526a3bc923dbc9bcdd86ebf6",
+      "hex": "a099aa77d61b4f488bc72c654c9a9b6f"
+    },
+    {
+      "key": "sessionControl2Iid",
+      "rva": "0x29c7f8",
+      "bytes": 16,
+      "sha256": "e30219a97749c1898cb0ef78c300549a88947697884b3b664b33893426c918e6",
+      "hex": "88ffb7bf3972c94f8fa207c950be9c6d"
+    },
+    {
+      "key": "audioClient2Iid",
+      "rva": "0x29c808",
+      "bytes": 16,
+      "sha256": "d3fdc25df6da5a01b989a28cc3a88c7c52b514b9fd7a0f64c444de578524ce4e",
+      "hex": "cd7867720af6da4e82dee47610cd78aa"
+    },
+    {
+      "key": "ieeeFloatSubtype",
+      "rva": "0x29c828",
+      "bytes": 16,
+      "sha256": "285d0a1038b0f2e0d6b95e47ea3b2abbdd24195d362c8227c23da110dc207241",
+      "hex": "0300000000001000800000aa00389b71"
+    },
+    {
+      "key": "formatSelectionChannelTable",
+      "rva": "0x197f58",
+      "bytes": 32,
+      "sha256": "5106a5d632dd56c64b18d0a775fa73af05dd9a82d8515fee6c97a1aebf0619dd",
+      "hex": "c27e1900c97e1900d07e1900d77e1900de7e1900e57e1900ec7e1900f37e1900"
+    },
+    {
+      "key": "waveChannelTable",
+      "rva": "0x198ce4",
+      "bytes": 32,
+      "sha256": "8657de885cf0ee20f5f0c43be31394d36f8d585cde4fb756c3ef85da53910ca8",
+      "hex": "768c19007e8c1900868c19008e8c1900968c19009e8c1900a68c1900ae8c1900"
+    }
+  ],
+  "dataWindowDependencies": [
+    {
+      "key": "renderClientIid",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerDataWindow": "renderClientIid"
+    }
+  ],
+  "interfaces": [
+    {
+      "interface": "IAudioClient",
+      "dataWindow": "audioClientIid",
+      "uuid": "1cb9ad4c-dbfa-4c32-b178-c2f568a703b2",
+      "group": "sinkServiceSetup",
+      "iidLoadRva": "0x19764e"
+    },
+    {
+      "interface": "IAudioSessionManager2",
+      "dataWindow": "sessionManager2Iid",
+      "uuid": "77aa99a0-1bd6-484f-8bc7-2c654c9a9b6f",
+      "group": "sinkServiceSetup",
+      "iidLoadRva": "0x197694"
+    },
+    {
+      "interface": "IAudioSessionControl2",
+      "dataWindow": "sessionControl2Iid",
+      "uuid": "bfb7ff88-7239-4fc9-8fa2-07c950be9c6d",
+      "group": "sinkServiceSetup",
+      "iidLoadRva": "0x1976e4"
+    },
+    {
+      "interface": "IAudioClient2",
+      "dataWindow": "audioClient2Iid",
+      "uuid": "726778cd-f60a-4eda-82de-e47610cd78aa",
+      "group": "sinkServiceSetup",
+      "iidLoadRva": "0x197742"
+    },
+    {
+      "interface": "IAudioRenderClient",
+      "dataWindow": "renderClientIid",
+      "uuid": "f294acfc-3146-4483-a7bf-addca7c260e2",
+      "group": "sinkServiceSetup",
+      "iidLoadRva": "0x197a7f"
+    }
+  ],
+  "comCalls": [
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x19766f",
+      "interface": "IMMDevice",
+      "method": "Activate",
+      "slot": 24,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x1976a7",
+      "interface": "IMMDevice",
+      "method": "ActivateSessionManager2",
+      "slot": 24,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x1976c7",
+      "interface": "IAudioSessionManager2",
+      "method": "GetAudioSessionControl",
+      "slot": 24,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x1976eb",
+      "interface": "IAudioSessionControl",
+      "method": "QueryInterface",
+      "slot": 0,
+      "slotBytes": 0,
+      "prefixHex": "ff10"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197708",
+      "interface": "IAudioSessionControl2",
+      "method": "SetDuckingPreference",
+      "slot": 128,
+      "slotBytes": 4,
+      "prefixHex": "ff90"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x19774c",
+      "interface": "IAudioClient",
+      "method": "QueryInterface",
+      "slot": 0,
+      "slotBytes": 0,
+      "prefixHex": "ff10"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x1977a3",
+      "interface": "IAudioClient2",
+      "method": "IsOffloadCapable",
+      "slot": 120,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x1977b8",
+      "interface": "IAudioClient2",
+      "method": "SetClientProperties",
+      "slot": 128,
+      "slotBytes": 4,
+      "prefixHex": "ff90"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x19780a",
+      "interface": "IAudioClient",
+      "method": "GetDevicePeriod",
+      "slot": 72,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x1978ff",
+      "interface": "IAudioClient",
+      "method": "InitializeAutoConversion",
+      "slot": 24,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197942",
+      "interface": "IAudioClient",
+      "method": "InitializeEndpointFormat",
+      "slot": 24,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x19795a",
+      "interface": "IAudioClient",
+      "method": "SetEventHandle",
+      "slot": 104,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197972",
+      "interface": "IAudioClient",
+      "method": "GetBufferSize",
+      "slot": 32,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197a89",
+      "interface": "IAudioClient",
+      "method": "GetService",
+      "slot": 112,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197aa9",
+      "interface": "IAudioRenderClient",
+      "method": "GetBuffer",
+      "slot": 24,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197ac4",
+      "interface": "IAudioRenderClient",
+      "method": "ReleaseSilenceBuffer",
+      "slot": 32,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkFormatSelection",
+      "rva": "0x197d7a",
+      "interface": "IAudioClient",
+      "method": "GetMixFormat",
+      "slot": 64,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "sinkFormatSelection",
+      "rva": "0x197e42",
+      "interface": "IAudioClient",
+      "method": "IsFormatSupported",
+      "slot": 56,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    },
+    {
+      "group": "availableFrameRequest",
+      "rva": "0x197b8b",
+      "interface": "IAudioClient",
+      "method": "GetCurrentPadding",
+      "slot": 48,
+      "slotBytes": 1,
+      "prefixHex": "ff50"
+    }
+  ],
+  "channelTables": [
+    {
+      "dataWindow": "formatSelectionChannelTable",
+      "group": "sinkFormatSelection",
+      "loadRva": "0x197eb5",
+      "instructionPrefixHex": "418b8c80",
+      "targets": [
+        "0x197ec2",
+        "0x197ec9",
+        "0x197ed0",
+        "0x197ed7",
+        "0x197ede",
+        "0x197ee5",
+        "0x197eec",
+        "0x197ef3"
+      ]
+    },
+    {
+      "dataWindow": "waveChannelTable",
+      "group": "waveChannelConfiguration",
+      "loadRva": "0x198c69",
+      "instructionPrefixHex": "418b9482",
+      "targets": [
+        "0x198c76",
+        "0x198c7e",
+        "0x198c86",
+        "0x198c8e",
+        "0x198c96",
+        "0x198c9e",
+        "0x198ca6",
+        "0x198cae"
+      ]
+    }
+  ],
+  "directEdges": [
+    {
+      "group": "sinkServiceSetup",
+      "rva": "0x197729",
+      "targetGroup": "sinkFormatSelection"
+    },
+    {
+      "group": "sinkFormatSelection",
+      "rva": "0x197daf",
+      "targetGroup": "waveFormatNormalization"
+    },
+    {
+      "group": "sinkFormatSelection",
+      "rva": "0x197e7f",
+      "targetGroup": "waveFormatNormalization"
+    },
+    {
+      "group": "sinkFormatSelection",
+      "rva": "0x197e99",
+      "targetGroup": "waveChannelConfiguration"
+    },
+    {
+      "group": "waveFormatNormalization",
+      "rva": "0x19683e",
+      "targetGroup": "waveChannelConfiguration"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native triplet, existing voice-owned sink constructor/service full extents, new complete format reader/selector bodies, bounded channel tables, interface GUID loads and COM call slots on the same opened image.",
+    "direct": "Original negotiation obtains and normalizes mix format, tries requested channels, chooses mix/closest fallback, applies optional client/session settings, computes buffer timing, tries engine-rate Windows conversion before endpoint-rate native resampler fallback, acquires the render service and releases an initial silence buffer. It requires successful silence release, event setup, render service and sufficient device capacity before success.",
+    "structuralOnly": "Opaque output/plugin contexts and cached format state remain stored layouts; interface identity is supported by native GUID bytes and reviewed Windows SDK declarations.",
+    "conditional": "Finite IMMDevice/IAudioClient/IAudioRenderClient and optional session interfaces supply all endpoint responses. Returned formats use CoTaskMem allocation for original free. Bounded matched, channel/closest/rejection, rate auto-conversion/fallback, client properties/ducking and failure cohorts execute original negotiation; no real audio endpoint or Start is used.",
+    "unresolved": "Game-selected endpoint/output identity, actual OS format/device acceptance and driver scheduling, continuous native sink resampling output, concurrent lifetime/teardown and audibility."
+  },
+  "formatSubtypeBinding": {
+    "dataWindow": "ieeeFloatSubtype",
+    "uuid": "00000003-0000-0010-8000-00aa00389b71",
+    "group": "waveFormatNormalization",
+    "loadRva": "0x19684c"
+  }
+}

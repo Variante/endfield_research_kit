@@ -1,0 +1,95 @@
+{
+  "schema": "endfield.wwise-mastering-coefficients-native-contract.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "generatorMethod": "filterCoefficients",
+  "tableData": "coefficientTable",
+  "entryOffsets": [
+    155,
+    181,
+    285,
+    419,
+    702,
+    528,
+    216,
+    332,
+    870,
+    969,
+    1004,
+    1057,
+    1108
+  ],
+  "commonOffsets": {
+    "frame": 0,
+    "angleArgument": 19,
+    "angleMultiply": 22,
+    "retainKindAndOutput": 33,
+    "retainGain": 42,
+    "retainFrequency": 50,
+    "angleToCallArgument": 59,
+    "packedHelperCall": 78,
+    "halfLoad": 83,
+    "helperSeedAndTypeGuard": 92,
+    "invalidError": 1235
+  },
+  "dataRoles": [
+    "scalarUnity",
+    "signMask",
+    "controlScale",
+    "controlBase",
+    "scalarHalf",
+    "angleScale",
+    "negativeAngleScale",
+    "approximateEulerBase",
+    "negativeHalf",
+    "negativeTwo",
+    "quarterControlScale",
+    "sqrtTwo",
+    "coefficientThreshold"
+  ],
+  "inputs": {
+    "frequency": "normalized cutoff",
+    "quality": "Q",
+    "gain": "raw gain argument",
+    "packedHelper": "opaque lane 0 S and lane 1 C",
+    "alpha": "float32(float32(0.5/Q)*S)"
+  },
+  "output": {
+    "rawOrder": [
+      "a0",
+      "a1",
+      "a2",
+      "b0",
+      "b1",
+      "b2"
+    ],
+    "storedByWrapper": [
+      "a0",
+      "-a1/a0",
+      "-a2/a0",
+      "b0/a0",
+      "b1/a0",
+      "b2/a0"
+    ],
+    "zeroType": "six zero raw coefficients; the wrapper skips generation for type zero",
+    "invalidType": "unsigned type >12 returns error without coefficient stores"
+  },
+  "arithmetic": {
+    "rounding": "float32 after each scalar operation",
+    "helper": "opaque power-helper call result with exact base/exponent arguments",
+    "firstOrderBase": 2.718280076980591,
+    "firstOrderExponentScale": -6.2831854820251465,
+    "qualityThreshold": 0.699999988079071,
+    "qualityUpperScale": "sqrt(float32(qualityThreshold/Q))",
+    "qualityLowerScale": 1.0,
+    "admittedHelperResult": "positive finite results have ordinary numerical arithmetic; zero/unordered roots have separate skip-division expression paths",
+    "helperRootSkipPredicate": "UCOMISS square-root result,+0; ZF=1 skips division for zero or unordered if the comparison completes"
+  },
+  "meaningBoundary": "All thirteen numeric generator routes, both quality-threshold paths and both helper-root zero/unordered skip-division paths are proved by decoding their complete scalar arithmetic into expression trees, with exact helper arguments and opaque helper returns. Raw coefficient order and the independently proved wrapper normalization are preserved. Ordinary numerical arithmetic assumes finite inputs and strictly positive finite power-helper returns; exceptional paths establish expressions and branch predicates, not full NaN payload/exception behavior. Completing SSE comparisons, callee-saved register preservation and nonzero normalization denominator are conditional. Trigonometric/power numerical equivalence, theoretical response names, other revisions/default profile resolution, allocation and live activation are not established."
+}

@@ -6,6 +6,8 @@ import math
 import struct
 from typing import Any
 
+from scripts.game_data.string_pool import StringPool, StringPoolDecodeError
+
 
 class MatrixShockWaveDecodeError(ValueError):
     pass
@@ -34,7 +36,15 @@ def _f32(data: bytes, offset: int, field: str) -> tuple[float, int]:
     return value, offset + 4
 
 
-def _string(data: bytes, offset: int, field: str) -> tuple[str, int]:
+def _string(
+    data: bytes, offset: int, field: str, strings: StringPool | None = None
+) -> tuple[str, int]:
+    if strings is not None:
+        index, offset = _i32(data, offset, f"{field}.poolIndex")
+        try:
+            return strings.resolve(index), offset
+        except StringPoolDecodeError as exc:
+            raise MatrixShockWaveDecodeError(f"{field}: {exc}") from exc
     length, offset = _u32(data, offset, f"{field}.length")
     if length > 4096:
         raise MatrixShockWaveDecodeError(f"{field}: invalid length {length}")
@@ -45,7 +55,15 @@ def _string(data: bytes, offset: int, field: str) -> tuple[str, int]:
         raise MatrixShockWaveDecodeError(f"{field}: invalid UTF-8") from exc
 
 
-def decode_matrix_shockwave_table(data: bytes) -> dict[str, Any]:
+def decode_matrix_shockwave_table(
+    data: bytes, *, strings: StringPool | None = None
+) -> dict[str, Any]:
+    """Decode one table; ``strings`` selects pooled string storage.
+
+    Builds that ship ``Json/StringPool/`` store each string as an i32 global
+    pool index instead of an inline length + UTF-8 run. The caller selects the
+    encoding (see ``string_pool.export_string_pool``); the reader never guesses.
+    """
     if not data or data[0] != 2:
         raise MatrixShockWaveDecodeError("root member count is not 2")
     offset = 1
@@ -63,7 +81,7 @@ def decode_matrix_shockwave_table(data: bytes) -> dict[str, Any]:
     keys: list[str] = []
     bar_count = 0
     for row_index in range(count):
-        key, offset = _string(data, offset, f"configDict[{row_index}].key")
+        key, offset = _string(data, offset, f"configDict[{row_index}].key", strings)
         if key in keys:
             raise MatrixShockWaveDecodeError(f"configDict[{row_index}]: duplicate key")
         keys.append(key)

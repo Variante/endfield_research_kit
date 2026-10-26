@@ -1,0 +1,1027 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v10",
+  "status": "reviewed",
+  "inheritsRecipe": "buff_runtime_values_capture.json",
+  "hookUpdates": [
+    {
+      "name": "buff.ActionBlackboard.GetDouble",
+      "appendFields": [
+        {
+          "label": "expressionUsesKey",
+          "argument": "input",
+          "type": "bool",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+BlackboardDouble::useBlackboardKey",
+              "type": "bool",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Blackboard+BlackboardDouble"
+            }
+          ]
+        },
+        {
+          "label": "expressionKey",
+          "argument": "input",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+BlackboardDouble::blackboardKey",
+              "type": "string",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Blackboard+BlackboardDouble"
+            }
+          ]
+        },
+        {
+          "label": "expressionLiteral",
+          "argument": "input",
+          "type": "float",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+BlackboardDouble::value",
+              "type": "float",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Blackboard+BlackboardDouble"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "buff.ActionBlackboard.GetFloatInput",
+      "appendFields": [
+        {
+          "label": "expressionUsesKey",
+          "argument": "input",
+          "type": "bool",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+BlackboardDouble::useBlackboardKey",
+              "type": "bool",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Blackboard+BlackboardDouble"
+            }
+          ]
+        },
+        {
+          "label": "expressionKey",
+          "argument": "input",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+BlackboardDouble::blackboardKey",
+              "type": "string",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Blackboard+BlackboardDouble"
+            }
+          ]
+        },
+        {
+          "label": "expressionLiteral",
+          "argument": "input",
+          "type": "float",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+BlackboardDouble::value",
+              "type": "float",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Blackboard+BlackboardDouble"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "buff.SkillUtil._CalculatePotentialTalentEffect",
+      "observationMode": "paired"
+    }
+  ],
+  "hooks": [
+    {
+      "name": "buff.Blackboard.TryGetDoubleKey",
+      "type": "Beyond.Blackboard",
+      "method": "TryGetDouble",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "double"
+        }
+      ],
+      "fields": [
+        {
+          "label": "key",
+          "argument": "key",
+          "type": "string",
+          "role": "value-source-observation"
+        },
+        {
+          "label": "outputDouble",
+          "argument": "value",
+          "type": "double",
+          "argumentRepresentation": {
+            "mode": "scalarByRef",
+            "type": "double"
+          }
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.Blackboard._AssignInternal",
+      "type": "Beyond.Blackboard",
+      "method": "_AssignInternal",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "item",
+          "type": "Beyond.Blackboard+DataPair"
+        }
+      ],
+      "fields": [
+        {
+          "label": "pairKey",
+          "argument": "item",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::key",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        },
+        {
+          "label": "pairValuedouble",
+          "argument": "item",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::valueDouble",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        },
+        {
+          "label": "pairValuestr",
+          "argument": "item",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::valueStr",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        },
+        {
+          "label": "pairIsdynamic",
+          "argument": "item",
+          "type": "bool",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::isDynamic",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.Blackboard._AssignDynamicInternal",
+      "type": "Beyond.Blackboard",
+      "method": "_AssignDynamicInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "item",
+          "type": "Beyond.Blackboard+DataPair"
+        }
+      ],
+      "fields": [
+        {
+          "label": "pairKey",
+          "argument": "item",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::key",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        },
+        {
+          "label": "pairValuedouble",
+          "argument": "item",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::valueDouble",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        },
+        {
+          "label": "pairValuestr",
+          "argument": "item",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::valueStr",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        },
+        {
+          "label": "pairIsdynamic",
+          "argument": "item",
+          "type": "bool",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Blackboard+DataPair::isDynamic",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 32
+          }
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.BattleFormula.CalculateHeal",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "CalculateHeal",
+      "returnType": "double",
+      "static": true,
+      "parameters": [
+        {
+          "name": "healPackData",
+          "type": "Beyond.Gameplay.Core.HealPackData"
+        },
+        {
+          "name": "healDetail",
+          "type": "Proto.BATTLE_HEAL_ACTION_DETAIL"
+        },
+        {
+          "name": "reportInfo",
+          "type": "Proto.BATTLE_REPORT_INFO"
+        }
+      ],
+      "fields": [
+        {
+          "label": "healType",
+          "argument": "healPackData",
+          "type": "Beyond.Gameplay.HealType",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.HealPackData::healType",
+              "type": "Beyond.Gameplay.HealType",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 80
+          }
+        },
+        {
+          "label": "healDetailIdentity",
+          "argument": "healDetail",
+          "type": "Proto.BATTLE_HEAL_ACTION_DETAIL",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "reportedSourceId",
+          "argument": "healDetail",
+          "type": "ulong",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::sourceId_",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "reportedTargetId",
+          "argument": "healDetail",
+          "type": "ulong",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::targetId_",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "reportedHealValue",
+          "argument": "healDetail",
+          "type": "double",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::value_",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "reportedCurrentHp",
+          "argument": "healDetail",
+          "type": "double",
+          "role": "reported-value",
+          "path": [
+            {
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::curHp_",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.AbilitySystem._OnHealed",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "_OnHealed",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier"
+        }
+      ],
+      "fields": [
+        {
+          "label": "targetServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetBattleInstanceId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverBattleInstId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetEntityName",
+          "argument": "this",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "storedClientHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>::<clientValue>k__BackingField",
+              "type": "double",
+              "mode": "inline",
+              "layoutWitness": "Beyond.Gameplay.Core.AbilitySystem"
+            }
+          ]
+        },
+        {
+          "label": "cachedServerHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_cachedServerHp",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "requestedHealValue",
+          "argument": "modifier",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<value>k__BackingField",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "realDelta",
+          "argument": "modifier",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<realDelta>k__BackingField",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "environmentId",
+          "argument": "modifier",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<environmentId>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "deltaType",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<deltaType>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "cancelReason",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+CancelReason",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<cancelReason>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+CancelReason",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.AbilitySystem.SetHpInternal",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "SetHpInternal",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "double"
+        },
+        {
+          "name": "isHpRecovery",
+          "type": "bool"
+        },
+        {
+          "name": "modifier",
+          "type": "System.Nullable`1<Beyond.Gameplay.Core.AbilitySystem+Modifier>"
+        },
+        {
+          "name": "isMaxHpChanged",
+          "type": "bool"
+        }
+      ],
+      "fields": [
+        {
+          "label": "targetServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetBattleInstanceId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverBattleInstId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetEntityName",
+          "argument": "this",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "storedClientHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>::<clientValue>k__BackingField",
+              "type": "double",
+              "mode": "inline",
+              "layoutWitness": "Beyond.Gameplay.Core.AbilitySystem"
+            }
+          ]
+        },
+        {
+          "label": "cachedServerHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_cachedServerHp",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.HealAction.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.HealAction",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.AbilitySystem.get_hp",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_hp",
+      "returnType": "double",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "targetServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetBattleInstanceId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverBattleInstId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetEntityName",
+          "argument": "this",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "storedClientHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>::<clientValue>k__BackingField",
+              "type": "double",
+              "mode": "inline",
+              "layoutWitness": "Beyond.Gameplay.Core.AbilitySystem"
+            }
+          ]
+        },
+        {
+          "label": "cachedServerHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_cachedServerHp",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.AbilitySystem.get_maxHp",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_maxHp",
+      "returnType": "double",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "targetServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetBattleInstanceId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverBattleInstId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetEntityName",
+          "argument": "this",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "storedClientHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>::<clientValue>k__BackingField",
+              "type": "double",
+              "mode": "inline",
+              "layoutWitness": "Beyond.Gameplay.Core.AbilitySystem"
+            }
+          ]
+        },
+        {
+          "label": "cachedServerHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_cachedServerHp",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Buff source/value/settlement boundaries",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    },
+    {
+      "name": "buff.Blackboard.AssignDouble",
+      "type": "Beyond.Blackboard",
+      "method": "Assign",
+      "static": false,
+      "returnType": "void",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "double"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "key",
+          "argument": "key",
+          "type": "string",
+          "role": "write-key"
+        },
+        {
+          "label": "assignedValue",
+          "argument": "value",
+          "type": "double",
+          "role": "write-request",
+          "argumentRepresentation": {
+            "mode": "scalarRegister",
+            "type": "double"
+          }
+        }
+      ],
+      "semanticRole": "Actual Double write submission at the compiled initialization caller boundary",
+      "evidenceBoundary": {
+        "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+        "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+        "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+      }
+    }
+  ],
+  "coverageGaps": [
+    "Initialization effect pairs enclose queries and write requests; acceptance and full destination contents remain distinct.",
+    "Expression selector/key/Single literal are sampled directly. Double lookup and outer formula returns supply their typed numeric results.",
+    "SetHpInternal is entry-only: floating input is deliberately unobserved. Stored client HP, cached server HP and later OnHealed realDelta are separate observations.",
+    "Normal modifier notification may already follow an HP write. Enclosure and target identity are required for before/after comparisons; no timestamp-only attribution.",
+    "One unique mixed void(this,key,Double,MethodInfo) observer forwards the Double input in XMM2 and records its exact bits. Other floating register input signatures remain refused."
+  ],
+  "evidenceBoundary": {
+    "direct": "Named bounded fields and completed paired calls, including raw numeric returns and original arguments.",
+    "conditional": "Selected ABI and native layout; sequential passive reads without calling game getters.",
+    "unresolved": "No collection enumeration, live IFix selection, server acceptance, pointer lifetime or serialized-node ownership. A write request is not a complete collection snapshot."
+  }
+}

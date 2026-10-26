@@ -1,0 +1,260 @@
+{
+  "schema": "endfield.collision-live-body-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "codeWindows": [
+    {
+      "module": "unityPlayer",
+      "role": "set_kinematic",
+      "rva": 4185712,
+      "bytes": 184,
+      "sha256": "57bbb8695a6803f404839800d7ed78cb643b3e760a3357128904ed08c0c95808",
+      "runtimeRanges": [
+        [
+          4185712,
+          4185896,
+          28548032
+        ]
+      ]
+    },
+    {
+      "module": "unityPlayer",
+      "role": "add_force",
+      "rva": 4184640,
+      "bytes": 200,
+      "sha256": "db44ad55d8e40ad1445025a6a1af6eb5f18fe6ac5b26785adfed797c0a65866e",
+      "runtimeRanges": [
+        [
+          4184640,
+          4184840,
+          28572396
+        ]
+      ]
+    },
+    {
+      "module": "unityPlayer",
+      "role": "sleeping",
+      "rva": 4186576,
+      "bytes": 162,
+      "sha256": "dacfcb22672a7e2e9c4a1082932b787eb2bfcb678f778ec6a65f94654b6418a0",
+      "runtimeRanges": [
+        [
+          4186576,
+          4186738,
+          28548476
+        ]
+      ]
+    },
+    {
+      "module": "unityPlayer",
+      "role": "sleep_getter",
+      "rva": 7729024,
+      "bytes": 11,
+      "sha256": "184442d52ee41cc2bfd1a2b4c916ccbd8a5fe1a15c289d83803f02ef253ba1cf"
+    },
+    {
+      "module": "gameAssembly",
+      "role": "destructible_break",
+      "rva": 59372304,
+      "bytes": 1800,
+      "sha256": "d47aa07109e829d4b1f98e28f4aa03a76e0817b6b61e9bb1fde52ad8fea21a91",
+      "runtimeRanges": [
+        [
+          59372304,
+          59374104,
+          212940408
+        ]
+      ]
+    },
+    {
+      "module": "unityPlayer",
+      "role": "sleep_forward",
+      "rva": 4186752,
+      "bytes": 29,
+      "sha256": "521a69e98c4ec9784bbd8d19d88c9f2ab3f95d320f331f121ae80f1276fe40b7"
+    }
+  ],
+  "hooks": [
+    {
+      "role": "set_kinematic",
+      "kind": 86,
+      "module": "unityPlayer",
+      "rva": 4185712,
+      "entryHex": "48895c241048894c2408574883ec6048",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "bool"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "add_force",
+      "kind": 87,
+      "module": "unityPlayer",
+      "rva": 4184640,
+      "entryHex": "48895c2410488974241848894c240857",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "i32"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "sleeping",
+      "kind": 88,
+      "module": "unityPlayer",
+      "rva": 4186576,
+      "entryHex": "48894c2408534883ec60488bd90f57c0",
+      "abi": {
+        "arguments": [
+          "pointer"
+        ],
+        "returnMode": "bool"
+      }
+    },
+    {
+      "role": "destructible_break",
+      "kind": 89,
+      "module": "gameAssembly",
+      "rva": 59372304,
+      "entryHex": "488bc448895808488970184889501057",
+      "method": [
+        51668,
+        "Beyond.Gameplay.View.DestructiblePhysicsMono",
+        "_Break",
+        59372304
+      ],
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "name": "UnityEngine.Rigidbody::set_isKinematic",
+      "slot": 214,
+      "functionRva": 4185712,
+      "role": "set_kinematic",
+      "managedMethod": [
+        439002,
+        "UnityEngine.Rigidbody",
+        "set_isKinematic",
+        59369072
+      ],
+      "cacheCellRva": 233503952,
+      "cacheLoadRva": 59369082,
+      "cacheLoadHex": "488b054f16610a"
+    },
+    {
+      "name": "UnityEngine.Rigidbody::AddForce_Injected",
+      "slot": 253,
+      "functionRva": 4184640,
+      "role": "add_force",
+      "managedMethod": [
+        439103,
+        "UnityEngine.Rigidbody",
+        "AddForce_Injected",
+        72254928
+      ],
+      "cacheCellRva": 233504008,
+      "cacheLoadRva": 72254943,
+      "cacheLoadHex": "488b0522779c09"
+    },
+    {
+      "name": "UnityEngine.Rigidbody::IsSleeping",
+      "slot": 245,
+      "functionRva": 4186576,
+      "role": "sleeping",
+      "managedMethod": [
+        439033,
+        "UnityEngine.Rigidbody",
+        "IsSleeping",
+        51590896
+      ],
+      "cacheCellRva": 233503968,
+      "cacheLoadRva": 51590902,
+      "cacheLoadHex": "488b05e3c5d70a"
+    }
+  ],
+  "layout": {
+    "managed": {
+      "cachedPtr": 16,
+      "identityClassCellRva": 218988680,
+      "classStatics": 184,
+      "classInitialized": 224
+    },
+    "rigidbody": {
+      "actor": 96,
+      "cachedKinematic": 152
+    },
+    "actor": {
+      "sleepState": 376
+    }
+  },
+  "sleepGetter": {
+    "rva": 7729024,
+    "vtableRva": 25955928,
+    "slot": 68,
+    "leafHex": "83b978010000000f95c0c3"
+  },
+  "limits": {
+    "maxBodyEvents": 8192,
+    "maxBreakEvents": 256,
+    "initialSamples": 64,
+    "sampleEvery": 16,
+    "boostSteps": 120,
+    "maxBodyRoots": 64,
+    "maxBodyRechecks": 8192
+  },
+  "evidenceBoundary": "direct: original registered Rigidbody setter/force/sleep calls, passive managed identity/native component/typed actor, flags, registration and original compiled sleeping getter scalar. Before/after frames are separately timed; missing registration/identity remains a gap. Destructible break ancestry selects original activation context, not IFix or positive solver contacts.",
+  "instanceIdConsumer": {
+    "index": 359554,
+    "type": "UnityEngine.Object",
+    "method": "GetInstanceID",
+    "static": false,
+    "returnType": "int",
+    "parameters": [],
+    "rva": 47858080,
+    "bodyBytes": 167,
+    "bodySha256": "179f937b5a14966cb2fd26be5a7838a09a53525196b961419571c68776b63bb2",
+    "role": "instance_id",
+    "hook": false,
+    "parameterByRef": [],
+    "abi": {
+      "arguments": [
+        "pointer",
+        "pointer"
+      ],
+      "returnMode": "i32",
+      "hiddenReturnBytes": 0
+    },
+    "abiEntryProbes": [
+      {
+        "offset": 11,
+        "bytes": "488bd9",
+        "instruction": "mov rbx, rcx"
+      }
+    ]
+  },
+  "sleepForward": {
+    "rva": 4186752,
+    "actorOperandOffset": 7,
+    "virtualSlotOperandOffset": 17,
+    "wrapperCallOffset": 90
+  },
+  "kinematicMask": 1
+}

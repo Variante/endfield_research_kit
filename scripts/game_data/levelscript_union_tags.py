@@ -101,6 +101,19 @@ def union_tags_audit() -> dict[str, Any]:
     return dict(_load()[1])
 
 
+def type_name_for_tag(family: str, tag: int) -> str | None:
+    """Return the authenticated current union's managed short-name token.
+
+    This is diagnostic identity, not codec admission or a field-count claim.
+    Missing/mismatched inputs and ambiguous tags name nothing.
+    """
+    families, audit = _load()
+    if audit.get("status") != NATIVE_EVIDENCE_VALIDATED:
+        return None
+    names = [name for name, pair in families.get(family, {}).items() if pair[0] == tag]
+    return names[0] if len(names) == 1 else None
+
+
 def contract_native_inputs(contract_path: Path = DEFAULT_CONTRACT) -> dict[str, str]:
     """The build the tag contract was regenerated against, uppercase."""
     try:

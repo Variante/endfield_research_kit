@@ -1,0 +1,286 @@
+{
+  "schema": "endfield.streaming-collision-native.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "decoderBridge": {
+    "markerRole": "marker17DwordStreamConsumer",
+    "ecsRole": "decode_core",
+    "boundary": "exact: both independently authenticated roles refer to identical code bytes and entry RVA"
+  },
+  "meshSources": [
+    {
+      "selector": 5,
+      "bodyKey": [
+        5,
+        0,
+        0
+      ],
+      "countKey": [
+        5,
+        2,
+        0
+      ],
+      "meshKeyBase": [
+        5,
+        1,
+        0
+      ],
+      "countLiteral": {
+        "rva": 27950952,
+        "hex": "050000000200000000000000",
+        "loadRva": 14934476,
+        "tailLoadRva": 14934491
+      },
+      "producerRole": "producer_e3e1b0",
+      "sourceProbes": [
+        {
+          "rva": 14934788,
+          "hex": "c7451005000000c7451401000000"
+        },
+        {
+          "rva": 14934846,
+          "hex": "44897d28e889ef29ff"
+        }
+      ],
+      "immediateKeyProbes": [
+        {
+          "rva": 14934788,
+          "bytes": 7,
+          "operandOffset": 3,
+          "keyWord": 0
+        },
+        {
+          "rva": 14934795,
+          "bytes": 7,
+          "operandOffset": 3,
+          "keyWord": 1
+        }
+      ],
+      "resourceCallRva": 14934850,
+      "meshIdBoundary": "resource helper output; runtime object/instance ID is not a stored CAB/PathID"
+    },
+    {
+      "selector": 6,
+      "bodyKey": [
+        9,
+        0,
+        0
+      ],
+      "countKey": [
+        9,
+        2,
+        0
+      ],
+      "meshKeyBase": [
+        9,
+        1,
+        0
+      ],
+      "countLiteral": {
+        "rva": 27951496,
+        "hex": "090000000200000000000000",
+        "loadRva": 14935996,
+        "tailLoadRva": 14936011
+      },
+      "producerRole": "producer_e3e7a0",
+      "sourceProbes": [
+        {
+          "rva": 14936308,
+          "hex": "c7451009000000c7451401000000"
+        },
+        {
+          "rva": 14936366,
+          "hex": "44897d28e899e929ff"
+        }
+      ],
+      "immediateKeyProbes": [
+        {
+          "rva": 14936308,
+          "bytes": 7,
+          "operandOffset": 3,
+          "keyWord": 0
+        },
+        {
+          "rva": 14936315,
+          "bytes": 7,
+          "operandOffset": 3,
+          "keyWord": 1
+        }
+      ],
+      "resourceCallRva": 14936370,
+      "meshIdBoundary": "resource helper output; runtime object/instance ID is not a stored CAB/PathID"
+    },
+    {
+      "selector": 9,
+      "bodyKey": [
+        255,
+        3,
+        0
+      ],
+      "countKey": [
+        255,
+        5,
+        0
+      ],
+      "meshKeyBase": [
+        255,
+        4,
+        0
+      ],
+      "countLiteral": {
+        "rva": 27950648,
+        "hex": "ff0000000500000000000000",
+        "loadRva": 14933441,
+        "tailLoadRva": 14933456
+      },
+      "producerRole": "producer_e3d9b0",
+      "sourceProbes": [
+        {
+          "rva": 14933773,
+          "hex": "c74520ff0000004c8bf6c7452404000000"
+        },
+        {
+          "rva": 14933833,
+          "hex": "44897d28e87ef329ff"
+        }
+      ],
+      "immediateKeyProbes": [
+        {
+          "rva": 14933773,
+          "bytes": 7,
+          "operandOffset": 3,
+          "keyWord": 0
+        },
+        {
+          "rva": 14933783,
+          "bytes": 7,
+          "operandOffset": 3,
+          "keyWord": 1
+        }
+      ],
+      "resourceCallRva": 14933837,
+      "meshIdBoundary": "resource helper output; runtime object/instance ID is not a stored CAB/PathID"
+    }
+  ],
+  "resourceRead": {
+    "bytes": 16,
+    "key64Offset": 0,
+    "word8Offset": 8,
+    "word12Offset": 12,
+    "countMarker": 2,
+    "resourceMarker": 15,
+    "contextNestedTableOffset": 128,
+    "field5VtableEntry": 14,
+    "extentBoundary": "direct: consumed 16-byte span, whole target extent unresolved",
+    "keyBoundary": "direct: nonzero key64 and word8 not 0 or 11 are required; lookup compares full key64; namespace and manifest/CAB joins unresolved"
+  },
+  "codeWindows": [
+    {
+      "role": "resource_copy",
+      "rva": 905936,
+      "bytes": 190,
+      "sha256": "91bbf5e2d308796355b57bb5b1f1c7898a2e6b3b6d8d98e7ff3211fba6fd75c7"
+    },
+    {
+      "role": "resource_resolve",
+      "rva": 906160,
+      "bytes": 312,
+      "sha256": "747da25b8f5b20d5cc635f85ffd865952028e803349e353521fed9d20db00e00"
+    },
+    {
+      "role": "resource_valid",
+      "rva": 908320,
+      "bytes": 24,
+      "sha256": "a99b2beb3a8f42db7c460dcb942b6ef4a8b28a83bfd12118d875d8fec35928df"
+    },
+    {
+      "role": "resource_find",
+      "rva": 907552,
+      "bytes": 128,
+      "sha256": "19248242e515ce2633cea42ad451faf3f49ffee32a546b83f16f918de42e1d44"
+    },
+    {
+      "role": "terrain_resource_copy",
+      "rva": 5176752,
+      "bytes": 190,
+      "sha256": "054e9d900f48738f42ab2ce4ffa663bd39345cbbb7ccb44332f6bb48606b44aa"
+    }
+  ],
+  "probes": [
+    {
+      "role": "resource_copy",
+      "offset": 52,
+      "hex": "488b9380000000"
+    },
+    {
+      "role": "resource_copy",
+      "offset": 100,
+      "hex": "8b4424588d0485000000004883c0044803c28b084803c8750748"
+    },
+    {
+      "role": "resource_copy",
+      "offset": 132,
+      "hex": "0f1001"
+    },
+    {
+      "role": "resource_valid",
+      "offset": 0,
+      "hex": "48833900740f8379080b7409837908007403b001c332c0c3"
+    },
+    {
+      "role": "resource_find",
+      "offset": 4,
+      "hex": "4c8bda4c8bd1488b12e87e5a060045"
+    },
+    {
+      "role": "resource_find",
+      "offset": 44,
+      "hex": "488b480849390b7441"
+    },
+    {
+      "role": "terrain_resource_copy",
+      "offset": 132,
+      "hex": "0f1001"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native images, decoder bridge, count literals, producer key-building instructions, resource helper and direct helper calls.",
+    "direct": "Selected slot3 callbacks use a table-local count and ordered resource keys. Helper copies 16 bytes from nested field5 by full-key index before checking resource validity and looking up the first qword. The terrain callback resolves one fixed resource key and forwards its successful result to the decoder heightmap argument.",
+    "conditional": "Stored selector/key bodies are compatible with default native callbacks; concrete Init/Streaming runtime pairing, callbacks and load success are not execution receipts.",
+    "unresolved": "Resource map population, semantic key namespace, CAB/PathID mesh identity, runtime entity assignment, inactive-record shape ordinals and actual query-hit ownership."
+  },
+  "fixedResourceSources": [
+    {
+      "selector": 7,
+      "bodyKey": [
+        8,
+        0,
+        0
+      ],
+      "resourceKey": [
+        8,
+        1,
+        0
+      ],
+      "resourceRole": "heightmap",
+      "producerRole": "producer_e3ef40",
+      "literal": {
+        "rva": 27949880,
+        "hex": "080000000100000000000000",
+        "loadRva": 14937944,
+        "tailLoadRva": 14937956
+      },
+      "resourceCallRva": 14937991,
+      "resourceTargetRole": "terrain_resource_copy",
+      "decoderArgumentProbe": {
+        "rva": 14938041,
+        "hex": "4533c94533c08b10488d48048b8424a0000000c1ea0289442420e8f8c038ff"
+      },
+      "boundary": "direct: ordered key resolves one native 16-byte resource span; successful helper output goes to the decoder fifth argument while mesh pointer/count are zero. Runtime cache contents, Texture identity and sampled height bytes remain separate."
+    }
+  ]
+}

@@ -1,0 +1,2431 @@
+{
+  "schema": "endfield.wwise-mastering-shared-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "conditional",
+  "method": {
+    "rva": "0x2433b0",
+    "bodyLength": 11797,
+    "bodySha256": "ef60e86b6e3c22ca03913ad5c1a5aec7e726a829fa1948b14791380bbf99fb78",
+    "program": [
+      {
+        "offset": 0,
+        "bytesHex": "488bc44c8948204c894018535556574154415641574881ecf00000008b72084c8d513c4d8be1400fb6f6458b0a4d8bf8488bfa4c8bd94585c90f847b2a0000"
+      },
+      {
+        "offset": 63,
+        "prefixHex": "660f6f25",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 71,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 79,
+        "prefixHex": "f30f102d",
+        "suffixHex": "",
+        "target": "polynomialLeadingScalar"
+      },
+      {
+        "offset": 87,
+        "bytesHex": "0f2970b8"
+      },
+      {
+        "offset": 91,
+        "prefixHex": "f30f1035",
+        "suffixHex": "",
+        "target": "polynomialSecondScalar"
+      },
+      {
+        "offset": 99,
+        "bytesHex": "0f2978a8"
+      },
+      {
+        "offset": 103,
+        "prefixHex": "f30f103d",
+        "suffixHex": "",
+        "target": "polynomialThirdScalar"
+      },
+      {
+        "offset": 111,
+        "bytesHex": "440f294098"
+      },
+      {
+        "offset": 116,
+        "prefixHex": "f3440f1005",
+        "suffixHex": "",
+        "target": "polynomialFourthScalar"
+      },
+      {
+        "offset": 125,
+        "bytesHex": "440f294888"
+      },
+      {
+        "offset": 130,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 139,
+        "bytesHex": "440f299078ffffff"
+      },
+      {
+        "offset": 147,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 156,
+        "bytesHex": "440f299868ffffff"
+      },
+      {
+        "offset": 164,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 173,
+        "bytesHex": "440f29a058ffffff"
+      },
+      {
+        "offset": 181,
+        "prefixHex": "f3440f1025",
+        "suffixHex": "",
+        "target": "scalarUnity"
+      },
+      {
+        "offset": 190,
+        "bytesHex": "4c8968100fb74210443bc8440f296c2470440f29742460440f43c8440f297c245033db83fe0c730a85f60f84bb0d0000eb05be0c0000008bd64c8be348899424300100000fb74f10f3470f1034a3488b07450f28fe0fb77712490fafcc450fc6ff00440f297c24204c8d348885f60f844a0d0000418b4338450f28ec0f57c0f3480f2ac0f3440f5ee8410f28cd0fc6c9000f294c2410413bf10f83250700000f57c0450f28fc448bc3f3480f2ac6f3440f5ef8410f28c70fc6c0000f2944243085f60f84f60c000083fe080f82c402000066410f6e028d46ff660f70c000498d0486660f7f4424404d3bf27709493bc20f839f0200008bd683e2f8440f285c2420440f28542410"
+      },
+      {
+        "offset": 453,
+        "prefixHex": "66440f6f0d",
+        "suffixHex": "",
+        "target": "polynomialSecondVector"
+      },
+      {
+        "offset": 462,
+        "bytesHex": "440f28442430660f6f7c2440"
+      },
+      {
+        "offset": 474,
+        "prefixHex": "660f6f2d",
+        "suffixHex": "",
+        "target": "vectorUnity"
+      },
+      {
+        "offset": 482,
+        "bytesHex": "66410f6ed0660f70d200660ffed3418bc0660f6fc2660f6fdf660f72d008660ffada0f5bc8"
+      },
+      {
+        "offset": 519,
+        "prefixHex": "660f6f05",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 527,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 534,
+        "bytesHex": "0f54c20f5bc00f28d50f58c8660f6fc3"
+      },
+      {
+        "offset": 550,
+        "prefixHex": "0f541d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 557,
+        "bytesHex": "660f72d008410f59c80f5cd10f5bc80f5bc3"
+      },
+      {
+        "offset": 575,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 582,
+        "bytesHex": "0f28dd0f58c8410f59ca0f59d1410f28c90f5cda0f28c20f59c4410f28e10f5ce00f28c3"
+      },
+      {
+        "offset": 618,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 625,
+        "bytesHex": "0f59e20f5cc8410f100486"
+      },
+      {
+        "offset": 636,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 643,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 649,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 656,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 663,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 669,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 676,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 683,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 689,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 696,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 703,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 709,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 716,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 723,
+        "bytesHex": "0f59cb660f6fdf410f59e3"
+      },
+      {
+        "offset": 734,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 741,
+        "bytesHex": "0f59c80f58e1410f112486418d4004660f6ed0660f70d200"
+      },
+      {
+        "offset": 765,
+        "prefixHex": "660ffe15",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 773,
+        "bytesHex": "660f6fc2660ffada"
+      },
+      {
+        "offset": 781,
+        "prefixHex": "0f5415",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 788,
+        "bytesHex": "660f72d0080f5bc80f5bc2"
+      },
+      {
+        "offset": 799,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 806,
+        "bytesHex": "0f28d50f58c8660f6fc3660f72d008410f59c80f5cd10f5bc8"
+      },
+      {
+        "offset": 831,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 838,
+        "prefixHex": "0f541d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 845,
+        "bytesHex": "410f28e10f5bc34183c0080f28dd0f58c8410f59ca0f59d1410f28c90f5cda0f28c2"
+      },
+      {
+        "offset": 879,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 886,
+        "bytesHex": "0f5ce00f28c3"
+      },
+      {
+        "offset": 892,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 899,
+        "bytesHex": "0f59e20f5cc8410f100486"
+      },
+      {
+        "offset": 910,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 917,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 923,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 930,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 937,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 943,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 950,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 957,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 963,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 970,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 977,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 983,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 990,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 997,
+        "bytesHex": "0f59cb"
+      },
+      {
+        "offset": 1000,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 1008,
+        "bytesHex": "410f59e3"
+      },
+      {
+        "offset": 1012,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 1019,
+        "bytesHex": "0f59c80f58e1410f112486"
+      },
+      {
+        "offset": 1030,
+        "prefixHex": "660f6f25",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 1038,
+        "bytesHex": "443bc20f82cbfdffff"
+      },
+      {
+        "offset": 1047,
+        "prefixHex": "f30f102d",
+        "suffixHex": "",
+        "target": "polynomialLeadingScalar"
+      },
+      {
+        "offset": 1055,
+        "prefixHex": "f30f103d",
+        "suffixHex": "",
+        "target": "polynomialThirdScalar"
+      },
+      {
+        "offset": 1063,
+        "prefixHex": "f3440f1005",
+        "suffixHex": "",
+        "target": "polynomialFourthScalar"
+      },
+      {
+        "offset": 1072,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 1081,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 1090,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 1099,
+        "bytesHex": "488b942430010000443bc60f83200a00008bc6458bf8412bc083f8040f8240030000498d6f02448d6efd418bc5498d2cae412bc0ffc8c1e802ffc04d8d3c87660f1f4400000f57c0418bc0410f28cc418d50020f28de8d4aff410f28d4f3480f2ac0418b02412bc0f3410f59c7f30f5cc80f57c0f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc80f57c0f3480f2ac1f30f59caf3410f58dbf3410f59c7f30f5ccff3410f59def30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca410f28d4f3410f58cbf30f594df8f30f58d9410f28ccf30f5cc80f57c0f30f115df80f28de418b02412bc0ffc8f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf3410f59def30f59ca8d4a018bc20f57c0f30f5ccff3480f2ac0f30f59caf3410f59c7f3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca0f28d6f3410f58cbf30f594dfcf30f58d9410f28ccf30f115dfc410f28dc418b02f30f5cd80f57c0412bc083e802f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc80f57c0f3480f2ac1f30f59cbf3410f58d3f3410f59c7f30f5ccff30f595500f30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cb0f28def3410f58cbf3410f59cef30f58d1410f28ccf30f5cc80f57c0f30f115500410f28d4418b02412bc083e803f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd8f30f59d9f30f5cdff30f59d90f28c24183c004f30f59c5f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59caf3410f58cbf30f594d04f30f58d9f30f115d044883c510453bc50f82ecfcffff443bc60f83c70600004b8d0cbe0f57c0418bc0410f28cc410f28dc0f28d6f3480f2ac0418b02412bc041ffc0f3410f59c7f30f5cd80f57c0f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5911f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f11114883c104443bc60f8234ffffffe9f20500008bd34585c90f84e70500004183f9080f825402000066410f6e02418d41ff660f70c000498d0486660f7f4424404d3bf27709493bc20f832e020000458bc14183e0f8440f285c2410"
+      },
+      {
+        "offset": 2250,
+        "prefixHex": "66440f6f15",
+        "suffixHex": "",
+        "target": "polynomialSecondVector"
+      },
+      {
+        "offset": 2259,
+        "bytesHex": "66440f6f4c2440"
+      },
+      {
+        "offset": 2266,
+        "prefixHex": "66440f6f05",
+        "suffixHex": "",
+        "target": "vectorUnity"
+      },
+      {
+        "offset": 2275,
+        "bytesHex": "0f1f4000660f1f840000000000660f6ec266410f6fc9660f70c000660ffec38bc2660ffac8410f28d8660f6fc1"
+      },
+      {
+        "offset": 2320,
+        "prefixHex": "0f540d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 2327,
+        "bytesHex": "660f72d0080f5bd00f5bc1"
+      },
+      {
+        "offset": 2338,
+        "prefixHex": "0f5915",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 2345,
+        "bytesHex": "410f28ca0f58d0410f59d30f5cda0f28c20f59c4410f28e20f5ce00f28c3"
+      },
+      {
+        "offset": 2375,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 2382,
+        "bytesHex": "0f59e20f5cc8410f100486"
+      },
+      {
+        "offset": 2393,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 2400,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 2406,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 2413,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 2420,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 2426,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 2433,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 2440,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 2446,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 2453,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 2460,
+        "bytesHex": "0f59cb0f59e2"
+      },
+      {
+        "offset": 2466,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 2473,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 2480,
+        "bytesHex": "0f59cb410f28d8410f59e7"
+      },
+      {
+        "offset": 2491,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 2498,
+        "bytesHex": "0f59c80f58e166410f6fc9410f1124868d4204660f6ec0410f28e2660f70c000"
+      },
+      {
+        "offset": 2530,
+        "prefixHex": "660ffe05",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 2538,
+        "bytesHex": "660ffac8660f6fc1"
+      },
+      {
+        "offset": 2546,
+        "prefixHex": "0f540d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 2553,
+        "bytesHex": "660f72d0080f5bd00f5bc1"
+      },
+      {
+        "offset": 2564,
+        "prefixHex": "0f5915",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 2571,
+        "bytesHex": "0f58d0410f59d30f28c20f5cda"
+      },
+      {
+        "offset": 2584,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 2591,
+        "bytesHex": "0f5ce00f28c30f59e2"
+      },
+      {
+        "offset": 2600,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 2607,
+        "bytesHex": "0f59e2"
+      },
+      {
+        "offset": 2610,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 2617,
+        "bytesHex": "0f59e2"
+      },
+      {
+        "offset": 2620,
+        "prefixHex": "0f5c25",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 2627,
+        "bytesHex": "0f59e2"
+      },
+      {
+        "offset": 2630,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 2637,
+        "bytesHex": "0f59e2"
+      },
+      {
+        "offset": 2640,
+        "prefixHex": "0f5825",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 2647,
+        "bytesHex": "410f59e7"
+      },
+      {
+        "offset": 2651,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 2658,
+        "bytesHex": "410f28ca83c2080f5cc8410f1004860f59cb"
+      },
+      {
+        "offset": 2676,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 2683,
+        "bytesHex": "0f59cb"
+      },
+      {
+        "offset": 2686,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 2693,
+        "bytesHex": "0f59cb"
+      },
+      {
+        "offset": 2696,
+        "prefixHex": "0f5c0d",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 2703,
+        "bytesHex": "0f59cb"
+      },
+      {
+        "offset": 2706,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 2713,
+        "bytesHex": "0f59cb"
+      },
+      {
+        "offset": 2716,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 2724,
+        "prefixHex": "0f580d",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 2731,
+        "bytesHex": "0f59c80f58e1410f112486"
+      },
+      {
+        "offset": 2742,
+        "prefixHex": "660f6f25",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 2750,
+        "bytesHex": "413bd00f8229feffff"
+      },
+      {
+        "offset": 2759,
+        "prefixHex": "f3440f1005",
+        "suffixHex": "",
+        "target": "polynomialFourthScalar"
+      },
+      {
+        "offset": 2768,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 2777,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 2786,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 2795,
+        "bytesHex": "413bd10f8380030000418bc1448bc22bc283f8040f82bd020000498d4802418d71fd8bc6498d0c8e2bc2ffc8c1e802ffc04d8d0480418b020f57db2bc2410f28cc0f28d6f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5951f8f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cb0f57dbf3410f58cbf3410f59cef30f58d1410f28ccf30f1151f80f28d6418b022bc2ffc8f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5951fcf30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f1151fc418b022bc20f57c983e8020f28de410f28d4f3480f2ac8f3410f59cdf30f5cd10f28c1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca0f28d6f3410f58cbf30f5909f30f58d9410f28ccf30f11190f57db418b022bc283c20483e803f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f595104f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f1151044883c1103bd60f8267fdffff413bd10f83b20000004b8d0c86418b020f57db2bc2410f28cc0f28d6ffc2f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5911f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f11114883c104413bd10f8252ffffff488b942430010000"
+      },
+      {
+        "offset": 3708,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 3716,
+        "bytesHex": "49ffc44883ea0148899424300100000f8569f2ffff4c8ba424480100004c8bbc2440010000389c24500100000f84d80d00004d85ff0f84cf0d0000418b6f08400fb6ed83fd02731b85ed0f84ba0d00008bd54d8d633048899424300100004c8bebeb21bd020000004d8d63308bd54c8beb4889942430010000eb0990"
+      },
+      {
+        "offset": 3840,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 3848,
+        "bytesHex": "410fb74f10f3450f103424498b07410f28e6410fb77f12490fafcd0fc6e4000f296424404c8d348885ff0f84350d0000418b4338450f28ec0f57c0f3480f2ac0f3440f5ee8450f28fd450fc6ff00440f297c2430413bf90f832c070000450f28fc0f57c0448bc3f3480f2ac7f3440f5ef8410f28cf0fc6c9000f294c242085ff0f84df0c000083ff080f82c202000066410f6e028d47ff660f70c000498d0486660f7f4424104d3bf27709493bc20f839d0200008bd783e2f8440f285c2440440f28542430"
+      },
+      {
+        "offset": 4045,
+        "prefixHex": "66440f6f0d",
+        "suffixHex": "",
+        "target": "polynomialSecondVector"
+      },
+      {
+        "offset": 4054,
+        "bytesHex": "440f28442420660f6f7c2410"
+      },
+      {
+        "offset": 4066,
+        "prefixHex": "660f6f35",
+        "suffixHex": "",
+        "target": "vectorUnity"
+      },
+      {
+        "offset": 4074,
+        "bytesHex": "eb0c0f1f4000"
+      },
+      {
+        "offset": 4080,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 4088,
+        "bytesHex": "66410f6ed00f28e6660f70d200660ffed3418bc0660f6fc2660f6fdf660f72d008660ffada"
+      },
+      {
+        "offset": 4125,
+        "prefixHex": "0f5415",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 4132,
+        "bytesHex": "0f5bc80f5bc2"
+      },
+      {
+        "offset": 4138,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 4145,
+        "bytesHex": "410f28d10f58c8660f6fc3"
+      },
+      {
+        "offset": 4156,
+        "prefixHex": "0f541d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 4163,
+        "bytesHex": "660f72d008410f59c80f5ce10f5bc80f5bc3"
+      },
+      {
+        "offset": 4181,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 4188,
+        "bytesHex": "660f6fdf0f58c8410f59ca0f59e10f28ce0f5ccc0f28c1"
+      },
+      {
+        "offset": 4211,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 4218,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 4229,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 4236,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 4239,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 4246,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 4249,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 4256,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 4259,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 4266,
+        "bytesHex": "0f59d10f28cc"
+      },
+      {
+        "offset": 4272,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 4279,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 4286,
+        "bytesHex": "0f59d0410f28c10f5cc10f59c4"
+      },
+      {
+        "offset": 4299,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 4306,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4309,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 4316,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4319,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 4326,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4329,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 4336,
+        "bytesHex": "0f59c40f28e6"
+      },
+      {
+        "offset": 4342,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 4349,
+        "bytesHex": "410f59c30f58d0410f111486418d4004660f6ed0660f70d200"
+      },
+      {
+        "offset": 4374,
+        "prefixHex": "660ffe15",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 4382,
+        "bytesHex": "660ffada660f6fc2"
+      },
+      {
+        "offset": 4390,
+        "prefixHex": "0f5415",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 4397,
+        "bytesHex": "660f72d0080f5bc80f5bc2"
+      },
+      {
+        "offset": 4408,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 4415,
+        "bytesHex": "0f58c8660f6fc3"
+      },
+      {
+        "offset": 4422,
+        "prefixHex": "0f541d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 4429,
+        "bytesHex": "660f72d008410f59c80f5ce10f5bc8"
+      },
+      {
+        "offset": 4444,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 4451,
+        "bytesHex": "0f5bc34183c008410f28d10f58c8410f59ca0f59e10f28ce0f5ccc0f28c1"
+      },
+      {
+        "offset": 4481,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 4488,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 4499,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 4506,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 4509,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 4516,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 4519,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 4526,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 4529,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 4536,
+        "bytesHex": "0f59d10f28cc"
+      },
+      {
+        "offset": 4542,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 4549,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 4556,
+        "bytesHex": "0f59d0410f28c10f5cc10f59c4"
+      },
+      {
+        "offset": 4569,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 4576,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4579,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 4586,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4589,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 4596,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4599,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 4606,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 4609,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 4616,
+        "bytesHex": "410f59c30f58d0410f111486443bc20f82d3fdffff"
+      },
+      {
+        "offset": 4637,
+        "prefixHex": "f30f1035",
+        "suffixHex": "",
+        "target": "polynomialSecondScalar"
+      },
+      {
+        "offset": 4645,
+        "prefixHex": "f30f103d",
+        "suffixHex": "",
+        "target": "polynomialThirdScalar"
+      },
+      {
+        "offset": 4653,
+        "prefixHex": "f3440f1005",
+        "suffixHex": "",
+        "target": "polynomialFourthScalar"
+      },
+      {
+        "offset": 4662,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 4671,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 4680,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 4689,
+        "bytesHex": "488b942430010000443bc70f830b0a00008bc7458bf8412bc083f8040f8241030000498d77028d6ffd8bc5498d34b6412bc0ffc8c1e802ffc04d8d3c8766900f57c0418bc0410f28cc418d50020f28de8d4aff410f28d4f3480f2ac0418b02412bc0f3410f59c7f30f5cc80f57c0f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc80f57c0f3480f2ac1f30f59caf3410f58dbf3410f59c7f30f5ccff3410f59def30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca410f28d4f3410f58cbf30f594ef8f30f58d9410f28ccf30f5cc80f57c0f30f115ef80f28de418b02412bc0ffc8f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf3410f59def30f59ca8d4a018bc20f57c0f30f5ccff3480f2ac0f30f59caf3410f59c7f3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca0f28d6f3410f58cbf30f594efcf30f58d9410f28ccf30f115efc410f28dc418b02f30f5cd80f57c0412bc083e802f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc80f57c0f3480f2ac1f30f59cbf3410f58d3f3410f59c7f30f5ccff30f5916f30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cb0f28def3410f58cbf3410f59cef30f58d1410f28ccf30f5cc80f57c0f30f1116410f28d4418b02412bc083e803f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd8f30f59d9f30f5cdff30f59d90f28c24183c004f30f59c5f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59caf3410f58cbf30f594e04f30f58d9f30f115e044883c610443bc50f82eefcffff443bc7720d4c8bbc2440010000e9b10600004b8d0cbe0f57c0418bc0410f28cc410f28dc0f28d6f3480f2ac0418b02412bc041ffc0f3410f59c7f30f5cd80f57c0f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5911f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f11114883c104443bc70f8234ffffff4c8bbc2440010000e9d40500008bd34585c90f84c90500004183f9080f823602000066410f6e02418d41ff660f70c000498d0486660f7f4424404d3bf27709493bc20f8310020000458bc14183e0f8"
+      },
+      {
+        "offset": 5843,
+        "prefixHex": "66440f6f1d",
+        "suffixHex": "",
+        "target": "polynomialSecondVector"
+      },
+      {
+        "offset": 5852,
+        "bytesHex": "66440f6f542440"
+      },
+      {
+        "offset": 5859,
+        "prefixHex": "66440f6f0d",
+        "suffixHex": "",
+        "target": "vectorUnity"
+      },
+      {
+        "offset": 5868,
+        "bytesHex": "eb0a6690"
+      },
+      {
+        "offset": 5872,
+        "prefixHex": "660f6f1d",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 5880,
+        "bytesHex": "660f6ec266410f6fca660f70c000410f28d3660ffec38bc2660ffac8660f6fc1"
+      },
+      {
+        "offset": 5912,
+        "prefixHex": "0f540d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 5919,
+        "bytesHex": "660f72d0080f5bd80f5bc1"
+      },
+      {
+        "offset": 5930,
+        "prefixHex": "0f591d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 5937,
+        "bytesHex": "410f28c90f58d8410f59df0f5ccb0f28c1"
+      },
+      {
+        "offset": 5954,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 5961,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 5972,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 5979,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 5982,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 5989,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 5992,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 5999,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 6002,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 6009,
+        "bytesHex": "0f59d10f28cb"
+      },
+      {
+        "offset": 6015,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 6022,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 6029,
+        "bytesHex": "0f59d0410f28c30f5cc166410f6fca0f59c3"
+      },
+      {
+        "offset": 6047,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 6054,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6057,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 6064,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6067,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 6074,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6077,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 6084,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6087,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 6094,
+        "bytesHex": "0f59c40f58d0410f1114868d4204660f6ec0410f28d3660f70c000"
+      },
+      {
+        "offset": 6121,
+        "prefixHex": "660ffe05",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 6129,
+        "bytesHex": "660ffac8660f6fc1"
+      },
+      {
+        "offset": 6137,
+        "prefixHex": "0f540d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 6144,
+        "bytesHex": "660f72d0080f5bd80f5bc1"
+      },
+      {
+        "offset": 6155,
+        "prefixHex": "0f591d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 6162,
+        "bytesHex": "410f28c90f58d8410f59df0f5ccb0f28c1"
+      },
+      {
+        "offset": 6179,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 6186,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 6197,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 6204,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 6207,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 6214,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 6217,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 6224,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 6227,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 6234,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 6237,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 6244,
+        "bytesHex": "0f59d00f28cb410f28c3"
+      },
+      {
+        "offset": 6254,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 6261,
+        "bytesHex": "83c2080f5cc10f59c3"
+      },
+      {
+        "offset": 6270,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 6277,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6280,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 6287,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6290,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 6297,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6300,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 6307,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 6310,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 6317,
+        "bytesHex": "0f59c40f58d0410f111486413bd00f822ffeffff"
+      },
+      {
+        "offset": 6337,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 6346,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 6355,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 6364,
+        "bytesHex": "413bd10f8380030000418bc1448bc22bc283f8040f82bd020000498d4802418d79fd8bc7498d0c8e2bc2ffc8c1e802ffc04d8d0480418b020f57c92bc20f28de410f28d4f3480f2ac8f3410f59cdf30f5cd10f28c1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca0f28d6f3410f58cbf30f5949f8f30f58d9410f28ccf30f1159f80f57db418b022bc2ffc8f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5951fcf30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f1151fc418b022bc20f57c983e8020f28de410f28d4f3480f2ac8f3410f59cd0f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca410f28d4f3410f58cbf30f5909f30f58d90f57c9f30f11190f28de418b022bc283c20483e803f3480f2ac8f3410f59cd0f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59caf3410f58cbf30f594904f30f58d9f30f1159044883c1103bd70f8267fdffff413bd10f83b20000004b8d0c86418b020f57db2bc2410f28cc0f28d6ffc2f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5911f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f11114883c104413bd10f8252ffffff488b94243001000049ffc54983c4044883ea0148899424300100000f857af2ffff4c8ba42448010000389c24580100000f84c00d0000418b14248beb413b5340899c2430010000410f43534089142485d20f849f0d00004c8beb90498b442410418b53404e8b0428498b4424084a8b34288bc385d20f84650d00004d8b00498b7b508bc84c3904cf740bffc03bc272f2e94b0d000083f8ff0f84420d0000498b43580fb77e124c8b36f3440f103488450f28fe450fc6ff00440f297c243085ff0f841a0d0000418b4338450f28ec0f57c0f3480f2ac0f3440f5ee8410f28e50fc6e4000f29642440413bf90f8313070000450f28fc0f57c0448bc3f3480f2ac7f3440f5ef8410f28cf0fc6c9000f294c242085ff0f84c60c000083ff080f82b502000066410f6e028d47ff660f70c000498d0486660f7f4424104d3bf27709493bc20f83900200008bd783e2f8440f285c2440440f28542430"
+      },
+      {
+        "offset": 7614,
+        "prefixHex": "66440f6f0d",
+        "suffixHex": "",
+        "target": "polynomialSecondVector"
+      },
+      {
+        "offset": 7623,
+        "bytesHex": "440f28442420660f6f7c2410"
+      },
+      {
+        "offset": 7635,
+        "prefixHex": "660f6f35",
+        "suffixHex": "",
+        "target": "vectorUnity"
+      },
+      {
+        "offset": 7643,
+        "bytesHex": "0f1f44000066410f6ed0660f6fdf660f70d2000f28e6"
+      },
+      {
+        "offset": 7665,
+        "prefixHex": "660ffe15",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 7673,
+        "bytesHex": "660ffada418bc0660f6fc2"
+      },
+      {
+        "offset": 7684,
+        "prefixHex": "0f5415",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 7691,
+        "bytesHex": "660f72d0080f5bc80f5bc2"
+      },
+      {
+        "offset": 7702,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 7709,
+        "bytesHex": "410f28d10f58c8660f6fc3"
+      },
+      {
+        "offset": 7720,
+        "prefixHex": "0f541d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 7727,
+        "bytesHex": "660f72d008410f59c80f5ce10f5bc80f5bc3"
+      },
+      {
+        "offset": 7745,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 7752,
+        "bytesHex": "660f6fdf0f58c8410f59cb0f59e10f28ce0f5ccc0f28c1"
+      },
+      {
+        "offset": 7775,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 7782,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 7793,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 7800,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 7803,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 7810,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 7813,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 7820,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 7823,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 7830,
+        "bytesHex": "0f59d10f28cc"
+      },
+      {
+        "offset": 7836,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 7843,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 7850,
+        "bytesHex": "0f59d0410f28c10f5cc10f59c4"
+      },
+      {
+        "offset": 7863,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 7870,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 7873,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 7880,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 7883,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 7890,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 7893,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 7900,
+        "bytesHex": "0f59c40f28e6"
+      },
+      {
+        "offset": 7906,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 7913,
+        "bytesHex": "410f59c20f58d0410f111486418d4004660f6ed0660f70d200"
+      },
+      {
+        "offset": 7938,
+        "prefixHex": "660ffe15",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 7946,
+        "bytesHex": "660ffada660f6fc2"
+      },
+      {
+        "offset": 7954,
+        "prefixHex": "0f5415",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 7961,
+        "bytesHex": "660f72d0080f5bc80f5bc2"
+      },
+      {
+        "offset": 7972,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 7979,
+        "bytesHex": "0f58c8660f6fc3"
+      },
+      {
+        "offset": 7986,
+        "prefixHex": "0f541d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 7993,
+        "bytesHex": "660f72d008410f59c80f5ce10f5bc8"
+      },
+      {
+        "offset": 8008,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 8015,
+        "bytesHex": "0f5bc34183c008410f28d10f58c8410f59cb0f59e10f28ce0f5ccc0f28c1"
+      },
+      {
+        "offset": 8045,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 8052,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 8063,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 8070,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 8073,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 8080,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 8083,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 8090,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 8093,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 8100,
+        "bytesHex": "0f59d10f28cc"
+      },
+      {
+        "offset": 8106,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 8113,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 8120,
+        "bytesHex": "0f59d0410f28c10f5cc10f59c4"
+      },
+      {
+        "offset": 8133,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 8140,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 8143,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 8150,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 8153,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 8160,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 8163,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 8170,
+        "bytesHex": "0f59c4"
+      },
+      {
+        "offset": 8173,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 8180,
+        "bytesHex": "410f59c20f58d0410f111486443bc20f82d7fdffff"
+      },
+      {
+        "offset": 8201,
+        "prefixHex": "f30f1035",
+        "suffixHex": "",
+        "target": "polynomialSecondScalar"
+      },
+      {
+        "offset": 8209,
+        "prefixHex": "f30f103d",
+        "suffixHex": "",
+        "target": "polynomialThirdScalar"
+      },
+      {
+        "offset": 8217,
+        "prefixHex": "f3440f1005",
+        "suffixHex": "",
+        "target": "polynomialFourthScalar"
+      },
+      {
+        "offset": 8226,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 8235,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 8244,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 8253,
+        "bytesHex": "443bc70f83ff0900008bc7458bf8412bc083f8040f823d030000498d77028d6ffd8bc5498d34b6412bc0ffc8c1e802ffc04d8d3c870f57c0418bc0410f28dc418d5002410f28cc8d4aff0f28d6f3480f2ac0418b02412bc0f3410f59c7f30f5cd80f57c0f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc80f57c0f3480f2ac1f30f59cbf3410f58d3f3410f59c7f30f5ccff30f5956f8f30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cb410f28dcf30f5cd80f57c0f3410f58cbf3410f59cef30f58d1410f28ccf30f1156f80f28d6418b02412bc0ffc8f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f5956fcf30f59cb8d4a018bc20f57c0f30f5ccff3480f2ac0f30f59cbf3410f59c7f3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cb0f28def3410f58cbf3410f59cef30f58d1410f28ccf30f5cc80f57c0f30f1156fc410f28d4418b02412bc083e802f3480f2ac0f3410f59c5f30f59c8f30f5cd10f28c1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc80f57c0f3480f2ac1f30f59caf3410f58dbf3410f59c7f30f5ccff3410f59def30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca0f28d6f3410f58cbf30f590ef30f58d9410f28ccf30f111e410f28dc418b02f30f5cd80f57c0412bc083e803f3480f2ac0f3410f59c5f30f59d8f30f5ccb0f28c1f30f59c5f30f5cd0f30f59d1f30f5cd7f30f59d10f28c34183c004f30f59c5f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f595604f30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f1156044883c610443bc50f82eefcffff8bac2430010000443bc70f83b10600004b8d0cbe0f57c0418bc0410f28cc0f28de410f28d4f3480f2ac0418b02412bc041ffc0f3410f59c7f30f5cc80f57c0f3480f2ac0f3410f59c5f30f59c80f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59caf3410f58cbf30f5909f30f58d9f30f11194883c104443bc70f8234ffffffe9dc0500008bd34585c90f84d10500004183f9080f823e02000066410f6e02418d41ff660f70c000498d0486660f7f4424404d3bf27709493bc20f8318020000458bc14183e0f8"
+      },
+      {
+        "offset": 9387,
+        "prefixHex": "66440f6f1d",
+        "suffixHex": "",
+        "target": "polynomialSecondVector"
+      },
+      {
+        "offset": 9396,
+        "bytesHex": "66440f6f542440"
+      },
+      {
+        "offset": 9403,
+        "prefixHex": "66440f6f0d",
+        "suffixHex": "",
+        "target": "vectorUnity"
+      },
+      {
+        "offset": 9412,
+        "bytesHex": "0f1f40000f1f840000000000660f6ec266410f6fca660f70c000410f28d3"
+      },
+      {
+        "offset": 9442,
+        "prefixHex": "660ffe05",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 9450,
+        "bytesHex": "660ffac88bc2660f6fc1"
+      },
+      {
+        "offset": 9460,
+        "prefixHex": "0f540d",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 9467,
+        "bytesHex": "660f72d0080f5bd80f5bc1"
+      },
+      {
+        "offset": 9478,
+        "prefixHex": "0f591d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 9485,
+        "bytesHex": "410f28c90f58d80f59dc0f5ccb0f28c1"
+      },
+      {
+        "offset": 9501,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 9508,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 9519,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 9526,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9529,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 9536,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9539,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 9546,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9549,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 9556,
+        "bytesHex": "0f59d10f28cb"
+      },
+      {
+        "offset": 9562,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 9569,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 9576,
+        "bytesHex": "0f59d0410f28c30f5cc166410f6fca0f59c3"
+      },
+      {
+        "offset": 9594,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 9601,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9604,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 9611,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9614,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 9621,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9624,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 9631,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9634,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 9641,
+        "bytesHex": "410f59c70f58d0410f1114868d4204660f6ec0410f28d3660f70c000"
+      },
+      {
+        "offset": 9669,
+        "prefixHex": "660ffe05",
+        "suffixHex": "",
+        "target": "laneOffsets"
+      },
+      {
+        "offset": 9677,
+        "bytesHex": "660ffac8660f6fc1660f72d0080f5bd8"
+      },
+      {
+        "offset": 9693,
+        "prefixHex": "660f6f05",
+        "suffixHex": "",
+        "target": "unsignedLowByteMask"
+      },
+      {
+        "offset": 9701,
+        "prefixHex": "0f591d",
+        "suffixHex": "",
+        "target": "unsignedHighByteScale"
+      },
+      {
+        "offset": 9708,
+        "bytesHex": "0f54c10f5bc0410f28c90f58d80f59dc0f5ccb0f28c1"
+      },
+      {
+        "offset": 9730,
+        "prefixHex": "0f5905",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 9737,
+        "bytesHex": "0f5cd0410f1004860f59d1"
+      },
+      {
+        "offset": 9748,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 9755,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9758,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 9765,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9768,
+        "prefixHex": "0f5c15",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 9775,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9778,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 9785,
+        "bytesHex": "0f59d1"
+      },
+      {
+        "offset": 9788,
+        "prefixHex": "0f5815",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 9795,
+        "bytesHex": "0f59d00f28cb83c208"
+      },
+      {
+        "offset": 9804,
+        "prefixHex": "0f590d",
+        "suffixHex": "",
+        "target": "polynomialLeadingVector"
+      },
+      {
+        "offset": 9811,
+        "bytesHex": "410f28c30f5cc10f59c3"
+      },
+      {
+        "offset": 9821,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialThirdVector"
+      },
+      {
+        "offset": 9828,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9831,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialFourthVector"
+      },
+      {
+        "offset": 9838,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9841,
+        "prefixHex": "0f5c05",
+        "suffixHex": "",
+        "target": "polynomialFifthVector"
+      },
+      {
+        "offset": 9848,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9851,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialSixthVector"
+      },
+      {
+        "offset": 9858,
+        "bytesHex": "0f59c3"
+      },
+      {
+        "offset": 9861,
+        "prefixHex": "0f5805",
+        "suffixHex": "",
+        "target": "polynomialConstantVector"
+      },
+      {
+        "offset": 9868,
+        "bytesHex": "410f59c70f58d0410f111486413bd00f822ffeffff"
+      },
+      {
+        "offset": 9889,
+        "prefixHex": "f3440f100d",
+        "suffixHex": "",
+        "target": "polynomialFifthScalar"
+      },
+      {
+        "offset": 9898,
+        "prefixHex": "f3440f1015",
+        "suffixHex": "",
+        "target": "polynomialSixthScalar"
+      },
+      {
+        "offset": 9907,
+        "prefixHex": "f3440f101d",
+        "suffixHex": "",
+        "target": "polynomialConstantScalar"
+      },
+      {
+        "offset": 9916,
+        "bytesHex": "413bd10f8380030000418bc1448bc22bc283f8040f82bd020000498d4802418d79fd8bc7498d0c8e2bc2ffc8c1e802ffc04d8d0480418b020f57c92bc20f28de410f28d4f3480f2ac8f3410f59cdf30f5cd10f28c1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca0f28d6f3410f58cbf30f5949f8f30f58d9410f28ccf30f1159f80f57db418b022bc2ffc8f3480f2ad8f3410f59ddf30f5ccb0f28c1f30f59c5f30f5cd00f28c3f30f59c5f30f59d1f30f5cd7f30f59d1f3410f58d0f30f59d1f3410f5cd1f30f59d1f3410f58d2f30f59d10f28cef30f5cc8f3410f58d3f30f59cbf30f5951fcf30f5ccff30f59cbf3410f58c8f30f59cbf3410f5cc9f30f59cbf3410f58caf30f59cbf3410f58cbf3410f59cef30f58d1f30f1151fc418b022bc20f57c983e8020f28de410f28d4f3480f2ac8f3410f59cd0f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59ca410f28d4f3410f58cbf30f5909f30f58d90f57c9f30f11190f28de418b022bc283c20483e803f3480f2ac8f3410f59cd0f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59caf3410f58cbf30f594904f30f58d9f30f1159044883c1103bd70f8267fdffff413bd10f83b20000004b8d0c86418b020f57c92bc20f28de410f28d4ffc2f3480f2ac8f3410f59cd0f28c1f30f5cd1f30f59c5f30f5cd80f28c2f30f59c5f30f59d9f30f5cdff30f59d9f3410f58d8f30f59d9f3410f5cd9f30f59d9f3410f58daf30f59d90f28cef30f5cc8f3410f58dbf30f59caf3410f59def30f5ccff30f59caf3410f58c8f30f59caf3410f5cc9f30f59caf3410f58caf30f59caf3410f58cbf30f5909f30f58d9f30f11194883c104413bd10f8252ffffffffc54983c50889ac24300100003b2c240f8265f2ffff45290a440f287c2450440f28742460440f286c2470440f28a42480000000440f289c2490000000440f289424a0000000440f288c24b0000000440f288424c00000000f28bc24d00000000f28b424e00000004c8bac2438010000e94903000033dbbd0200000083fe0c7317448bf383fe04731485f60f84de0000008bd3e9ae000000be0c0000008d46fc488bd3c1e8024c8d4108ffc04c8bcd448bd0448d348500000000900fb747124d8d40100fb74f10480fafca4883c2044803c8488b078b4c88fc418948e8498d49ff0fb74710480fafc80fb747124803c8488b078b4c88fc418948ec0fb747120fb74f10490fafc94803c8488b078b4c88fc418948f0498d49010fb747104983c104480fafc80fb747124803c8488b078b4c88fc418948f44983ea010f857affffff443bf67329412bf6448bc60fb747120fb74f10480fafca4803c8488b078b4c88fc41890c9348ffc24983e80175dd389c2450010000744f4d85ff744a418b47088bcb0fb6c03bc5730685c07439eb028bc52bc14d8d4330448bc8488bd3410fb747124d8d4004410fb74f10480fafca48ffc24803c8498b078b4c88fc418948fc4983e90175d7389c24580100000f84ea010000418b3424448bd3413b736041895b40410f43736083fe040f82690100008d46fc488bfbc1e802ffc08be8448d1485000000000f1f440000498b4424084c8b0c074183790c11743c6641837912007434498b442410418b5340498b4b50488b04d8488b00488904d1450fb74112498b01418b5340498b4b58428b4480fc89049141ff4340498b4424084c8b4cd8084183790c11743d6641837912007435498b442410418b5340498b4b50488b44d808488b00488904d1450fb74112498b01418b5340498b4b58428b4480fc89049141ff4340498b4424084c8b4cd8104183790c11743d6641837912007435498b442410418b5340498b4b50488b44d810488b00488904d1450fb74112498b01418b5340498b4b58428b4480fc89049141ff4340498b4424084c8b4cd8184183790c11743d6641837912007435498b442410418b5340498b4b50488b44d818488b00488904d1450fb74112498b01418b5340498b4b58428b4480fc89049141ff43404883c304488d7f204883ed010f85b8feffff443bd67206eb6485f67460488d1cdd00000000498b4424084c8b0c034183790c11743c6641837912007434498b442410418b5340498b4b50488b0403488b00488904d1450fb74112498b01418b5340498b4b58428b4480fc89049141ff43404883c30841ffc2443bd672a84881c4f0000000415f415e415c5f5e5d5bc3"
+      }
+    ]
+  },
+  "data": {
+    "polynomialLeadingVector": {
+      "rva": "0x2db050",
+      "byteLength": 16,
+      "bytesHex": "945b3341945b3341945b3341945b3341"
+    },
+    "laneOffsets": {
+      "rva": "0x297d90",
+      "byteLength": 16,
+      "bytesHex": "00000000010000000200000003000000"
+    },
+    "polynomialLeadingScalar": {
+      "rva": "0x2db014",
+      "byteLength": 4,
+      "bytesHex": "945b3341"
+    },
+    "polynomialSecondScalar": {
+      "rva": "0x2db020",
+      "byteLength": 4,
+      "bytesHex": "cac11742"
+    },
+    "polynomialThirdScalar": {
+      "rva": "0x2db024",
+      "byteLength": 4,
+      "bytesHex": "b33b4b42"
+    },
+    "polynomialFourthScalar": {
+      "rva": "0x2db01c",
+      "byteLength": 4,
+      "bytesHex": "a2f00942"
+    },
+    "polynomialFifthScalar": {
+      "rva": "0x2db018",
+      "byteLength": 4,
+      "bytesHex": "78e14e41"
+    },
+    "polynomialSixthScalar": {
+      "rva": "0x2db010",
+      "byteLength": 4,
+      "bytesHex": "dc9c5c40"
+    },
+    "polynomialConstantScalar": {
+      "rva": "0x2db00c",
+      "byteLength": 4,
+      "bytesHex": "49f5923d"
+    },
+    "scalarUnity": {
+      "rva": "0x28f350",
+      "byteLength": 4,
+      "bytesHex": "0000803f"
+    },
+    "polynomialSecondVector": {
+      "rva": "0x2db080",
+      "byteLength": 16,
+      "bytesHex": "cac11742cac11742cac11742cac11742"
+    },
+    "vectorUnity": {
+      "rva": "0x2923b0",
+      "byteLength": 16,
+      "bytesHex": "0000803f0000803f0000803f0000803f"
+    },
+    "unsignedLowByteMask": {
+      "rva": "0x2b0fb0",
+      "byteLength": 16,
+      "bytesHex": "ff000000ff000000ff000000ff000000"
+    },
+    "unsignedHighByteScale": {
+      "rva": "0x2da3b0",
+      "byteLength": 16,
+      "bytesHex": "00008043000080430000804300008043"
+    },
+    "polynomialThirdVector": {
+      "rva": "0x2db090",
+      "byteLength": 16,
+      "bytesHex": "b33b4b42b33b4b42b33b4b42b33b4b42"
+    },
+    "polynomialFourthVector": {
+      "rva": "0x2db070",
+      "byteLength": 16,
+      "bytesHex": "a2f00942a2f00942a2f00942a2f00942"
+    },
+    "polynomialFifthVector": {
+      "rva": "0x2db060",
+      "byteLength": 16,
+      "bytesHex": "78e14e4178e14e4178e14e4178e14e41"
+    },
+    "polynomialSixthVector": {
+      "rva": "0x2db040",
+      "byteLength": 16,
+      "bytesHex": "dc9c5c40dc9c5c40dc9c5c40dc9c5c40"
+    },
+    "polynomialConstantVector": {
+      "rva": "0x2db030",
+      "byteLength": 16,
+      "bytesHex": "49f5923d49f5923d49f5923d49f5923d"
+    }
+  },
+  "layout": {
+    "recordStrideBytes": 104,
+    "primaryHistoryOffset": 0,
+    "primaryChannelLimit": 12,
+    "auxiliaryHistoryOffset": 48,
+    "auxiliaryChannelLimit": 2,
+    "durationOffset": 56,
+    "remainingOffset": 60,
+    "capturedCountOffset": 64,
+    "capturedIdPointerOffset": 80,
+    "capturedValuePointerOffset": 88,
+    "capturedCapacityOffset": 96,
+    "bufferDataPointerOffset": 0,
+    "bufferChannelWordOffset": 8,
+    "bufferChannelMask": 255,
+    "bufferStatusOffset": 12,
+    "bufferMaximumFramesOffset": 16,
+    "bufferValidFramesOffset": 18,
+    "listCountOffset": 0,
+    "listBuffersPointerOffset": 8,
+    "listIdentitiesPointerOffset": 16,
+    "listIdentityIndirection": 1,
+    "listSkippedCaptureStatus": 17,
+    "auxiliaryFlagEffectOffset": 1004,
+    "listFlagEffectOffset": 1005
+  },
+  "polynomial": {
+    "coefficientsDescending": [
+      -11.209857940673828,
+      37.939247131347656,
+      -50.80830001831055,
+      34.48499298095703,
+      -12.930046081542969,
+      3.4470739364624023,
+      0.07175690680742264
+    ],
+    "evaluation": "float32 Horner, separate rounding at each multiply/add",
+    "blend": "P(q)*savedSample + P(1-q)*currentSample, separately rounded",
+    "ordinaryQ": "float32((remaining-frameIndex)*float32(1/duration))",
+    "shortBufferQ": "float32(float32(1-float32(frameIndex*float32(1/validFrames)))*ordinaryQ)"
+  },
+  "transition": {
+    "frameLimit": "min(remaining,primaryMaximumFrames)",
+    "processedFrames": "min(bufferValidFrames,frameLimit)",
+    "shortBufferCondition": "bufferValidFrames < frameLimit",
+    "counterDecrement": "frameLimit independent of valid frame counts",
+    "historiesDuringTransition": "retained",
+    "captureWhenCounterZero": true,
+    "capture": "last valid sample per admitted planar channel; primary/auxiliary need positive valid frame counts",
+    "listTransitionCount": "min(currentListCount,previousCapturedCount)",
+    "listTransitionMatching": "opaque identity value equality",
+    "listCaptureCount": "min(currentListCount,capturedCapacity)",
+    "listCapture": "pack identities and last samples for status !=17 and validFrames !=0",
+    "enabledFlags": "nonzero byte; auxiliary also requires nonnull pointer"
+  },
+  "meaningBoundary": "Complete static context-indexed routine: polynomial transition in primary planar channels, optional auxiliary channels and matched identity-indexed streams; zero-counter history capture and timer updates. Admitted nonoverlapping readable storage, finite ordinary samples, positive duration during transition, positive primary/auxiliary valid frames during capture, buffer valid frames within maximum storage, admitted list pointers/capacity. Record creation, transition trigger/duration producer, membership/identity meaning, allocation bounds/lifetime, concurrent ownership and live invocation not established."
+}

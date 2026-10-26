@@ -1,0 +1,65 @@
+{
+  "schema": "endfield.ifix-runtime-evidence-requirements.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "unresolved",
+  "purpose": "Identify whether saved sessions can decide IFix descriptor aliasing or generic context selection; preparation and profile declarations never establish execution.",
+  "nativeGroups": ["instanceFieldRules", "instanceAliasRules", "instanceByteAliasRules", "genericBridgeRules", "genericReferenceGetRules", "genericScalarGetRules", "genericAdjustorRules", "callReferenceUpdateRules"],
+  "methodRefs": ["instanceFieldRules.methods.Ldfld", "instanceFieldRules.methods.Stfld", "genericBridgeRules.getObjectMethod", "reflectionInvokerRules.methods.updateReference"],
+  "contextReadRecipes": {
+    "GetAsType": {
+      "nativeProofRefs": ["genericReferenceGetRules", "genericScalarGetRules"],
+      "ordinaryEntryCarriers": {"unboxedCall": "RCX", "signedOffset": "EDX", "opaqueContext": "R8"},
+      "carrierByteOffset": 56,
+      "effectiveEntryByteOffset": 0,
+      "reloadAfter": "optional contextPrepare and GetObject; use the reloaded context entry, not an entry-only snapshot",
+      "boundary": "Conditional selected native request program; opaque context bits are not a runtime closed-type identity."
+    },
+    "GenericDelegate": {
+      "nativeProofRef": "genericBridgeRules",
+      "incomingContext": {"Func0": "RDX", "Action1/Func1": "R8", "Action2/Func2": "R9", "Action3/Func3": "qword[entryRSP+0x28]", "Action4/Func4": "qword[entryRSP+0x30]"},
+      "carrierByteOffset": 56,
+      "FuncEffectiveEntryByteOffset": "8*generic-input-arity",
+      "FuncReloadAfter": "Execute and GetObject; forward the selected effective entry to contextType",
+      "ActionBoundary": "These Action programs only test/prepare the context carrier; they have no local typed result-entry query.",
+      "representationBoundary": "Native hidden context and managed System.Reflection.MethodInfo closure references are different representations."
+    }
+  },
+  "questions": {
+    "descriptorAliasing": {
+      "nativeProofRefs": ["instanceFieldRules", "instanceByteAliasRules"],
+      "requiredObservations": [
+        "Same-session call/thread identity and exact selected code location for each snapshot.",
+        "Actual source and destination Value addresses, complete pre-copy source bytes, evaluation base, field index and selected unmanaged-field address.",
+        "Reloaded receiver/unmanaged-array/header/field-address stability across copy and rebase, separately from managed-array references.",
+        "Source tag read after both copy stores; on the managed branch, destination Value1 write and Stfld source Value1 read after rebase.",
+        "Managed array identities, lengths and selected reference before the assignment/store requests; post-request state and normal completion are separate observations."
+      ],
+      "representativeBranches": ["distinct nonoverlapping descriptors", "same Value address", "partial overlap changing the post-copy tag guard", "Stfld rebase changing the subsequently read source index", "distinct/shared managed-array identity"],
+      "entryOnlyBoundary": "An entry reference identifies neither the selected Value byte ranges nor the post-copy guard, rebase, managed read or completed store.",
+      "acceptance": "A complete loss-free session with authenticated native sites and correlated observations may establish only the sampled address/byte/array relation. Compare against the native equations only when their stable-storage premises are independently supported.",
+      "stop": "Missing phases, changed address/header premises, failed reads, losses or absent completion keep the affected consequence unresolved. Pointer reuse across calls is not object lifetime."
+    },
+    "genericContexts": {
+      "nativeProofRefs": ["genericBridgeRules", "genericReferenceGetRules", "genericScalarGetRules", "genericAdjustorRules"],
+      "requiredObservations": [
+        "Selected ordinary or adjustor entry and raw incoming argument/hidden-context carriers, with exact per-entry native ABI proof.",
+        "Saved incoming context, preparation selection and the effective selected context entry used by the actual query after its preceding helper calls.",
+        "Typed query argument and returned Type/reference or unbox address/result bits, with correlated return observations; reference GetObject pre-clear reference and post-clear physical slot are separate phases.",
+        "For a closed-type claim, independently authenticated runtime generic declaration/instantiation records and raw Type carriers; ordinary code address, MethodSpec index or a printed name alone is insufficient.",
+        "For an adjustor claim, paired receiver/context observations before and after the receiver adjustment and at the ordinary target; an on-disk adjustor cell alone does not select invocation."
+      ],
+      "representativeBranches": ["ordinary reference result", "ordinary bool/native-pointer result", "prepared/unprepared context", "ordinary/adjustor entry", "same code address with distinct runtime contexts"],
+      "entryOnlyBoundary": "A registered shared generic entry does not identify the supplied runtime MethodInfo, closed type, effective query context, cast/unbox success or returned storage.",
+      "acceptance": "Admit raw point observations only inside an authenticated complete session. Closed-type and result claims additionally require their own declaration/Type and paired-return proofs; retain unknown contexts without guessing a stored candidate.",
+      "stop": "Missing incoming/effective contexts, byref ambiguity, unsupported runtime layouts, unmatched pairing, failed reads or losses withhold the corresponding claim."
+    },
+    "patchExecution": {
+      "requiredObservations": ["Accepted patch bytes/hash at LoadInternal", "Selected fix record and registered wrapper identity", "Same invocation IsPatched/GetPatch selection and Execute entry"],
+      "acceptance": "IFix local observations do not establish that a declared patch replacement ran unless this separate path is observed.",
+      "stop": "Keep file declarations, native body candidates and observed execution identities separate."
+    }
+  },
+  "profileBoundary": "This auditor recognizes retained native entry-profile declarations. It does not implement a new paired observer protocol, decode an IFix session or upgrade profile fields to runtime claims.",
+  "sessionBoundary": "Rebind saved inspection, collection inventory, profile and provider summary before reporting capabilities. Reuse upstream inspection admission explicitly; a changed or incomplete receipt withholds even that reuse.",
+  "instrumentationBoundary": "Offline only. No game launch, attachment, capture, injector or shared observer edits."
+}

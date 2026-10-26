@@ -10,7 +10,10 @@ fields) and the enum are derived from an explicit ``GameAssembly.dll`` and
 ``global-metadata.dat`` pair, with native sizes and field offsets checked,
 and every opcode inside the parser's exact method spans is named. Every
 instruction in the current dumped patch files maps to an enum member; an
-unknown code fails closed.
+unknown code fails closed. Callers with an authenticated literal/control VM
+contract may reserve sequential inline payloads for long/double literals and
+packed Switch tables; payloads retain physical indexes and raw padding bytes.
+The metadata-only command does not assume those native operand rules.
 """
 
 from __future__ import annotations
@@ -113,13 +116,26 @@ def selected_opcode_layout(gameassembly: Path, metadata_path: Path) -> dict[str,
     }
 
 
-def decode_patch_opcodes(data: bytes, layout: dict[str, Any], *, source: str) -> dict[str, Any]:
-    """Decode only code names and raw operands inside exact parsed method spans."""
+def decode_patch_opcodes(data: bytes, layout: dict[str, Any], *, source: str,
+                         inline_data_rules: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Name stored words, optionally reserving native-proved sequential payloads.
+
+    The optional contract is authenticated by the caller's selected VM audit.
+    Physical indexes and raw payload/padding bytes are preserved. This is a
+    sequential storage view, not a claim that runtime control skips each payload.
+    """
     parsed = parse_ifix_patch(data, source=source)
     members = layout["opcodeEnum"]["members"]
     names = {int(row["id"]): str(row["name"]) for row in members}
     if len(names) != len(members):
         raise InstructionLayoutError("opcode map contains duplicate values")
+    payload_rules = {}
+    if inline_data_rules is not None:
+        from scripts.game_data.ifix_vm_literal_control_rules import inline_data_rules as checked_inline_rules
+        payload_rules = checked_inline_rules(inline_data_rules)
+        for name, rule in payload_rules.items():
+            if names.get(rule["opcodeId"]) != name:
+                raise InstructionLayoutError(f"inline opcode map differs: {name}")
     methods = []
     for body in parsed["methods"]["records"]:
         start, end = body["codeOffset"], body["codeEndOffset"]
@@ -127,20 +143,52 @@ def decode_patch_opcodes(data: bytes, layout: dict[str, Any], *, source: str) ->
         if len(raw) != body["codeSize"] * INSTRUCTION_WORD_SIZE:
             raise InstructionLayoutError(f"{source}: method {body['index']} code span changed")
         instructions = []
-        for index, (code, operand) in enumerate(struct.iter_unpack("<II", raw)):
+        words = list(struct.iter_unpack("<II", raw))
+        index = 0
+        while index < len(words):
+            code, operand = words[index]
             if code not in names:
                 raise InstructionLayoutError(
                     f"{source}: method {body['index']} instruction {index} "
                     f"at {start + index * INSTRUCTION_WORD_SIZE}: unknown opcode {code}"
                 )
-            instructions.append({
+            instruction = {
                 "index": index,
                 "offset": start + index * INSTRUCTION_WORD_SIZE,
                 "opcode": code,
                 "name": names[code],
                 "operandUnsigned": operand,
                 "operandSigned": operand if operand < 0x80000000 else operand - 0x100000000,
-            })
+            }
+            instructions.append(instruction)
+            rule = payload_rules.get(names[code])
+            payload_count = 0
+            if rule is not None:
+                if rule["kind"] == "qword-next-record":
+                    payload_count = 1
+                else:
+                    count = instruction["operandSigned"]
+                    if count < 0:
+                        raise InstructionLayoutError(f"{source}: method {body['index']} Switch {index}: negative inline table count {count}")
+                    payload_count = (count + 1) // 2
+                if payload_count > len(words) - index - 1:
+                    raise InstructionLayoutError(f"{source}: method {body['index']} {names[code]} {index}: inline payload exceeds method span")
+                payload = raw[(index+1)*8:(index+1+payload_count)*8]
+                instruction["inlineDataRawHex"] = payload.hex()
+                instruction["inlineDataRecordCount"] = payload_count
+                if rule["kind"] == "packed-signed-int32-relative-targets":
+                    instruction["inlineDataEntries"] = [struct.unpack_from('<i',payload,k*4)[0] for k in range(count)]
+            for payload_index in range(index+1,index+1+payload_count):
+                low, high = words[payload_index]
+                instructions.append({
+                    "index": payload_index, "offset": start+payload_index*8,
+                    "opcode": low, "name": "InlineData", "operandUnsigned": high,
+                    "operandSigned": high if high < 0x80000000 else high-0x100000000,
+                    "recordKind": "inline-data", "ownerInstructionIndex": index,
+                    "rawHex": raw[payload_index*8:(payload_index+1)*8].hex(),
+                    "framingBoundary": "authored-sequential-storage;runtime-entry-unobserved",
+                })
+            index += 1 + payload_count
         methods.append({
             "index": body["index"],
             "codeOffset": start,
@@ -154,6 +202,7 @@ def decode_patch_opcodes(data: bytes, layout: dict[str, Any], *, source: str) ->
         "fixRecords": parsed["fixRecords"],
         "methods": methods,
         "instructionCount": sum(row["instructionCount"] for row in methods),
+        "inlineDataRecordCount": sum(ins.get("recordKind") == "inline-data" for row in methods for ins in row["instructions"]),
         "sourceSelection": "caller-supplied-patch-file",
         "evidenceBoundary": "opcode-named-operand-raw",
     }
@@ -176,7 +225,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ifix-vm-opcode-audit: {error}", file=sys.stderr)
         return 1
     report = {
-        "schema": "endfield-ifix-vm-opcode-audit-v1",
+        "schema": "endfield-ifix-vm-opcode-audit-v2",
         "status": "opcode_layout_validated",
         "layout": layout,
         "files": files,

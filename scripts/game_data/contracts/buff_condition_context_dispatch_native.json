@@ -1,0 +1,158 @@
+{
+  "schema": "endfield.buff-condition-context-dispatch-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "context-fallback-actual-child-programs-allocated-self-interface-count-and-static-getter-pairs",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_condition_context_adapter_native.json",
+  "childContracts": {
+    "dispatch": "buff_formatter_dispatch_fallback_native.json",
+    "scan": "buff_formatter_resolver_scan_native.json",
+    "creation": "buff_formatter_class_creation_native.json"
+  },
+  "metadataColumns": {
+    "recordBytes": 92,
+    "vtableCountWordOffset": 78,
+    "interfaceOffsetsCountWordOffset": 82,
+    "rowsChecked": 58110,
+    "runtimeSourcePointerIdentityProved": false
+  },
+  "creationDispatchSources": {
+    "allocationCallRva": 2979969,
+    "selfPointer": {
+      "siteRva": 2979989,
+      "allocationByteOffset": 120,
+      "freshAllocationRaxStoredIntoItsOwnQwordProved": true,
+      "directStoreUnique": true,
+      "actualPreparedReceiverPointerEqualityProved": false
+    },
+    "interfaceRecordCount": {
+      "loadRva": 2980597,
+      "storeRva": 2980601,
+      "sourceRecordWordOffset": 82,
+      "allocationWordOffset": 304,
+      "namedInterfaceOffsetsCountCopiedToAllocationProved": true,
+      "bits": 16,
+      "directStoreUnique": true,
+      "unchangedByChildrenOrAliasesProved": false
+    },
+    "storesDominateEveryNormalLocalReturn": true,
+    "allocationRequest": {
+      "source": "current stored metadata vtable_count WORD",
+      "sourceRecordWordOffset": 78,
+      "bias": 20,
+      "shift": 4,
+      "formula": "(zero_extend_64(stored vtable_count WORD) + bias) << shift",
+      "actualAllocationCapacityOrOutcomeProved": false
+    },
+    "runtimeMetadataClassOrArrayIdentityProved": false,
+    "wholeRootAdmitted": false
+  },
+  "staticInterfaceBindings": [
+    {
+      "type": "Beyond.Gameplay.Core.Ability",
+      "typeDefinition": 9045,
+      "interfaceRecordIndex": 11473,
+      "interfaceOffsetsCount": 3,
+      "interfaceOffset": 4,
+      "interfaceSlot": 4,
+      "effectiveVtableSlot": 8,
+      "vtableCount": 20,
+      "getContextMethodDefinition": 55798,
+      "currentStaticVtableGetterProved": true,
+      "pairEndByteOffset": 464,
+      "recordedAllocationRequestBytes": 640,
+      "staticPairWithinRecordedAllocationRequestProved": true,
+      "runtimeInterfaceArrayPairOrCapacityProved": false
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Buff",
+      "typeDefinition": 10044,
+      "interfaceRecordIndex": 12291,
+      "interfaceOffsetsCount": 12,
+      "interfaceOffset": 16,
+      "interfaceSlot": 4,
+      "effectiveVtableSlot": 20,
+      "vtableCount": 32,
+      "getContextMethodDefinition": 60669,
+      "currentStaticVtableGetterProved": true,
+      "pairEndByteOffset": 656,
+      "recordedAllocationRequestBytes": 832,
+      "staticPairWithinRecordedAllocationRequestProved": true,
+      "runtimeInterfaceArrayPairOrCapacityProved": false
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment",
+      "typeDefinition": 9047,
+      "interfaceRecordIndex": 11478,
+      "interfaceOffsetsCount": 2,
+      "interfaceOffset": 4,
+      "interfaceSlot": 4,
+      "effectiveVtableSlot": 8,
+      "vtableCount": 19,
+      "getContextMethodDefinition": 55956,
+      "currentStaticVtableGetterProved": true,
+      "pairEndByteOffset": 464,
+      "recordedAllocationRequestBytes": 624,
+      "staticPairWithinRecordedAllocationRequestProved": true,
+      "runtimeInterfaceArrayPairOrCapacityProved": false
+    },
+    {
+      "type": "Beyond.Gameplay.Core.BattleManager+ComboSkillEnvironment",
+      "typeDefinition": 10353,
+      "interfaceRecordIndex": 12646,
+      "interfaceOffsetsCount": 2,
+      "interfaceOffset": 4,
+      "interfaceSlot": 4,
+      "effectiveVtableSlot": 8,
+      "vtableCount": 19,
+      "getContextMethodDefinition": 62460,
+      "currentStaticVtableGetterProved": true,
+      "pairEndByteOffset": 464,
+      "recordedAllocationRequestBytes": 624,
+      "staticPairWithinRecordedAllocationRequestProved": true,
+      "runtimeInterfaceArrayPairOrCapacityProved": false
+    },
+    {
+      "type": "Beyond.Gameplay.Core.GlobalBuff",
+      "typeDefinition": 10405,
+      "interfaceRecordIndex": 12687,
+      "interfaceOffsetsCount": 8,
+      "interfaceOffset": 10,
+      "interfaceSlot": 4,
+      "effectiveVtableSlot": 14,
+      "vtableCount": 26,
+      "getContextMethodDefinition": 62588,
+      "currentStaticVtableGetterProved": true,
+      "pairEndByteOffset": 560,
+      "recordedAllocationRequestBytes": 736,
+      "staticPairWithinRecordedAllocationRequestProved": true,
+      "runtimeInterfaceArrayPairOrCapacityProved": false
+    }
+  ],
+  "conditions": [
+    "Stable compatible actual metadata/header/source-index/class allocation and original object-header binding.",
+    "Self/interface-count records and method pairs remain coherent and unchanged by aliases or child effects.",
+    "Readable storage and ordinary compatible normal child/tail returns; preparation, resolver search and parent conditions remain required."
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Complete existing prepare/resolver/search programs and current named metadata vtable/interface-offset counts.",
+      "Five typed static interface-offset/vtable entries select the independently proved Context getter entries."
+    ],
+    "direct": [
+      "Fresh allocator-result self QWORD and adjacent saved-source interface-record WORD copy dominate normal creation returns.",
+      "Actual caller/child entry targets, self/count/record/pair declarations and original-object/fresh-class argument sources are joined."
+    ],
+    "conditional": [
+      "Matching actual allocation/receiver/class/metadata state, stable self/count/array/pair storage and ABI-compatible returning children.",
+      "Selected static getter pairs fit the recorded vtable-based allocation request formula; this requires matching static/runtime records."
+    ],
+    "unresolved": [
+      "Allocator capacity/outcome, actual initialized self/class/interface array/pair identities, alias/child effects or termination, full condition CFG/IFix branch and actual execution."
+    ]
+  }
+}

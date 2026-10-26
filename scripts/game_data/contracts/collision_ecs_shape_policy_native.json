@@ -1,0 +1,309 @@
+{
+  "schema": "endfield.collision-ecs-shape-policy-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "typeName": {
+    "rva": 25939416,
+    "ascii": "PxShape"
+  },
+  "layout": {
+    "body": {
+      "bufferControl": 380,
+      "bufferMask": 16384,
+      "bufferPointer": 112,
+      "bufferedFlags": 348,
+      "inlineFlags": 172,
+      "visibleMask": 32767
+    },
+    "actor": {
+      "concreteType": 8
+    }
+  },
+  "codeWindows": [
+    {
+      "role": "ecs_shape_setup",
+      "rva": 13234144,
+      "bytes": 784,
+      "sha256": "a43629ec65c1e0f5df4f2669a30580d4104d1316cb2773f5af689c235c589ac4",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    },
+    {
+      "role": "static_actor_kind",
+      "rva": 885664,
+      "bytes": 3,
+      "sha256": "4bc724f3b1d0caf4fe369c18cba3102e6c4ea057f63fe1587e3973134a7f755e",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    },
+    {
+      "role": "dynamic_actor_kind",
+      "rva": 5781104,
+      "bytes": 6,
+      "sha256": "2db31f4e09597946e56e859813bfdad7046d457c32332c3a882654d1e3ffdf67",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "rva": 7725392,
+      "bytes": 60,
+      "sha256": "bc9f868e0914fa7521d26328ede65d047b9ee493a06a8f9fa238190daf4d9e6f",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    },
+    {
+      "role": "shape_set_flags",
+      "rva": 7928800,
+      "bytes": 63,
+      "sha256": "fe6fae73d6504d49564a5ae6287f243e42c0d5fff6cedbd4fb3dd7352033d264",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    },
+    {
+      "role": "dynamic_constructor",
+      "rva": 7701456,
+      "bytes": 130,
+      "sha256": "8cd1fad5d4a499456e203c3f558039c4e2ce6de7d40a2ddf5d302f66f0a979e4",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    },
+    {
+      "role": "shape_flags",
+      "rva": 7923088,
+      "bytes": 33,
+      "sha256": "ead520fe3ebfddfaa873bc776ed17073658314770275ad0764420cc09380c107",
+      "evidenceBoundary": "direct: reviewed native instructions; runtime values remain separate"
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "dynamic_body_flags",
+      "offset": 0,
+      "prefix": "f781",
+      "mode": "u32",
+      "field": "body.bufferControl"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 0,
+      "prefix": "f7817c010000",
+      "mode": "u32",
+      "field": "body.bufferMask"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 12,
+      "prefix": "488b41",
+      "mode": "u8",
+      "field": "body.bufferPointer"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 16,
+      "prefix": "0fb788",
+      "mode": "u32",
+      "field": "body.bufferedFlags"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 38,
+      "prefix": "0fb789",
+      "mode": "u32",
+      "field": "body.inlineFlags"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 23,
+      "prefix": "b8",
+      "mode": "u32",
+      "field": "body.visibleMask"
+    },
+    {
+      "role": "dynamic_constructor",
+      "offset": 17,
+      "prefix": "c741",
+      "mode": "u8",
+      "field": "actor.concreteType"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 344,
+      "prefix": "66837f",
+      "mode": "u8",
+      "field": "actor.concreteType"
+    }
+  ],
+  "targetOperands": [
+    {
+      "role": "dynamic_constructor",
+      "offset": 111,
+      "prefix": "488d05",
+      "mode": "rip32",
+      "targetRva": 25955928
+    }
+  ],
+  "probes": [
+    {
+      "role": "static_actor_kind",
+      "offset": 0,
+      "hex": "33c0c3"
+    },
+    {
+      "role": "dynamic_actor_kind",
+      "offset": 0,
+      "hex": "b801000000c3"
+    },
+    {
+      "role": "dynamic_constructor",
+      "offset": 17,
+      "hex": "c7410805000300"
+    },
+    {
+      "role": "dynamic_constructor",
+      "offset": 111,
+      "hex": "488d05128a1601488907488bc74883c4205f"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 10,
+      "hex": "741a"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 37,
+      "hex": "c3"
+    },
+    {
+      "role": "dynamic_body_flags",
+      "offset": 45,
+      "hex": "b8ff7f00006623c8488bc266890ac3"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 119,
+      "hex": "c645600b4c8b91b8000000488d4d6048894c2428488bc844884c242041ffd2488bf04885"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 221,
+      "hex": "41833f06488945e8488945e08945f8740a41833f05740432dbeb02b301488b0748"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 291,
+      "hex": "4584ff74300fb64d68488b05558d070180e1fe80c902884d6880783000740b8b45e880e1fb83c840eb618b45e880c90483c840eb56"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 344,
+      "hex": "66837f0805751e4885ff7419488b07488d5560488bcfff90a8010000f600017504b001eb0232c084db741b84c0750e488b07488bcfff502883f80275090fb64d6880e1feeb070f"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 414,
+      "hex": "0fb64d6880c9018b45e880e1fb80c902488bd7884d68"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 566,
+      "hex": "0fb645688845604c8b8128010000498b0e41ffd0"
+    }
+  ],
+  "vtableSlots": [
+    {
+      "tableRva": 25972808,
+      "slot": 5,
+      "role": "static_actor_kind"
+    },
+    {
+      "tableRva": 25955928,
+      "slot": 5,
+      "role": "dynamic_actor_kind"
+    },
+    {
+      "tableRva": 25955928,
+      "slot": 53,
+      "role": "dynamic_body_flags"
+    },
+    {
+      "tableRva": 25979232,
+      "slot": 37,
+      "role": "shape_set_flags"
+    },
+    {
+      "tableRva": 25979232,
+      "slot": 38,
+      "role": "shape_flags"
+    }
+  ],
+  "virtualDispatches": [
+    {
+      "role": "ecs_shape_setup",
+      "offset": 213,
+      "prefix": "ff90",
+      "width": 4,
+      "tableRva": 25979232,
+      "slot": 38,
+      "targetRole": "shape_flags"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 256,
+      "prefix": "ff50",
+      "width": 1,
+      "tableRva": 25972808,
+      "slot": 5,
+      "targetRole": "static_actor_kind"
+    },
+    {
+      "role": "ecs_shape_setup",
+      "offset": 366,
+      "prefix": "ff90",
+      "width": 4,
+      "tableRva": 25955928,
+      "slot": 53,
+      "targetRole": "dynamic_body_flags"
+    }
+  ],
+  "evidenceBoundary": "conditional: common ECS shape setup computes configuration from its secondary option, geometry kind and actor/body mode. This proves native branches and typed getters, not execution of a selected branch, current runtime flags, filter-shader selection, contact generation or solver participation.",
+  "representation": {
+    "secondaryOption": "A true incoming secondary option clears simulation, enables scene query, and selects trigger versus query-only using a separately read runtime setting. Stored secondaryFlag does not by itself establish the effective live setting.",
+    "ordinaryOption": "A false secondary option clears trigger and enables scene query. For geometry kinds 4/5, simulation is cleared when actor-kind result is 2, or when concrete type word is 5 and its original body-flags getter lacks bit 0. Otherwise simulation is enabled. The named static implementation returns actor kind 0; the named dynamic implementation returns 1.",
+    "bodyMode": "The original typed dynamic-body getter reads buffered or inline flags and clears bit 15. Bit 0 is consumed by mesh eligibility here; assigning its kinematic name also requires the matching API/setter evidence.",
+    "finalSetter": "The computed byte is passed to the original shape setFlags interface. Successful return and any subsequent mutation remain separate from this offline branch proof."
+  },
+  "unwindFamilies": [
+    {
+      "role": "ecs_shape_setup",
+      "rva": 13234144,
+      "runtimeRanges": [
+        [
+          13234144,
+          13234928,
+          28586672
+        ]
+      ]
+    },
+    {
+      "role": "shape_set_flags",
+      "rva": 7928800,
+      "runtimeRanges": [
+        [
+          7928800,
+          7928863,
+          28545412
+        ]
+      ]
+    },
+    {
+      "role": "dynamic_constructor",
+      "rva": 7701456,
+      "runtimeRanges": [
+        [
+          7701456,
+          7701586,
+          28540940
+        ]
+      ]
+    }
+  ]
+}

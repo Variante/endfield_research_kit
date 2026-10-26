@@ -59,6 +59,31 @@ _GLOBAL_STREAMING_NAME = re.compile(
 )
 
 
+def snapshot_outer_fingerprints(outer, failures, stage):
+    """Authenticate the audit's catalogs and build before opening inner files."""
+    rows=list(outer.get('sourceFingerprints') or [])+list(outer.get('buildFingerprints') or [])
+    result=[];seen=set()
+    def fail(source,field,expected,actual):
+        failures.append(dict(source=source,stage=stage,field=field,expected=expected,actual=actual))
+    if not rows:
+        fail('outer-summary','sourceFingerprints+buildFingerprints','nonempty fingerprint inventory',0)
+    for index,row in enumerate(rows):
+        raw=row.get('path');source=f'outer-fingerprint[{index}]'
+        if not isinstance(raw,str) or not raw:
+            fail(source,'path','nonempty path',raw);continue
+        path=Path(raw);key=str(path.resolve()).casefold()
+        if key in seen:
+            fail(source,'path','unique resolved path',str(path.resolve()));continue
+        seen.add(key)
+        try:length=path.stat().st_size;digest=_sha256_file(path)
+        except OSError as exc:
+            fail(path.as_posix(),'read','readable fingerprint source',f'{type(exc).__name__}: {exc}');continue
+        if length != row.get('length'):fail(path.as_posix(),'length',row.get('length'),length)
+        if digest != str(row.get('sha256','')).upper():fail(path.as_posix(),'sha256',row.get('sha256'),digest)
+        result.append(dict(path=path.as_posix(),length=length,sha256=digest))
+    return result
+
+
 def _join_info_catalog(infos, data_files):
     """Search all four-word permutations; publish a relation only if unique.
 
@@ -298,6 +323,10 @@ def sweep(
         failures, provenance = _validate_provenance(
             summary, header, outer_ledger_path, expected_input_set_sha256
         )
+        fingerprints_start=snapshot_outer_fingerprints(summary,failures,'outer-fingerprint-start')
+        if failures:
+            return dict(schema=SCHEMA,status='failed',failed=True,inputSetSha256=expected_input_set_sha256,
+                        summary=empty_summary,failures=failures,provenance=provenance)
         module_root = Path(__file__).resolve().parent
         parser_path = module_root / "framing.py"
         gate_path = Path(__file__).resolve()
@@ -979,6 +1008,10 @@ def sweep(
                     )
                 )
 
+    fingerprints_end=snapshot_outer_fingerprints(summary,failures,'outer-fingerprint-end')
+    if fingerprints_start != fingerprints_end:
+        failures.append(dict(stage='outer-fingerprint-end',field='auditSources',
+                             expected='unchanged authenticated metadata/build fingerprints',actual='source changed during scan'))
     parser_sha256_at_end = _sha256_file(parser_path)
     gate_sha256_at_end = _sha256_file(gate_path)
     native_validator_sha256_at_end = _sha256_file(native_validator_path)

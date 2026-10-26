@@ -421,12 +421,23 @@ layout, actual objects and live IFix choices remain separate obligations.
 - The additional
   [daily capture recipe](../../scripts/game_data/contracts/mission_daily_trace_capture.json)
   retains those AST/state hooks alongside selected interactive/photo, SNS,
-  script and action entries. Its current preset targets the distinct stored
-  `m1m42` interactive variant and `m1m39` photo group; reused labels do not
-  select a runtime variant. Their definitions contain no quest/mission-state
+  script and action entries. Its current preset retains all available mission
+  definitions, including the distinct stored `m1m42` interactive variant and
+  photo variants such as `m1m39` and `m1m61`; reused labels do not select a
+  runtime variant. These definitions contain no quest/mission-state
   predicates, so recording these tasks cannot by itself close the live state
   Param gap. Selected pre-run exports are copied as source context, with source
   freshness, omitted dependencies and live instance ownership left separate.
+  The three-target tracking variants instead store a combined objective over
+  sibling quest-state predicates; their expression and condition unique ID are
+  shared across different mission IDs. HUD target count can help choose a
+  recording route, but neither that count nor the shared condition ID selects
+  the runtime definition. Capture the sibling completions and final handoff
+  continuously, preferably in a different freely selectable order, and keep
+  mission-owned progress AST execution conditional on actual observed calls.
+  The stored `m1m61` photo route has one quest, no predecessor and no mission
+  action-map entries. It supplies a second identification-group case for the
+  shared photo consumer, rather than a multi-quest handoff or dynamic-Param case.
 - Current paired observations close a constant-activation example for
   `CheckQuestState` in an AST with source label `_InitGuideGroupCondition` and
   no owning quest ID. Distinct live Param objects retain source zero, `idRef`

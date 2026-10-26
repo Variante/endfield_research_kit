@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.wwise-effect-parameters-native.v3",
+  "schema": "endfield.wwise-effect-parameters-native.v4",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
     "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
@@ -1406,5 +1406,172 @@
   "unreviewedClassIds": [
     "0x007f0003",
     "0x00ba0003"
-  ]
+  ],
+  "parameterUpdates": {
+    "0x007f0003": {
+      "shape": "signed16TwoTableScalarUpdatesV1",
+      "evidenceBoundary": "direct",
+      "meaningBoundary": "Anonymous numeric updates and shared receiver destinations only. No public control names, units, scalar-helper mathematical identity, runtime selection or DSP role. Finite-input clamp intervals describe this update method, not the bulk loader.",
+      "vtableSlot": 8,
+      "method": {
+        "rva": "0x00257fd0",
+        "bodyLength": 879,
+        "bodySha256": "428f0a502bd7bcb6e1734ebea2f36b8986e447f1e52ef52ca59746d571b8c86a",
+        "extent": "PE exception-directory range includes embedded dispatch tables"
+      },
+      "selectorCount": 35,
+      "selectorTableBodyOffset": 844,
+      "targetTableBodyOffset": 784,
+      "targetCount": 15,
+      "codeByteLength": 784,
+      "defaultHandlerOffset": 773,
+      "nullReturnCode": 31,
+      "successReturnCode": 1,
+      "scalarHelperRva": "0x0026a7e0",
+      "constants": {
+        "0x00297b2c": "00003443",
+        "0x00293758": "9a99c0c2",
+        "0x0028fc0c": "cdcc4c3d",
+        "0x002922e4": "00002041",
+        "0x0029df8c": "0000c041"
+      },
+      "cases": [
+        {
+          "parameterId": 0,
+          "handlerOffset": 65,
+          "serializedOffset": 0,
+          "receiverOffset": 8,
+          "kind": "word32Copy",
+          "bulkStoreBodyOffset": 16,
+          "bulkStoreInstructionHex": "894108"
+        },
+        {
+          "parameterId": 1,
+          "handlerOffset": 82,
+          "serializedOffset": 4,
+          "receiverOffset": 12,
+          "kind": "word32Copy",
+          "bulkStoreBodyOffset": 25,
+          "bulkStoreInstructionHex": "89410c"
+        },
+        {
+          "parameterId": 2,
+          "handlerOffset": 99,
+          "serializedOffset": 8,
+          "receiverOffset": 16,
+          "kind": "clampFloat32",
+          "bulkStoreBodyOffset": 45,
+          "bulkStoreInstructionHex": "f30f114110"
+        },
+        {
+          "parameterId": 10,
+          "handlerOffset": 139,
+          "serializedOffset": 12,
+          "receiverOffset": 20,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 80,
+          "bulkStoreInstructionHex": "f30f114714",
+          "upperIsZero": true
+        },
+        {
+          "parameterId": 11,
+          "handlerOffset": 204,
+          "serializedOffset": 16,
+          "receiverOffset": 24,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 102,
+          "bulkStoreInstructionHex": "f30f114718",
+          "upperIsZero": true
+        },
+        {
+          "parameterId": 20,
+          "handlerOffset": 309,
+          "serializedOffset": 24,
+          "receiverOffset": 32,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 134,
+          "bulkStoreInstructionHex": "f30f114720",
+          "upperIsZero": true
+        },
+        {
+          "parameterId": 21,
+          "handlerOffset": 374,
+          "serializedOffset": 28,
+          "receiverOffset": 36,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 156,
+          "bulkStoreInstructionHex": "f30f114724",
+          "upperIsZero": true
+        },
+        {
+          "parameterId": 22,
+          "handlerOffset": 439,
+          "serializedOffset": 32,
+          "receiverOffset": 40,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 178,
+          "bulkStoreInstructionHex": "f30f114728",
+          "upperIsZero": true
+        },
+        {
+          "parameterId": 23,
+          "handlerOffset": 504,
+          "serializedOffset": 36,
+          "receiverOffset": 44,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 200,
+          "bulkStoreInstructionHex": "f30f11472c",
+          "upperIsZero": true
+        },
+        {
+          "parameterId": 30,
+          "handlerOffset": 569,
+          "serializedOffset": 40,
+          "receiverOffset": 48,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 222,
+          "bulkStoreInstructionHex": "f30f114730",
+          "upperIsZero": false
+        },
+        {
+          "parameterId": 31,
+          "handlerOffset": 635,
+          "serializedOffset": 44,
+          "receiverOffset": 52,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 244,
+          "bulkStoreInstructionHex": "f30f114734",
+          "upperIsZero": false
+        },
+        {
+          "parameterId": 32,
+          "handlerOffset": 701,
+          "serializedOffset": 48,
+          "receiverOffset": 56,
+          "kind": "word32Copy",
+          "bulkStoreBodyOffset": 255,
+          "bulkStoreInstructionHex": "894738"
+        },
+        {
+          "parameterId": 33,
+          "handlerOffset": 269,
+          "serializedOffset": 20,
+          "receiverOffset": 28,
+          "kind": "clampFloat32",
+          "bulkStoreBodyOffset": 115,
+          "bulkStoreInstructionHex": "f30f114f1c"
+        },
+        {
+          "parameterId": 34,
+          "handlerOffset": 718,
+          "serializedOffset": 52,
+          "receiverOffset": 60,
+          "kind": "clampThenScalarHelper",
+          "bulkStoreBodyOffset": 282,
+          "bulkStoreInstructionHex": "f30f11473c",
+          "upperIsZero": false
+        }
+      ]
+    }
+  }
 }

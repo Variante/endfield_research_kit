@@ -1,0 +1,698 @@
+{
+  "schema": "endfield.memorypack-blackboard-number-lookup-native-contract.v1",
+  "status": "exact-current-build",
+  "mode": "managed-number-lookup-complete-conditional-loop",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "method": [
+    936,
+    "Beyond.Blackboard",
+    "_TryGetNumber",
+    47220768
+  ],
+  "comparisonMethod": [
+    450282,
+    "Beyond.StringUtils",
+    "_EqualsIgnoreCase$BurstManaged",
+    90872736
+  ],
+  "burstGetterMethod": [
+    447657,
+    "Unity.Burst.BurstCompiler",
+    "get_IsEnabled",
+    47223760
+  ],
+  "stringFirstCharOffset": 20,
+  "limits": {
+    "lookup": 447,
+    "comparison": 6,
+    "numeric": 432
+  },
+  "globalCells": {
+    "dispatch": 218051984,
+    "comparison": 218879248,
+    "burstContext": 218879824,
+    "burstState": 218879888
+  },
+  "codeWindows": [
+    {
+      "startRva": 47220768,
+      "endRva": 47220829,
+      "sha256": "77DF5F2F47F2018E16C25D6D08737B9F35F1368792D6C6E4F3FFC65C23370AED",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    },
+    {
+      "startRva": 47220829,
+      "endRva": 47221493,
+      "sha256": "A9CAFB49C902E0961A556EBABF71012F2F1B6844053011A6A6D6B903016387F4",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    },
+    {
+      "startRva": 47221493,
+      "endRva": 47221510,
+      "sha256": "3C0F49291B5DFA4D691E776415F9DCAB83E02AE534DD1BADC0F6F198BB73BDC6",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    },
+    {
+      "startRva": 47221510,
+      "endRva": 47221635,
+      "sha256": "8EEDE2A885C6A1EA7AFEE9BB7375DBEE9F6EFA7347DDA7BA79DB9F90A7D1B1B8",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    },
+    {
+      "startRva": 78547614,
+      "endRva": 78547915,
+      "sha256": "CF24C0DE8CCC2A264E452AB12D3B1D0FF9F6A4E4B9C3F29EEF9C6DC030BEEC0F",
+      "boundary": "Selected method entry range or exact UNW_FLAG_CHAININFO-owned range; no proximity ownership."
+    }
+  ],
+  "blocks": {
+    "entry": [
+      [
+        47220768,
+        "4056"
+      ],
+      [
+        47220770,
+        "57"
+      ],
+      [
+        47220771,
+        "4155"
+      ],
+      [
+        47220773,
+        "4881EC90000000"
+      ],
+      [
+        47220780,
+        "0F57C0"
+      ],
+      [
+        47220783,
+        "488BF9"
+      ],
+      [
+        47220786,
+        "488B0D57AD2E0A"
+      ],
+      [
+        47220793,
+        "4D8BE8"
+      ],
+      [
+        47220796,
+        "0F11442430"
+      ],
+      [
+        47220801,
+        "488BF2"
+      ],
+      [
+        47220804,
+        "0F11442440"
+      ],
+      [
+        47220809,
+        "83B9E000000000"
+      ],
+      [
+        47220816,
+        "0F849F020000"
+      ],
+      [
+        47220822,
+        "488B81B8000000"
+      ],
+      [
+        47220829,
+        "48899C24B0000000"
+      ],
+      [
+        47220837,
+        "4889AC24B8000000"
+      ],
+      [
+        47220845,
+        "4C89A424C0000000"
+      ],
+      [
+        47220853,
+        "488B10"
+      ],
+      [
+        47220856,
+        "4C89B42488000000"
+      ],
+      [
+        47220864,
+        "4C89BC2480000000"
+      ],
+      [
+        47220872,
+        "0F29742470"
+      ],
+      [
+        47220877,
+        "4885D2"
+      ],
+      [
+        47220880,
+        "0F8459020000"
+      ],
+      [
+        47220886,
+        "817A18BF010000"
+      ],
+      [
+        47220893,
+        "0F8FFB01DE01"
+      ]
+    ],
+    "initialCount": [
+      [
+        47220899,
+        "4533E4"
+      ],
+      [
+        47220902,
+        "418BDC"
+      ],
+      [
+        47220905,
+        "44396718"
+      ],
+      [
+        47220909,
+        "0F8E8A000000"
+      ]
+    ],
+    "initialClass": [
+      [
+        47220915,
+        "4C8B05564C3B0A"
+      ],
+      [
+        47220922,
+        "660F1F440000"
+      ]
+    ],
+    "countCompare": [
+      [
+        47220928,
+        "3B5F18"
+      ]
+    ],
+    "loopBound": [
+      [
+        47220931,
+        "0F83FA02DE01"
+      ],
+      [
+        47220937,
+        "488B4F10"
+      ],
+      [
+        47220941,
+        "4885C9"
+      ],
+      [
+        47220944,
+        "0F8419020000"
+      ],
+      [
+        47220950,
+        "3B5918"
+      ],
+      [
+        47220953,
+        "0F839E020000"
+      ],
+      [
+        47220959,
+        "4863C3"
+      ],
+      [
+        47220962,
+        "48FFC0"
+      ],
+      [
+        47220965,
+        "48C1E005"
+      ],
+      [
+        47220969,
+        "0F103408"
+      ],
+      [
+        47220973,
+        "4539A0E0000000"
+      ],
+      [
+        47220980,
+        "0F840C020000"
+      ],
+      [
+        47220986,
+        "498B80B8000000"
+      ],
+      [
+        47220993,
+        "488B10"
+      ],
+      [
+        47220996,
+        "4885D2"
+      ],
+      [
+        47220999,
+        "0F84E2010000"
+      ],
+      [
+        47221005,
+        "837A1806"
+      ],
+      [
+        47221009,
+        "0F8FAD010000"
+      ],
+      [
+        47221015,
+        "66480F7EF1"
+      ],
+      [
+        47221020,
+        "4885C9"
+      ],
+      [
+        47221023,
+        "0F84CA010000"
+      ],
+      [
+        47221029,
+        "4885F6"
+      ],
+      [
+        47221032,
+        "0F84C1010000"
+      ],
+      [
+        47221038,
+        "8B4610"
+      ],
+      [
+        47221041,
+        "394110"
+      ],
+      [
+        47221044,
+        "7412"
+      ]
+    ],
+    "advance": [
+      [
+        47221046,
+        "FFC3"
+      ],
+      [
+        47221048,
+        "3B5F18"
+      ],
+      [
+        47221051,
+        "7C86"
+      ]
+    ],
+    "zeroOut": [
+      [
+        47221053,
+        "4D896500"
+      ],
+      [
+        47221057,
+        "32C0"
+      ],
+      [
+        47221059,
+        "E933010000"
+      ]
+    ],
+    "lengthEqual": [
+      [
+        47221064,
+        "8B6910"
+      ],
+      [
+        47221067,
+        "4C8D7114"
+      ],
+      [
+        47221071,
+        "488B0DFA4D3B0A"
+      ],
+      [
+        47221078,
+        "4439A1E0000000"
+      ],
+      [
+        47221085,
+        "0F84B7010000"
+      ],
+      [
+        47221091,
+        "488B0D264E3B0A"
+      ],
+      [
+        47221098,
+        "4439A1E0000000"
+      ],
+      [
+        47221105,
+        "0F84AD010000"
+      ],
+      [
+        47221111,
+        "33C9"
+      ],
+      [
+        47221113,
+        "E8520A0000"
+      ],
+      [
+        47221118,
+        "84C0"
+      ],
+      [
+        47221120,
+        "0F84C301DE01"
+      ]
+    ],
+    "callback": [
+      [
+        78547785,
+        "448BC5"
+      ],
+      [
+        78547788,
+        "488D5614"
+      ],
+      [
+        78547792,
+        "498BCE"
+      ],
+      [
+        78547795,
+        "E84810BC00"
+      ],
+      [
+        78547800,
+        "90"
+      ],
+      [
+        78547801,
+        "E958FE21FE"
+      ]
+    ],
+    "comparisonResult": [
+      [
+        47221174,
+        "84C0"
+      ],
+      [
+        47221176,
+        "0F84FA000000"
+      ]
+    ],
+    "loadPair": [
+      [
+        47221182,
+        "3B5F18"
+      ],
+      [
+        47221185,
+        "0F83FC01DE01"
+      ],
+      [
+        47221191,
+        "488B4F10"
+      ],
+      [
+        47221195,
+        "4885C9"
+      ],
+      [
+        47221198,
+        "0F841B010000"
+      ],
+      [
+        47221204,
+        "3B5918"
+      ],
+      [
+        47221207,
+        "0F83A0010000"
+      ],
+      [
+        47221213,
+        "4863C3"
+      ],
+      [
+        47221216,
+        "48FFC0"
+      ],
+      [
+        47221219,
+        "48C1E005"
+      ],
+      [
+        47221223,
+        "0F100408"
+      ],
+      [
+        47221227,
+        "0F11442430"
+      ],
+      [
+        47221232,
+        "0F104C0810"
+      ],
+      [
+        47221237,
+        "488B0D94AB2E0A"
+      ],
+      [
+        47221244,
+        "0F114C2440"
+      ],
+      [
+        47221249,
+        "4439A1E0000000"
+      ],
+      [
+        47221256,
+        "0F842A010000"
+      ],
+      [
+        47221262,
+        "488B81B8000000"
+      ],
+      [
+        47221269,
+        "488B10"
+      ],
+      [
+        47221272,
+        "4885D2"
+      ],
+      [
+        47221275,
+        "0F84CE000000"
+      ],
+      [
+        47221281,
+        "817A18B0010000"
+      ],
+      [
+        47221288,
+        "0F8F3001DE01"
+      ],
+      [
+        47221294,
+        "488B442440"
+      ],
+      [
+        47221299,
+        "4885C0"
+      ],
+      [
+        47221302,
+        "747C"
+      ]
+    ],
+    "numericLength": [
+      [
+        47221304,
+        "44396010"
+      ],
+      [
+        47221308,
+        "7676"
+      ]
+    ],
+    "nonNumeric": [
+      [
+        47221310,
+        "32C0"
+      ]
+    ],
+    "numericResult": [
+      [
+        47221312,
+        "84C0"
+      ],
+      [
+        47221314,
+        "7474"
+      ]
+    ],
+    "readDouble": [
+      [
+        47221316,
+        "3B5F18"
+      ],
+      [
+        47221319,
+        "0F837601DE01"
+      ],
+      [
+        47221325,
+        "488B4F10"
+      ],
+      [
+        47221329,
+        "4885C9"
+      ],
+      [
+        47221332,
+        "0F8495000000"
+      ],
+      [
+        47221338,
+        "3B5918"
+      ],
+      [
+        47221341,
+        "0F831A010000"
+      ],
+      [
+        47221347,
+        "4863C3"
+      ],
+      [
+        47221350,
+        "48FFC0"
+      ],
+      [
+        47221353,
+        "48C1E005"
+      ],
+      [
+        47221357,
+        "F20F104C0808"
+      ],
+      [
+        47221363,
+        "B001"
+      ],
+      [
+        47221365,
+        "F2410F114D00"
+      ]
+    ],
+    "epilogue": [
+      [
+        47221371,
+        "0F28742470"
+      ],
+      [
+        47221376,
+        "4C8BBC2480000000"
+      ],
+      [
+        47221384,
+        "4C8BB42488000000"
+      ],
+      [
+        47221392,
+        "4C8BA424C0000000"
+      ],
+      [
+        47221400,
+        "488BAC24B8000000"
+      ],
+      [
+        47221408,
+        "488B9C24B0000000"
+      ],
+      [
+        47221416,
+        "4881C490000000"
+      ],
+      [
+        47221423,
+        "415D"
+      ],
+      [
+        47221425,
+        "5F"
+      ],
+      [
+        47221426,
+        "5E"
+      ],
+      [
+        47221427,
+        "C3"
+      ]
+    ],
+    "numericTrue": [
+      [
+        47221428,
+        "B001"
+      ],
+      [
+        47221430,
+        "EB88"
+      ]
+    ],
+    "rejectReload": [
+      [
+        47221432,
+        "4C8B05514A3B0A"
+      ],
+      [
+        47221439,
+        "E972FEFFFF"
+      ]
+    ]
+  },
+  "architectureReferences": [
+    {
+      "url": "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2b-manual.pdf",
+      "section": "MOVQ from XMM low quadword to a general-purpose register; the exact 66 REX.W 0F 7E encoding."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-170",
+      "section": "Only normal-returning Burst getter call uses the ordinary nonvolatile-register and stack preservation condition; comparison leaf preservation follows its separately checked whole program."
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Current lookup signature, complete entry/chained-unwind ownership, all selected block bytes, input aliases, raw class/dispatch guards, global reload cells, actual direct callee targets and selected CFG edges.",
+    "direct": "Selected pair key and numeric value cells, named String length/firstChar joins, output-address preservation and exact eight-byte found/zero writes; caller save/restore and original-output return paths.",
+    "conditional": "Coherent stable nonnegative Int32 list count and selected pair/nonnull key Strings, stable readable spans/dispatch cells, valid original output and frame, normal instruction completion/Win64 getter return, normal dispatch guard edges and false Burst getter for each reached comparison. Arbitrary loop terminates at first matching numeric candidate or count exhaustion under these conditions.",
+    "unresolved": "Actual receiver/input/Burst/dispatch state or found value, enabled Burst callback, alternate class initialization/patch/error paths and helper effects, public GetValue/generic provider, complete action/root composition and runtime effects."
+  }
+}

@@ -1,0 +1,411 @@
+{
+  "schema": "endfield.dynamic-level-state-writes-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_level_predicate_value_sources_native_claims.json",
+      "schema": "endfield.dynamic-level-predicate-value-sources-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "Load": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "Load",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": []
+    },
+    "Start": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "Start",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": []
+    },
+    "Ready": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "Ready",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": []
+    },
+    "Unload": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "Unload",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": []
+    }
+  },
+  "programs": {
+    "Load": [
+      [
+        "push rbx",
+        "sub rsp, 0x30",
+        "cmp [rip+*",
+        "mov rbx, rcx",
+        "jne *",
+        "lea rcx, [rip+*",
+        "call *",
+        "lea rcx, [rip+*",
+        "call *",
+        "lea rcx, [rip+*",
+        "call *",
+        "lea rcx, [rip+*",
+        "call *",
+        "mov [rip+*",
+        "xor edx, edx",
+        "mov ecx, 0x5ef3",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "cmp [rbx+0x10], 0x0",
+        "jcc *",
+        "mov [rbx+0x10], 0x1",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "add rsp, 0x30",
+        "pop rbx",
+        "jmp *",
+        "add rsp, 0x30",
+        "pop rbx",
+        "ret",
+        "call *",
+        "int3"
+      ],
+      [
+        "mov rcx, [rip+*"
+      ],
+      [
+        "mov [rsp+0x40], rdi",
+        "mov rdi, [rbx+0x18]",
+        "mov ebx, [rbx+0x10]",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "mov rax, [rip+*",
+        "mov r9d, ebx",
+        "mov rdx, [rip+*",
+        "mov r8, rdi",
+        "mov cl, 0x4",
+        "mov [rsp+0x20], rax",
+        "call *",
+        "mov rdi, [rsp+0x40]",
+        "jmp *"
+      ],
+      [
+        "xor edx, edx",
+        "mov ecx, 0x5ef3",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ],
+    "Start": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "cmp [rip+*",
+        "mov rbx, rcx",
+        "jne *",
+        "lea rcx, [rip+*",
+        "call *",
+        "mov [rip+*",
+        "xor edx, edx",
+        "mov ecx, 0x5efa",
+        "call *",
+        "xor edx, edx",
+        "test al, al",
+        "jcc *",
+        "mov rcx, rbx",
+        "call *",
+        "test al, al",
+        "jne *",
+        "xor edx, edx",
+        "mov [rbx+0x10], 0x2",
+        "mov rcx, rbx",
+        "call *",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "mov ecx, 0x6",
+        "mov rdx, rbx",
+        "add rsp, 0x20",
+        "pop rbx",
+        "jmp *",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "call *",
+        "int3"
+      ],
+      [
+        "mov ecx, 0x5efa",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ],
+    "Ready": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "cmp [rip+*",
+        "mov rbx, rcx",
+        "jne *",
+        "lea rcx, [rip+*",
+        "call *",
+        "mov [rip+*",
+        "xor edx, edx",
+        "mov ecx, 0x5f02",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov [rbx+0x10], 0x3",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "add rsp, 0x20",
+        "pop rbx",
+        "jmp *",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "call *",
+        "int3"
+      ],
+      [
+        "xor edx, edx",
+        "mov ecx, 0x5f02",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ],
+    "Unload": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "cmp [rip+*",
+        "mov rbx, rcx",
+        "jne *",
+        "lea rcx, [rip+*",
+        "call *",
+        "mov [rip+*",
+        "xor edx, edx",
+        "mov ecx, 0x5d44",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "mov ecx, 0x7",
+        "mov [rbx+0x10], 0x0",
+        "mov rdx, rbx",
+        "call *",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "xor edx, edx",
+        "mov rcx, rbx",
+        "add rsp, 0x20",
+        "pop rbx",
+        "jmp *",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "call *",
+        "int3"
+      ],
+      [
+        "xor edx, edx",
+        "mov ecx, 0x5d44",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ]
+  },
+  "selectedWrites": {
+    "Load": {
+      "storedInt32Bits": 1,
+      "prefixEndsAfterActualStore": true,
+      "witnesses": {
+        "saveReceiver": 13,
+        "initEdge": 16,
+        "postInit": 73,
+        "patchArgument": 75,
+        "patchCall": 80,
+        "patchTest": 85,
+        "patchEdge": 87,
+        "store": 103
+      },
+      "stackBytes": 48,
+      "patchArgumentBits": 24307,
+      "stateGuard": {
+        "compare": 93,
+        "edge": 97,
+        "observedInt32Bits": 0
+      }
+    },
+    "Start": {
+      "storedInt32Bits": 2,
+      "prefixEndsAfterActualStore": true,
+      "witnesses": {
+        "saveReceiver": 13,
+        "initEdge": 16,
+        "postInit": 37,
+        "patchArgument": 39,
+        "patchCall": 44,
+        "patchTest": 51,
+        "patchEdge": 53,
+        "store": 73
+      },
+      "stackBytes": 32,
+      "patchArgumentBits": 24314,
+      "getterGuard": {
+        "hiddenArgumentClear": 49,
+        "receiver": 59,
+        "call": 62,
+        "test": 67,
+        "edge": 69
+      }
+    },
+    "Ready": {
+      "storedInt32Bits": 3,
+      "prefixEndsAfterActualStore": true,
+      "witnesses": {
+        "saveReceiver": 13,
+        "initEdge": 16,
+        "postInit": 37,
+        "patchArgument": 39,
+        "patchCall": 44,
+        "patchTest": 49,
+        "patchEdge": 51,
+        "store": 57
+      },
+      "stackBytes": 32,
+      "patchArgumentBits": 24322
+    },
+    "Unload": {
+      "storedInt32Bits": 0,
+      "prefixEndsAfterActualStore": true,
+      "witnesses": {
+        "saveReceiver": 13,
+        "initEdge": 16,
+        "postInit": 37,
+        "patchArgument": 39,
+        "patchCall": 44,
+        "patchTest": 49,
+        "patchEdge": 51,
+        "store": 62
+      },
+      "stackBytes": 32,
+      "patchArgumentBits": 23876
+    }
+  },
+  "evidenceBoundary": {
+    "direct": [
+      "actual receiver State field 32-bit constant stores reached on selected raw paths",
+      "enum member aliases are declarations only"
+    ],
+    "conditional": [
+      "false actual patch low byte",
+      "normal pre-store callees preserve incoming nonvolatile receiver and do not disturb active caller frame",
+      "independently compatible GameLevel incoming receiver",
+      "Load same immediate pre-store state lane equals zero",
+      "Start actual ordinary started getter low byte zero",
+      "Load observes zero at its CMP; no concurrent atomic transition is proved"
+    ],
+    "unresolved": [
+      "following callbacks/normal return",
+      "lifecycle order/activation/concurrency",
+      "state guard or method labels as runtime transition rules",
+      "inline initialization/cache semantics",
+      "normal return after the store or atomic/concurrent state transition"
+    ]
+  },
+  "ownedByteCounts": {
+    "Load": [
+      172,
+      7,
+      68,
+      41
+    ],
+    "Start": [
+      163,
+      39
+    ],
+    "Ready": [
+      126,
+      41
+    ],
+    "Unload": [
+      149,
+      41
+    ]
+  }
+}

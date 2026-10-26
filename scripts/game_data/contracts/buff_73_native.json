@@ -44,6 +44,54 @@
       "endRva": 83665210,
       "sha256": "5EE588AACF854D4CC04E1155FF40890E6DC6FEF3E056A35218789EDEF51692ED",
       "boundary": "FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 79834730,
+      "endRva": 79834775,
+      "sha256": "D2734E25B242526810BBFB40ADA6A51218DE1F0423FDADE791F627C8DEF785D7",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 79834776,
+      "endRva": 79834821,
+      "sha256": "55C86AC0B9DEFF51F193C280BB25A49785472607F60DB99CDA84FDBA85A26D08",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 52483776,
+      "endRva": 52483803,
+      "sha256": "6B3F0BBBC04E6C5227842435DAC2B8AFEE90B7E817EE2422D5983A7D4D59952C",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 58153824,
+      "endRva": 58153851,
+      "sha256": "2F53EF4DA5A874110D655CEFBDCBB949BF75A76555860903B1C548812B532C2D",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 58153856,
+      "endRva": 58153883,
+      "sha256": "2EFBFC76AD818A500C0FDF69E3A13ADF2833AB52B0645A70E0138442DB76A3D4",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
+    },
+    {
+      "startRva": 58153888,
+      "endRva": 58153915,
+      "sha256": "596666C73B74D62A6BD2CEC96BB77AEBA7F6E9C58A05155175D65074FC249A73",
+      "boundary": "Complete selected primitive source or inherited setter owned native window; ordinary cursor and Data transfer are separately validated; external callees remain conditional."
     }
   ],
   "nestedContexts": [
@@ -73,5 +121,5 @@
       "scalar32"
     ]
   },
-  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only fixed framing. The member4 reader ends immediately after its common byte and three DWORD members. Its Priority context belongs to the first DWORD source read; there is no nested provider or final payload. Do not infer extra data from constructors, output setters, type names or adjacent methods. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Skill-cast identity meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only fixed framing. The member4 reader ends immediately after its common byte and three DWORD members. Its Priority context belongs to the first DWORD source read; there is no nested provider or final payload. Do not infer extra data from constructors, output setters, type names or adjacent methods. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Skill-cast identity meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved. The separately reviewed four-common-field record validates buffered Boolean normalization, exact DWORD return and cursor accounting, ref-wrapper/reader argument transfer, and each inherited setter store into the base Data instance. Refill callees, invalid-header error execution, actual cache/formatter choices and Skill-cast comparison semantics remain unresolved."
 }

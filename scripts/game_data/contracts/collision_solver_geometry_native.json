@@ -1,0 +1,181 @@
+{
+  "schema": "endfield.collision-solver-geometry-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "codeWindows": [
+    {
+      "role": "box_getter",
+      "rva": 7922768,
+      "bytes": 60,
+      "sha256": "c2a03f2d1528a807ded234a98743f6560bcdeb7e9b6f2bc734631e4ce833a918",
+      "module": "unityPlayer",
+      "leafHex": "83b99800000003740332c0c3f6413801740a488b49404883c140eb074881c1980000008b0189028b41048942048b41088942088b410c89420cb001c3",
+      "boundary": "Complete call-free leaf with both success/failure returns and internal branches enclosed."
+    },
+    {
+      "role": "sphere_getter",
+      "rva": 7925968,
+      "bytes": 51,
+      "sha256": "c351a910a0bba6f8f9dad55cfea6939b03634c46aaf3e9f512ef8d3f8cf25426",
+      "module": "unityPlayer",
+      "leafHex": "83b99800000000740332c0c3f64138017411488b41404883c040488b00488902b001c3488d8198000000488b00488902b001c3",
+      "boundary": "Complete call-free leaf with both success/failure returns and internal branches enclosed."
+    },
+    {
+      "role": "capsule_getter",
+      "rva": 7922832,
+      "bytes": 67,
+      "sha256": "a5560a16b285ee72e1ab67633090d43dcd0bfed41c8b37de35ffa9f6407d578c",
+      "module": "unityPlayer",
+      "leafHex": "83b99800000002740332c0c3f64138017419488b41404883c040f20f1000f20f11028b4008894208b001c3488d8198000000f20f1000f20f11028b4008894208b001c3",
+      "boundary": "Complete call-free leaf with both success/failure returns and internal branches enclosed."
+    }
+  ],
+  "fieldOperands": [],
+  "layout": {
+    "shape": {
+      "vtable": 25979232,
+      "inlineGeometry": 152,
+      "bufferFlags": 56,
+      "bufferPointer": 64,
+      "bufferedGeometry": 64,
+      "geometryMask": 1
+    },
+    "core": {
+      "apiDelta": 112,
+      "geometry": 40,
+      "prefixBytes": 80,
+      "trianglePointer": 80
+    }
+  },
+  "getters": [
+    {
+      "kind": "box",
+      "slot": 10,
+      "windowRole": "box_getter",
+      "type": 3,
+      "copy": {
+        "offset": 35,
+        "hex": "8b0189028b41048942048b41088942088b410c89420cb001c3",
+        "extents": [
+          [
+            0,
+            4
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            8,
+            4
+          ],
+          [
+            12,
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "kind": "sphere",
+      "slot": 11,
+      "windowRole": "sphere_getter",
+      "type": 0,
+      "copy": {
+        "offset": 42,
+        "hex": "488b00488902b001c3",
+        "extents": [
+          [
+            0,
+            8
+          ]
+        ]
+      }
+    },
+    {
+      "kind": "capsule",
+      "slot": 12,
+      "windowRole": "capsule_getter",
+      "type": 2,
+      "copy": {
+        "offset": 50,
+        "hex": "f20f1000f20f11028b4008894208b001c3",
+        "extents": [
+          [
+            0,
+            8
+          ],
+          [
+            8,
+            4
+          ]
+        ]
+      }
+    }
+  ],
+  "geometryTypes": {
+    "0": "sphere",
+    "1": "plane",
+    "2": "capsule",
+    "3": "box",
+    "4": "convexMesh",
+    "5": "triangleMesh",
+    "6": "heightfield"
+  },
+  "primitives": {
+    "sphere": {
+      "type": 0,
+      "bytes": 8,
+      "fields": {
+        "radius": {
+          "offset": 4,
+          "count": 1
+        }
+      }
+    },
+    "capsule": {
+      "type": 2,
+      "bytes": 12,
+      "fields": {
+        "radius": {
+          "offset": 4,
+          "count": 1
+        },
+        "halfHeight": {
+          "offset": 8,
+          "count": 1
+        }
+      }
+    },
+    "box": {
+      "type": 3,
+      "bytes": 16,
+      "fields": {
+        "halfExtents": {
+          "offset": 4,
+          "count": 3
+        }
+      }
+    }
+  },
+  "sharedContracts": [
+    "collision_runtime_shape_native.json",
+    "collision_physics_stage_native.json"
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected typed primitive getter leaves and copied geometry extents. Native primitive type tags agree with the documented PhysX geometry enum.",
+    "direct": "Same-call copied contact-manager-referenced embedded geometry bytes and finite primitive dimensions.",
+    "conditional": "Public PxShape/core pointer subtraction, preparation-to-solver descriptor/CM lifetime, stored-source and world-pose ownership remain separate. Primitive geometry is not a cooked Mesh asset.",
+    "unresolved": "Triangle/convex mesh pointers outside the core prefix, source asset selection, continuous lifetime, public physics-step ownership and newly generated impulse."
+  },
+  "references": [
+    "https://raw.githubusercontent.com/NVIDIAGameWorks/PhysX/4.1/physx/include/geometry/PxGeometry.h",
+    "https://raw.githubusercontent.com/NVIDIAGameWorks/PhysX/4.1/physx/include/geometry/PxCapsuleGeometry.h",
+    "https://raw.githubusercontent.com/NVIDIAGameWorks/PhysX/4.1/physx/include/geometry/PxBoxGeometry.h"
+  ]
+}

@@ -31,7 +31,7 @@ if __package__ in {None, ""}:
 from scripts.common import OUT_DIR, read_json, require_export_layout, resolve_installed_game_data_root
 from scripts.game_data.extraction import benchmark_export
 from scripts.game_data.extraction.scope import STRUCTURED_LEVELS
-from scripts.game_data.extraction.export_changed_game_data import exclusive_workflow_lock
+from scripts.game_data.extraction.export_changed_game_data import COMMAND_FAILURE_EXIT_CODE, exclusive_workflow_lock
 from scripts.game_data.extraction.export_sync import SyncTransaction, SyncError, input_identity, sync_root
 from scripts.game_data.extraction.verify_export_freshness import verify
 from scripts.repo_paths import REPO_ROOT
@@ -421,6 +421,9 @@ def execute_export(args: argparse.Namespace, plan: BuildPlan, game_root: Path, e
             "--game-root", str(game_root), "--output", str(export_root),
             "--structured-dump-mode", level, "--manifest", str(changed_manifest),
         ])
+        if code == COMMAND_FAILURE_EXIT_CODE:
+            log("changed-file extraction failed; stopping without a full-extraction fallback")
+            return code
         if code:
             stage("Delta unavailable; extracting the complete current scope")
             code = run(exporter_command(plan, args, game_root, export_root))

@@ -1,0 +1,451 @@
+{
+  "schema": "endfield.story-quest-attachment-diagnostics.v1",
+  "mappingId": "current-build-quest-story-attachment-negative-v3",
+  "sources": {
+    "missionRuntime:e10m3d5": {
+      "path": "MissionRuntimeAsset/e10m3d5.json",
+      "sha256": "4C858AB0F4C0DFA1E429B68C7F835562173A75AA1468898BA5356195B97304AE"
+    },
+    "missionRuntime:e2m8": {
+      "path": "MissionRuntimeAsset/e2m8.json",
+      "sha256": "59ECD6F146B39EACD35A46A8F37D53B86303BD23E8CD7B1981963E424A2D4035"
+    },
+    "levelScript:map01_lv006/3500100002": {
+      "path": "LevelScriptData/map01_lv006/3500100002.json",
+      "sha256": "2EF4018A558DAB6ED943F3428265E8263BD2451493D8EF858E1A189F9DF329FD"
+    },
+    "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3": {
+      "path": "LevelData/map02_lv002/map02_lv002_lv_data_sub_e10m3.json",
+      "sha256": "618086ED98D05A91AA9EE3CD90E4CC8058993B85D165235F86C2FAE7AD2A3019"
+    },
+    "gameplayConfig:NpcProxyTable": {
+      "path": "GameplayConfig/NpcProxyTable.json",
+      "sha256": "4074D496BB22D0AC17E67D0DB2FC49066451D901E27C68C163519B6277AA9BC1"
+    },
+    "gameplayConfig:WorldEntityRegistry": {
+      "path": "GameplayConfig/WorldEntityRegistry.json",
+      "sha256": "87C4A38D1DE04887A846FD55C6ADEB344B5CB6F3D2CDC8DDD2895B1E8E24F55A"
+    },
+    "missionRuntime:e10m4d5": {
+      "path": "MissionRuntimeAsset/e10m4d5.json",
+      "sha256": "EC04195CE179542287FD8166431F13BBB7F2A198C83D31CE5F0199D95F54AAA7"
+    },
+    "levelScript:dung02_rdg002/24400000018": {
+      "path": "LevelScriptData/dung02_rdg002/24400000018.json",
+      "sha256": "C0FDAB0796DEFD595F315D77A43C5AFFA95A901621B20B1072E6E429E3801510"
+    },
+    "missionRuntime:e5m2": {
+      "path": "MissionRuntimeAsset/e5m2.json",
+      "sha256": "2F68E582EF78915ECB9259CC6E43EA16AC6D41B75ADE16605A8A13AF61F110DB"
+    },
+    "missionRuntime:e5m2d5": {
+      "path": "MissionRuntimeAsset/e5m2d5.json",
+      "sha256": "461272B1FEF275221EC049A580E62426C226B9B423FCFFF45519F4A19BA54BB9"
+    },
+    "levelScript:map02_lv001/10100070004": {
+      "path": "LevelScriptData/map02_lv001/10100070004.json",
+      "sha256": "84BC3DC65D169709FF2618C47085A9301BE0C523658E91855FC35C9B872F0C5F"
+    },
+    "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2": {
+      "path": "LevelData/map02_lv001/map02_lv001_lv_data_sub_e5m2.json",
+      "sha256": "5B5EDA2AD40265DB126B00213C448BCB145F8ADC82EF41B8B7FD39C818450179"
+    },
+    "gameplayConfig:NpcProxyExDataTable": {
+      "path": "GameplayConfig/NpcProxyExDataTable.json",
+      "sha256": "F58ED00260C0B5BDC33BB17874370E9F9B987CDAFD90BA97CDBBA0314DAFEC29"
+    }
+  },
+  "declarations": {
+    "e10m3d5_q#7": {
+      "mission": "e10m3",
+      "variantMission": "e10m3d5",
+      "sourceKey": "missionRuntime:e10m3d5",
+      "sourceFile": {
+        "sourcePath": "missionRuntime:e10m3d5"
+      },
+      "prevQuestIds": [
+        "e10m3d5_q#1"
+      ],
+      "conditionType": "GameConditionServerPlaceHolder",
+      "comparer": 3,
+      "progressToCompare": 1,
+      "validationKind": "mission_bound_npc_proxy_context",
+      "npcProxyId": "cuidaifu_map02_e10m3d5",
+      "npcProxyMissionId": "e10m3d5",
+      "npcProxyDialogRows": [
+        [
+          "e10m3d5",
+          ""
+        ],
+        [
+          "e10m3d5",
+          "dlg_e10m3_2"
+        ],
+        [
+          "e10m3d5",
+          ""
+        ]
+      ],
+      "npcProxyPosition": {
+        "x": -1179.63171,
+        "y": 297.717682,
+        "z": -171.104172
+      },
+      "worldEntitySegmentId": "22800780001",
+      "diagnosticStoryKeys": [
+        "dlg_e10m3_2",
+        "radio_e10m3_9"
+      ],
+      "connectionRows": [
+        {
+          "key": "radio_e10m3_9",
+          "kind": "level_data",
+          "relation": "leveldata_quest_reference",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "direct",
+          "source": "LevelData quest/story byte-string context",
+          "levelId": "map02_lv002",
+          "file": {
+            "sourcePath": "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3"
+          }
+        },
+        {
+          "key": "dlg_e10m3_2",
+          "kind": "dialog",
+          "relation": "npc_proxy_ex_attachment",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_unique",
+          "source": "NpcProxyExDataTable.data[*] exact missionId + unique quest tracking proxy",
+          "npcProxyId": "cuidaifu_map02_e10m3d5",
+          "npcProxyMissionId": "e10m3d5"
+        },
+        {
+          "key": "dlg_e10m3_2",
+          "kind": "dialog",
+          "relation": "variant_runtime_attachment",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_variant",
+          "source": "variant MissionRuntime quest attachment",
+          "variantMission": "e10m3d5",
+          "attachmentKind": "levelDataQuestRef"
+        },
+        {
+          "key": "radio_e10m3_9",
+          "kind": "radio",
+          "relation": "variant_runtime_attachment",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_variant",
+          "source": "variant MissionRuntime quest attachment",
+          "variantMission": "e10m3d5",
+          "attachmentKind": "levelDataQuestRef"
+        }
+      ],
+      "levelDataStoryRefs": [
+        {
+          "storyRef": "radio_e10m3_9",
+          "levelId": "map02_lv002",
+          "file": {
+            "sourcePath": "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3"
+          },
+          "distance": 140,
+          "source": "LevelData quest/story byte-string context",
+          "fields": [
+            "radio_e10m3_9"
+          ]
+        }
+      ],
+      "levelDataSourceKey": "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3",
+      "levelDataFile": {
+        "sourcePath": "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3"
+      },
+      "levelDataByteStringCounts": {
+        "e10m3d5_q#7": 1,
+        "radio_e10m3_9": 2,
+        "dlg_e10m3_2": 0,
+        "cuidaifu_map02_e10m3d5": 0
+      },
+      "relatedSourceFiles": [
+        {
+          "sourcePath": "missionRuntime:e10m3d5"
+        },
+        {
+          "sourcePath": "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3"
+        },
+        {
+          "sourcePath": "gameplayConfig:NpcProxyTable"
+        },
+        {
+          "sourcePath": "gameplayConfig:NpcProxyExDataTable"
+        },
+        {
+          "sourcePath": "gameplayConfig:WorldEntityRegistry"
+        }
+      ],
+      "recoveryStatus": "closed_server_placeholder_with_mission_bound_proxy_context",
+      "evidenceKind": "exact server placeholder plus mission-bound tracked NPC proxy and non-owning LevelData context",
+      "attachmentBoundary": "the objective tracks the exact doctor proxy and that proxy has a mission-bound dlg_e10m3_2 interaction row; the server-owned completion condition still exposes no dialog-finish or playback field, while radio_e10m3_9 is only LevelData byte proximity",
+      "orderBoundary": "the tracked proxy, mission-bound dialog selection, LevelData collection proximity, and predecessor shell do not identify the server completion event or relative Story order"
+    },
+    "e2m8_q#5": {
+      "mission": "e2m8",
+      "variantMission": "e2m8",
+      "sourceKey": "missionRuntime:e2m8",
+      "sourceFile": {
+        "sourcePath": "missionRuntime:e2m8"
+      },
+      "prevQuestIds": [],
+      "conditionType": "CheckLevelScriptPropertyBool",
+      "scriptId": "3500100002",
+      "levelId": "map01_lv006",
+      "propertyKey": "CarParked",
+      "validationKind": "property_getter_without_story_chain",
+      "levelScriptSourceKey": "levelScript:map01_lv006/3500100002",
+      "levelScriptFile": {
+        "sourcePath": "levelScript:map01_lv006/3500100002"
+      },
+      "diagnosticStoryKeys": [
+        "dlg_e2m8_1",
+        "radio_e2m8_1",
+        "radio_e2m8_1d5"
+      ],
+      "levelScriptByteStringCounts": {
+        "CarParked": 1,
+        "dlg_e2m8_1": 2,
+        "radio_e2m8_1": 3,
+        "radio_e2m8_1d5": 1
+      },
+      "getterRecord": {
+        "start": 2113,
+        "localId": 5,
+        "nextId": 4,
+        "code": 2564,
+        "kind": 0,
+        "uid": "112ebae2",
+        "membership": "getterList#2",
+        "texts": [
+          "CarParked"
+        ]
+      },
+      "connectionRows": [
+        {
+          "key": "dlg_e2m8_1",
+          "kind": "dialog",
+          "relation": "levelscript_condition_scope",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_script",
+          "source": "LevelScript referenced by this quest condition",
+          "mapId": "map01_lv006",
+          "scriptId": "3500100002",
+          "conditionKey": "CarParked"
+        },
+        {
+          "key": "radio_e2m8_1d5",
+          "kind": "radio",
+          "relation": "levelscript_condition_scope",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_script",
+          "source": "LevelScript referenced by this quest condition",
+          "mapId": "map01_lv006",
+          "scriptId": "3500100002",
+          "conditionKey": "CarParked"
+        }
+      ],
+      "relatedSourceFiles": [
+        {
+          "sourcePath": "missionRuntime:e2m8"
+        },
+        {
+          "sourcePath": "levelScript:map01_lv006/3500100002"
+        }
+      ],
+      "recoveryStatus": "closed_property_getter_without_story_control_chain",
+      "evidenceKind": "exact property checker plus hash-locked getter-list record",
+      "attachmentBoundary": "CarParked resolves to one exact getterList record at 0x841; the record carries no Story id and is serialized outside the three independent Story action chains in the same script; the generated condition-scope rows remain context-only diagnostics",
+      "orderBoundary": "shared script membership cannot attach dlg_e2m8_1, radio_e2m8_1, or radio_e2m8_1d5 to this hidden parallel quest"
+    },
+    "e10m4d5_q#31": {
+      "mission": "e10m4",
+      "variantMission": "e10m4d5",
+      "prevQuestIds": [
+        "e10m4d5_q#8"
+      ],
+      "conditionType": "CheckLevelScriptPropertyBool",
+      "scriptId": "24400000018",
+      "propertyKey": "enemyStart1",
+      "diagnosticStoryKeys": [
+        "dlg_e10m4_3",
+        "dlg_e10m4_4",
+        "dlg_e10m4_5",
+        "radio_e10m4_68"
+      ],
+      "recoveryStatus": "closed_shared_levelscript_without_property_scoped_story_bridge"
+    },
+    "e10m4d5_q#34": {
+      "mission": "e10m4",
+      "variantMission": "e10m4d5",
+      "prevQuestIds": [
+        "e10m4d5_q#12"
+      ],
+      "conditionType": "GameConditionServerPlaceHolder",
+      "comparer": 3,
+      "progressToCompare": 6,
+      "diagnosticStoryKeys": [
+        "radio_e10m4_68"
+      ],
+      "recoveryStatus": "closed_server_placeholder_without_client_story_semantics"
+    },
+    "e10m4d5_q#35": {
+      "mission": "e10m4",
+      "variantMission": "e10m4d5",
+      "prevQuestIds": [
+        "e10m4d5_q#34"
+      ],
+      "conditionType": "CheckLevelScriptPropertyBool",
+      "scriptId": "24400000018",
+      "propertyKey": "enemyStart2",
+      "diagnosticStoryKeys": [
+        "dlg_e10m4_3",
+        "dlg_e10m4_4",
+        "dlg_e10m4_5",
+        "radio_e10m4_68"
+      ],
+      "recoveryStatus": "closed_shared_levelscript_without_property_scoped_story_bridge"
+    },
+    "e5m2_q#33": {
+      "mission": "e5m2",
+      "variantMission": "e5m2",
+      "sourceKey": "missionRuntime:e5m2",
+      "sourceFile": {
+        "sourcePath": "missionRuntime:e5m2"
+      },
+      "prevQuestIds": [
+        "e5m2_q#12"
+      ],
+      "conditionType": "CheckLevelScriptPropertyBool",
+      "scriptId": "10100070004",
+      "propertyKey": "bridge",
+      "validationKind": "shared_levelscript_condition_scope",
+      "levelScriptSourceKey": "levelScript:map02_lv001/10100070004",
+      "levelScriptFile": {
+        "sourcePath": "levelScript:map02_lv001/10100070004"
+      },
+      "diagnosticStoryKeys": [
+        "dlg_e5m2_10",
+        "radio_e5m2_10"
+      ],
+      "levelScriptByteStringCounts": {
+        "e5m2_q#33": 1,
+        "dlg_e5m2_10": 1,
+        "radio_e5m2_10": 1
+      },
+      "recoveryStatus": "closed_shared_levelscript_without_property_scoped_story_bridge",
+      "evidenceKind": "exact property checker plus hash-locked same-script task and Story-call boundary",
+      "attachmentBoundary": "the script contains this quest id and two Story calls, but its only bridge substrings belong to guide_group_wltechbridge and guide_text_wltechbridge_title; it has no exact MemoryPack string for the six-character property key and no decoded property-scoped Story control path",
+      "orderBoundary": "same-script quest/task bytes, Story calls, and generated condition scope do not identify playback, ownership, or order"
+    },
+    "e5m2d5_q#12": {
+      "mission": "e5m2",
+      "variantMission": "e5m2d5",
+      "sourceKey": "missionRuntime:e5m2d5",
+      "sourceFile": {
+        "sourcePath": "missionRuntime:e5m2d5"
+      },
+      "prevQuestIds": [
+        "e5m2d5_q#11"
+      ],
+      "conditionType": "GameConditionServerPlaceHolder",
+      "progressToCompare": 1,
+      "validationKind": "weak_leveldata_context",
+      "levelDataSourceKey": "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2",
+      "levelDataFile": {
+        "sourcePath": "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+      },
+      "npcProxyId": "tangtang_map02_e5m2duizhi",
+      "npcProxyDialogRows": [
+        [
+          "",
+          ""
+        ],
+        [
+          "",
+          "dlg_e5m2_8"
+        ]
+      ],
+      "diagnosticStoryKeys": [
+        "radio_e5m2_7d5",
+        "radio_e5m2_18"
+      ],
+      "connectionRows": [
+        {
+          "key": "radio_e5m2_18",
+          "kind": "level_data",
+          "relation": "leveldata_quest_reference",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "direct",
+          "source": "LevelData quest/story byte-string context",
+          "levelId": "map02_lv001",
+          "file": {
+            "sourcePath": "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+          }
+        },
+        {
+          "key": "radio_e5m2_7d5",
+          "kind": "radio",
+          "relation": "variant_runtime_attachment",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_variant",
+          "source": "variant MissionRuntime quest attachment",
+          "variantMission": "e5m2d5",
+          "attachmentKind": "levelDataQuestRef"
+        },
+        {
+          "key": "radio_e5m2_18",
+          "kind": "radio",
+          "relation": "variant_runtime_attachment",
+          "direction": "context",
+          "phase": "context",
+          "confidence": "scoped_variant",
+          "source": "variant MissionRuntime quest attachment",
+          "variantMission": "e5m2d5",
+          "attachmentKind": "levelDataQuestRef"
+        }
+      ],
+      "levelDataStoryRefs": [
+        {
+          "storyRef": "radio_e5m2_18",
+          "levelId": "map02_lv001",
+          "file": {
+            "sourcePath": "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2"
+          },
+          "distance": 118,
+          "source": "LevelData quest/story byte-string context",
+          "fields": [
+            "radio_e5m2_18"
+          ]
+        }
+      ],
+      "levelDataByteStringCounts": {
+        "e5m2d5_q#12": 2,
+        "radio_e5m2_18": 3
+      },
+      "recoveryStatus": "closed_weak_leveldata_reference_without_typed_story_bridge",
+      "evidenceKind": "exact server placeholder plus hash-locked weak LevelData quest/Story byte proximity",
+      "attachmentBoundary": "the objective is server-owned; its tracked NPC proxy has no mission-bound dialog, while the LevelData evidence is only byte-string proximity to radio_e5m2_18 and a weak synthesized variant attachment",
+      "orderBoundary": "LevelData collection proximity and predecessor-shell context do not establish playback, ownership, or relative Story order",
+      "reopenWhen": "any source hash or generated shape changes, or a typed MissionRuntime, LevelData, or mission-bound NPC-proxy Story route is recovered"
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Source hashes and generated field predicates authenticate these diagnostic closures.",
+    "structuralOnly": "Byte proximity and predecessor-shell co-membership are diagnostic context.",
+    "unresolved": "Server completion, playback ownership and relative Story order are not established."
+  }
+}

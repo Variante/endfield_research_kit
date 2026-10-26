@@ -108,12 +108,12 @@ def _contract(path: Path) -> dict[str, Any]:
         raise ValueError(f"{LABEL}.contract:shape")
     layouts = json.loads(LAYOUT_PATH.read_bytes())
     rows = [row for row in layouts.get("layouts", []) if
-            (row.get("family"), row.get("tag")) == (route["family"], route["tag"])]
+            (row.get("family"), row.get("wrapperName")) == (route["family"], route.get("wrapperName"))]
     layout = rows[0] if len(rows) == 1 else None
     cursor = layout.get("cursorEvidence") if layout else None
     receipts = data["sourceReceipts"]
     if (
-        layouts.get("schema") != "endfield.action-map-layouts.v3"
+        layouts.get("schema") != "endfield.action-map-layouts.v5"
         or layout is None
         or layout.get("nativeGate") != "levelscript_track_camera_native"
         or layout.get("wrapperName") != route["wrapperName"]
@@ -298,8 +298,8 @@ def _validate_sources(data: dict[str, Any], export_root: Path, ledger_path: Path
         raise ValueError(f"{LABEL}.source:missing-ledger")
     layouts = json.loads(LAYOUT_PATH.read_bytes())
     cursor = next(row["cursorEvidence"] for row in layouts["layouts"] if
-                  (row.get("family"), row.get("tag")) ==
-                  (data["route"]["family"], data["route"]["tag"]))
+                  (row.get("family"), row.get("wrapperName")) ==
+                  (data["route"]["family"], data["route"].get("wrapperName")))
     enum_values = {value: name for name, value in data["enum"]["members"]}
     for path, digest, start, end, move_start, move_end, move_digest in data["sourceReceipts"]:
         if not path.startswith("LevelScriptData/"):
@@ -367,12 +367,64 @@ def validate_track_camera_native_contract(
                 "detail": detail, "validationFailures": [{"gate": check, "actual": detail[:500]}]}
 
 
+def regenerate(contract: dict[str, Any], *, opener: Any = None,
+               layouts: dict[str, Any] | None = None,
+               catalog: dict[str, Any] | None = None) -> tuple[dict[str, Any], list[str]]:
+    """Re-prove the reviewed route on the selected build, or refuse it.
+
+    The contract holds one route, so a refused route refuses the contract.
+    Reviewed member names, codec kinds and their order are semantic claims
+    (moveWay enum position, Param contexts, source receipts); any non-append
+    change, and any append that has not been reviewed, is refused rather than
+    re-derived. Byte-level re-derivation for an unchanged member list reuses
+    the two-routes route builder's evidence shape only after review, so it is
+    refused here as ``route-builder:review-required``.
+    """
+    from scripts.game_data.levelscript_two_routes_native import (
+        RouteRefused, check_reviewed_fields, open_selected_build,
+    )
+    opener = opener or open_selected_build
+    catalog = catalog or json.loads((CONTRACTS_DIR / "levelscript_union_tags.json").read_bytes())
+    layouts = layouts or json.loads(LAYOUT_PATH.read_bytes())
+    route = contract["route"]
+    try:
+        _image, inputs = opener()
+        if (inputs["GameAssembly.dll"], inputs["global-metadata.dat"]) != (
+                catalog["nativeInputs"]["gameAssemblySha256"].upper(),
+                catalog["nativeInputs"]["metadataSha256"].upper()):
+            raise RouteRefused("catalog-inputs:levelscript_union_tags.json is not regenerated for the selected build")
+        family_rows = catalog["families"][route["family"]]
+        family_rows = family_rows.values() if isinstance(family_rows, dict) else family_rows
+        rows = [(row.get("tag"), row) for row in family_rows
+                if isinstance(row, dict) and row.get("wrapperName") == route["wrapperName"]]
+        if len(rows) != 1 or rows[0][1].get("wrappedType") != route["typeName"]:
+            raise RouteRefused(f"catalog-identity={route['wrapperName']}:found={len(rows)}")
+        layout = [row for row in layouts.get("layouts", [])
+                  if (row.get("family"), row.get("wrapperName")) == (route["family"], route["wrapperName"])]
+        if len(layout) != 1:
+            raise RouteRefused(f"layout-row={route['wrapperName']}:found={len(layout)}")
+        installed = layout[0]["fields"]
+        check_reviewed_fields(route["wrapperName"],
+                              [[name, kind] for name, kind, _native in route["fields"]], installed)
+        raise RouteRefused(f"route-builder:{route['wrapperName']}:member list unchanged; "
+                           "byte re-derivation needs review before it is written")
+    except (RouteRefused, KeyError) as exc:
+        return contract, [f"{route['family']}:{route['wrapperName']}:{type(exc).__name__}:{exc}"]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--regenerate", action="store_true")
+    parser.add_argument("--write", action="store_true")
     parser.add_argument("--game-root", type=Path)
     parser.add_argument("--export-root", type=Path, help="current exported game/Json root")
     parser.add_argument("--ledger", type=Path, help="current JsonData per-file JSONL.gz ledger")
     args = parser.parse_args(argv)
+    if args.regenerate:
+        contract = json.loads(Path(CONTRACT_PATH).read_bytes())
+        _regenerated, refused = regenerate(contract)
+        print(json.dumps({"refused": refused, "written": False}, indent=1))
+        return 1 if refused else 0
     result = validate_track_camera_native_contract(
         game_root=args.game_root, export_root=args.export_root, ledger_path=args.ledger,
     )

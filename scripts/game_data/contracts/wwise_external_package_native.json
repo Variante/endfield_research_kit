@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.wwise-external-package-native.v2",
+  "schema": "endfield.wwise-external-package-native.v3",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
     "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
@@ -177,7 +177,26 @@
         "hashExternalPath",
         "passExternalFlags",
         "passExternalKey",
-        "lookupExternalKey"
+        "lookupExternalKey",
+        "loadedPackages",
+        "numericId",
+        "passNumericFlags",
+        "passNumericKey",
+        "lookupNumericKey",
+        "packageNext",
+        "allocationFailureStops",
+        "rowLength",
+        "rowBlockOffset",
+        "rowBlockBytes",
+        "storeLength",
+        "storeBlockOffset",
+        "storeBlockBytes",
+        "storePackage",
+        "rowByteOffset",
+        "storeByteOffset",
+        "storeNumericKey",
+        "incrementReference",
+        "allocationFailureStatus"
       ],
       "windows": [
         {
@@ -259,6 +278,101 @@
           "role": "lookupExternalKey",
           "rva": "0x59f0",
           "instructionHex": "e87be3ffff"
+        },
+        {
+          "role": "loadedPackages",
+          "rva": "0x58e8",
+          "instructionHex": "498b5c2468"
+        },
+        {
+          "role": "numericId",
+          "rva": "0x5913",
+          "instructionHex": "418b6e08"
+        },
+        {
+          "role": "passNumericFlags",
+          "rva": "0x5949",
+          "instructionHex": "4c8bc6"
+        },
+        {
+          "role": "passNumericKey",
+          "rva": "0x594c",
+          "instructionHex": "8bd5"
+        },
+        {
+          "role": "lookupNumericKey",
+          "rva": "0x594e",
+          "instructionHex": "e82de3ffff"
+        },
+        {
+          "role": "packageNext",
+          "rva": "0x5aa3",
+          "instructionHex": "488b5b08"
+        },
+        {
+          "role": "allocationFailureStops",
+          "rva": "0x5aa1",
+          "instructionHex": "741a"
+        },
+        {
+          "role": "rowLength",
+          "rva": "0x5986",
+          "instructionHex": "8b4608"
+        },
+        {
+          "role": "rowBlockOffset",
+          "rva": "0x598f",
+          "instructionHex": "8b4e0c"
+        },
+        {
+          "role": "rowBlockBytes",
+          "rva": "0x5999",
+          "instructionHex": "8b4604"
+        },
+        {
+          "role": "storeLength",
+          "rva": "0x5989",
+          "instructionHex": "488901"
+        },
+        {
+          "role": "storeBlockOffset",
+          "rva": "0x5992",
+          "instructionHex": "48894808"
+        },
+        {
+          "role": "storeBlockBytes",
+          "rva": "0x599c",
+          "instructionHex": "894138"
+        },
+        {
+          "role": "storePackage",
+          "rva": "0x59a2",
+          "instructionHex": "48895830"
+        },
+        {
+          "role": "rowByteOffset",
+          "rva": "0x59b6",
+          "instructionHex": "0faf4e04"
+        },
+        {
+          "role": "storeByteOffset",
+          "rva": "0x59ba",
+          "instructionHex": "894820"
+        },
+        {
+          "role": "storeNumericKey",
+          "rva": "0x59c0",
+          "instructionHex": "896824"
+        },
+        {
+          "role": "incrementReference",
+          "rva": "0x5a74",
+          "instructionHex": "ff4360"
+        },
+        {
+          "role": "allocationFailureStatus",
+          "rva": "0x5a9e",
+          "instructionHex": "83fe34"
         }
       ]
     },
@@ -373,6 +487,656 @@
           "instructionHex": "ff5718"
         }
       ]
+    },
+    {
+      "key": "numericKeyLookup",
+      "entryRva": "0x3c80",
+      "windows": [
+        {
+          "rva": "0x3c80",
+          "bodyLength": 78,
+          "bodySha256": "616734189d5c0e62c55f9a13f5487159960f8ddfa5f8eaf6db571cb453985234",
+          "unwindRva": "0x2efae8",
+          "unwindInfoHex": "0104010004420000"
+        },
+        {
+          "rva": "0x3cce",
+          "bodyLength": 143,
+          "bodySha256": "865ed6ed2f5880ee1825d88fba7d103639fb5d9d068f8d9d1e99fa82f5ac72e8",
+          "unwindRva": "0x2efaf0",
+          "unwindInfoHex": "21150600157404000c64070005340600803c0000ce3c0000e8fa2e00"
+        },
+        {
+          "rva": "0x3d5d",
+          "bodyLength": 7,
+          "bodySha256": "3c78f1b41c4bdbcf62f179b5439779dddea500cb3406038978dc1fdfa8242afb",
+          "unwindRva": "0x2efb0c",
+          "unwindInfoHex": "21000000803c0000ce3c0000e8fa2e00"
+        }
+      ],
+      "requiredRoles": [
+        "loadCodec",
+        "bankCodecZero",
+        "bankCodecOffset",
+        "bankCodecRange",
+        "bankTable",
+        "bankCount",
+        "tailBankSearch",
+        "soundTable",
+        "soundCount",
+        "languageFlag",
+        "languageId",
+        "soundRows",
+        "soundRowStride",
+        "compareNumericKey",
+        "compareLanguage"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadCodec",
+          "rva": "0x3c84",
+          "instructionHex": "418b4004"
+        },
+        {
+          "role": "bankCodecZero",
+          "rva": "0x3c8e",
+          "instructionHex": "85c0"
+        },
+        {
+          "role": "bankCodecOffset",
+          "rva": "0x3c92",
+          "instructionHex": "83c0e2"
+        },
+        {
+          "role": "bankCodecRange",
+          "rva": "0x3c95",
+          "instructionHex": "83f801"
+        },
+        {
+          "role": "bankTable",
+          "rva": "0x3c9a",
+          "instructionHex": "4c8b4118"
+        },
+        {
+          "role": "bankCount",
+          "rva": "0x3ca3",
+          "instructionHex": "41833800"
+        },
+        {
+          "role": "tailBankSearch",
+          "rva": "0x3cb2",
+          "instructionHex": "e949060000"
+        },
+        {
+          "role": "soundTable",
+          "rva": "0x3cb7",
+          "instructionHex": "488b4120"
+        },
+        {
+          "role": "soundCount",
+          "rva": "0x3cc4",
+          "instructionHex": "8b10"
+        },
+        {
+          "role": "languageFlag",
+          "rva": "0x3ce3",
+          "instructionHex": "41385918"
+        },
+        {
+          "role": "languageId",
+          "rva": "0x3ce9",
+          "instructionHex": "0fb77908"
+        },
+        {
+          "role": "soundRows",
+          "rva": "0x3cda",
+          "instructionHex": "488d7004"
+        },
+        {
+          "role": "soundRowStride",
+          "rva": "0x3d11",
+          "instructionHex": "488d1489"
+        },
+        {
+          "role": "compareNumericKey",
+          "rva": "0x3d15",
+          "instructionHex": "44391c96"
+        },
+        {
+          "role": "compareLanguage",
+          "rva": "0x3d2a",
+          "instructionHex": "41394a10"
+        }
+      ],
+      "readOrder": "For codec classes zero, thirty and thirty-one, a present nonempty bank table is selected without fallback on key miss. Otherwise select the sound table. Binary search ordered DWORD key/language pairs in twenty-byte rows; selected language is the package WORD when requested, otherwise zero. No allocation or package loading occurs here."
+    },
+    {
+      "key": "numericBankKeySearch",
+      "entryRva": "0x4300",
+      "windows": [
+        {
+          "rva": "0x4300",
+          "bodyLength": 140,
+          "bodySha256": "e48a4b1c7abb00d3312b55f3260761d98d4a3c751fe68e70f0aaa0fc888b5ae4",
+          "unwindRva": "0x2efba0",
+          "unwindInfoHex": "010a04000a74020005340100"
+        }
+      ],
+      "requiredRoles": [
+        "bankRows",
+        "languageFlag",
+        "languageId",
+        "bankCount",
+        "bankRowStride",
+        "compareNumericKey",
+        "compareLanguage"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "bankRows",
+          "rva": "0x430d",
+          "instructionHex": "498d7804"
+        },
+        {
+          "role": "languageFlag",
+          "rva": "0x4314",
+          "instructionHex": "4584c9"
+        },
+        {
+          "role": "languageId",
+          "rva": "0x4319",
+          "instructionHex": "0fb75908"
+        },
+        {
+          "role": "bankCount",
+          "rva": "0x4322",
+          "instructionHex": "458b00"
+        },
+        {
+          "role": "bankRowStride",
+          "rva": "0x4341",
+          "instructionHex": "488d1489"
+        },
+        {
+          "role": "compareNumericKey",
+          "rva": "0x4345",
+          "instructionHex": "44391c97"
+        },
+        {
+          "role": "compareLanguage",
+          "rva": "0x435a",
+          "instructionHex": "41394910"
+        }
+      ],
+      "readOrder": "Binary search the selected nonempty twenty-byte bank rows by unsigned DWORD key and language; this helper assumes a positive table count, which its authenticated caller checks."
+    },
+    {
+      "key": "packageAdmission",
+      "entryRva": "0x6ad0",
+      "windows": [
+        {
+          "rva": "0x6ad0",
+          "bodyLength": 277,
+          "bodySha256": "0ba98e810f36c4c544041e7e9005d5116299c2a688c01a71c0a4bad947b65c6b",
+          "unwindRva": "0x2eff9c",
+          "unwindInfoHex": "01100600106413001034110010d20c70"
+        }
+      ],
+      "requiredRoles": [
+        "primaryContext",
+        "loadHeader",
+        "headRead",
+        "headWriteEmpty",
+        "tailWriteEmpty",
+        "nextWriteEmpty",
+        "nextWritePopulated",
+        "headWritePopulated",
+        "countIncrement",
+        "packageId"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "primaryContext",
+          "rva": "0x6b61",
+          "instructionHex": "488d0d88723300"
+        },
+        {
+          "role": "loadHeader",
+          "rva": "0x6b68",
+          "instructionHex": "e8a3200000"
+        },
+        {
+          "role": "headRead",
+          "rva": "0x6b86",
+          "instructionHex": "488b0dcb723300"
+        },
+        {
+          "role": "headWriteEmpty",
+          "rva": "0x6b9a",
+          "instructionHex": "488905b7723300"
+        },
+        {
+          "role": "tailWriteEmpty",
+          "rva": "0x6ba1",
+          "instructionHex": "488905a8723300"
+        },
+        {
+          "role": "nextWriteEmpty",
+          "rva": "0x6ba8",
+          "instructionHex": "48897008"
+        },
+        {
+          "role": "nextWritePopulated",
+          "rva": "0x6bae",
+          "instructionHex": "48894808"
+        },
+        {
+          "role": "headWritePopulated",
+          "rva": "0x6bb2",
+          "instructionHex": "4889059f723300"
+        },
+        {
+          "role": "countIncrement",
+          "rva": "0x6bb9",
+          "instructionHex": "ff0589723300"
+        },
+        {
+          "role": "packageId",
+          "rva": "0x6bc6",
+          "instructionHex": "8b4040"
+        }
+      ],
+      "readOrder": "Supplied standard-stream manager opens the package path under codec eleven. Original header loader must return success or language-miss status before list admission. Empty list sets head/tail; otherwise prepend the returned package to the head. Increment list count and return native package ID."
+    },
+    {
+      "key": "packageReprioritization",
+      "entryRva": "0x7910",
+      "windows": [
+        {
+          "rva": "0x7910",
+          "bodyLength": 202,
+          "bodySha256": "56e3cc451f77a2724a7e35c2071edfab552706ff1ba427c43af19bfc08d44484",
+          "unwindRva": "0x2f011c",
+          "unwindInfoHex": "0106020006320230"
+        }
+      ],
+      "requiredRoles": [
+        "headRead",
+        "comparePackageId",
+        "nextRead",
+        "headRemove",
+        "tailCompare",
+        "tailRemove",
+        "countRemove",
+        "headWriteEmpty",
+        "tailWriteEmpty",
+        "nextWriteEmpty",
+        "nextWritePopulated",
+        "headWritePopulated",
+        "countIncrement"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "headRead",
+          "rva": "0x7925",
+          "instructionHex": "4c8b0d2c653300"
+        },
+        {
+          "role": "comparePackageId",
+          "rva": "0x7937",
+          "instructionHex": "395840"
+        },
+        {
+          "role": "nextRead",
+          "rva": "0x793f",
+          "instructionHex": "488b4008"
+        },
+        {
+          "role": "headRemove",
+          "rva": "0x7969",
+          "instructionHex": "48890de8643300"
+        },
+        {
+          "role": "tailCompare",
+          "rva": "0x797d",
+          "instructionHex": "483b05cc643300"
+        },
+        {
+          "role": "tailRemove",
+          "rva": "0x7986",
+          "instructionHex": "4c8905c3643300"
+        },
+        {
+          "role": "countRemove",
+          "rva": "0x798d",
+          "instructionHex": "ff0db5643300"
+        },
+        {
+          "role": "headWriteEmpty",
+          "rva": "0x799d",
+          "instructionHex": "488905b4643300"
+        },
+        {
+          "role": "tailWriteEmpty",
+          "rva": "0x79a4",
+          "instructionHex": "488905a5643300"
+        },
+        {
+          "role": "nextWriteEmpty",
+          "rva": "0x79ab",
+          "instructionHex": "48894808"
+        },
+        {
+          "role": "nextWritePopulated",
+          "rva": "0x79b1",
+          "instructionHex": "48894808"
+        },
+        {
+          "role": "headWritePopulated",
+          "rva": "0x79b5",
+          "instructionHex": "4889059c643300"
+        },
+        {
+          "role": "countIncrement",
+          "rva": "0x79bc",
+          "instructionHex": "ff0586643300"
+        }
+      ],
+      "readOrder": "Find the first matching package DWORD ID in the current list, remove it from head/interior/tail and reinsert at the head. Missing ID returns fourteen. Matching native package ID is conditional; collisions are not a unique physical identity."
+    },
+    {
+      "key": "packageRemoval",
+      "entryRva": "0x6c30",
+      "windows": [
+        {
+          "rva": "0x6c30",
+          "bodyLength": 199,
+          "bodySha256": "f0d73d12f7376fb79aa1783ce9d63b13e5bedcd086bbf3e68153feeab6d0b885",
+          "unwindRva": "0x2effac",
+          "unwindInfoHex": "0106020006520230"
+        }
+      ],
+      "requiredRoles": [
+        "headRead",
+        "comparePackageId",
+        "nextRead",
+        "headRemove",
+        "tailCompare",
+        "tailRemove",
+        "countRemove",
+        "releaseReference",
+        "destroyIfZero"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "headRead",
+          "rva": "0x6c45",
+          "instructionHex": "4c8b0d0c723300"
+        },
+        {
+          "role": "comparePackageId",
+          "rva": "0x6c56",
+          "instructionHex": "395940"
+        },
+        {
+          "role": "nextRead",
+          "rva": "0x6c5e",
+          "instructionHex": "488b4908"
+        },
+        {
+          "role": "headRemove",
+          "rva": "0x6cb0",
+          "instructionHex": "4c8905a1713300"
+        },
+        {
+          "role": "tailCompare",
+          "rva": "0x6cbd",
+          "instructionHex": "483b0d8c713300"
+        },
+        {
+          "role": "tailRemove",
+          "rva": "0x6cc6",
+          "instructionHex": "48891583713300"
+        },
+        {
+          "role": "countRemove",
+          "rva": "0x6ccd",
+          "instructionHex": "ff0d75713300"
+        },
+        {
+          "role": "releaseReference",
+          "rva": "0x6cd3",
+          "instructionHex": "834160ff"
+        },
+        {
+          "role": "destroyIfZero",
+          "rva": "0x6cdc",
+          "instructionHex": "ff5008"
+        }
+      ],
+      "readOrder": "Find the first matching package DWORD ID, unlink its list entry and decrement one reference. Destroy through the package address point only if that decrement reaches zero; hit descriptors already increment a separate retained reference."
+    },
+    {
+      "key": "packageHeaderLoad",
+      "entryRva": "0x8c10",
+      "windows": [
+        {
+          "rva": "0x8c10",
+          "bodyLength": 1010,
+          "bodySha256": "70c9f3f29d68db6b680a6fa8f79b99107eb52a305901b898efbc49d295293594",
+          "unwindRva": "0x2f0470",
+          "unwindInfoHex": "01390c453968060024431fe21bf019e017d015c01370126011301050"
+        }
+      ],
+      "requiredRoles": [
+        "acceptPlainMagic",
+        "acceptEncryptedMagic",
+        "headerExtent",
+        "packageIdStore",
+        "initialReference",
+        "retainStream",
+        "encryptedBranch",
+        "headerTransform",
+        "tableAssignment",
+        "callbackRegistrationFlag",
+        "languageSelection"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "acceptPlainMagic",
+          "rva": "0x8d57",
+          "instructionHex": "3d414b504b"
+        },
+        {
+          "role": "acceptEncryptedMagic",
+          "rva": "0x8d63",
+          "instructionHex": "3d3a297844"
+        },
+        {
+          "role": "headerExtent",
+          "rva": "0x8d71",
+          "instructionHex": "8d5908"
+        },
+        {
+          "role": "packageIdStore",
+          "rva": "0x8de6",
+          "instructionHex": "894740"
+        },
+        {
+          "role": "initialReference",
+          "rva": "0x8df7",
+          "instructionHex": "c7476001000000"
+        },
+        {
+          "role": "retainStream",
+          "rva": "0x8e0b",
+          "instructionHex": "48894748"
+        },
+        {
+          "role": "encryptedBranch",
+          "rva": "0x8eee",
+          "instructionHex": "80bd9000000000"
+        },
+        {
+          "role": "headerTransform",
+          "rva": "0x8f05",
+          "instructionHex": "e816010000"
+        },
+        {
+          "role": "tableAssignment",
+          "rva": "0x8f19",
+          "instructionHex": "e8d2acffff"
+        },
+        {
+          "role": "callbackRegistrationFlag",
+          "rva": "0x8f43",
+          "instructionHex": "80bb9800000000"
+        },
+        {
+          "role": "languageSelection",
+          "rva": "0x8f89",
+          "instructionHex": "e8a2aeffff"
+        }
+      ],
+      "readOrder": "Read prefix and the rounded declared header through the supplied standard-stream interface, allocate original package/header storage, execute the existing aligned XOR owner for the encrypted header body, assign native tables and select current language. The isolated cohort supplies block size one and existing notification-registration state; header malformed-size safety is not generalized."
+    },
+    {
+      "key": "packageTableAssignment",
+      "entryRva": "0x3bf0",
+      "windows": [
+        {
+          "rva": "0x3bf0",
+          "bodyLength": 126,
+          "bodySha256": "195c5cdfbb65cd086baab2a92b6c29d59da0d9e46863f240a508f04b597c61f8",
+          "unwindRva": "0x2efadc",
+          "unwindInfoHex": "010a04000a74020005340100"
+        }
+      ],
+      "requiredRoles": [
+        "bankBytes",
+        "externalBytes",
+        "soundBytes",
+        "languageBytes",
+        "headerPrefix",
+        "headerBound",
+        "languageTable",
+        "bankTable",
+        "soundTable",
+        "externalTable",
+        "addressLanguageSize",
+        "addressSoundSize"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "bankBytes",
+          "rva": "0x3bfa",
+          "instructionHex": "8b4210"
+        },
+        {
+          "role": "externalBytes",
+          "rva": "0x3c01",
+          "instructionHex": "448b4a18"
+        },
+        {
+          "role": "soundBytes",
+          "rva": "0x3c10",
+          "instructionHex": "418b03"
+        },
+        {
+          "role": "languageBytes",
+          "rva": "0x3c16",
+          "instructionHex": "8b0f"
+        },
+        {
+          "role": "headerPrefix",
+          "rva": "0x3c1b",
+          "instructionHex": "4883c11c"
+        },
+        {
+          "role": "headerBound",
+          "rva": "0x3c25",
+          "instructionHex": "483bc1"
+        },
+        {
+          "role": "languageTable",
+          "rva": "0x3c3e",
+          "instructionHex": "49895210"
+        },
+        {
+          "role": "bankTable",
+          "rva": "0x3c4c",
+          "instructionHex": "49895218"
+        },
+        {
+          "role": "soundTable",
+          "rva": "0x3c5a",
+          "instructionHex": "49895220"
+        },
+        {
+          "role": "externalTable",
+          "rva": "0x3c64",
+          "instructionHex": "49894228"
+        },
+        {
+          "role": "addressLanguageSize",
+          "rva": "0x3c0c",
+          "instructionHex": "488d7a0c"
+        },
+        {
+          "role": "addressSoundSize",
+          "rva": "0x3c05",
+          "instructionHex": "4c8d5a14"
+        }
+      ],
+      "readOrder": "For the selected four-sector header shape, reject a supplied extent smaller than the summed sector sizes plus header prefix, then retain table pointers at the stored boundaries. Stored row ordering/count validity and meaning are not inferred by this assignment helper."
+    },
+    {
+      "key": "packageLanguageSelection",
+      "entryRva": "0x3e30",
+      "windows": [
+        {
+          "rva": "0x3e30",
+          "bodyLength": 74,
+          "bodySha256": "7fc7191a61f4469c51076ea330078699136fee3dacbbca0974dc29b08d983619",
+          "unwindRva": "0x2efb50",
+          "unwindInfoHex": "0106020006320230"
+        }
+      ],
+      "requiredRoles": [
+        "resetLanguage",
+        "languageTable",
+        "findLanguage",
+        "languageMissWithMultiple",
+        "retainLanguage"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "resetLanguage",
+          "rva": "0x3e3b",
+          "instructionHex": "66894108"
+        },
+        {
+          "role": "languageTable",
+          "rva": "0x3e3f",
+          "instructionHex": "488b4910"
+        },
+        {
+          "role": "findLanguage",
+          "rva": "0x3e4d",
+          "instructionHex": "e86e030000"
+        },
+        {
+          "role": "languageMissWithMultiple",
+          "rva": "0x3e5b",
+          "instructionHex": "833901"
+        },
+        {
+          "role": "retainLanguage",
+          "rva": "0x3e6b",
+          "instructionHex": "66894308"
+        }
+      ],
+      "readOrder": "Clear selected language, conditionally find the supplied current-language text in the package language table and retain the returned WORD. Multiple languages with no nonzero match return status twenty-two; package admission explicitly accepts this status."
     }
   ],
   "hashRules": {
@@ -400,10 +1164,10 @@
     "iatRva": "0x28b020"
   },
   "evidenceBoundary": {
-    "exact": "Complete selected hash/lookup, default I/O initialization and batch-dispatch groups, typed instructions and static table targets agree with the installed inputs.",
-    "direct": "The external path helper converts UTF-16 to UTF-8, folds only ASCII capitals and applies 64-bit multiply-before-xor FNV-1 to the complete path. The external lookup compares a 64-bit key in 24-byte rows, with a separate language comparison.",
-    "conditional": "When a local selected I/O address point matches the reviewed default table, its batch slot adjusts to the primary context and dispatches package descriptors through the reviewed primary slot. External lookup requires kind one and searches complete-path 64-bit keys with language selection; entry arguments do not report a selected row.",
-    "unresolved": "The current entry capture does not observe the package descriptor flags, external hash/lookup entries, returned table row, retained provider descriptor, file handle or decoded output. A matching key is not a live media selection."
+    "exact": "Complete selected package lookup, numeric search, native package header/load/list lifecycle, external hash and default I/O dispatch groups, typed instructions and static table targets agree with the selected inputs. The existing aligned transform owner is reused on the same opened image, without duplicating its declaration.",
+    "direct": "The external path helper converts UTF-16 to UTF-8, folds only ASCII capitals and applies 64-bit multiply-before-xor FNV-1 to the complete path. The external lookup compares a 64-bit key in 24-byte rows, with a separate language comparison. The numeric family retains the DWORD descriptor ID and searches ordered twenty-byte key/language rows. Bank codec classes select a populated bank table, otherwise the sound table. The package loop returns its first successful row and writes the row geometry plus retained package pointer; allocation failure terminates the loop. Successful native package load prepends the package; a separate exact package-ID routine moves a matching entry to the head. Removal unlinks and releases one reference, while selected descriptors separately retain the package. Native encrypted-header load and table pointers agree with the offline header reader on the admitted physical cohort.",
+    "conditional": "When a local selected I/O address point matches the reviewed default table, its batch slot adjusts to the primary context and dispatches package descriptors through the reviewed primary slot. External lookup requires kind one and searches complete-path 64-bit keys with language selection; entry arguments do not report a selected row. Numeric original-host cohorts on real physical header rows and bounded synthetic loaded lists prove this behavior under supplied list order, language, descriptor allocation and backing-I/O interfaces; they do not establish the live game loaded list.",
+    "unresolved": "The live package-loading order/lifetime and numeric stream device scheduling remain unresolved. Offline original numeric lookup can be connected to independently authenticated physical WEM bytes and original codec/context output only under explicit supplied loaded-list and stream interfaces. Existing external entry captures do not themselves select a numeric row or establish continuous Event ownership."
   },
   "ioDispatch": {
     "primaryAddressPointRva": "0x28bfe0",
@@ -422,5 +1186,83 @@
         "targetOwner": "defaultIoBatchDispatch"
       }
     ]
-  }
+  },
+  "numericLookup": {
+    "bankTablePointer": 24,
+    "soundTablePointer": 32,
+    "countBytes": 4,
+    "rowsOffset": 4,
+    "rowBytes": 20,
+    "keyBytes": 4,
+    "languageOffset": 16,
+    "languageBytes": 4,
+    "packageLanguageOffset": 8,
+    "packageLanguageBytes": 2,
+    "languageFlagOffset": 24,
+    "bankCodecBase": 30,
+    "bankCodecLastDelta": 1,
+    "loadedPackagesOffset": 104,
+    "nextPackageOffset": 8,
+    "packageReferenceOffset": 96,
+    "rowLengthOffset": 8,
+    "rowBlockOffset": 12,
+    "rowBlockBytesOffset": 4,
+    "descriptorLengthOffset": 0,
+    "descriptorBlockOffset": 8,
+    "descriptorBlockBytesOffset": 56,
+    "descriptorPackageOffset": 48,
+    "descriptorByteOffset": 32,
+    "descriptorNumericKeyOffset": 36,
+    "allocationFailureStatus": 52
+  },
+  "nativeGroupDependencies": [
+    {
+      "key": "headerAlignedTransform",
+      "ownerContract": "wwise_package_transform_native",
+      "ownerGroup": "alignedPackageTransform"
+    }
+  ],
+  "packageLifecycle": {
+    "packageIdOffset": 64,
+    "nextPackageOffset": 8,
+    "referenceOffset": 96,
+    "languageTableOffset": 16,
+    "bankTableOffset": 24,
+    "soundTableOffset": 32,
+    "externalTableOffset": 40,
+    "headerPrefixBytes": 28,
+    "languageSizeOffset": 12,
+    "bankSizeOffset": 16,
+    "soundSizeOffset": 20,
+    "externalSizeOffset": 24,
+    "notificationRegistrationOffset": 152,
+    "initialReference": 1,
+    "loadedHeadOffset": 104,
+    "loadedTailOffset": 96,
+    "loadedCountOffset": 88,
+    "packageSourceOffset": 72,
+    "languageOffset": 8
+  },
+  "lifecycleEdges": [
+    {
+      "group": "packageAdmission",
+      "role": "loadHeader",
+      "target": "packageHeaderLoad"
+    },
+    {
+      "group": "packageHeaderLoad",
+      "role": "headerTransform",
+      "target": "headerAlignedTransform"
+    },
+    {
+      "group": "packageHeaderLoad",
+      "role": "tableAssignment",
+      "target": "packageTableAssignment"
+    },
+    {
+      "group": "packageHeaderLoad",
+      "role": "languageSelection",
+      "target": "packageLanguageSelection"
+    }
+  ]
 }

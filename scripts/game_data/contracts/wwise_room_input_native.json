@@ -1,0 +1,1604 @@
+{
+  "schema": "endfield.wwise-room-input-observer.v4",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "borrowedGroups": [
+    "roomVerbStereo"
+  ],
+  "nativeGroups": [
+    {
+      "key": "roomInputPreparation",
+      "entryRva": "0x231200",
+      "windows": [
+        {
+          "rva": "0x231200",
+          "bodyLength": 90,
+          "bodySha256": "e3dace266f19bc0ccbdae92c9758fe8ff5cc2dfec0e87b2b8b6c080986bdb910",
+          "unwindRva": "0x3048e0",
+          "unwindInfoHex": "010f06000f640b000f540a000f520b70",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x23125a",
+          "bodyLength": 93,
+          "bodySha256": "716a8318fe40a941104b4bcc5e1c82d08669c6f1c1643afc4c15f9f3e6a9c6b6",
+          "unwindRva": "0x318154",
+          "unwindInfoHex": "2105020005340900001223005a122300e0483000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2312b7",
+          "bodyLength": 16,
+          "bodySha256": "cf9d498bb6486d3dbff549636ee73f24c716126eb7fc47a07bd24722fc7ad87e",
+          "unwindRva": "0x318168",
+          "unwindInfoHex": "21000000001223005a122300e0483000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "parameterObject",
+        "frameOffsetStack",
+        "foldCall",
+        "optionalToneEnable",
+        "optionalToneCall"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "parameterObject",
+          "rva": "0x23120f",
+          "instructionHex": "488b8158010000"
+        },
+        {
+          "role": "frameOffsetStack",
+          "rva": "0x231225",
+          "instructionHex": "448b442460"
+        },
+        {
+          "role": "foldCall",
+          "rva": "0x231245",
+          "instructionHex": "e8162e0000"
+        },
+        {
+          "role": "optionalToneEnable",
+          "rva": "0x231251",
+          "instructionHex": "80b89800000000"
+        },
+        {
+          "role": "optionalToneCall",
+          "rva": "0x2312a3",
+          "instructionHex": "e8d86af4ff"
+        }
+      ]
+    },
+    {
+      "key": "roomInputFold",
+      "entryRva": "0x234060",
+      "windows": [
+        {
+          "rva": "0x234060",
+          "bodyLength": 75,
+          "bodySha256": "e2fdac15327c3877ffe090669d77cef4f8332fe2e0f82ee64d150abdd8eadee4",
+          "unwindRva": "0x318724",
+          "unwindInfoHex": "01270c00276804001a740f001a640e001a540d001a340c001a9216e0",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2340ab",
+          "bodyLength": 335,
+          "bodySha256": "a9a23f87dadb089a08b63a0cd62c620244a68b65cc83abe6b911c557215c67e9",
+          "unwindRva": "0x318740",
+          "unwindInfoHex": "211a04001a8802000578030060402300ab40230024873100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2341fa",
+          "bodyLength": 225,
+          "bodySha256": "4f3a9366ce6e9afaaa99c0904e4ae8dd3213023090a3b610c1ac60c58c26fdee",
+          "unwindRva": "0x318758",
+          "unwindInfoHex": "2100000060402300ab40230024873100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "capacity",
+        "sourcePlane",
+        "sourceFrameOffset",
+        "gainAStack",
+        "gainBStack",
+        "normalizationDivide",
+        "normalizationSqrt",
+        "multiply",
+        "add"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "capacity",
+          "rva": "0x234190",
+          "instructionHex": "0fb74f10"
+        },
+        {
+          "role": "sourcePlane",
+          "rva": "0x23419a",
+          "instructionHex": "480fafc8"
+        },
+        {
+          "role": "sourceFrameOffset",
+          "rva": "0x2341a5",
+          "instructionHex": "4803cd"
+        },
+        {
+          "role": "gainAStack",
+          "rva": "0x2340c9",
+          "instructionHex": "f3440f10842480000000"
+        },
+        {
+          "role": "gainBStack",
+          "rva": "0x2340b3",
+          "instructionHex": "f30f10bc2488000000"
+        },
+        {
+          "role": "normalizationDivide",
+          "rva": "0x234143",
+          "instructionHex": "f30f5eca"
+        },
+        {
+          "role": "normalizationSqrt",
+          "rva": "0x234147",
+          "instructionHex": "f30f51f1"
+        },
+        {
+          "role": "multiply",
+          "rva": "0x2341c3",
+          "instructionHex": "0f5902"
+        },
+        {
+          "role": "add",
+          "rva": "0x2341ca",
+          "instructionHex": "0f5801"
+        }
+      ]
+    },
+    {
+      "key": "roomDelayCopy",
+      "entryRva": "0x232a80",
+      "windows": [
+        {
+          "rva": "0x232a80",
+          "bodyLength": 28,
+          "bodySha256": "93a0f3b794aae2495ac717c20fcf8396db6afcc2b248bd34d771845de16f0438",
+          "unwindRva": "0x2f27a0",
+          "unwindInfoHex": "0102010002300000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x232a9c",
+          "bodyLength": 172,
+          "bodySha256": "038989a336cea3b05f481d7da69e1df962003cd743e22b430284b2e9eee45a98",
+          "unwindRva": "0x3185f0",
+          "unwindInfoHex": "2105020005740200802a23009c2a2300a0272f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x232b48",
+          "bodyLength": 2,
+          "bodySha256": "0ec6878258e3360694ef14f7cd9293b0e1c888ca7d072c27aebc2a92843a1483",
+          "unwindRva": "0x318604",
+          "unwindInfoHex": "21000000802a23009c2a2300a0272f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "index",
+        "buffer",
+        "length",
+        "outputOldHistory",
+        "storeInput",
+        "updateIndex",
+        "wrapIndex"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "index",
+          "rva": "0x232a85",
+          "instructionHex": "8b4910"
+        },
+        {
+          "role": "buffer",
+          "rva": "0x232a8b",
+          "instructionHex": "498b4308"
+        },
+        {
+          "role": "length",
+          "rva": "0x232ab0",
+          "instructionHex": "458b0b"
+        },
+        {
+          "role": "outputOldHistory",
+          "rva": "0x232adb",
+          "instructionHex": "410f1108"
+        },
+        {
+          "role": "storeInput",
+          "rva": "0x232ae3",
+          "instructionHex": "410f1102"
+        },
+        {
+          "role": "updateIndex",
+          "rva": "0x232b21",
+          "instructionHex": "45014b10"
+        },
+        {
+          "role": "wrapIndex",
+          "rva": "0x232b34",
+          "instructionHex": "41897b10"
+        }
+      ]
+    },
+    {
+      "key": "roomDelaySwap",
+      "entryRva": "0x232b50",
+      "windows": [
+        {
+          "rva": "0x232b50",
+          "bodyLength": 30,
+          "bodySha256": "bf4f7ffb933cfb34c01471cf2ab65421e23314604915b7bd546a71f273555775",
+          "unwindRva": "0x30463c",
+          "unwindInfoHex": "0104010004020000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x232b6e",
+          "bodyLength": 144,
+          "bodySha256": "b906663a9f18623a50eca73ad4a22e9c7e72e2d792d63296c0c1d6042b1c6478",
+          "unwindRva": "0x3185cc",
+          "unwindInfoHex": "2104020004340000502b23006e2b23003c463000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x232bfe",
+          "bodyLength": 5,
+          "bodySha256": "b3145da89f5ba6c5bf2e0b19da7bfa614944a8f6c19dcb3bb4dc6e0dd88815d2",
+          "unwindRva": "0x3185e0",
+          "unwindInfoHex": "21000000502b23006e2b23003c463000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "index",
+        "buffer",
+        "length",
+        "outputOldHistory",
+        "storeInput",
+        "updateIndex",
+        "wrapIndex"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "index",
+          "rva": "0x232b57",
+          "instructionHex": "8b4910"
+        },
+        {
+          "role": "buffer",
+          "rva": "0x232b5d",
+          "instructionHex": "498b4208"
+        },
+        {
+          "role": "length",
+          "rva": "0x232b80",
+          "instructionHex": "458b02"
+        },
+        {
+          "role": "outputOldHistory",
+          "rva": "0x232ba7",
+          "instructionHex": "0f110a"
+        },
+        {
+          "role": "storeInput",
+          "rva": "0x232bae",
+          "instructionHex": "410f1101"
+        },
+        {
+          "role": "updateIndex",
+          "rva": "0x232bdc",
+          "instructionHex": "45014210"
+        },
+        {
+          "role": "wrapIndex",
+          "rva": "0x232bef",
+          "instructionHex": "41895a10"
+        }
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "index": 49,
+      "name": "AkSoundEngine.roomInputPreparation",
+      "sourceKind": "roomInputPreparation",
+      "ownerGroup": "roomInputPreparation",
+      "abiId": "win64.void_integer5_result.v1",
+      "memory": [
+        {
+          "name": "instance",
+          "argIndex": 0,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "buffer",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 2,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "frames",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "frameOffset",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "format",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "capacity",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 16
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 18
+        },
+        {
+          "name": "copyDelayLength",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 208
+        },
+        {
+          "name": "swapDelayLength",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 184
+        },
+        {
+          "name": "toneEnabled",
+          "argIndex": 0,
+          "kind": "u8",
+          "offset": 152,
+          "pointerOffsets": [
+            344
+          ]
+        },
+        {
+          "name": "toneSlotCount",
+          "argIndex": 0,
+          "kind": "u8",
+          "offset": 308
+        },
+        {
+          "name": "prefix",
+          "argIndex": 2,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "instance",
+          "argIndex": 0,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "buffer",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 2,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "frames",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "frameOffset",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "format",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "capacity",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 16
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "kind": "u16",
+          "offset": 18
+        },
+        {
+          "name": "copyDelayLength",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 208
+        },
+        {
+          "name": "swapDelayLength",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 184
+        },
+        {
+          "name": "toneEnabled",
+          "argIndex": 0,
+          "kind": "u8",
+          "offset": 152,
+          "pointerOffsets": [
+            344
+          ]
+        },
+        {
+          "name": "toneSlotCount",
+          "argIndex": 0,
+          "kind": "u8",
+          "offset": 308
+        },
+        {
+          "name": "prefix",
+          "argIndex": 2,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    },
+    {
+      "index": 50,
+      "name": "AkSoundEngine.roomInputFold",
+      "sourceKind": "roomInputFold",
+      "ownerGroup": "roomInputFold",
+      "abiId": "win64.void_integer4_float2_result.v1",
+      "memory": [
+        {
+          "name": "frames",
+          "argIndex": 1,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "frameOffset",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "buffer",
+          "argIndex": 0,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 3,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "format",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "capacity",
+          "argIndex": 0,
+          "kind": "u16",
+          "offset": 16
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 0,
+          "kind": "u16",
+          "offset": 18
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 0
+        },
+        {
+          "name": "centerGainBits",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "lfeGainBits",
+          "argIndex": 7,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "leftWord0",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "leftWord1",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 4,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "leftWord2",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 8,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "leftWord3",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 12,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord0",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2048,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord1",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2052,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord2",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2056,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord3",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2060,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 3,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "frames",
+          "argIndex": 1,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "frameOffset",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "buffer",
+          "argIndex": 0,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 3,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "format",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "capacity",
+          "argIndex": 0,
+          "kind": "u16",
+          "offset": 16
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 0,
+          "kind": "u16",
+          "offset": 18
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 0
+        },
+        {
+          "name": "centerGainBits",
+          "argIndex": 6,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "lfeGainBits",
+          "argIndex": 7,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "leftWord0",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "leftWord1",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 4,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "leftWord2",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 8,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "leftWord3",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 12,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord0",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2048,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord1",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2052,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord2",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2056,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "rightWord3",
+          "argIndex": 0,
+          "kind": "indexedU32",
+          "offset": 2060,
+          "pointerOffsets": [
+            0
+          ],
+          "indexField": "frameOffset",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 3,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    },
+    {
+      "index": 51,
+      "name": "AkSoundEngine.roomDelayCopy",
+      "sourceKind": "roomDelayCopy",
+      "ownerGroup": "roomDelayCopy",
+      "abiId": "win64.void_integer4_result.v1",
+      "memory": [
+        {
+          "name": "length",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "ringPointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 8
+        },
+        {
+          "name": "ringIndex",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 16
+        },
+        {
+          "name": "frames",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "input",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 2,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 0,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 4,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 8,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 12,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 2,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "length",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "ringPointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 8
+        },
+        {
+          "name": "ringIndex",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 16
+        },
+        {
+          "name": "frames",
+          "argIndex": 3,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "input",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 2,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 0,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 4,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 8,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 12,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 2,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    },
+    {
+      "index": 52,
+      "name": "AkSoundEngine.roomDelaySwap",
+      "sourceKind": "roomDelaySwap",
+      "ownerGroup": "roomDelaySwap",
+      "abiId": "win64.void_integer3_result.v1",
+      "memory": [
+        {
+          "name": "length",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "ringPointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 8
+        },
+        {
+          "name": "ringIndex",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 16
+        },
+        {
+          "name": "frames",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "input",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 0,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 4,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 8,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 12,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "length",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "ringPointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 8
+        },
+        {
+          "name": "ringIndex",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 16
+        },
+        {
+          "name": "frames",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "input",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "output",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 0,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 4,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 8,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 0,
+          "kind": "ringU32",
+          "offset": 12,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    }
+  ],
+  "selection": {
+    "format": 12546,
+    "capacity": 512,
+    "validFrames": 512,
+    "prefixBytes": 16,
+    "blockFrames": [
+      64,
+      128,
+      256
+    ],
+    "stereoFoldCoefficientBits": 1060439283
+  },
+  "layout": {
+    "parameterObject": 344,
+    "ringLength": 0,
+    "ringPointer": 8,
+    "ringIndex": 16,
+    "initialCopyDelay": 208,
+    "initialSwapDelay": 184,
+    "toneEnabled": 152,
+    "toneSlotCount": 308
+  },
+  "callBindings": [
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d85a",
+      "targetGroup": "roomInputPreparation",
+      "returnRva": "0x22d85f",
+      "role": "prepareBlock"
+    },
+    {
+      "group": "roomInputPreparation",
+      "rva": "0x231245",
+      "targetGroup": "roomInputFold",
+      "returnRva": "0x23124a",
+      "role": "foldInput"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d878",
+      "targetGroup": "roomDelayCopy",
+      "returnRva": "0x22d87d",
+      "role": "initialCopyDelay"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d89d",
+      "targetGroup": "roomDelaySwap",
+      "returnRva": "0x22d8a2",
+      "role": "initialSwapDelay"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d9d7",
+      "targetGroup": "roomDelaySwap",
+      "returnRva": "0x22d9dc",
+      "role": "laterSwapDelay"
+    }
+  ],
+  "foldUnit": {
+    "loadRva": "0x2340a0",
+    "rva": "0x28f350",
+    "word": 1065353216,
+    "instructionHex": "f30f100da8b20500"
+  },
+  "evidenceBoundary": {
+    "exact": "Original standard stereo fold zeroes output then separately rounds each normalized channel product and accumulated addition. Circular services exchange old history with input and wrap the index.",
+    "conditional": "Actual registered RoomVerb input-block and delay calls with full original operands, frozen read addresses, same-call normal returns and matching ordered preparation-to-delay prefixes.",
+    "unresolved": "Tone filtering beyond existing recorded operands, ER tap generation, diffusion/feedback network, reverb wet-history reconstruction, gain transitions, full buffers and isolated Event attribution."
+  },
+  "fieldBindings": [
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d85f",
+      "instructionHex": "83bed000000000",
+      "displacementOffset": 2,
+      "layoutField": "initialCopyDelay"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d814",
+      "instructionHex": "488d9eb8000000",
+      "displacementOffset": 3,
+      "layoutField": "initialSwapDelay"
+    },
+    {
+      "group": "roomInputPreparation",
+      "rva": "0x23120f",
+      "instructionHex": "488b8158010000",
+      "displacementOffset": 3,
+      "layoutField": "parameterObject"
+    },
+    {
+      "group": "roomInputPreparation",
+      "rva": "0x231251",
+      "instructionHex": "80b89800000000",
+      "displacementOffset": 2,
+      "layoutField": "toneEnabled"
+    },
+    {
+      "group": "roomInputPreparation",
+      "rva": "0x231261",
+      "instructionHex": "389f34010000",
+      "displacementOffset": 2,
+      "layoutField": "toneSlotCount"
+    }
+  ],
+  "parameterTransport": {
+    "ownerContract": "wwise_effect_parameters_native",
+    "classId": "0x00760003",
+    "serializedOffset": 109,
+    "layoutField": "toneEnabled",
+    "sourceBase": {
+      "rva": "0x231d5c",
+      "instructionHex": "488d5a08"
+    },
+    "cursor": {
+      "rva": "0x231e95",
+      "instructionHex": "488d4b4d"
+    },
+    "readByte": {
+      "rva": "0x231ee7",
+      "instructionHex": "0fb64118"
+    },
+    "storeByte": {
+      "rva": "0x231eeb",
+      "instructionHex": "888798000000"
+    }
+  }
+}

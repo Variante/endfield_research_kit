@@ -1,0 +1,20 @@
+{
+  "schema": "endfield.buff-skill-cast-interface-return-claims.v1",
+  "status": "reviewed",
+  "parentContract": "buff_skill_cast_action_source_claims.json",
+  "interfaceType": "Beyond.Gameplay.Core.IActionEnvironment",
+  "interfaceMethod": {"name": "FillSkillCastInfo", "returnType": "Beyond.Gameplay.Core.Skill+SkillCastInfo", "parameterTypes": [], "isStatic": false},
+  "interfaceSlotLiteral": 13,
+  "defaultReturnProgramHex": "33C00F57C00F110148894110488BC1C3",
+  "compiledAdapter": {
+    "programHex": "488BC44889580848896810488970184889782041564883EC40498B19488BE9488BCB440FB7F2498BF9498BF0E8000000000FB793300100004533D266443BD2731E488B8BB0000000410FB7C24803C0483934C1745A6641FFC266443BD272E9450FB7C6488BD6488BCFE8000000004C8B08488D4C24204C8B4008488BD741FFD1488B5C2450488B742460488B7C24680F1000F20F104810488BC50F114500F20F114D10488B6C24584883C440415EC3410FB7D24803D28B44D1084103C648984883C01448C1E0044803C3EBA2",
+    "relocationCalls": [{"role": "classPreparation", "offset": 44}, {"role": "lookup", "offset": 105}],
+    "matchedReturnControl": {"interfaceCountWordOffset": 304, "interfaceTablePointerOffset": 176, "entryStrideBytes": 16, "entryOffsetDwordOffset": 8, "vtableIndexBias": 20, "invokeDataStrideBytes": 16, "copiedReturnBytes": 24}
+  },
+  "evidenceBoundary": {
+    "direct": "The actual source loads a tag-1 disk context for the declared interface and supplies its declared method slot to this complete compiled adapter.",
+    "structuralOnly": "Class/table offsets and pointer-pair contents are observed representation; live class initialization and interface implementation identity are not inferred from disk names.",
+    "conditional": "With a correctly resolved interface class and compatible readable tables, the matching-entry path derives an InvokeData pair from a word counter, wrapped DWORD slot sum and signed extension, then passes the original receiver and MethodInfo to the function pointer. It copies twenty-four bits-preserving result bytes from the returned reference. If that selected function is the current named default interface implementation, its checked body returns twenty-four zero bytes.",
+    "unresolved": "The live interface cell, actual method pointer/implementation, lookup result, preparation/lookup/callee effects, returned values and invocation."
+  }
+}

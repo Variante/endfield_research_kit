@@ -182,7 +182,7 @@ def validate_provider_dependencies(contract: dict[str, Any], source: dict[str, A
             _fail("providerSourceField", name, expected, contract["layouts"]["source"][name])
 
 
-def load_validated_decoder_provider_contract(*, gameassembly: Path, metadata: Path, ak_sound_engine: Path, contract_path: Path = CONTRACT_PATH, include_storage: bool = False, include_dispatch: bool = False, include_package: bool = False, include_retention: bool = False, include_result: bool = False, include_read: bool = False) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+def load_validated_decoder_provider_contract(*, gameassembly: Path, metadata: Path, ak_sound_engine: Path, contract_path: Path = CONTRACT_PATH, include_storage: bool = False, include_dispatch: bool = False, include_package: bool = False, include_retention: bool = False, include_result: bool = False, include_read: bool = False, include_standard_stream: bool = False) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     if include_read:
         include_result = True
     if include_result:
@@ -241,12 +241,33 @@ def load_validated_decoder_provider_contract(*, gameassembly: Path, metadata: Pa
         if include_read:
             result = audit.get('packageResultGate', {})
             audit['packageReadGate'] = validate_optional_read(image,bodies,records,contract,package['contract'],result['contract']) if result.get('status')=='validated' else {'status':'missing','detail':'validated package result dependency required'}
+        if include_standard_stream:
+            audit['standardStreamGate'] = validate_optional_standard_stream(image,bodies,records,contract)
         return contract, audit
     except SourceContractError as error:
         audit.update(status="mismatched", detail=str(error)[:320], diagnostic=error.diagnostic)
     except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError, OverflowError, StopIteration) as error:
         audit.update(status="mismatched", detail=str(error)[:320], diagnostic={"failedCheck": "decoderProviderContract", "actual": str(error)[:160]})
     return None, audit
+
+
+def validate_optional_standard_stream(image, bodies, records, parent):
+    from scripts.game_data import wwise_standard_stream_native as stream
+    try:
+        contract = stream.load_standard_stream_contract()
+        stream.validate_standard_stream_bytes(contract,image,bodies,records,parent)
+        return {'status':'validated','detail':'numeric stream construction/read completion and resident-memory handoff validated',
+                'selectedContractSchema':contract['schema'],'ownedNativeGroups':len(contract['nativeGroups']),
+                'nativeGroups':len(contract['nativeGroups'])+len(contract['nativeGroupDependencies']),
+                'nativeGroupDependencies':contract['nativeGroupDependencies'],
+                'nativeLeafDependencies':contract.get('nativeLeafDependencies',[]),
+                'evidenceBoundary':contract['evidenceBoundary']}
+    except SourceContractError as error:
+        return {'status':'mismatched','detail':str(error)[:320],'diagnostic':error.diagnostic}
+    except FileNotFoundError as error:
+        return {'status':'missing','detail':str(error)[:320]}
+    except (OSError,ValueError,KeyError,TypeError,IndexError,AttributeError,OverflowError,StopIteration) as error:
+        return {'status':'mismatched','detail':str(error)[:320],'diagnostic':{'failedCheck':'standardStream','actual':str(error)[:160]}}
 
 
 def validate_optional_read(image, bodies, records, parent, package, result):
@@ -318,7 +339,11 @@ def validate_optional_package(image: Any, bodies: dict, records: dict, parent: d
     try:
         contract = package.load_package_contract()
         package.validate_package_bytes(contract, image, bodies, records, parent)
-        return {"status": "validated", "detail": "conditional external-package path hash and keyed lookup validated",
+        return {"status": "validated", "detail": "conditional package header/load/list lifecycle, numeric lookup and external-path hashing validated",
+                "selectedContractSchema": contract['schema'],
+                "nativeGroups": len(contract['nativeGroups'])+len(contract.get('nativeGroupDependencies',[])),
+                "ownedNativeGroups": len(contract['nativeGroups']),
+                "nativeGroupDependencies": contract.get('nativeGroupDependencies',[]),
                 "contract": contract, "observerSpec": package.observer_spec(contract), "evidenceBoundary": contract["evidenceBoundary"]}
     except SourceContractError as error:
         return {"status": "mismatched", "detail": str(error)[:320], "diagnostic": error.diagnostic}
@@ -366,16 +391,17 @@ def main() -> int:
     parser.add_argument("--ak-sound-engine", required=True, type=Path)
     parser.add_argument("--include-storage", action="store_true")
     parser.add_argument("--include-dispatch", action="store_true", help="Also validate source-based provider dispatch on the same selected images; implies storage.")
-    parser.add_argument("--include-package", action="store_true", help="Also validate conditional external-package hashing and table lookup on the same images.")
+    parser.add_argument("--include-package", action="store_true", help="Also validate package header/load/list lifecycle, numeric lookup and external-path hashing on the same images.")
     parser.add_argument("--include-retention", action="store_true", help="Also validate retained provider/device reads; implies storage.")
     parser.add_argument("--include-result", action="store_true", help="Also validate package descriptor completion; implies storage and package.")
     parser.add_argument('--include-read',action='store_true',help='Also validate package read/completion and pre-transform entries; implies result.')
+    parser.add_argument('--include-standard-stream',action='store_true',help='Also validate numeric stream construction/read completion and resident-memory handoff, reusing existing native owners on the same images.')
     args = parser.parse_args()
     _, audit = load_validated_decoder_provider_contract(gameassembly=args.gameassembly, metadata=args.metadata, ak_sound_engine=args.ak_sound_engine,
-        include_storage=args.include_storage or args.include_dispatch or args.include_retention, include_dispatch=args.include_dispatch, include_package=args.include_package, include_retention=args.include_retention, include_result=args.include_result, include_read=args.include_read)
+        include_storage=args.include_storage or args.include_dispatch or args.include_retention, include_dispatch=args.include_dispatch, include_package=args.include_package, include_retention=args.include_retention, include_result=args.include_result, include_read=args.include_read, include_standard_stream=args.include_standard_stream)
     print(json.dumps(audit, ensure_ascii=False, indent=2))
     return 0 if audit["status"] == "validated" and all(audit.get(key, {}).get("status", "validated") == "validated"
-        for key in ("providerStorageGate", "sourceDispatchGate", "externalPackageGate", "providerRetentionGate", "packageResultGate", "packageReadGate")) else 1
+        for key in ("providerStorageGate", "sourceDispatchGate", "externalPackageGate", "providerRetentionGate", "packageResultGate", "packageReadGate", "standardStreamGate")) else 1
 
 
 if __name__ == "__main__":

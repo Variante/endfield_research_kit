@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
+import struct
 import sys
 from pathlib import Path
 from typing import Any
@@ -23,7 +25,33 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.il2cpp.protocol import field_defaults, native_enum_members
 
 CONTRACT = CONTRACTS_DIR / "attribute_formula_native.json"
-SCHEMA = "endfield.attribute-formula-native-claims.v1"
+SCHEMA = "endfield.attribute-formula-native-claims.v2"
+
+
+def validate_arithmetic_windows(image, index, windows):
+    """Authenticate reviewed normal-path SSE bytes and their external literals."""
+    failures = []
+    for window in windows:
+        symbol = f"{window['type']}.{window['method']}"
+        try:
+            body = index.body(window["type"], window["method"])
+            raw = image.pe.bytes_at_va(body.pointer, window["byteCount"])
+            actual = hashlib.sha256(raw).hexdigest()
+            if actual != window["sha256"]:
+                failures.append({"symbol": symbol, "claim": "arithmeticWindow", "reason": f"expected {window['sha256']}, actual {actual}"})
+                continue
+            for literal in window.get("float64Literals", []):
+                offset = literal["instructionOffset"]
+                instruction = raw[offset:offset + 8]
+                if len(instruction) != 8 or instruction[:3] not in (b"\xf2\x0f\x10", b"\xf2\x0f\x59") or instruction[3] & 0xc7 != 0x05:
+                    raise ValueError(f"literal +{offset}: expected RIP-relative MOVSD/MULSD")
+                target = body.pointer + offset + 8 + struct.unpack_from("<i", instruction, 4)[0]
+                value = struct.unpack("<d", image.pe.bytes_at_va(target, 8))[0]
+                if value != literal["value"]:
+                    failures.append({"symbol": symbol, "claim": "float64Literal", "reason": f"offset {offset}: expected {literal['value']}, actual {value}"})
+        except (ValueError, RuntimeError, KeyError, IndexError) as exc:
+            failures.append({"symbol": symbol, "claim": "arithmeticWindow", "reason": str(exc)})
+    return failures
 
 
 def load_attribute_formula() -> dict[str, Any]:
@@ -45,7 +73,9 @@ def load_attribute_formula() -> dict[str, Any]:
     if not gate.validated:
         return {**base, "status": gate.status, "detail": gate.detail, "failures": []}
     image = open_native_image(gate.gameassembly, gate.metadata)
-    _rows, failures = evaluate(BodyIndex(image), contract["methods"])
+    index = BodyIndex(image)
+    _rows, failures = evaluate(index, contract["methods"])
+    failures.extend(validate_arithmetic_windows(image, index, contract["arithmeticWindows"]))
     defaults = field_defaults(image.metadata)
     for type_name, expected in (contract.get("enumClaims") or {}).items():
         try:
@@ -57,6 +87,14 @@ def load_attribute_formula() -> dict[str, Any]:
         if actual != expected:
             failures.append({"symbol": type_name, "claim": "enumMembers",
                              "reason": f"expected={expected!r} actual={actual!r}"})
+    try:
+        members = native_enum_members(image.metadata, defaults, image.pe, image.registration, "Beyond.GEnums.AttributeType")
+        actual = {member["name"]: member["id"] for member in members}
+        for name, expected in contract["attributeIds"].items():
+            if actual.get(name) != expected:
+                failures.append({"symbol": f"AttributeType.{name}", "claim": "enumId", "reason": f"expected {expected}, actual {actual.get(name)}"})
+    except (RuntimeError, ValueError, KeyError, IndexError) as exc:
+        failures.append({"symbol": "AttributeType", "claim": "enumId", "reason": str(exc)})
     return {
         **base,
         "status": "pendingReview" if failures else "validated",

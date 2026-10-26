@@ -1,0 +1,362 @@
+{
+  "schema": "endfield.collision-solver-response-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "evidenceBoundary": "direct: selected PGS wrapper -> scalar solver reads/writes accumulated normal response after header plus normal points and updates only body vector lanes 0 and 16. Saved after-solve positive values are observed accumulated response, not proof of newly generated impulse in that call, a force in Newtons, continuous lifetime, stored asset identity, or physics-step ownership.",
+  "codeWindows": [
+    {
+      "role": "contact_wrapper",
+      "rva": 8465920,
+      "bytes": 141,
+      "sha256": "8719261b754630e2cb294302163a8bfdb40307868da6aeb36e3e7bb4260f54c8",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "static_wrapper",
+      "rva": 8467792,
+      "bytes": 141,
+      "sha256": "5e05c47c397ebf1931be384f42f0a66c0e5d673f0afc9507cab607b72c8c393a",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "contact_core",
+      "rva": 8464416,
+      "bytes": 1490,
+      "sha256": "e368b9bdccc46a25ac3b66c6f7068c0ceb409638c72058a56e54f0f7334eaced",
+      "boundary": "complete unwind family"
+    },
+    {
+      "role": "static_core",
+      "rva": 8466608,
+      "bytes": 1176,
+      "sha256": "da8fcbf175c14ca3150dd5fd916fb6dec999308c469eb6567cf3832a0e422408",
+      "boundary": "complete unwind family"
+    }
+  ],
+  "unwindFamilies": [
+    {
+      "role": "contact_wrapper",
+      "rva": 8465920,
+      "runtimeRanges": [
+        [
+          8465920,
+          8465944,
+          29544284
+        ],
+        [
+          8465944,
+          8466029,
+          29144176
+        ],
+        [
+          8466029,
+          8466061,
+          29144204
+        ]
+      ]
+    },
+    {
+      "role": "static_wrapper",
+      "rva": 8467792,
+      "runtimeRanges": [
+        [
+          8467792,
+          8467816,
+          29544284
+        ],
+        [
+          8467816,
+          8467901,
+          29144364
+        ],
+        [
+          8467901,
+          8467933,
+          29144392
+        ]
+      ]
+    },
+    {
+      "role": "contact_core",
+      "rva": 8464416,
+      "runtimeRanges": [
+        [
+          8464416,
+          8464548,
+          29143712
+        ],
+        [
+          8464548,
+          8465722,
+          29143744
+        ],
+        [
+          8465722,
+          8465906,
+          29143800
+        ]
+      ]
+    },
+    {
+      "role": "static_core",
+      "rva": 8466608,
+      "runtimeRanges": [
+        [
+          8466608,
+          8466690,
+          29143816
+        ],
+        [
+          8466690,
+          8467692,
+          29143840
+        ],
+        [
+          8467692,
+          8467784,
+          29143908
+        ]
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "role": "contact_core",
+      "offset": 27,
+      "hex": "4c8b69084c8b21488b51200fb7711e440f299868ffffff450f281c24440f29a058ffffff440f54"
+    },
+    {
+      "role": "contact_core",
+      "offset": 192,
+      "hex": "4c8bc24883c250488bfa410fb64802410fb65803"
+    },
+    {
+      "role": "contact_core",
+      "offset": 221,
+      "hex": "488d0449450f28"
+    },
+    {
+      "role": "contact_core",
+      "offset": 266,
+      "hex": "48c1e0044803d0"
+    },
+    {
+      "role": "contact_core",
+      "offset": 312,
+      "hex": "4c8bca"
+    },
+    {
+      "role": "contact_core",
+      "offset": 451,
+      "hex": "f3410f1001"
+    },
+    {
+      "role": "static_core",
+      "offset": 160,
+      "hex": "4c8bc2410f28ef4883c250488bfa410fb64802410fb65803"
+    },
+    {
+      "role": "static_core",
+      "offset": 209,
+      "hex": "488d0449"
+    },
+    {
+      "role": "static_core",
+      "offset": 232,
+      "hex": "48c1e0044803d0"
+    },
+    {
+      "role": "static_core",
+      "offset": 269,
+      "hex": "4c8bca"
+    },
+    {
+      "role": "static_core",
+      "offset": 339,
+      "hex": "f3410f1001"
+    },
+    {
+      "role": "static_core",
+      "offset": 483,
+      "hex": "0f59c8410f28c70f5cc30f5cd10f5fd0f30f108424180100000fc6c0000f58d30f5dd00f28ca0f58ea0f5ccb0f28c1410f59cc0f"
+    },
+    {
+      "role": "static_core",
+      "offset": 534,
+      "hex": "0f59c60f5948d44883c030f3410f11134983c304440f58c8"
+    },
+    {
+      "role": "contact_core",
+      "offset": 1306,
+      "hex": "f3450f111c24410f28c3410fc6c355f3410f11442404410f28c4410fc6c455450fc6dbaaf3450f115c2408440f289c24c0000000f3410f114504410f28c5f3450f116500410fc6c555450fc6e4aaf3450f116508440f28a424b0000000f3450f116c2410f3410f11442414410f28c6410fc6c655450fc6edaaf3450f116c2418440f28ac24a0000000f3450f117510450fc6f6aaf3450f117518440f28b42490000000f3410f1145144881c438010000415f415d415c5ec3"
+    },
+    {
+      "role": "static_core",
+      "offset": 1084,
+      "hex": "f3450f110f410f28c1410fc6c155f3410f114704410f28c2410fc6c255450fc6c9aaf3450f114f08440f288c2480000000f3450f115710450fc6d2aaf3450f115718440f28542470f3410f1147144881c4e0000000415f415e415cc3"
+    }
+  ],
+  "fieldOperands": [
+    {
+      "role": "contact_core",
+      "offset": 34,
+      "prefix": "488b51",
+      "mode": "u8",
+      "field": "descriptor.constraint"
+    },
+    {
+      "role": "contact_core",
+      "offset": 38,
+      "prefix": "0fb771",
+      "mode": "u8",
+      "field": "descriptor.length"
+    },
+    {
+      "role": "contact_wrapper",
+      "offset": 80,
+      "prefix": "4883c7",
+      "mode": "u8",
+      "field": "descriptor.stride"
+    },
+    {
+      "role": "contact_core",
+      "offset": 195,
+      "prefix": "4883c2",
+      "mode": "u8",
+      "field": "header.bytes"
+    },
+    {
+      "role": "contact_core",
+      "offset": 202,
+      "prefix": "410fb648",
+      "mode": "u8",
+      "field": "header.normalCount"
+    },
+    {
+      "role": "contact_core",
+      "offset": 207,
+      "prefix": "410fb658",
+      "mode": "u8",
+      "field": "header.frictionCount"
+    },
+    {
+      "role": "static_core",
+      "offset": 541,
+      "prefix": "4883c0",
+      "mode": "u8",
+      "field": "header.pointStride"
+    },
+    {
+      "role": "static_core",
+      "offset": 352,
+      "prefix": "4983c1",
+      "mode": "u8",
+      "field": "header.forceStride"
+    },
+    {
+      "role": "contact_core",
+      "offset": 1368,
+      "prefix": "f3450f1165",
+      "mode": "u8",
+      "field": "body.vector0"
+    },
+    {
+      "role": "contact_core",
+      "offset": 1443,
+      "prefix": "f3450f1175",
+      "mode": "u8",
+      "field": "body.vector1"
+    }
+  ],
+  "targetOperands": [
+    {
+      "role": "contact_wrapper",
+      "offset": 75,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8464416
+    },
+    {
+      "role": "contact_wrapper",
+      "offset": 136,
+      "prefix": "e9",
+      "mode": "rel32",
+      "targetRva": 8464416
+    },
+    {
+      "role": "static_wrapper",
+      "offset": 75,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8466608
+    },
+    {
+      "role": "static_wrapper",
+      "offset": 136,
+      "prefix": "e9",
+      "mode": "rel32",
+      "targetRva": 8466608
+    },
+    {
+      "role": "contact_core",
+      "offset": 17,
+      "prefix": "0f280d",
+      "mode": "rip32",
+      "targetRva": 25992096
+    }
+  ],
+  "layout": {
+    "descriptor": {
+      "constraint": 32,
+      "length": 30,
+      "stride": 48
+    },
+    "header": {
+      "bytes": 80,
+      "normalCount": 2,
+      "frictionCount": 3,
+      "pointStride": 48,
+      "forceStride": 4
+    },
+    "body": {
+      "vector0": 0,
+      "vector1": 16
+    }
+  },
+  "variants": [
+    {
+      "kind": 58,
+      "role": "pgs_friction_contact",
+      "wrapper": "contact_wrapper",
+      "core": "contact_core",
+      "constraintTags": [
+        1,
+        6
+      ],
+      "dispatchTableRva": 29603472
+    },
+    {
+      "kind": 59,
+      "role": "pgs_friction_static",
+      "wrapper": "static_wrapper",
+      "core": "static_core",
+      "constraintTags": [
+        5
+      ],
+      "dispatchTableRva": 29603472
+    }
+  ],
+  "vectorMask": {
+    "rva": 25992096,
+    "hex": "ffffffffffffffffffffffff00000000"
+  },
+  "limits": {
+    "maxNormals": 255,
+    "maxConstraintBytes": 65536
+  },
+  "recordBoundary": "Existing kind64 model holds two 48-byte body-prefix copies; world holds selected side after solve. Body-read success was not recorded: lane differences remain conditional observations. Archive solverConstraint windows have independently authenticated successful framing/reads."
+}

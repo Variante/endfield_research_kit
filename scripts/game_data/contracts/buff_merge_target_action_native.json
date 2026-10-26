@@ -1,0 +1,163 @@
+{
+  "schema": "endfield.buff-merge-target-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "234": "mergeTarget"
+  },
+  "records": {
+    "mergeTarget": {
+      "sourceContract": "buff_ea_native.json",
+      "wrapperTypeDefinition": 16237,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MergeTargetAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9574,
+      "runtimeTypeName": "Beyond.Gameplay.Core.MergeTargetAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        121156,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MergeTargetAction_DataForMemoryPack",
+        "Deserialize",
+        65103328
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 65103472,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103495,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84390100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65103513,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103535,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84100100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 65103500
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65103546,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103568,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84EF0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65103579,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103601,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84CE0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "mergeHittableTargets",
+          "declaredType": "bool",
+          "setterMethodIndex": 121151,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 65103612,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103635,
+            "targetRva": 65105984,
+            "methodIndex": 121151
+          },
+          "sourceToDestinationHex": "4885F60F84AD0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "targetGroupKey",
+          "declaredType": "string",
+          "setterMethodIndex": 121152,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 65103646,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103669,
+            "targetRva": 65106032,
+            "methodIndex": 121152
+          },
+          "sourceToDestinationHex": "4885F60F848B0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "targets",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TargetSettings>",
+          "setterMethodIndex": 121153,
+          "kind": "target-list",
+          "sourceCall": {
+            "rva": 65103687,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65103706,
+            "targetRva": 65106080,
+            "methodIndex": 121153
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 65103674
+        }
+      ]
+    }
+  },
+  "dependencies": [
+    "buff_target_settings_child_native.json",
+    "memorypack_utf8_source_helper_native.json"
+  ],
+  "evidenceBoundary": {
+    "exact": "Current independent union route and seven-member source order joined to generated setter names, parameter types and original source-to-destination spans. Historical tag and six-member layout are excluded.",
+    "direct": "Four inherited operands, mergeHittableTargets byte, targetGroupKey string source and targets List<TargetSettings> closed MethodSpec. Each nonnull reached list element requires its own exact recursive target receipt.",
+    "conditional": "Shared reference-list/provider dispatch, compatible buffered reader state and normal child returns; a static closed context does not prove live provider choice or native callback behavior.",
+    "structuralOnly": "Raw Boolean/priority/index bits are preserved as stored. Null wrapper, null/empty string, null/empty list and null list elements remain distinct.",
+    "unresolved": "Native inherited/owned setter execution, evaluated flag and key, target selection, merging/replacement, provider outcomes, child effects and enclosing root or gameplay execution."
+  }
+}

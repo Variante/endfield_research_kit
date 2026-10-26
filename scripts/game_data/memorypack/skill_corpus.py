@@ -105,6 +105,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_bytes as _AB
 from scripts.common import canonical_json_sha256 as _canonical_sha256
 from scripts.game_data.memorypack.corpus_gate import (
     DEFAULT_CLI,
@@ -1735,7 +1736,7 @@ def _join_and_frame(
                 int(framed["candidates"][0]["startOffset"], 0),
             )
         timeline_play_animation_profile = None
-        if len(data) >= 23 and data[20:23] == b"\xFA\x15\x01":
+        if len(data) >= 23 and data[20:23] == _AB("Core_PlayAnimationAction_PlayAnimationActionData"):
             try:
                 timeline_play_animation_profile = decode_first_timeline_play_animation(
                     data,
@@ -1744,7 +1745,7 @@ def _join_and_frame(
                 _fail(
                     "skill-timeline-play-animation-profile-failed",
                     source=path,
-                    expected="exact current tag-0x0115 first TimelineActionData",
+                    expected="exact current Core_PlayAnimationAction_PlayAnimationActionData first TimelineActionData",
                     actual=str(exc),
                 )
             if timeline_play_animation_profile.get("wholeActionGroupDataExact"):
@@ -1756,7 +1757,7 @@ def _join_and_frame(
                 )
                 timeline_play_animation_profile["topLevelContinuation"] = continuation
         timeline_play_animation_step_profile = None
-        if len(data) >= 23 and data[20:23] == b"\xFA\x16\x01":
+        if len(data) >= 23 and data[20:23] == _AB("Core_PlayAnimationWithStep_PlayAnimationWithStepData"):
             try:
                 timeline_play_animation_step_profile = (
                     decode_first_timeline_play_animation_step(
@@ -1767,7 +1768,7 @@ def _join_and_frame(
                 _fail(
                     "skill-timeline-play-animation-step-profile-failed",
                     source=path,
-                    expected="exact current tag-0x0116 first TimelineActionData",
+                    expected="exact current Core_PlayAnimationWithStep_PlayAnimationWithStepData first TimelineActionData",
                     actual=str(exc),
                 )
             if timeline_play_animation_step_profile.get("wholeActionGroupDataExact"):
@@ -1787,7 +1788,7 @@ def _join_and_frame(
             and int.from_bytes(data[6:10], "little", signed=True) > 0
             and data[10] == 4
             and data[15] == 3
-            and data[20] == 0x92
+            and data[20:21] == _AB("Core_CreateBuffAction_Data")
             and int.from_bytes(data[16:20], "little", signed=True) > 0
         ):
             try:
@@ -1798,7 +1799,7 @@ def _join_and_frame(
                 _fail(
                     "skill-timeline-create-buff-profile-failed",
                     source=path,
-                    expected="exact current tag-0x0092 first CreateBuff action",
+                    expected="exact current Core_CreateBuffAction_Data first CreateBuff action",
                     actual=str(exc),
                 )
             if timeline_create_buff_profile.get("wholeActionGroupDataExact"):

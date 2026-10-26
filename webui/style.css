@@ -7409,6 +7409,11 @@ details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
   align-items: start;
 }
 
+/* Renderer/material evidence is too wide for the compact media facts column. */
+#asset-detail-body:has(.asset-fact-renderer) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .asset-panel {
   min-width: 0;
 }
@@ -7424,6 +7429,7 @@ details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
 
 .asset-preview-bg-controls {
   display: flex;
+  flex-wrap: wrap;
   min-height: 32px;
   align-items: center;
   gap: 10px;
@@ -7437,6 +7443,7 @@ details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
 }
 
 .asset-preview-bg-controls label {
+  white-space: nowrap;
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -7520,6 +7527,20 @@ details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
   background: transparent;
 }
 
+.asset-stored-texture {
+  margin: 10px 0;
+  white-space: pre-line;
+}
+
+.asset-stored-texture img {
+  display: block;
+  max-width: 100%;
+  max-height: 128px;
+  object-fit: contain;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+}
+
 #asset-model-axes {
   position: absolute;
   left: 8px;
@@ -7534,7 +7555,7 @@ details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
 }
 
 .asset-preview-note {
-  margin-top: 10px;
+  margin: 10px 0;
   color: var(--muted);
   font-size: 12px;
 }
@@ -7564,11 +7585,20 @@ details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
   letter-spacing: 0.08em;
 }
 
+.asset-fact.asset-fact-renderer {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
 .asset-fact-value {
   margin-top: 0;
   color: var(--text);
   font-size: 13px;
   word-break: break-word;
+}
+
+.asset-fact-multiline {
+  white-space: pre-line;
 }
 
 .asset-subhead {

@@ -1,0 +1,119 @@
+{
+  "schema": "endfield.dynamic-mission-string-enqueue-native-claims.v1",
+  "status": "reviewed",
+  "methods": {
+    "consumer": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "_EnqueueCompsForStr",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": [
+        "Int32"
+      ]
+    },
+    "ownerRequest": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "_EnqueueOwnerComps",
+      "callAbi": "instance",
+      "returnType": "Void",
+      "parameters": [
+        "Unity.Collections.NativeParallelHashSet`1<UInt64>"
+      ]
+    }
+  },
+  "program": [
+    "mov [rsp+0x8], rbx",
+    "push rdi",
+    "sub rsp, 0x30",
+    "cmp [rip+*",
+    "mov edi, edx",
+    "mov rbx, rcx",
+    "jne *",
+    "lea rcx, [rip+*",
+    "call *",
+    "lea rcx, [rip+*",
+    "call *",
+    "mov [rip+*",
+    "xorps xmm0, xmm0",
+    "xor edx, edx",
+    "mov ecx, 0xf652",
+    "movups [rsp+0x20], xmm0",
+    "call *",
+    "test al, al",
+    "jne *",
+    "mov rcx, [rbx+0x30]",
+    "test rcx, rcx",
+    "je *",
+    "mov r9, [rip+*",
+    "lea r8, [rsp+0x20]",
+    "mov edx, edi",
+    "call *",
+    "test al, al",
+    "je *",
+    "movaps xmm0, [rsp+0x20]",
+    "lea rdx, [rsp+0x20]",
+    "xor r8d, r8d",
+    "movdqa [rsp+0x20], xmm0",
+    "mov rcx, rbx",
+    "call *",
+    "mov rax, [rbx+0x48]",
+    "test rax, rax",
+    "je *",
+    "cmp [rax+0x20], 0x0",
+    "jle *",
+    "mov rcx, rbx",
+    "call *",
+    "jmp *",
+    "xor edx, edx",
+    "mov ecx, 0xf652",
+    "call *",
+    "test rax, rax",
+    "jne *",
+    "call *",
+    "int3",
+    "xor r9d, r9d",
+    "mov r8d, edi",
+    "mov rdx, rbx",
+    "mov rcx, rax",
+    "call *",
+    "mov rbx, [rsp+0x40]",
+    "add rsp, 0x30",
+    "pop rdi",
+    "ret"
+  ],
+  "evidenceBoundary": {
+    "direct": "actual typed Dictionary<Int32,NativeParallelHashSet<UInt64>> lookup request; successful selected call followed by same-local address and 16B mechanical copy to actual typed owner request",
+    "conditional": [
+      "actual IFix returns false",
+      "system/dictionary/pending references nonnull when reached",
+      "initialization and opaque calls return normally",
+      "lookup reference output and owner request support the observed compatible normal indirect parameter/local-storage ABI; complete managed size/by-value ABI unproved",
+      "opaque callees do not overwrite caller local16B or saved frame/registers"
+    ],
+    "unresolved": [
+      "managed value instance size/field layout",
+      "dictionary implementation or mutation",
+      "pending carrier raw Int32+0x20 interpretation",
+      "component/entity allocation or actual refresh"
+    ]
+  },
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "fields": {
+    "lookup": {
+      "name": "m_strCaredIdMap",
+      "offset": 48
+    },
+    "pending": {
+      "name": "m_pendingRefreshCompSet",
+      "offset": 72
+    }
+  }
+}

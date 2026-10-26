@@ -1,0 +1,423 @@
+{
+  "schema": "endfield.wwise-mixer-observer.v2",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "storedOwnerIdentity": {
+    "ownerContract": "wwise_source_native",
+    "ownerTransport": "anonymousOwnerSourceTransport",
+    "endpoint": "constructor",
+    "windowIndex": 0,
+    "blobProjectionHook": "anonymousSourceSelector",
+    "blobProjectionArgumentIndex": 2,
+    "retainedBlob": {
+      "bodyOffset": 39,
+      "instructionHex": "488bf2",
+      "argumentIndex": 1
+    },
+    "retainedSource": {
+      "bodyOffset": 26,
+      "instructionHex": "498be9",
+      "argumentIndex": 3
+    },
+    "fields": [
+      {
+        "name": "ownerPlaybackSerial",
+        "offset": 616,
+        "kind": "u32",
+        "sourceBlobField": "playbackSerialWord",
+        "loadBodyOffset": 194,
+        "loadInstructionHex": "8b4634",
+        "storeBodyOffset": 197,
+        "storeInstructionHex": "898768020000"
+      },
+      {
+        "name": "ownerExternalAllocation",
+        "offset": 596,
+        "kind": "pointer",
+        "sourceBlobField": "externalDescriptorAllocationPointer",
+        "loadBodyOffset": 223,
+        "loadInstructionHex": "488b4620",
+        "storeBodyOffset": 234,
+        "storeInstructionHex": "48898754020000"
+      },
+      {
+        "name": "ownerStoredSource",
+        "offset": 648,
+        "kind": "pointer",
+        "storeBodyOffset": 310,
+        "storeInstructionHex": "4889af88020000"
+      }
+    ]
+  },
+  "abiWitnesses": [
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "outputConsumer",
+      "windowIndex": 0,
+      "bodyOffset": 21,
+      "instructionHex": "f30f104d48",
+      "role": "fifth stack gain pair; integer/pointer register arguments retained in the borrowed body"
+    },
+    {
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkInput",
+      "windowIndex": 2,
+      "bodyOffset": 254,
+      "instructionHex": "f20f10757f",
+      "role": "fifth stack gain pair is loaded as eight raw bytes"
+    }
+  ],
+  "hookEdits": [
+    {
+      "ownerGroup": "contextSourceSampleBuffer",
+      "appendResultMemory": [
+        {
+          "name": "ownerPlaybackSerial",
+          "argIndex": 0,
+          "offset": 616,
+          "kind": "u32",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "ownerExternalAllocation",
+          "argIndex": 0,
+          "offset": 596,
+          "kind": "pointer",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "ownerStoredSource",
+          "argIndex": 0,
+          "offset": 648,
+          "kind": "pointer",
+          "pointerOffsets": [
+            208
+          ],
+          "requireMemory": {
+            "name": "primaryOwner",
+            "nonzero": true
+          }
+        }
+      ]
+    },
+    {
+      "ownerGroup": "busRouteMix",
+      "appendMemory": [
+        {
+          "name": "firstMixRow",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "pointer",
+          "requireMemory": {
+            "name": "mixRowCount",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowDescriptor",
+          "argIndex": 3,
+          "offset": 24,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowSamplePointer",
+          "argIndex": 3,
+          "offset": 0,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowFormat",
+          "argIndex": 3,
+          "offset": 8,
+          "kind": "u32",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowCapacity",
+          "argIndex": 3,
+          "offset": 16,
+          "kind": "u16",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowValidFrames",
+          "argIndex": 3,
+          "offset": 18,
+          "kind": "u16",
+          "pointerOffsets": [
+            0,
+            24
+          ],
+          "requireMemory": {
+            "name": "firstRowDescriptor",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowPreviousGainBits",
+          "argIndex": 3,
+          "offset": 112,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowTargetGainBits",
+          "argIndex": 3,
+          "offset": 116,
+          "kind": "u32",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "firstRowMatrix",
+          "argIndex": 3,
+          "offset": 224,
+          "kind": "pointer",
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "firstMixRow",
+            "nonzero": true
+          }
+        }
+      ]
+    },
+    {
+      "ownerGroup": "outputConsumer",
+      "abiId": "win64.void_integer5_result.v1",
+      "memory": [
+        {
+          "name": "sinkInterface",
+          "argIndex": 0,
+          "offset": 624,
+          "kind": "pointer"
+        },
+        {
+          "name": "outputNode",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "argument"
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 1,
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 1,
+          "offset": 16,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 1,
+          "offset": 18,
+          "kind": "u16"
+        },
+        {
+          "name": "incomingGainPairBits",
+          "argIndex": 6,
+          "offset": 0,
+          "kind": "argument"
+        },
+        {
+          "name": "samplePrefix",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            0
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "sinkInterface",
+          "argIndex": 0,
+          "offset": 624,
+          "kind": "pointer"
+        }
+      ]
+    },
+    {
+      "ownerGroup": "sinkInput",
+      "abiId": "win64.void_integer5_result.v1",
+      "appendMemory": [
+        {
+          "name": "incomingGainPairBits",
+          "argIndex": 6,
+          "offset": 0,
+          "kind": "argument"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "renderClient",
+          "argIndex": 0,
+          "offset": 88,
+          "kind": "pointer"
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 0,
+          "offset": 96,
+          "kind": "pointer"
+        },
+        {
+          "name": "channelConfiguration",
+          "argIndex": 0,
+          "offset": 104,
+          "kind": "u32"
+        },
+        {
+          "name": "capacityFrames",
+          "argIndex": 0,
+          "offset": 112,
+          "kind": "u16"
+        },
+        {
+          "name": "validFrames",
+          "argIndex": 0,
+          "offset": 114,
+          "kind": "u16"
+        },
+        {
+          "name": "inputFlags",
+          "argIndex": 0,
+          "offset": 615,
+          "kind": "u8"
+        },
+        {
+          "name": "samplePrefix",
+          "argIndex": 0,
+          "offset": 0,
+          "kind": "bytes",
+          "pointerOffsets": [
+            96
+          ],
+          "countField": "validFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ]
+    }
+  ],
+  "addedHooks": [
+    {
+      "index": 34,
+      "name": "AkSoundEngine.masterBusOutput",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "masterBusOutput",
+      "abiId": "win64.void_integer2_result.v1",
+      "memory": [
+        {
+          "name": "busInputs",
+          "argIndex": 0,
+          "offset": 192,
+          "kind": "pointer"
+        },
+        {
+          "name": "busInputCount",
+          "argIndex": 0,
+          "offset": 200,
+          "kind": "u32"
+        },
+        {
+          "name": "outputNode",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "argument"
+        },
+        {
+          "name": "sinkInterface",
+          "argIndex": 1,
+          "offset": 624,
+          "kind": "pointer"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "sinkInterface",
+          "argIndex": 1,
+          "offset": 624,
+          "kind": "pointer"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "Current source-output owner serial/allocation/source storage, actual R9 mix-row prefix and first-row descriptor/matrix/gain storage; paired master output, output-consumer and sink conversion with raw stack gain pairs.",
+    "conditional": "Selected complete native owners authenticate the borrowed operands. Completed same-thread output children remain with a sampled master call. Sparse row/PCM prefixes and non-atomic reads do not establish a complete engine frame or asynchronous generation.",
+    "unresolved": "Full row arrays and buffers, task dependency generations, effects, resampling branches, source/owner destruction and complete Event contribution to a mixed device frame."
+  },
+  "samplingBoundary": "Force only outputConsumer and sinkInput children of sampled masterBusOutput. Other frame consumers keep independent budgets. Preserve parent recorder/window during normal stop."
+}

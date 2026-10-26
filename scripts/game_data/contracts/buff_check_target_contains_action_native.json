@@ -1,0 +1,142 @@
+{
+  "schema": "endfield.buff-check-target-contains-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "checkTargetContains": {
+      "sourceContract": "buff_7e_native.json",
+      "wrapperTypeDefinition": 16701,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetContains_DataForMemoryPack",
+      "runtimeTypeDefinition": 13565,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckTargetContains+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        124718,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetContains_DataForMemoryPack",
+        "Deserialize",
+        68794928
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 68795072,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68795095,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F841E0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 68795113,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68795135,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84F50000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 68795100
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 68795146,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68795168,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84D40000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 68795179,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68795201,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84B30000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "childTargetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124714,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 68795219,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68795242,
+            "targetRva": 68795392,
+            "methodIndex": 124714
+          },
+          "sourceToDestinationHex": "4885F60F848B0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 68795206
+        },
+        {
+          "fieldName": "parentTargetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124715,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 68795260,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68795279,
+            "targetRva": 68795440,
+            "methodIndex": 124715
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 68795247
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "126": "checkTargetContains"
+  },
+  "evidenceBoundary": {
+    "exact": "Current six-member route/source/read order and both independent TargetSettings contexts, source-return bridges and generated setter identities.",
+    "direct": "Named childTargetSettings and parentTargetSettings retain their separate stored source spans; four inherited operands retain raw bits.",
+    "conditional": "Both nonnull settings require independent recursive TargetSettings receipts at their original endpoints. Unsupported children refuse the condition. Whole-root admission requires complete current family and canonical gates.",
+    "unresolved": "Live provider/target selection, acquired target sets, containment result, IFix paths, refill/error parity, runtime execution and resulting state."
+  }
+}

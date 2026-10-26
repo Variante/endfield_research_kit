@@ -23,10 +23,15 @@ READ_ORDER=[{"fieldName":"isEnable","kind":"byte"},{"fieldName":"priorityLevel",
 
 
 def _contract() -> dict[str,Any]:
-    value,_=read_reviewed_contract(CONTRACT_PATH,schema="endfield.buff-leaf-actions-native-contract.v5",
+    value,_=read_reviewed_contract(CONTRACT_PATH,schema="endfield.buff-leaf-actions-native-contract.v9",
         status="exact-current-build",label=LABEL)
-    if (set(value.get("records",{}))!={"notNextCheck","pauseBuffTime","abnormalStartFinish","refreshBuffAttrModifier","squadInFight","moveGait"}
-            or len(value["actionDispatch"])!=6 or set(value["actionDispatch"].values())!=set(value["records"])
+    if (set(value.get("records",{}))!={"notNextCheck","pauseBuffTime","abnormalStartFinish","refreshBuffAttrModifier","squadInFight","moveGait","checkSkillCastId","skillAffix","triggerSpellBurst","checkDamageType"}
+            or len(value["actionDispatch"])!=10 or set(value["actionDispatch"].values())!=set(value["records"])
+            or value["actionDispatch"].get("93")!="checkDamageType"
+            or [(m["fieldName"],m["kind"]) for m in value["records"]["checkDamageType"]["members"]]
+               !=[(m["fieldName"],m["kind"]) for m in READ_ORDER]+[("damageType","scalar32")]
+            or any(value["records"][key].get("inheritedActionSource",{}).get("mode")!="reader-rdi-ref-wrapper-rbx-four-common-primitives"
+                   for key in ("checkSkillCastId","skillAffix"))
             or any(r.get("inheritedMemberCount")!=4 or [{"fieldName":m["fieldName"],"kind":m["kind"]} for m in r["members"][:4]]!=READ_ORDER
                    or any(m["kind"] not in {"byte","scalar32"} for m in r["members"])
                    for r in value["records"].values())):raise ValueError(f"{LABEL}.contract:shape")
@@ -48,9 +53,9 @@ def _fail(check: str, expected: Any, actual: Any, *, record: str="", field: str=
     raise error
 
 
-def validate_current_native_contract() -> dict[str,Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str,Any]:
     contract=_contract();expected=contract["nativeInputs"]
-    gate=check_installed_native_inputs(expected["GameAssembly.dll"],expected["global-metadata.dat"])
+    gate=check_installed_native_inputs(expected["GameAssembly.dll"],expected["global-metadata.dat"],gameassembly=gameassembly,metadata=metadata)
     if gate.status!="validated":return {"status":gate.status,"detail":gate.detail,"nativeInputs":expected}
     unity=Path(gate.gameassembly).parent / "UnityPlayer.dll"
     if not unity.is_file() or hashlib.sha256(unity.read_bytes()).hexdigest().upper()!=expected["UnityPlayer.dll"]:

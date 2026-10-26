@@ -14,6 +14,19 @@ The shared theme offers Endfield (light, default) and Talos Night (dark), applie
 before first paint. Saved Classic or unknown choices fall back to Endfield;
 valid saved choices persist across pages and reloads. Assets uses plain preview and information columns; frontend
 layout details remain in `webui/README.md`.
+Assets' Model only control is a frontend rendering preference; it bypasses
+material appearance without changing published geometry or material evidence.
+Its transparent-face sorting also stays frontend-only and retains published
+material render queues and depth-write settings.
+Assets owns its optional collision runtime projection and never writes another
+page's data. Admission/native/source gates govern runtime labels separately from
+the stored-geometry previews; the page contract is in
+[`webui/assets.md`](webui/assets.md).
+Its optional stored collider/prefab owner projection also belongs to Assets;
+it revalidates scene extraction receipts and preserves the runtime evidence
+boundary independently of authored enabled/active settings.
+Optional Model-source metadata uses that same Assets publication and source
+receipts; it links to Data's last exported raw files without writing Data outputs.
 
 Page title typography is shared in `webui/style.css`; Activities, Audio and
 Gameplay's top catalog heading use the same rule as the other list pages,
@@ -424,7 +437,7 @@ Gameplay character metadata and facets distinguish elemental type from main
 and secondary abilities (`mainAttrType` / `subAttrType`). Loadout equipment
 terms keep the authored main/secondary target label beside its resolved ability;
 changing character changes the resolved label, never the original target scope.
-Equipment main-ability terms use an accent tint and solid underline; secondary-ability terms use the secondary accent and dashed underline. Character Loadout applies the same treatment to equipment attributes resolved against the selected character, with explicit main/secondary labels; combined targets keep both indicators. These are display cues and do not change calculation or target scope.
+Equipment main-ability terms use bold text with a background; secondary-ability terms use only the same background. Both retain their existing text colors, without underlines or borders. Character Loadout applies the same treatment to equipment attributes resolved against the selected character, with explicit main/secondary labels; combined targets use the main-ability bold treatment. These are display cues and do not change calculation or target scope.
 
 Assets publishes Story Wiki's authored item-to-icon bindings as `wikiItemIcons`
 in `story_media.json`, read from the current exported ItemTable. Gameplay's

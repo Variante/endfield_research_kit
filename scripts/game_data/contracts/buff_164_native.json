@@ -38,6 +38,54 @@
       "endRva": 83601286,
       "sha256": "6200B9CB4E6D777DB80499337DD30E6B9C6AF5CD81E688AC8E7B78FE91F5E8D6",
       "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 79834730,
+      "endRva": 79834775,
+      "sha256": "D2734E25B242526810BBFB40ADA6A51218DE1F0423FDADE791F627C8DEF785D7",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 79834776,
+      "endRva": 79834821,
+      "sha256": "55C86AC0B9DEFF51F193C280BB25A49785472607F60DB99CDA84FDBA85A26D08",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 52483776,
+      "endRva": 52483803,
+      "sha256": "6B3F0BBBC04E6C5227842435DAC2B8AFEE90B7E817EE2422D5983A7D4D59952C",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 58153824,
+      "endRva": 58153851,
+      "sha256": "2F53EF4DA5A874110D655CEFBDCBB949BF75A76555860903B1C548812B532C2D",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 58153856,
+      "endRva": 58153883,
+      "sha256": "2EFBFC76AD818A500C0FDF69E3A13ADF2833AB52B0645A70E0138442DB76A3D4",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
+    },
+    {
+      "startRva": 58153888,
+      "endRva": 58153915,
+      "sha256": "596666C73B74D62A6BD2CEC96BB77AEBA7F6E9C58A05155175D65074FC249A73",
+      "boundary": "Current complete inherited setter or primitive owned window; ordinary transfers are separately proved; external refill/error/live effects remain unresolved."
     }
   ],
   "nestedContexts": [
@@ -67,5 +115,5 @@
       "scalar32"
     ]
   },
-  "boundary": "Exact selected union dispatch and module/token joins identify SkillAffixAction. Header4 consumes only the common byte and three DWORDs. The Priority context belongs to the first DWORD and adds no wire header. There are no additional payloads, nested objects or collection counts. Preserve arbitrary scalar/byte bits, independent FF union and FF wrapper, the full extended union tag 0x164, and the required final DWORD. Normal extended records are 17 bytes; null wrappers are four. Static identity is exact and selected source order direct; framing remains structural-only. Skill-affix behavior, authored field meanings, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+  "boundary": "Exact selected union dispatch and module/token joins identify SkillAffixAction. Header4 consumes only the common byte and three DWORDs. The Priority context belongs to the first DWORD and adds no wire header. There are no additional payloads, nested objects or collection counts. Preserve arbitrary scalar/byte bits, independent FF union and FF wrapper, the full extended union tag 0x164, and the required final DWORD. Normal extended records are 17 bytes; null wrappers are four. Static identity is exact and selected source order direct; framing remains structural-only. Skill-affix behavior, authored field meanings, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved. Separately validated inherited source programs prove buffered Boolean normalization, DWORD cursor accounting and four base-Data stores under normal Win64 returns; skill affix selection or effects remain unresolved."
 }

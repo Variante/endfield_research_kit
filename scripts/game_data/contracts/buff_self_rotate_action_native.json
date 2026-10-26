@@ -1,0 +1,4583 @@
+{
+  "schema": "endfield.buff-self-rotate-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "selfRotateAction": {
+      "sourceContract": "buff_144_native.json",
+      "wrapperTypeDefinition": 16415,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SelfRotateAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9793,
+      "runtimeTypeName": "Beyond.Gameplay.Core.SelfRotateAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member18",
+      "readerMethod": [
+        122619,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SelfRotateAction_DataForMemoryPack",
+        "Deserialize",
+        58156800
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58156975,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157002,
+            "rawHex": "884110",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 16,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F84E0030000488B4E104885C90F84D3030000",
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "inheritedDirectStore": {
+            "argumentMode": "wrapper-reader",
+            "argumentProgram": [
+              [
+                58156969,
+                "488B37"
+              ],
+              [
+                58156972,
+                "488BCB"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58156980,
+                "4885F6"
+              ],
+              [
+                58156983,
+                "0F84E0030000"
+              ],
+              [
+                58156989,
+                "488B4E10"
+              ],
+              [
+                58156993,
+                "4885C9"
+              ],
+              [
+                58156996,
+                "0F84D3030000"
+              ],
+              [
+                58157002,
+                "884110"
+              ]
+            ]
+          }
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157018,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157045,
+            "rawHex": "894114",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 20,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F84B5030000488B4E104885C90F84A8030000",
+          "sourceContextInstructionRva": 58157008,
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "inheritedDirectStore": {
+            "argumentMode": "reader-context-wrapper",
+            "argumentProgram": [
+              [
+                58157005,
+                "488BCB"
+              ],
+              [
+                58157008,
+                "488B1551369109"
+              ],
+              [
+                58157015,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157023,
+                "4885F6"
+              ],
+              [
+                58157026,
+                "0F84B5030000"
+              ],
+              [
+                58157032,
+                "488B4E10"
+              ],
+              [
+                58157036,
+                "4885C9"
+              ],
+              [
+                58157039,
+                "0F84A8030000"
+              ],
+              [
+                58157045,
+                "894114"
+              ]
+            ]
+          }
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157054,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157081,
+            "rawHex": "894118",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 24,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F8491030000488B4E104885C90F8484030000",
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "inheritedDirectStore": {
+            "argumentMode": "reader-wrapper",
+            "argumentProgram": [
+              [
+                58157048,
+                "488BCB"
+              ],
+              [
+                58157051,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157059,
+                "4885F6"
+              ],
+              [
+                58157062,
+                "0F8491030000"
+              ],
+              [
+                58157068,
+                "488B4E10"
+              ],
+              [
+                58157072,
+                "4885C9"
+              ],
+              [
+                58157075,
+                "0F8484030000"
+              ],
+              [
+                58157081,
+                "894118"
+              ]
+            ]
+          }
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157090,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157117,
+            "rawHex": "89411C",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 28,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F846D030000488B4E104885C90F8460030000",
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "inheritedDirectStore": {
+            "argumentMode": "reader-wrapper",
+            "argumentProgram": [
+              [
+                58157084,
+                "488BCB"
+              ],
+              [
+                58157087,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157095,
+                "4885F6"
+              ],
+              [
+                58157098,
+                "0F846D030000"
+              ],
+              [
+                58157104,
+                "488B4E10"
+              ],
+              [
+                58157108,
+                "4885C9"
+              ],
+              [
+                58157111,
+                "0F8460030000"
+              ],
+              [
+                58157117,
+                "89411C"
+              ]
+            ]
+          }
+        },
+        {
+          "fieldName": "advancedDirectionSettings",
+          "declaredType": "Beyond.Gameplay.Core.DirectionSettings",
+          "setterMethodIndex": 122603,
+          "kind": "direction-profile",
+          "sourceCall": {
+            "rva": 58157133,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157173,
+            "rawHex": "48896830",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 48
+          },
+          "sourceToDestinationHex": "488BE84885F60F843F03000033D2488BCEE8E80500004885C00F842C030000488D4830",
+          "observedGetterCall": {
+            "rva": 58157155,
+            "targetRva": 58158672
+          },
+          "sourceContextInstructionRva": 58157123,
+          "observedBarrierCall": {
+            "rva": 58157177,
+            "targetRva": 158528
+          },
+          "getterDirectStore": {
+            "mode": "reference-return",
+            "argumentMode": [
+              "reader",
+              "context",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157120,
+                "488BCB"
+              ],
+              [
+                58157123,
+                "488B159E339109"
+              ],
+              [
+                58157130,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157138,
+                "488BE8"
+              ],
+              [
+                58157141,
+                "4885F6"
+              ],
+              [
+                58157144,
+                "0F843F030000"
+              ],
+              [
+                58157150,
+                "33D2"
+              ],
+              [
+                58157152,
+                "488BCE"
+              ],
+              [
+                58157155,
+                "E8E8050000"
+              ],
+              [
+                58157160,
+                "4885C0"
+              ],
+              [
+                58157163,
+                "0F842C030000"
+              ],
+              [
+                58157169,
+                "488D4830"
+              ],
+              [
+                58157173,
+                "48896830"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157155,
+              "targetRva": 58158672
+            },
+            "barrierCall": {
+              "rva": 58157177,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "ignoreImmobilized",
+          "declaredType": "bool",
+          "setterMethodIndex": 122604,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58157188,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157224,
+            "rawHex": "40886860",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 96
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F840803000033D2488BCEE8B10500004885C00F84F5020000",
+          "observedGetterCall": {
+            "rva": 58157210,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "normalized-byte-return",
+            "argumentMode": [
+              "wrapper",
+              "reader"
+            ],
+            "argumentProgram": [
+              [
+                58157182,
+                "488B37"
+              ],
+              [
+                58157185,
+                "488BCB"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157193,
+                "0FB6E8"
+              ],
+              [
+                58157196,
+                "4885F6"
+              ],
+              [
+                58157199,
+                "0F8408030000"
+              ],
+              [
+                58157205,
+                "33D2"
+              ],
+              [
+                58157207,
+                "488BCE"
+              ],
+              [
+                58157210,
+                "E8B1050000"
+              ],
+              [
+                58157215,
+                "4885C0"
+              ],
+              [
+                58157218,
+                "0F84F5020000"
+              ],
+              [
+                58157224,
+                "40886860"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157210,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "immediateRotate",
+          "declaredType": "bool",
+          "setterMethodIndex": 122605,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58157234,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157270,
+            "rawHex": "40886854",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 84
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F84DA02000033D2488BCEE8830500004885C00F84C7020000",
+          "observedGetterCall": {
+            "rva": 58157256,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "normalized-byte-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157228,
+                "488BCB"
+              ],
+              [
+                58157231,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157239,
+                "0FB6E8"
+              ],
+              [
+                58157242,
+                "4885F6"
+              ],
+              [
+                58157245,
+                "0F84DA020000"
+              ],
+              [
+                58157251,
+                "33D2"
+              ],
+              [
+                58157253,
+                "488BCE"
+              ],
+              [
+                58157256,
+                "E883050000"
+              ],
+              [
+                58157261,
+                "4885C0"
+              ],
+              [
+                58157264,
+                "0F84C7020000"
+              ],
+              [
+                58157270,
+                "40886854"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157256,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "isRootMotionScale",
+          "declaredType": "bool",
+          "setterMethodIndex": 122606,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58157280,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157316,
+            "rawHex": "4088684C",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 76
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F84AC02000033D2488BCEE8550500004885C00F8499020000",
+          "observedGetterCall": {
+            "rva": 58157302,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "normalized-byte-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157274,
+                "488BCB"
+              ],
+              [
+                58157277,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157285,
+                "0FB6E8"
+              ],
+              [
+                58157288,
+                "4885F6"
+              ],
+              [
+                58157291,
+                "0F84AC020000"
+              ],
+              [
+                58157297,
+                "33D2"
+              ],
+              [
+                58157299,
+                "488BCE"
+              ],
+              [
+                58157302,
+                "E855050000"
+              ],
+              [
+                58157307,
+                "4885C0"
+              ],
+              [
+                58157310,
+                "0F8499020000"
+              ],
+              [
+                58157316,
+                "4088684C"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157302,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "overrideRotateRate",
+          "declaredType": "bool",
+          "setterMethodIndex": 122607,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58157326,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157362,
+            "rawHex": "40886855",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 85
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F847E02000033D2488BCEE8270500004885C00F846B020000",
+          "observedGetterCall": {
+            "rva": 58157348,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "normalized-byte-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157320,
+                "488BCB"
+              ],
+              [
+                58157323,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157331,
+                "0FB6E8"
+              ],
+              [
+                58157334,
+                "4885F6"
+              ],
+              [
+                58157337,
+                "0F847E020000"
+              ],
+              [
+                58157343,
+                "33D2"
+              ],
+              [
+                58157345,
+                "488BCE"
+              ],
+              [
+                58157348,
+                "E827050000"
+              ],
+              [
+                58157353,
+                "4885C0"
+              ],
+              [
+                58157356,
+                "0F846B020000"
+              ],
+              [
+                58157362,
+                "40886855"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157348,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "rootMotion",
+          "declaredType": "bool",
+          "setterMethodIndex": 122608,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58157372,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157408,
+            "rawHex": "40886838",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 56
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F845002000033D2488BCEE8F90400004885C00F843D020000",
+          "observedGetterCall": {
+            "rva": 58157394,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "normalized-byte-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157366,
+                "488BCB"
+              ],
+              [
+                58157369,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157377,
+                "0FB6E8"
+              ],
+              [
+                58157380,
+                "4885F6"
+              ],
+              [
+                58157383,
+                "0F8450020000"
+              ],
+              [
+                58157389,
+                "33D2"
+              ],
+              [
+                58157391,
+                "488BCE"
+              ],
+              [
+                58157394,
+                "E8F9040000"
+              ],
+              [
+                58157399,
+                "4885C0"
+              ],
+              [
+                58157402,
+                "0F843D020000"
+              ],
+              [
+                58157408,
+                "40886838"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157394,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "rootMotionAnimKey",
+          "declaredType": "string",
+          "setterMethodIndex": 122609,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 58157418,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157458,
+            "rawHex": "48896840",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 64
+          },
+          "sourceToDestinationHex": "488BE84885F60F842202000033D2488BCEE8CB0400004885C00F840F020000488D4840",
+          "observedGetterCall": {
+            "rva": 58157440,
+            "targetRva": 58158672
+          },
+          "observedBarrierCall": {
+            "rva": 58157462,
+            "targetRva": 158528
+          },
+          "getterDirectStore": {
+            "mode": "reference-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157412,
+                "488BCB"
+              ],
+              [
+                58157415,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157423,
+                "488BE8"
+              ],
+              [
+                58157426,
+                "4885F6"
+              ],
+              [
+                58157429,
+                "0F8422020000"
+              ],
+              [
+                58157435,
+                "33D2"
+              ],
+              [
+                58157437,
+                "488BCE"
+              ],
+              [
+                58157440,
+                "E8CB040000"
+              ],
+              [
+                58157445,
+                "4885C0"
+              ],
+              [
+                58157448,
+                "0F840F020000"
+              ],
+              [
+                58157454,
+                "488D4840"
+              ],
+              [
+                58157458,
+                "48896840"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157440,
+              "targetRva": 58158672
+            },
+            "barrierCall": {
+              "rva": 58157462,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "rootMotionDirectionType",
+          "declaredType": "Beyond.Gameplay.Core.SelfRotateAction+RootMotionDirectionType",
+          "setterMethodIndex": 122610,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157480,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157515,
+            "rawHex": "896850",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 80
+          },
+          "sourceToDestinationHex": "8BE84885F60F84E501000033D2488BCEE88E0400004885C00F84D2010000",
+          "observedGetterCall": {
+            "rva": 58157501,
+            "targetRva": 58158672
+          },
+          "sourceContextInstructionRva": 58157467,
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "scalar32-return",
+            "argumentMode": [
+              "context",
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157467,
+                "488B152ED38909"
+              ],
+              [
+                58157474,
+                "488BCB"
+              ],
+              [
+                58157477,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157485,
+                "8BE8"
+              ],
+              [
+                58157487,
+                "4885F6"
+              ],
+              [
+                58157490,
+                "0F84E5010000"
+              ],
+              [
+                58157496,
+                "33D2"
+              ],
+              [
+                58157498,
+                "488BCE"
+              ],
+              [
+                58157501,
+                "E88E040000"
+              ],
+              [
+                58157506,
+                "4885C0"
+              ],
+              [
+                58157509,
+                "0F84D2010000"
+              ],
+              [
+                58157515,
+                "896850"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157501,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "rootMotionStartFrame",
+          "declaredType": "int",
+          "setterMethodIndex": 122611,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157524,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157559,
+            "rawHex": "896848",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 72
+          },
+          "sourceToDestinationHex": "8BE84885F60F84B901000033D2488BCEE8620400004885C00F84A6010000",
+          "observedGetterCall": {
+            "rva": 58157545,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "scalar32-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157518,
+                "488BCB"
+              ],
+              [
+                58157521,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157529,
+                "8BE8"
+              ],
+              [
+                58157531,
+                "4885F6"
+              ],
+              [
+                58157534,
+                "0F84B9010000"
+              ],
+              [
+                58157540,
+                "33D2"
+              ],
+              [
+                58157542,
+                "488BCE"
+              ],
+              [
+                58157545,
+                "E862040000"
+              ],
+              [
+                58157550,
+                "4885C0"
+              ],
+              [
+                58157553,
+                "0F84A6010000"
+              ],
+              [
+                58157559,
+                "896848"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157545,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "rotateDirType",
+          "declaredType": "Beyond.Gameplay.Core.SelfRotateAction+RotateDirectionType",
+          "setterMethodIndex": 122612,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157575,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157610,
+            "rawHex": "89685C",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 92
+          },
+          "sourceToDestinationHex": "8BE84885F60F848601000033D2488BCEE82F0400004885C00F8473010000",
+          "observedGetterCall": {
+            "rva": 58157596,
+            "targetRva": 58158672
+          },
+          "sourceContextInstructionRva": 58157565,
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "scalar32-return",
+            "argumentMode": [
+              "reader",
+              "context",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157562,
+                "488BCB"
+              ],
+              [
+                58157565,
+                "488B15BCD28909"
+              ],
+              [
+                58157572,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157580,
+                "8BE8"
+              ],
+              [
+                58157582,
+                "4885F6"
+              ],
+              [
+                58157585,
+                "0F8486010000"
+              ],
+              [
+                58157591,
+                "33D2"
+              ],
+              [
+                58157593,
+                "488BCE"
+              ],
+              [
+                58157596,
+                "E82F040000"
+              ],
+              [
+                58157601,
+                "4885C0"
+              ],
+              [
+                58157604,
+                "0F8473010000"
+              ],
+              [
+                58157610,
+                "89685C"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157596,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "rotateRate",
+          "declaredType": "float",
+          "setterMethodIndex": 122613,
+          "kind": "raw-float32",
+          "sourceCall": {
+            "rva": 58157619,
+            "targetRva": 46828464
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157661,
+            "rawHex": "F30F117058",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 88
+          },
+          "sourceToDestinationHex": "0F28F04885F60F845901000033D2488BCEE8020400004885C00F8446010000488B37488BCB",
+          "observedGetterCall": {
+            "rva": 58157641,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "single-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46828464,
+                "48895C2408"
+              ],
+              [
+                46828469,
+                "57"
+              ],
+              [
+                46828470,
+                "4883EC30"
+              ],
+              [
+                46828474,
+                "83793004"
+              ],
+              [
+                46828478,
+                "488BD9"
+              ],
+              [
+                46828481,
+                "0F29742420"
+              ],
+              [
+                46828486,
+                "0F8CB6A3F701"
+              ],
+              [
+                46828492,
+                "488B4350"
+              ],
+              [
+                46828496,
+                "F30F1030"
+              ],
+              [
+                46828500,
+                "8B7B30"
+              ],
+              [
+                46828503,
+                "83EF04"
+              ],
+              [
+                46828506,
+                "0F88B5A3F701"
+              ],
+              [
+                46828512,
+                "4883435004"
+              ],
+              [
+                46828517,
+                "83434004"
+              ],
+              [
+                46828521,
+                "83434404"
+              ],
+              [
+                46828525,
+                "897B30"
+              ],
+              [
+                46828528,
+                "488B5C2440"
+              ],
+              [
+                46828533,
+                "0F28C6"
+              ],
+              [
+                46828536,
+                "0F28742420"
+              ],
+              [
+                46828541,
+                "4883C430"
+              ],
+              [
+                46828545,
+                "5F"
+              ],
+              [
+                46828546,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "single-return",
+            "argumentMode": [
+              "reader",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157613,
+                "488BCB"
+              ],
+              [
+                58157616,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157624,
+                "0F28F0"
+              ],
+              [
+                58157627,
+                "4885F6"
+              ],
+              [
+                58157630,
+                "0F8459010000"
+              ],
+              [
+                58157636,
+                "33D2"
+              ],
+              [
+                58157638,
+                "488BCE"
+              ],
+              [
+                58157641,
+                "E802040000"
+              ],
+              [
+                58157646,
+                "4885C0"
+              ],
+              [
+                58157649,
+                "0F8446010000"
+              ],
+              [
+                58157655,
+                "488B37"
+              ],
+              [
+                58157658,
+                "488BCB"
+              ],
+              [
+                58157661,
+                "F30F117058"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157641,
+              "targetRva": 58158672
+            }
+          }
+        },
+        {
+          "fieldName": "rotateType",
+          "declaredType": "Beyond.Gameplay.Core.SelfRotateAction+RotateType",
+          "setterMethodIndex": 122614,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58157673,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157708,
+            "rawHex": "896820",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 32
+          },
+          "sourceToDestinationHex": "8BE84885F60F842401000033D2488BCEE8CD0300004885C00F8411010000",
+          "observedGetterCall": {
+            "rva": 58157694,
+            "targetRva": 58158672
+          },
+          "sourceContextInstructionRva": 58157666,
+          "primitiveSource": {
+            "mode": "scalar32-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827184,
+                "48895C2408"
+              ],
+              [
+                46827189,
+                "4889742410"
+              ],
+              [
+                46827194,
+                "57"
+              ],
+              [
+                46827195,
+                "4883EC20"
+              ],
+              [
+                46827199,
+                "83793004"
+              ],
+              [
+                46827203,
+                "488BD9"
+              ],
+              [
+                46827206,
+                "0F8C9EA7F701"
+              ],
+              [
+                46827212,
+                "488B4350"
+              ],
+              [
+                46827216,
+                "8B30"
+              ],
+              [
+                46827218,
+                "8B7B30"
+              ],
+              [
+                46827221,
+                "83EF04"
+              ],
+              [
+                46827224,
+                "0F889FA7F701"
+              ],
+              [
+                46827230,
+                "4883435004"
+              ],
+              [
+                46827235,
+                "83434004"
+              ],
+              [
+                46827239,
+                "83434404"
+              ],
+              [
+                46827243,
+                "897B30"
+              ],
+              [
+                46827246,
+                "488B5C2430"
+              ],
+              [
+                46827251,
+                "8BC6"
+              ],
+              [
+                46827253,
+                "488B742438"
+              ],
+              [
+                46827258,
+                "4883C420"
+              ],
+              [
+                46827262,
+                "5F"
+              ],
+              [
+                46827263,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "scalar32-return",
+            "argumentMode": [
+              "wrapper",
+              "reader",
+              "context"
+            ],
+            "argumentProgram": [
+              [
+                58157655,
+                "488B37"
+              ],
+              [
+                58157658,
+                "488BCB"
+              ],
+              [
+                58157661,
+                "F30F117058"
+              ],
+              [
+                58157666,
+                "488B157FD28909"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157678,
+                "8BE8"
+              ],
+              [
+                58157680,
+                "4885F6"
+              ],
+              [
+                58157683,
+                "0F8424010000"
+              ],
+              [
+                58157689,
+                "33D2"
+              ],
+              [
+                58157691,
+                "488BCE"
+              ],
+              [
+                58157694,
+                "E8CD030000"
+              ],
+              [
+                58157699,
+                "4885C0"
+              ],
+              [
+                58157702,
+                "0F8411010000"
+              ],
+              [
+                58157708,
+                "896820"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157694,
+              "targetRva": 58158672
+            },
+            "scheduledPreviousStore": [
+              58157661,
+              "F30F117058"
+            ]
+          }
+        },
+        {
+          "fieldName": "targetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 122615,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 58157724,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157764,
+            "rawHex": "48896828",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 40
+          },
+          "sourceToDestinationHex": "488BE84885F60F84F000000033D2488BCEE8990300004885C00F84DD000000488D4828",
+          "observedGetterCall": {
+            "rva": 58157746,
+            "targetRva": 58158672
+          },
+          "sourceContextInstructionRva": 58157714,
+          "observedBarrierCall": {
+            "rva": 58157768,
+            "targetRva": 158528
+          },
+          "getterDirectStore": {
+            "mode": "reference-return",
+            "argumentMode": [
+              "reader",
+              "context",
+              "wrapper"
+            ],
+            "argumentProgram": [
+              [
+                58157711,
+                "488BCB"
+              ],
+              [
+                58157714,
+                "488B156FAC8E09"
+              ],
+              [
+                58157721,
+                "488B37"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157729,
+                "488BE8"
+              ],
+              [
+                58157732,
+                "4885F6"
+              ],
+              [
+                58157735,
+                "0F84F0000000"
+              ],
+              [
+                58157741,
+                "33D2"
+              ],
+              [
+                58157743,
+                "488BCE"
+              ],
+              [
+                58157746,
+                "E899030000"
+              ],
+              [
+                58157751,
+                "4885C0"
+              ],
+              [
+                58157754,
+                "0F84DD000000"
+              ],
+              [
+                58157760,
+                "488D4828"
+              ],
+              [
+                58157764,
+                "48896828"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157746,
+              "targetRva": 58158672
+            },
+            "barrierCall": {
+              "rva": 58157768,
+              "targetRva": 158528
+            }
+          }
+        },
+        {
+          "fieldName": "useAdvancedDirectionSetting",
+          "declaredType": "bool",
+          "setterMethodIndex": 122616,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58157779,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58157820,
+            "rawHex": "885824",
+            "fieldOwnerTypeDefinition": 9793,
+            "baseRegister": 0,
+            "fieldOffset": 36
+          },
+          "sourceToDestinationHex": "0FB6D84885FF0F84B900000033D2488BCFE8620300004885C00F84A60000000F28742420",
+          "observedGetterCall": {
+            "rva": 58157801,
+            "targetRva": 58158672
+          },
+          "primitiveSource": {
+            "mode": "normalized-byte-return",
+            "readerTypeDefinition": 54009,
+            "readerFieldOffsets": {
+              "bufferSource": 16,
+              "totalLength": 40,
+              "bufferReference": 48,
+              "bufferLength": 64,
+              "rentBuffer": 72,
+              "advancedCount": 80,
+              "consumed": 84,
+              "optionalState": 88,
+              "currentPtr": 96
+            },
+            "program": [
+              [
+                46827712,
+                "48895C2408"
+              ],
+              [
+                46827717,
+                "4889742410"
+              ],
+              [
+                46827722,
+                "57"
+              ],
+              [
+                46827723,
+                "4883EC20"
+              ],
+              [
+                46827727,
+                "83793001"
+              ],
+              [
+                46827731,
+                "488BD9"
+              ],
+              [
+                46827734,
+                "0F8CBCA5F701"
+              ],
+              [
+                46827740,
+                "488B4350"
+              ],
+              [
+                46827744,
+                "0FB630"
+              ],
+              [
+                46827747,
+                "8B7B30"
+              ],
+              [
+                46827750,
+                "83EF01"
+              ],
+              [
+                46827753,
+                "0F88BCA5F701"
+              ],
+              [
+                46827759,
+                "48FF4350"
+              ],
+              [
+                46827763,
+                "FF4340"
+              ],
+              [
+                46827766,
+                "FF4344"
+              ],
+              [
+                46827769,
+                "897B30"
+              ],
+              [
+                46827772,
+                "488B5C2430"
+              ],
+              [
+                46827777,
+                "4084F6"
+              ],
+              [
+                46827780,
+                "488B742438"
+              ],
+              [
+                46827785,
+                "0F95C0"
+              ],
+              [
+                46827788,
+                "4883C420"
+              ],
+              [
+                46827792,
+                "5F"
+              ],
+              [
+                46827793,
+                "C3"
+              ]
+            ]
+          },
+          "getterDirectStore": {
+            "mode": "normalized-byte-return",
+            "argumentMode": [
+              "wrapper",
+              "reader"
+            ],
+            "argumentProgram": [
+              [
+                58157773,
+                "488B3F"
+              ],
+              [
+                58157776,
+                "488BCB"
+              ]
+            ],
+            "bridgeProgram": [
+              [
+                58157784,
+                "0FB6D8"
+              ],
+              [
+                58157787,
+                "4885FF"
+              ],
+              [
+                58157790,
+                "0F84B9000000"
+              ],
+              [
+                58157796,
+                "33D2"
+              ],
+              [
+                58157798,
+                "488BCF"
+              ],
+              [
+                58157801,
+                "E862030000"
+              ],
+              [
+                58157806,
+                "4885C0"
+              ],
+              [
+                58157809,
+                "0F84A6000000"
+              ],
+              [
+                58157815,
+                "0F28742420"
+              ],
+              [
+                58157820,
+                "885824"
+              ]
+            ],
+            "getterCall": {
+              "rva": 58157801,
+              "targetRva": 58158672
+            }
+          }
+        }
+      ],
+      "inheritedDirectActionSource": {
+        "mode": "reader-rbx-wrapper-ref-rdi-four-common-direct-stores",
+        "baseWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "baseDataName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+        "baseInstanceField": "___instance",
+        "commonPrefixProgram": [
+          [
+            58156800,
+            "48895C2408"
+          ],
+          [
+            58156805,
+            "48896C2410"
+          ],
+          [
+            58156810,
+            "4889742418"
+          ],
+          [
+            58156815,
+            "57"
+          ],
+          [
+            58156816,
+            "4883EC30"
+          ],
+          [
+            58156820,
+            "803D852F730A00"
+          ],
+          [
+            58156827,
+            "488BFA"
+          ],
+          [
+            58156830,
+            "488BD9"
+          ],
+          [
+            58156833,
+            "0F84FE030000"
+          ],
+          [
+            58156839,
+            "488B0F"
+          ],
+          [
+            58156842,
+            "4885C9"
+          ],
+          [
+            58156845,
+            "0F857B786B01"
+          ],
+          [
+            58156851,
+            "837B3001"
+          ],
+          [
+            58156855,
+            "0F8C7E786B01"
+          ],
+          [
+            58156861,
+            "488B4350"
+          ],
+          [
+            58156865,
+            "0FB628"
+          ],
+          [
+            58156868,
+            "8B7330"
+          ],
+          [
+            58156871,
+            "83EE01"
+          ],
+          [
+            58156874,
+            "0F8881786B01"
+          ],
+          [
+            58156880,
+            "48FF4350"
+          ],
+          [
+            58156884,
+            "FF4340"
+          ],
+          [
+            58156887,
+            "FF4344"
+          ],
+          [
+            58156890,
+            "897330"
+          ],
+          [
+            58156893,
+            "4080FDFF"
+          ],
+          [
+            58156897,
+            "0F84AD030000"
+          ],
+          [
+            58156903,
+            "0F29742420"
+          ],
+          [
+            58156908,
+            "48833F00"
+          ],
+          [
+            58156912,
+            "752D"
+          ],
+          [
+            58156914,
+            "488B0D2FD58909"
+          ],
+          [
+            58156921,
+            "E8E2F88AFC"
+          ],
+          [
+            58156926,
+            "488BF0"
+          ],
+          [
+            58156929,
+            "4885C0"
+          ],
+          [
+            58156932,
+            "0F8413040000"
+          ],
+          [
+            58156938,
+            "33D2"
+          ],
+          [
+            58156940,
+            "488BC8"
+          ],
+          [
+            58156943,
+            "E80C070000"
+          ],
+          [
+            58156948,
+            "488BCF"
+          ],
+          [
+            58156951,
+            "488937"
+          ],
+          [
+            58156954,
+            "E8A1038BFC"
+          ],
+          [
+            58156959,
+            "4080FD12"
+          ],
+          [
+            58156963,
+            "0F8542786B01"
+          ],
+          [
+            58156969,
+            "488B37"
+          ],
+          [
+            58156972,
+            "488BCB"
+          ],
+          [
+            58156975,
+            "E80C2153FF"
+          ],
+          [
+            58156980,
+            "4885F6"
+          ],
+          [
+            58156983,
+            "0F84E0030000"
+          ],
+          [
+            58156989,
+            "488B4E10"
+          ],
+          [
+            58156993,
+            "4885C9"
+          ],
+          [
+            58156996,
+            "0F84D3030000"
+          ],
+          [
+            58157002,
+            "884110"
+          ],
+          [
+            58157005,
+            "488BCB"
+          ],
+          [
+            58157008,
+            "488B1551369109"
+          ],
+          [
+            58157015,
+            "488B37"
+          ],
+          [
+            58157018,
+            "E8D11E53FF"
+          ],
+          [
+            58157023,
+            "4885F6"
+          ],
+          [
+            58157026,
+            "0F84B5030000"
+          ],
+          [
+            58157032,
+            "488B4E10"
+          ],
+          [
+            58157036,
+            "4885C9"
+          ],
+          [
+            58157039,
+            "0F84A8030000"
+          ],
+          [
+            58157045,
+            "894114"
+          ],
+          [
+            58157048,
+            "488BCB"
+          ],
+          [
+            58157051,
+            "488B37"
+          ],
+          [
+            58157054,
+            "E8AD1E53FF"
+          ],
+          [
+            58157059,
+            "4885F6"
+          ],
+          [
+            58157062,
+            "0F8491030000"
+          ],
+          [
+            58157068,
+            "488B4E10"
+          ],
+          [
+            58157072,
+            "4885C9"
+          ],
+          [
+            58157075,
+            "0F8484030000"
+          ],
+          [
+            58157081,
+            "894118"
+          ],
+          [
+            58157084,
+            "488BCB"
+          ],
+          [
+            58157087,
+            "488B37"
+          ],
+          [
+            58157090,
+            "E8891E53FF"
+          ],
+          [
+            58157095,
+            "4885F6"
+          ],
+          [
+            58157098,
+            "0F846D030000"
+          ],
+          [
+            58157104,
+            "488B4E10"
+          ],
+          [
+            58157108,
+            "4885C9"
+          ],
+          [
+            58157111,
+            "0F8460030000"
+          ],
+          [
+            58157117,
+            "89411C"
+          ]
+        ]
+      },
+      "getterDirectOutputSource": {
+        "mode": "reader-rbx-ref-wrapper-rdi-common-direct-derived-getter-final-byte",
+        "parentProgram": [
+          [
+            58156800,
+            "48895C2408"
+          ],
+          [
+            58156805,
+            "48896C2410"
+          ],
+          [
+            58156810,
+            "4889742418"
+          ],
+          [
+            58156815,
+            "57"
+          ],
+          [
+            58156816,
+            "4883EC30"
+          ],
+          [
+            58156820,
+            "803D852F730A00"
+          ],
+          [
+            58156827,
+            "488BFA"
+          ],
+          [
+            58156830,
+            "488BD9"
+          ],
+          [
+            58156833,
+            "0F84FE030000"
+          ],
+          [
+            58156839,
+            "488B0F"
+          ],
+          [
+            58156842,
+            "4885C9"
+          ],
+          [
+            58156845,
+            "0F857B786B01"
+          ],
+          [
+            58156851,
+            "837B3001"
+          ],
+          [
+            58156855,
+            "0F8C7E786B01"
+          ],
+          [
+            58156861,
+            "488B4350"
+          ],
+          [
+            58156865,
+            "0FB628"
+          ],
+          [
+            58156868,
+            "8B7330"
+          ],
+          [
+            58156871,
+            "83EE01"
+          ],
+          [
+            58156874,
+            "0F8881786B01"
+          ],
+          [
+            58156880,
+            "48FF4350"
+          ],
+          [
+            58156884,
+            "FF4340"
+          ],
+          [
+            58156887,
+            "FF4344"
+          ],
+          [
+            58156890,
+            "897330"
+          ],
+          [
+            58156893,
+            "4080FDFF"
+          ],
+          [
+            58156897,
+            "0F84AD030000"
+          ],
+          [
+            58156903,
+            "0F29742420"
+          ],
+          [
+            58156908,
+            "48833F00"
+          ],
+          [
+            58156912,
+            "752D"
+          ],
+          [
+            58156914,
+            "488B0D2FD58909"
+          ],
+          [
+            58156921,
+            "E8E2F88AFC"
+          ],
+          [
+            58156926,
+            "488BF0"
+          ],
+          [
+            58156929,
+            "4885C0"
+          ],
+          [
+            58156932,
+            "0F8413040000"
+          ],
+          [
+            58156938,
+            "33D2"
+          ],
+          [
+            58156940,
+            "488BC8"
+          ],
+          [
+            58156943,
+            "E80C070000"
+          ],
+          [
+            58156948,
+            "488BCF"
+          ],
+          [
+            58156951,
+            "488937"
+          ],
+          [
+            58156954,
+            "E8A1038BFC"
+          ],
+          [
+            58156959,
+            "4080FD12"
+          ],
+          [
+            58156963,
+            "0F8542786B01"
+          ],
+          [
+            58156969,
+            "488B37"
+          ],
+          [
+            58156972,
+            "488BCB"
+          ],
+          [
+            58156975,
+            "E80C2153FF"
+          ],
+          [
+            58156980,
+            "4885F6"
+          ],
+          [
+            58156983,
+            "0F84E0030000"
+          ],
+          [
+            58156989,
+            "488B4E10"
+          ],
+          [
+            58156993,
+            "4885C9"
+          ],
+          [
+            58156996,
+            "0F84D3030000"
+          ],
+          [
+            58157002,
+            "884110"
+          ],
+          [
+            58157005,
+            "488BCB"
+          ],
+          [
+            58157008,
+            "488B1551369109"
+          ],
+          [
+            58157015,
+            "488B37"
+          ],
+          [
+            58157018,
+            "E8D11E53FF"
+          ],
+          [
+            58157023,
+            "4885F6"
+          ],
+          [
+            58157026,
+            "0F84B5030000"
+          ],
+          [
+            58157032,
+            "488B4E10"
+          ],
+          [
+            58157036,
+            "4885C9"
+          ],
+          [
+            58157039,
+            "0F84A8030000"
+          ],
+          [
+            58157045,
+            "894114"
+          ],
+          [
+            58157048,
+            "488BCB"
+          ],
+          [
+            58157051,
+            "488B37"
+          ],
+          [
+            58157054,
+            "E8AD1E53FF"
+          ],
+          [
+            58157059,
+            "4885F6"
+          ],
+          [
+            58157062,
+            "0F8491030000"
+          ],
+          [
+            58157068,
+            "488B4E10"
+          ],
+          [
+            58157072,
+            "4885C9"
+          ],
+          [
+            58157075,
+            "0F8484030000"
+          ],
+          [
+            58157081,
+            "894118"
+          ],
+          [
+            58157084,
+            "488BCB"
+          ],
+          [
+            58157087,
+            "488B37"
+          ],
+          [
+            58157090,
+            "E8891E53FF"
+          ],
+          [
+            58157095,
+            "4885F6"
+          ],
+          [
+            58157098,
+            "0F846D030000"
+          ],
+          [
+            58157104,
+            "488B4E10"
+          ],
+          [
+            58157108,
+            "4885C9"
+          ],
+          [
+            58157111,
+            "0F8460030000"
+          ],
+          [
+            58157117,
+            "89411C"
+          ],
+          [
+            58157120,
+            "488BCB"
+          ],
+          [
+            58157123,
+            "488B159E339109"
+          ],
+          [
+            58157130,
+            "488B37"
+          ],
+          [
+            58157133,
+            "E83EF462FF"
+          ],
+          [
+            58157138,
+            "488BE8"
+          ],
+          [
+            58157141,
+            "4885F6"
+          ],
+          [
+            58157144,
+            "0F843F030000"
+          ],
+          [
+            58157150,
+            "33D2"
+          ],
+          [
+            58157152,
+            "488BCE"
+          ],
+          [
+            58157155,
+            "E8E8050000"
+          ],
+          [
+            58157160,
+            "4885C0"
+          ],
+          [
+            58157163,
+            "0F842C030000"
+          ],
+          [
+            58157169,
+            "488D4830"
+          ],
+          [
+            58157173,
+            "48896830"
+          ],
+          [
+            58157177,
+            "E8C2028BFC"
+          ],
+          [
+            58157182,
+            "488B37"
+          ],
+          [
+            58157185,
+            "488BCB"
+          ],
+          [
+            58157188,
+            "E8372053FF"
+          ],
+          [
+            58157193,
+            "0FB6E8"
+          ],
+          [
+            58157196,
+            "4885F6"
+          ],
+          [
+            58157199,
+            "0F8408030000"
+          ],
+          [
+            58157205,
+            "33D2"
+          ],
+          [
+            58157207,
+            "488BCE"
+          ],
+          [
+            58157210,
+            "E8B1050000"
+          ],
+          [
+            58157215,
+            "4885C0"
+          ],
+          [
+            58157218,
+            "0F84F5020000"
+          ],
+          [
+            58157224,
+            "40886860"
+          ],
+          [
+            58157228,
+            "488BCB"
+          ],
+          [
+            58157231,
+            "488B37"
+          ],
+          [
+            58157234,
+            "E8092053FF"
+          ],
+          [
+            58157239,
+            "0FB6E8"
+          ],
+          [
+            58157242,
+            "4885F6"
+          ],
+          [
+            58157245,
+            "0F84DA020000"
+          ],
+          [
+            58157251,
+            "33D2"
+          ],
+          [
+            58157253,
+            "488BCE"
+          ],
+          [
+            58157256,
+            "E883050000"
+          ],
+          [
+            58157261,
+            "4885C0"
+          ],
+          [
+            58157264,
+            "0F84C7020000"
+          ],
+          [
+            58157270,
+            "40886854"
+          ],
+          [
+            58157274,
+            "488BCB"
+          ],
+          [
+            58157277,
+            "488B37"
+          ],
+          [
+            58157280,
+            "E8DB1F53FF"
+          ],
+          [
+            58157285,
+            "0FB6E8"
+          ],
+          [
+            58157288,
+            "4885F6"
+          ],
+          [
+            58157291,
+            "0F84AC020000"
+          ],
+          [
+            58157297,
+            "33D2"
+          ],
+          [
+            58157299,
+            "488BCE"
+          ],
+          [
+            58157302,
+            "E855050000"
+          ],
+          [
+            58157307,
+            "4885C0"
+          ],
+          [
+            58157310,
+            "0F8499020000"
+          ],
+          [
+            58157316,
+            "4088684C"
+          ],
+          [
+            58157320,
+            "488BCB"
+          ],
+          [
+            58157323,
+            "488B37"
+          ],
+          [
+            58157326,
+            "E8AD1F53FF"
+          ],
+          [
+            58157331,
+            "0FB6E8"
+          ],
+          [
+            58157334,
+            "4885F6"
+          ],
+          [
+            58157337,
+            "0F847E020000"
+          ],
+          [
+            58157343,
+            "33D2"
+          ],
+          [
+            58157345,
+            "488BCE"
+          ],
+          [
+            58157348,
+            "E827050000"
+          ],
+          [
+            58157353,
+            "4885C0"
+          ],
+          [
+            58157356,
+            "0F846B020000"
+          ],
+          [
+            58157362,
+            "40886855"
+          ],
+          [
+            58157366,
+            "488BCB"
+          ],
+          [
+            58157369,
+            "488B37"
+          ],
+          [
+            58157372,
+            "E87F1F53FF"
+          ],
+          [
+            58157377,
+            "0FB6E8"
+          ],
+          [
+            58157380,
+            "4885F6"
+          ],
+          [
+            58157383,
+            "0F8450020000"
+          ],
+          [
+            58157389,
+            "33D2"
+          ],
+          [
+            58157391,
+            "488BCE"
+          ],
+          [
+            58157394,
+            "E8F9040000"
+          ],
+          [
+            58157399,
+            "4885C0"
+          ],
+          [
+            58157402,
+            "0F843D020000"
+          ],
+          [
+            58157408,
+            "40886838"
+          ],
+          [
+            58157412,
+            "488BCB"
+          ],
+          [
+            58157415,
+            "488B37"
+          ],
+          [
+            58157418,
+            "E8911D53FF"
+          ],
+          [
+            58157423,
+            "488BE8"
+          ],
+          [
+            58157426,
+            "4885F6"
+          ],
+          [
+            58157429,
+            "0F8422020000"
+          ],
+          [
+            58157435,
+            "33D2"
+          ],
+          [
+            58157437,
+            "488BCE"
+          ],
+          [
+            58157440,
+            "E8CB040000"
+          ],
+          [
+            58157445,
+            "4885C0"
+          ],
+          [
+            58157448,
+            "0F840F020000"
+          ],
+          [
+            58157454,
+            "488D4840"
+          ],
+          [
+            58157458,
+            "48896840"
+          ],
+          [
+            58157462,
+            "E8A5018BFC"
+          ],
+          [
+            58157467,
+            "488B152ED38909"
+          ],
+          [
+            58157474,
+            "488BCB"
+          ],
+          [
+            58157477,
+            "488B37"
+          ],
+          [
+            58157480,
+            "E8031D53FF"
+          ],
+          [
+            58157485,
+            "8BE8"
+          ],
+          [
+            58157487,
+            "4885F6"
+          ],
+          [
+            58157490,
+            "0F84E5010000"
+          ],
+          [
+            58157496,
+            "33D2"
+          ],
+          [
+            58157498,
+            "488BCE"
+          ],
+          [
+            58157501,
+            "E88E040000"
+          ],
+          [
+            58157506,
+            "4885C0"
+          ],
+          [
+            58157509,
+            "0F84D2010000"
+          ],
+          [
+            58157515,
+            "896850"
+          ],
+          [
+            58157518,
+            "488BCB"
+          ],
+          [
+            58157521,
+            "488B37"
+          ],
+          [
+            58157524,
+            "E8D71C53FF"
+          ],
+          [
+            58157529,
+            "8BE8"
+          ],
+          [
+            58157531,
+            "4885F6"
+          ],
+          [
+            58157534,
+            "0F84B9010000"
+          ],
+          [
+            58157540,
+            "33D2"
+          ],
+          [
+            58157542,
+            "488BCE"
+          ],
+          [
+            58157545,
+            "E862040000"
+          ],
+          [
+            58157550,
+            "4885C0"
+          ],
+          [
+            58157553,
+            "0F84A6010000"
+          ],
+          [
+            58157559,
+            "896848"
+          ],
+          [
+            58157562,
+            "488BCB"
+          ],
+          [
+            58157565,
+            "488B15BCD28909"
+          ],
+          [
+            58157572,
+            "488B37"
+          ],
+          [
+            58157575,
+            "E8A41C53FF"
+          ],
+          [
+            58157580,
+            "8BE8"
+          ],
+          [
+            58157582,
+            "4885F6"
+          ],
+          [
+            58157585,
+            "0F8486010000"
+          ],
+          [
+            58157591,
+            "33D2"
+          ],
+          [
+            58157593,
+            "488BCE"
+          ],
+          [
+            58157596,
+            "E82F040000"
+          ],
+          [
+            58157601,
+            "4885C0"
+          ],
+          [
+            58157604,
+            "0F8473010000"
+          ],
+          [
+            58157610,
+            "89685C"
+          ],
+          [
+            58157613,
+            "488BCB"
+          ],
+          [
+            58157616,
+            "488B37"
+          ],
+          [
+            58157619,
+            "E8782153FF"
+          ],
+          [
+            58157624,
+            "0F28F0"
+          ],
+          [
+            58157627,
+            "4885F6"
+          ],
+          [
+            58157630,
+            "0F8459010000"
+          ],
+          [
+            58157636,
+            "33D2"
+          ],
+          [
+            58157638,
+            "488BCE"
+          ],
+          [
+            58157641,
+            "E802040000"
+          ],
+          [
+            58157646,
+            "4885C0"
+          ],
+          [
+            58157649,
+            "0F8446010000"
+          ],
+          [
+            58157655,
+            "488B37"
+          ],
+          [
+            58157658,
+            "488BCB"
+          ],
+          [
+            58157661,
+            "F30F117058"
+          ],
+          [
+            58157666,
+            "488B157FD28909"
+          ],
+          [
+            58157673,
+            "E8421C53FF"
+          ],
+          [
+            58157678,
+            "8BE8"
+          ],
+          [
+            58157680,
+            "4885F6"
+          ],
+          [
+            58157683,
+            "0F8424010000"
+          ],
+          [
+            58157689,
+            "33D2"
+          ],
+          [
+            58157691,
+            "488BCE"
+          ],
+          [
+            58157694,
+            "E8CD030000"
+          ],
+          [
+            58157699,
+            "4885C0"
+          ],
+          [
+            58157702,
+            "0F8411010000"
+          ],
+          [
+            58157708,
+            "896820"
+          ],
+          [
+            58157711,
+            "488BCB"
+          ],
+          [
+            58157714,
+            "488B156FAC8E09"
+          ],
+          [
+            58157721,
+            "488B37"
+          ],
+          [
+            58157724,
+            "E8EFF162FF"
+          ],
+          [
+            58157729,
+            "488BE8"
+          ],
+          [
+            58157732,
+            "4885F6"
+          ],
+          [
+            58157735,
+            "0F84F0000000"
+          ],
+          [
+            58157741,
+            "33D2"
+          ],
+          [
+            58157743,
+            "488BCE"
+          ],
+          [
+            58157746,
+            "E899030000"
+          ],
+          [
+            58157751,
+            "4885C0"
+          ],
+          [
+            58157754,
+            "0F84DD000000"
+          ],
+          [
+            58157760,
+            "488D4828"
+          ],
+          [
+            58157764,
+            "48896828"
+          ],
+          [
+            58157768,
+            "E873008BFC"
+          ],
+          [
+            58157773,
+            "488B3F"
+          ],
+          [
+            58157776,
+            "488BCB"
+          ],
+          [
+            58157779,
+            "E8E81D53FF"
+          ],
+          [
+            58157784,
+            "0FB6D8"
+          ],
+          [
+            58157787,
+            "4885FF"
+          ],
+          [
+            58157790,
+            "0F84B9000000"
+          ],
+          [
+            58157796,
+            "33D2"
+          ],
+          [
+            58157798,
+            "488BCF"
+          ],
+          [
+            58157801,
+            "E862030000"
+          ],
+          [
+            58157806,
+            "4885C0"
+          ],
+          [
+            58157809,
+            "0F84A6000000"
+          ],
+          [
+            58157815,
+            "0F28742420"
+          ],
+          [
+            58157820,
+            "885824"
+          ]
+        ],
+        "getterMethod": [
+          122598,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_SelfRotateAction_DataForMemoryPack",
+          "get___instance",
+          58158672
+        ],
+        "getterProgram": [
+          [
+            58158672,
+            "4053"
+          ],
+          [
+            58158674,
+            "4883EC20"
+          ],
+          [
+            58158678,
+            "803D4128730A00"
+          ],
+          [
+            58158685,
+            "488BD9"
+          ],
+          [
+            58158688,
+            "7423"
+          ],
+          [
+            58158690,
+            "48837B1800"
+          ],
+          [
+            58158695,
+            "0F8471AE3D01"
+          ],
+          [
+            58158701,
+            "488B4310"
+          ],
+          [
+            58158705,
+            "48394318"
+          ],
+          [
+            58158709,
+            "0F8563AE3D01"
+          ],
+          [
+            58158715,
+            "488B4318"
+          ],
+          [
+            58158719,
+            "4883C420"
+          ],
+          [
+            58158723,
+            "5B"
+          ],
+          [
+            58158724,
+            "C3"
+          ]
+        ],
+        "baseInstanceField": "___instance",
+        "cachedInstanceField": "__realInstance"
+      }
+    }
+  },
+  "actionDispatch": {
+    "324": "selfRotateAction"
+  },
+  "sourceWindows": [
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "complete buffered normalized-byte-return helper through return"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "complete buffered scalar32-return helper through return"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "complete buffered single-return helper through return"
+    },
+    {
+      "startRva": 58158672,
+      "endRva": 58158725,
+      "sha256": "D108473A4FD1C05DAA4FA26BC090E2FA5A36526CCDB277F5C7DF1005D057FD5A",
+      "boundary": "complete selected cached-instance getter normal return"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "complete buffered normalized-byte-return helper through return"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "complete buffered scalar32-return helper through return"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "complete buffered single-return helper through return"
+    }
+  ],
+  "stringSourceContract": "memorypack_utf8_source_helper_native.json",
+  "childTypes": {
+    "direction-profile": "Beyond.Gameplay.Core.DirectionSettings",
+    "target-profile": "Beyond.Gameplay.Core.TargetSettings"
+  },
+  "evidenceBoundary": {
+    "exact": "selected stored source order, authenticated normal buffered programs and independent child framing",
+    "direct": "actual named source contexts and owned Data stores",
+    "conditional": "coherent selected cached getter normal return and ordinary preserving Win64 calls",
+    "unresolved": "getter slow paths, barrier effects, selected target, rotation meaning and live execution"
+  }
+}

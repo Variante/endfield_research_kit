@@ -1,0 +1,423 @@
+{
+  "schema": "endfield.buff-healing-settlement-native-contract.v2",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "codeWindows": [
+    {
+      "rva": 58228576,
+      "byteCount": 99,
+      "sha256": "1684add12c0466de6c91b5087f7550d817061cf54ba5d495db398c1147e352c5",
+      "name": "Beyond.Gameplay.Core.AbilitySystem+Modifier.get_isCancelled",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier",
+      "method": "get_isCancelled",
+      "methodIndex": 56975,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.AbilitySystem+Modifier.get_isCancelled; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 58238448,
+      "byteCount": 19212,
+      "sha256": "f77e6fff236ad4b3fbc5a9ddbafc334c1a286fea70d9a81d7c5c397afa5a2736",
+      "name": "Beyond.Gameplay.Core.AbilitySystem._DoApplyModifier",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "_DoApplyModifier",
+      "methodIndex": 56616,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.AbilitySystem._DoApplyModifier; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 50624464,
+      "byteCount": 6764,
+      "sha256": "c777f5ab4dd09b471b37524b3654bf0a88309f4eed9ed90c2eff63e55ff5dcb8",
+      "name": "Beyond.Gameplay.Core.AbilitySystem.SetHpInternal",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "SetHpInternal",
+      "methodIndex": 56612,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.AbilitySystem.SetHpInternal; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 64571296,
+      "byteCount": 102,
+      "sha256": "fedbf201a75e33d60cc1946879a6dcc45214b6f50796956fd233fbd97832814e",
+      "name": "Beyond.Gameplay.Core.AbilitySystem.get_hp",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_hp",
+      "methodIndex": 56211,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.AbilitySystem.get_hp; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 52432320,
+      "byteCount": 197,
+      "sha256": "e73202440fa947c6b95eb898e265148d224e86782b3f9bc69131659610f6cbd8",
+      "name": "Beyond.Gameplay.Core.AbilitySystem.get_maxHp",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "get_maxHp",
+      "methodIndex": 56226,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.AbilitySystem.get_maxHp; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 71233408,
+      "byteCount": 1410,
+      "sha256": "e4865fcea54c113fe63d8d04acb9def887683ef00c3a4b197456814dab16a6c6",
+      "name": "Beyond.Gameplay.Core.AbilitySystem._OnHealed",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "_OnHealed",
+      "methodIndex": 56636,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.AbilitySystem._OnHealed; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 63339216,
+      "byteCount": 400,
+      "sha256": "2338ad7ef84939fa557935c89c3b12112586bff3a7d0c1710a676fd36d52960d",
+      "name": "Beyond.Gameplay.Core.BattleFormula.CalculateHeal",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "CalculateHeal",
+      "methodIndex": 60624,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.BattleFormula.CalculateHeal; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 63339616,
+      "byteCount": 121,
+      "sha256": "96b3e055befaf2eddde7ab585983619f75b38977a18e5ec7195247ff16a3773e",
+      "name": "Beyond.Gameplay.Core.HealPackData.GetFinalHealValue",
+      "type": "Beyond.Gameplay.Core.HealPackData",
+      "method": "GetFinalHealValue",
+      "methodIndex": 61020,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.HealPackData.GetFinalHealValue; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 64066064,
+      "byteCount": 420,
+      "sha256": "ca785a149648face32881c99d32d769feb8637ebae56222f597b8e3e74e678fb",
+      "name": "Beyond.Gameplay.Core.HealPackData.ApplyHealModifier",
+      "type": "Beyond.Gameplay.Core.HealPackData",
+      "method": "ApplyHealModifier",
+      "methodIndex": 61022,
+      "boundary": "Authenticated reviewed context for Beyond.Gameplay.Core.HealPackData.ApplyHealModifier; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 55857136,
+      "byteCount": 130,
+      "sha256": "9b7638a8c684f89cf1183ab6416a1085b5914fd979727c4856085ca338dce56d",
+      "name": "helper.0x3544ff0",
+      "boundary": "Authenticated reviewed context for helper.0x3544ff0; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 58228688,
+      "byteCount": 114,
+      "sha256": "a4d4b3ef9e86a23c9b31b540f55709e935d67b6075aba7b328c269fe42dbd14f",
+      "name": "helper.0x3787fd0",
+      "boundary": "Authenticated reviewed context for helper.0x3787fd0; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 374720,
+      "byteCount": 1236,
+      "sha256": "991b40d50c4a7857567e96c3b4f41ad1517459c635ec56c3d09331ede16a9aa5",
+      "name": "helper.0x5b7c0",
+      "boundary": "Authenticated reviewed context for helper.0x5b7c0; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "rva": 346416,
+      "byteCount": 95,
+      "sha256": "8728c89675390d7feb83518a6e125a6ab577de18f7b1ffe56b9e7419f4aed733",
+      "name": "helper.0x54930",
+      "boundary": "Authenticated reviewed context for helper.0x54930; interpretation is conditional, not whole-body CFG decoding."
+    },
+    {
+      "type": "Beyond.Gameplay.Core.HealPackData",
+      "method": "_DumpAttributes",
+      "methodIndex": 61025,
+      "rva": 64066544,
+      "byteCount": 893,
+      "sha256": "5c47774d3e17f5fdbd81f0550d9488b6691a5bf26841c35a5c4a3361e6fcc4b9",
+      "name": "Beyond.Gameplay.Core.HealPackData._DumpAttributes",
+      "boundary": "Selected compiled snapshot-copy or event-interest/delivery context; conditional reviewed interpretation, not complete CFG."
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "TriggerEvent",
+      "methodIndex": 56560,
+      "rva": 50542880,
+      "byteCount": 2080,
+      "sha256": "0d8df76dd9a1ef7b72228a2685aac82122746e8897eb1e0208e9a1feaa5411e8",
+      "name": "Beyond.Gameplay.Core.AbilitySystem.TriggerEvent",
+      "boundary": "Selected compiled snapshot-copy or event-interest/delivery context; conditional reviewed interpretation, not complete CFG."
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "NeedTriggerEvent",
+      "methodIndex": 56563,
+      "rva": 50544960,
+      "byteCount": 1167,
+      "sha256": "1dc4e0d07e2873eef5dde6103f51e9e964d89f816dbbe817dfe4fbd1d57229c8",
+      "name": "Beyond.Gameplay.Core.AbilitySystem.NeedTriggerEvent",
+      "boundary": "Selected compiled snapshot-copy or event-interest/delivery context; conditional reviewed interpretation, not complete CFG."
+    },
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ActionContainer",
+      "method": "ExecuteInstant",
+      "methodIndex": 56732,
+      "rva": 57880192,
+      "byteCount": 1004,
+      "sha256": "316eaa86b419b26969598093aa460ccdc6935e12a6aac19020942a9964edbde0",
+      "name": "Beyond.Gameplay.Core.AbilitySystem+ActionContainer.ExecuteInstant",
+      "boundary": "Selected compiled snapshot-copy or event-interest/delivery context; conditional reviewed interpretation, not complete CFG."
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "GetValue",
+      "methodIndex": 60513,
+      "rva": 47286080,
+      "byteCount": 650,
+      "sha256": "169d1e587aea1768ef1617394a7eb9cef1714e53b2135e8c672d7ac1ea4c01fa",
+      "name": "Beyond.Gameplay.Core.Attributes.GetValue",
+      "boundary": "Selected compiled snapshot-copy or event-interest/delivery context; conditional reviewed interpretation, not complete CFG."
+    },
+    {
+      "name": "Beyond.Gameplay.Core.AbilitySystem+Modifier.get_finalDelta",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier",
+      "method": "get_finalDelta",
+      "methodIndex": 56964,
+      "rva": 58237952,
+      "byteCount": 192,
+      "sha256": "a13864b8fa878a7036052f89afcd7c162c0904eef753dcb08b22a72be4f78d78",
+      "boundary": "Named final-delta getter used by independently reached heal-context population sites; no actual HP increment inferred from this return."
+    }
+  ],
+  "literals": [
+    {
+      "rva": 176958608,
+      "bytesHex": "000000000000f03f"
+    },
+    {
+      "rva": 176958688,
+      "bytesHex": "acc52737"
+    },
+    {
+      "rva": 176959392,
+      "bytesHex": "00000080b5f8e43e"
+    },
+    {
+      "rva": 176959408,
+      "bytesHex": "ffffffffffffff7fffffffffffffff7f"
+    }
+  ],
+  "fields": [
+    {
+      "field": "Beyond.Gameplay.Core.HealPackData::healType",
+      "metadataOffset": 56,
+      "type": "Beyond.Gameplay.HealType"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.HealPackData::calcResult",
+      "metadataOffset": 64,
+      "type": "Beyond.Gameplay.Core.CalcResult"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.HealPackData::healerAttributes",
+      "metadataOffset": 72,
+      "type": "double[]"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.HealPackData::healReceiverAttributes",
+      "metadataOffset": 80,
+      "type": "double[]"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.CalcResult::value",
+      "metadataOffset": 16,
+      "type": "double"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<deltaType>k__BackingField",
+      "metadataOffset": 52,
+      "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<value>k__BackingField",
+      "metadataOffset": 56,
+      "type": "double"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<realDelta>k__BackingField",
+      "metadataOffset": 544,
+      "type": "double"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+HealContext::finalHealValue",
+      "metadataOffset": 48,
+      "type": "double"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+HealContext::realHealValue",
+      "metadataOffset": 56,
+      "type": "double"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+      "metadataOffset": 336,
+      "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::m_effectiveHpFloor",
+      "metadataOffset": 1344,
+      "type": "double"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.HealAction+Data::healer",
+      "metadataOffset": 40,
+      "type": "Beyond.Gameplay.ActionTargetType"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.Attributes::<instanceUid>k__BackingField",
+      "type": "uint",
+      "metadataOffset": 200
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::m_actionContainer",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+ActionContainer",
+      "metadataOffset": 320
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::m_eventDispatcher",
+      "type": "Beyond.EventDispatcher`1<Beyond.Gameplay.Core.AbilitySystem+Event>",
+      "metadataOffset": 384
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem::m_skills",
+      "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Skill>",
+      "metadataOffset": 624
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+EventContext::m_instanceUid",
+      "type": "uint",
+      "metadataOffset": 16
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+EventContext::eventType",
+      "type": "Beyond.Gameplay.Core.AbilitySystem+Event",
+      "metadataOffset": 40
+    }
+  ],
+  "enumMembers": {
+    "Beyond.Gameplay.HealType": {
+      "Normal": 0,
+      "Medical": 1
+    },
+    "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType": {
+      "Cancelled": 0,
+      "Add": 1,
+      "Minus": 2
+    },
+    "Beyond.Gameplay.Core.AbilitySystem+Modifier+ApplyResult": {
+      "Succeed": 0,
+      "Failed": 1,
+      "Cancelled": 2
+    },
+    "Beyond.GEnums.AttributeType": {
+      "MaxHp": 1,
+      "HealOutputIncrease": 29,
+      "HealTakenIncrease": 30,
+      "Will": 42
+    },
+    "Beyond.Gameplay.Core.Buff+Event": {
+      "OnBuffStart": 0,
+      "OnBuffTrigger": 1,
+      "OnBuffFinish": 2,
+      "OnBuffEnable": 3,
+      "OnBuffDisable": 4,
+      "DuringBuffEnable": 5,
+      "OnBuffEnhanceChanged": 6,
+      "OnBuffAfterTryEnhanced": 7,
+      "OnBuffBeforeTryEnhanced": 8,
+      "OnBuffDispelled": 9,
+      "OnBuffFinishedEarlyInterrupted": 10,
+      "OnBuffReleased": 11,
+      "Enum": 12
+    },
+    "Beyond.Gameplay.ActionTargetType": {
+      "ActionSource": 0,
+      "CurrentTarget": 3
+    },
+    "Beyond.Gameplay.Core.ValueSource": {
+      "AttackerOrHealer": 0,
+      "Target": 1
+    },
+    "Beyond.Gameplay.Core.AbilitySystem+Event": {
+      "OnReceiveHeal": 45,
+      "OnOutputHeal": 50
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native file hashes, named method-entry identities, reviewed code-window bytes, external literal bytes, field offsets and selected enum members. Anonymous helper windows are reviewed physical compiled code, not a metadata name claim.",
+    "conditional": "Reviewed normal compiled paths with false IFix selection, valid references/attribute arrays, ordinary Win64 preservation, finite scalar inputs and normal HP getter/setter dispatch. The validator authenticates their bytes and declarations; it does not implement whole-method CFG or prove runtime branch selection. Event listeners, HP floors/death policies and special attribute processors require their own selection evidence.",
+    "unresolved": "Actual loaded patch implementation, individual live attribute-array values, complete healing-processor traversal, exact max-HP observation, live serialized-node identity, event delivery and server acknowledgement. Failed sessions remain diagnostic."
+  },
+  "interpretation": {
+    "normalHealFormula": "After GetFinalHealValue, HealType.Normal multiplies the pack return by 1 + healerAttributes[HealOutputIncrease] + healReceiverAttributes[HealTakenIncrease]. The two increases add; they are not separately multiplied. Non-Normal passes the pack return on the reviewed alternative.",
+    "cancelPredicate": "Modifier.get_isCancelled returns true for DeltaType.Cancelled; otherwise its default finite-value helper tests abs(value) <= the supplied Single epsilon converted to Double. It does not read cancelReason. The normal non-damage HP branch returns ApplyResult.Cancelled through the common EAX/RET epilogue when that predicate is true.",
+    "hpSettlement": "The HP branch reads old HP, obtains finalDelta, submits old HP + finalDelta to the setter bridge, rereads HP and writes readback minus old HP to Modifier.realDelta. SetHpInternal first clamps the submitted value between zero and get_maxHp. Later floor/death/early-return policy remains conditional; for a living target with valid old HP and a nonnegative increase within stable bounds, the floor reduction guard does not select its adjustment.",
+    "healedCallback": "After HP readback, the reviewed notification callsite tests get_isDamage and get_isHeal and reaches _OnHealed on the heal branch; that callsite has no realDelta-positive test. _OnHealed conditionally populates finalHealValue from get_finalDelta and realHealValue from Modifier.realDelta and calls TriggerEvent when the event guard permits it. Reaching the callback is distinct from broadcasting/delivering an event.",
+    "mossEventIds": "The selected Buff.Event enum names OnBuffStart and OnBuffTrigger. Stored action configuration, expression selection and live action-to-node binding require independent evidence.",
+    "attributeSnapshots": {
+      "guardPatchId": 48606,
+      "getter": "Beyond.Gameplay.Core.Attributes.GetValue",
+      "copies": [
+        {
+          "returnRva": 64066866,
+          "side": "healer",
+          "arrayField": "Beyond.Gameplay.Core.HealPackData::healerAttributes",
+          "postReturnWindow": {
+            "rva": 64066866,
+            "byteCount": 29,
+            "sha256": "560ce4fad888b7a92985dca516a173f9bedead81c0cd24ae7106c7151d73d568",
+            "copyInstructionRva": 64066889,
+            "copyInstructionBytes": "f20f1144c620",
+            "reviewedInstruction": "movsd [rsi+0x20+rax*8], xmm0"
+          }
+        },
+        {
+          "returnRva": 64067156,
+          "side": "receiver",
+          "arrayField": "Beyond.Gameplay.Core.HealPackData::healReceiverAttributes",
+          "postReturnWindow": {
+            "rva": 64067156,
+            "byteCount": 29,
+            "sha256": "63398a85a99eaa22139ffdeb986db09e319bc01fa7907c8a35f22c3f897a1052",
+            "copyInstructionRva": 64067179,
+            "copyInstructionBytes": "f20f1144c320",
+            "reviewedInstruction": "movsd [rbx+0x20+rax*8], xmm0"
+          }
+        }
+      ],
+      "boundary": "False DumpAttributes IFix guard, non-null valid selected handles and ordinary compiled property-read path. Each getter result is copied as an unchanged Double to its indexed snapshot. Getter receiver/UID is retained; actor attribution must agree with explicit same-heal actor attribute identity/UID records. Omitted calls are not zero values. Constructor samples precede these processor-stage refreshes.",
+      "snapshotMethod": "Beyond.Gameplay.Core.HealPackData._DumpAttributes"
+    },
+    "eventRouting": "With a non-null resolved modifier source, _OnHealed first asks the source NeedTriggerEvent(OnOutputHeal), then asks its own receiver NeedTriggerEvent(OnReceiveHeal). Each true interest guard allocates a HealContext and passes requested/real amounts. Source interest false does not skip the later receiver guard. A null resolved source leaves both routes. NeedTriggerEvent checks nonempty action interest, dispatcher key presence, combo-manager interest and skill interest; it is an OR, not a requirement that every listener family be present.",
+    "eventDelivery": "TriggerEvent default path sets EventContext.eventType, calls its EventDispatcher before ActionContainer.ExecuteInstant, then notifies skills and the combo manager using the retained context. ActionContainer looks up the selected event queue and invokes sequence entries. Interest, dispatch, action-container entry, a reached sequence and a downstream effect are separate evidence boundaries. An existing dispatcher key or a normally completed dispatch does not prove a particular generic delegate was invoked.",
+    "eventContextPopulationSites": {
+      "guardPatchId": 5571,
+      "getter": "Beyond.Gameplay.Core.AbilitySystem+Modifier.get_finalDelta",
+      "sites": [
+        {
+          "returnRva": 71234203,
+          "event": "OnOutputHeal",
+          "receiver": "resolved modifier source",
+          "dispatchCallRva": 71234303,
+          "eventArgumentRva": 71234295
+        },
+        {
+          "returnRva": 71234549,
+          "event": "OnReceiveHeal",
+          "receiver": "OnHealed this",
+          "dispatchCallRva": 71234640,
+          "eventArgumentRva": 71234632
+        }
+      ],
+      "boundary": "An observed getter at one of these checked default OnHealed sites witnesses context population past its interest guard. The normal local continuation submits the named event; this is not a directly captured TriggerEvent argument or proof of a particular generic delegate.",
+      "caller": "Beyond.Gameplay.Core.AbilitySystem._OnHealed"
+    },
+    "attributeGetter": "The reviewed ordinary GetValue path returns the final cache cell when clean; on a dirty attribute it calls _CalculateFinalAttributeValue with the full filter masks, updates that cache cell and returns the calculated Double. Live IFix replacements and complete modifier-source provenance remain separate. Snapshot observations record the actual original getter return rather than invoking the getter from the observer."
+  }
+}

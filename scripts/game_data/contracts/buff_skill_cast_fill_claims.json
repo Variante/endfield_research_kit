@@ -1,0 +1,83 @@
+{
+  "schema": "endfield.buff-skill-cast-fill-claims.v2",
+  "status": "reviewed",
+  "consumer": {
+    "type": "Beyond.Gameplay.Core.Ability",
+    "method": "FillSkillCastInfo",
+    "returnType": "Beyond.Gameplay.Core.Skill+SkillCastInfo",
+    "parameterTypes": [],
+    "isStatic": false
+  },
+  "fields": [
+    {
+      "field": "Beyond.Gameplay.Core.Ability::skillCastId",
+      "type": "uint",
+      "role": "skillCastId"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.Ability::castOriginSkill",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "role": "originSkill"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.Ability::nonReturnedAtbCost",
+      "type": "float",
+      "role": "cost"
+    }
+  ],
+  "bodyClaims": [
+    {
+      "calls": [
+        "IFix.WrappersManagerImpl.IsPatched",
+        "IFix.WrappersManagerImpl.GetPatch",
+        "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1583"
+      ]
+    },
+    {
+      "readsField": "Beyond.Gameplay.Core.Ability::skillCastId"
+    },
+    {
+      "readsField": "Beyond.Gameplay.Core.Ability::castOriginSkill"
+    },
+    {
+      "readsField": "Beyond.Gameplay.Core.Ability::nonReturnedAtbCost"
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "The selected named instance method returns SkillCastInfo, declares no explicit parameters, has the named field reads and patch calls, and passes complete byte/control/frame checks.",
+    "conditional": "Under the selected hidden-output Win64 ABI, valid disjoint storage, AL-zero IsPatched selection and normal return, the complete reviewed program transfers the three named fields to the typed inline result, preserves their raw bits and zeros padding. Barrier state/effects and loop termination are not proved.",
+    "unresolved": "The anonymous caller environment discriminator and receiver class selection, patched values, actual invocation, barrier effects and termination, and runtime outcomes."
+  },
+  "returnLayoutContract": "buff_selector_validator_identity_claims.json",
+  "returnFlow": {
+    "semantics": "win64-hidden-output-rcx-this-rdx-three-member-cast-info-unpatched.v1",
+    "program": [
+      {"take": "mov [rsp+0x18], rbx"}, {"take": "push rdi"}, {"take": "sub rsp, 0x50"},
+      {"take": "mov rdi, rdx"}, {"take": "mov rbx, rcx"}, {"take": "xor edx, edx"},
+      {"pattern": "mov ecx, 0x[0-9a-f]+"}, {"call": "isPatched"}, {"take": "test al, al"},
+      {"branch": ["jne", "patched"]}, {"take": "xor eax, eax"},
+      {"pattern": "cmp \\[rip[+-]0x[0-9a-f]+ => 0x[0-9a-f]+\\], 0x0"},
+      {"take": "mov [rsp+0x24], eax"}, {"take": "mov [rsp+0x30], rax"},
+      {"take": "mov eax, [rdi+{skillCastId}]"}, {"take": "mov [rsp+0x20], eax"},
+      {"take": "mov rax, [rdi+{originSkill}]"}, {"take": "mov [rsp+0x28], rax"},
+      {"branch": ["je", "fieldTail"]}, {"take": "lea r8, [rsp+0x28]"}, {"take": "shr r8, 0xc"},
+      {"pattern": "lea r9, \\[rip[+-]0x[0-9a-f]+ => 0x[0-9a-f]+\\]"},
+      {"take": "and r8d, 0x1fffff"}, {"take": "mov edx, r8d"}, {"take": "shr rdx, 0x6"},
+      {"take": "and r8d, 0x3f"}, {"take": "prefetch [r9+rdx*8]"}, {"take": "nop"},
+      {"mark": "markLoop"}, {"take": "mov rax, [r9+rdx*8]"}, {"take": "mov rcx, rax"},
+      {"take": "bts rcx, r8"}, {"take": "lock cmpxchg [r9+rdx*8], rcx"}, {"branch": ["jne", "markLoop"]},
+      {"mark": "fieldTail"}, {"take": "movss xmm2, [rdi+{cost}]"},
+      {"take": "movsd xmm1, [rsp+0x30]"}, {"take": "movups xmm0, [rsp+0x20]"},
+      {"take": "movss xmm1, xmm2"}, {"branch": ["jmp", "output"]},
+      {"mark": "patched"}, {"take": "xor edx, edx"}, {"take": "mov [rsp+0x68], rsi"},
+      {"pattern": "mov ecx, 0x[0-9a-f]+"}, {"call": "getPatch"}, {"take": "test rax, rax"},
+      {"branch": ["je", "trap"]}, {"take": "xor r9d, r9d"}, {"take": "lea rcx, [rsp+0x38]"},
+      {"take": "mov r8, rdi"}, {"take": "mov rdx, rax"}, {"call": "patchWrapper"},
+      {"take": "mov rsi, [rsp+0x68]"}, {"take": "movups xmm0, [rax]"}, {"take": "movsd xmm1, [rax+0x10]"},
+      {"mark": "output"}, {"take": "movups [rbx], xmm0"}, {"take": "mov rax, rbx"},
+      {"take": "movsd [rbx+0x10], xmm1"}, {"take": "mov rbx, [rsp+0x70]"},
+      {"take": "add rsp, 0x50"}, {"take": "pop rdi"}, {"take": "ret"},
+      {"mark": "trap"}, {"call": "trapHelper"}, {"take": "int3"}
+    ]
+  }
+}

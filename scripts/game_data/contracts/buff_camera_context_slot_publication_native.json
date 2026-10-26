@@ -1,0 +1,80 @@
+{
+  "schema": "endfield.buff-camera-context-slot-publication-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "baseConstructorContract": "buff_camera_base_constructor_native.json",
+  "function": {
+    "entryRva": 45072,
+    "unwindFamily": {
+      "schema": "endfield.amd64-unwind-chain-family.v1",
+      "selectedPrimaryRva": 45072,
+      "tableRva": 251727872,
+      "tableBytes": 8097252,
+      "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+      "tableRowsChecked": 674771,
+      "unwindVersionRows": {
+        "1": 674768,
+        "2": 3
+      },
+      "completeParentTriplesChecked": true,
+      "allParentChainsTerminated": true,
+      "chainFrameBytesMatched": true,
+      "ranges": [
+        {
+          "runtimeTriple": [
+            45072,
+            47509,
+            211657700
+          ],
+          "tableRowRva": 251729468,
+          "runtimeTripleRawHex": "10B0000095B90000E4A39D0C",
+          "codeBytes": 2437,
+          "unwindRawHex": "11220A0022011B0016F014E012D010C00E700D600C300B50AC541900",
+          "unwindVersion": 1,
+          "unwindFlags": 2,
+          "frameByte": 0,
+          "parentChain": []
+        }
+      ],
+      "unwindOperationsOrFixedAllocationSemanticsProved": false,
+      "handlerLanguageDataProved": false,
+      "wholeManagedMethodProgramProved": false,
+      "runtimeExecutionKnown": false,
+      "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+    },
+    "codeWindows": [
+      {
+        "startRva": 45072,
+        "endRva": 47509,
+        "sha256": "10231D49EEBCEAD16CF4142DF20F38407783C9D3DA55196125D305F23785D238"
+      }
+    ],
+    "instructionsChecked": 605
+  },
+  "sites": {
+    "loop": 46160,
+    "suffix": 47384,
+    "publication": 47423,
+    "methodProducer": 46782,
+    "methodKey": 46881,
+    "methodReturnStore": 47367,
+    "rangeResult": 45839,
+    "selectedCount": 45868,
+    "loopSetup": 46126
+  },
+  "consumer": {
+    "slotByteOffset": 56,
+    "classContextOffset": 192
+  },
+  "evidenceBoundary": {
+    "exact": "Complete declared exception-owned initializer bytes, syntactic graph and stack joins, selected range/loop/kind-three argument programs, and independently checked constructor/base context consumers.",
+    "direct": "Range start/count feed sixteen-byte definitions; each normal iteration advances the definition pointer sixteen and output pointer eight, decrements the same remaining count, and publishes the original output-array return. Kind three passes both descriptor operands with one saved context and stores the complete final helper return.",
+    "conditional": "With the authenticated class/module context, correct range selection, valid allocation/fill result, stable disjoint frame/definition/output storage and normal ABI-preserving helpers, metadata slot seven occupies output byte offset fifty-six in the class context field read by the constructor.",
+    "structuralOnly": "Full syntactic CFG reachability does not prove loop termination, helper effects, runtime slot values or metadata semantic identity of anonymous descriptor/callback storage.",
+    "unresolved": "Actual class/context initialization, method-descriptor substitution and cache selection, cold target equality to the registered RET0 pointer, positive camera list composition and gameplay execution."
+  }
+}

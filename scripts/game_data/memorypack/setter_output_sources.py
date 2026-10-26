@@ -25,7 +25,7 @@ def _program(image: Any, window: dict, rows: list, expected: list[bytes], fail: 
 
 
 def validate_primitive_source(image: Any, source: dict, member: dict, *, fail: Callable) -> None:
-    """Check complete ordinary byte/Single reads and explicit cursor accounting.
+    """Check complete ordinary byte/DWORD/Single reads and cursor accounting.
 
     Reader is a byref value type. Selected boxed metadata offsets include its
     two-pointer object header; these programs address its unboxed fields.
@@ -55,6 +55,17 @@ def validate_primitive_source(image: Any, source: dict, member: dict, *, fail: C
             b'\xff\x43' + bytes((advanced,)), b'\xff\x43' + bytes((consumed,)), b'\x89\x7b' + bytes((remaining,)),
             b'\x48\x8b\x5c\x24\x30', b'\x40\x84\xf6', b'\x48\x8b\x74\x24\x38', b'\x0f\x95\xc0',
             b'\x48\x83\xc4\x20', b'\x5f', b'\xc3']
+    elif mode == 'scalar32-return':
+        if len(actual) != 22:
+            fail('setter-primitive-count', 22, rows)
+        expected = [b'\x48\x89\x5c\x24\x08', b'\x48\x89\x74\x24\x10', b'\x57', b'\x48\x83\xec\x20',
+            b'\x83\x79' + bytes((remaining, 4)), b'\x48\x8b\xd9', _branch(actual[6], condition=12, fail=fail),
+            b'\x48\x8b\x43' + bytes((pointer,)), b'\x8b\x30', b'\x8b\x7b' + bytes((remaining,)),
+            b'\x83\xef\x04', _branch(actual[11], condition=8, fail=fail),
+            b'\x48\x83\x43' + bytes((pointer, 4)), b'\x83\x43' + bytes((advanced, 4)),
+            b'\x83\x43' + bytes((consumed, 4)), b'\x89\x7b' + bytes((remaining,)),
+            b'\x48\x8b\x5c\x24\x30', b'\x8b\xc6', b'\x48\x8b\x74\x24\x38',
+            b'\x48\x83\xc4\x20', b'\x5f', b'\xc3']
     elif mode == 'single-return':
         if len(actual) != 22:
             fail('setter-primitive-count', 22, rows)
@@ -66,7 +77,7 @@ def validate_primitive_source(image: Any, source: dict, member: dict, *, fail: C
             b'\x83\x43' + bytes((consumed, 4)), b'\x89\x7b' + bytes((remaining,)), b'\x48\x8b\x5c\x24\x40',
             b'\x0f\x28\xc6', b'\x0f\x28\x74\x24\x20', b'\x48\x83\xc4\x30', b'\x5f', b'\xc3']
     else:
-        fail('setter-primitive-mode', 'explicit byte/Single source', mode)
+        fail('setter-primitive-mode', 'explicit byte/DWORD/Single source', mode)
     _program(image, window, rows, expected, fail)
     if rows[0][0] != call['targetRva']:
         fail('setter-primitive-entry', call['targetRva'], rows[0])
@@ -151,8 +162,26 @@ def _getter(image: Any, record: dict, proof: dict, source: dict, selected: Any, 
             or int.from_bytes(raw[:8], 'little') != record['runtimeTypeDefinition']):
         fail('setter-output-getter-type', 'exact reference Data instance getter', method_row)
     parent = selected.parent(record['wrapperTypeName'])
+    if 'wrapperParentChain' in proof:
+        from scripts.game_data.il2cpp.reference_layouts import validate_reference_ancestor_chain
+        chain = proof['wrapperParentChain']
+        if not isinstance(chain, list) or not chain:
+            fail('setter-output-wrapper-ancestors', 'explicit wrapper reference ancestor chain', chain)
+        try:
+            validate_reference_ancestor_chain(selected, record['wrapperTypeName'], chain, chain[-1])
+        except ValueError as error:
+            fail('setter-output-wrapper-ancestors', chain, str(error))
+        parent = chain[-1]
     _owner, base_type, instance = selected.field(parent + '::' + proof['baseInstanceField'])
-    if selected.parent(record['runtimeTypeName']) != base_type or not 0 <= instance < 128:
+    if 'runtimeParentChain' in proof:
+        from scripts.game_data.il2cpp.reference_layouts import validate_reference_ancestor_chain
+        try:
+            validate_reference_ancestor_chain(selected, record['runtimeTypeName'], proof['runtimeParentChain'], base_type)
+        except ValueError as error:
+            fail('setter-output-data-ancestors', proof['runtimeParentChain'], str(error))
+    elif selected.parent(record['runtimeTypeName']) != base_type:
+        fail('setter-output-base-instance-type', base_type, selected.parent(record['runtimeTypeName']))
+    if not 0 <= instance < 128:
         fail('setter-output-base-instance-type', 'exact immediate base Data and disp8 slot', [base_type, instance])
     cached = _typed_field(selected, record['wrapperTypeName'],
         proof['cachedInstanceField'], record['runtimeTypeName'], fail)

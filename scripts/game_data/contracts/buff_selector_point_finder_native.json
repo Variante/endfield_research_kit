@@ -1,0 +1,92 @@
+{
+  "schema": "endfield.buff-selector-point-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "finder_0e_native.json",
+  "dispatcher": {
+    "switchTableRva": 59821652,
+    "switchEntryCount": 24,
+    "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+    "unionTag": 14,
+    "switchTargetRva": 59820044,
+    "routeWindow": {
+      "startRva": 59820044,
+      "endRva": 59820063,
+      "sha256": "CA7E0548F1B4B9FCDE66A18CE650143DACBFFAD741D9B71DD6746C3CED57E44C",
+      "boundary": "PointFinder route through actual type usage load"
+    },
+    "usageCellRva": 217990624,
+    "usageRawHex": "6344032000000000",
+    "registeredTypeIndex": 107057,
+    "wrapperTypeDefinition": 23053,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPack",
+    "typeLoadInstruction": [
+      59820056,
+      "488B15C17D6D09"
+    ]
+  },
+  "records": {
+    "pointFinder": {
+      "sourceContract": "finder_0e_native.json",
+      "wrapperTypeDefinition": 23053,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPack",
+      "runtimeTypeDefinition": 10200,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Selector+PointFinder+Data",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "finder14member2",
+      "readerMethod": [
+        167194,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPack",
+        "Deserialize",
+        66767312
+      ],
+      "members": [
+        {
+          "fieldName": "positionOffset",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 167190,
+          "kind": "BlackboardVector3",
+          "sourceCall": {
+            "rva": 66767463,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66767482,
+            "targetRva": 66767616,
+            "methodIndex": 167190
+          },
+          "sourceContextInstructionRva": 66767450,
+          "sourceToDestinationHex": "4885FF747F4533C0488BD0488BCF"
+        },
+        {
+          "fieldName": "rotationOffset",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 167191,
+          "kind": "BlackboardVector3",
+          "sourceCall": {
+            "rva": 66767500,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66767519,
+            "targetRva": 66767664,
+            "methodIndex": 167191
+          },
+          "sourceContextInstructionRva": 66767487,
+          "sourceToDestinationHex": "4885DB745A4533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current selected nested route and two named BlackboardVector3 source-to-setter transfers.",
+    "conditional": "Each independently bounded vector composes the shared current vector/scalar proof. Complete Buff roots require their own full family gate and original-root replay.",
+    "unresolved": "Evaluated offsets, selected point, world coordinates and runtime finder execution."
+  }
+}

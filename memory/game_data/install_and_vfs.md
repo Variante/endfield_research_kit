@@ -8,6 +8,93 @@ installed client exposes: which VFS blocks exist and which maintained reader
 owns each payload family. Every other file assumes you know which block its
 bytes came out of.
 
+## Launcher patch downloads
+
+The configured install is resolved from `endfield_paths.bat`; its game root
+is the `Endfield_Data` directory, and launcher staging is beside it under
+`launcher_tmp/<launcher-id>/`. An observed predownload uses
+`predownload/<old-version>-<new-version>_file/` for archive parts and
+`predownload/download_sdk_config` for the JSON download task. Read that task
+to locate the actual package rather than assuming the launcher id or version
+directory survives a future update. Its `file_list` records each part's
+download filename and expected size; `total_size`, `version_id` and
+`decompress_path` describe the package and configured extraction destination.
+On observed download completion, the launcher moves the numbered archive parts
+to the sibling `preload/` directory, retaining `.zip.<part>.tmp` filenames, and
+clears the download task to an empty JSON array. Thus `decompress_path` does
+not by itself mean extracted files: `preload/` can hold the completed encrypted
+package. Completion and staging do not prove installation has occurred.
+
+Direct reads of the first downloaded part prove ZIP local-file headers with
+game-relative entry names. Inspected encrypted entries have method 99 and
+the AES extra field (`0x9901`) identifying AE-2, AES-256 and underlying
+Deflate. Filenames can therefore be inspected without decrypting contents;
+payload extraction requires the appropriate password. Numbered `.zip` parts
+form one package, and active download filenames carry temporary task suffixes.
+An incomplete download cannot establish the complete archive inventory or
+whole-package validity. Encryption observed in inspected entries does not
+prove every entry uses it. A complete central-directory inspection established
+AE-2/AES-256 on every non-directory entry in the observed package, with both
+stored and Deflate inner methods; this is metadata evidence, not authenticated
+payload validation. Read the numbered parts as one seekable byte stream to
+inspect the directory without creating another full-size concatenated file.
+
+The completed package contains client-relative binaries and control files
+(`patch.json`, `delete_files.txt`, `game_files`, verification manifests), full
+VFS catalogs/chunks under `vfs_files/files/Endfield_Data/StreamingAssets/VFS/`,
+and `.chk_patch` payloads under `vfs_files/vfs_patch/diff_<new>_<old>/`.
+This proves a mixed package layout; the chunk-patch algorithm, source/target
+joins and deletion instructions remain unresolved until the encrypted control
+files and payloads are read. The downloader task's patch flags alone cannot
+exclude those chunk-patch members. Existing verified VFS catalog identities
+can name their hash directories, but that join does not decode the new
+catalogs or identify changed logical records, characters or Story content.
+
+### Where to look for the archive password
+
+Static inspection of the installed launcher's `Games.exe` gives two direct
+anchors. `CLibNetworkUtils::ParseLatestGameJson` reads a JSON string field
+`cd_key` into its parsed game info. `CDecompressAssist::Start` interpolates
+a supplied nonempty password into `-p"%1"` for the bundled `7zg.exe`
+extraction command. The complete join between those anchors is still
+unresolved, so `cd_key` is a strong password candidate, not a recovered or
+tested password.
+
+Inspect the launcher's latest-game response (`/api/game/get_latest`, or the
+`get_latest_game`/`batch_get_latest_game` messages supported by its launcher
+API) and the response's `packs`, `patches` and `pre_patch` objects for that
+field. Alternatively, the extraction process's password argument is a direct
+observation point when the launcher actually unpacks the archive. Predownload
+completion alone does not launch extraction. The observed download-task JSON
+contains no password field; the launcher's `Cache/Config/Config` is not
+plaintext JSON and its encoding remains unresolved. Account-login password
+strings are a separate code path and do not establish an archive password.
+
+The public HTTPS `launcher.hypergryph.com/api/game/get_latest` endpoint can
+be read with the observed client fields `appcode`, `channel`, `sub_channel`,
+`version` and `patch_encrypt=true`. Resolve the selected game's appcode from
+its package/CDN identity rather than using the display name: the observed CDN
+path's first segment selected the correct game's response. The response's
+`pre_patch.patches` supplies part URLs, expected sizes and MD5s, which allow
+transport identity checks without decryption. The queried responses supplied
+no `cd_key`, including the fresh-install request and the request with launcher
+fields; this observation does not establish that all endpoints omit it or
+that it is withheld until release. Matching every part's checksum proves the
+download matches that metadata, not that encrypted members have been
+AES-authenticated or that their inner patch format has been understood. Keep
+raw responses with signed URLs under `tmp/`, and checksum receipts under
+`reports/launcher/`.
+
+Separate package inspection from content recovery: a completed archive's
+directory describes included physical files, while comparison of complete old
+and new decoded exports describes recovered Story, character, map and gameplay
+changes. Preserve the old export baseline before an installed-client refresh;
+the maintained sync/Updates workflow is documented in `scripts/README.md`.
+Predownload files are staging evidence, not the active `Persistent` overlay,
+and must not be treated as installed-build native evidence. Package-specific
+paths, sizes and inventories belong in `reports/launcher/`; the format and
+interpretation boundaries above remain the durable record.
+
 ## The VFS blocks
 
 The authenticated VFS audit locates every logical file by block, chunk, offset

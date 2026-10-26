@@ -10,12 +10,16 @@ from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript.framing_common import _record_start
 from typing import Any
 
-# Exact current-build ActionHeader identities recovered from the installed
-# ActionHeaderForMemoryPack formatter and global-metadata.dat. Keep this table
-# version-scoped: historical exports use different serialized codes for some
-# of the same event classes (notably OnDialogExit).
-LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID = (
-    "gameassembly-2026-07-11-cr-0x18b9217d0-actionheader"
+# Build-neutral route ids for LevelScript union identities. The selected build
+# is authenticated by contracts/levelscript_union_tags.json, so the ids name the
+# semantic route only. Historical exports use different serialized codes for
+# some of the same classes (notably OnDialogExit); never reuse a table across
+# builds without that contract validating.
+LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID = "levelscript-union-tags-actionheader"
+LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID = "levelscript-union-tags-actionbase"
+LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID = "levelscript-union-tags-puregetter"
+LEVELSCRIPT_ACTIONBASE_FORMATTER_TABLE_MAPPING_ID = (
+    "levelscript-union-tags-actionbase-formatter-table"
 )
 
 
@@ -52,8 +56,8 @@ LEVELSCRIPT_NATIVE_HEADER_TAG_NAMES: dict[tuple[int, int], str] = {
 
 
 # Complete current-build ActionHeaderForMemoryPack union registration table.
-# GameAssembly cctor VA 0x1843bb480 registers contiguous tags 0x0000..0x00e5
-# through helper 0x183ead480. Union identity is selected by the tag; the
+# Tags come from the ActionHeader union in contracts/levelscript_union_tags.json
+# (registration addresses and tag ceiling live there). Union identity is selected by the tag; the
 # concrete subtype member count remains separately retained on decoded records
 # as a payload-shape guard.
 LEVELSCRIPT_NATIVE_HEADER_UNION_TAG_NAMES: dict[int, str] = {
@@ -357,7 +361,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "label": "actionbase-call-server",
         "confidence": "high",
         "note": (
-            "compact MemoryPack tag 0x34 with member count 0x0e maps to "
+            "selected-build formatter dispatch and reviewed member count map to "
             "CallServer; generated setters name the event-args, event-name, "
             "callback, and custom-event fields"
         ),

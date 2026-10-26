@@ -1,0 +1,128 @@
+{
+  "schema": "endfield.wwise-device-observer.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "ownerContract": "wwise_voice_pipeline_native",
+  "identityRole": "renderClientIdentity",
+  "callerGroup": "sinkSubmit",
+  "bindingKind": "observedRenderClientVtable",
+  "hooks": [
+    {
+      "index": 32,
+      "name": "WASAPI.IAudioRenderClient.GetBuffer",
+      "abiId": "win64.wasapi_get_buffer.v1",
+      "callerField": "getBufferCallRva",
+      "slotField": "getBufferSlot",
+      "memory": [
+        {
+          "name": "getBufferTarget",
+          "argIndex": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "offsetFromIdentity": "getBufferSlot",
+          "kind": "pointer",
+          "requireArgument": 0
+        },
+        {
+          "name": "releaseBufferTarget",
+          "argIndex": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "offsetFromIdentity": "releaseBufferSlot",
+          "kind": "pointer",
+          "requireArgument": 0
+        },
+        {
+          "name": "requestedFrames",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "argumentU32"
+        },
+        {
+          "name": "outputPointerReference",
+          "argIndex": 2,
+          "offset": 0,
+          "kind": "argument"
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "hresultBits",
+          "argIndex": 4,
+          "offset": 0,
+          "kind": "argumentU32"
+        },
+        {
+          "name": "returnedBuffer",
+          "argIndex": 2,
+          "offset": 0,
+          "kind": "pointer",
+          "requireMemory": {
+            "name": "hresultBits",
+            "equals": 0
+          }
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "name": "WASAPI.IAudioRenderClient.ReleaseBuffer",
+      "abiId": "win64.wasapi_release_buffer.v1",
+      "callerField": "releaseBufferCallRva",
+      "slotField": "releaseBufferSlot",
+      "memory": [
+        {
+          "name": "releasedFrames",
+          "argIndex": 1,
+          "offset": 0,
+          "kind": "argumentU32"
+        },
+        {
+          "name": "releaseFlags",
+          "argIndex": 2,
+          "offset": 0,
+          "kind": "argumentU32"
+        },
+        {
+          "name": "bufferPointer",
+          "argIndex": 6,
+          "offset": 0,
+          "kind": "argument"
+        },
+        {
+          "name": "copiedPrefix",
+          "argIndex": 6,
+          "offset": 0,
+          "kind": "bytes",
+          "countField": "releasedFrames",
+          "stride": 4,
+          "maxBytes": 256
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "hresultBits",
+          "argIndex": 4,
+          "offset": 0,
+          "kind": "argumentU32"
+        }
+      ]
+    }
+  ],
+  "correlationBoundary": "Only the selected native sink-submit caller sites, same retained render client, and an observed sink invocation may emit device rows. ReleaseBuffer carries the successful same-invocation GetBuffer capture ID and returned buffer as extraArgument. The extra argument is observer context, not a fifth API argument.",
+  "bufferBoundary": "GetBuffer records HRESULT and reads its out pointer only on S_OK. ReleaseBuffer reads min(256, releasedFrames*4) bytes before forwarding, provided frames do not exceed the successful request. This is a bounded prefix independent of the whole interleaved channel extent. No release-return buffer read is allowed.",
+  "lifecycleBoundary": "The worker discovers and hooks at most four distinct targets per method. Early selected sink calls can precede installation and are counted as bootstrap skips. Disabled trampolines and bounded target-module references remain resident until process exit, matching source-hook cleanup.",
+  "evidenceBoundary": {
+    "exact": "Selected native triplet, borrowed complete sink caller, render-client IID and virtual-call slot declarations.",
+    "direct": "Paired SDK HRESULT calls, same-client buffer identity and bounded bytes before release; runtime implementation targets are observed, not cataloged or assigned a pinned OS build.",
+    "conditional": "S_OK, nonnull readable output pointer, current selected sink scope, exact caller return site, matching client and frame bound. Zero/nonzero HRESULT is preserved as raw unsigned bits, not replaced or reinterpreted as source status.",
+    "unresolved": "Unobserved early calls, complete buffers, endpoint identity/format history, asynchronous lifetime, device processing and audibility."
+  }
+}

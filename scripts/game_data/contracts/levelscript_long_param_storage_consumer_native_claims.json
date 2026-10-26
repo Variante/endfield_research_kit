@@ -1,0 +1,28 @@
+{
+  "schema": "endfield.levelscript-long-param-storage-consumer-native-claims.v2",
+  "status": "reviewed",
+  "dependencies": [
+    {"role": "storage", "path": "levelscript_long_param_native.json"},
+    {"role": "consumer", "path": "levelscript_long_param_value_native_claims.json"},
+    {"role": "utf8Source", "path": "memorypack_utf8_source_helper_native.json"}
+  ],
+  "claims": {
+    "sameConcreteWrapperAndParameter": true,
+    "sameGetterAndConstSourceSetters": true,
+    "constantBytes": 8,
+    "storedSelector": "PARAM_SOURCE_CONST",
+    "selectedReadyConsumerPath": "constant-output",
+    "return": "unchanged Int64 bits",
+    "identityConditions": [
+      "same selected output-slot wrapper throughout field population, GetValue and consumer use",
+      "same compatible holder throughout field population, GetValue and consumer use",
+      "constant and selector storage unchanged except for the proved selected field writes"
+    ],
+    "runtimeReceiverOrProviderSelectionProved": false
+  },
+  "evidenceBoundary": {
+    "direct": "Actual concrete generated wrapper, getter/setter identities, typed holder definition and stored/consumer field intervals are cross-joined after both owning proofs validate.",
+    "conditional": "Selected default buffered stored constant and CONST selector, same compatible wrapper/holder and unchanged storage, ordinary closed ABI and selected initialized/ready contexts yield unchanged Int64 bits through the selected output return.",
+    "unresolved": "Runtime receiver/provider/MethodInfo selection, opaque callee non-interference, enclosing positive owner/list admission, nonconstant evaluation and live execution."
+  }
+}

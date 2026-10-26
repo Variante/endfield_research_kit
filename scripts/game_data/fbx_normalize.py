@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import re
 import struct
+import hashlib
+import zlib
 
 FBX_MAGIC = b"Kaydara FBX Binary  \x00"
 # Blender's fixed export values; any constant works, these are recognisable.
@@ -43,6 +45,16 @@ FIXED_TIMESTAMP = {
 OBJECT_ID_BASE = 0x1000_0000_0000
 _PATH_ID_SUFFIX = re.compile(rb"_p[0-9A-Fa-f]{16}(?=\.fbx$|$)")
 _SCALAR_SIZES = {ord("Y"): 2, ord("C"): 1, ord("I"): 4, ord("F"): 4, ord("D"): 8, ord("L"): 8}
+FBX_CONTENT_SCHEMA = "endfield.fbx-content-without-instance-pose.v2"
+FBX_VARIANT_SCHEMA = "endfield.fbx-content-with-instance-pose.v1"
+_POSE_PROPERTIES = frozenset({
+    b"Lcl Translation", b"Lcl Rotation", b"Lcl Scaling",
+    b"PreRotation", b"PostRotation", b"RotationOffset", b"RotationPivot",
+    b"ScalingOffset", b"ScalingPivot", b"GeometricTranslation",
+    b"GeometricRotation", b"GeometricScaling",
+    b"PreferedAngleX", b"PreferedAngleY", b"PreferedAngleZ",
+    b"PreferredAngleX", b"PreferredAngleY", b"PreferredAngleZ",
+})
 
 
 class _Node:
@@ -90,7 +102,7 @@ def _parse_props(buf: bytes, offset: int, count: int, end: int) -> list[tuple[in
     return props
 
 
-def _parse_nodes(buf: bytes, offset: int, end: int, wide: bool) -> tuple[list[_Node], int]:
+def _parse_nodes(buf: bytes, offset: int, end: int, wide: bool, *, strict: bool = False) -> tuple[list[_Node], int]:
     header = "<QQQ" if wide else "<III"
     header_size = 24 if wide else 12
     null_record = header_size + 1
@@ -108,7 +120,9 @@ def _parse_nodes(buf: bytes, offset: int, end: int, wide: bool) -> tuple[list[_N
         if not offset + null_record <= props_at <= props_at + props_size <= node_end <= end:
             raise ValueError("FBX node bounds do not advance within the parent")
         props = _parse_props(buf, props_at, count, props_at + props_size)
-        children, _ = _parse_nodes(buf, props_at + props_size, node_end, wide)
+        children, child_end = _parse_nodes(buf, props_at + props_size, node_end, wide, strict=strict)
+        if strict and child_end != node_end:
+            raise ValueError("FBX node has unparsed trailing bytes")
         nodes.append(_Node(name, props, children))
         offset = node_end
     return nodes, offset
@@ -129,6 +143,10 @@ def normalize_fbx(data: bytes) -> bytes:
         top, top_end = _parse_nodes(data, 27, len(data), version >= 7500)
     except (ValueError, struct.error, IndexError, RecursionError):
         return data
+    return _normalize_parsed_fbx(data, top, top_end)
+
+
+def _normalize_parsed_fbx(data: bytes, top: list[_Node], top_end: int) -> bytes:
     buf = bytearray(data)
     by_name = {node.name: node for node in top}
 
@@ -183,3 +201,155 @@ def normalize_fbx(data: bytes) -> bytes:
     if top_end + 16 <= len(buf):
         buf[top_end:top_end + 16] = FIXED_FOOTER_ID
     return bytes(buf)
+
+
+def fbx_content_fingerprint(data: bytes, export_stem: str) -> str:
+    """Compare FBX resources while ignoring instance placement and skin pose.
+
+    The original file and its SHA256 are never changed. Only DocumentUrl and
+    SrcDocumentUrl naming this export, non-bone Null carrier labels, local and
+    geometric transforms, preferred joint angles, pose matrices and Cluster
+    bind matrices are excluded after ordinary SDK normalization. Mesh/bone
+    names, geometry, materials, hierarchy, skin indices/weights and animation
+    remain part of the key. This is a grouping policy, not file equivalence.
+    Typed matrix dimensions and the surrounding graph still participate.
+    Unknown or malformed binary framing supplies no fingerprint.
+    """
+    return fbx_content_fingerprints(data, export_stem)[0]
+
+
+def fbx_content_fingerprints(data: bytes, export_stem: str) -> tuple[str, str]:
+    """Read once for a resource key and a pose-preserving variant key.
+
+    Both ignore export/instance labels. The second retains all placement,
+    pose and bind values, decoding matrix arrays so compression alone cannot
+    create a variant. Neither key changes the exported file or its full hash.
+    """
+    if not export_stem or not data.startswith(FBX_MAGIC) or len(data) < 27:
+        return "", ""
+    try:
+        version = struct.unpack_from("<I", data, 23)[0]
+        top, top_end = _parse_nodes(data, 27, len(data), version >= 7500, strict=True)
+        if not top:
+            return "", ""
+        normalized = _normalize_parsed_fbx(data, top, top_end)
+        view = memoryview(normalized)
+        by_name = {node.name: node for node in top}
+        omitted: set[int] = set()
+        pose_omitted: set[int] = set()
+        matrices: dict[int, bytes] = {}
+        stem = export_stem.encode("utf-8")
+
+        def value(prop: tuple[int, int, int]) -> bytes:
+            _, at, size = prop
+            return normalized[at:at + size]
+
+        header = by_name.get(b"FBXHeaderExtension")
+        scene = header.child(b"SceneInfo") if header else None
+        properties = scene.child(b"Properties70") if scene else None
+        for prop in properties.children if properties else ():
+            if prop.name != b"P" or len(prop.props) != 5 or prop.props[0][0] != ord("S") or prop.props[4][0] != ord("S"):
+                continue
+            if value(prop.props[0]) not in (b"DocumentUrl", b"SrcDocumentUrl"):
+                continue
+            filename = value(prop.props[4]).replace(b"\\", b"/").rsplit(b"/", 1)[-1]
+            if filename.endswith(b".fbx") and _PATH_ID_SUFFIX.sub(b"", filename[:-4]) == stem:
+                omitted.add(prop.props[4][1])
+
+        root_ids = set()
+        connections = by_name.get(b"Connections")
+        for node in connections.children if connections else ():
+            if node.name == b"C" and len(node.props) == 3 and tuple(p[0] for p in node.props) == (ord("S"), ord("L"), ord("L")):
+                if value(node.props[0]) == b"OO" and struct.unpack("<q", value(node.props[2]))[0] == 0:
+                    root_ids.add(value(node.props[1]))
+        objects = by_name.get(b"Objects")
+        object_nodes = objects.children if objects else ()
+        clusters = {value(node.props[0]) for node in object_nodes
+                    if node.name == b"Deformer" and len(node.props) >= 3
+                    and node.props[0][0] == ord("L") and value(node.props[2]) == b"Cluster"}
+        linked_bones = set()
+        for node in connections.children if connections else ():
+            if node.name == b"C" and len(node.props) == 3 and value(node.props[0]) == b"OO":
+                if value(node.props[2]) in clusters:
+                    linked_bones.add(value(node.props[1]))
+
+        def omit_matrix(node: _Node) -> None:
+            if len(node.props) == 1:
+                code, at, size = node.props[0]
+                if code in b"fd" and struct.unpack_from("<I", normalized, at - 12)[0] == 16:
+                    encoding = struct.unpack_from("<I", normalized, at - 8)[0]
+                    expected = 16 * (4 if code == ord("f") else 8)
+                    matrix = normalized[at:at + size]
+                    if encoding == 1:
+                        decoder = zlib.decompressobj()
+                        matrix = decoder.decompress(matrix, expected + 1)
+                        if not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:
+                            raise ValueError("invalid FBX matrix compression")
+                    elif encoding != 0:
+                        raise ValueError("unknown FBX matrix encoding")
+                    if len(matrix) != expected:
+                        raise ValueError("FBX matrix size mismatch")
+                    pose_omitted.add(at)
+                    matrices[at] = matrix
+
+        for node in objects.children if objects else ():
+            if node.name == b"Model" and len(node.props) >= 2 and node.props[0][0] == ord("L") and node.props[1][0] == ord("S"):
+                carrier = (len(node.props) >= 3 and value(node.props[2]) == b"Null"
+                           and value(node.props[0]) not in linked_bones)
+                own_root = value(node.props[0]) in root_ids and value(node.props[1]) == stem + b"\x00\x01Model"
+                if carrier or own_root:
+                    omitted.add(node.props[1][1])
+                properties = node.child(b"Properties70")
+                for prop in properties.children if properties else ():
+                    if (prop.name == b"P" and len(prop.props) > 4
+                            and prop.props[0][0] == ord("S") and value(prop.props[0]) in _POSE_PROPERTIES
+                            and all(p[0] in b"FD" for p in prop.props[4:])):
+                        pose_omitted.update(p[1] for p in prop.props[4:])
+            elif node.name == b"Pose":
+                for pose_node in node.children:
+                    if pose_node.name == b"PoseNode":
+                        matrix = pose_node.child(b"Matrix")
+                        if matrix:
+                            omit_matrix(matrix)
+            elif node.name == b"Deformer" and node.props and value(node.props[0]) in clusters:
+                for matrix in node.children:
+                    if matrix.name in (b"Transform", b"TransformLink", b"TransformAssociateModel"):
+                        omit_matrix(matrix)
+        if not omitted and not pose_omitted:
+            return "", ""
+
+        def fingerprint(schema: str, excluded: set[int], *, retain_pose: bool = False) -> str:
+            digest = hashlib.sha256(schema.encode("ascii") + b"\x00")
+            digest.update(view[:27])
+
+            def hash_nodes(nodes: list[_Node]) -> None:
+                digest.update(struct.pack("<Q", len(nodes)))
+                for node in nodes:
+                    digest.update(bytes([len(node.name)]))
+                    digest.update(node.name)
+                    digest.update(struct.pack("<Q", len(node.props)))
+                    for code, at, size in node.props:
+                        digest.update(bytes([code, at not in excluded]))
+                        if at in excluded:
+                            if code in b"fdlib":
+                                digest.update(view[at - 12:at - 8])  # Retain matrix element count.
+                            continue
+                        if retain_pose and at in matrices:
+                            digest.update(struct.pack("<Q", 12 + len(matrices[at])))
+                            digest.update(struct.pack("<III", 16, 0, len(matrices[at])))
+                            digest.update(matrices[at])
+                        else:
+                            # Other array descriptors retain their count and encoding.
+                            start = at - 12 if code in b"fdlib" else at
+                            digest.update(struct.pack("<Q", at + size - start))
+                            digest.update(view[start:at + size])
+                    hash_nodes(node.children)
+
+            hash_nodes(top)
+            digest.update(view[top_end:])
+            return digest.hexdigest()
+
+        return (fingerprint(FBX_CONTENT_SCHEMA, omitted | pose_omitted),
+                fingerprint(FBX_VARIANT_SCHEMA, omitted, retain_pose=True))
+    except (ValueError, zlib.error, struct.error, IndexError, RecursionError):
+        return "", ""

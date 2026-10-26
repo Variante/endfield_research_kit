@@ -6,6 +6,9 @@ it does not reuse the legacy all-row ``namedSchemaReceipts`` denominator.
 All logical files are rejoined to current exported bytes. The installed source
 receipt is checked before and after the scan, while parser changes remain a
 separate future family replay obligation. Nothing here admits a new schema.
+Only the unique marker candidate accepted by the recorded reader through EOF
+supplies named obligations and owned unions. Rejected marker probes remain a
+separate inventory; their absent receipts are not additional root gaps.
 """
 from __future__ import annotations
 
@@ -22,7 +25,38 @@ from scripts.common import ROOT, canonical_json_sha256, resolve_installed_native
 from scripts.game_data.jsondata_source_provenance import authenticate_current_jsondata_receipt
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _package_import_closure
 
-SCHEMA = "endfield.buff-residual-census.v3"
+SCHEMA = "endfield.buff-residual-census.v4"
+
+
+def _frontier_candidates(row: dict[str, Any], *, source: str, length: int):
+    candidates = row.get("candidates")
+    if not isinstance(candidates, list) or any(not isinstance(c, dict) for c in candidates):
+        raise ValueError(f"buffResidualCensus:marker-candidate-shape:source={source}")
+    accepted = []
+    rejected = []
+    for index, candidate in enumerate(candidates):
+        flag = candidate.get("readerAcceptedThroughEof")
+        if type(flag) is not bool:
+            raise ValueError(f"buffResidualCensus:marker-acceptance-flag:source={source},candidate={index},"
+                             f"expected=bool,actual={repr(flag)[:120]}")
+        if not flag:
+            rejected.append(candidate)
+            continue
+        receipt = candidate.get("namedSchemaReceipt")
+        # readerEndOffset belongs to another recorded parser projection and
+        # need not be the root EOF coordinate. The named receipt owns this join.
+        if (not isinstance(receipt, dict)
+                or type(receipt.get("physicalEof")) is not int
+                or receipt["physicalEof"] != length):
+            raise ValueError(f"buffResidualCensus:accepted-marker-receipt:source={source},candidate={index},"
+                             f"expected=receipt-through-eof-{length},actualEnd={repr((receipt or {}).get('physicalEof') if isinstance(receipt, dict) else None)[:120]},"
+                             f"receiptPresent={bool(receipt)}")
+        accepted.append(candidate)
+    declared = row.get("candidateCount")
+    if type(declared) is not int or declared != len(accepted):
+        raise ValueError(f"buffResidualCensus:accepted-marker-count:source={source},"
+                         f"expected={repr(declared)[:120]},actual={len(accepted)}")
+    return accepted, rejected
 
 
 def _recorded_shared_stop(refusal: Any) -> str | None:
@@ -142,6 +176,9 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
     union_instances: Counter[tuple[str, int]] = Counter()
     shared_stops: dict[str, list[dict[str, Any]]] = defaultdict(list)
     without_shared_stop = 0
+    accepted_candidates = rejected_candidates = rejected_files = ambiguous_files = 0
+    rejected_statuses: Counter[str] = Counter()
+    rejected_examples: dict[str, set[str]] = defaultdict(set)
     residuals = []
     exact = 0
     for row in rows:
@@ -170,11 +207,28 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
         else:
             shared_stops[shared_stop].append({"source": source, "logicalSha256": row["logicalSha256"],
                                              "refusal": row["rootSharedEventRefusal"]})
-        candidates = row.get("candidates") or []
+        candidates, rejected = _frontier_candidates(row, source=source, length=len(data))
+        accepted_candidates += len(candidates)
+        rejected_candidates += len(rejected)
+        rejected_files += bool(rejected)
+        for candidate in rejected:
+            status = candidate.get("readerStatus")
+            status = status if isinstance(status, str) and status else "unclassified-rejected-marker"
+            rejected_statuses[status] += 1
+            rejected_examples[status].add(source)
         source_obligations = set()
         source_first = set()
         source_unions = Counter()
-        for candidate in candidates:
+        if len(candidates) != 1:
+            ambiguous_files += 1
+            key = ("root", "unique-accepted-marker-frame-unresolved")
+            source_obligations.add(key)
+            source_first.add(key)
+            obligations[key].add(source)
+            first[key].add(source)
+        # Multiple accepted frames do not supply unique named field ownership.
+        selected_candidates = candidates if len(candidates) == 1 else []
+        for candidate in selected_candidates:
             receipt = candidate.get("namedSchemaReceipt") or {}
             blockers = receipt.get("blockers") or []
             if not blockers:
@@ -203,6 +257,9 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
             union_instances[key] += count
         residuals.append({"source": source, "logicalSha256": row["logicalSha256"],
                           "length": len(data), "candidateCount": len(candidates),
+                          "recordedMarkerCandidates": len(candidates) + len(rejected),
+                          "rejectedMarkerCandidates": len(rejected),
+                          "candidateSelectionStatus": "unique-accepted-through-eof" if len(candidates) == 1 else "unresolved",
                           "firstObligations": [{"field": f, "category": c} for f, c in sorted(source_first)],
                           "obligations": [{"field": f, "category": c} for f, c in sorted(source_obligations)],
                           "completedUnionCohorts": [{"field": f, "tag": t, "instances": n}
@@ -229,9 +286,21 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
             "inputSetSha256": report["inputSetSha256"], "publicationEligible": False,
             "summary": {"filesChecked": len(rows), "exactRootsExcluded": exact,
                         "residualFiles": len(residuals), "firstObligationCohorts": len(first),
-                        "completedUnionCohorts": len(unions)},
+                        "completedUnionCohorts": len(unions),
+                        "acceptedFrontierCandidates": accepted_candidates,
+                        "rejectedMarkerCandidates": rejected_candidates,
+                        "filesWithRejectedMarkers": rejected_files,
+                        "filesWithoutUniqueAcceptedFrontier": ambiguous_files},
             "firstObligations": rank(first), "allObligations": rank(obligations),
             "completedUnionCohorts": rank(unions, tags=True), "files": residuals,
+            "rejectedMarkerProbes": {
+                "statuses": [{"readerStatus": status, "candidates": count,
+                              "distinctFiles": len(rejected_examples[status]),
+                              "examples": sorted(rejected_examples[status])[:8]}
+                             for status, count in sorted(rejected_statuses.items())],
+                "evidenceBoundary": "Explicitly rejected marker candidates remain recorded probes; "
+                    "their absent naming receipts and partially decoded unions are excluded from "
+                    "named obligation and owned-union counts."},
             "recordedSharedEventStops": {
                 "filesWithoutRecordedStop": without_shared_stop,
                 "firstStops": [{"diagnostic": diagnostic, "distinctFiles": len(sources),
@@ -243,6 +312,7 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
                     "An absent recorded refusal is not proof of closure; counts cannot predict whole-file recovery."},
             "evidenceBoundary": "Counts concern unresolved files in the recorded complete family receipt. "
                 "All original logical bytes are rejoined, but changed readers are not replayed here. "
+                "Only one recorded accepted EOF frame supplies named frontier ownership. "
                 "Cohorts overlap; completed unions are stored spans, not first-stop claims, execution, "
                 "or predicted whole-file closures. Only the complete family gate can admit new exact roots."}
 

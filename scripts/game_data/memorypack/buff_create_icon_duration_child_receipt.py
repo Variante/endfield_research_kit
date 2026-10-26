@@ -18,6 +18,7 @@ import struct
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag as _A
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets
@@ -44,7 +45,7 @@ def _contract() -> dict[str, Any]:
     if (
         value.get("parentActionContract") != "skill_timeline_create_buff_native.json"
         or value.get("readerContract") != "buff_92_native.json"
-        or value.get("parentUnionTag") != 0x0092
+        or value.get("parentUnionTag") != _A("Core_CreateBuffAction_Data")
         or len(value.get("wrapper", {}).get("setterMethods", ())) != 2
         or value["wrapper"].get("readOrder") != ["durationSourceType", "timedMarkerId"]
         or [row[1].removeprefix("set___").removesuffix("__")

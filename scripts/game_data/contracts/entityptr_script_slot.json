@@ -84,54 +84,54 @@
   }
  ],
  "nativeInputs": {
-  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+  "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
  },
  "methods": [
   {
    "id": "getSlotParentScriptId",
    "type": "Beyond.Gameplay.Core.EntityPtr",
    "name": "GetSlotParentScriptId",
-   "va": "0x186374908",
-   "fileOffset": 104280840,
-   "bodySize": 400,
-   "bodySha256": "E079B43F8AC97C7BF12802E2AD1399B46455C8A2465BA6B15B9DB0FED075D3C6"
+   "va": "0x189234afc",
+   "fileOffset": 153301756,
+   "bodySize": 392,
+   "bodySha256": "BC0BE9187DD6B39EA684E381EEF8B65382D85069913B31853B92189E8DB45496"
   },
   {
    "id": "tryGetEntityBySlotId",
    "type": "Beyond.Gameplay.Core.EntityPtr",
    "name": "_TryGetEntityBySlotId",
-   "va": "0x1863752d8",
-   "fileOffset": 104283352,
-   "bodySize": 600,
-   "bodySha256": "E038C842662B6B6FE9403C2880B04D7C7DA39588A3F98CECA50DBA5CB0815B6C"
+   "va": "0x1892354a4",
+   "fileOffset": 153304228,
+   "bodySize": 628,
+   "bodySha256": "BD1CE6FA535B7B559FF332582B3180FDB2D934988AE3A7F64424CD308F18A123"
   },
   {
    "id": "tryGetScriptEntityLogicIdBySlotId",
    "type": "Beyond.Gameplay.Core.EntityManager",
    "name": "TryGetScriptEntityLogicIdBySlotId",
-   "va": "0x18319ff10",
-   "fileOffset": 52029712,
+   "va": "0x186b88420",
+   "fileOffset": 112749600,
    "bodySize": 192,
-   "bodySha256": "52071063784AD38C18F3C919DD58B01D60DA12468DEF3F782AFC31982DF53BCE"
+   "bodySha256": "BA1C18A554E76661D38AA10A5097285714A109A58569193FE3942CE84B0E3FDD"
   },
   {
    "id": "onScriptEntityDataAdd",
    "type": "Beyond.Gameplay.Core.EntityManager",
    "name": "OnScriptEntityDataAdd",
-   "va": "0x1863a31a8",
-   "fileOffset": 104471464,
-   "bodySize": 288,
-   "bodySha256": "3C48FD5EDB062A6F483631710641118A60F8B700E640BCCEBED8DAAA08C721B7"
+   "va": "0x186b13c00",
+   "fileOffset": 112272384,
+   "bodySize": 272,
+   "bodySha256": "9988AC18CEB84B8D8D123696B1128209BB52228375E2B93F1436C3B4AA03227B"
   },
   {
    "id": "onScriptEntityDataRemove",
    "type": "Beyond.Gameplay.Core.EntityManager",
    "name": "OnScriptEntityDataRemove",
-   "va": "0x1863a32c8",
-   "fileOffset": 104471752,
-   "bodySize": 348,
-   "bodySha256": "CEB35A9D5D3E73BF9A490A1C0D548154B227DF331FAC8140DFAFE9879CF96CFD"
+   "va": "0x186b884e0",
+   "fileOffset": 112749792,
+   "bodySize": 336,
+   "bodySha256": "57DBAF536E5F36C9DF6B440F819931B588F74109F8CACAD33983009FF4A03F59"
   }
  ]
 }

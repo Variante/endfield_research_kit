@@ -1,9 +1,9 @@
 {
-  "schema": "endfield.buff-action-consumer-claims.v11",
+  "schema": "endfield.buff-action-consumer-claims.v18",
   "status": "reviewed",
   "evidenceBoundary": {
     "direct": "Named compiled calls, selected virtual assignment/initialization claims and narrowly witnessed incoming-instance closed-data field reads. Field reads authenticate receiver ownership separately from mere displacement matching; they do not establish later call arguments or live values. A checked false Boolean guard also reaches a typed enum literal through a complete EAX-to-RET epilogue. Selected bool/byte Data reads authenticate a complete byte MOV or unsigned byte MOVZX, register/base/displacement and incoming-instance ownership; they do not normalize or evaluate the byte. An explicit byte-argument mode also joins the owned Data byte to the sole selected bool/byte parameter of a nongeneric reference instance method returning void/bool. An owned instance byte-store profile follows complete incoming-this/argument aliases through the selected false Boolean guard to a named instance field. An explicit normal-forward-jump profile follows only complete local EB/E9 instructions whose byte-derived targets match the decoded text and a selected instruction boundary. Conditional branches retain fallthrough; other paths and loops are not explored. An explicit closed-generic-reference-field profile independently proves a full reference read and does not admit generic sink argument forwarding. Register-only BT decoding preserves operand direction, width, complete boundaries and the fact that only flags are written. A separate owned-byte return profile proves the selected false Boolean guard and non-null Data fallthrough return alwaysNext through AL with an unchanged complete epilogue.",
-    "conditional": "These calls describe compiled paths. Branch selection, IFix execution and actual delivery require separate evidence. Explicit local-path selection checks complete original instruction boundaries and local branch edges, while preserving the existing incoming-instance, field, ABI and clobber proofs. It does not establish branch feasibility, live selection or callee return.",
+    "conditional": "These calls describe compiled paths. Branch selection, IFix execution and actual delivery require separate evidence. Explicit local-path selection checks complete original instruction boundaries and local branch edges, while preserving the existing incoming-instance, field, ABI and clobber proofs. It does not establish branch feasibility, live selection or callee return. Incoming-reference stack transfer follows complete original local CFG edges under explicit named false-call selection, normal Win64 callees and valid non-forged heap references. Entry-relative slots survive only full-width stores/loads, no overlap, no outgoing-home clobber and no escaped local address. Only first arrival at the witnessed call within its method prefix is admitted; paths leaving that prefix and later re-entering, and live IFix selection, remain separate. A matched-pair replacement program checks the true-comparison fallthrough, retained dynamic flag, complete pair stores and immediate return; comparison identity, complete scan coverage and prior base provenance remain separate obligations. Full-reference call-result joins select contiguous fallthrough and normal Win64 preservation, not live branch selection. A complete keyed Float lookup program proves direct-first/entity-fallback with identical key/out lanes; it does not prove typed-expression overloads. A complete dynamic-entry filter proves non-dynamic input returns false before scanning under false IFix selection; collision handling is separate. A selected vector/stack field-copy program preserves key, Double, string and the supplied dynamic byte through bounded vector-neutral helper entries. Correct source-record address, unchanged destination and helper memory noninterference remain conditions; whole list traversal and count-helper dispatch are not claimed. Guarded embedded RVA-table framing separates complete code from tail data without promoting every operation. Complete dynamic-list loop framing binds the source index, captured helper bound, record stride, field-copy window and local backedge; a named MethodSpec context does not identify a different physical call target as the registered method.",
     "unresolved": "Live target selection, evaluated values, keys, writes, server acceptance and whole Buff behavior. Call presence does not prove that a particular stored field supplies a call argument. Concrete reference suffixes establish only the selected closed Data slot. AI target-group updates, shorter SpellInfliction, CharHurtAnim, Ignite text events, projectile launch and lock-on recovery retain separate live branch/value/entity/effect gaps. Generic event Dispatch presence does not identify its instantiated event payload. Global creation/finish, lifetime arithmetic, chosen Buff handles, Switch Option selection/iteration and conditional mask outcomes remain open even when owned configuration fields and selected sink arguments are proved. The custom Switch policy caller use and current Data assignment, runtime duration values, early-finish reason, weapon receiver and rendering effects remain separate obligations.",
     "structuralOnly": "A closedReferenceLayout claim independently proves the selected sole generic reference slot with either an instance-fieldless concrete subclass or an explicitly checked complete contiguous concrete suffix. Selected static declarations do not consume instance space. Closed generic suffix references authenticate the selected reference-class definition and complete closed argument identity independently of argument storage; generic value types remain excluded. This does not claim a field read, runtime type, field value or use at a sink."
   },
@@ -2452,12 +2452,18 @@
         "recoverPoise.ExecuteInternal": {
           "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
           "method": "ExecuteInternal",
-          "parameters": ["Beyond.Gameplay.Core.TargetHandleView"],
-          "claims": [{"calls": [
-            "Beyond.Gameplay.Core.AbilityActionUtils.GetActionTarget",
-            "Beyond.Gameplay.Core.AbilitySystem+Modifier.NewPoise",
-            "Beyond.Gameplay.EffectManager.CreateEffectByCfg"
-          ]}],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetActionTarget",
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.NewPoise",
+                "Beyond.Gameplay.EffectManager.CreateEffectByCfg"
+              ]
+            }
+          ],
           "contract": "Compiled direct calls only. Operand ownership, amount computation, selected target and accepted poise/effect writes remain unresolved."
         }
       }
@@ -2468,11 +2474,15 @@
           "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
           "method": "get_executeReturnType",
           "parameters": [],
-          "claims": [{"returnsEnumAfterFalseCall": {
-            "call": "IFix.WrappersManagerImpl.IsPatched",
-            "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
-            "member": "CustomReturnType"
-          }}],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
           "contract": "The selected false IFix guard reaches a typed return-policy literal and complete return epilogue. This does not establish runtime guard selection or action execution."
         }
       }
@@ -2483,12 +2493,16 @@
           "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
           "method": "AlwaysReturnTrue",
           "parameters": [],
-          "claims": [{"returnsClosedByteFieldAfterFalseCall": {
-            "call": "IFix.WrappersManagerImpl.IsPatched",
-            "witnessType": "Beyond.Gameplay.Core.RecoverPoiseAction",
-            "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.RecoverPoiseAction+Data>::m_data",
-            "valueField": "Beyond.Gameplay.Core.RecoverPoiseAction+Data::alwaysNext"
-          }}],
+          "claims": [
+            {
+              "returnsClosedByteFieldAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "witnessType": "Beyond.Gameplay.Core.RecoverPoiseAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.RecoverPoiseAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.RecoverPoiseAction+Data::alwaysNext"
+              }
+            }
+          ],
           "contract": "On the false selected Boolean IFix guard and non-null incoming owned Data fallthrough, an unsigned byte load supplies EAX/AL and survives the complete epilogue. The owned cold IFix target leaves this return program. This Boolean method is separate from the CustomReturnType enum getter; caller use, live patch selection and Data assignment remain unresolved."
         }
       }
@@ -2498,13 +2512,19 @@
         "recoverPoise.ExecuteInternal": {
           "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
           "method": "ExecuteInternal",
-          "parameters": ["Beyond.Gameplay.Core.TargetHandleView"],
-          "claims": [{"readsClosedDataField": {
-            "witnessType": "Beyond.Gameplay.Core.RecoverPoiseAction",
-            "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.RecoverPoiseAction+Data>::m_data",
-            "valueField": "Beyond.Gameplay.Core.RecoverPoiseAction+Data::target",
-            "onAnyLocalCompiledPath": true
-          }}],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.RecoverPoiseAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.RecoverPoiseAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.RecoverPoiseAction+Data::target",
+                "onAnyLocalCompiledPath": true
+              }
+            }
+          ],
           "contract": "One checked compiled local path reads target through the incoming owned Data slot. Target forwarding, selected entity, amount computation and accepted poise/effect writes remain unresolved."
         }
       }
@@ -2945,6 +2965,708 @@
             }
           ],
           "contract": "The owned incoming closed Data slot supplies contextKey, target and index reads. The index reference reaches the named static GetValue.param argument with Int32 return ABI. The named targets getter, GetTargetsView, SetTarget and UpdateTargetGroup calls are present. Target-to-GetTargetsView forwarding remains outside the current checker because its aggregate return ABI is excluded. Key-to-update forwarding, evaluated index, bounds outcome, item and target identity, mutation success, IFix selection and execution remain independent obligations."
+        }
+      }
+    },
+    "ifElseExecutionRoutes": {
+      "methods": {
+        "ifElse.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.IfElseAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.TargetHandle.CopyFrom",
+                "Beyond.Gameplay.Core.IfElseAction._DoExecute"
+              ]
+            }
+          ],
+          "contract": "Compiled target copy and downstream execution calls. Devirtualized helper routes may inline this body; named entry coverage is not a branch-coverage measure."
+        },
+        "ifElse._DoExecute": {
+          "type": "Beyond.Gameplay.Core.IfElseAction",
+          "method": "_DoExecute",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SequenceAction.ExecuteInstant",
+                "Beyond.Gameplay.Core.SequenceAction.Execute",
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.PushEventContext",
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.PopEventContext"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.IfElseAction::m_conditionAction"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.IfElseAction::m_succeedActions"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.IfElseAction::m_failActions"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.IfElseAction::m_processingActions"
+            }
+          ],
+          "contract": "Named child-sequence reads and compiled condition/selected-sequence execution with event-context push/pop. This does not independently prove incoming receiver ownership, actual selected branch or sequence result."
+        },
+        "sequence.Execute": {
+          "type": "Beyond.Gameplay.Core.SequenceAction",
+          "method": "Execute",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.Execute",
+                "Beyond.Gameplay.Core.AbilityAction.Reset",
+                "Beyond.Gameplay.Core.SequenceAction.get_actionEnvironment"
+              ]
+            }
+          ],
+          "contract": "Compiled child execution/reset and selected Context policy-field read. Full policy control flow, iteration values and final live Boolean remain separate claims."
+        },
+        "sequence.ExecuteInstant": {
+          "type": "Beyond.Gameplay.Core.SequenceAction",
+          "method": "ExecuteInstant",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.PushEventContext",
+                "Beyond.Gameplay.Core.SequenceAction.Execute"
+              ]
+            }
+          ],
+          "contract": "Compiled context publication and ordinary sequence execution. Actual context, reset-after-execute argument, context disposal and live branch selection remain unresolved."
+        }
+      }
+    },
+    "ifElseReturnPolicy": {
+      "methods": {
+        "ifElse.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.IfElseAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "Selected false IFix guard reaches the declared CustomReturnType literal and complete epilogue; live policy selection remains unobserved."
+        },
+        "ifElse.AlwaysReturnTrue": {
+          "type": "Beyond.Gameplay.Core.IfElseAction",
+          "method": "AlwaysReturnTrue",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsClosedByteFieldAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "witnessType": "Beyond.Gameplay.Core.IfElseAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.IfElseAction+IfElseActionData>::m_data",
+                "valueField": "Beyond.Gameplay.Core.IfElseAction+IfElseActionData::alwaysNext",
+                "concreteInstanceSuffix": true
+              }
+            }
+          ],
+          "contract": "Selected false IFix guard returns the owned Data alwaysNext byte through a complete epilogue. Caller composition, source assignment and live IFix selection remain separate obligations."
+        }
+      }
+    },
+    "healCalculationAndModifier": {
+      "methods": {
+        "heal.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.HealAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.HealModifier.ApplyModifier",
+                "Beyond.Gameplay.Core.BattleFormula.CalculateHeal",
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.NewHeal"
+              ]
+            }
+          ],
+          "contract": "Compiled target collection, heal modifier/calculation and new-heal operation calls. Their inputs, numeric result, selected receiver and final accepted HP change are not proved by call presence."
+        }
+      }
+    },
+    "energyCalculationAndDelivery": {
+      "methods": {
+        "obtainCost.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.ObtainCostAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.BattleFormula.CalculateUltimateSp",
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.NewUltimateSp",
+                "Beyond.Gameplay.Core.BattleManager.GainAtb"
+              ]
+            }
+          ],
+          "contract": "Separate compiled ultimate-energy calculation/modifier and shared ATB gain calls. Cost type, target, parameter forwarding and final resource change remain unresolved."
+        }
+      }
+    },
+    "actionResultComposition": {
+      "methods": {
+        "action.Execute": {
+          "type": "Beyond.Gameplay.Core.AbilityAction",
+          "method": "Execute",
+          "claims": [
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.Core.AbilityAction.get_executeReturnType"
+            },
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.Core.AbilityAction.AlwaysReturnTrue"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.AbilityAction::m_executeResult"
+            },
+            {
+              "writesField": "Beyond.Gameplay.Core.AbilityAction::m_executeResult"
+            },
+            {
+              "matches": "or al, sil"
+            },
+            {
+              "matches": "setne al"
+            }
+          ],
+          "contract": "Selected virtual policy/custom-result getter dispatches, common result-cell reads/writes and the complete byte OR/Boolean normalization instructions. Separate claims constrain the body; they do not independently prove every alias, live policy, helper implementation or gameplay effect."
+        }
+      }
+    },
+    "potentialAndTalentAttachments": {
+      "methods": {
+        "Beyond.Gameplay.PotentialUtil.TryGetCharPotentialAttachedSkillCreateOptions": {
+          "type": "Beyond.Gameplay.PotentialUtil",
+          "method": "TryGetCharPotentialAttachedSkillCreateOptions",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.SkillUtil.CheckSkillConditions",
+                "Beyond.Cfg.PotentialTalentEffectData.get_attachSkill"
+              ]
+            }
+          ],
+          "contract": "Compiled condition checking and typed attachment access. Player unlock selection, parameter forwarding, creation timing and evaluated Blackboard values remain unresolved."
+        },
+        "Beyond.Gameplay.PotentialUtil.TryGetCharPotentialBuffBbData": {
+          "type": "Beyond.Gameplay.PotentialUtil",
+          "method": "TryGetCharPotentialBuffBbData",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.SkillUtil.CheckSkillConditions",
+                "Beyond.Cfg.PotentialTalentEffectData.get_attachBuff"
+              ]
+            }
+          ],
+          "contract": "Compiled condition checking and typed attachment access. Player unlock selection, parameter forwarding, creation timing and evaluated Blackboard values remain unresolved."
+        },
+        "Beyond.Gameplay.TalentUtil.TryGetCharTalentAttachedSkillCreateOptions": {
+          "type": "Beyond.Gameplay.TalentUtil",
+          "method": "TryGetCharTalentAttachedSkillCreateOptions",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.SkillUtil.CheckSkillConditions",
+                "Beyond.Cfg.PotentialTalentEffectData.get_attachSkill"
+              ]
+            }
+          ],
+          "contract": "Compiled condition checking and typed attachment access. Player unlock selection, parameter forwarding, creation timing and evaluated Blackboard values remain unresolved."
+        },
+        "Beyond.Gameplay.TalentUtil.TryGetCharTalentBuffBbData": {
+          "type": "Beyond.Gameplay.TalentUtil",
+          "method": "TryGetCharTalentBuffBbData",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.SkillUtil.CheckSkillConditions",
+                "Beyond.Cfg.PotentialTalentEffectData.get_attachBuff"
+              ]
+            }
+          ],
+          "contract": "Compiled condition checking and typed attachment access. Player unlock selection, parameter forwarding, creation timing and evaluated Blackboard values remain unresolved."
+        }
+      }
+    },
+    "blackboardCreationAndInheritance": {
+      "methods": {
+        "skill.AssignSourceBlackboard": {
+          "type": "Beyond.Gameplay.Core.Skill",
+          "method": "AssignSourceBlackboard",
+          "parameters": [
+            "Beyond.Blackboard"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Blackboard.Assign",
+                "Beyond.ActionBlackboard.Assign",
+                "Beyond.Gameplay.Core.Ability.AssignSourceBlackboard"
+              ]
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "extraBlackboard",
+                "call": "Beyond.ActionBlackboard.Assign",
+                "toParameter": "another"
+              }
+            }
+          ],
+          "contract": "Direct incoming source-Blackboard forwarding and compiled continuation to Ability source assignment. This is a reference argument join, not a lifetime, copy policy or observed numeric value."
+        },
+        "buff.Reset": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "Reset",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Blackboard.CreateFrom",
+                "Beyond.ActionBlackboard.Assign"
+              ]
+            }
+          ],
+          "contract": "Compiled Buff Blackboard construction and assignment calls; defaults versus inherited data, chosen instance and evaluated values remain unresolved."
+        },
+        "createBuff.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CreateBuffAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.AbilitySystem.AddBuffByAbilityAction"
+              ]
+            }
+          ],
+          "contract": "Compiled action-Blackboard access, value evaluation and Buff creation sink. Direct operand, count/duration, selected target and accepted creation need separate claims."
+        },
+        "abilitySystem._CreateSkill": {
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "method": "_CreateSkill",
+          "parameters": [
+            "Beyond.Gameplay.CreateSkillOptions"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.SkillUtil.CreateSkillDataWithCharInfo",
+                "Beyond.Gameplay.Core.AbilitySystem._GetSkillPatchData",
+                "Beyond.Gameplay.Core.Skill.Create"
+              ]
+            }
+          ],
+          "contract": "Compiled char-info-aware source construction, patch lookup and Skill.Create calls; selected character information, unlocks, branch and parameter forwarding are not proved by call presence."
+        }
+      }
+    },
+    "initialBlackboardSources": {
+      "methods": {
+        "skill._OnCreate": {
+          "type": "Beyond.Gameplay.Core.Skill",
+          "method": "_OnCreate",
+          "claims": [
+            {
+              "passesSpilledArgumentOnFalseCalls": {
+                "fromParameter": "extraBlackboard",
+                "call": "Beyond.ActionBlackboard.Assign",
+                "toParameter": "another",
+                "falseCalls": [
+                  "IFix.WrappersManagerImpl.IsPatched"
+                ]
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Blackboard.AddRange",
+                "Beyond.ActionBlackboard.Assign",
+                "Beyond.Blackboard..ctor"
+              ],
+              "ordered": true
+            },
+            {
+              "callsVirtualGetter": "Beyond.ActionBlackboard.get_directBlackboard"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.SkillData::blackboard"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.AbilitySystemPatchData+SkillPatchData::blackboard"
+            },
+            {
+              "writesField": "Beyond.Gameplay.Core.Skill::<onCreateBlackboard>k__BackingField"
+            },
+            {
+              "passesFieldToCall": {
+                "field": "Beyond.Gameplay.Core.AbilitySystem::sourceBlackboard",
+                "register": "rdx",
+                "call": "Beyond.ActionBlackboard.Assign"
+              }
+            }
+          ],
+          "contract": "Incoming extraBlackboard is reloaded from its unchanged entry-relative stack spill into the IList Assign argument on selected false-IFix paths. Separate typed reads, destination writes and call-order claims constrain the compiled body. The complete merge interpretation is recorded in gameplay_semantics; these separate claims do not alone prove every alias, live patch selection, input uniqueness or final value."
+        },
+        "actionBlackboard.Assign": {
+          "type": "Beyond.ActionBlackboard",
+          "method": "Assign",
+          "parameters": [
+            "System.Collections.Generic.IList`1<Beyond.Blackboard+DataPair>"
+          ],
+          "claims": [
+            {
+              "callsVirtualGetter": "Beyond.ActionBlackboard.get_directBlackboard"
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "another",
+                "call": "Beyond.Blackboard.Assign",
+                "toParameter": "another"
+              }
+            }
+          ],
+          "contract": "List assignment selects the direct Blackboard and forwards another. Entity lookup is a separate virtual slot and is not the Assign destination."
+        },
+        "blackboard.AssignList": {
+          "type": "Beyond.Blackboard",
+          "method": "Assign",
+          "parameters": [
+            "System.Collections.Generic.IList`1<Beyond.Blackboard+DataPair>"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Blackboard.AddRange",
+                "Beyond.Blackboard._AssignInternal"
+              ]
+            }
+          ],
+          "contract": "Compiled empty-destination append and nonempty per-item assignment routes. Call presence alone does not prove duplicate policy, iteration or branch selection."
+        },
+        "blackboardWithOwner.direct": {
+          "type": "Beyond.BlackboardWithOwner",
+          "method": "get_directBlackboard",
+          "claims": [
+            {
+              "readsField": "Beyond.BlackboardWithOwner::<directBlackboard>k__BackingField"
+            }
+          ],
+          "contract": "Declared direct storage getter; owner entity storage is a separate getter."
+        },
+        "blackboardWithOwner.entity": {
+          "type": "Beyond.BlackboardWithOwner",
+          "method": "get_entityBlackboard",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Core.AbilitySystem::entityBlackboard"
+            }
+          ],
+          "contract": "Compiled owner entity Blackboard read. This is separate from sourceBlackboard copied during Skill initialization."
+        },
+        "blackboard.copy": {
+          "type": "Beyond.Blackboard",
+          "method": ".ctor",
+          "parameters": [
+            "System.Collections.Generic.IList`1<Beyond.Blackboard+DataPair>"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Blackboard.AddRange"
+              ]
+            }
+          ],
+          "contract": "Compiled list-copy constructor appends source entries rather than delegating to keyed Assign; duplicate keys are not normalized by this call claim."
+        }
+      }
+    },
+    "blackboardMatchedPairReplacement": {
+      "methods": {
+        "blackboard._AssignInternal": {
+          "type": "Beyond.Blackboard",
+          "method": "_AssignInternal",
+          "claims": [
+            {
+              "replacesBlackboardPairAfterTrueComparison": true
+            }
+          ],
+          "contract": "Selected matched-slot replacement keeps the prior isDynamic byte, copies the complete new DataPair into the matched slot and returns. This is conditional on true comparison and valid checks; full scan, incoming base provenance, case comparator and live branch selection remain separate."
+        }
+      }
+    },
+    "skillDataModificationOrder": {
+      "methods": {
+        "skillUtil.CreateSkillDataWithCharInfo": {
+          "type": "Beyond.Gameplay.SkillUtil",
+          "method": "CreateSkillDataWithCharInfo",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.SkillUtil.CalculateLevelSkillData",
+                "Beyond.Gameplay.SkillUtil.CalculateTalentModifiedSkillData",
+                "Beyond.Gameplay.SkillUtil.CalculatePotentialModifiedSkillData"
+              ],
+              "ordered": true
+            },
+            {
+              "feedsReferenceResultToCall": {
+                "fromCall": "Beyond.Gameplay.CreateSkillOptions.GetSkillData",
+                "toCall": "Beyond.Gameplay.SkillUtil.CalculateLevelSkillData",
+                "toParameter": "templateData"
+              }
+            },
+            {
+              "feedsReferenceResultToCall": {
+                "fromCall": "Beyond.Gameplay.SkillUtil.CalculateLevelSkillData",
+                "toCall": "Beyond.Gameplay.SkillUtil.CalculateTalentModifiedSkillData",
+                "toParameter": "templateData"
+              }
+            },
+            {
+              "feedsReferenceResultToCall": {
+                "fromCall": "Beyond.Gameplay.SkillUtil.CalculateTalentModifiedSkillData",
+                "toCall": "Beyond.Gameplay.SkillUtil.CalculatePotentialModifiedSkillData",
+                "toParameter": "templateData"
+              }
+            }
+          ],
+          "contract": "Selected contiguous reference-return joins connect base, level, talent and potential method inputs. Conditions may skip stages; methods internal loops, actual player unlocks and resulting numeric values are separate."
+        },
+        "skillUtil.CalculateLevelSkillData": {
+          "type": "Beyond.Gameplay.SkillUtil",
+          "method": "CalculateLevelSkillData",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SkillData.DeepClone",
+                "Beyond.Cfg.SkillPatchData.get_blackboard",
+                "Beyond.BlackboardExtensions.Assign"
+              ]
+            }
+          ],
+          "contract": "Compiled cloned-template, authored level Blackboard access and assignment calls. Individual field/value forwarding and the selected level remain separate."
+        }
+      }
+    },
+    "keyedBlackboardLookupOrder": {
+      "methods": {
+        "actionBlackboard.TryGetFloat": {
+          "type": "Beyond.ActionBlackboard",
+          "method": "TryGetFloat",
+          "claims": [
+            {
+              "queriesFloatBlackboardDirectBeforeEntity": true
+            }
+          ],
+          "contract": "Complete keyed Float normal program checks direct success bypasses entity; direct false uses entity with the same key/out slot; total failure writes zero and returns false. Null direct getter takes an error path. Double/String and typed-expression paths remain separate."
+        }
+      }
+    },
+    "dynamicBlackboardInputSelection": {
+      "methods": {
+        "blackboard._AssignDynamicInternal": {
+          "type": "Beyond.Blackboard",
+          "method": "_AssignDynamicInternal",
+          "claims": [
+            {
+              "filtersDynamicBlackboardPairOnFalseGuard": true
+            },
+            {
+              "calls": [
+                "Beyond.StringUtils.EqualsIgnoreCase",
+                "System.Collections.Generic.List`1.set_Item"
+              ]
+            }
+          ],
+          "contract": "Complete false-IFix prefix refuses incoming non-dynamic pairs before key scanning. Separate call presence records comparison/replacement; it does not claim static-key collisions are refused. The observed diagnostic cold path and continuation are explained separately in gameplay_semantics."
+        }
+      }
+    },
+    "dynamicBlackboardListFieldTransfer": {
+      "methods": {
+        "blackboard.AssignDynamicList": {
+          "type": "Beyond.Blackboard",
+          "method": "AssignDynamic",
+          "parameters": [
+            "System.Collections.Generic.List`1<Beyond.Blackboard+DataPair>"
+          ],
+          "claims": [
+            {
+              "copiesBlackboardPairFieldsToDynamicCall": true
+            }
+          ],
+          "contract": "Selected complete vector/stack field-copy window passes all named pair fields, including the unchanged dynamic byte, to the dynamic sink. Each helper has a closed bounded call-entry graph without vector operations or external transfer. This is conditional field transfer, not complete list traversal, count/index proof, memory noninterference or whole-function ownership."
+        }
+      }
+    },
+    "talentPotentialEmbeddedTables": {
+      "methods": {
+        "CalculateTalentModifiedSkillData": {
+          "type": "Beyond.Gameplay.SkillUtil",
+          "method": "CalculateTalentModifiedSkillData",
+          "claims": [
+            {
+              "partitionsGuardedEmbeddedRvaTable": true
+            }
+          ],
+          "contract": "Owned extent partitions into completely decoded code and an unsigned-guarded tail RVA table; table targets are checked code boundaries. Older image-base preservation is conditional. This framing does not prove every modifier operation, iteration order or live dispatch."
+        },
+        "CalculatePotentialModifiedSkillData": {
+          "type": "Beyond.Gameplay.SkillUtil",
+          "method": "CalculatePotentialModifiedSkillData",
+          "claims": [
+            {
+              "partitionsGuardedEmbeddedRvaTable": true
+            }
+          ],
+          "contract": "Owned extent partitions into completely decoded code and an unsigned-guarded tail RVA table; table targets are checked code boundaries. Older image-base preservation is conditional. This framing does not prove every modifier operation, iteration order or live dispatch."
+        }
+      }
+    },
+    "dynamicBlackboardCapturedBoundIteration": {
+      "methods": {
+        "blackboard.AssignDynamicList": {
+          "type": "Beyond.Blackboard",
+          "method": "AssignDynamic",
+          "parameters": [
+            "System.Collections.Generic.List`1<Beyond.Blackboard+DataPair>"
+          ],
+          "claims": [
+            {
+              "iteratesDynamicBlackboardListWithCapturedBound": true
+            }
+          ],
+          "contract": "Complete selected ordinary list-loop framing starts at index zero, captures the helper EAX result once, checks both source bounds, uses a 32-byte record stride and the independently checked field-copy program, then increments the Int32 index and follows the checked signed backedge. The on-disk MethodInfo context names SafeCount<DataPair>; its registered entry and the compiled call target are recorded separately, with no identity join on resemblance. Correct helper return, resolved context, valid unchanged source/list/frame and memory noninterference remain conditions; dynamic baseline consumption and live execution are unresolved."
+        }
+      }
+    },
+    "healPackAndOuterFormula": {
+      "methods": {
+        "heal.CalculateHealWithDetail": {
+          "type": "Beyond.Gameplay.Core.BattleFormula",
+          "method": "CalculateHeal",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.HealPackData.GetFinalHealValue",
+                "Beyond.Gameplay.Core.HealPackData.GetReportInfo",
+                "Beyond.Gameplay.Core.HealPackData.ClearInstantAttributeModifier"
+              ]
+            },
+            {
+              "matches": "mulsd xmm6, xmm0"
+            }
+          ],
+          "contract": "Named outer formula contains the pack calculation/report/cleanup calls and a scalar Double multiplier. This records compiled call/operator presence; the separately inspected selected continuation has a heal-type-dependent modifier after the pack call. It does not certify every numeric alias, live branch, populated packet, actual outer return or HP write.",
+          "parametersPrefix": [
+            "Beyond.Gameplay.Core.HealPackData",
+            "Proto.BATTLE_HEAL_ACTION_DETAIL"
+          ]
+        },
+        "heal.GetFinalHealValue": {
+          "type": "Beyond.Gameplay.Core.HealPackData",
+          "method": "GetFinalHealValue",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.HealPackData.ApplyHealModifier"
+              ]
+            }
+          ],
+          "contract": "The captured named pack calculator has a modifier consumer; its function name does not make its result the outer BattleFormula return or final HP mutation."
+        }
+      }
+    },
+    "valueSourceAndHealNotifications": {
+      "methods": {
+        "scalar.GetValue": {
+          "type": "Beyond.Blackboard+BlackboardDouble",
+          "method": "GetValue",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Blackboard.DumpToString",
+                "Beyond.DLogger.LogError",
+                "Beyond.Blackboard+BlackboardParamBase`2.GetDirectValue"
+              ]
+            },
+            {
+              "matches": "xorps xmm0, xmm0"
+            }
+          ],
+          "contract": "Compiled public scalar getter contains keyed-query failure diagnostics, a zero Double return setup and a separate direct-value call. Presence claims do not establish every alias, live dispatch branch or actual value."
+        },
+        "heal.Action": {
+          "type": "Beyond.Gameplay.Core.HealAction",
+          "method": "ExecuteInternal",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.BattleFormula.CalculateHeal",
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.NewHeal",
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.Apply",
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.get_finalDelta"
+              ]
+            }
+          ],
+          "contract": "The selected action has formula, heal-modifier construction/application and final-delta consumers. These calls alone do not prove complete numeric transfer, HP mutation or protocol identity."
+        },
+        "heal.Notify": {
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "method": "_OnHealed",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilitySystem+Modifier.get_finalDelta",
+                "Beyond.Gameplay.Core.AbilitySystem.TriggerEvent"
+              ]
+            },
+            {
+              "writesField": "Beyond.Gameplay.Core.AbilitySystem+HealContext::finalHealValue"
+            },
+            {
+              "writesField": "Beyond.Gameplay.Core.AbilitySystem+HealContext::realHealValue"
+            }
+          ],
+          "contract": "Named notification reads the final-delta getter and writes both named heal-context offsets before event consumers. Field-write presence is not a full receiver-alias proof, live event selection or server HP acknowledgement."
+        },
+        "blackboard.AssignNumericKey": {
+          "type": "Beyond.Blackboard",
+          "method": "Assign",
+          "parameters": [
+            "System.String",
+            "System.Double"
+          ],
+          "claims": [
+            {
+              "matches": "movaps xmm6, xmm2"
+            },
+            {
+              "matches": "movsd \\[rbp-0x[0-9a-f]+\\], xmm6"
+            }
+          ],
+          "contract": "The selected numeric Assign saves its positional XMM2 Double and stores it into a local pair. The inspected primary matched-key path scans/replaces directly instead of calling the named internal writer; cold/IFix paths and actual destination contents are separate. These operator-presence claims do not certify the complete replacement aliases."
         }
       }
     }

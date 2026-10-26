@@ -1,0 +1,111 @@
+{
+  "schema": "endfield.buff-name-cache-handler-direct-init-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "saved-cookie-to-direct-handler-store-and-sibling-argument-flow",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "caller": {
+      "entryRva": 1819496,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 1819496,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              1819496,
+              1819557,
+              211637216
+            ],
+            "tableRowRva": 251824856,
+            "runtimeTripleRawHex": "68C31B00A5C31B00E0539D0C",
+            "codeBytes": 61,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 1819496,
+          "endRva": 1819557,
+          "sha256": "6CA80D2BDE36633F1F69111E513A8E365FC89ED6228245CB4E52F8BC31082250"
+        }
+      ]
+    },
+    "directStore": {
+      "entryRva": 1819920,
+      "ownershipKind": "closedNoCallProgram",
+      "codeWindows": [
+        {
+          "startRva": 1819920,
+          "endRva": 1819928,
+          "sha256": "4C02B66BA2DE3EA1043B766A6630C26C96743F5E52A80122167870BA8B70EA9B"
+        }
+      ]
+    }
+  },
+  "cookieRva": 217652352,
+  "encodedHandlerRva": 230665096,
+  "calls": [
+    {
+      "siteRva": 1819512,
+      "targetRva": 1733120,
+      "instructionHex": "E883AEFEFF"
+    },
+    {
+      "siteRva": 1819520,
+      "targetRva": 1819920,
+      "instructionHex": "E88B010000"
+    },
+    {
+      "siteRva": 1819528,
+      "targetRva": 1845140,
+      "instructionHex": "E807640000"
+    },
+    {
+      "siteRva": 1819536,
+      "targetRva": 1894224,
+      "instructionHex": "E8BB230100"
+    },
+    {
+      "siteRva": 1819544,
+      "targetRva": 1678300,
+      "instructionHex": "E83FD8FDFF"
+    }
+  ],
+  "conditionalDomain": {
+    "abi": "Valid frame/global storage and normal ABI-compatible sibling completion preserving nonvolatile RBX. Each child receives the saved cookie read, even if global cookie changes later.",
+    "store": "The direct store writes its incoming RCX word. Unknown other children may modify cookie/encoded state or hold locks; no final state or startup order is assumed."
+  },
+  "evidenceBoundary": {
+    "exact": "Whole owned caller CFG/frame, actual selected CALL and closed no-call store bytes; cookie read and exact eight-byte destination.",
+    "direct": "Saved cookie is passed to every direct child; one closed child writes it to encoded handler. Caller writes AL true only. The store has no own guard call.",
+    "conditional": "With a getter using that same saved cookie immediately at the store state, encoded XOR cookie is zero. Subsequent global/callback state and sibling memory effects are not proved.",
+    "structuralOnly": "A static caller edge does not prove startup invocation/order or absence of an enclosing lock.",
+    "unresolved": "Sibling effects and callers/order, complete writer coverage, cookie/encoded epochs and guard initialization, live callback identity and complete positive Buff roots."
+  }
+}

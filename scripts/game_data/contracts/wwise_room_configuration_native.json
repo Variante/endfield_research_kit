@@ -1,0 +1,1240 @@
+{
+  "schema": "endfield.wwise-room-configuration-native.v3",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "roomEffectInitialize",
+      "entryRva": "0x22aa80",
+      "windows": [
+        {
+          "rva": "0x22aa80",
+          "bodyLength": 436,
+          "bodySha256": "afde454ca3d5ac1d34598b89a3ee62f7adfe4bfd65b5a4aa2c2c9eeea3399613",
+          "unwindRva": "0x317ec0",
+          "unwindInfoHex": "010d05000d01140006f004e002700000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22ac34",
+          "bodyLength": 170,
+          "bodySha256": "184d226cb31930f2de984aab9e5ee8633d0e3580cd653106df90840aacad851d",
+          "unwindRva": "0x317ed0",
+          "unwindInfoHex": "2110040010d412000834180080aa220034ac2200c07e3100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22acde",
+          "bodyLength": 532,
+          "bodySha256": "e864cfa52d3f2db2426253b5b7e03f342398662c7469bb03372722213747d8dc",
+          "unwindRva": "0x317ee8",
+          "unwindInfoHex": "2125060025c4130014641a000854190034ac2200deac2200d07e3100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22aef2",
+          "bodyLength": 326,
+          "bodySha256": "2167368b0af67c80b7080629260b35c29e49fe6c4e21404cb00a060c136d5b40",
+          "unwindRva": "0x317f04",
+          "unwindInfoHex": "211f06001f8806001478070008680800deac2200f2ae2200e87e3100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22b038",
+          "bodyLength": 24,
+          "bodySha256": "68f29108f0cf154b2f32468570cc56d4bd23351cc1d7df402c220697216beac3",
+          "unwindRva": "0x317f20",
+          "unwindInfoHex": "21000000deac2200f2ae2200e87e3100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22b050",
+          "bodyLength": 16,
+          "bodySha256": "37650eac4bd415567946dc79bf088cb3dca8cb1fa7b8c565f8a45c5a0780db6f",
+          "unwindRva": "0x317f30",
+          "unwindInfoHex": "2100000034ac2200deac2200d07e3100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x22b060",
+          "bodyLength": 13,
+          "bodySha256": "4aa82054c44d2efa121a2b58dfb3bccabebbb700760ea970aa630032d2a42e15",
+          "unwindRva": "0x317f40",
+          "unwindInfoHex": "2100000080aa220034ac2200c07e3100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "sampleRate",
+        "parameterObject",
+        "fdnCount",
+        "earlyByte",
+        "wetPole",
+        "allocateFdn",
+        "initializeEarly",
+        "initializeDiffusion"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "sampleRate",
+          "rva": "0x22aa9e",
+          "instructionHex": "899130010000"
+        },
+        {
+          "role": "parameterObject",
+          "rva": "0x22aaa4",
+          "instructionHex": "4c898958010000"
+        },
+        {
+          "role": "fdnCount",
+          "rva": "0x22aab6",
+          "instructionHex": "898128010000"
+        },
+        {
+          "role": "earlyByte",
+          "rva": "0x22ab11",
+          "instructionHex": "888f38010000"
+        },
+        {
+          "role": "wetPole",
+          "rva": "0x22ab6c",
+          "instructionHex": "f30f114f78"
+        },
+        {
+          "role": "allocateFdn",
+          "rva": "0x22ac1f",
+          "instructionHex": "e89c5e0000"
+        },
+        {
+          "role": "initializeEarly",
+          "rva": "0x22ae2d",
+          "instructionHex": "e8ce710000"
+        },
+        {
+          "role": "initializeDiffusion",
+          "rva": "0x22af97",
+          "instructionHex": "e8d4770000"
+        }
+      ]
+    },
+    {
+      "key": "roomEffectReset",
+      "entryRva": "0x230660",
+      "windows": [
+        {
+          "rva": "0x230660",
+          "bodyLength": 309,
+          "bodySha256": "c9b33a148a4dd111cb62db6d28a8013cdd466c95dcd34f18bdeea900aff713c4",
+          "unwindRva": "0x2f2c40",
+          "unwindInfoHex": "0114080014640800145407001434060014321070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "clearDamping",
+        "resetFdn",
+        "clearDiffusion"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "clearDamping",
+          "rva": "0x2306ba",
+          "instructionHex": "48897b70"
+        },
+        {
+          "role": "resetFdn",
+          "rva": "0x230727",
+          "instructionHex": "e874000000"
+        },
+        {
+          "role": "clearDiffusion",
+          "rva": "0x230738",
+          "instructionHex": "e8c3220000"
+        }
+      ]
+    },
+    {
+      "key": "roomEffectTerminate",
+      "entryRva": "0x230fa0",
+      "windows": [
+        {
+          "rva": "0x230fa0",
+          "bodyLength": 350,
+          "bodySha256": "55a70f6110b80c2637d28dab5906fb629b9688b62f0398ba26b29ea02811e2c0",
+          "unwindRva": "0x2f2c54",
+          "unwindInfoHex": "011a0a001a7409001a6408001a5407001a3406001a3216e0",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "releaseFdn",
+        "releaseDiffusion"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "releaseFdn",
+          "rva": "0x231057",
+          "instructionHex": "e804010000"
+        },
+        {
+          "role": "releaseDiffusion",
+          "rva": "0x23106b",
+          "instructionHex": "e8a0acfcff"
+        }
+      ]
+    },
+    {
+      "key": "roomStateRebuild",
+      "entryRva": "0x22b070",
+      "windows": [
+        {
+          "rva": "0x22b070",
+          "bodyLength": 2475,
+          "bodySha256": "420dffb4955ece73345a17d4026312a1d1d5dc64162582769587a9f6bfc9331b",
+          "unwindRva": "0x3180e8",
+          "unwindInfoHex": "01240e00246804001c6412001c5411001c3410001c9218f016e014d012c01070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "qualityChange",
+        "earlyChange",
+        "earlyByte",
+        "clearRebuildFlag"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "qualityChange",
+          "rva": "0x22b0a1",
+          "instructionHex": "3987d4010000"
+        },
+        {
+          "role": "earlyChange",
+          "rva": "0x22b12b",
+          "instructionHex": "388ff9010000"
+        },
+        {
+          "role": "earlyByte",
+          "rva": "0x22b1eb",
+          "instructionHex": "888f38010000"
+        },
+        {
+          "role": "clearRebuildFlag",
+          "rva": "0x22ba0d",
+          "instructionHex": "4488a09a000000"
+        }
+      ]
+    },
+    {
+      "key": "roomFdnAllocation",
+      "entryRva": "0x230ac0",
+      "windows": [
+        {
+          "rva": "0x230ac0",
+          "bodyLength": 99,
+          "bodySha256": "3d515eabc850f7ca2edaa556e1d1368366d10b8605cdccb8baa914096ddaebcf",
+          "unwindRva": "0x31800c",
+          "unwindInfoHex": "0161060061347a000b01770004f00260",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x230b23",
+          "bodyLength": 131,
+          "bodySha256": "6d74529d74985108a7ab22d18351bf25bb3e1b42ac8384eea065ab1b81c83c77",
+          "unwindRva": "0x31801c",
+          "unwindInfoHex": "2112040012747c0008547b00c00a2300230b23000c803100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x230ba6",
+          "bodyLength": 547,
+          "bodySha256": "265f33ec50fd601d74e23c47ad9c98050865221dc1dd0f2967b08e828ae58f45",
+          "unwindRva": "0x318034",
+          "unwindInfoHex": "2144040044e4760000747c00c00a2300230b23000c803100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "allocation",
+        "outputScale",
+        "generateLengths",
+        "quantizeLengths",
+        "configureFdn"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "allocation",
+          "rva": "0x230af1",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "outputScale",
+          "rva": "0x230bc3",
+          "instructionHex": "f30f119624010000"
+        },
+        {
+          "role": "generateLengths",
+          "rva": "0x230c00",
+          "instructionHex": "e85b8fffff"
+        },
+        {
+          "role": "quantizeLengths",
+          "rva": "0x230c26",
+          "instructionHex": "e8e593ffff"
+        },
+        {
+          "role": "configureFdn",
+          "rva": "0x230d4a",
+          "instructionHex": "e8f1200000"
+        }
+      ]
+    },
+    {
+      "key": "roomFdnInitialize",
+      "entryRva": "0x232e40",
+      "windows": [
+        {
+          "rva": "0x232e40",
+          "bodyLength": 308,
+          "bodySha256": "6dd6e6676d90357daf953dae4533648077e61bfe3c29b6e6bb1df33217cecfae",
+          "unwindRva": "0x318624",
+          "unwindInfoHex": "013e0c003e7803003668040014640e0014540d0014340c0014921070",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "fourthFilter"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "fourthFilter",
+          "rva": "0x232f4b",
+          "instructionHex": "e890fdffff"
+        }
+      ]
+    },
+    {
+      "key": "roomFdnCoefficientGroup",
+      "entryRva": "0x232c30",
+      "windows": [
+        {
+          "rva": "0x232c30",
+          "bodyLength": 173,
+          "bodySha256": "d768d95dca3cf3e3e61919d72a37b34c19e1bff0349fba4e04413257d4b20271",
+          "unwindRva": "0x3186fc",
+          "unwindInfoHex": "01220a0022780300146804000f640d000f340c000f920b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "commonDamping",
+        "firstFilter"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "commonDamping",
+          "rva": "0x232c55",
+          "instructionHex": "e846010000"
+        },
+        {
+          "role": "firstFilter",
+          "rva": "0x232c70",
+          "instructionHex": "e86b000000"
+        }
+      ]
+    },
+    {
+      "key": "roomFdnCoefficient",
+      "entryRva": "0x232ce0",
+      "windows": [
+        {
+          "rva": "0x232ce0",
+          "bodyLength": 190,
+          "bodySha256": "7415be459526733c24c641f7afad8e2773d64496bf28714f32a2f026bdcf627c",
+          "unwindRva": "0x318614",
+          "unwindInfoHex": "011d06001d7802001568030006720230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "decayExponent",
+        "gainPower",
+        "logGain",
+        "storeB0",
+        "storeA1"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "decayExponent",
+          "rva": "0x232d28",
+          "instructionHex": "f20f5ee3"
+        },
+        {
+          "role": "gainPower",
+          "rva": "0x232d2f",
+          "instructionHex": "e89cc60300"
+        },
+        {
+          "role": "logGain",
+          "rva": "0x232d3b",
+          "instructionHex": "e8e0c00300"
+        },
+        {
+          "role": "storeB0",
+          "rva": "0x232d87",
+          "instructionHex": "f30f114304"
+        },
+        {
+          "role": "storeA1",
+          "rva": "0x232d93",
+          "instructionHex": "f30f114308"
+        }
+      ]
+    },
+    {
+      "key": "roomFdnDamping",
+      "entryRva": "0x232da0",
+      "windows": [
+        {
+          "rva": "0x232da0",
+          "bodyLength": 160,
+          "bodySha256": "bb8f87d2d30649d926e267f2bdd4573438fee33a7bca881c77a98b1f438fac5c",
+          "unwindRva": "0x318714",
+          "unwindInfoHex": "011a05001a7802000c68030004820000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "decayPower",
+        "logGain",
+        "clampDamping",
+        "sqrtDamping"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "decayPower",
+          "rva": "0x232dff",
+          "instructionHex": "e8ccc50300"
+        },
+        {
+          "role": "logGain",
+          "rva": "0x232e04",
+          "instructionHex": "e817c00300"
+        },
+        {
+          "role": "clampDamping",
+          "rva": "0x232e18",
+          "instructionHex": "660f2fcf"
+        },
+        {
+          "role": "sqrtDamping",
+          "rva": "0x232e2e",
+          "instructionHex": "660f51c7"
+        }
+      ]
+    },
+    {
+      "key": "roomEarlyInitialize",
+      "entryRva": "0x232000",
+      "windows": [
+        {
+          "rva": "0x232000",
+          "bodyLength": 282,
+          "bodySha256": "b3172f5a050fe291f69cfac7d94d1a2ea07e780bbff8d6dfc1981db542a4726a",
+          "unwindRva": "0x318504",
+          "unwindInfoHex": "01421000429802003c880300337804002b6805001134140011b20df00be009c007700660",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x23211a",
+          "bodyLength": 404,
+          "bodySha256": "5422e89fbe1a25906884d05475e0f87eae7b5345de7522641135245b41b4c6e7",
+          "unwindRva": "0x318528",
+          "unwindInfoHex": "2115040015d4130008541200002023001a21230004853100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2322ae",
+          "bodyLength": 48,
+          "bodySha256": "6cf6a0d50e78bf164124a585746f2562347b1e20dd239a6c986deb6338178f57",
+          "unwindRva": "0x318540",
+          "unwindInfoHex": "21000000002023001a21230004853100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "sizePower",
+        "ringLength",
+        "ringAllocation",
+        "leftIndex",
+        "leftGain",
+        "leftCount",
+        "rightIndex",
+        "rightGain",
+        "rightCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "sizePower",
+          "rva": "0x232073",
+          "instructionHex": "e868870300"
+        },
+        {
+          "role": "ringLength",
+          "rva": "0x2320f8",
+          "instructionHex": "8913"
+        },
+        {
+          "role": "ringAllocation",
+          "rva": "0x232104",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "leftIndex",
+          "rva": "0x23218d",
+          "instructionHex": "6642898c4314020000"
+        },
+        {
+          "role": "leftGain",
+          "rva": "0x2321ad",
+          "instructionHex": "4289448314"
+        },
+        {
+          "role": "leftCount",
+          "rva": "0x2321d9",
+          "instructionHex": "66899318030000"
+        },
+        {
+          "role": "rightIndex",
+          "rva": "0x23223c",
+          "instructionHex": "6642898c4b94020000"
+        },
+        {
+          "role": "rightGain",
+          "rva": "0x23225c",
+          "instructionHex": "4289848b14010000"
+        },
+        {
+          "role": "rightCount",
+          "rva": "0x2322a5",
+          "instructionHex": "6689931a030000"
+        }
+      ]
+    },
+    {
+      "key": "roomDiffusionInitialize",
+      "entryRva": "0x232770",
+      "windows": [
+        {
+          "rva": "0x232770",
+          "bodyLength": 121,
+          "bodySha256": "5b1ca9665a1d3d1ba46e492aa25f28eb32d28835b4d133d3ce8965eba5c210d3",
+          "unwindRva": "0x31858c",
+          "unwindInfoHex": "010e04000e68030006720230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "pairedAllocation",
+        "gain",
+        "index"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "pairedAllocation",
+          "rva": "0x2327b1",
+          "instructionHex": "ff5018"
+        },
+        {
+          "role": "gain",
+          "rva": "0x2327cd",
+          "instructionHex": "f30f117314"
+        },
+        {
+          "role": "index",
+          "rva": "0x2327dc",
+          "instructionHex": "c7431000000000"
+        }
+      ]
+    },
+    {
+      "key": "roomFdnReset",
+      "entryRva": "0x233fd0",
+      "windows": [
+        {
+          "rva": "0x233fd0",
+          "bodyLength": 64,
+          "bodySha256": "bcbc52d1ab94e86dcc36ff24aa2d30726ddce5f4cc3c5f8ad3b74216492add3c",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "clearFirstRing",
+        "clearFirstFilter"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "clearFirstRing",
+          "rva": "0x233fd9",
+          "instructionHex": "e832ecffff"
+        },
+        {
+          "role": "clearFirstFilter",
+          "rva": "0x233ffb",
+          "instructionHex": "894360"
+        }
+      ]
+    }
+  ],
+  "borrowedGroups": [
+    {
+      "ownerContract": "wwise_bus_processing_native",
+      "ownerSchema": "endfield.wwise-bus-processing-observer.v4",
+      "keys": [
+        "roomVerbFactory",
+        "roomVerbExecute"
+      ]
+    },
+    {
+      "ownerContract": "wwise_room_history_native",
+      "ownerSchema": "endfield.wwise-room-history-native.v4",
+      "keys": [
+        "roomParameterRefresh",
+        "roomLateTonePreparation"
+      ]
+    },
+    {
+      "ownerContract": "wwise_room_input_native",
+      "ownerSchema": "endfield.wwise-room-input-observer.v4",
+      "keys": [
+        "roomInputPreparation"
+      ]
+    },
+    {
+      "ownerContract": "wwise_room_blend_native",
+      "ownerSchema": "endfield.wwise-room-blend-observer.v2",
+      "keys": [
+        "roomVerbStereo"
+      ]
+    }
+  ],
+  "callBindings": [
+    {
+      "group": "roomEffectInitialize",
+      "rva": "0x22ac1f",
+      "targetGroup": "roomFdnAllocation",
+      "returnRva": "0x22ac24"
+    },
+    {
+      "group": "roomEffectInitialize",
+      "rva": "0x22ae2d",
+      "targetGroup": "roomEarlyInitialize",
+      "returnRva": "0x22ae32"
+    },
+    {
+      "group": "roomEffectInitialize",
+      "rva": "0x22af97",
+      "targetGroup": "roomDiffusionInitialize",
+      "returnRva": "0x22af9c"
+    },
+    {
+      "group": "roomStateRebuild",
+      "rva": "0x22b0ee",
+      "targetGroup": "roomFdnAllocation",
+      "returnRva": "0x22b0f3"
+    },
+    {
+      "group": "roomStateRebuild",
+      "rva": "0x22b484",
+      "targetGroup": "roomEarlyInitialize",
+      "returnRva": "0x22b489"
+    },
+    {
+      "group": "roomStateRebuild",
+      "rva": "0x22b8c9",
+      "targetGroup": "roomEarlyInitialize",
+      "returnRva": "0x22b8ce"
+    },
+    {
+      "group": "roomFdnAllocation",
+      "rva": "0x230d4a",
+      "targetGroup": "roomFdnInitialize",
+      "returnRva": "0x230d4f"
+    },
+    {
+      "group": "roomFdnInitialize",
+      "rva": "0x232e84",
+      "targetGroup": "roomFdnDamping",
+      "returnRva": "0x232e89"
+    },
+    {
+      "group": "roomFdnInitialize",
+      "rva": "0x232efd",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232f02"
+    },
+    {
+      "group": "roomFdnInitialize",
+      "rva": "0x232f16",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232f1b"
+    },
+    {
+      "group": "roomFdnInitialize",
+      "rva": "0x232f2f",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232f34"
+    },
+    {
+      "group": "roomFdnInitialize",
+      "rva": "0x232f4b",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232f50"
+    },
+    {
+      "group": "roomFdnCoefficientGroup",
+      "rva": "0x232c55",
+      "targetGroup": "roomFdnDamping",
+      "returnRva": "0x232c5a"
+    },
+    {
+      "group": "roomFdnCoefficientGroup",
+      "rva": "0x232c70",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232c75"
+    },
+    {
+      "group": "roomFdnCoefficientGroup",
+      "rva": "0x232c89",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232c8e"
+    },
+    {
+      "group": "roomFdnCoefficientGroup",
+      "rva": "0x232ca2",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232ca7"
+    },
+    {
+      "group": "roomFdnCoefficientGroup",
+      "rva": "0x232cbe",
+      "targetGroup": "roomFdnCoefficient",
+      "returnRva": "0x232cc3"
+    }
+  ],
+  "factoryClassId": "0x00760003",
+  "parameterOwnerContract": "wwise_effect_parameters_native",
+  "effectSlots": [
+    {
+      "slot": 48,
+      "group": "roomEffectInitialize"
+    },
+    {
+      "slot": 16,
+      "group": "roomEffectReset"
+    },
+    {
+      "slot": 8,
+      "group": "roomEffectTerminate"
+    }
+  ],
+  "parameterProjection": {
+    "byteExtent": 200,
+    "wordBytes": 4,
+    "instanceOffset": 344,
+    "knownRanges": [
+      [
+        8,
+        88
+      ],
+      [
+        92,
+        154
+      ],
+      [
+        156,
+        200
+      ]
+    ],
+    "transientBytes": [
+      88,
+      154
+    ],
+    "bulkStores": [
+      {
+        "rva": "0x231d60",
+        "instructionHex": "894108",
+        "offset": 8,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231d69",
+        "instructionHex": "89410c",
+        "offset": 12,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231d70",
+        "instructionHex": "f30f114110",
+        "offset": 16,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231d7a",
+        "instructionHex": "f30f114914",
+        "offset": 20,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231d84",
+        "instructionHex": "f30f114118",
+        "offset": 24,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231d8e",
+        "instructionHex": "f30f11491c",
+        "offset": 28,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231d98",
+        "instructionHex": "f30f114120",
+        "offset": 32,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231da2",
+        "instructionHex": "f30f114924",
+        "offset": 36,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231dac",
+        "instructionHex": "f30f114128",
+        "offset": 40,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231dd0",
+        "instructionHex": "f30f11492c",
+        "offset": 44,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231dda",
+        "instructionHex": "f30f114130",
+        "offset": 48,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231de4",
+        "instructionHex": "f30f114934",
+        "offset": 52,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231dee",
+        "instructionHex": "f30f114138",
+        "offset": 56,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e04",
+        "instructionHex": "f30f11473c",
+        "offset": 60,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e1a",
+        "instructionHex": "f30f114740",
+        "offset": 64,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e30",
+        "instructionHex": "f30f114744",
+        "offset": 68,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e46",
+        "instructionHex": "f30f114748",
+        "offset": 72,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e5c",
+        "instructionHex": "f30f11474c",
+        "offset": 76,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e72",
+        "instructionHex": "f30f114750",
+        "offset": 80,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e90",
+        "instructionHex": "f30f114754",
+        "offset": 84,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231e9d",
+        "instructionHex": "888799000000",
+        "offset": 153,
+        "bytes": 1
+      },
+      {
+        "rva": "0x231ea6",
+        "instructionHex": "89475c",
+        "offset": 92,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231ead",
+        "instructionHex": "f30f114760",
+        "offset": 96,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231eb7",
+        "instructionHex": "f30f114f64",
+        "offset": 100,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231ec1",
+        "instructionHex": "f30f114768",
+        "offset": 104,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231ecb",
+        "instructionHex": "f30f114f6c",
+        "offset": 108,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231ed9",
+        "instructionHex": "f30f114770",
+        "offset": 112,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231ee4",
+        "instructionHex": "894774",
+        "offset": 116,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231eeb",
+        "instructionHex": "888798000000",
+        "offset": 152,
+        "bytes": 1
+      },
+      {
+        "rva": "0x231ef4",
+        "instructionHex": "898780000000",
+        "offset": 128,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231efc",
+        "instructionHex": "898784000000",
+        "offset": 132,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f05",
+        "instructionHex": "898788000000",
+        "offset": 136,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f0e",
+        "instructionHex": "89878c000000",
+        "offset": 140,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f17",
+        "instructionHex": "898790000000",
+        "offset": 144,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f20",
+        "instructionHex": "898794000000",
+        "offset": 148,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f34",
+        "instructionHex": "f30f114778",
+        "offset": 120,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f54",
+        "instructionHex": "f30f11477c",
+        "offset": 124,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f5e",
+        "instructionHex": "f30f118f9c000000",
+        "offset": 156,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f6b",
+        "instructionHex": "f30f1187a0000000",
+        "offset": 160,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f78",
+        "instructionHex": "f30f118fa4000000",
+        "offset": 164,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f85",
+        "instructionHex": "f30f1187a8000000",
+        "offset": 168,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f92",
+        "instructionHex": "f30f118fac000000",
+        "offset": 172,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231f9f",
+        "instructionHex": "f30f1187b0000000",
+        "offset": 176,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231fac",
+        "instructionHex": "f30f118fb4000000",
+        "offset": 180,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231fb9",
+        "instructionHex": "f30f1187b8000000",
+        "offset": 184,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231fc6",
+        "instructionHex": "f30f118fbc000000",
+        "offset": 188,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231fd1",
+        "instructionHex": "8987c0000000",
+        "offset": 192,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231fdf",
+        "instructionHex": "8987c4000000",
+        "offset": 196,
+        "bytes": 4
+      },
+      {
+        "rva": "0x231fea",
+        "instructionHex": "c6475801",
+        "offset": 88,
+        "bytes": 1
+      },
+      {
+        "rva": "0x231fee",
+        "instructionHex": "c6879a00000001",
+        "offset": 154,
+        "bytes": 1
+      }
+    ],
+    "selection": "Only normal registered Room return with stable parameter pointer/vtable and identical known setting bytes at entry and return."
+  },
+  "layout": {
+    "sampleRate": 304,
+    "parameterObject": 344,
+    "fdnCount": 296,
+    "fdnArray": 320,
+    "fdnStride": 168,
+    "earlyObject": 336,
+    "earlyByte": 312,
+    "dampingFirstState": 112,
+    "dampingPole": 120,
+    "diffusionFirstState": 8,
+    "diffusionStride": 24,
+    "ringLength": 0,
+    "ringPointer": 8,
+    "ringIndex": 16,
+    "pairedStride": 8,
+    "parameterQuality": 116,
+    "parameterPattern": 92,
+    "parameterToneEnabled": 152,
+    "parameterEarlyEnabled": 153,
+    "parameterToneInsertOffsets": [
+      128,
+      136,
+      144
+    ],
+    "parameterToneCurveOffsets": [
+      132,
+      140,
+      148
+    ],
+    "parameterFloatOffsets": [
+      8,
+      12,
+      16,
+      20,
+      24,
+      28,
+      32,
+      36,
+      40,
+      44,
+      48,
+      52,
+      56,
+      60,
+      64,
+      68,
+      72,
+      76,
+      80,
+      84,
+      96,
+      100,
+      104,
+      108,
+      112,
+      120,
+      124,
+      156,
+      160,
+      164,
+      168,
+      172,
+      176,
+      180,
+      184,
+      188,
+      192,
+      196
+    ],
+    "toneArray": 328,
+    "toneCount": 308,
+    "toneStride": 160,
+    "toneMode": 144,
+    "parameterDecay": 8,
+    "fdnPreDelay": 144
+  },
+  "leafWindows": [
+    {
+      "role": "clearOrdinaryHistory",
+      "rva": "0x232c10",
+      "byteLength": 27,
+      "bytesHex": "4c8b49084d85c97411448b0133d241c1e002498bc9e9866f0500c3",
+      "boundary": "complete straight-line leaf through return/tail jump"
+    },
+    {
+      "role": "clearPairedHistory",
+      "rva": "0x232a00",
+      "byteLength": 27,
+      "bytesHex": "488b41084885c07411448b0133d249c1e003488bc8e996710500c3",
+      "boundary": "complete straight-line leaf through return/tail jump"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Complete original effect initialize/reset/terminate/rebuild and selected early/FDN/diffusion configuration bodies; factory slots and parameter-store extent authenticated on selected inputs.",
+    "direct": "Configuration creates input history, weighted stereo taps, paired diffusion history and a configured FDN array. Reset clears stored samples/filter history while retaining ordinary cursors. Paired diffusion history requires aligned allocation.",
+    "conditional": "Owned original factory/bulk/effect initialization/full stereo impulse/reset/termination under supplied allocator, parameter and standard-stereo format. Restoring owned cursor/critical-index phase reproduces all output bytes. Saved parameter examples are provided inputs, not a live bank occurrence.",
+    "unresolved": "Live parameter object contents and authored effect occurrence; full live initial/history state, allocation generations, isolated Event contribution and physical audibility."
+  },
+  "fieldBindings": [
+    {
+      "group": "roomEffectInitialize",
+      "role": "sampleRate",
+      "layoutField": "sampleRate",
+      "displacementOffset": 2,
+      "displacementBytes": 4
+    },
+    {
+      "group": "roomEffectInitialize",
+      "role": "parameterObject",
+      "layoutField": "parameterObject",
+      "displacementOffset": 3,
+      "displacementBytes": 4
+    },
+    {
+      "group": "roomEffectInitialize",
+      "role": "fdnCount",
+      "layoutField": "fdnCount",
+      "displacementOffset": 2,
+      "displacementBytes": 4
+    },
+    {
+      "group": "roomEffectInitialize",
+      "role": "earlyByte",
+      "layoutField": "earlyByte",
+      "displacementOffset": 2,
+      "displacementBytes": 4
+    },
+    {
+      "group": "roomEffectInitialize",
+      "role": "wetPole",
+      "layoutField": "dampingPole",
+      "displacementOffset": 4,
+      "displacementBytes": 1
+    }
+  ],
+  "toneStageSelectors": [
+    {
+      "stagePurpose": "inputTone",
+      "mode": 3,
+      "group": "roomInputPreparation",
+      "rva": "0x231282",
+      "instructionHex": "83ba9000000003"
+    },
+    {
+      "stagePurpose": "earlyLeftTone",
+      "mode": 1,
+      "group": "roomVerbStereo",
+      "rva": "0x22d905",
+      "instructionHex": "83b99000000001"
+    },
+    {
+      "stagePurpose": "earlyRightTone",
+      "mode": 1,
+      "group": "roomVerbStereo",
+      "rva": "0x22d905",
+      "instructionHex": "83b99000000001"
+    },
+    {
+      "stagePurpose": "lateTone",
+      "mode": 2,
+      "group": "roomLateTonePreparation",
+      "rva": "0x2308c2",
+      "instructionHex": "83ba9000000002"
+    }
+  ]
+}

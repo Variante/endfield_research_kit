@@ -1,0 +1,970 @@
+{
+  "schema": "endfield.buff-formatter-class-fields-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "named-class-bits-field-iterator-preparation-and-input-helper-bit-transfer-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_formatter_incoming_address_native.json",
+  "physicalFields": {
+    "typeFlags": 276,
+    "stateFlags": 312,
+    "fieldState": 313,
+    "fields": 128,
+    "fieldCount": 294,
+    "parent": 88,
+    "genericLink": 96
+  },
+  "bits": {
+    "fieldsReady": 0,
+    "fieldsPreparing": 7,
+    "hasReferences": 5,
+    "blittable": 3
+  },
+  "closedEntries": {
+    "typeFlags": {
+      "entryRva": 689424,
+      "window": {
+        "startRva": 689424,
+        "endRva": 689431,
+        "sha256": "A76D15A2360D222FF556781ACFAE2E5BA16AD17C81AB06799A82A003EBD04EC0"
+      }
+    },
+    "blittable": {
+      "entryRva": 746464,
+      "window": {
+        "startRva": 746464,
+        "endRva": 746477,
+        "sha256": "DC90CBF42A1E41D8D52D7EBB68A26990D099CB41DD83DE1BD5B38D2A32163563"
+      }
+    },
+    "hasReferencesTail": {
+      "entryRva": 11090672,
+      "window": {
+        "startRva": 11090672,
+        "endRva": 11090677,
+        "sha256": "935A1687961CA57ACD23263A8306E171E6C83C05AC456990D547A34620C9E157"
+      }
+    }
+  },
+  "functions": {
+    "hasReferences": {
+      "entryRva": 663952,
+      "ownedWindows": [
+        {
+          "startRva": 663952,
+          "endRva": 664008,
+          "sha256": "9349A1E77554164D764391BF670F068955E8E0233B2C54C87C009CED4BD1D821"
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 663952,
+          "endRva": 664008,
+          "sha256": "9349A1E77554164D764391BF670F068955E8E0233B2C54C87C009CED4BD1D821"
+        }
+      ],
+      "paddingWindows": [],
+      "checkedInstructionCount": 16,
+      "frameBytes": 32,
+      "failureTargetRva": 1734832,
+      "labels": {
+        "result": 663970,
+        "prepare": 663988
+      },
+      "localBranches": [
+        {
+          "siteRva": 663968,
+          "kind": "conditional",
+          "target": 6443114932,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 664000,
+          "kind": "conditional",
+          "target": 6443114914,
+          "conditionCode": 5,
+          "predicate": "ZF=0"
+        }
+      ],
+      "calls": [
+        {
+          "siteRva": 663988,
+          "kind": "call",
+          "target": 6442510736
+        },
+        {
+          "siteRva": 664002,
+          "kind": "call",
+          "target": 6444185776
+        }
+      ],
+      "returnRvas": [
+        663987
+      ],
+      "trapRvas": [
+        664007
+      ],
+      "explicitStores": []
+    },
+    "fieldIterator": {
+      "entryRva": 57984,
+      "ownedWindows": [
+        {
+          "startRva": 57984,
+          "endRva": 58102,
+          "sha256": "8EB137966EDEC442ADF83CC50AA3649177FD564655FD3C6B6D7AE3DE7F7EF68A"
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 57984,
+          "endRva": 58102,
+          "sha256": "8EB137966EDEC442ADF83CC50AA3649177FD564655FD3C6B6D7AE3DE7F7EF68A"
+        }
+      ],
+      "paddingWindows": [],
+      "checkedInstructionCount": 33,
+      "frameBytes": 32,
+      "savedRegisterOffset": 8,
+      "strideShift": 5,
+      "strideBytes": 32,
+      "labels": {
+        "empty": 58070,
+        "prepare": 58055,
+        "restore": 58044,
+        "first": 58074
+      },
+      "localBranches": [
+        {
+          "siteRva": 58003,
+          "kind": "conditional",
+          "target": 6442509014,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 58009,
+          "kind": "conditional",
+          "target": 6442508999,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 58039,
+          "kind": "conditional",
+          "target": 6442509014,
+          "conditionCode": 3,
+          "predicate": "CF=0"
+        },
+        {
+          "siteRva": 58068,
+          "kind": "conditional",
+          "target": 6442509018,
+          "conditionCode": 5,
+          "predicate": "ZF=0"
+        },
+        {
+          "siteRva": 58072,
+          "kind": "jump",
+          "target": 6442508988
+        }
+      ],
+      "calls": [
+        {
+          "siteRva": 58055,
+          "kind": "call",
+          "target": 6442510736
+        }
+      ],
+      "returnRvas": [
+        58054,
+        58101
+      ],
+      "trapRvas": [],
+      "explicitStores": [
+        {
+          "siteRva": 57984,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "rbx",
+            "backingRegister": "rbx",
+            "registerBits": 64,
+            "registerBitOffset": 0,
+            "memoryBytes": 8,
+            "address": {
+              "base": "rsp",
+              "index": null,
+              "scale": 1,
+              "displacement": 8,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        },
+        {
+          "siteRva": 58041,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "rax",
+            "backingRegister": "rax",
+            "registerBits": 64,
+            "registerBitOffset": 0,
+            "memoryBytes": 8,
+            "address": {
+              "base": "rdx",
+              "index": null,
+              "scale": 1,
+              "displacement": 0,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        },
+        {
+          "siteRva": 58081,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "rax",
+            "backingRegister": "rax",
+            "registerBits": 64,
+            "registerBitOffset": 0,
+            "memoryBytes": 8,
+            "address": {
+              "base": "rbx",
+              "index": null,
+              "scale": 1,
+              "displacement": 0,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        }
+      ]
+    },
+    "bridge": {
+      "entryRva": 59792,
+      "ownedWindows": [
+        {
+          "startRva": 59792,
+          "endRva": 59966,
+          "sha256": "A992749C4AC29BB53764496A245411FB3AC79E25D10BE3D9CDD8562F51B9FB96"
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 59792,
+          "endRva": 59966,
+          "sha256": "A992749C4AC29BB53764496A245411FB3AC79E25D10BE3D9CDD8562F51B9FB96"
+        }
+      ],
+      "paddingWindows": [],
+      "checkedInstructionCount": 50,
+      "frameBytes": 32,
+      "contextStackOffset": 48,
+      "acquireTargetRva": 3175856,
+      "releaseSlotRva": 176355304,
+      "labels": {
+        "restore": 59960,
+        "decrement": 59956,
+        "retry": 59888,
+        "candidate": 59911,
+        "exchanged": 59929
+      },
+      "localBranches": [
+        {
+          "siteRva": 59808,
+          "kind": "conditional",
+          "target": 6442510904,
+          "conditionCode": 5,
+          "predicate": "ZF=0"
+        },
+        {
+          "siteRva": 59856,
+          "kind": "conditional",
+          "target": 6442510904,
+          "conditionCode": 14,
+          "predicate": "ZF=1 or SF!=OF"
+        },
+        {
+          "siteRva": 59863,
+          "kind": "conditional",
+          "target": 6442510900,
+          "conditionCode": 5,
+          "predicate": "ZF=0"
+        },
+        {
+          "siteRva": 59892,
+          "kind": "conditional",
+          "target": 6442510904,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 59902,
+          "kind": "conditional",
+          "target": 6442510855,
+          "conditionCode": 14,
+          "predicate": "ZF=1 or SF!=OF"
+        },
+        {
+          "siteRva": 59923,
+          "kind": "conditional",
+          "target": 6442510873,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 59927,
+          "kind": "jump",
+          "target": 6442510832
+        },
+        {
+          "siteRva": 59931,
+          "kind": "conditional",
+          "target": 6442510904,
+          "conditionCode": 9,
+          "predicate": "SF=0"
+        },
+        {
+          "siteRva": 59954,
+          "kind": "jump",
+          "target": 6442510904
+        }
+      ],
+      "calls": [
+        {
+          "siteRva": 59826,
+          "kind": "call",
+          "target": 6445626800
+        },
+        {
+          "siteRva": 59840,
+          "kind": "call",
+          "target": 6442498512
+        },
+        {
+          "siteRva": 59948,
+          "kind": "indirectCall",
+          "cell": 6618806248
+        }
+      ],
+      "returnRvas": [
+        59965
+      ],
+      "trapRvas": [],
+      "explicitStores": [
+        {
+          "siteRva": 59821,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "rcx",
+            "backingRegister": "rcx",
+            "registerBits": 64,
+            "registerBitOffset": 0,
+            "memoryBytes": 8,
+            "address": {
+              "base": "rsp",
+              "index": null,
+              "scale": 1,
+              "displacement": 48,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        },
+        {
+          "siteRva": 59867,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "rax",
+            "backingRegister": "rax",
+            "registerBits": 64,
+            "registerBitOffset": 0,
+            "memoryBytes": 8,
+            "address": {
+              "base": "r8",
+              "index": null,
+              "scale": 1,
+              "displacement": 72,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        },
+        {
+          "siteRva": 59871,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "eax",
+            "backingRegister": "rax",
+            "registerBits": 32,
+            "registerBitOffset": 0,
+            "memoryBytes": 4,
+            "address": {
+              "base": "r8",
+              "index": null,
+              "scale": 1,
+              "displacement": 80,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        },
+        {
+          "siteRva": 59917,
+          "kind": "lockedMemoryExchangeOperation",
+          "facts": {
+            "operation": "cmpxchg",
+            "bits": 32,
+            "sourceRegister": "edx",
+            "destinationAddress": {
+              "base": "r8",
+              "index": null,
+              "scale": 1,
+              "displacement": 8,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "memoryReadBytes": 4,
+            "memoryWriteBytes": 4,
+            "locked": true,
+            "writesFlags": [
+              "CF",
+              "OF",
+              "SF",
+              "ZF",
+              "AF",
+              "PF"
+            ],
+            "accumulatorRegister": "eax",
+            "successCondition": "previous accumulator equals previous destination memory",
+            "successMemoryResult": "previous source register",
+            "failureMemoryResult": "previous memory value written back",
+            "failureAccumulatorResult": "previous destination memory value",
+            "failureAccumulatorZeroExtendsTo64": true,
+            "successAccumulatorPreserved": true,
+            "flagOperation": "previous accumulator minus previous memory",
+            "memoryWriteCycleOccursOnBothOutcomes": true
+          }
+        },
+        {
+          "siteRva": 59956,
+          "kind": "memoryStepOperation",
+          "facts": {
+            "operation": "dec",
+            "bits": 32,
+            "destinationAddress": {
+              "base": "r8",
+              "index": null,
+              "scale": 1,
+              "displacement": 80,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "memoryReadBytes": 4,
+            "memoryWriteBytes": 4,
+            "locked": false,
+            "delta": -1,
+            "wrapsModulo": 4294967296,
+            "preservesRegisters": true,
+            "preservesCarryFlag": true,
+            "writesFlags": [
+              "OF",
+              "SF",
+              "ZF",
+              "AF",
+              "PF"
+            ]
+          }
+        }
+      ]
+    },
+    "setup": {
+      "entryRva": 47568,
+      "ownedWindows": [
+        {
+          "startRva": 47568,
+          "endRva": 47717,
+          "sha256": "9634F2CF36927F63C3E919378D8D78D768F9BAB8613705C5AEDDC085754A2309"
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 47568,
+          "endRva": 47717,
+          "sha256": "9634F2CF36927F63C3E919378D8D78D768F9BAB8613705C5AEDDC085754A2309"
+        }
+      ],
+      "paddingWindows": [],
+      "checkedInstructionCount": 38,
+      "frameBytes": 32,
+      "savedRegisterOffset": 8,
+      "genericReceiverTargetRva": 59968,
+      "genericFieldsTargetRva": 47728,
+      "auxiliaryTargetRva": 2912160,
+      "ordinaryFieldsTargetRva": 2916272,
+      "skipAuxiliaryMask": 16,
+      "labels": {
+        "restore": 47686,
+        "generic": 47620,
+        "parent": 47707,
+        "ordinary": 47697,
+        "auxiliary": 47655,
+        "finish": 47672
+      },
+      "localBranches": [
+        {
+          "siteRva": 47591,
+          "kind": "conditional",
+          "target": 6442498630,
+          "conditionCode": 5,
+          "predicate": "ZF=0"
+        },
+        {
+          "siteRva": 47605,
+          "kind": "conditional",
+          "target": 6442498564,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 47618,
+          "kind": "conditional",
+          "target": 6442498651,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 47625,
+          "kind": "conditional",
+          "target": 6442498641,
+          "conditionCode": 4,
+          "predicate": "ZF=1"
+        },
+        {
+          "siteRva": 47662,
+          "kind": "conditional",
+          "target": 6442498616,
+          "conditionCode": 5,
+          "predicate": "ZF=0"
+        },
+        {
+          "siteRva": 47705,
+          "kind": "jump",
+          "target": 6442498599
+        },
+        {
+          "siteRva": 47715,
+          "kind": "jump",
+          "target": 6442498564
+        }
+      ],
+      "calls": [
+        {
+          "siteRva": 47631,
+          "kind": "call",
+          "target": 6442510912
+        },
+        {
+          "siteRva": 47642,
+          "kind": "call",
+          "target": 6442498512
+        },
+        {
+          "siteRva": 47650,
+          "kind": "call",
+          "target": 6442498672
+        },
+        {
+          "siteRva": 47667,
+          "kind": "call",
+          "target": 6445363104
+        },
+        {
+          "siteRva": 47700,
+          "kind": "call",
+          "target": 6445367216
+        },
+        {
+          "siteRva": 47710,
+          "kind": "call",
+          "target": 6442498512
+        }
+      ],
+      "returnRvas": [
+        47696
+      ],
+      "trapRvas": [],
+      "explicitStores": [
+        {
+          "siteRva": 47568,
+          "kind": "memoryOperation",
+          "facts": {
+            "direction": "store",
+            "register": "rbx",
+            "backingRegister": "rbx",
+            "registerBits": 64,
+            "registerBitOffset": 0,
+            "memoryBytes": 8,
+            "address": {
+              "base": "rsp",
+              "index": null,
+              "scale": 1,
+              "displacement": 8,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "valueExtension": null,
+            "upperRegisterEffect": "preserved",
+            "requiredAlignmentBytes": 1,
+            "nonTemporalHint": false,
+            "writesFlags": false
+          }
+        },
+        {
+          "siteRva": 47593,
+          "kind": "byteMemoryLogicalOperation",
+          "facts": {
+            "bits": 8,
+            "destinationAddress": {
+              "base": "rcx",
+              "index": null,
+              "scale": 1,
+              "displacement": 312,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "memoryReadBytes": 1,
+            "memoryWriteBytes": 1,
+            "preservesRegisters": true,
+            "operation": "or",
+            "immediateWord": 128,
+            "encodedImmediateBits": 8,
+            "signExtendsImmediateTo64": false,
+            "clearsFlags": [
+              "CF",
+              "OF"
+            ],
+            "undefinedFlags": [
+              "AF"
+            ],
+            "writesResultFlags": [
+              "SF",
+              "ZF",
+              "PF"
+            ]
+          }
+        },
+        {
+          "siteRva": 47672,
+          "kind": "byteMemoryLogicalOperation",
+          "facts": {
+            "bits": 8,
+            "destinationAddress": {
+              "base": "rbx",
+              "index": null,
+              "scale": 1,
+              "displacement": 312,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "memoryReadBytes": 1,
+            "memoryWriteBytes": 1,
+            "preservesRegisters": true,
+            "operation": "and",
+            "immediateWord": 127,
+            "encodedImmediateBits": 8,
+            "signExtendsImmediateTo64": false,
+            "clearsFlags": [
+              "CF",
+              "OF"
+            ],
+            "undefinedFlags": [
+              "AF"
+            ],
+            "writesResultFlags": [
+              "SF",
+              "ZF",
+              "PF"
+            ]
+          }
+        },
+        {
+          "siteRva": 47679,
+          "kind": "byteMemoryLogicalOperation",
+          "facts": {
+            "bits": 8,
+            "destinationAddress": {
+              "base": "rbx",
+              "index": null,
+              "scale": 1,
+              "displacement": 313,
+              "ripRelative": false,
+              "addressBits": 64
+            },
+            "memoryReadBytes": 1,
+            "memoryWriteBytes": 1,
+            "preservesRegisters": true,
+            "operation": "or",
+            "immediateWord": 1,
+            "encodedImmediateBits": 8,
+            "signExtendsImmediateTo64": false,
+            "clearsFlags": [
+              "CF",
+              "OF"
+            ],
+            "undefinedFlags": [
+              "AF"
+            ],
+            "writesResultFlags": [
+              "SF",
+              "ZF",
+              "PF"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "protocol": {
+    "globalContextRva": 222598832,
+    "offsets": {
+      "handle": 0,
+      "count": 8,
+      "limit": 12,
+      "owner": 72,
+      "reentry": 80
+    }
+  },
+  "exportDeclarations": {
+    "selectedExports": [
+      {
+        "symbolName": "il2cpp_class_get_fields",
+        "nameIndex": 62,
+        "namePointerSlotRva": 217627016,
+        "namePointerHex": "ef c7 f8 0c",
+        "nameRva": 217630703,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 67 65 74 5f 66 69 65 6c 64 73 00",
+        "ordinalIndexSlotRva": 217628548,
+        "ordinalIndexHex": "3e 00",
+        "ordinalIndex": 62,
+        "ordinal": 63,
+        "functionSlotRva": 217625360,
+        "functionSlotHex": "80 e2 00 00",
+        "targetRva": 57984,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      },
+      {
+        "symbolName": "il2cpp_class_get_flags",
+        "nameIndex": 63,
+        "namePointerSlotRva": 217627020,
+        "namePointerHex": "07 c8 f8 0c",
+        "nameRva": 217630727,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 67 65 74 5f 66 6c 61 67 73 00",
+        "ordinalIndexSlotRva": 217628550,
+        "ordinalIndexHex": "3f 00",
+        "ordinalIndex": 63,
+        "ordinal": 64,
+        "functionSlotRva": 217625364,
+        "functionSlotHex": "10 85 0a 00",
+        "targetRva": 689424,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      },
+      {
+        "symbolName": "il2cpp_class_has_references",
+        "nameIndex": 81,
+        "namePointerSlotRva": 217627092,
+        "namePointerHex": "f2 c9 f8 0c",
+        "nameRva": 217631218,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 68 61 73 5f 72 65 66 65 72 65 6e 63 65 73 00",
+        "ordinalIndexSlotRva": 217628586,
+        "ordinalIndexHex": "51 00",
+        "ordinalIndex": 81,
+        "ordinal": 82,
+        "functionSlotRva": 217625436,
+        "functionSlotHex": "f0 3a a9 00",
+        "targetRva": 11090672,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      },
+      {
+        "symbolName": "il2cpp_class_is_blittable",
+        "nameIndex": 85,
+        "namePointerSlotRva": 217627108,
+        "namePointerHex": "62 ca f8 0c",
+        "nameRva": 217631330,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 69 73 5f 62 6c 69 74 74 61 62 6c 65 00",
+        "ordinalIndexSlotRva": 217628594,
+        "ordinalIndexHex": "55 00",
+        "ordinalIndex": 85,
+        "ordinal": 86,
+        "functionSlotRva": 217625452,
+        "functionSlotHex": "e0 63 0b 00",
+        "targetRva": 746464,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      }
+    ],
+    "exportDirectoryRva": 217625072,
+    "exportDirectoryBytes": 14800,
+    "exportDirectoryHeader": {
+      "fileOffset": 448,
+      "rawHex": "f0 b1 f8 0c d0 39 00 00"
+    },
+    "exportDirectoryHex": "00 00 00 00 ff ff ff ff 00 00 00 00 44 c2 f8 0c 01 00 00 00 9e 01 00 00 9e 01 00 00 18 b2 f8 0c 90 b8 f8 0c 08 bf f8 0c",
+    "libraryNameRva": 217629252,
+    "libraryName": "GameAssembly.dll",
+    "libraryNameHex": "47 61 6d 65 41 73 73 65 6d 62 6c 79 2e 64 6c 6c 00",
+    "ordinalBase": 1,
+    "declaredFunctionCount": 414,
+    "declaredNameCount": 414,
+    "functionTableRva": 217625112,
+    "functionTableSha256": "0C0390A8E5063325C2D7EC7A31CE3ED91A3D2BF7319908A9DF5AB90AE5CFABF0",
+    "nameTableRva": 217626768,
+    "nameTableSha256": "7A2FC65B3D792B7D5A1D858B2293037ABE1242FD8CD39D7FC8FA95A85CA2C072",
+    "ordinalTableRva": 217628424,
+    "ordinalTableSha256": "8AA818C09CCCB57973D8F1D7396FEBBD9E845DB143318C401A0B0D8E366F3E0D",
+    "allDeclaredNameOrderAndOrdinalIndicesChecked": true,
+    "completeExportImplementationCatalogProved": false,
+    "liveLoadedLibraryOrBindingProved": false
+  },
+  "releaseImportDeclarations": {
+    "selectedImports": [
+      {
+        "slotRva": 176355304,
+        "descriptorRva": 217640052,
+        "descriptorHex": "60 f4 f8 0c 00 00 00 00 00 00 00 00 8e 05 f9 0c c0 f7 82 0a",
+        "libraryNameRva": 217646478,
+        "libraryName": "baselib.dll",
+        "libraryNameHex": "62 61 73 65 6c 69 62 2e 64 6c 6c 00",
+        "originalThunkRva": 217642080,
+        "firstThunkRva": 176355264,
+        "thunkIndex": 5,
+        "actualThunkCount": 13,
+        "terminatedLookupBytes": 112,
+        "terminatedLookupSha256": "583E1E716F1E04F1C21B949EE7E13D89136E00F7057E4867D6F41EE3BB8F9E04",
+        "lookupEntryRva": 217642120,
+        "lookupEntryHex": "48 01 f9 0c 00 00 00 00",
+        "iatEntryHex": "48 01 f9 0c 00 00 00 00",
+        "hintNameRva": 217645384,
+        "hint": 82,
+        "hintHex": "52 00",
+        "symbolName": "?Baselib_SystemSemaphore_Release@il2cpp_baselib@@YAXUBaselib_SystemSemaphore_Handle@1@I@Z",
+        "symbolNameHex": "3f 42 61 73 65 6c 69 62 5f 53 79 73 74 65 6d 53 65 6d 61 70 68 6f 72 65 5f 52 65 6c 65 61 73 65 40 69 6c 32 63 70 70 5f 62 61 73 65 6c 69 62 40 40 59 41 58 55 42 61 73 65 6c 69 62 5f 53 79 73 74 65 6d 53 65 6d 61 70 68 6f 72 65 5f 48 61 6e 64 6c 65 40 31 40 49 40 5a 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    ],
+    "importDirectoryRva": 217639872,
+    "importDirectoryBytes": 220,
+    "importDirectoryHeader": {
+      "fileOffset": 456,
+      "rawHex": "c0 eb f8 0c dc 00 00 00"
+    },
+    "iatDirectoryRva": 176353280,
+    "iatDirectoryBytes": 2176,
+    "iatDirectoryHeader": {
+      "fileOffset": 544,
+      "rawHex": "00 f0 82 0a 80 08 00 00"
+    },
+    "walkedDescriptors": 10,
+    "descriptorNullTerminatorRva": 217640072,
+    "actualTerminatedTableOwnershipChecked": true,
+    "completeImportSymbolCatalogProved": false,
+    "liveIatValueOrCalleeSelected": false
+  },
+  "incomingCallerJoin": {
+    "entryRva": 45072,
+    "calls": [
+      {
+        "siteRva": 45506,
+        "kind": "call",
+        "target": 6442498512
+      }
+    ]
+  },
+  "callerBlittableInheritance": {
+    "window": {
+      "startRva": 45369,
+      "endRva": 45424,
+      "sha256": "5528F91700047FE6788F7791A225B052196383D232699B4D30ABAE60127D791F"
+    },
+    "genericDefinitionTargetRva": 59984
+  },
+  "conditions": [
+    "Normal Microsoft x64 callees preserve nonvolatile registers and restore compatible stack/return storage",
+    "Valid coherent class-layout storage and nonwrapping field-array endpoints are needed for class/iterator interpretation",
+    "Unknown aliases and child writes may change the incoming pointed slot, receiver fields, iterator storage, saved stack cells and synchronization record; no disjointness is inferred",
+    "Post-child context and receiver-field reloads are fresh values; actual helper result class identity, construction, capacity and synchronization outcomes remain open"
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Actual selected name/ordinal/EAT declarations, closed entry bit consumers and all owned preparation/iterator instructions, local control and stores",
+      "Same complete field preparation callee is reached from the named field iterator and the actual input-address helper",
+      "Actual input-helper byte replacement mask equals the named blittable bit"
+    ],
+    "direct": [
+      "Named get-fields consumer reads an unsigned word count and a field base and advances the iterator by its checked field stride",
+      "Named has-references consumer checks field-preparation readiness and returns the selected physical bit after a fresh receiver load"
+    ],
+    "conditional": [
+      "Normal-return register/receiver flow, bit results and iterator pointer interpretation under stated compatible coherent storage and normal ABI conditions"
+    ],
+    "structuralOnly": [
+      "Generic/ordinary/auxiliary child effects, allocation and anonymous synchronization storage"
+    ],
+    "unresolved": [
+      "Original pointed-slot preservation, live receiver/formatter class, initialized capacity, alias/noninterference, child storage construction, termination, actual callbacks and positive-list/root admission"
+    ]
+  }
+}

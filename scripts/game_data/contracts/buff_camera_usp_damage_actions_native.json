@@ -1,0 +1,1929 @@
+{
+  "schema": "endfield.buff-camera-usp-damage-actions-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "8": "addDynamicCcs",
+    "116": "checkSkillDamageType",
+    "298": "refrainObtainUsp"
+  },
+  "records": {
+    "addDynamicCcs": {
+      "sourceContract": "buff_08_native.json",
+      "wrapperTypeDefinition": 15959,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AddDynamicCcsAction_AddDynamicCcsActionDataForMemoryPack",
+      "runtimeTypeDefinition": 9274,
+      "runtimeTypeName": "Beyond.Gameplay.Core.AddDynamicCcsAction+AddDynamicCcsActionData",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member50",
+      "readerMethod": [
+        118951,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AddDynamicCcsAction_AddDynamicCcsActionDataForMemoryPack",
+        "Deserialize",
+        54737728
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54737872,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54737895,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84C90700004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 54737913,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54737935,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84A00700004533C08BD0488BCE",
+          "sourceContextInstructionRva": 54737900
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 54737946,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54737968,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F847F0700004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 54737979,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738001,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F845E0700004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "additionalLookAtOffset",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 118903,
+          "kind": "vector",
+          "sourceCall": {
+            "rva": 54738019,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738042,
+            "targetRva": 65092336,
+            "methodIndex": 118903
+          },
+          "sourceToDestinationHex": "4885F60F84360700004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738006
+        },
+        {
+          "fieldName": "additionalShoulderOffset",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 118904,
+          "kind": "vector",
+          "sourceCall": {
+            "rva": 54738060,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738083,
+            "targetRva": 65092400,
+            "methodIndex": 118904
+          },
+          "sourceToDestinationHex": "4885F60F840D0700004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738047
+        },
+        {
+          "fieldName": "additiveFOV",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118905,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738101,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738124,
+            "targetRva": 65092464,
+            "methodIndex": 118905
+          },
+          "sourceToDestinationHex": "4885F60F84E40600004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738088
+        },
+        {
+          "fieldName": "additiveHorizontalAngle",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118906,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738142,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738165,
+            "targetRva": 65092528,
+            "methodIndex": 118906
+          },
+          "sourceToDestinationHex": "4885F60F84BB0600004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738129
+        },
+        {
+          "fieldName": "additiveVerticalValue",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118907,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738183,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738206,
+            "targetRva": 65092592,
+            "methodIndex": 118907
+          },
+          "sourceToDestinationHex": "4885F60F84920600004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738170
+        },
+        {
+          "fieldName": "additiveZoomScale",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118908,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738224,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738247,
+            "targetRva": 65092656,
+            "methodIndex": 118908
+          },
+          "sourceToDestinationHex": "4885F60F84690600004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738211
+        },
+        {
+          "fieldName": "blendInCustomCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 118909,
+          "kind": "curve",
+          "sourceCall": {
+            "rva": 54738265,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738288,
+            "targetRva": 65092720,
+            "methodIndex": 118909
+          },
+          "sourceToDestinationHex": "4885F60F84400600004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738252
+        },
+        {
+          "fieldName": "blendInStyle",
+          "declaredType": "Cinemachine.CinemachineBlendDefinition+Style",
+          "setterMethodIndex": 118910,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 54738306,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738328,
+            "targetRva": 65092768,
+            "methodIndex": 118910
+          },
+          "sourceToDestinationHex": "4885F60F84170600004533C08BD0488BCE",
+          "sourceContextInstructionRva": 54738293
+        },
+        {
+          "fieldName": "blendInTime",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118911,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738346,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738369,
+            "targetRva": 65092816,
+            "methodIndex": 118911
+          },
+          "sourceToDestinationHex": "4885F60F84EF0500004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738333
+        },
+        {
+          "fieldName": "blendOutCustomCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 118912,
+          "kind": "curve",
+          "sourceCall": {
+            "rva": 54738387,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738410,
+            "targetRva": 65092864,
+            "methodIndex": 118912
+          },
+          "sourceToDestinationHex": "4885F60F84C60500004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738374
+        },
+        {
+          "fieldName": "blendOutStyle",
+          "declaredType": "Cinemachine.CinemachineBlendDefinition+Style",
+          "setterMethodIndex": 118913,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 54738428,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738450,
+            "targetRva": 65092912,
+            "methodIndex": 118913
+          },
+          "sourceToDestinationHex": "4885F60F849D0500004533C08BD0488BCE",
+          "sourceContextInstructionRva": 54738415
+        },
+        {
+          "fieldName": "blendOutTime",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118914,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738468,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738491,
+            "targetRva": 65092960,
+            "methodIndex": 118914
+          },
+          "sourceToDestinationHex": "4885F60F84750500004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738455
+        },
+        {
+          "fieldName": "ccsDuration",
+          "declaredType": "float",
+          "setterMethodIndex": 118915,
+          "kind": "raw4",
+          "sourceCall": {
+            "rva": 54738502,
+            "targetRva": 46828464
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738525,
+            "targetRva": 65093008,
+            "methodIndex": 118915
+          },
+          "sourceToDestinationHex": "4885F60F84530500004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "ccsPriority",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118916,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738543,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738566,
+            "targetRva": 65093056,
+            "methodIndex": 118916
+          },
+          "sourceToDestinationHex": "4885F60F842A0500004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738530
+        },
+        {
+          "fieldName": "customPriority",
+          "declaredType": "bool",
+          "setterMethodIndex": 118917,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54738577,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738600,
+            "targetRva": 65093104,
+            "methodIndex": 118917
+          },
+          "sourceToDestinationHex": "4885F60F84080500004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "debugName",
+          "declaredType": "string",
+          "setterMethodIndex": 118918,
+          "kind": "payload",
+          "sourceCall": {
+            "rva": 54738611,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738634,
+            "targetRva": 65093152,
+            "methodIndex": 118918
+          },
+          "sourceToDestinationHex": "4885F60F84E60400004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "enableHorizontalAngleLimit",
+          "declaredType": "bool",
+          "setterMethodIndex": 118919,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54738645,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738668,
+            "targetRva": 65093200,
+            "methodIndex": 118919
+          },
+          "sourceToDestinationHex": "4885F60F84C40400004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enterConditionsOr",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd>",
+          "setterMethodIndex": 118920,
+          "kind": "group-list",
+          "sourceCall": {
+            "rva": 54738686,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738709,
+            "targetRva": 65093248,
+            "methodIndex": 118920
+          },
+          "sourceToDestinationHex": "4885F60F849B0400004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738673
+        },
+        {
+          "fieldName": "fovCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 118921,
+          "kind": "curve",
+          "sourceCall": {
+            "rva": 54738727,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738750,
+            "targetRva": 65093296,
+            "methodIndex": 118921
+          },
+          "sourceToDestinationHex": "4885F60F84720400004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738714
+        },
+        {
+          "fieldName": "keepAdditiveParamOnLeave",
+          "declaredType": "bool",
+          "setterMethodIndex": 118922,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54738761,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738784,
+            "targetRva": 65093360,
+            "methodIndex": 118922
+          },
+          "sourceToDestinationHex": "4885F60F84500400004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "leaveConditionsOr",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd>",
+          "setterMethodIndex": 118923,
+          "kind": "group-list",
+          "sourceCall": {
+            "rva": 54738802,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738825,
+            "targetRva": 65093408,
+            "methodIndex": 118923
+          },
+          "sourceToDestinationHex": "4885F60F84270400004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738789
+        },
+        {
+          "fieldName": "lookAtOffset",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 118924,
+          "kind": "vector",
+          "sourceCall": {
+            "rva": 54738843,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738866,
+            "targetRva": 65093456,
+            "methodIndex": 118924
+          },
+          "sourceToDestinationHex": "4885F60F84FE0300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738830
+        },
+        {
+          "fieldName": "maxHorizontalAngle",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118925,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738884,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738907,
+            "targetRva": 65093520,
+            "methodIndex": 118925
+          },
+          "sourceToDestinationHex": "4885F60F84D50300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738871
+        },
+        {
+          "fieldName": "maxVerticalValue",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118926,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738925,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738948,
+            "targetRva": 65093584,
+            "methodIndex": 118926
+          },
+          "sourceToDestinationHex": "4885F60F84AC0300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738912
+        },
+        {
+          "fieldName": "maxZoom",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118927,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54738966,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54738989,
+            "targetRva": 65093648,
+            "methodIndex": 118927
+          },
+          "sourceToDestinationHex": "4885F60F84830300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738953
+        },
+        {
+          "fieldName": "minHorizontalAngle",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118928,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54739007,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739030,
+            "targetRva": 65093712,
+            "methodIndex": 118928
+          },
+          "sourceToDestinationHex": "4885F60F845A0300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54738994
+        },
+        {
+          "fieldName": "minVerticalValue",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118929,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54739048,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739071,
+            "targetRva": 65093776,
+            "methodIndex": 118929
+          },
+          "sourceToDestinationHex": "4885F60F84310300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54739035
+        },
+        {
+          "fieldName": "minZoom",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118930,
+          "kind": "scalar",
+          "sourceCall": {
+            "rva": 54739089,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739112,
+            "targetRva": 65093840,
+            "methodIndex": 118930
+          },
+          "sourceToDestinationHex": "4885F60F84080300004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54739076
+        },
+        {
+          "fieldName": "overrideLowerParamsToDefault",
+          "declaredType": "bool",
+          "setterMethodIndex": 118931,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739123,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739146,
+            "targetRva": 65093904,
+            "methodIndex": 118931
+          },
+          "sourceToDestinationHex": "4885F60F84E60200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "removeByActionEnd",
+          "declaredType": "bool",
+          "setterMethodIndex": 118932,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739157,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739180,
+            "targetRva": 65093952,
+            "methodIndex": 118932
+          },
+          "sourceToDestinationHex": "4885F60F84C40200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "removeByDuration",
+          "declaredType": "bool",
+          "setterMethodIndex": 118933,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739191,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739214,
+            "targetRva": 65094000,
+            "methodIndex": 118933
+          },
+          "sourceToDestinationHex": "4885F60F84A20200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "screenYCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 118934,
+          "kind": "curve",
+          "sourceCall": {
+            "rva": 54739232,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739255,
+            "targetRva": 65094048,
+            "methodIndex": 118934
+          },
+          "sourceToDestinationHex": "4885F60F84790200004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54739219
+        },
+        {
+          "fieldName": "shoulderOffset",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 118935,
+          "kind": "vector",
+          "sourceCall": {
+            "rva": 54739273,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739296,
+            "targetRva": 65094112,
+            "methodIndex": 118935
+          },
+          "sourceToDestinationHex": "4885F60F84500200004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54739260
+        },
+        {
+          "fieldName": "useAdditionalLookAtOffset",
+          "declaredType": "bool",
+          "setterMethodIndex": 118936,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739307,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739330,
+            "targetRva": 65094176,
+            "methodIndex": 118936
+          },
+          "sourceToDestinationHex": "4885F60F842E0200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useAdditionalShoulderOffset",
+          "declaredType": "bool",
+          "setterMethodIndex": 118937,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739341,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739364,
+            "targetRva": 65094224,
+            "methodIndex": 118937
+          },
+          "sourceToDestinationHex": "4885F60F840C0200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useAdditiveFOV",
+          "declaredType": "bool",
+          "setterMethodIndex": 118938,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739375,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739398,
+            "targetRva": 65094272,
+            "methodIndex": 118938
+          },
+          "sourceToDestinationHex": "4885F60F84EA0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useAdditiveParam",
+          "declaredType": "bool",
+          "setterMethodIndex": 118939,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739409,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739432,
+            "targetRva": 65094320,
+            "methodIndex": 118939
+          },
+          "sourceToDestinationHex": "4885F60F84C80100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useCondition",
+          "declaredType": "bool",
+          "setterMethodIndex": 118940,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739443,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739466,
+            "targetRva": 65094368,
+            "methodIndex": 118940
+          },
+          "sourceToDestinationHex": "4885F60F84A60100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useFovCurve",
+          "declaredType": "bool",
+          "setterMethodIndex": 118941,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739477,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739500,
+            "targetRva": 65094416,
+            "methodIndex": 118941
+          },
+          "sourceToDestinationHex": "4885F60F84840100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useLookAtOffset",
+          "declaredType": "bool",
+          "setterMethodIndex": 118942,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739511,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739534,
+            "targetRva": 65094464,
+            "methodIndex": 118942
+          },
+          "sourceToDestinationHex": "4885F60F84620100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useMaxVerticalValue",
+          "declaredType": "bool",
+          "setterMethodIndex": 118943,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739545,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739568,
+            "targetRva": 65094512,
+            "methodIndex": 118943
+          },
+          "sourceToDestinationHex": "4885F60F84400100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useMaxZoom",
+          "declaredType": "bool",
+          "setterMethodIndex": 118944,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739579,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739602,
+            "targetRva": 65094560,
+            "methodIndex": 118944
+          },
+          "sourceToDestinationHex": "4885F60F841E0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useMinVerticalValue",
+          "declaredType": "bool",
+          "setterMethodIndex": 118945,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739613,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739636,
+            "targetRva": 65094608,
+            "methodIndex": 118945
+          },
+          "sourceToDestinationHex": "4885F60F84FC0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useMinZoom",
+          "declaredType": "bool",
+          "setterMethodIndex": 118946,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739647,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739670,
+            "targetRva": 65094656,
+            "methodIndex": 118946
+          },
+          "sourceToDestinationHex": "4885F60F84DA0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useScreenYCurve",
+          "declaredType": "bool",
+          "setterMethodIndex": 118947,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739681,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739704,
+            "targetRva": 65094704,
+            "methodIndex": 118947
+          },
+          "sourceToDestinationHex": "4885F60F84B80000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useShoulderOffset",
+          "declaredType": "bool",
+          "setterMethodIndex": 118948,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 54739715,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 54739738,
+            "targetRva": 65094752,
+            "methodIndex": 118948
+          },
+          "sourceToDestinationHex": "4885DB0F84960000004533C00FB6D0488BCB"
+        }
+      ]
+    },
+    "refrainObtainUsp": {
+      "sourceContract": "buff_12a_native.json",
+      "wrapperTypeDefinition": 16361,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack",
+      "runtimeTypeDefinition": 9732,
+      "runtimeTypeName": "Beyond.Gameplay.Core.RefrainObtainUsp+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        122228,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack",
+        "Deserialize",
+        70655968
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70656112,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656135,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F844C0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70656153,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656175,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84230100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 70656140
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70656186,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656208,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84020100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 70656219,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656241,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84E10000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "clearUspOnEnd",
+          "declaredType": "bool",
+          "setterMethodIndex": 122223,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 70656252,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656275,
+            "targetRva": 70656464,
+            "methodIndex": 122223
+          },
+          "sourceToDestinationHex": "4885F60F84C00000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "refrainObtainUspTags",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTagList",
+          "setterMethodIndex": 122224,
+          "kind": "tag-list-profile",
+          "sourceCall": {
+            "rva": 70656293,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656316,
+            "targetRva": 70656512,
+            "methodIndex": 122224
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 70656280
+        },
+        {
+          "fieldName": "targetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 122225,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 70656334,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 70656353,
+            "targetRva": 70656560,
+            "methodIndex": 122225
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 70656321
+        }
+      ]
+    },
+    "checkSkillDamageType": {
+      "sourceContract": "buff_74_native.json",
+      "wrapperTypeDefinition": 16677,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPack",
+      "runtimeTypeDefinition": 13541,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckSkillDamageType+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        124558,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPack",
+        "Deserialize",
+        72026416
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 72026560,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72026583,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84F50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72026601,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72026623,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84CC0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 72026588
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72026634,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72026656,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84AB0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72026667,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72026689,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F848A0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "damageTypeList",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.GEnums.DamageType>",
+          "setterMethodIndex": 124555,
+          "kind": "counted-scalar32",
+          "sourceCall": {
+            "rva": 72026707,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72026726,
+            "targetRva": 72026832,
+            "methodIndex": 124555
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 72026694
+        }
+      ]
+    },
+    "conditionGroup": {
+      "sourceContract": "buff_08_native.json",
+      "wrapperTypeDefinition": 22419,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+      "runtimeTypeDefinition": 8490,
+      "runtimeTypeName": "Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "member1",
+      "readerMethod": [
+        162729,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+        "Deserialize",
+        157866072
+      ],
+      "members": [
+        {
+          "fieldName": "and",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionCondition>",
+          "kind": "nullable-member5-list",
+          "setterMethodIndex": 162725,
+          "sourceCall": {
+            "rva": 157866260,
+            "targetRva": 11199508
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 157866275,
+            "targetRva": 153000880,
+            "methodIndex": 162725
+          },
+          "sourceToDestinationHex": "CC4533C0488BD0488BCB",
+          "sourceContextInstructionRva": 157866237
+        }
+      ]
+    },
+    "condition": {
+      "sourceContract": "buff_08_native.json",
+      "wrapperTypeDefinition": 22969,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionForMemoryPack",
+      "runtimeTypeDefinition": 8489,
+      "runtimeTypeName": "Beyond.Gameplay.View.CameraControlState+TransitionCondition",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        166651,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionForMemoryPack",
+        "Deserialize",
+        158060748
+      ],
+      "members": [
+        {
+          "fieldName": "boolValue",
+          "declaredType": "bool",
+          "kind": "byte",
+          "setterMethodIndex": 166643,
+          "sourceCall": {
+            "rva": 158060939,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 158060961,
+            "targetRva": 84416204,
+            "methodIndex": 166643
+          },
+          "sourceToDestinationHex": "4885F60F84930000004533C08AD0488BCE"
+        },
+        {
+          "fieldName": "buffValue",
+          "declaredType": "string",
+          "kind": "byte-payload",
+          "setterMethodIndex": 166644,
+          "sourceCall": {
+            "rva": 158060972,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 158060991,
+            "targetRva": 153010088,
+            "methodIndex": 166644
+          },
+          "sourceToDestinationHex": "4885F674764533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "comparator",
+          "declaredType": "Beyond.Gameplay.View.CameraControlConditionComparator",
+          "kind": "scalar32",
+          "setterMethodIndex": 166645,
+          "sourceCall": {
+            "rva": 158061009,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 158061027,
+            "targetRva": 84401920,
+            "methodIndex": 166645
+          },
+          "sourceToDestinationHex": "4885F674514533C08BD0488BCE",
+          "sourceContextInstructionRva": 158060996
+        },
+        {
+          "fieldName": "conditionType",
+          "declaredType": "Beyond.Gameplay.View.CameraControlConditionType",
+          "kind": "scalar32",
+          "setterMethodIndex": 166646,
+          "sourceCall": {
+            "rva": 158061045,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 158061063,
+            "targetRva": 84403284,
+            "methodIndex": 166646
+          },
+          "sourceToDestinationHex": "4885F6742D4533C08BD0488BCE",
+          "sourceContextInstructionRva": 158061032
+        },
+        {
+          "fieldName": "floatValue",
+          "declaredType": "float",
+          "kind": "raw4",
+          "setterMethodIndex": 166647,
+          "sourceCall": {
+            "rva": 158061074,
+            "targetRva": 46828464
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 158061093,
+            "targetRva": 84403372,
+            "methodIndex": 166647
+          },
+          "sourceToDestinationHex": "4885DB74104533C00F28C8488BCB"
+        }
+      ]
+    },
+    "damageTypeSource": {
+      "sourceContract": "buff_5d_native.json",
+      "wrapperTypeDefinition": 16619,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageType_DataForMemoryPack",
+      "runtimeTypeDefinition": 13489,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckDamageType+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        124168,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageType_DataForMemoryPack",
+        "Deserialize",
+        58592688
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "kind": "byte",
+          "setterMethodIndex": 107646,
+          "sourceCall": {
+            "rva": 58592832,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592855,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84F40000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "kind": "scalar32",
+          "setterMethodIndex": 107647,
+          "sourceCall": {
+            "rva": 58592873,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592895,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84CB0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 58592860
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "kind": "scalar32",
+          "setterMethodIndex": 107648,
+          "sourceCall": {
+            "rva": 58592906,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592928,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84AA0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "kind": "scalar32",
+          "setterMethodIndex": 107649,
+          "sourceCall": {
+            "rva": 58592939,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592961,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84890000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "damageType",
+          "declaredType": "Beyond.GEnums.DamageType",
+          "kind": "scalar32",
+          "setterMethodIndex": 124165,
+          "sourceCall": {
+            "rva": 58592979,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58592997,
+            "targetRva": 58593104,
+            "methodIndex": 124165
+          },
+          "sourceToDestinationHex": "4885DB74654533C08BD0488BCB",
+          "sourceContextInstructionRva": 58592966
+        }
+      ]
+    }
+  },
+  "formatterRegistrations": {
+    "cameraGroups": {
+      "sourceRecord": "addDynamicCcs",
+      "sourceFields": [
+        "enterConditionsOr",
+        "leaveConditionsOr"
+      ],
+      "keyType": "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd>",
+      "formatterDefinition": "MemoryPack.Formatters.ListFormatter`1",
+      "allocation": {
+        "instructionRva": 67694530,
+        "instructionHex": "488B0DF71D0009",
+        "usageCellRva": 218697152,
+        "usageRawHex": "E168062000000000",
+        "tag": 1,
+        "typeIndex": 210032,
+        "typeName": "MemoryPack.Formatters.ListFormatter`1<Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd>",
+        "typeRawHex": "F8003C8D010000000000150000000000"
+      },
+      "constructor": {
+        "instructionRva": 67694550,
+        "instructionHex": "488B15131E0009",
+        "usageCellRva": 218697200,
+        "usageRawHex": "434711C000000000",
+        "tag": 6,
+        "methodSpecIndex": 566177,
+        "methodSpec": [
+          428796,
+          17013,
+          -1
+        ],
+        "typeName": "MemoryPack.Formatters.ListFormatter`1",
+        "methodName": ".ctor",
+        "classArguments": [
+          "Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd"
+        ],
+        "methodArguments": []
+      },
+      "registration": {
+        "instructionRva": 67694565,
+        "instructionHex": "488B151C1E0009",
+        "usageCellRva": 218697224,
+        "usageRawHex": "354F12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 599962,
+        "methodSpec": [
+          428385,
+          -1,
+          62666
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatterProvider",
+        "methodName": "Register",
+        "classArguments": [],
+        "methodArguments": [
+          "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionConditionAnd>"
+        ]
+      },
+      "ownerMethod": [
+        118950,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AddDynamicCcsAction_AddDynamicCcsActionDataForMemoryPack",
+        "RegisterFormatter",
+        67694096
+      ],
+      "ownerWindow": {
+        "startRva": 67694096,
+        "endRva": 67694591,
+        "sha256": "62AD50234A0DDB9760DDEB1703A32A9B47EC1CA173D55065A0BD5A1BFE5C2829"
+      },
+      "window": {
+        "startRva": 67694530,
+        "endRva": 67694585,
+        "sha256": "266C14385E5C11605E0EBFB7FFD7F4F59A7DCCE2D0981F2E9848EE5FB336A17D"
+      },
+      "program": [
+        [
+          67694530,
+          "488B0DF71D0009"
+        ],
+        [
+          67694537,
+          "E89270F9FB"
+        ],
+        [
+          67694542,
+          "488BD8"
+        ],
+        [
+          67694545,
+          "4885C0"
+        ],
+        [
+          67694548,
+          "7423"
+        ],
+        [
+          67694550,
+          "488B15131E0009"
+        ],
+        [
+          67694557,
+          "488BC8"
+        ],
+        [
+          67694560,
+          "E80B6E2100"
+        ],
+        [
+          67694565,
+          "488B151C1E0009"
+        ],
+        [
+          67694572,
+          "488BCB"
+        ],
+        [
+          67694575,
+          "4883C420"
+        ],
+        [
+          67694579,
+          "5B"
+        ],
+        [
+          67694580,
+          "E9171677FF"
+        ]
+      ],
+      "continuation": "tail",
+      "nullAllocationTargetRva": 67694585,
+      "actualCalls": {
+        "allocation": 155744,
+        "constructor": 69885424,
+        "registration": 58721808
+      }
+    },
+    "cameraConditions": {
+      "sourceRecord": "conditionGroup",
+      "sourceFields": [
+        "and"
+      ],
+      "keyType": "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionCondition>",
+      "formatterDefinition": "MemoryPack.Formatters.ListFormatter`1",
+      "allocation": {
+        "instructionRva": 157866601,
+        "instructionHex": "488B0D60984904",
+        "usageCellRva": 229798608,
+        "usageRawHex": "DF68062000000000",
+        "tag": 1,
+        "typeIndex": 210031,
+        "typeName": "MemoryPack.Formatters.ListFormatter`1<Beyond.Gameplay.View.CameraControlState+TransitionCondition>",
+        "typeRawHex": "E88D928D010000000000150000000000"
+      },
+      "constructor": {
+        "instructionRva": 157866621,
+        "instructionHex": "488B1544984904",
+        "usageCellRva": 229798600,
+        "usageRawHex": "414711C000000000",
+        "tag": 6,
+        "methodSpecIndex": 566176,
+        "methodSpec": [
+          428796,
+          17012,
+          -1
+        ],
+        "typeName": "MemoryPack.Formatters.ListFormatter`1",
+        "methodName": ".ctor",
+        "classArguments": [
+          "Beyond.Gameplay.View.CameraControlState+TransitionCondition"
+        ],
+        "methodArguments": []
+      },
+      "registration": {
+        "instructionRva": 157866636,
+        "instructionHex": "488B1515984904",
+        "usageCellRva": 229798568,
+        "usageRawHex": "334F12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 599961,
+        "methodSpec": [
+          428385,
+          -1,
+          62665
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatterProvider",
+        "methodName": "Register",
+        "classArguments": [],
+        "methodArguments": [
+          "System.Collections.Generic.List`1<Beyond.Gameplay.View.CameraControlState+TransitionCondition>"
+        ]
+      },
+      "ownerMethod": [
+        162728,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+        "RegisterFormatter",
+        157866360
+      ],
+      "ownerWindow": {
+        "startRva": 157866360,
+        "endRva": 157866662,
+        "sha256": "593C480D3F0D9BB2EF69E2DE4AB4DFBC39EBC487D237BB2276145B8451114711"
+      },
+      "window": {
+        "startRva": 157866601,
+        "endRva": 157866656,
+        "sha256": "2C30B2C25DAFE1650149779985A28DE34C2FE3597FD697042E6B4D657DAF7E5D"
+      },
+      "program": [
+        [
+          157866601,
+          "488B0D60984904"
+        ],
+        [
+          157866608,
+          "E8EB8599F6"
+        ],
+        [
+          157866613,
+          "488BD8"
+        ],
+        [
+          157866616,
+          "4885C0"
+        ],
+        [
+          157866619,
+          "7423"
+        ],
+        [
+          157866621,
+          "488B1544984904"
+        ],
+        [
+          157866628,
+          "488BC8"
+        ],
+        [
+          157866631,
+          "E86483C1FA"
+        ],
+        [
+          157866636,
+          "488B1515984904"
+        ],
+        [
+          157866643,
+          "488BCB"
+        ],
+        [
+          157866646,
+          "4883C420"
+        ],
+        [
+          157866650,
+          "5B"
+        ],
+        [
+          157866651,
+          "E9702B17FA"
+        ]
+      ],
+      "continuation": "tail",
+      "nullAllocationTargetRva": 157866656,
+      "actualCalls": {
+        "allocation": 155744,
+        "constructor": 69885424,
+        "registration": 58721808
+      }
+    },
+    "damageTypeList": {
+      "sourceRecord": "checkSkillDamageType",
+      "sourceFields": [
+        "damageTypeList"
+      ],
+      "keyType": "System.Collections.Generic.List`1<Beyond.GEnums.DamageType>",
+      "formatterDefinition": "MemoryPack.Formatters.ListFormatter`1",
+      "allocation": {
+        "instructionRva": 68283952,
+        "instructionHex": "488B0D61AAF108",
+        "usageCellRva": 218339480,
+        "usageRawHex": "7B67062000000000",
+        "tag": 1,
+        "typeIndex": 209853,
+        "typeName": "MemoryPack.Formatters.ListFormatter`1<Beyond.GEnums.DamageType>",
+        "typeRawHex": "88133C8D010000000000150000000000"
+      },
+      "constructor": {
+        "instructionRva": 68283972,
+        "instructionHex": "488B1555AAF108",
+        "usageCellRva": 218339488,
+        "usageRawHex": "2B4611C000000000",
+        "tag": 6,
+        "methodSpecIndex": 566037,
+        "methodSpec": [
+          428796,
+          19594,
+          -1
+        ],
+        "typeName": "MemoryPack.Formatters.ListFormatter`1",
+        "methodName": ".ctor",
+        "classArguments": [
+          "Beyond.GEnums.DamageType"
+        ],
+        "methodArguments": []
+      },
+      "registration": {
+        "instructionRva": 68283987,
+        "instructionHex": "488B15F6A9F108",
+        "usageCellRva": 218339408,
+        "usageRawHex": "CF4D12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 599783,
+        "methodSpec": [
+          428385,
+          -1,
+          62522
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatterProvider",
+        "methodName": "Register",
+        "classArguments": [],
+        "methodArguments": [
+          "System.Collections.Generic.List`1<Beyond.GEnums.DamageType>"
+        ]
+      },
+      "ownerMethod": [
+        124557,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPack",
+        "RegisterFormatter",
+        68283568
+      ],
+      "ownerWindow": {
+        "startRva": 68283568,
+        "endRva": 68284063,
+        "sha256": "A45F2C90931DB539018AB866672B322FE68284E6943DB0FED93A5B0993200A00"
+      },
+      "window": {
+        "startRva": 68283952,
+        "endRva": 68284002,
+        "sha256": "62484A341640207FB71ED419F0367767E3D2BFEF5FE45460C2AA4F2DBECF10DA"
+      },
+      "program": [
+        [
+          68283952,
+          "488B0D61AAF108"
+        ],
+        [
+          68283959,
+          "E82472F0FB"
+        ],
+        [
+          68283964,
+          "488BD8"
+        ],
+        [
+          68283967,
+          "4885C0"
+        ],
+        [
+          68283970,
+          "7455"
+        ],
+        [
+          68283972,
+          "488B1555AAF108"
+        ],
+        [
+          68283979,
+          "488BC8"
+        ],
+        [
+          68283982,
+          "E89D6F1800"
+        ],
+        [
+          68283987,
+          "488B15F6A9F108"
+        ],
+        [
+          68283994,
+          "488BCB"
+        ],
+        [
+          68283997,
+          "E8AE176EFF"
+        ]
+      ],
+      "continuation": "call",
+      "nullAllocationTargetRva": 68284057,
+      "actualCalls": {
+        "allocation": 155744,
+        "constructor": 69885424,
+        "registration": 58721808
+      }
+    },
+    "damageTypeValue": {
+      "sourceRecord": "damageTypeSource",
+      "sourceFields": [
+        "damageType"
+      ],
+      "keyType": "Beyond.GEnums.DamageType",
+      "formatterDefinition": "MemoryPack.Formatters.UnmanagedFormatter`1",
+      "allocation": {
+        "instructionRva": 68284002,
+        "instructionHex": "488B0DBF5EED08",
+        "usageCellRva": 218058024,
+        "usageRawHex": "FF95062000000000",
+        "tag": 1,
+        "typeIndex": 215807,
+        "typeName": "MemoryPack.Formatters.UnmanagedFormatter`1<Beyond.GEnums.DamageType>",
+        "typeRawHex": "28FE398D010000000000150000000000"
+      },
+      "constructor": {
+        "instructionRva": 68284022,
+        "instructionHex": "488B15D35DED08",
+        "usageCellRva": 218057808,
+        "usageRawHex": "790412C000000000",
+        "tag": 6,
+        "methodSpecIndex": 590396,
+        "methodSpec": [
+          428978,
+          19594,
+          -1
+        ],
+        "typeName": "MemoryPack.Formatters.UnmanagedFormatter`1",
+        "methodName": ".ctor",
+        "classArguments": [
+          "Beyond.GEnums.DamageType"
+        ],
+        "methodArguments": []
+      },
+      "registration": {
+        "instructionRva": 68284037,
+        "instructionHex": "488B15145FED08",
+        "usageCellRva": 218058144,
+        "usageRawHex": "719E12C000000000",
+        "tag": 6,
+        "methodSpecIndex": 610104,
+        "methodSpec": [
+          428385,
+          -1,
+          19594
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatterProvider",
+        "methodName": "Register",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.GEnums.DamageType"
+        ]
+      },
+      "ownerMethod": [
+        124557,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillDamageType_DataForMemoryPack",
+        "RegisterFormatter",
+        68283568
+      ],
+      "ownerWindow": {
+        "startRva": 68283568,
+        "endRva": 68284063,
+        "sha256": "A45F2C90931DB539018AB866672B322FE68284E6943DB0FED93A5B0993200A00"
+      },
+      "window": {
+        "startRva": 68284002,
+        "endRva": 68284057,
+        "sha256": "07F997AF6D101718FE47E835B923D1DE256A85ABA805436E6AD8787CEE834C4D"
+      },
+      "program": [
+        [
+          68284002,
+          "488B0DBF5EED08"
+        ],
+        [
+          68284009,
+          "E8F271F0FB"
+        ],
+        [
+          68284014,
+          "488BD8"
+        ],
+        [
+          68284017,
+          "4885C0"
+        ],
+        [
+          68284020,
+          "7423"
+        ],
+        [
+          68284022,
+          "488B15D35DED08"
+        ],
+        [
+          68284029,
+          "488BC8"
+        ],
+        [
+          68284032,
+          "E81BFBEAFF"
+        ],
+        [
+          68284037,
+          "488B15145FED08"
+        ],
+        [
+          68284044,
+          "488BCB"
+        ],
+        [
+          68284047,
+          "4883C420"
+        ],
+        [
+          68284051,
+          "5B"
+        ],
+        [
+          68284052,
+          "E9E7156EFF"
+        ]
+      ],
+      "continuation": "tail",
+      "nullAllocationTargetRva": 68284057,
+      "actualCalls": {
+        "allocation": 155744,
+        "constructor": 66906528,
+        "registration": 58721408
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current ordered source calls, generated field destinations, closed source contexts and current union routes; complete selected static allocation/constructor/Register instruction windows and raw key/element pointer joins.",
+    "direct": "Under normal non-null allocation and constructor return, the original object reference reaches Register with the exact key used by each source field.",
+    "conditional": "Typed non-null allocation, normal constructor return and ordinary Win64 stack/nonvolatile behavior are assumed. No actual initialization/provider result is observed.",
+    "structuralOnly": "Independent Object/int compiled formatter candidates do not establish runtime code selection for the concrete condition or DamageType classes.",
+    "unresolved": "Selected list/element formatter bodies, positive collection grammar, independent recursive children, maintained parent dispatcher integration, complete family/root admission and actual gameplay conditions/effects."
+  }
+}

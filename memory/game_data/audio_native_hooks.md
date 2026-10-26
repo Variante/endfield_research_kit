@@ -1054,9 +1054,9 @@ Individual Event contribution to a mixed device frame remains unresolved; an
 earlier source prefix or matching context address does not supply a frame join.
 
 Further caller review corrects the mixer-array boundary. `busRouteMix` receives
-task state in the second integer register and its selected row-pointer array in
+caller result storage in the second integer register and its selected row-pointer array in
 the fourth. The array contains mixer rows, not top-level route objects. Older
-playback/device recipes sampled task-state bytes under an incorrect route-array
+playback/device recipes sampled result-storage bytes under an incorrect route-array
 label. Their raw bytes remain historical, but the current review excludes that
 array interpretation. Independently read route source/bus fields and the
 same-invocation sink/device copy witnesses remain valid. The corrected playback
@@ -1081,8 +1081,8 @@ arguments; their reviewed native loads establish that calling surface. Original
 calls execute once. Only completed same-thread master/consumer/sink nesting with
 matching node, sink and descriptor contributes a conversion witness. Output
 children keep their parent's recorder and window through normal stop. Native
-worker-task callers confirm that source publication, bus output and bus reset are
-separate work stages; a task-state pointer alone does not identify a whole frame
+worker callers confirm that source publication, bus output and bus reset are
+separate work stages; a result-storage pointer alone does not identify a whole frame
 generation. A later device submission still needs a proved buffer/frame join.
 The mixer capture now supplies actual row arrays/first descriptors and completed
 master/consumer/sink conversion chains with successful device submissions. The
@@ -1098,9 +1098,1082 @@ field. The corrected mixer contract binds each copied serial/allocation load
 back to the owned selector-blob field as well as checking the owner store.
 The streaming review excludes the old ID label and preserves other current
 owner/source reads with an explicit partial identity and unavailable serial.
-Zero values from that old field are not zero playing IDs. A short repeat with
-the corrected prepared recipe is required to observe the actual serial; no
-change to the generic recorder or reinterpretation of saved bytes can supply it.
+Zero values from that old field are not zero playing IDs. The corrected repeat
+now observes nonzero current owner serials beside completed PCM. Every sampled
+current serial has one saved managed Event candidate. A subset also matches a
+complete owner/serial/source/allocation tuple from one recorded local
+Action/selector/constructor chain, including finite nonzero PCM. These current
+reads replace latest-constructor proximity for identity comparison; they remain
+non-atomic stored identity and lifetime-conditional transport, not allocation
+generations. Do not request another identical capture to re-prove the serial.
+Some observations have no recorded local transport tuple, and others retain the
+same owner address and serial but a different stored source from the constructor
+input. Exclude both from the complete tuple join. A serial-only match cannot
+explain source replacement, owner reuse or a different constructor family;
+those alternatives remain open until their native mutation/lifetime endpoints
+are observed.
+
+The same source descriptor/sample/format/frame storage can have different saved
+serial candidates within a capture. This is observed reuse, so an entire-session
+storage join cannot identify the mixer frame's Event. The prepared
+[`wwise_mixer_frame_native.json`](../../scripts/game_data/contracts/wwise_mixer_frame_native.json)
+extension pairs actual bus mixing with completed first output descriptor/PCM
+reads, and observes every source sample/release, native descriptor publication
+and bus reset endpoint while recording is active. Its bus wrapper forwards all
+six integer/pointer arguments and preserves the caller result-storage return; publication
+and reset wrappers retain raw return-register bits without assigning an object
+meaning. Native publication supplies the exact context descriptor to route rows;
+completed reset clears retained bus input PCM and valid frames.
+The extension must be selected by its frame manifest. A newer recorder DLL with
+the earlier mixer manifest retains the earlier sampled observer, without the
+publication/reset endpoints. Use the frozen manifest, activation roster and
+endpoint counters to establish selection; loss-free transport is independent.
+The offline reviewer retains bounded reset examples and observed reset ordinals,
+checks source-write/release intervals, current publication identity and same-call
+input/output addresses, and rejects intentional endpoint skips. These ordinals
+are observed intervals rather than a native global frame counter. Other writers,
+concurrent ownership, all rows/channels/effects and device-frame attribution stay
+conditional or unresolved. A completion after stop cannot admit an interval join.
+The frame observer is now captured: completed native publication reads the same
+current owner/serial/source/allocation as the sampled PCM, and a subset of actual
+mix rows retains that published descriptor/sample/format/frame identity within
+the observed write/reset interval. A selected physical voice WEM reproduces a
+finite source prefix; its current identity also occurs in nonzero bus-mix output
+observations. This extends the conditional file/source-to-mixer-input path,
+without proving the gain/matrix/filter equation or later device-frame identity.
+Source and bus-output prefixes differ even for single-row scopes, so pointer
+continuity must not be described as an unchanged PCM copy.
+
+Return-storage leaf review establishes only anonymous word initialization and
+move/clear operations. These leaves neither schedule nor wait for work, and the
+returned caller storage is not evidence of an asynchronous task or dependency.
+The numeric declaration now captures incoming gain pairs, the previous/target
+matrix pointers and first words, and a filter target beside the mix call. It also
+reads a few second-plane words only under explicit stereo-format, capacity and
+valid-frame guards. Stored matrix words still need their selected consumer/layout
+and filter history before they can explain effective channel output.
+The native mix body multiplies each incoming previous/target gain by the
+corresponding row gain and writes the products back into the gain-pair array
+before filter/matrix dispatch. Entry reads precede those mutations. Independent
+IEEE nearest float32 products describe these captured operands, not observed
+effective output; the integer-only wrapper does not observe native MXCSR.
+Two matrix words are not a complete stereo matrix, and a zero filter target
+does not prove bypass or empty history.
+
+The numeric capture overflowed the recorder queue. Keep its completed
+same-invocation matrix/gain reads, source identities and sink-copy pairs as
+local observations, but withhold every source-write/publication/reset interval
+join from that session. The earlier loss-free frame scopes remain accepted
+separately. The reviewer now resolves coefficient reads through their recorded
+matrix pointers and accepts guarded-out argument fields without replacing the
+actual call register. It checks incoming gains against fifth-argument storage;
+stream diagnostics also invalidate previously retained absence-of-intervening
+write/reset claims. The recorder now buffers each JSON row through the shared
+worker writer instead of formatting each scalar and hex digit separately.
+A shorter repeat still needs zero losses; a successful build does not prove
+that transport condition.
+
+Code review withdraws the unchanged numeric repeat. The recipe's mix entry
+span contains row pointers rather than PCM at the native filter/matrix boundary;
+it reads only the first row, limited matrix words and a few second-plane samples.
+It also leaves master conversion and later sink submission as separate observed
+scopes without a carried buffer generation. Loss-free repetition alone cannot
+close either the numerical equation or Event-to-device attribution. Prove the
+native consumer read order and a sufficient bounded comparison offline first.
+The reviewer corrections now invalidate previous context/row projections on
+publication entry, require completed publication identity to agree with its
+entry and source write, and bind source ordinals to individual invocations.
+Overlapping, released, superseded and late calls cannot create a source interval.
+Primary descriptor and PCM span addresses are checked before counting source
+observations; guarded-out or failed reads cannot supply copied bytes. Bounded
+regression cases cover the reproduced failures. Both saved frame sessions have
+been replayed: the clean session retains its prior conditional candidates with
+no diagnostics, and the lossy session still withholds intervals. Those tests
+demonstrate corrected reader behavior, not that the fabricated failure cases
+occurred in the game. Native calls and waveform data were not changed.
+Keep direct call/storage and sink-copy witnesses separate. The dense endpoint policy
+runs throughout the provider lifetime, and automatic recording starts at runtime
+readiness; a short gameplay instruction does not bound loading-time observation
+or prove sufficient queue/drain capacity.
+
+Offline consumer review now separates the earlier source snapshot from the
+actual unfiltered matrix-consumer input. The selected full bodies and read
+order are recorded in the existing mixer-frame contract and authenticated
+during preparation. That consumer takes a cohort of source indices, source
+descriptor and filter arrays, an output-descriptor reference, effective gain
+pairs and previous/target matrix arrays. It updates bypass filter history,
+then accumulates planar contributions into existing output. Matrix rows are
+padded to a vector-width boundary; the first two stored coefficients do not
+include the second input channel's row. Capturing the caller's row pointers
+does not observe this consumer's input PCM.
+
+Audio's `mixer_pcm_witness` checks a supplied bounded first-output equation:
+one first-row source, constant gain/matrix, one nonzero channel contribution,
+zero initial output and nearest native rounding. Ramps, cross-channel sums,
+unsupported float ranges and a source-sample boundary are withheld. Original
+isolated native filtered-source and submitted PCM reproduce nonzero prefixes
+under supplied identity-matrix/zero-bus/rounding conditions; silence and terminal
+gain ramps remain separate. This is a regression of the equation evaluator,
+not a live observation of the new consumer boundary or independent filter parity.
+
+The native sink handoff is also more specific: conversion writes an inline
+descriptor and sets input-present. On the non-ring, non-resampling path,
+frame-end submits that descriptor when valid frames exist, then clears
+input-present. The resampled path uses a different descriptor; the no-input
+path submits silent COM buffers outside the observed sink-submit call. These
+branches must remain distinct. Field displacements, masks and call witnesses
+are native-bound in the mixer-frame contract.
+`sink_handoff_capture` implements the corresponding observed write/consume
+ledger. It requires complete sink-write and frame-end endpoint coverage,
+matching checked descriptors, same-thread parent nesting, successful paired
+returns and the consumed flag. Overlaps, intervening writes, unsupported modes
+and descriptor changes withhold the join. A retained submit capture ID can
+connect to a same-invocation device copy; it does not identify the upstream
+Event or a global allocation generation. Both saved frame recipes fail this
+coverage gate, including the loss-free recipe, because frame-end is absent
+and sink writes are sampled. No generation join has been recovered from them.
+
+A bounded offline replay of original callback records preserves all serialized
+JSON values through the current worker writer and measures serialization and
+file-write throughput. The measured rates and corpus are generated report
+data. This excludes game contention, provider callback cost and the worker's
+other tasks; it does not prove loss-free gameplay. The recorder still needs
+an explicit bounded observation policy and the missing consumer/frame-end
+endpoints; this measurement alone does not justify another capture.
+
+The separate `audio-handoff` profile now supplies the sink-write/frame-end/
+submission endpoints for a narrower question: does a completed master
+conversion's saved PCM prefix reach a later same-sink device copy through a
+checked write/consume interval? It observes every sink write, frame-end and
+submission in an explicitly selected native window. Loading-time native roots
+are excluded before observational memory reads. Paired returns and nested
+device children retain the window ID acquired by their parent; a closure flag
+prevents a late return from admitting an interval, including when timestamps
+share the same coarse tick. Numpad and console toggles close the window, and
+bounded drain batches keep those controls responsive under continuous traffic.
+The user controls duration; the earlier fixed short cutoff has been removed.
+The handoff preset starts the overlay automatically and retains host-stop
+closure and the existing window/record bounds.
+Outside-window counters remain distinct from intentional sampling skips and
+queue loss. The offline importer checks the frozen activation, window IDs,
+closure flags, complete endpoint scope, descriptor/mode/client addresses and
+same-thread parent nesting. It joins completed master conversions and accepted
+device copies only through their checked write and submit capture IDs, with
+converted-to-submitted prefix equality. The new endpoints and controls are
+built and regression-tested; both historical frame sessions retain their prior
+evidence boundaries on replay. A loss-free handoff capture now supplies this
+conditional prefix witness: completed master output contains the checked output
+consumer and sink conversion; the completed sink write is consumed by a nested
+direct frame-end submission before another observed write/consume; its device
+calls receive successful HRESULTs and copy the same nonzero prefix. Independent
+inspection of the original phase rows confirms the nesting, descriptor/mode/
+client fields, call order and byte equality. The first input plane also explains
+the corresponding converted first-channel prefix under its recorded constant
+gain. These observations connect master conversion to actual render-client
+buffer submission. They cover saved prefixes and observed intervals, not whole
+buffers, unobserved writers, audibility or an individual Event's contribution to
+mixed output. Last-observed same-bus mixes agree with the master input's
+descriptor while their saved prefixes differ from the later conversion input.
+The native matching-layout master branch can pad the descriptor and apply
+retained per-frame gains before the output consumer; these saved rows lack
+all intervening operands. Sampled bus-mix endpoints also leave possible
+intervening writers. Descriptor matches remain discovery candidates, not a
+proved buffer generation, numerical explanation or an Event-to-master join.
+
+The separate `audio-mixer-consumer` observer now adds the original unfiltered
+consumer entry and return. The existing mixer-frame contract owns its complete
+body, argument/read bindings and bounded declarations; preparation still gates
+the selected native inputs. It forwards all eight arguments, retains the
+entry rounding mode, and samples source planes, effective gain pairs, padded
+previous/target matrix rows, initial first-output samples and returned output.
+Source tail padding and capacity promotion occur before this boundary. A
+local forwarding/read example exercises the real read program on private PCM
+storage; it establishes observer behavior, not game DSP output. The importer
+checks exact frozen consumer reads, scalar/plane addresses and paired stack
+arguments, then evaluates a same-call constant first-output equation. Missing
+operands, changed geometry, aliasing, unsupported layouts/ramps/sums, late
+returns and capture diagnostics withhold the numerical witness. Parent source
+candidates additionally require completed bus nesting and descriptor/sample
+identity; the completed-mix key now includes its recording window.
+The loss-free consumer capture now supplies live numerical agreement. Original
+consumer PCM, constant effective gain/matrix, zero initial output and entry
+rounding explain nonzero first-output samples. Independent original phase-row
+inspection confirms ordered same-parent nesting, unchanged descriptor/PCM/
+format/extents and identical returned prefixes at the parent bus output.
+Source content continuity additionally compares saved plane prefixes, rather
+than treating a reused PCM pointer as unchanged content. Completed Action/
+selector/constructor candidates require the full current owner/source/serial/
+allocation tuple and constructor-before-sample ordering. Observed native
+external paths remain distinct from managed path candidates. Selected current
+package headers and WEM bytes are checked; complete isolated original-codec
+decodes match the live source prefixes for the admitted switch-bark cases.
+These bounded joins connect Event/source/file through decoded PCM and numerical
+mixing to parent bus output. They do not establish whole live buffers or an
+individual Event's contribution to the final device mix.
+The importer initially treated guarded-out PCM/matrix anchors in unsupported
+output layouts as corrupt addresses. Corrected validation retains those calls
+as numerically unselected, while selected layouts still require exact read
+addresses. Regression and replay preserve the earlier clean/failed boundaries.
+
+The `audio-master-stage` observation adds the first master input descriptor,
+retained gain pair, output format/mode/processed flags, entry rounding and
+before/after PCM to the accepted consumer/device observations. Its reviewed
+contract borrows authenticated master, padding and gain bodies from the existing
+pipeline owner. A constant first-plane comparison requires one matching stereo
+descriptor, ordinary unprocessed entry, unchanged input/gain fields, completed
+processing, identical conversion input and closed loss-free recording. The
+recipe distinguishes an intervening transformation before master entry from
+the master gain itself. A completed loss-free recording now admits the bounded
+first-plane equation and successful sink/device prefix chains. The retained
+master gains in this cohort are unity: observed input prefixes remain unchanged
+through master processing and match its nested conversion input. Independent
+original-row checks confirm descriptor/storage identity, processing flags,
+entry rounding, ordered nesting and byte-equal successful render-client
+handoffs. Unlinked master scopes remain unattributed.
+Last sampled same-bus mixes have matching descriptor/sample storage but different
+prefixes already at master entry. The differences therefore precede this master
+gain stage; sampling still prevents a complete generation join or attribution
+to a particular upstream writer or effect. The next offline review belongs to
+the post-mix bus task, descriptor/effect processing and its path into master
+entry, before another recipe is requested. Extended paths, ramps and incomplete
+reads remain withheld with named reasons. Full filters, all channels, concurrent
+allocation lifetimes and individual Event-to-device contribution remain open;
+accepted master and sink handoffs are reused without another identical run.
+
+### Shared post-mix processing patterns
+
+[`wwise_bus_processing_native.json`](../../scripts/game_data/contracts/wwise_bus_processing_native.json)
+records complete output-task, post-mix, effect-consume and effect-dispatch bodies,
+borrowing the existing planar frame-gain and master-output owners. The selected
+task collects bus input, then its synchronous branch prepares the bus before
+optional master output. Deferred task results are a distinct branch; returning
+the caller's result storage is not voice readiness or device submission.
+
+Descriptor-owner gains can represent pending arithmetic rather than gain already
+present in PCM. Under the ordinary effect-entry prepass, non-unity previous and
+target gains are applied through the original frame-gain routine, then both
+retained words are set to unity before effect execution. A suppression flag
+skips that prepass. Thus unity at a later master entry does not mean upstream
+gain was absent. The original routine executes offline on complete private
+planar buffers and agrees in supplied constant-gain, suppression and control-
+transition cases. Private vtable callbacks supply effect arithmetic and reset;
+this proves engine ordering and gain/control behavior, not a game effect kernel.
+
+The shared effect driver separates in-place, separate-output and multi-object
+paths. In-place execution receives existing descriptors; separate-output paths
+can replace the selected descriptor collection. Current/previous control words
+also govern execution and reset, so descriptor presence alone does not imply an
+effect ran. Track the selected collection, descriptor, owner, PCM and method
+target through the actual branch instead of flattening this into one permanent
+buffer pointer or assigning a public SDK class name from proximity.
+
+The first bus-processing recording expanded every bus task and saturated its
+queue. It is excluded from complete processing/master/device joins. The offline
+reader also hit report-row limits; those limits now cap retained witnesses while
+continuing phase pairing and counting, with explicit truncation diagnostics.
+The corrected bus-processing observer samples roots by their declared task index
+and forces all mix, matrix-consumer, post-processing, effect, frame-gain, EQ
+instance, biquad-service and master descendants of each selected root. Job storage is reused across indices,
+so its pointer is not a valid sampling key. Unselected roots and their scoped
+descendants remain unobserved; this proves no global bus or allocation coverage.
+The frame-gain ABI
+has floating operands; its wrapper preserves them and records their bit words
+and entry rounding. Guarded field-based pointer reads retain the actual first
+effect object's vtable and Execute target without extending an unbounded
+pointer walk. The offline consumer requires native return sites, same-task
+nesting, preserved storage/owner fields and prefix continuity on both sides of
+post-processing; only its admitted master invocation may join the existing
+sink/device chain. Gain arithmetic, reset-to-unity and residual effect-prefix
+changes remain separate claims. Missing task selection, late/unwound pairs,
+bad addresses, loss or diagnostics withhold publication. Full buffers, changing
+gain arithmetic, general effect parameters/state, allocation generations,
+concurrent writers and individual Event contribution remain open. A clean scoped
+recording now admits the selected mix-return/post-processing/master/device
+prefix chain. Reuse that accepted branch without repeating it. The earlier
+master recording remains accepted, while the expanded all-root bus attempt is
+retained as local investigation evidence only.
+
+The same contract now records direct registration/factory/constructed-vtable/
+Execute joins for Parametric EQ and Compressor. The named parameter-schema owner
+remains `wwise_effect_parameters_native.json`; its selected native inputs and
+named parameter bodies are checked without duplicating its catalog. Paired
+runtime vtable and method-pointer observations match those constructed tables.
+Bounded lossy task examples locate prefix changes at the EQ driver and unity
+frame-gain calls inside the later Compressor. These local observations guide
+recovery; they do not admit a complete task/device chain through a lossy stream.
+
+The Compressor collection path suppresses the shared driver's gain prepass and
+performs its own pending owner-gain materialization. It can then publish new
+previous/target makeup gains into identified descriptor owners instead of
+changing PCM immediately. Sentinel owners, or LFE exclusion requiring a
+channel-specific operation, take an inline PCM path; including LFE allows the
+uniform gain to remain deferred. Complete private-buffer executions of the
+original kernel validate controlled deferred, inline, zero and LFE cases. The
+detector operands in these trials suppress detector gain changes; general
+compression arithmetic, live controls and state are not established. A unity
+word after this kernel is not automatically a driver reset-to-unity claim.
+
+The EQ driver maintains three enabled bands, refreshes their coefficients and
+dispatches their processing through a runtime processor interface. Its history
+lookup combines the owner identity and channel, rather than using a PCM pointer
+as the persistent key. The reviewed collection processor locates independent
+history storage for that key. Thus source PCM and one gain value do not suffice
+to reproduce a stateful bus effect: coefficients, enabled branches, processor
+selection and the correct history are additional inputs. The reviewed service
+dispatch selects authenticated SSE or AVX processing; a uniform segment takes
+the corresponding uniform kernel. Original execution on complete private
+buffers confirms the service ABI and agrees with each selected uniform kernel.
+Changing later input and the other buffer leaves the first output prefix
+unchanged, while changing initial history or coefficients changes it. SSE and
+AVX can differ in their last float bit, so processor selection and entry MXCSR
+are required operands. This establishes the scope needed for a bounded live
+comparison, not a replay of a captured game effect.
+
+The prepared observer records the actual EQ instance and its newly constructed
+collection, output-gain controls, enabled-band flags and processor implementation.
+The shared driver originally receives a descriptor-base/count collection; its
+multi-object branch constructs a distinct count/descriptor-pointer-array/owner-
+pointer-array collection for EQ. A pointer-equality join between those two
+representations is invalid. The reader instead requires the same instance,
+descriptor, owner-array entry, PCM and properly nested call identities. Inside
+that admitted instance it retains each original service invocation's first-buffer
+PCM prefix, coefficients, initial/returned history and processing geometry.
+Sequential service prefixes must connect without gaps. The last service prefix
+and final effect prefix remain separate because EQ output gain may also run.
+The selected native contract now carries separate first-block SSE and AVX
+expression programs, with complete kernel, dispatch/caller, instruction-path
+and constant provenance. The portable evaluator uses integer dyadics, retaining
+one binary32 rounding per SSE operation and one rounding per AVX fused operation.
+Controlled original-kernel trials match its first-buffer prefixes bit-for-bit,
+including zero, identity and impulse inputs. The admitted normal finite range
+requires nearest rounding and masked exceptions; unsupported subnormal or
+range behavior stays explicit. A textbook scalar recurrence is insufficient
+for exact parity with the binary's optimized block arithmetic.
+
+The original kernels' controlled initial-history responses and returned state
+establish the history order as the prior two output samples followed by the
+prior two input samples, each older sample first. Capturing returned history
+does not explain its full transition from only an input prefix: that needs the
+remaining input frame. The live reader reports per-service numerical results
+and separately counts exact nonzero results within device-linked tasks; an
+operand chain alone is not numerical admission. A clean live recording now
+confirms the observed active EQ-band sequence under the selected AVX branch:
+saved coefficients, initial history and entry rounding reproduce each checked
+first-buffer prefix bit-for-bit. Sequential band prefixes connect, the final
+EQ prefix equals the effect return, and those completed tasks join master
+conversion and device submission. This is conditional numerical admission of
+the checked mixed-bus prefixes. The live case separates unity master-input gain
+from a later non-unity sink-conversion gain before byte-equal render-client
+copies; those are independent amplitude stages. Live SSE selection, unsupported segmentation,
+other channels and whole-buffer output remain unresolved.
+A bounded positive reader example covers
+the task/EQ/master/device join; wrong ownership, processor targets, addresses,
+operands or nesting cannot supply an EQ operand claim. This native consumer recovery
+does not rename the anonymous stored parameter partitions or prove their public
+control units.
+
+EQ output gain also uses pending owner arithmetic. When LFE inclusion permits a
+uniform operation, it multiplies identified owners' previous/target gains and
+can leave PCM unchanged. LFE exclusion takes a direct per-channel path, with
+an excluded LFE plane preserved; the EQ instance updates its previous-output-
+gain state after either branch. Original complete-private-buffer trials with
+disabled bands distinguish deferred gain, inline ramps and the unity no-op.
+These supplied-control trials do not admit a live gain ramp or power-helper
+equation. Thus a matching last-biquad and final-effect prefix can coexist with
+an effect that changes later output through retained owner gains.
+
+In the accepted live branch, EQ output gain is unity. A middle driver slot has
+empty object-collection snapshots and unchanged PCM; it is not an unidentified
+effect kernel. The following registered Compressor materializes unity owner
+gain and adds no further change to the checked prefix. This does not prove
+general compression or non-unity effect-gain behavior. Guarded failed biquad
+operand reads occur in zero-buffer calls, outside the admitted stereo service
+branch; they cannot supply DSP operands or undermine the separately complete
+selected chains.
+
+The admitted master input already mixes multiple source rows. Earlier singleton
+source-to-consumer candidates cannot explain an individual contribution through
+that mix. The original AVX matrix consumer expands source channels and calls
+separate constant and ramp accumulators. Their first pointer is the destination,
+the second the source; each lane uses fused source-times-coefficient plus the
+existing destination. A ramp separately forms its first coefficient with one
+step, then advances by one step per sample. Complete private-buffer comparisons
+establish these first-prefix operations, including nonzero initial output and
+independence from unrecorded tails. Reviewed provenance and mixed floating ABI
+declarations are owned by
+[`wwise_mix_contributions_native.json`](../../scripts/game_data/contracts/wwise_mix_contributions_native.json),
+which borrows complete bodies from the authored-parameter contract.
+
+The contribution recipe preserves independent output-descriptor reads for
+multi-source cohorts while retaining the singleton gate on older source/matrix
+reads. Its reader requires exact additions, unchanged source prefixes, original
+consumer output geometry and normal return, ordered destination continuity,
+completed mix output and the already admitted task/device path. Event/file
+candidates additionally require matching sample/publication content and observed
+owner/source/serial/allocation transport. A clean live recording now admits both
+constant and ramp additions bit-for-bit, including nonzero existing destination
+values. Ordered additions reach the original multi-source consumer return and
+mixed output; selected master mixes then traverse the independently checked EQ
+and device path. Effective per-channel coefficients and their native ramp order
+are observed behavior, rather than inferred authored controls. Direct source/
+Event candidates occur in earlier mixing stages: master inputs are intermediate
+bus buffers. Allocation generations, every cohort member, filtered and SSE paths,
+whole buffers and attribution through nonlinear effects stay open. An unchanged
+accumulator or EQ repeat is unnecessary.
+
+Intermediate buses can also be joined conditionally: a completed task's mixed
+prefix enters post-processing, its stable returned descriptor/sample/owner and
+content become a later actual accumulator input, and the later mix reaches the
+admitted master/device path. Observed reset, replacement mix and subsequent
+writers invalidate future reads of that snapshot. A later frame-gain writer
+does not erase an independently admitted earlier master/device endpoint, but
+that older snapshot cannot identify a future bus read. These joins use actual
+same-thread call order and content, not stored routing ancestry or pointer
+proximity. Ordinary Event/source candidates now traverse such intermediate
+buses. Their selector source IDs have typed sound-sector candidates in current
+package headers; this is not a live file-handle or encoded-occurrence selection.
+An isolated Event's arithmetic through processing remains unresolved.
+
+The intermediate changed prefixes include the registered RoomVerb instance.
+Its registration, factory-created vtable and Execute slot are proved by
+[`wwise_bus_processing_native.json`](../../scripts/game_data/contracts/wwise_bus_processing_native.json),
+beside the existing named parameter schema. The original stereo worker calls a
+three-buffer SSE blend: dry/output plus two wet inputs, each with a previous and
+target gain. Products and sums round separately; transitions start at the
+previous gain and advance once per sample. This differs from the matrix
+accumulator's fused arithmetic and first-step convention. Original private
+kernel comparisons establish the bounded blend model; the saved contribution
+recipe did not record these wet inputs or gains. The reviewed
+[`wwise_room_blend_native.json`](../../scripts/game_data/contracts/wwise_room_blend_native.json)
+owns the dispatch, complete bodies, ten-argument ABI and new operands.
+The Room observer must identify the actual registered effect object, check
+nested blend callers and ordered prefixes, then require normal Room and effect
+returns before attaching an admitted bus node. Wet-buffer delay/filter/feedback
+generation, full reverb history and nonlinear Event attribution remain open.
+
+The accepted Room recording now compares the original constant dry/wet sums
+bit-for-bit, including nonzero wet operands. Ordered first-plane blends preserve
+the normal Room and effect return, then the same admitted bus-processing node.
+Some of these nodes lie on conditional Event/source-to-device paths. Every
+observed gain pair is constant here: private transition examples do not become
+live transition evidence. Original caller order separates the first dry-plus-
+wet operation from a following unity-dry addition of two further wet buffers;
+the right-channel calls exchange the two wet coefficients. This explains the
+checked final blend, not how its wet samples were generated.
+
+Zero valid input at Room entry is a separate observed case: the instance returns
+a full output frame and invokes the same blend services. Driver sample/owner
+reads are intentionally gated out for that initial extent. The reader admits
+per-call arithmetic from the actual registered object, selected descriptor and
+Room-owned sample pointer, but it does not invent the missing original input
+prefix or owner. These calls cannot supply the full-input Room/effect/bus chain.
+Their first dry prefix before the initial blend is zero; nonzero wet output
+demonstrates why
+zero current input is insufficient to infer silent effect output. The exact
+delay/history origin and native tail-control selection remain separate.
+
+The reviewed
+[`wwise_room_input_native.json`](../../scripts/game_data/contracts/wwise_room_input_native.json)
+and its selected-image validator prove the earlier stereo input path. The fold
+clears its mono destination, normalizes the two ordinary stereo channels by the
+square root of one half, and separately rounds each product/addition. Input
+preparation can then run conditional tone processing. Original private-buffer
+comparisons establish this fold and the tone-disabled preparation branch.
+The named serialized tone-enable byte is transported by the reviewed parameter
+bulk loader into the same member read by that conditional input-filter branch.
+The input contract checks its complete owned parameter body and read/store
+operands; recorded controls still do not prove a live bulk-loader invocation
+or an atomic parameter version.
+The following circular services read old history into output, replace those
+ring positions with incoming samples, and advance/wrap the stored index; one
+service writes a separate output and another exchanges samples in place.
+Complete private comparisons cover partial spans, wrapping and repeated wraps.
+The native stereo worker processes bounded blocks, retaining the source-frame
+offset, and uses separate ring states for the initial copy/swap paths. Zero
+length selects a different branch, so an absent delay call is not itself a
+bypass witness. Reviewed branch-field operands stay in that contract.
+
+The accepted input recording observes the actual preparation/fold and both circular service
+phases within the registered Room instance. Indexed source reads retain the
+current block offset; circular reads retain the actual length/index and wrap
+each sampled address. It compares observed history to returned output and
+checks index progression. Delay-length and optional-tone snapshots distinguish
+the stored branch controls, while ordered preparation/delay prefixes remain
+conditional observations. This still does not reconstruct the ring's complete
+history, ER tap generation, diffusion/feedback network, full buffers or an
+isolated Event's wet contribution. The stereo fold and observed old-history
+outputs now reproduce live sampled values exactly, with returned ring indices
+matching progression. Preparation output enters the initial copy and in-place
+delay services by actual pointer, same-Room order and matching content. Some
+preparation prefixes differ from the fold while tone processing is enabled;
+their tone arithmetic remains unproved in that recording. The tone-byte address
+is validated against the independently observed enclosing parameter-object
+pointer, rather than treating the byte as an inline Room member. Zero-input
+Room entries retain zero folded prefixes and nonzero history output separately
+from the full-input effect/bus chain.
+
+The next native history owner,
+[`wwise_room_history_native.json`](../../scripts/game_data/contracts/wwise_room_history_native.json),
+proves a separate expanded-matrix tone kernel used for input and early wet
+processing, plus the stereo worker's fixed serial diffusion loop. These are
+different services from the previously admitted collection EQ. The tone kernel
+uses captured mono samples, an expanded coefficient matrix and previous input/
+output history with separate products and sums. Each diffusion stage stores a
+pair of old delayed input and output: current output is the separately rounded
+sum of old input and gain times current input minus old output. It replaces the
+pair with current input/output and advances the ring index. Complete private
+owned-buffer comparisons establish both operations, including wrapping and
+repeated wraps, without initializing the engine. They do not establish live
+tone coefficients, diffusion history or full reverb parity. The history probe
+records those missing operands and admits only actual registered Room nesting,
+native caller/instance-owned state and checked ordered prefixes. Late feedback,
+ER tap generation and late feedback are covered by the wet owner below;
+isolated Event attribution remains open.
+
+The accepted history recording now replays the input tone and serial diffusion
+prefixes exactly. Ordered input-fold/tone/preparation returns are retained, as
+are delay-to-diffusion and consecutive diffusion prefix candidates. It also
+records the later post-diffusion tone caller. That complete preparation body
+and both direct call sites are now included in the same native owner, so its
+existing operands are replayed without a new recording. Captured flush-to-zero
+handling explains tiny intermediate results near the reverb tail; the portable
+model applies the recorded control at each separate operation, including DAZ
+when observed. Original private comparisons cover these policies and retain an
+explicit unsupported boundary for gradual denormal inputs. Some admitted Room
+returns still join a conditional Event/source-to-device path; these remain
+mixed signal observations rather than isolated Event contributions.
+
+The remaining wet-generation owner is
+[`wwise_room_wet_native.json`](../../scripts/game_data/contracts/wwise_room_wet_native.json).
+Early reflections read one circular input history through separate stereo tap
+weights and indices. Current input is written before tap reads, so a tap can
+consume freshly written input instead of the entry history. The late service
+uses independent delay rings and per-ring damped history, then combines and
+rotates filtered values through a feedback sum while accumulating a wet output.
+The following stateful wet damping uses the actual floating gain, previous
+scaled input, previous output and pole. Complete private original-buffer
+comparisons establish the selected vector operations, wrapping, full tap banks,
+feedback state and damping. The accepted wet recording now reproduces every
+selected early-reflection, feedback and damping prefix from its original live
+operands. The early-state byte is a nonzero gate, not a canonical boolean;
+requiring exactly one rejected valid stereo calls. The worker also uses that
+byte in scratch allocation. The native contract records the direct zero test,
+and the reader accepts only a captured nonzero byte with the original owned
+early object and stable metadata at normal Room return.
+
+The stereo worker alternates configured FDN instances into two accumulators.
+Each FDN filters four delayed values, applies the feedback rotation and adds
+to its accumulator; the following damping transforms each accumulated plane.
+Ordered chains require every configured instance in its channel, an initial
+zero prefix, exact preceding/next destination content, original pointers,
+matching frame counts and call order. Both damped late planes and generated
+early planes then supply the original Room blends. A tone stage, when selected,
+must preserve the same ordered producer/content evidence. Failed writers
+invalidate earlier candidates; truncated reports withhold chains. Actual
+network/tap counts are configuration observations, not universal constants.
+
+Ring headroom selects a vector loop and scalar remainder. Their addition
+orders differ: the scalar output uses signed pairwise sums before adding the
+destination, and its feedback scales each filtered value before summing and
+injecting input. The first sampled values now replay both paths, including
+boundary wrapping, from existing captured ring operands. Complete private
+original-buffer examples check output, all rings, indices and final filter
+history across these boundaries. The early-reflection prefix still selects
+its vector path. These bounded joins explain sampled wet generation into the
+accepted Room/effect/bus path; they do not reconstruct complete live histories
+or isolate an Event. Authored coefficient generation, early scalar/remainder
+paths, whole live buffers, live file occurrence selection and audibility remain
+open. Reuse the accepted wet recording instead of repeating its recipe.
+
+The history owner also proves one authored configuration link offline. The
+existing Room parameter bulk loader copies the serialized diffusion control
+into the parameter object. The complete refresh consumer compares its cached
+value, applies a separately rounded scale and decreasing thresholds, clamps
+each result between positive zero and the native maximum, and writes the gain
+of each serial diffusion state. Its constants, transport instructions and
+complete consumer body are authenticated in the same history contract, without
+duplicating the parameter owner's native catalog. Owned original-loader/refresh
+examples cover control boundaries and out-of-range values with all other
+cached settings equal; only the selected gain bytes and refresh flag change.
+This closes the conditional authored-control-to-diffusion-gain calculation.
+It does not identify a live instance's authored effect occurrence or establish
+complete initialization, tap/FDN/tone coefficient generation or update lifetime.
+
+The separate
+[`wwise_room_configuration_native.json`](../../scripts/game_data/contracts/wwise_room_configuration_native.json)
+now authenticates the original registered effect's initialize/reset/terminate
+slots, complete configuration/rebuild consumers and the bounded parameter
+store extent. The existing parameter owner supplies its factory, vtable and
+bulk-loader identity; those native catalogs are borrowed rather than copied.
+The original factory and parameter loader, effect initialization, complete
+standard-stereo impulse processing and termination execute offline with bounded
+owned ordinary/aligned allocators, without initializing the Wwise engine.
+Provided parameter examples exercise different network counts, tap patterns
+and tone choices. All resources are released by the original termination path.
+
+Reset clears delay samples and filter history while preserving ring cursors
+and early-reflection phase state. Consequently a repeated impulse after Reset
+can differ bit-for-bit when vector/scalar segment boundaries move. In an
+explicit owned-buffer experiment, restoring the prior cursors and critical tap
+indices after normal Reset reproduces the complete output. Do not reinterpret
+Reset as fresh initialization or discard live phase when reconstructing state.
+
+The reusable original configuration host can initialize directly from a
+provided stored parameter projection and sample rate, then return delay
+lengths, feedback filter coefficients, early weights/phase, diffusion settings,
+damping pole and tone matrix candidates. The private original copy must match
+the explicitly selected native inputs; unreadable/drifted inputs and unsupported
+settings withhold computation. Reads and allocators remain bounded and owned.
+The loss-free configuration recording now supplies the actual registered live
+parameter object and sample rate at normal paired Room entry/return. Native
+bulk-store witnesses define the compared setting bytes; vtable addresses,
+padding and transient refresh flags are separate. The original owned host
+reproduces the admitted network lengths/filter coefficients, early bank gains
+and phase, diffusion lengths/gains, wet damping pole, input copy/swap delay
+lengths and stage-specific tone matrix candidates exactly. The configuration
+reader and native validator own this comparison; the generated
+[`configuration admission`](../../reports/audio/room_configuration_admission_065550824.json)
+retains its sampled coverage and exclusions.
+
+The first tone comparison used an assumed input insertion enum. Instruction
+review proves separate native selectors for input, early stereo and late tone;
+the configuration contract borrows those complete consumers and validates each
+selector operand. Correcting the input selector makes the saved matrices match,
+without another capture or an arithmetic tolerance. Tone equality remains a
+candidate among matching same-stage slots, not a unique allocation join.
+
+Known settings can remain equal while the effect replaces its network and
+early-history allocations inside a Room call. The accepted recording contains
+such a replacement with consumed refresh/rebuild flags. The complete Execute
+body tests those flags before processing; paired observations are consistent
+with that native route, but do not prove atomic settings or an update
+transaction. Wet ownership checks correctly withhold the stronger state/bus
+attachment for the replacement call. Do not promote matching configuration
+values into continuous live history.
+
+Bounded single-control original initialization examples around the admitted
+settings distinguish delay geometry from feedback filtering: decay and HF
+controls change feedback coefficients, density/shape change network geometry,
+quality changes network count, and diffusion changes serial gains. Early
+pattern/size affect weighted taps and early input delay, while pre-delay changes
+the late input delay. Tone enable, gain and frequency select or change expanded
+matrices; sample rate affects several families together. These are observed
+conditional dependencies under supplied values. An unchanged field in one
+example does not prove global independence; disabled paths and selected curves
+can ignore controls. All examples use owned buffers and original cleanup,
+without engine initialization or game mutation.
+
+One supplied historical bank parameter example matches all known stored live
+settings as well as the derived configuration. This narrows the value candidate
+but does not identify the loaded authored effect or physical bank occurrence.
+Clones and identical authored settings remain possible. Reuse this configuration
+capture; the next offline work belongs to parameter clone/update/lifecycle and
+Event-source/provider ownership. Complete live histories, whole live buffers,
+allocation generations, isolated Event contribution and hardware audibility
+remain separate.
+
+The separate
+[`wwise_room_parameters_native.json`](../../scripts/game_data/contracts/wwise_room_parameters_native.json)
+and `wwise_room_parameters_native` validator now authenticate the sparse signed
+update-ID dispatch, clone copy spans, default/bulk initialization slots and
+allocator termination. A clone receives distinct parameter storage, copies the
+stored representation and sets both refresh and rebuild flags. It does not
+retain an authored bank ID inside that copied parameter representation. Thus
+identical live settings are compatible with several independently allocated
+clones; matching values cannot supply origin or allocation generation.
+
+The update dispatch distinguishes coefficient-refresh writes, topology/tone
+rebuild writes and flag-free internal tuning writes. The named controls retain
+their bulk-reader meanings; the internal tuning controls have exact numeric
+update IDs and stored destinations, while their DSP roles remain unresolved.
+Null value pointers are rejected before dispatch. Unsupported signed IDs can
+return success without any mutation. The size argument does not bound the
+original input read: bounded callers must provide the actual byte width even
+when a recorded size is smaller. Owned original cases prove each defined ID's
+value/dirty footprint and the no-op, null and size behavior without engine
+initialization. The reusable `wwise_room_parameters_host` keeps all factory,
+clone, value and termination storage owned and bounded; failures withhold output
+and close allocator callbacks.
+
+The same contract now owns complete generic template/registry/clone-carrier
+consumers. A runtime registry matches the full plug-in class ID and selects its
+parameter factory. Successful parameter initialization can replace the template's
+retained parameter object, releasing an older one. The clone carrier retains
+both the cloned parameter pointer and its source template, joins that template's
+subscriber list and retains a reference. Subscription is a separately gated
+branch. Parameter-class identity, template identity and processing-instance
+identity are therefore three different joins.
+
+Success alone does not establish readiness. The registry can return success
+with no parameter factory and a null output. The template setter can also return
+success after a failed class lookup, storing the requested class word while
+leaving a null or previously retained parameter pointer. With a null template
+parameter, the instantiation helper can return a value already stored in the
+carrier. Require current class/pointer, normal return and the actual ownership
+writes; do not turn any of these success returns into a fresh-clone claim.
+Even failed clone allocation can link the carrier and retain the template
+reference while storing a null parameter pointer. Readiness and retained
+ownership are distinct outcomes, so failure is not evidence of no side effects.
+The original empty-subscription release path frees a successful clone, removes
+head or interior carrier links, clears retained pointers and releases references.
+Owned cases cover both a successful carrier and a failed-clone carrier. The
+earlier composition retains one template reference. Separate original lifecycle
+cases now cover the last-reference branch and nonempty game-sync membership
+under supplied private services; live engine subscriptions remain a different
+claim.
+
+An isolated original composition supplies a private registry row, bounded
+allocator interfaces and an owned lock, with subscription disabled. Original
+template initialization, cloning and carrier publication lead into actual
+Room effect initialization with that clone pointer retained by the effect. The
+result reproduces the accepted live network/filter configuration. Private
+service inputs are restored and original carrier release removes both list
+positions and restores the retained template reference. All parameter/effect
+allocations are released; no engine initialization or game process is involved.
+The generated
+[parameter examples](../../reports/audio/room_parameter_lifecycle_examples_current.json)
+and [template composition](../../reports/audio/room_parameter_template_composition_current.json)
+record the supplied conditions. This does not execute the real bank load order,
+subscription scheduling or last-reference template destruction. Carrier release
+is conditional on empty subscription lists; remaining owned carrier headers are
+discarded after those completed native release calls.
+
+The reviewed
+[`wwise_effect_lifecycle_native.json`](../../scripts/game_data/contracts/wwise_effect_lifecycle_native.json)
+and `wwise_effect_lifecycle_native` validator extend the parameter owner without
+duplicating its native groups. The bank's effect reader looks up a typed registry
+object by object ID. A reused object receives another reference and is appended
+to the current bank usage slot's object-pointer array when capacity permits.
+Only a newly created object takes the template-loading branch. Several banks can
+therefore retain the same live template; the later bank's matching definition
+does not prove it initialized that template. A successful bank read can also
+leave the array unchanged when its append capacity is unavailable. Require the
+observed append and actual object pointer instead of inferring ownership from
+the bank read's success or matching parameter bytes.
+
+Bank usage-slot release walks the retained object pointers, decrements each
+reference and invokes virtual final release on the last reference. Shared effect
+final release selects its typed registry lane. A reference that is still held
+prevents destruction. At zero references the selected routine removes the
+matching head or interior registry entry, leaves the registry lock, invokes
+virtual destruction and releases the object storage. Template destruction
+terminates retained parameters, releases its owned arrays and state storage,
+and destroys its critical section. The destruction guard is a thread/lock
+condition, not evidence of deferred destruction. Owned original cases execute
+the actual bank-array decrement, real template vtable, registry removal,
+parameter termination and free route for both list positions, while separately
+proving that a retained reference leaves the object alive. Private service
+inputs and counters are restored, and all owned allocations are released.
+
+Subscription has distinct game-sync and state/property routes. Game-sync setup
+stores packed handles and registers the actual nested subscriber interface in
+an entry/key-selected target array. Repeated handles/targets are deduplicated;
+nonempty unsubscribe performs the typed lookup and removes the actual matching
+target. Isolated original cases use the real carrier key getter, preallocated
+owned lists and a supplied private registry to execute insertion, deduplication
+and removal. These prove original native branches without initializing the
+engine; they do not prove a subscription existed in the game. State registration
+has separate entry creation and owner-handle writes. Its registration helper can
+return true with no selected owner, so neither the outer Subscribe result nor
+that helper's true result is a nonempty-registration witness.
+
+The carrier's original nested game-sync interface has a proved callback slot.
+Its thunk adjusts to the carrier's property aggregate, passes the packed
+game-sync identity and observed value inputs through the selected aggregate
+consumer, and can reach the retained clone's virtual parameter setter. The
+setter transport feeds the recovered refresh/rebuild fields. Definitions can
+produce no matching property or no update, so a callback alone is not a
+parameter-write witness. The lifecycle reader requires a closed descendant
+setter with a selected class, defined ID, non-null input, successful result and
+matching permitted write footprint. Missing, rejected and unsupported setters
+remain separate. The private original example invokes the real callback with
+owned empty property definitions and preserves its no-write outcome. Origins
+are confined to one continuous observation window; reopening a window cannot
+reuse a generation whose intervening lifetime was not observed.
+
+The dedicated `effect_lifecycle_observer_profile` and `effect_lifecycle_capture`
+observe bank appends and source prefixes, template construction/loading,
+parameter cloning/updating, actual target membership, state entry/handle writes,
+effect initialization/Execute and release/destruction. This is an unsampled
+lifecycle window; accepted DSP captures remain reusable. The initial window
+opens automatically after provider initialization and can be toggled with the
+existing controls. It does not promise that hooks preceded every startup bank.
+Missing births, closed-window crossings, null-success paths, absent appends and
+unobserved generations stay unresolved. Final-release return programs deliberately
+avoid dereferencing destroyed storage. Parameter, template, carrier and effect
+origins must be observed as separate identities; equal pointers or settings
+cannot retrospectively supply a missing construction.
+
+Shared and custom effect templates are derived objects. Their factories call
+the common base constructor, then replace both the primary and nested state
+address points. The base constructor's vtable is therefore a construction
+stage, not the final live type. The reviewed derived address points retain the
+common loader and indexable destruction route, but select their own deleting
+destructors and typed final-release lanes. The lifecycle observer admits the
+reviewed alternatives instead of filtering final release to the transient base
+vtable. Original owned cases execute both factories, complete template loading,
+retained parameter creation, clone/subscriber membership, Room processing and
+bank-array last-reference destruction through those actual derived vtables.
+
+The loader's source header, selected class, nested registry/factory output and
+retained parameter must agree in one closed invocation. That gives an observed
+loaded-parameter origin, which a later clone can carry into effect initialization
+and Execute. A bank append can retain that loaded origin, including reuse by
+another bank; reuse does not make the later bank the definition's initializer.
+Matching bytes without the factory/load connection cannot supply the origin.
+The source prefix and live bank-slot key still do not identify a unique physical
+package occurrence.
+
+Initial subscription application is separate from a later notification. After
+registration, Subscribe walks enabled template property records, combines their
+provided values with current aggregates and invokes the retained clone's setter.
+The outer application ignores the setter status. An initial setter call therefore
+proves neither actual target membership nor an asynchronous callback. The reviewed
+complete body and operand bindings establish this distinction; the lossy saved
+recording supplies diagnostic examples, not accepted live lifetimes.
+
+The first lifecycle recording overflowed its transport queue. Its saved rows are
+withheld from all live ownership joins. Offline diagnosis exposed engine-wide
+bank-reader and unrelated effect-callback traffic, a missing full setter payload,
+and the derived-vtable omission. The revised recipe observes bank bytes only
+under observed effect-bank parents, selects real common effect-carrier interfaces
+for subscription/retention, and selects detailed Room callbacks by their actual
+retained parameter class. Target-registration descendants preserve real
+subscriptions for other effect classes too; their retained parameter pointers
+do not acquire an inferred allocation generation. Calls inside that scope remain
+unsampled; exclusions and unreadable selection operands have separate counters.
+Unreadable selection, loss, incomplete pairs or recipe drift withhold joins.
+Execute retains ownership operands without repeating previously proved parameter
+blocks every frame. Setter admission now compares the actual input payload and
+dirty writes exactly; nonlinear level conversion requires an explicit identical
+private original DLL comparison. Known lossy streams are checked in full without
+building a semantic lifetime graph or admitting partial chains.
+
+Selection must also follow failed read dependencies. If an inaccessible pointer
+guards out a later class predicate, that predicate is unknown rather than a
+proved exclusion. The recorder propagates this condition into its unreadable
+scope counter, which prevents complete-coverage admission. Concurrent queue
+producers assign record sequence numbers from reserved queue positions;
+completion order after reservation cannot supply dequeue order.
+
+Registry creation alone does not identify the allocation routine reached by
+its indirect call. Loaded Room origins require the observed original parameter
+factory nested inside the matching registry invocation, its returned address
+point, and the same retained parameter at loader return. Target membership
+during instantiation waits for that exact parent and parameter before acquiring
+a carrier origin. Replacing a Room carrier with another effect class cannot
+inherit the prior Room generation. Direct template destructor entry retires its
+origin even without a final-release parent; a later reused address survives the
+old invocation's return. Callbacks also require the retained parameter generation
+to remain live and identical across entry and return, even when the carrier
+itself has not changed. State handle appends require the selected owner to
+remain identical across entry and return. Bounded original shared/custom cases
+exercise the factory-to-load, clone-to-membership, processing and destruction
+path without engine initialization; they establish conditional native behavior,
+while complete live ownership still requires independent runtime evidence.
+
+Nonempty original FX control examples now start at serialized template loading.
+The loader creates RTPC definitions; Subscribe copies their keys and descriptor
+pointers into the carrier's own list and registers its actual subscriber
+interface. The descriptor remains shared with the template, while the carrier's
+template reference protects that retained definition. FX curve parameter IDs
+reach the selected plug-in's virtual setter; node property labels cannot name
+them. Initial Subscribe application and later notification remain distinct even
+when both write the same parameter.
+
+Notification selection includes both the game-sync ID and its packed type.
+The original curve evaluator supplies mapped old/new values, with a two-value
+cache avoiding reevaluation. Composition can replace, apply an incremental
+mapped-value difference, multiply retained contributions, or take their maximum
+with a zero floor. Contribution replacement matches its parameter, source kind
+and curve ID rather than repeatedly appending the same source. The reviewed
+contract owns the mode declarations and borrows the existing curve-evaluation
+catalog instead of duplicating it. Owned cached and uncached linear/no-scaling
+cases establish these selected branches; other curve/scaling paths retain their
+separate proof boundaries.
+
+The serialized-control cohort also keeps an already initialized Room effect and
+its impulse history alive across notification. The next original Execute
+refreshes processing from the modified dirty parameter block without effect
+reinitialization. Its output changes from an independently primed unchanged
+control and matches an unhooked original with the identical notified parameter,
+through a bounded multi-frame tail. Original unsubscribe, full subscriber
+destruction and bank-array final template destruction leave no owned allocation.
+Carrier release alone clears the definition count; full subscriber destruction
+also frees that list's storage. These are conditional original executions on
+provided serialized definitions and private services, not observations of a
+shipped bank binding, engine scheduling, mixer/device output or audibility.
+
+The maintained FX control reader and corpus gate inventory stored definitions
+from authenticated available packages under the explicit selected native triplet.
+The complete API frames parameter/media/RTPC/state/default data through exact
+EOF; the prefix API retains its narrower boundary. The state loader has one
+reviewed owner and borrows the existing FX loader and factories. Both derived
+templates select the same state-reading virtual slot. State values store all
+parameter IDs before all float values. Parameter IDs stay in the plug-in setter
+domain; their native low-word retention remains separate from the stored integer.
+Defaults replace an existing matching retained ID or append a new property;
+initial subscriber application consumes the retained flag and value. Framing
+does not establish allocation admission, effective states or accepted setters.
+
+Room definitions include both empty and nonempty RTPC prefixes, so their class
+alone cannot decide whether a notification should occur. The reviewed available
+corpus distinguishes Room controls from Gain state definitions; an absent stored
+Room state group cannot exclude runtime-added state bindings. Counts and source
+joins remain generated reports rather than a duplicated build-specific catalog.
+
+A selected shipped Room object also executes its original nonlinear scaling,
+incremental level composition and plug-in level conversion on owned storage.
+The exact physical object bytes feed original loading, definition copying,
+automatic nonempty target insertion and existing-effect refresh. The unchanged
+history reference remains byte-exact after applying the same original setters.
+This closes conditional file-bytes-to-controls-to-Room-output behavior, without
+claiming that the running game selected that package occurrence. Source-prefix
+limits must cover the selected complete control definition before admitting
+its framing; the earlier shorter prefix could establish parameter initialization
+but could not retain every following curve.
+
+The [built-in parameter contract](../../scripts/game_data/contracts/wwise_builtin_parameters_native.json)
+and its validator close a separate static producer route. The component builds
+retained ray rows, writes a calculated distance into each row, selects a row from
+that same array and passes its exact pointer to the enabled built-in updater.
+The first binding list carries packed control ID/type keys into exact namespace
+lookup and scoped value application. A retained override can suppress that
+application. Distance uses converted coordinate differences, an optional
+retained probe and listener/source scaling; it need not equal raw world distance.
+Authenticated Init settings connect the selected Room curve key to this stored
+binding. Its authored default is separate from a computed live value. Actual
+emitter/listener/probe objects, selected scope and complete callback lifetimes
+still require runtime evidence; approximate SDK symbol matches do not establish
+these joins.
+
+The registered-notification original cohort calls the real list dispatcher on
+the target array populated by original subscription. Its virtual callback reaches
+the retained Room subscriber, with the caller return inside the authenticated
+dispatcher. The shipped nonlinear definition then writes the retained clone and
+refreshes the existing Room history, preserving equality with an independently
+updated unhooked original. This extends the earlier direct-callback cohort;
+input values and private services remain supplied. Initial applied values already
+compose authored defaults with current aggregates, so serialized default floats
+cannot be compared directly with those setter inputs. Scope creation can move
+matching subscribers from the default target list into scoped lists. Immediate
+changed values and retained transition processing are distinct paths; list
+mutation/counters also govern dispatch. Neither the owned dispatcher example nor
+an observed insertion proves continuous list membership, scoped migration,
+smoothing schedules or actual emitter/listener ownership. A separate owned
+scope-migration cohort executes the original key filter and list transfer on
+that real registered subscriber. A mismatching key leaves the source list
+unchanged; a matching key transfers its actual interface pointer into supplied
+scoped-list storage. Original notification there reaches the same retained
+clone and preserves the PCM comparison. Migration back permits original
+unsubscribe, after which another dispatch produces no callback or setter;
+final template cleanup releases all owned allocation. The supplied destination
+is not a game-created scoped entry, so native scope-tree creation and lifetime
+remain separate from this transfer proof.
+
+The parameter-node original cohort also constructs the real entry and uses its
+native scoped value storage/application before notification. Original target
+association, callback dispatch and immediate updates reach the retained Room
+clone. The same subscriber is removed from a different scoped header than its
+initial insertion header, confirming original target association beyond the
+earlier supplied-list transfer. Unsubscribe suppresses another update's callback, and parameter/template
+destruction leaves no owned allocation. Its wildcard scope, zero transition
+policy and private services are conditions. Per-object scope trees, nonzero
+transition scheduling and live emitter/listener identities remain unobserved.
+This route also calls the shared handle-registration helper. Its historical
+State label is not a namespace proof: the reader reports an actual scope-handle
+append with full packed key, low-word ID and raw type, and keeps anonymous
+registration creation untyped. Boolean success without an observed owner/append
+remains unresolved; neither row alone supplies named State subscription evidence.
+
+The original ray cohort extends that node path upstream. Supplied finite
+coordinates feed the complete original distance calculation; original special
+binding admission and the enabled built-in updater carry its stored ray value
+through the packed-key list into the real parameter entry, subscriber callback
+and retained Room clone. Consecutive computed inputs supply consecutive old/new
+callback values, and the existing-history PCM still equals an independently
+updated original. Coordinates, owner/scaling storage, wildcard scope and immediate
+transition policy remain supplied. The physical Init binding byte is joined
+independently; its nonzero transition policy and authored default are not replaced
+by the private cohort's zero policy/default in live conclusions.
+
+The original transition prefix distinguishes rate-based and fixed-duration
+policies. The rate path divides the current/target difference by its
+direction-selected coefficient; the fixed-duration path selects that direction's
+time value. It scales and truncates the result, then takes the signed maximum
+with the requested duration. A nonpositive selected duration skips transition
+manager allocation/update. Thus equal stored coefficients do not imply a fixed short response:
+rate-based duration also depends on the magnitude of the parameter change.
+Bounded unmodified-instruction replay proves this prefix separately from manager
+allocation, tick scheduling, the full transition curve and live policy selection.
+The initialization prefix converts that duration through native frequency and
+the context's frame quantum into a truncated quantum count, retaining a start
+tick. It reads the same quantum owned by the codec/context contract. A separate
+unmodified prefix replay checks this conversion under provided frequency/quantum;
+the file's initialized globals are not observations of a running device, and
+manager advancement/completion remains outside this prefix proof.
+Complete original manager/advance/receiver bodies close the separate static
+completion route: visit both retained lists, compute progress or select the final
+target, snapshot users before virtual notification, and carry value/completion
+into the parameter receiver. Completion clears its retained transition; delivered
+floats re-enter scoped value application and the existing subscriber path. This
+is a static route rather than an executed full smoothing schedule; manager
+creation, active clock globals and all curve/filter selections remain conditions.
+
+The remaining origin question requires a live loaded template and physical bank
+occurrence, its parameter allocation, each clone carrier and the parameter passed
+into effect initialization, with replacement/release intervals. Authored Sound
+effect slots distinguish an enabled reference from a bypassed reference even
+when both select the same shared template and external-source cookie. Their
+typed Event/Action/parent references are stored route candidates, not observations
+of effective bypass, selected external files or admitted voice processing. Existing late
+Room snapshots cannot retrospectively observe template loading. Continue
+reviewing the lifecycle recorder, read programs and reader before requesting
+its live run; an unchanged configuration recording cannot close it. Event/source file selection
+and full live DSP history remain independent gaps.
+
+Hook creation is a separate preparation requirement from forwarding ABI and
+operand replay. The initial contribution run stopped before readiness and
+recorded no native observations: the hook backend rejected the ramp entry
+because it decoded an unsupported vector instruction after its complete jump
+prefix. That following instruction is not relocated. The corrected backend
+decodes only displaced instructions and still rejects unsupported instructions
+inside that prefix. Private original-DLL examples now exercise creation of
+every static native recipe entry and enabled forwarding of both accumulation
+trampolines, with complete-buffer equality. Startup errors retain the failing
+hook name, RVA and backend status. These local checks do not replace a closed
+live observation window.
+
+The first handoff attempt recorded no observation window or native rows. The
+provider ran and excluded outside-window calls, but readiness and zero queue
+loss do not establish that recording started. The user pressed the audio hotkey
+without a visible overlay. Code review found that the overlay expired during
+the host's longer prelaunch wait; the session's attachment followed that short
+expiry. The overlay now follows the launcher's lifetime, and the host offers
+an `audio` console command using the existing event control, so manual start
+does not depend on the overlay. The importer reports a missing or unclosed
+window as `noObservationWindow`, leaves native data uninterpreted and emits
+bounded diagnostics. Empty handoff sessions cannot be marked complete by the
+runtime. A repeat still needs a closed, loss-free window and all required
+endpoints before admitting the buffer/device join.
+
+Dense unsampled source observations are checked and counted in full; retained
+examples are bounded per exact current identity tuple. Publication/reset example
+arrays are likewise bounded independently of the live interval state and counts.
+Do not count these examples as the full source stream. Provider selection counters
+span the provider lifetime, while saved observations are filtered by recorded
+invocation into closed windows. The native worker discards outside-window records
+during final quiescent draining. Selection totals must bound reviewed entries;
+their excess remains explicitly unattributed and does not prove window completeness.
+Zero intentional skips and zero queue losses remain required for conditional
+source/reset intervals; scoped counters do not certify a whole engine frame.
+Native publication precedes the associated frame-reference release. The reviewer
+therefore distinguishes a current source-write/release interval from a published
+first-row projection. The latter requires matching route/bus/row/descriptor and
+sample fields, carries any observed release explicitly, and is invalidated by a
+new source write, replacement publication or bus reset. It does not certify the
+allocation's continued validity. Intervening writes/resets during mixing also
+withhold the corresponding completed interval join.
 
 The completed conversions also retain a direct numerical witness: captured
 first-planar-channel input multiplied by the captured constant gain, rounded to

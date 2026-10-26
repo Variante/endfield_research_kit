@@ -1,0 +1,168 @@
+{
+  "schema": "endfield.buff-check-consume-layer-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "checkConsumeLayer": {
+      "sourceContract": "buff_3f_native.json",
+      "wrapperTypeDefinition": 16015,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckConsumeBuffLayer_DataForMemoryPack",
+      "runtimeTypeDefinition": 9339,
+      "runtimeTypeName": "Beyond.Gameplay.Core.CheckConsumeBuffLayer+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        119464,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckConsumeBuffLayer_DataForMemoryPack",
+        "Deserialize",
+        61450144
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 61450288,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450311,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F844B0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 61450329,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450351,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84220100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 61450316
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 61450362,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450384,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84010100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 61450395,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450417,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84E00000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "compareType",
+          "declaredType": "Beyond.CompareType",
+          "setterMethodIndex": 119459,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 61450435,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450457,
+            "targetRva": 61450640,
+            "methodIndex": 119459
+          },
+          "sourceToDestinationHex": "4885F60F84B80000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 61450422
+        },
+        {
+          "fieldName": "num",
+          "declaredType": "Beyond.Blackboard+BlackboardInt",
+          "setterMethodIndex": 119460,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 61450475,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450498,
+            "targetRva": 61450688,
+            "methodIndex": 119460
+          },
+          "sourceToDestinationHex": "4885F60F84900000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 61450462
+        },
+        {
+          "fieldName": "storeKey",
+          "declaredType": "string",
+          "setterMethodIndex": 119461,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 61450509,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 61450528,
+            "targetRva": 61450736,
+            "methodIndex": 119461
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "63": "checkConsumeLayer"
+  },
+  "integerOwnerContract": "buff_pick_target_action_native.json",
+  "integerReaderMethod": [
+    104585,
+    "Beyond.MemoryPack.Beyond_Blackboard_BlackboardIntForMemoryPack",
+    "Deserialize",
+    62974240
+  ],
+  "integerRuntimeTypeDefinition": 174,
+  "stringSourceContract": "memorypack_utf8_source_helper_native.json",
+  "evidenceBoundary": {
+    "exact": "Current named seven-member parent, typed source contexts and generated setter joins. Original action spans require the independent BlackboardInt owner and final source-string receipt.",
+    "direct": "The parent retains byte/four-DWORD operands, a nullable BlackboardInt and a separately nullable final key. Its num context names the same independently owned integer reader/type.",
+    "conditional": "Normal provider/helper paths and current native/source gates; child and parent extents are separately checked, reserving the required final key length before reading the integer.",
+    "unresolved": "Evaluated comparison, integer/key lookup, buff layer consumption, key writes, full-family/root admission and runtime execution."
+  }
+}

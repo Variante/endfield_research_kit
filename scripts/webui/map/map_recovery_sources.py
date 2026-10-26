@@ -14,16 +14,57 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+from scripts.game_data.levelconfig_binary import decode_level_config
+from scripts.game_data.string_pool import export_string_pool
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 LEVEL_CONFIG_ROOT = EXPORT_LAYOUT.json_dir / "LevelConfig"
 STREAMING_INSTANCE_ROOT = WEBUI_BUILD_DIR / "map" / "world_placements"
 
-_BINARY_SCENE_PATH_RE = re.compile(
-    rb"([A-Za-z0-9_]+)/([A-Za-z0-9_]+?)(?:_art)?_streaming[.]asset"
-)
-_BINARY_ART_LEVEL_RE = re.compile(rb"([A-Za-z0-9_]+_lv[0-9]+)_art")
+_SCENE_PATH_RE = re.compile(r"([A-Za-z0-9_]+)/([A-Za-z0-9_]+?)(?:_art)?_streaming[.]asset")
+_ART_LEVEL_RE = re.compile(r"([A-Za-z0-9_]+_lv[0-9]+)_art")
+
+
+class LevelConfigSourceError(ValueError):
+    """A present LevelConfig could not be read or decoded for the selected export."""
+
+
+def _source_label(path: Path) -> str:
+    return str(path.relative_to(ROOT)).replace("\\", "/") if path.is_relative_to(ROOT) else str(path)
+
+
+@lru_cache(maxsize=1024)
+def level_config(level_id: str, *, level_config_root: Path = LEVEL_CONFIG_ROOT) -> dict | None:
+    """Decode one level's LevelConfig, or ``None`` when the export has none.
+
+    Strings are inline or StringPool indices depending on whether the export
+    ships ``Json/StringPool``. A present file that fails to decode raises
+    ``LevelConfigSourceError`` instead of resolving to no scene, so a format
+    change cannot silently empty every map.
+    """
+    if not re.fullmatch(r"[A-Za-z0-9_]+", str(level_id or "")):
+        return None
+    path = level_config_root / f"{level_id}.json"
+    if not path.is_file():
+        return None
+    try:
+        decoded = decode_level_config(
+            path.read_bytes(), strings=export_string_pool(level_config_root.parent)
+        )
+    except (OSError, ValueError) as exc:
+        raise LevelConfigSourceError(f"{_source_label(path)}: {exc}") from exc
+    return {**decoded, "source": _source_label(path)}
+
+
+def _string_members(config: dict) -> list[str]:
+    state = config["defaultState"]
+    values = (
+        state["exportedSceneConfigPath"], state["name"], state["sourceSceneName"],
+        config["dimensionSourceLevelId"], config["id"], config["mapIdStr"],
+        config["waterStartAudio"], config["waterStopAudio"],
+    )
+    return [value for value in values if value]
 
 
 @lru_cache(maxsize=1024)
@@ -34,25 +75,21 @@ def authored_streaming_scene(
 ) -> dict | None:
     """Return the exact shared art-scene id declared by a level's config.
 
-    The current contract reads the directly addressed compact LevelConfig and
-    accepts only a bounded path whose folder and asset names agree. No name
-    prefix, TextAsset fallback, or tutorial sequence is used as evidence.
+    The current contract reads ``defaultState.exportedSceneConfigPath`` from
+    the directly addressed decoded LevelConfig and accepts only a bounded path
+    whose folder and asset names agree. No name prefix, TextAsset fallback, or
+    tutorial sequence is used as evidence.
     """
-    if not re.fullmatch(r"[A-Za-z0-9_]+", str(level_id or "")):
+    config = level_config(level_id, level_config_root=level_config_root)
+    if not config:
         return None
-    binary = level_config_root / f"{level_id}.json"
-    if binary.is_file():
-        try:
-            matched = _BINARY_SCENE_PATH_RE.search(binary.read_bytes())
-        except OSError:
-            matched = None
-        if matched and matched.group(1).lower() == matched.group(2).lower():
-            return {
-                "sceneId": matched.group(1).decode("ascii"),
-                "method": "level_config_embedded_streaming_path",
-                "source": str(binary.relative_to(ROOT)).replace("\\", "/") if binary.is_relative_to(ROOT) else str(binary),
-            }
-
+    matched = _SCENE_PATH_RE.search(config["defaultState"]["exportedSceneConfigPath"] or "")
+    if matched and matched.group(1).lower() == matched.group(2).lower():
+        return {
+            "sceneId": matched.group(1),
+            "method": "level_config_embedded_streaming_path",
+            "source": config["source"],
+        }
     return None
 
 
@@ -121,22 +158,18 @@ def authored_art_level(
     is a source relation, not permission to merge the gameplay map into the
     source level's WebUI region.
     """
-    if not re.fullmatch(r"[A-Za-z0-9_]+", str(level_id or "")):
+    config = level_config(level_id, level_config_root=level_config_root)
+    if not config:
         return None
-    path = level_config_root / f"{level_id}.json"
-    try:
-        matches = {
-            value.decode("ascii")
-            for value in _BINARY_ART_LEVEL_RE.findall(path.read_bytes())
-        }
-    except (OSError, UnicodeError):
-        return None
+    matches = {
+        value for member in _string_members(config) for value in _ART_LEVEL_RE.findall(member)
+    }
     if len(matches) != 1:
         return None
     return {
         "levelId": next(iter(matches)),
         "method": "level_config_embedded_art_level",
-        "source": str(path.relative_to(ROOT)).replace("\\", "/") if path.is_relative_to(ROOT) else str(path),
+        "source": config["source"],
     }
 
 

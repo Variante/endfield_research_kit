@@ -1,0 +1,287 @@
+{
+  "schema": "endfield.dynamic-mission-condition-consumers-native-contract.v3",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": {
+    "update": {
+      "index": 87701,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "method": "_UpdateConditionValue",
+      "parameters": [
+        "System.UInt64"
+      ],
+      "parameterNames": [
+        "compId"
+      ],
+      "returnType": "System.Boolean",
+      "rva": 57537712,
+      "bodyExtent": 591,
+      "bodySha256": "7DE58F5BED259EC9F396DE0B1C01CB105A299F2620CAE676A4F56D06A03082CC"
+    },
+    "query": {
+      "index": 87697,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
+      "method": "_GetCurrentConditionValue",
+      "parameters": [
+        "System.UInt16",
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "hotSlot",
+        "conditionIndex"
+      ],
+      "returnType": "System.Int32",
+      "rva": 57538656,
+      "bodyExtent": 187,
+      "bodySha256": "4A4C8FBDE96954F3B82115F02F534A1B8BCF08E12F5EFA2084A952DDC7595A20"
+    }
+  },
+  "dependencies": [
+    {
+      "path": "dynamic_scalar_components_native.json",
+      "schema": "endfield.dynamic-scalar-components-native-contract.v3",
+      "methodRoles": {
+        "state": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition",
+          "method": "get_State"
+        },
+        "same": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneMissionCondition",
+          "method": "get_IsSame"
+        }
+      }
+    },
+    {
+      "path": "dynamic_main_vector_native.json",
+      "schema": "endfield.dynamic-main-vector-native-contract.v1",
+      "methodRoles": {
+        "vector": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+          "method": "MissionCondition"
+        }
+      }
+    },
+    {
+      "path": "dynamic_erosion_consumers_native.json",
+      "schema": "endfield.dynamic-erosion-consumers-native-contract.v3",
+      "methodRoles": {
+        "patchCheck": {
+          "type": "IFix.WrappersManagerImpl",
+          "method": "IsPatched"
+        }
+      }
+    }
+  ],
+  "probes": {
+    "saveComp": {
+      "offset": 42,
+      "bytes": "488BDA"
+    },
+    "saveThis": {
+      "offset": 45,
+      "bytes": "4C8BF1"
+    },
+    "hotSlot": {
+      "offset": 88,
+      "bytes": "488BFB48C1EF20"
+    },
+    "count": {
+      "offset": 151,
+      "bytes": "448B630C"
+    },
+    "counter": {
+      "offset": 155,
+      "bytes": "4533ED"
+    },
+    "firstIndex": {
+      "offset": 171,
+      "bytes": "448B7B08"
+    },
+    "addCounter": {
+      "offset": 178,
+      "bytes": "4503FD"
+    },
+    "queryArgs": {
+      "offset": 181,
+      "bytes": "0FB7D7458BC7498BCE"
+    },
+    "queryReturn": {
+      "offset": 200,
+      "bytes": "89457F"
+    },
+    "tableSlot": {
+      "offset": 195,
+      "bytes": "BA24000000"
+    },
+    "vectorStride": {
+      "offset": 246,
+      "bytes": "41C1E704"
+    },
+    "vectorPosition": {
+      "offset": 267,
+      "bytes": "418D1407"
+    },
+    "carrierOut": {
+      "offset": 254,
+      "bytes": "488D4DB7"
+    },
+    "carrierCopies": {
+      "offset": 281,
+      "bytes": "0F1045B70F105DC733D2B963F600000F115DD70F1145970F115DA7"
+    },
+    "stateBuffer": {
+      "offset": 321,
+      "bytes": "0F1045BF"
+    },
+    "stateTail": {
+      "offset": 343,
+      "bytes": "F20F1045DF"
+    },
+    "stateArgs": {
+      "offset": 359,
+      "bytes": "8B55B7488D4DF783C208"
+    },
+    "stateReturn": {
+      "offset": 381,
+      "bytes": "448BF8"
+    },
+    "sameBuffer": {
+      "offset": 404,
+      "bytes": "0F10459F"
+    },
+    "sameTail": {
+      "offset": 408,
+      "bytes": "F20F104DAF"
+    },
+    "sameArgs": {
+      "offset": 435,
+      "bytes": "8B5597488D4DF783C20C"
+    },
+    "sameEqualsOne": {
+      "offset": 450,
+      "bytes": "83F8017553"
+    },
+    "equalPredicate": {
+      "offset": 455,
+      "bytes": "443B7D7F0F94C1"
+    },
+    "unequalPredicate": {
+      "offset": 538,
+      "bytes": "443B7D7F0F95C1"
+    },
+    "cacheChanged": {
+      "offset": 478,
+      "bytes": "0FB64306403AC6408873060F95C0"
+    },
+    "returnFrame": {
+      "offset": 492,
+      "bytes": "4C8D9C24D0000000498B5B30498B7338498B7B40498BE3415F415E415D415C5DC3"
+    },
+    "patchBranch": {
+      "offset": 76,
+      "bytes": "84C00F8514647301"
+    },
+    "statePatchBranch": {
+      "offset": 313,
+      "bytes": "84C00F85D3627301"
+    },
+    "samePatchBranch": {
+      "offset": 389,
+      "bytes": "84C00F85B1627301"
+    }
+  },
+  "methodCallAbi": {
+    "update": "instance",
+    "query": "instance",
+    "state": "instance",
+    "same": "instance",
+    "vector": "instance",
+    "patchCheck": "static"
+  },
+  "calls": {
+    "query": 190,
+    "table": 207,
+    "vector": 237,
+    "initialize": 276,
+    "stateRead": 369,
+    "sameRead": 445,
+    "updatePatch": 71,
+    "statePatch": 308,
+    "samePatch": 384,
+    "sameAuxiliary": 575
+  },
+  "ownedAccessorCalls": {
+    "vectorTable": 35,
+    "vectorVector": 62,
+    "vectorForward": 109,
+    "stateRead": 75,
+    "sameRead": 75,
+    "sameAuxiliary": 86
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native identities, ordinary primitive ABI records, source getter/vector declarations and primary windows.",
+    "direct": "Same selected MissionCondition record supplies State and IsSame. Literal IsSame==1 chooses equality to the same-ordinal provider Int32 return; every other Int32 chooses inequality. Anonymous cache byte update returns a changed flag. On the selected nonnull query route, the opaque lookup object supplies an Int32 key to the explicitly bound Dictionary<Int32,Int32>.TryGetValue request. A true result returns its Int32 output; a false result returns zero.",
+    "conditional": "Selected non-replacement update and generated State/IsSame fast paths, nonzero admitted vector slot and supplied cache/grid data. The 32-bit index left shift and position addition must not wrap, and the selected record must be valid; equal raw index bits alone do not prove a valid ordinal. Valid pointers/normal returns and normal Win64 nonvolatile-register preservation are required. Direct fixed-frame stores along admitted CFG paths do not overlap the saved provider Int32 local; callees and indirect writes must not modify that local or its frame bases. Query metadata initialization and patch checks follow the non-replacement path, both dictionary receivers and opaque lookup result are valid nonnull pointers, and callees honor the explicit Int32 output ABI.",
+    "unresolved": "Id/IsQuest target meaning, provider value origin, authored Conditions-to-live cache join, aggregation byte source, hotSlot-to-file/grid ownership, runtime invocation and condition truth remain unresolved."
+  },
+  "queryContext": {
+    "callOffset": 112,
+    "callTargetRva": 57493296,
+    "contextLoadOffset": 97,
+    "contextLoadRawHex": "4C8B0D50399D09",
+    "usageCellRva": 218837528,
+    "usageRawHex": "ABAB01C000000000",
+    "methodSpecIndex": 54741,
+    "methodSpecRawHex": "DB5E04001D040000FFFFFFFF",
+    "definition": 286427,
+    "type": "System.Collections.Generic.Dictionary`2",
+    "method": "TryGetValue",
+    "signature": {
+      "returnType": "System.Boolean",
+      "returnRawBits": "80020000",
+      "flags": 486,
+      "parameters": [
+        {
+          "name": "key",
+          "type": "<type-index:3984>",
+          "rawBits": "00130000",
+          "rawTypeRecordHex": "0A3D0000000000000000130000000000",
+          "genericOwner": {
+            "parameterIndex": 15626,
+            "parameterOffset": 42809940,
+            "parameterRawHex": "77130000D1D101000000000000000000",
+            "containerIndex": 4983,
+            "containerOffset": 43046480,
+            "containerRawHex": "7E92000002000000000000000A3D0000",
+            "typeIndex": 37502,
+            "ordinal": 0,
+            "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted."
+          }
+        },
+        {
+          "name": "value",
+          "type": "<type-index:85460>",
+          "rawBits": "20130002",
+          "rawTypeRecordHex": "0B3D0000000000000200132000000000",
+          "genericOwner": {
+            "parameterIndex": 15627,
+            "parameterOffset": 42809956,
+            "parameterRawHex": "77130000D6D101000000000001000000",
+            "containerIndex": 4983,
+            "containerOffset": 43046480,
+            "containerRawHex": "7E92000002000000000000000A3D0000",
+            "typeIndex": 37502,
+            "ordinal": 1,
+            "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted."
+          }
+        }
+      ]
+    },
+    "classInstantiationIndex": 1053,
+    "methodPointerIndex": 49312
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "schema": "endfield.buff-enum-underlying-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-enum-projection-and-named-api-entry-programs-with-record-pointer-boundary",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "projection": {
+      "entryRva": 57808,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 57808,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              57808,
+              57937,
+              211637216
+            ],
+            "tableRowRva": 251729744,
+            "runtimeTripleRawHex": "D0E1000051E20000E0539D0C",
+            "codeBytes": 129,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 57808,
+          "endRva": 57937,
+          "sha256": "4CC1E0AEC83B33BB9089039788D75F001989225C48ACBFF4ED8D387C1E17489E"
+        }
+      ]
+    },
+    "enumBase": {
+      "entryRva": 51904,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 51904,
+          "endRva": 51922,
+          "sha256": "11B84E26EC4119319DE2FCF7FB608B0B23F5C7DA3851D3FF6429F678CC6A465D"
+        }
+      ]
+    },
+    "isEnum": {
+      "entryRva": 615344,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 615344,
+          "endRva": 615357,
+          "sha256": "C2CD7A1B03F6DE571452EE4AB5BE6D96E5496D6ED3C5D05414AB35FCBB376A68"
+        }
+      ]
+    },
+    "getType": {
+      "entryRva": 653600,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 653600,
+          "endRva": 653605,
+          "sha256": "A8ADEAD0A89E8BCC0F6079669194E35B31C483DF478A1515E46C55A9CF74FB51"
+        }
+      ]
+    },
+    "getElement": {
+      "entryRva": 918944,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 918944,
+          "endRva": 918949,
+          "sha256": "C0151D9FEAB268CCCF5281F8B14121F2C8F7D02892D3177CC3EFA49B031E22EC"
+        }
+      ]
+    },
+    "typeWrapper": {
+      "entryRva": 59984,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 59984,
+          "endRva": 60002,
+          "sha256": "33C4D6691EB212135014BF7F69BDF01B250BC9486D3E2EDE12FF0A5C549920DE"
+        }
+      ]
+    },
+    "descriptorWrapper": {
+      "entryRva": 59968,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 59968,
+          "endRva": 59976,
+          "sha256": "8D9DC097F073CAB91371FACDE9F081CCE290E79E47CD3BBDBBEDC20658811000"
+        }
+      ]
+    },
+    "recordToClass": {
+      "entryRva": 304416,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 304416,
+          "endRva": 304475,
+          "sha256": "15C18088C0424FC5E1394F2F097E075E5AB8E67F15C4929D6113436382DECEA7"
+        }
+      ]
+    }
+  },
+  "namedExports": {
+    "selectedExports": [
+      {
+        "symbolName": "il2cpp_class_enum_basetype",
+        "nameIndex": 48,
+        "namePointerSlotRva": 217626960,
+        "namePointerHex": "6e c6 f8 0c",
+        "nameRva": 217630318,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 65 6e 75 6d 5f 62 61 73 65 74 79 70 65 00",
+        "ordinalIndexSlotRva": 217628520,
+        "ordinalIndexHex": "30 00",
+        "ordinalIndex": 48,
+        "ordinal": 49,
+        "functionSlotRva": 217625304,
+        "functionSlotHex": "c0 ca 00 00",
+        "targetRva": 51904,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      },
+      {
+        "symbolName": "il2cpp_class_get_element_class",
+        "nameIndex": 59,
+        "namePointerSlotRva": 217627004,
+        "namePointerHex": "97 c7 f8 0c",
+        "nameRva": 217630615,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 67 65 74 5f 65 6c 65 6d 65 6e 74 5f 63 6c 61 73 73 00",
+        "ordinalIndexSlotRva": 217628542,
+        "ordinalIndexHex": "3b 00",
+        "ordinalIndex": 59,
+        "ordinal": 60,
+        "functionSlotRva": 217625348,
+        "functionSlotHex": "a0 05 0e 00",
+        "targetRva": 918944,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      },
+      {
+        "symbolName": "il2cpp_class_get_type",
+        "nameIndex": 76,
+        "namePointerSlotRva": 217627072,
+        "namePointerHex": "6c c9 f8 0c",
+        "nameRva": 217631084,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 67 65 74 5f 74 79 70 65 00",
+        "ordinalIndexSlotRva": 217628576,
+        "ordinalIndexHex": "4c 00",
+        "ordinalIndex": 76,
+        "ordinal": 77,
+        "functionSlotRva": 217625416,
+        "functionSlotHex": "20 f9 09 00",
+        "targetRva": 653600,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      },
+      {
+        "symbolName": "il2cpp_class_is_enum",
+        "nameIndex": 86,
+        "namePointerSlotRva": 217627112,
+        "namePointerHex": "7c ca f8 0c",
+        "nameRva": 217631356,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 69 73 5f 65 6e 75 6d 00",
+        "ordinalIndexSlotRva": 217628596,
+        "ordinalIndexHex": "56 00",
+        "ordinalIndex": 86,
+        "ordinal": 87,
+        "functionSlotRva": 217625456,
+        "functionSlotHex": "b0 63 09 00",
+        "targetRva": 615344,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      }
+    ],
+    "exportDirectoryRva": 217625072,
+    "exportDirectoryBytes": 14800,
+    "exportDirectoryHeader": {
+      "fileOffset": 448,
+      "rawHex": "f0 b1 f8 0c d0 39 00 00"
+    },
+    "exportDirectoryHex": "00 00 00 00 ff ff ff ff 00 00 00 00 44 c2 f8 0c 01 00 00 00 9e 01 00 00 9e 01 00 00 18 b2 f8 0c 90 b8 f8 0c 08 bf f8 0c",
+    "libraryNameRva": 217629252,
+    "libraryName": "GameAssembly.dll",
+    "libraryNameHex": "47 61 6d 65 41 73 73 65 6d 62 6c 79 2e 64 6c 6c 00",
+    "ordinalBase": 1,
+    "declaredFunctionCount": 414,
+    "declaredNameCount": 414,
+    "functionTableRva": 217625112,
+    "functionTableSha256": "0C0390A8E5063325C2D7EC7A31CE3ED91A3D2BF7319908A9DF5AB90AE5CFABF0",
+    "nameTableRva": 217626768,
+    "nameTableSha256": "7A2FC65B3D792B7D5A1D858B2293037ABE1242FD8CD39D7FC8FA95A85CA2C072",
+    "ordinalTableRva": 217628424,
+    "ordinalTableSha256": "8AA818C09CCCB57973D8F1D7396FEBBD9E845DB143318C401A0B0D8E366F3E0D",
+    "allDeclaredNameOrderAndOrdinalIndicesChecked": true,
+    "completeExportImplementationCatalogProved": false,
+    "liveLoadedLibraryOrBindingProved": false
+  },
+  "layout": {
+    "frameBytes": 32,
+    "kind": 10,
+    "typeFlags": 8,
+    "typeFlagMask": 536870912,
+    "typeData": 0,
+    "descriptorType": 0,
+    "classFlags": 312,
+    "classEnumMask": 4,
+    "classEnumShift": 2,
+    "elementClass": 64,
+    "valueType": 32
+  },
+  "kinds": {
+    "enumRecord": 17,
+    "genericInstance": 21
+  },
+  "classResolverRva": 304480,
+  "recordProjection": {
+    "metadataHeaderRva": 233439216,
+    "metadataBaseRva": 233439208,
+    "headerTypeDefinitionsOffset": 160,
+    "recordBytes": 92,
+    "multiplier": -5614226457215950491,
+    "shift": 6
+  },
+  "projectionIncomingCalls": [
+    {
+      "sourceRole": "first",
+      "siteRva": 2911548,
+      "targetRva": 57808,
+      "instructionHex": "E88F74D4FF"
+    }
+  ],
+  "selectedDamageTypeMetadata": {
+    "typeDefinition": 33942,
+    "byvalTypeIndex": 113665,
+    "typePointerVa": 6664703528,
+    "rawTypeHex": "96840000000000000000118000000000",
+    "isEnum": true,
+    "underlyingField": [
+      "Beyond.GEnums.DamageType",
+      "int",
+      16
+    ],
+    "liveClassIdentityProved": false
+  },
+  "evidenceBoundary": {
+    "exact": "Complete exception-owned projection plus closed ordinary API/wrapper/record-conversion entry programs, both return branches and every local edge. No neighbor extent is borrowed for unwindless programs.",
+    "direct": "PE export name/ordinal/EAT joins bind enum flag, element-class pointer and type-address getters; actual wrapper and named enum-basetype tail transfers.",
+    "conditional": "Valid coherent disjoint storage, stable native metadata header/base and a valid aligned TypeDefinition-record input, normal ABI child returns. Separate class resolutions remain fresh and are not equated.",
+    "structuralOnly": "Selected on-disk DamageType metadata is an Int32 enum; its stored type.data value is a record index, while this consumer subtracts live metadata bases from a record pointer.",
+    "unresolved": "Type-data initialization/index-to-pointer join, selected runtime class and element-class identity, same class across repeated resolutions, concrete DamageType normalization/sharing/provider and parent/root admission."
+  }
+}

@@ -2,7 +2,8 @@
 
 The selected formatter copies two wrap words and seven words per Keyframe.
 Callback resolution names establish stored destinations, not evaluation or
-execution of Unity callbacks. Callers still prove each parent typed join.
+execution of Unity callbacks. The explicit stored-profile adapter retains
+source-named headerless Keyframe words; callers prove each parent typed join.
 """
 from __future__ import annotations
 
@@ -260,13 +261,14 @@ def validate_current_native_contract() -> dict[str, Any]:
 
 
 def decode_curve(data: bytes, *, source: str, digest: str, start: int, end: int,
-                 native_validation: dict[str, Any]) -> dict[str, Any]:
+                 native_validation: dict[str, Any], require_end: bool = True) -> dict[str, Any]:
     contract=_contract()
     if (native_validation.get("status")!="validated" or native_validation.get("nativeInputs")!=contract["nativeInputs"]
             or any(native_validation.get(k)!=contract[k] for k in ("keyframeFields","storedMemberCount","keyframeBytes"))
             or not isinstance(data,bytes) or not source or not isinstance(digest,str)
             or hashlib.sha256(data).hexdigest().upper()!=digest.upper()
-            or type(start) is not int or type(end) is not int or not 0<=start<end<=len(data)):
+            or type(start) is not int or type(end) is not int or not 0<=start<end<=len(data)
+            or type(require_end) is not bool):
         raise ValueError(f"{LABEL}.decode:native-source-or-span")
     reader=Reader(data,source,end);reader.pos=start;fields=[];keys=[];count=None
     is_null=reader.peek()==255
@@ -286,8 +288,62 @@ def decode_curve(data: bytes, *, source: str, digest: str, start: int, end: int,
                     "start":pos,"end":reader.pos,"rawHex":raw.hex().upper()})
             keys.append({"start":begin,"end":reader.pos,"namedFields":members})
         fields.append({"fieldName":"keys","start":at,"end":reader.pos,"count":count,"elements":keys})
-    if reader.pos!=end:
+    if require_end and reader.pos!=end:
         raise ValueError(f"{LABEL}.decode:curve-end={reader.pos}; expected={end}")
     return {"schema":"endfield.memorypack-animation-curve-receipt.v1","source":source,
-        "logicalSha256":digest.upper(),"start":start,"end":end,"null":is_null,"keyCount":count,
+        "logicalSha256":digest.upper(),"start":start,"end":reader.pos,"null":is_null,"keyCount":count,
         "namedFields":fields,"recursiveStoredSchemaExact":True,"runtimeMeaningExact":False}
+
+
+def stored_curve_node(receipt: dict[str, Any]) -> dict[str, Any]:
+    """Project an independently decoded curve into named bit-preserving values."""
+    from scripts.game_data.memorypack import stored_plan_values as stored
+    from scripts.game_data.memorypack.source_bound_stored_tree import bind_source_named_tree
+    if receipt.get('recursiveStoredSchemaExact') is not True:
+        raise ValueError(f'{LABEL}.stored:complete-source-receipt-required')
+    if receipt['null']:
+        if receipt['namedFields'] or receipt['keyCount'] is not None:
+            raise ValueError(f'{LABEL}.stored:null-members')
+        return stored.object_node([], null=True)
+    fields = receipt['namedFields']; contract = _contract()
+    if [f['fieldName'] for f in fields] != ['preWrapMode', 'postWrapMode', 'keys']:
+        raise ValueError(f'{LABEL}.stored:source-member-order')
+    def word(field):
+        raw = bytes.fromhex(field['rawHex'])
+        if len(raw) != 4 or field['end'] - field['start'] != len(raw):
+            raise ValueError(f'{LABEL}.stored:named-word-span')
+        return {'fieldName': field['fieldName'], 'start': field['start'], 'end': field['end'],
+                'value': stored.fixed_node(raw)}
+    keys = []
+    for key in fields[2]['elements']:
+        members = key['namedFields']
+        if [(f['fieldName'], f['declaredType']) for f in members] != [
+                (f['fieldName'], f['declaredType']) for f in contract['keyframeFields']]:
+            raise ValueError(f'{LABEL}.stored:keyframe-source-member-order')
+        keys.append({'kind': 'struct', 'start': key['start'], 'end': key['end'],
+                     'memberOrder': [f['fieldName'] for f in members], 'members': [word(f) for f in members]})
+    tree = stored.object_node([word(fields[0]), word(fields[1]),
+        {'fieldName': fields[2]['fieldName'], 'start': fields[2]['start'], 'end': fields[2]['end'],
+         'value': {'kind': 'list', 'count': receipt['keyCount'], 'elements': keys}}])
+    # Every curve object and headerless keyframe has its own source fields.
+    bind_source_named_tree(receipt, tree)
+    return tree
+
+
+def source_profile_reader(native_validation: dict[str, Any]):
+    """Make an explicit curve-only profile callback; authenticate on each reach."""
+    from scripts.game_data.memorypack import stored_plan_values as stored
+    def profile(reader, member, depth):
+        if (member.kind != 'profile' or member.profile != 'curve_profile'
+                or type(depth) is not int or not 0 <= depth <= 256):
+            raise ValueError(f'{LABEL}.profile:source-bound-curve-only')
+        begin = reader.pos
+        receipt = decode_curve(reader.data, source=reader.source,
+            digest=hashlib.sha256(reader.data).hexdigest(), start=begin, end=reader.limit,
+            native_validation=native_validation, require_end=False)
+        tree = stored_curve_node(receipt)
+        if stored.encode_stored_node(tree) != reader.data[begin:receipt['end']]:
+            raise ValueError(f'{LABEL}.profile:named-field-value-reencode')
+        reader.pos = receipt['end']
+        return tree
+    return profile

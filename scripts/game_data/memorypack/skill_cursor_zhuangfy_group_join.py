@@ -1,7 +1,7 @@
 """Join four executed Zhuangfy terminals to selected stored action prefixes.
 
 The saved strict group verification is hash-pinned in a reviewed selection
-contract. The two 0x0038 action spans receive an independent native-gated
+contract. The two CheckAbilityEntityCurDuration action spans receive an independent native-gated
 static read. Earlier ActionGroup interiors remain partial in all four files.
 """
 from __future__ import annotations
@@ -14,6 +14,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack import skill_cursor_scoped_group as scoped
 from scripts.game_data.memorypack import skill_timeline_shared_sequence as shared
@@ -181,7 +182,7 @@ def verify_selected_group(
             claimed = sequence_by_path[path]
             members = claimed.get("actions")
             _require(isinstance(members, list) and len(members) == 2
-                     and [row.get("tag") for row in members] == ["0x0038", "0x0146"]
+                     and [row.get("tag") for row in members] == [_AT("Core_CheckAbilityEntityCurDuration_Data"), _AT("Core_SetAbilityEntityDuration_Data")]
                      and members[0].get("end") == members[1].get("start"),
                      f"action-contract-shape:{path}")
             for row, decoder, validation in (
@@ -208,7 +209,7 @@ def verify_selected_group(
                          f"whole-file-join-failed:{path}")
             else:
                 _require(claimed.get("wholeStoredFileExpected") is False
-                         and claimed.get("nextStopTag") == "0x0197",
+                         and claimed.get("nextStopTag") == _AT("Core_VoiceInterruptAction_VoiceInterruptActionData"),
                          f"later-stop-drift:{path}")
         joined.append({
             "virtualPath": path,
@@ -246,7 +247,7 @@ def verify_selected_group(
         },
         "evidenceBoundary": (
             "The live cursor selects the earlier EOF terminal in four exact copied sources. "
-            "Selected native readers close actions 0x0038 and 0x0146 in the two normal-skill "
+            "Selected native readers close the CheckAbilityEntityCurDuration and SetAbilityEntityDuration actions in the two normal-skill "
             "variants. The ultimate-mode variant's complete ActionGroup and static fields "
             "0-42 join the executed terminal and close one stored file. The ordinary variant "
             "stops later at 0x0197; perfect dodge and ultimate remain at their first stops. "

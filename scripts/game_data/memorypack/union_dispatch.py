@@ -155,13 +155,22 @@ def _table_dispatch(blob: bytes, index: int, blob_va: int, image_base: int) -> t
     if modrm >> 6 != 2 or modrm & 7 != 4 or sib >> 6 != 2:
         return None
     table_rva = struct.unpack_from("<I", blob, mov + 3)[0]
-    if not any(
-        blob[lea] in (0x48, 0x4C) and blob[lea + 1] == 0x8D and (blob[lea + 2] & 0xC7) == 0x05
-        and blob_va + lea + 7 + struct.unpack_from("<i", blob, lea + 3)[0] == image_base
-        for lea in range(mov - 7, max(mov - 24, 0), -1)
-    ):
-        return None
-    return mov, table_rva
+    rex = blob[mov - 1] if 0x40 <= blob[mov - 1] <= 0x4F else 0
+    base_register = (sib & 7) | (8 if rex & 1 else 0)
+    # Older builds load the image base just before the table read; newer
+    # builds hoist it into the prologue. Take the nearest earlier ``lea`` that
+    # writes the table's base register, so a hoisted load is still bound to
+    # this dispatch rather than to any image-base load nearby.
+    for lea in range(mov - 7, -1, -1):
+        if blob[lea] not in (0x48, 0x4C) or blob[lea + 1] != 0x8D or (blob[lea + 2] & 0xC7) != 0x05:
+            continue
+        register = ((blob[lea + 2] >> 3) & 7) | (8 if blob[lea] & 4 else 0)
+        if register != base_register:
+            continue
+        if blob_va + lea + 7 + struct.unpack_from("<i", blob, lea + 3)[0] != image_base:
+            return None
+        return mov, table_rva
+    return None
 
 
 def _jump_tables(image: NativeImage, start: int) -> list[tuple[int, int]]:
@@ -271,8 +280,15 @@ def _entry_at(image: NativeImage, target: int, tag: int) -> SwitchEntry | None:
         )
     except ValueError:
         return None
-    type_pointer = pe.u64_at_va(int(registration["types"], 16) + index * 8)
-    definition = struct.unpack_from("<Q", pe.bytes_at_va(type_pointer, 16))[0]
+    try:
+        type_pointer = pe.u64_at_va(int(registration["types"], 16) + index * 8)
+        definition = struct.unpack_from("<Q", pe.bytes_at_va(type_pointer, 16))[0]
+    except ValueError:
+        return None
+    # A non-definition Il2CppType (generic instance, array) holds a pointer
+    # here; a branch loading one is not a wrapper construction.
+    if definition >= len(image.metadata.types):
+        return None
     return SwitchEntry(
         tag=tag, wrapper_name=image.type_name(definition), type_definition=definition,
         target_va=target, body_va=body, usage_cell_va=usage, registered_type_index=index,

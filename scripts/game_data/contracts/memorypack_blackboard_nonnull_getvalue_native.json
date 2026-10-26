@@ -1,0 +1,964 @@
+{
+  "schema": "endfield.memorypack-blackboard-nonnull-getvalue-native-contract.v1",
+  "status": "exact-current-build",
+  "mode": "initialized-nonnull-board-public-and-matching-try-returns",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": {
+    "public": [
+      980,
+      "Beyond.Blackboard+BlackboardDouble",
+      "GetValue",
+      105954816
+    ],
+    "tryValue": [
+      977,
+      "Beyond.Blackboard+BlackboardDouble",
+      "TryGetValueInternal",
+      51486448
+    ],
+    "patchCheck": [
+      102181,
+      "IFix.WrappersManagerImpl",
+      "IsPatched",
+      46758256
+    ],
+    "numberLookup": [
+      936,
+      "Beyond.Blackboard",
+      "_TryGetNumber",
+      47220768
+    ],
+    "missingLogger": [
+      441501,
+      "Beyond.DLogger",
+      "LogError",
+      115103044
+    ],
+    "tryThunk": [
+      -1,
+      "physical",
+      "tryThunk",
+      637296
+    ],
+    "dumpToString": [
+      901,
+      "Beyond.Blackboard",
+      "DumpToString",
+      105960060
+    ],
+    "classStorageHelper": [
+      -1,
+      "physical",
+      "classStorageHelper",
+      13472
+    ],
+    "classInitHelper": [
+      -1,
+      "physical",
+      "classInitHelper",
+      19344
+    ]
+  },
+  "entries": {
+    "public": 105954816,
+    "try": 637296
+  },
+  "ownedCodeWindows": {
+    "public": [
+      {
+        "startRva": 105954816,
+        "endRva": 105955098,
+        "sha256": "9A9B89937A4793CA98B4DFB552219C5E29E3FFF4B0CF31E03D5C98FFEBA15470",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+      }
+    ],
+    "try": [
+      {
+        "startRva": 637296,
+        "endRva": 637699,
+        "sha256": "A66239F8E87451C960578CA8877584D9CD8F2E23AE0CD444176A342762DCEA16",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+      },
+      {
+        "startRva": 3134112,
+        "endRva": 3134462,
+        "sha256": "53E412BCE65FC154D4442F42EEE7422F7EE14BA51C6813D18F57DEB0860898EE",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+      }
+    ]
+  },
+  "programs": {
+    "publicFound": {
+      "program": [
+        [
+          105954816,
+          "48895C2408"
+        ],
+        [
+          105954821,
+          "57"
+        ],
+        [
+          105954822,
+          "4883EC40"
+        ],
+        [
+          105954826,
+          "803DF96A9B0700"
+        ],
+        [
+          105954833,
+          "488BDA"
+        ],
+        [
+          105954836,
+          "0F29742430"
+        ],
+        [
+          105954841,
+          "488BF9"
+        ],
+        [
+          105954844,
+          "7537"
+        ],
+        [
+          105954901,
+          "0F57F6"
+        ],
+        [
+          105954904,
+          "33D2"
+        ],
+        [
+          105954906,
+          "B9EC010000"
+        ],
+        [
+          105954911,
+          "F20F11742468"
+        ],
+        [
+          105954917,
+          "E806BB78FC"
+        ],
+        [
+          105954922,
+          "84C0"
+        ],
+        [
+          105954924,
+          "7574"
+        ],
+        [
+          105954926,
+          "4885DB"
+        ],
+        [
+          105954929,
+          "745E"
+        ],
+        [
+          105954931,
+          "4C8D4C2468"
+        ],
+        [
+          105954936,
+          "4C8BC3"
+        ],
+        [
+          105954939,
+          "488BD7"
+        ],
+        [
+          105954942,
+          "E8EDFAB8F9"
+        ],
+        [
+          105954947,
+          "84C0"
+        ],
+        [
+          105954949,
+          "7542"
+        ],
+        [
+          105955017,
+          "F20F10442468"
+        ],
+        [
+          105955023,
+          "EB39"
+        ],
+        [
+          105955082,
+          "488B5C2450"
+        ],
+        [
+          105955087,
+          "0F28742430"
+        ],
+        [
+          105955092,
+          "4883C440"
+        ],
+        [
+          105955096,
+          "5F"
+        ],
+        [
+          105955097,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 105954816,
+          "endRva": 105955098,
+          "sha256": "9A9B89937A4793CA98B4DFB552219C5E29E3FFF4B0CF31E03D5C98FFEBA15470",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+        }
+      ],
+      "boundary": "Complete selected initialized/unpatched nonnull or concrete-Try matching branch from actual entry through RET."
+    },
+    "publicMissing": {
+      "program": [
+        [
+          105954816,
+          "48895C2408"
+        ],
+        [
+          105954821,
+          "57"
+        ],
+        [
+          105954822,
+          "4883EC40"
+        ],
+        [
+          105954826,
+          "803DF96A9B0700"
+        ],
+        [
+          105954833,
+          "488BDA"
+        ],
+        [
+          105954836,
+          "0F29742430"
+        ],
+        [
+          105954841,
+          "488BF9"
+        ],
+        [
+          105954844,
+          "7537"
+        ],
+        [
+          105954901,
+          "0F57F6"
+        ],
+        [
+          105954904,
+          "33D2"
+        ],
+        [
+          105954906,
+          "B9EC010000"
+        ],
+        [
+          105954911,
+          "F20F11742468"
+        ],
+        [
+          105954917,
+          "E806BB78FC"
+        ],
+        [
+          105954922,
+          "84C0"
+        ],
+        [
+          105954924,
+          "7574"
+        ],
+        [
+          105954926,
+          "4885DB"
+        ],
+        [
+          105954929,
+          "745E"
+        ],
+        [
+          105954931,
+          "4C8D4C2468"
+        ],
+        [
+          105954936,
+          "4C8BC3"
+        ],
+        [
+          105954939,
+          "488BD7"
+        ],
+        [
+          105954942,
+          "E8EDFAB8F9"
+        ],
+        [
+          105954947,
+          "84C0"
+        ],
+        [
+          105954949,
+          "7542"
+        ],
+        [
+          105954951,
+          "488B7F18"
+        ],
+        [
+          105954955,
+          "33D2"
+        ],
+        [
+          105954957,
+          "488BCB"
+        ],
+        [
+          105954960,
+          "E8E7130000"
+        ],
+        [
+          105954965,
+          "488B0DC49FB906"
+        ],
+        [
+          105954972,
+          "488BD8"
+        ],
+        [
+          105954975,
+          "E8FC75AFF9"
+        ],
+        [
+          105954980,
+          "488B0D9D4FB906"
+        ],
+        [
+          105954987,
+          "4C8BCB"
+        ],
+        [
+          105954990,
+          "488B15F3EE6B07"
+        ],
+        [
+          105954997,
+          "4C8BC7"
+        ],
+        [
+          105955000,
+          "48894C2420"
+        ],
+        [
+          105955005,
+          "B103"
+        ],
+        [
+          105955007,
+          "E880968B00"
+        ],
+        [
+          105955012,
+          "0F57C0"
+        ],
+        [
+          105955015,
+          "EB41"
+        ],
+        [
+          105955082,
+          "488B5C2450"
+        ],
+        [
+          105955087,
+          "0F28742430"
+        ],
+        [
+          105955092,
+          "4883C440"
+        ],
+        [
+          105955096,
+          "5F"
+        ],
+        [
+          105955097,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 105954816,
+          "endRva": 105955098,
+          "sha256": "9A9B89937A4793CA98B4DFB552219C5E29E3FFF4B0CF31E03D5C98FFEBA15470",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+        }
+      ],
+      "boundary": "Complete selected initialized/unpatched nonnull or concrete-Try matching branch from actual entry through RET."
+    },
+    "thunkDirect": {
+      "program": [
+        [
+          637296,
+          "48895C2408"
+        ],
+        [
+          637301,
+          "4889742418"
+        ],
+        [
+          637306,
+          "57"
+        ],
+        [
+          637307,
+          "4883EC30"
+        ],
+        [
+          637311,
+          "488B0A"
+        ],
+        [
+          637314,
+          "498BF1"
+        ],
+        [
+          637317,
+          "498BF8"
+        ],
+        [
+          637320,
+          "488BDA"
+        ],
+        [
+          637323,
+          "E80092F6FF"
+        ],
+        [
+          637328,
+          "488B03"
+        ],
+        [
+          637331,
+          "4C8B9080010000"
+        ],
+        [
+          637338,
+          "4C8B8888010000"
+        ],
+        [
+          637345,
+          "488D0548E50703"
+        ],
+        [
+          637352,
+          "4C3BD0"
+        ],
+        [
+          637355,
+          "0F853B1A2600"
+        ],
+        [
+          637361,
+          "488B0DD87BF50C"
+        ],
+        [
+          637368,
+          "83B9E000000000"
+        ],
+        [
+          637375,
+          "0F84CC000000"
+        ],
+        [
+          637381,
+          "488B81B8000000"
+        ],
+        [
+          637388,
+          "488B10"
+        ],
+        [
+          637391,
+          "4885D2"
+        ],
+        [
+          637394,
+          "0F8425010000"
+        ],
+        [
+          637400,
+          "817A18E9010000"
+        ],
+        [
+          637407,
+          "0F8FBB182600"
+        ],
+        [
+          637413,
+          "4885FF"
+        ],
+        [
+          637416,
+          "0F840F010000"
+        ],
+        [
+          637422,
+          "83B9E000000000"
+        ],
+        [
+          637429,
+          "0F57C0"
+        ],
+        [
+          637432,
+          "F20F11442448"
+        ],
+        [
+          637438,
+          "0F849E000000"
+        ],
+        [
+          637444,
+          "488B81B8000000"
+        ],
+        [
+          637451,
+          "488B10"
+        ],
+        [
+          637454,
+          "4885D2"
+        ],
+        [
+          637457,
+          "0F84E6000000"
+        ],
+        [
+          637463,
+          "817A18CE010000"
+        ],
+        [
+          637470,
+          "0F8FEB182600"
+        ],
+        [
+          637476,
+          "83B9E000000000"
+        ],
+        [
+          637483,
+          "0F8482000000"
+        ],
+        [
+          637489,
+          "488B81B8000000"
+        ],
+        [
+          637496,
+          "488B10"
+        ],
+        [
+          637499,
+          "4885D2"
+        ],
+        [
+          637502,
+          "0F84B9000000"
+        ],
+        [
+          637508,
+          "817A18C1010000"
+        ],
+        [
+          637515,
+          "0F8F29192600"
+        ],
+        [
+          637521,
+          "807B1000"
+        ],
+        [
+          637525,
+          "751E"
+        ],
+        [
+          637527,
+          "F30F104314"
+        ],
+        [
+          637532,
+          "B001"
+        ],
+        [
+          637534,
+          "0F5AC0"
+        ],
+        [
+          637537,
+          "F20F1106"
+        ],
+        [
+          637541,
+          "488B5C2440"
+        ],
+        [
+          637546,
+          "488B742450"
+        ],
+        [
+          637551,
+          "4883C430"
+        ],
+        [
+          637555,
+          "5F"
+        ],
+        [
+          637556,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 637296,
+          "endRva": 637699,
+          "sha256": "A66239F8E87451C960578CA8877584D9CD8F2E23AE0CD444176A342762DCEA16",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+        },
+        {
+          "startRva": 3134112,
+          "endRva": 3134462,
+          "sha256": "53E412BCE65FC154D4442F42EEE7422F7EE14BA51C6813D18F57DEB0860898EE",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+        }
+      ],
+      "boundary": "Complete selected initialized/unpatched nonnull or concrete-Try matching branch from actual entry through RET."
+    },
+    "thunkKeyed": {
+      "program": [
+        [
+          637296,
+          "48895C2408"
+        ],
+        [
+          637301,
+          "4889742418"
+        ],
+        [
+          637306,
+          "57"
+        ],
+        [
+          637307,
+          "4883EC30"
+        ],
+        [
+          637311,
+          "488B0A"
+        ],
+        [
+          637314,
+          "498BF1"
+        ],
+        [
+          637317,
+          "498BF8"
+        ],
+        [
+          637320,
+          "488BDA"
+        ],
+        [
+          637323,
+          "E80092F6FF"
+        ],
+        [
+          637328,
+          "488B03"
+        ],
+        [
+          637331,
+          "4C8B9080010000"
+        ],
+        [
+          637338,
+          "4C8B8888010000"
+        ],
+        [
+          637345,
+          "488D0548E50703"
+        ],
+        [
+          637352,
+          "4C3BD0"
+        ],
+        [
+          637355,
+          "0F853B1A2600"
+        ],
+        [
+          637361,
+          "488B0DD87BF50C"
+        ],
+        [
+          637368,
+          "83B9E000000000"
+        ],
+        [
+          637375,
+          "0F84CC000000"
+        ],
+        [
+          637381,
+          "488B81B8000000"
+        ],
+        [
+          637388,
+          "488B10"
+        ],
+        [
+          637391,
+          "4885D2"
+        ],
+        [
+          637394,
+          "0F8425010000"
+        ],
+        [
+          637400,
+          "817A18E9010000"
+        ],
+        [
+          637407,
+          "0F8FBB182600"
+        ],
+        [
+          637413,
+          "4885FF"
+        ],
+        [
+          637416,
+          "0F840F010000"
+        ],
+        [
+          637422,
+          "83B9E000000000"
+        ],
+        [
+          637429,
+          "0F57C0"
+        ],
+        [
+          637432,
+          "F20F11442448"
+        ],
+        [
+          637438,
+          "0F849E000000"
+        ],
+        [
+          637444,
+          "488B81B8000000"
+        ],
+        [
+          637451,
+          "488B10"
+        ],
+        [
+          637454,
+          "4885D2"
+        ],
+        [
+          637457,
+          "0F84E6000000"
+        ],
+        [
+          637463,
+          "817A18CE010000"
+        ],
+        [
+          637470,
+          "0F8FEB182600"
+        ],
+        [
+          637476,
+          "83B9E000000000"
+        ],
+        [
+          637483,
+          "0F8482000000"
+        ],
+        [
+          637489,
+          "488B81B8000000"
+        ],
+        [
+          637496,
+          "488B10"
+        ],
+        [
+          637499,
+          "4885D2"
+        ],
+        [
+          637502,
+          "0F84B9000000"
+        ],
+        [
+          637508,
+          "817A18C1010000"
+        ],
+        [
+          637515,
+          "0F8F29192600"
+        ],
+        [
+          637521,
+          "807B1000"
+        ],
+        [
+          637525,
+          "751E"
+        ],
+        [
+          637557,
+          "488B5318"
+        ],
+        [
+          637561,
+          "4C8D442448"
+        ],
+        [
+          637566,
+          "4533C9"
+        ],
+        [
+          637569,
+          "488BCF"
+        ],
+        [
+          637572,
+          "E897CDC602"
+        ],
+        [
+          637577,
+          "F20F10442448"
+        ],
+        [
+          637583,
+          "EBD0"
+        ],
+        [
+          637537,
+          "F20F1106"
+        ],
+        [
+          637541,
+          "488B5C2440"
+        ],
+        [
+          637546,
+          "488B742450"
+        ],
+        [
+          637551,
+          "4883C430"
+        ],
+        [
+          637555,
+          "5F"
+        ],
+        [
+          637556,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 637296,
+          "endRva": 637699,
+          "sha256": "A66239F8E87451C960578CA8877584D9CD8F2E23AE0CD444176A342762DCEA16",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+        },
+        {
+          "startRva": 3134112,
+          "endRva": 3134462,
+          "sha256": "53E412BCE65FC154D4442F42EEE7422F7EE14BA51C6813D18F57DEB0860898EE",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths checked separately."
+        }
+      ],
+      "boundary": "Complete selected initialized/unpatched nonnull or concrete-Try matching branch from actual entry through RET."
+    }
+  },
+  "trySlot": 4,
+  "dispatchLimits": [
+    489,
+    462,
+    449
+  ],
+  "globalCells": {
+    "publicInit": 233580810,
+    "loggerClass": 218783328,
+    "loggerContext": 218762824,
+    "loggerFormat": 230469032,
+    "dispatch": 218051984
+  },
+  "publicPatchIndex": 492,
+  "loggerContextUsage": {
+    "usageCellRva": 218762824,
+    "usageRawHex": "E32F12C000000000",
+    "methodSpecIndex": 595953,
+    "methodSpec": [
+      441501,
+      -1,
+      1120
+    ]
+  },
+  "loggerPhysicalRegistration": {
+    "methodSpecIndex": 506485,
+    "methodSpec": [
+      441501,
+      -1,
+      1088
+    ],
+    "registration": {
+      "tableIndex": 479341,
+      "methodSpecIndex": 506485,
+      "rawHex": "75BA0700DE4E070005220100FFFFFFFF",
+      "indices": [
+        478942,
+        74245,
+        -1
+      ]
+    },
+    "pointerRva": 115103044,
+    "methodDefinitionIndices": [
+      441501
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Actual public/dump/patch/Try identities, concrete metadata Try slot, complete owned windows and selected return programs; stored string/string logger MethodSpec lacks AOT row while actual target is registered object/object under same definition and reciprocal MVAR owners.",
+    "direct": "Selected scalar/Board/output origins, actual class function comparison, direct or keyed output/AL flow, home-space temporary and frame separation, missing dump/logger argument program and public Double returns.",
+    "conditional": "Initialized public flag, false patch, nonnull Board, raw slot function equal concrete Try, normal stored guards/managed loop, stable coherent fields/referents and valid isolated frames/home spaces, ordinary helpers/logger with compatible live context and completed SIMD.",
+    "unresolved": "Actual runtime function/value/list/state/context and logger effects, unequal virtual-function selection and other dispatches/initialization/failures, provider and complete recursive actions/roots."
+  }
+}

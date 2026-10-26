@@ -79,7 +79,7 @@ SPAWNER_WAVE_SCHEMA_MAPPING_ID = (
     "gameassembly-2026-07-23-memorypack-spawner-wave-group-v2"
 )
 SPAWNER_WAVE_RUNTIME_MAPPING_ID = (
-    "gameassembly-2026-07-23-cr-0x18b9217d0-spawner-wave-group-runtime-v2"
+    "levelscript-union-tags-spawner-wave-group-runtime-v2"
 )
 
 
@@ -907,14 +907,29 @@ def _exact_vector3(data: bytes, offset: int, field: str) -> tuple[list[float], i
 
 
 # ``SpawnerActionData`` layouts read here, with the member count each reads.
+# Every action opens with the ``SpawnerActionBase`` members ``actionId``,
+# ``defaultDisable`` and ``timestamp`` (``_read_action_base``).
 # Tags are resolved by type name per build; never write one here.
 _SPAWNER_ACTION_LAYOUTS = {
-    "SpawnerActions_SpawnMonsterFromTemplateV2": 12,
-    "SpawnerActions_Pause": 3,
-    "SpawnerActions_PlayAudio": 3,
-    "SpawnerActions_PreviewRoute": 7,
-    "SpawnerActions_RaiseEvent": 3,
+    "SpawnerActions_SpawnMonsterFromTemplateV2": 13,
+    "SpawnerActions_Pause": 4,
+    "SpawnerActions_PlayAudio": 4,
+    "SpawnerActions_PreviewRoute": 8,
+    "SpawnerActions_RaiseEvent": 4,
 }
+
+
+def _read_action_base(
+    data: bytes, offset: int, field: str
+) -> tuple[dict[str, Any], int]:
+    action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
+    default_disable, offset = _exact_bool(data, offset, f"{field}.defaultDisable")
+    timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+    return {
+        "actionId": action_id,
+        "defaultDisable": default_disable,
+        "timestamp": timestamp,
+    }, offset
 
 
 def _spawner_action_routes() -> dict[tuple[int, int], str]:
@@ -943,8 +958,7 @@ def _decode_current_spawner_action(
         raise SpawnerWaveDecodeError(f"{field}: tag {tag} member count changed")
     offset += 1
     if action == "SpawnerActions_SpawnMonsterFromTemplateV2":
-        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
-        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        base, offset = _read_action_base(data, offset, field)
         face_main, offset = _exact_bool(data, offset, f"{field}.faceMainCharacter")
         library_key, offset = _read_string(data, offset)
         position, offset = _exact_vector3(data, offset, f"{field}.position")
@@ -959,10 +973,9 @@ def _decode_current_spawner_action(
             "sourceOffset": start,
             "endOffset": offset,
             "unionTag": tag,
-            "memberCount": 12,
+            "memberCount": member_count,
             "concreteType": "SpawnerActions.SpawnMonsterFromTemplateV2",
-            "actionId": action_id,
-            "timestamp": timestamp,
+            **base,
             "faceMainCharacter": face_main,
             "libraryKey": library_key or "",
             "position": position,
@@ -975,36 +988,31 @@ def _decode_current_spawner_action(
             "startPointInvalid": start_invalid,
         }, offset
     if action == "SpawnerActions_Pause":
-        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
-        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        base, offset = _read_action_base(data, offset, field)
         string_value, offset = _read_string(data, offset)
         return {
             "sourceOffset": start,
             "endOffset": offset,
             "unionTag": tag,
-            "memberCount": 3,
+            "memberCount": member_count,
             "concreteType": "SpawnerActions.Pause",
-            "actionId": action_id,
-            "timestamp": timestamp,
+            **base,
             "pauseKey": string_value,
         }, offset
     if action == "SpawnerActions_PlayAudio":
-        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
-        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        base, offset = _read_action_base(data, offset, field)
         audio_id, offset = _read_string(data, offset)
         return {
             "sourceOffset": start,
             "endOffset": offset,
             "unionTag": tag,
-            "memberCount": 3,
+            "memberCount": member_count,
             "concreteType": "SpawnerActions.PlayAudio",
-            "actionId": action_id,
-            "timestamp": timestamp,
+            **base,
             "audioId": audio_id or "",
         }, offset
     if action == "SpawnerActions_PreviewRoute":
-        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
-        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        base, offset = _read_action_base(data, offset, field)
         duration, offset = _exact_f32(data, offset, f"{field}.duration")
         hide_full, offset = _exact_bool(data, offset, f"{field}.hideInFullPreview")
         position, offset = _exact_vector3(data, offset, f"{field}.position")
@@ -1014,10 +1022,9 @@ def _decode_current_spawner_action(
             "sourceOffset": start,
             "endOffset": offset,
             "unionTag": tag,
-            "memberCount": 7,
+            "memberCount": member_count,
             "concreteType": "SpawnerActions.PreviewRoute",
-            "actionId": action_id,
-            "timestamp": timestamp,
+            **base,
             "duration": duration,
             "hideInFullPreview": hide_full,
             "position": position,
@@ -1025,17 +1032,15 @@ def _decode_current_spawner_action(
             "startPointInvalid": start_invalid,
         }, offset
     if action == "SpawnerActions_RaiseEvent":
-        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
-        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        base, offset = _read_action_base(data, offset, field)
         key, offset = _read_string(data, offset)
         return {
             "sourceOffset": start,
             "endOffset": offset,
             "unionTag": tag,
-            "memberCount": 3,
+            "memberCount": member_count,
             "concreteType": "SpawnerActions.RaiseEvent",
-            "actionId": action_id,
-            "timestamp": timestamp,
+            **base,
             "key": key or "",
         }, offset
     raise SpawnerWaveDecodeError(f"{field}: unsupported union tag {tag}")

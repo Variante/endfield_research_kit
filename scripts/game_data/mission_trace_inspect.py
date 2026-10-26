@@ -3,6 +3,8 @@
 Run as ``python -m scripts.game_data.mission_trace_inspect --session PATH
 --output-dir reports/runtime_capture/inspection``. Optional ``--join-sources``
 adds explicit archived questDic-to-missionId assignments, never causal joins.
+Use ``--local-files`` for the refactored collector's path/size inventory. That
+mode writes ``analysis.json`` and never admits a legacy hashed collection.
 Package hashes authenticate consistency with its retained inventory, not its
 origin, native ABI, hook execution, or the correctness of server behavior.
 """
@@ -20,6 +22,7 @@ import struct
 from typing import Any
 
 from scripts.repo_paths import REPO_ROOT
+from .mission_trace_invocations import Invocations, InvocationError, PAIRED_ABI
 
 
 class InspectionError(ValueError):
@@ -34,7 +37,7 @@ class Limits:
     json_bytes: int = 32 * 1024**2
     journal_bytes: int = 8 * 1024**3
     rows: int = 1000000
-    input_line_bytes: int = 16 * 1024
+    input_line_bytes: int = 32 * 1024
     output_line_bytes: int = 64 * 1024
     output_bytes: int = 2 * 1024**3
     identifiers: int = 65536
@@ -151,6 +154,95 @@ def bound_object(artifacts: dict[str, dict[str, Any]], name: str, limits: Limits
     return value
 
 
+def snapshot_local_inventory(session: Path, limits: Limits) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Read the refactored path/size inventory; hashes describe this read only."""
+    inventory_path = safe_path(session, "collected/inventory.json")
+    inventory_bytes = read_bytes(inventory_path, limits.json_bytes)
+    inventory = parse_json(inventory_bytes, "collected/inventory.json")
+    require(isinstance(inventory, dict) and inventory.get("schema") == "endfieldCapture.inventory.v1",
+            "local-files: unsupported current collection inventory")
+    session_id = inventory.get("session")
+    require(isinstance(session_id, str) and 0 < len(session_id) <= 127, "local-files: invalid session identity")
+    rows = inventory.get("artifacts")
+    require(isinstance(rows, list) and 0 < len(rows) <= limits.artifacts and inventory.get("files") == len(rows),
+            "local-files: inventory count mismatch")
+    artifacts, targets, listed_bytes, total = {}, set(), 0, 0
+
+    def retain(name: str, expected_size: int | None = None) -> None:
+        nonlocal total
+        path = safe_path(session, name)
+        require(name not in artifacts and str(path).casefold() not in targets, f"local-files: duplicate artifact: {name}")
+        require(len(artifacts) < limits.artifacts, "local-files: artifact count exceeds budget")
+        before = path.stat()
+        size = integer(before.st_size, f"local file bytes: {name}", limits.artifact_bytes)
+        require(expected_size is None or size == expected_size,
+                f"local-files: size differs for {name}: expected {expected_size}, actual {size}")
+        total += size
+        require(total <= limits.package_bytes, "local-files: snapshot byte budget exceeded")
+        digest, length = hashlib.sha256(), 0
+        with path.open("rb") as source:
+            while block := source.read(1024 * 1024):
+                length += len(block)
+                require(length <= size, f"local-files: artifact grew: {name}")
+                digest.update(block)
+        after = path.stat()
+        require(length == size and (before.st_size, before.st_mtime_ns) == (after.st_size, after.st_mtime_ns),
+                f"local-files: artifact changed: {name}")
+        targets.add(str(path).casefold())
+        artifacts[name] = {"path": path, "bytes": size, "sha256": digest.hexdigest()}
+
+    for row in rows:
+        require(isinstance(row, dict) and set(row) == {"path", "bytes"}, "local-files: requires the current path/size inventory")
+        name = row.get("path")
+        require(isinstance(name, str) and not name.startswith(("private/", "collected/")),
+                "local-files: invalid public inventory path")
+        size = integer(row.get("bytes"), f"listed file bytes: {name}", limits.artifact_bytes)
+        retain(name, size)
+        listed_bytes += size
+    require(inventory.get("bytes") == listed_bytes,
+            f"local-files: inventory total differs: expected {inventory.get('bytes')}, actual {listed_bytes}")
+    for name in ("private/mission-trace-build-manifest.json", "private/mission-trace.activation",
+                 "private/runtime.conf", "private/EndfieldCapture.dll"):
+        retain(name)
+    require(read_bytes(inventory_path, limits.json_bytes) == inventory_bytes, "local-files: inventory changed during reading")
+    return artifacts, {"artifacts": len(artifacts), "bytes": total, "sessionId": session_id,
+        "inventorySha256": hashlib.sha256(inventory_bytes).hexdigest(),
+        "verifiedAgainstRetainedInventory": False, "inventoryOriginAuthenticated": False,
+        "listedPathSizesMatched": True, "hashSource": "offline local-file snapshot, not producer collection hashes",
+        "snapshotInputs": [{"path": name, "bytes": row["bytes"], "sha256": row["sha256"]}
+                           for name, row in sorted(artifacts.items())]}
+
+
+def local_source_bindings(artifacts: dict[str, dict[str, Any]], limits: Limits, join_sources: bool):
+    names = sorted(name for name in artifacts if name.startswith("source-files/"))
+    result = {"status": "selectedExportContext", "nativeValidated": False, "files": len(names),
+              "gaps": ["Selected pre-run export copies are source context; omitted sources and export/live-build joins remain unresolved."]}
+    assignments = {}
+    memberships = 0
+    if join_sources:
+        prefix = "source-files/export_full/game/Json/MissionRuntimeAsset/"
+        for name in names:
+            if not name.startswith(prefix) or not name.endswith(".json") or name.endswith("_meta.json"):
+                continue
+            data = bound_object(artifacts, name, limits)
+            mission = data.get("missionId")
+            quests = data.get("questDic")
+            require(isinstance(mission, str) and re.fullmatch(r"[a-z0-9_]{1,80}", mission) and
+                    name == prefix + mission + ".json" and isinstance(quests, dict) and len(quests) <= 4096,
+                    f"local-files: invalid source mission membership: {name}")
+            for quest, value in quests.items():
+                require(isinstance(quest, str) and 0 < len(quest) <= 256 and
+                        isinstance(value, dict) and value.get("questId") == quest,
+                        f"local-files: invalid source quest membership: {name}")
+                memberships += 1
+                require(memberships <= limits.identifiers,
+                        f"local-files: source membership count exceeds budget: {name}")
+                assignments.setdefault(quest, []).append({"missionId": mission, "source": name,
+                    "sourceSha256": artifacts[name]["sha256"], "sourcePath": f"questDic[{quest}]",
+                    "boundary": "Stored membership in a selected pre-run export copy, not live instance construction."})
+    return result, assignments
+
+
 def bound_bytes(artifacts: dict[str, dict[str, Any]], name: str, limit: int) -> bytes:
     require(name in artifacts, f"required artifact is not collection-bound: {name}")
     row = artifacts[name]
@@ -162,7 +254,7 @@ def bound_bytes(artifacts: dict[str, dict[str, Any]], name: str, limit: int) -> 
 
 def program(hook: dict[str, Any]) -> list[list[int]]:
     text = hook.get("readProgram")
-    require(isinstance(text, str) and len(text) <= 512 and (not text or text.endswith(";")), "invalid readProgram")
+    require(isinstance(text, str) and len(text) <= 1536 and (not text or text.endswith(";")), "invalid readProgram")
     result = []
     for item in text.rstrip(";").split(";") if text else []:
         require(re.fullmatch(r"\d+,\d+,\d+,\d+,\d+", item) is not None, "invalid readProgram row")
@@ -172,7 +264,7 @@ def program(hook: dict[str, Any]) -> list[list[int]]:
         require(chain0 != 4097 or chain1 == 4097, "readProgram second chain lacks first chain")
         require(kind != 4 or (offset == 0 and chain0 == chain1 == 4097), "scalar readProgram has memory path")
         result.append([arg, kind, offset, chain0, chain1])
-    require(len(result) <= 8, "readProgram field count exceeded")
+    require(len(result) <= 24, "readProgram field count exceeded")
     return result
 
 
@@ -181,13 +273,21 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
     summary = bound_object(artifacts, "mission-trace/summary.json", limits)
     session = bound_object(artifacts, "session.json", limits)
     require(profile.get("schema") == "endfieldCapture.missionTraceBuild.v1", "unsupported retained profile schema")
-    require(summary.get("schema") in ("endfieldCapture.missionTraceSummary.v1", "endfieldCapture.missionTraceSummary.v2"),
+    require(summary.get("schema") in ("endfieldCapture.missionTraceSummary.v1", "endfieldCapture.missionTraceSummary.v2", "endfieldCapture.missionTraceSummary.v3"),
             "unsupported provider summary schema")
     require(session.get("schema") == "endfieldCapture.session.v1" and profile.get("profile") == "mission-trace" and
             session.get("providers") == 128 and session.get("gameBuild") == profile.get("gameBuild"), "session/profile binding mismatch")
     hooks, summary_hooks = profile.get("missionTraceHooks"), summary.get("hooks")
     require(isinstance(hooks, list) and 0 < len(hooks) <= 96 and isinstance(summary_hooks, list), "hook count bounds exceeded")
     require(len(hooks) == len(summary_hooks) == summary.get("hookCount"), "profile/summary hook count mismatch")
+    paired_profile = any(PAIRED_ABI.fullmatch(h.get('abiId', '')) for h in hooks if isinstance(h, dict))
+    if paired_profile:
+        require(summary.get('schema') == 'endfieldCapture.missionTraceSummary.v3' and summary.get('entryOnly') is False
+                and summary.get('returnValuesObserved') is True and summary.get('pairedDepthLimit') == 64,
+                'paired profile/receipt phase policy mismatch')
+        integer(summary.get('pairingFailures'), 'pairing failures')
+    else:
+        require(summary.get('schema') != 'endfieldCapture.missionTraceSummary.v3', 'paired receipt without paired hooks')
     files = profile.get("files", {})
     require(isinstance(files, dict) and all(isinstance(files.get(key), dict) for key in ("gameAssembly", "metadata")),
             "invalid profile native inputs")
@@ -197,7 +297,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
         require(isinstance(digest, str) and re.fullmatch(r"[0-9a-f]{64}", digest) is not None and summary.get(receipt) == digest,
                 f"profile/summary native input binding mismatch: {key}")
         hashes.append(digest)
-    activation = ("schema=missionRuntimeTrace.activation.v1\ngame_assembly_sha256=" + hashes[0] +
+    activation = ("schema=missionRuntimeTrace.activation." + ("v2" if any(h.get("captureCallerReturnRvas") for h in hooks) else "v1") + "\ngame_assembly_sha256=" + hashes[0] +
                   "\nmetadata_sha256=" + hashes[1] + "\nhook_count=" + str(len(hooks)) + "\n")
     names, rvas = set(), set()
     for index, (hook, receipt) in enumerate(zip(hooks, summary_hooks)):
@@ -205,21 +305,116 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
         name = hook.get("name")
         require(isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9_.$<>+`-]{1,127}", name) is not None and name not in names, "invalid or repeated hook name")
         names.add(name)
+        if hook.get('declaringImage') is not None or hook.get('declaringImageProof') is not None:
+            owner=hook.get('declaringImageProof') or {}
+            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                    and isinstance(hook.get('declaringImage'),str)
+                    and owner.get('imageName')==hook['declaringImage']
+                    and re.fullmatch(r'[A-Za-z0-9_.-]{1,128}\.dll',hook['declaringImage']) is not None
+                    and owner.get('methodIndex')==hook.get('methodIndex')
+                    and isinstance(hook.get('symbol'),str)
+                    and hook.get('symbol')==owner.get('type','')+'.'+hook.get('symbol','').rsplit('.',1)[-1]
+                    and all(type(owner.get(k)) is int and owner[k]>=0 for k in ('imageIndex','typeDefinitionIndex','methodIndex','methodStart','methodCount'))
+                    and owner['methodStart']<=owner['methodIndex']<owner['methodStart']+owner['methodCount']
+                    and hook.get('receiverIdentity') is None
+                    and all(p.get('type') in {'bool','int','uint','long','ulong'} for p in hook.get('parameters',[]))
+                    and all(not f.get('fieldPath') and f.get('argumentName')!='this' for f in hook.get('fields',[])),
+                    'invalid declaring image/method owner binding')
         try:
             rva = int(hook["rva"], 16) if isinstance(hook.get("rva"), str) else integer(hook.get("rva"), "hook RVA")
         except (ValueError, KeyError) as exc:
             raise InspectionError("invalid hook RVA") from exc
         require(0 < rva < 1 << 32 and rva not in rvas, "invalid or repeated hook RVA")
         rvas.add(rva)
-        require(hook.get("module") == "GameAssembly.dll" and hook.get("abiId") == "win64.transparent_entry_snapshot.v1", "unsupported hook ABI/module")
+        paired = PAIRED_ABI.fullmatch(hook.get('abiId', ''))
+        require(hook.get("module") == "GameAssembly.dll" and (hook.get("abiId") == "win64.transparent_entry_snapshot.v1" or paired), "unsupported hook ABI/module")
+        if paired:
+            proof = hook.get('pairedAbiProof', {})
+            scoped=hook['abiId'].startswith('win64.scoped_')
+            require((hook.get('captureScope')=='paired-ancestor') == scoped
+                    and (not scoped or profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}),
+                    'paired scope/ABI binding differs')
+            if paired[1]=='int':
+                enum=proof.get('enumReturn',{});raw=enum.get('nativeTypeRecordHex','')
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                        and isinstance(raw,str) and re.fullmatch('[0-9a-f]{32}',raw) is not None,
+                        'invalid enum return native record')
+                native=bytes.fromhex(raw)
+                require(proof.get('returnStorage')=='int' and enum.get('storageType')=='int'
+                        and enum.get('type')==hook.get('returnType')==proof.get('returnType')
+                        and enum.get('bits')==32 and enum.get('register')=='eax'
+                        and native[10]==17 and native[11]&0x7f==0
+                        and int.from_bytes(native[:8],'little')==enum.get('typeDefinitionIndex')
+                        and enum.get('type') in profile.get('enumDefinitions',{}), 'invalid Int32 enum return ABI')
+                definition = profile['enumDefinitions'][enum['type']]
+                require(isinstance(definition, dict) and definition.get('storageType') == 'int'
+                        and definition.get('valueBits') == 32 and definition.get('signed') is True
+                        and isinstance(definition.get('members'), list) and 0 < len(definition['members']) <= 4096
+                        and all(isinstance(m, dict) and isinstance(m.get('name'), str) and 0 < len(m['name']) <= 256
+                                and type(m.get('value')) is int and -2**31 <= m['value'] < 2**31
+                                for m in definition['members']), 'invalid Int32 enum return definition')
+            mixed = hook.get('abiId') == 'win64.paired_double_slot2_void_4.v1'
+            if mixed:
+                scalar_inputs=proof.get('scalarInputs',[])
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                        and hook.get('returnType') == 'void' and len(scalar_inputs)==1
+                        and hook.get('receiverIdentity') is not None
+                        and [p.get('type') for p in hook.get('parameters',[])] == ['string','double'],
+                        'invalid mixed scalar input signature')
+                input_proof=scalar_inputs[0]
+                require(input_proof.get('slot') == 2 and input_proof.get('register') == 'xmm2'
+                        and input_proof.get('mode') == 'scalarRegister' and input_proof.get('type') == 'double'
+                        and scalar_type_record(input_proof,'double',byref=False),
+                        'invalid mixed scalar input native type')
+            else:
+                require(not proof.get('scalarInputs'),'scalar inputs require typed mixed ABI')
+            if int(paired[2]) == 5:
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'},
+                        'fifth paired GP slot requires recipe v10')
+            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v8', 'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'} and hook.get('observationMode') == 'paired'
+                    and proof.get('argumentSlots') == int(paired[2]) and proof.get('includesMethodInfo') is True
+                    and (proof.get('returnType') == paired[1] and hook.get('returnType') == paired[1]
+                         or paired[1]=='int' and proof.get('returnStorage')=='int')
+                    and len(hook.get('parameters', [])) + int(hook.get('receiverIdentity') is not None) + 1 == int(paired[2]),
+                    'invalid paired ABI provenance')
+        if paired and paired[1] in {'float', 'double'}:
+            scalar = proof.get('scalarReturn', {})
+            bits = 32 if paired[1] == 'float' else 64
+            require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                    and scalar.get('type') == paired[1] and scalar.get('bits') == bits
+                    and scalar.get('register') == 'xmm0' and scalar.get('representation') == 'rawIeee754Bits',
+                    'invalid floating return provenance')
+            require(scalar_type_record(scalar, paired[1], byref=False), 'invalid floating return type record')
         expected = hook.get("expectedBytes")
         require(isinstance(expected, str) and re.fullmatch(r"(?:[0-9a-f]{2}){16,256}", expected) is not None, "invalid native prefix")
         reads = program(hook)
         fields = hook.get("fields")
         require(isinstance(fields, list) and len(fields) == len(reads), "retained typed field metadata missing")
+        opaque = hook.get('pairedAbiProof', {}).get('opaqueByRefArguments', [])
+        require(isinstance(opaque, list) and len(opaque) <= len(hook.get('parameters', [])),
+                'opaque byref argument bounds differ')
+        opaque_names = set()
+        for witness in opaque:
+            require(isinstance(witness, dict), 'invalid opaque byref witness')
+            argument = witness.get('argument'); raw = witness.get('nativeTypeRecordHex', '')
+            matches = [(n, p) for n, p in enumerate(hook.get('parameters', [])) if p.get('name') == argument]
+            require(paired and profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                    and isinstance(argument, str) and argument not in opaque_names and len(matches) == 1
+                    and isinstance(raw, str) and re.fullmatch('[0-9a-f]{32}', raw) is not None,
+                    'invalid opaque byref parameter binding')
+            opaque_names.add(argument)
+            n, parameter = matches[0]; native = bytes.fromhex(raw)
+            slot = n + int(hook.get('receiverIdentity') is not None)
+            require(witness.get('type') == parameter.get('type') and witness.get('mode') == 'opaqueValueByRef'
+                    and witness.get('bytes') == 8 and witness.get('byref') is True
+                    and witness.get('pointeeRead') is False and native[10] == 17 and native[11] & 0x7f == 0x20
+                    and int.from_bytes(native[:8], 'little') == witness.get('typeDefinitionIndex')
+                    and type(witness.get('nativeTypeIndex')) is int and witness['nativeTypeIndex'] >= 0
+                    and not any(read[0] == slot for read in reads),
+                    'opaque byref must forward a declared value pointer without reads')
         if "anonymousEntryProof" in hook or name == "buff.AbilityActionData.DispatchAssignData":
             proof, caller = hook.get("anonymousEntryProof"), hook.get("sourceCaller")
-            require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7"}
+            require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7", "endfield.mission-trace-capture-recipe.v8", "endfield.mission-trace-capture-recipe.v9", "endfield.mission-trace-capture-recipe.v10", "endfield.mission-trace-capture-recipe.v11", "endfield.mission-trace-capture-recipe.v12", "endfield.mission-trace-capture-recipe.v13", "endfield.mission-trace-capture-recipe.v14"}
                     and isinstance(proof, dict) and isinstance(caller, dict)
                     and all(isinstance(field, dict) for field in fields)
                     and isinstance(caller.get("returnType"), str)
@@ -258,17 +453,123 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             representation = field.get("valueRepresentation")
             require(representation in (None, "referenceIdentity"), "unsupported value representation")
             if representation == "referenceIdentity":
-                require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v4", "endfield.mission-trace-capture-recipe.v5", "endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7"}
+                require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v4", "endfield.mission-trace-capture-recipe.v5", "endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7", "endfield.mission-trace-capture-recipe.v8", "endfield.mission-trace-capture-recipe.v9", "endfield.mission-trace-capture-recipe.v10", "endfield.mission-trace-capture-recipe.v11", "endfield.mission-trace-capture-recipe.v12", "endfield.mission-trace-capture-recipe.v13", "endfield.mission-trace-capture-recipe.v14"}
                         and field.get("valueBits") == 64 and field.get("kind") in (1, 4)
                         and field.get("storageType") == "ulong" and field.get("signed") is False,
                         "invalid reference identity binding")
+            argument_representation = field.get('argumentRepresentation') or {}
+            if argument_representation.get('mode') == 'scalarRegister':
+                witness=argument_representation.get('nativeArgumentProof',{})
+                require(paired and mixed and witness==input_proof
+                        and field.get('argumentName') == hook['parameters'][1]['name'] == witness.get('argument')
+                        and field.get('arg') == 2 and field.get('kind') == 4 and field.get('type') == 'double'
+                        and field.get('valueBits') == 64 and field.get('offset') == 0
+                        and field.get('chain0') == field.get('chain1') == 4097 and not field.get('fieldPath')
+                        and field.get('observation') == 'argument-register-bits',
+                        'invalid mixed scalar field binding')
+            if argument_representation.get('mode') == 'scalarByRef':
+                scalar_name = field['type']; bits = {'bool': 8, 'float': 32, 'double': 64}.get(scalar_name)
+                witness = argument_representation.get('nativeArgumentProof') or {}
+                parameters = hook.get('parameters') or []
+                param = [n for n,p in enumerate(parameters) if p.get('name') == field.get('argumentName') and p.get('type') == scalar_name]
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v9', 'endfield.mission-trace-capture-recipe.v10', 'endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                        and paired and scalar_name in {'bool','float','double'} and len(param) == 1
+                        and field.get('arg') == param[0] + int(hook.get('receiverIdentity') is not None)
+                        and field.get('kind') == {'bool': 5, 'float': 2, 'double': 1}.get(scalar_name) and field.get('valueBits') == bits
+                        and field.get('offset') == 0 and field.get('chain0') == field.get('chain1') == 4097
+                        and not field.get('fieldPath') and field.get('observation') == 'argument-pointee'
+                        and witness.get('type') == scalar_name and witness.get('bytes') == bits // 8
+                        and witness.get('byref') is True and scalar_type_record(witness, scalar_name, byref=True),
+                        'invalid scalar byref argument provenance')
             path = field.get("fieldPath", [])
             require(isinstance(path, list) and len(path) <= 8 and all(isinstance(part, dict) and
                     isinstance(part.get("field"), str) and len(part["field"]) <= 512 for part in path), "invalid typed field path")
+        if paired:
+            receiver = proof.get('unboxedReceiver')
+            if receiver is not None:
+                identity = hook.get('receiverIdentity') or {}
+                size = receiver.get('unboxedBytes') if isinstance(receiver, dict) else None
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                        and isinstance(receiver, dict) and type(size) is int and 1 <= size <= 4096
+                        and receiver.get('argument') == 'this' and receiver.get('type') == identity.get('type')
+                        and receiver.get('methodIndex') == hook.get('methodIndex')
+                        and type(receiver.get('typeDefinitionIndex')) is int and receiver['typeDefinitionIndex'] >= 0
+                        and receiver.get('mode') == 'indirectValue' and receiver.get('boxedHeaderBytes') == 16
+                        and receiver.get('passing') == proof.get('receiverPassing') == 'normalMethodUnboxedThisPointer'
+                        and identity.get('arg') == 0, 'invalid unboxed value receiver proof')
+            for field in fields:
+                if (proof.get('receiverPassing') == 'normalMethodUnboxedThisPointer'
+                        and field.get('arg') == 0 and field.get('fieldPath')
+                        and profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}):
+                    representation = field.get('argumentRepresentation') or {}
+                    cell = field['fieldPath'][0]; offset = cell.get('offset'); width = cell.get('storageBytes')
+                    require(receiver is not None and field.get('argumentName') == 'this'
+                            and representation.get('mode') == 'indirectValue' and representation.get('bytes') == size
+                            and representation.get('nativeArgumentProof') == receiver
+                            and type(offset) is int and type(width) is int and 0 <= offset and width > 0
+                            and offset + width <= size and cell.get('boxedOffset') == offset + 16,
+                            'normal value receiver field lacks unboxed layout binding')
+            indirect = proof.get('indirectAggregateArguments', [])
+            require(isinstance(indirect,list) and len(indirect) <= 4, 'invalid indirect aggregate proof list')
+            names=set()
+            for aggregate in indirect:
+                raw=aggregate.get('nativeTypeRecordHex','')
+                require(profile.get('recipeSchema') in {'endfield.mission-trace-capture-recipe.v10','endfield.mission-trace-capture-recipe.v11','endfield.mission-trace-capture-recipe.v12','endfield.mission-trace-capture-recipe.v13','endfield.mission-trace-capture-recipe.v14'}
+                        and isinstance(raw,str) and re.fullmatch('[0-9a-f]{32}',raw) is not None,
+                        'invalid indirect aggregate type record')
+                record=bytes.fromhex(raw);size=aggregate.get('unboxedBytes');argument=aggregate.get('argument')
+                require(aggregate.get('mode') == 'indirectValue' and type(size) is int
+                        and 1 <= size <= 4096 and size not in {1,2,4,8}
+                        and record[10] == 0x11 and record[11] & 0x7f in {0,0x20}
+                        and aggregate.get('byref') is bool(record[11] & 0x20)
+                        and isinstance(argument,str) and argument not in names,
+                        'invalid indirect aggregate ABI proof')
+                names.add(argument)
+                require(any(p.get('name') == argument and p.get('type') == aggregate.get('type')
+                            for p in hook.get('parameters',[])) and any(
+                        f.get('argumentName') == argument and f.get('fieldPath')
+                        and (f.get('argumentRepresentation') or {}).get('mode') == 'indirectValue'
+                        and (f.get('argumentRepresentation') or {}).get('bytes') == size for f in fields),
+                        'indirect aggregate field/parameter binding differs')
+            for field in fields:
+                if (field.get('argumentRepresentation') or {}).get('mode') == 'indirectValue':
+                    require(field.get('argumentName') in names or
+                            (field.get('argumentRepresentation') or {}).get('nativeArgumentProof') is not None,
+                            'paired indirect field lacks aggregate or native argument proof')
+        if paired:
+            require(all(p.get('type') not in {'float','double'} or any(
+                        f.get('argumentName') == p.get('name') and f.get('type') == p.get('type')
+                        and (f.get('argumentRepresentation') or {}).get('mode') in {'scalarByRef','scalarRegister'} for f in fields)
+                        for p in hook.get('parameters', [])), 'paired observer has unproved XMM/byref argument')
         require(receipt.get("index") == index and receipt.get("name") == name and receipt.get("rva") == rva and receipt.get("reads") == reads,
                 "profile/summary hook binding mismatch")
         integer(receipt.get("calls"), "hook calls")
         activation += f"hook={name}|{rva:x}|{hook['abiId']}|{expected}|{hook['readProgram']}\n"
+    by_name={h['name']:h for h in hooks}
+    for index,hook in enumerate(hooks):
+        scope=hook.get('captureCallerReturnRvas');proofs=hook.get('captureCallerProofs')
+        if scope is None and proofs is None:continue
+        require(profile.get('recipeSchema')=='endfield.mission-trace-capture-recipe.v14'
+                and hook.get('captureScope')=='paired-ancestor' and isinstance(scope,str)
+                and isinstance(proofs,list) and 1<=len(proofs)<=32, 'invalid caller scope shape')
+        returns=[]
+        for proof in proofs:
+            require(isinstance(proof,dict), 'invalid caller scope proof')
+            caller=by_name.get(proof.get('callerHook'));encoded=proof.get('callBytes','')
+            require(caller is not None and caller is not hook and caller.get('observationMode')=='paired'
+                    and proof.get('callerMethodIndex')==caller.get('methodIndex')
+                    and proof.get('callerBodySha256')==caller.get('bodySha256')
+                    and re.fullmatch('e8[0-9a-f]{8}',encoded) is not None
+                    and type(proof.get('callRva')) is int and type(proof.get('returnRva')) is int
+                    and int(caller['rva'],16)<=proof['callRva']
+                    and proof['returnRva']==proof['callRva']+5<=int(caller['rva'],16)+caller['bodyBytes']
+                    and proof.get('targetRva')==int(hook['rva'],16)
+                    and proof['returnRva']+int.from_bytes(bytes.fromhex(encoded)[1:],'little',signed=True)==proof['targetRva'],
+                    'invalid caller scope direct-call binding')
+            returns.append(proof['returnRva'])
+        require(returns==sorted(set(returns)) and scope==','.join(f'{r:x}' for r in returns),
+                'caller scope list/proof differs')
+        activation+=f"caller={index}|{scope}\n"
     activation_name = "private/mission-trace.activation"
     require(activation_name in artifacts and bound_bytes(artifacts, activation_name, 128 * 1024) == activation.encode("ascii"),
             "activation/profile binding mismatch")
@@ -294,6 +595,14 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
     return profile, summary, hooks
 
 
+def scalar_type_record(witness, name, *, byref):
+    raw = witness.get('nativeTypeRecordHex')
+    if not isinstance(raw, str) or re.fullmatch('[0-9a-fA-F]{32}', raw) is None:
+        return False
+    record = bytes.fromhex(raw)
+    return name in {'bool','float','double'} and record[10] == {'bool': 2, 'float': 12, 'double': 13}[name] and record[11] & 0x7f == (0x20 if byref else 0)
+
+
 PRIMITIVES = {"bool": (8, False), "byte": (8, False), "sbyte": (8, True), "short": (16, True),
               "ushort": (16, False), "int": (32, True), "uint": (32, False), "long": (64, True), "ulong": (64, False)}
 
@@ -314,7 +623,8 @@ def decode_field(field: dict[str, Any], observed: dict[str, Any], enums: dict[st
         if key in field:
             decoded[key] = field[key]
     if state == 4:
-        require(raw == 0 and "text" not in observed and (kind == 3 or field["chain0"] != 4097), "invalid observed null")
+        require(raw == 0 and "text" not in observed and (kind == 3 or field["chain0"] != 4097 or
+                kind in (1, 2, 5) and field['offset'] > 0 and bool(field.get('fieldPath'))), "invalid observed null")
         decoded.update(value=None, interpretation="Observed null string or absent carrier; ownership remains unresolved.")
         return decoded
     if kind == 3:
@@ -342,10 +652,13 @@ def decode_field(field: dict[str, Any], observed: dict[str, Any], enums: dict[st
     require(bits in (8, 16, 32, 64), "unsupported scalar width")
     masked = raw & ((1 << bits) - 1)
     decoded.update(valueBits=bits, maskedUnsigned=masked)
-    if name == "float":
-        if kind == 2 and bits == 32:
-            value = struct.unpack("<f", masked.to_bytes(4, "little"))[0]
-            decoded.update(value=value if math.isfinite(value) else None, floatBits=f"0x{masked:08x}",
+    if name in {"float", "double"}:
+        register_input = (kind==4 and name=='double' and bits==64
+            and (field.get('argumentRepresentation') or {}).get('mode') == 'scalarRegister'
+            and scalar_type_record((field.get('argumentRepresentation') or {}).get('nativeArgumentProof',{}),'double',byref=False))
+        if register_input or (kind, bits) == ((2, 32) if name == "float" else (1, 64)):
+            value = struct.unpack("<f" if bits == 32 else "<d", masked.to_bytes(bits // 8, "little"))[0]
+            decoded.update(value=value if math.isfinite(value) else None, floatBits=f"0x{masked:0{bits // 4}x}",
                            floatClass="finite" if math.isfinite(value) else ("nan" if math.isnan(value) else "infinity"))
         else:
             decoded.update(value=None, interpretation="Unsupported float carrier; GP values are not XMM arguments.")
@@ -471,7 +784,8 @@ def strict_enable_history_consistent(summary: dict[str, Any], hooks: int) -> boo
             and strict_receipt_consistent(history[-1], hooks))
 
 
-def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = False, limits: Limits = Limits()) -> dict[str, Any]:
+def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = False,
+                    local_files: bool = False, limits: Limits = Limits()) -> dict[str, Any]:
     session, output_dir = Path(session).resolve(strict=True), Path(output_dir).resolve()
     require(session.is_dir(), "session is not a directory")
     require(any(output_dir.is_relative_to((REPO_ROOT / folder).resolve()) for folder in ("reports", "scratch", "tmp")),
@@ -479,19 +793,26 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
     require(not output_dir.is_relative_to(session) and not session.is_relative_to(output_dir), "output must be outside original package")
     require(not output_dir.exists() or (output_dir.is_dir() and not any(output_dir.iterdir())), "output directory must be new or empty")
     output_dir.mkdir(parents=True, exist_ok=True)
-    report: dict[str, Any] = {"schema": "endfield.mission-trace-inspection.v1", "status": "failed", "session": str(session),
+    report: dict[str, Any] = {"schema": "endfield.mission-trace-analysis.v1" if local_files else "endfield.mission-trace-inspection.v1", "status": "failed", "session": str(session),
                              "budgets": asdict(limits), "nativeValidationReproved": False, "strictTransitionsReexecuted": False,
                              "boundary": "Entry observations and explicit retained metadata only; no success/return, causal ownership, file execution order, or server criteria inferred.",
                              "gaps": [], "decodedRows": 0}
     partial = output_dir / "decoded.events.partial.jsonl"
+    report_name = "analysis.json" if local_files else "inspection.json"
+    if local_files:
+        report["legacyCaptureAdmission"] = False
+        report["boundary"] = "Offline consistency of current raw files, declared fields and explicit synchronous pairs; no producer hash authentication, server policy or omitted-source ownership."
     try:
-        artifacts, report["inventory"] = verify_inventory(session, limits)
+        artifacts, report["inventory"] = (snapshot_local_inventory if local_files else verify_inventory)(session, limits)
         retained_session = bound_object(artifacts, "session.json", limits)
         require(retained_session.get("sessionId") == report["inventory"]["sessionId"], "collection/session identity mismatch")
         profile, summary, hooks = bindings(artifacts, limits)
+        if summary.get('schema') == 'endfieldCapture.missionTraceSummary.v3' and not local_files:
+            report['schema'] = 'endfield.mission-trace-inspection.v2'
         report["profileSha256"] = artifacts["private/mission-trace-build-manifest.json"]["sha256"]
         report["providerSummarySha256"] = artifacts["mission-trace/summary.json"]["sha256"]
-        report["sources"], assignments = source_bindings(session, artifacts, limits, join_sources)
+        report["sources"], assignments = (local_source_bindings(artifacts, limits, join_sources) if local_files
+                                          else source_bindings(session, artifacts, limits, join_sources))
         coverage_gaps = profile.get("coverageGaps", [])
         require(isinstance(coverage_gaps, list) and len(coverage_gaps) <= 256 and
                 all(isinstance(gap, str) and len(gap) <= 2048 for gap in coverage_gaps), "invalid retained profile coverage gaps")
@@ -522,6 +843,8 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
         require(end_qpc >= start_qpc and end_tick >= start_tick, "invalid receipt clock bracket")
         base, image_size = integer(summary.get("moduleBase"), "moduleBase"), integer(summary.get("moduleImageSize"), "moduleImageSize", 1 << 32)
         calls, states, threads, sequences = Counter(), Counter(), Counter(), set()
+        invocations = Invocations()
+        paired_profile = summary.get('schema') == 'endfieldCapture.missionTraceSummary.v3'
         identifiers: dict[str, Counter[str]] = {"missionId": Counter(), "questId": Counter(), "parentQuestId": Counter()}
         byte_count, input_bytes, qpc_decreases, previous_qpc = 0, 0, 0, None
         journal_digest = hashlib.sha256()
@@ -534,7 +857,8 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                 require(len(line) <= limits.input_line_bytes and line.endswith(b"\n"), "journal line is oversized or unterminated")
                 require(report["decodedRows"] < limits.rows, "journal row budget exceeded")
                 row = parse_json(line, "journal row")
-                require(isinstance(row, dict) and row.get("schema") == "endfieldCapture.missionTraceEntry.v1", "unsupported event schema")
+                require(isinstance(row, dict) and row.get("schema") == ('endfieldCapture.missionTraceEntry.v2' if paired_profile
+                        else 'endfieldCapture.missionTraceEntry.v1'), "unsupported event schema")
                 index = integer(row.get("hookIndex"), "hook index", len(hooks) - 1)
                 hook = hooks[index]
                 report["failedEvent"] = {"journal": journal_name, "row": report["decodedRows"] + 1, "hook": hook["name"],
@@ -552,12 +876,24 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                 for value in args:
                     integer(value, "raw argument")
                 mask = integer(row.get("argsReadMask"), "argument read mask", 255)
-                require(mask in (15, 255), "unsupported argument read mask")
+                typed_abi = PAIRED_ABI.fullmatch(hook.get('abiId', ''))
+                if typed_abi:
+                    expected_mask = (1 << int(typed_abi[2])) - 1
+                    legacy_masks = (15, 255) if profile.get('recipeSchema') in {
+                        'endfield.mission-trace-capture-recipe.v8', 'endfield.mission-trace-capture-recipe.v9'} else ()
+                    require(mask == expected_mask or mask in legacy_masks,
+                            f"paired argument read mask differs: hook={hook['name']}, expected={expected_mask}, actual={mask}")
+                else:
+                    require(mask in (15, 255), "unsupported argument read mask")
                 return_address = integer(row.get("returnAddress"), "return address")
                 expected_caller = return_address - base if base <= return_address < base + image_size else 0
+                if hook.get('captureCallerReturnRvas'):
+                    require(expected_caller in {p['returnRva'] for p in hook['captureCallerProofs']},
+                        f"event outside declared caller scope: hook={hook['name']}, actualCallerRva={expected_caller}")
                 require(row.get("callerGameAssemblyRva") == expected_caller, "caller address/RVA mismatch")
                 fields = row.get("fields")
-                require(isinstance(fields, list) and len(fields) == len(hook["fields"]), "event field count mismatch")
+                paired_return = invocations.observe(row, hook) if paired_profile else None
+                require(isinstance(fields, list) and len(fields) == (0 if row.get('phase') == 'unwind' else len(hook["fields"])), "event field count mismatch")
                 decoded_fields = []
                 for descriptor, observed in zip(hook["fields"], fields):
                     require(isinstance(observed, dict), "invalid observed field")
@@ -575,10 +911,14 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                         if value["value"] not in identities:
                             require(sum(len(items) for items in identifiers.values()) < limits.identifiers, "observed identifier budget exceeded")
                         identities[value["value"]] += 1
-                decoded = {"schema": "endfield.mission-trace-decoded-entry.v1", "sequence": sequence, "qpc": qpc, "tickNs": tick,
+                decoded = {"schema": "endfield.mission-trace-decoded-entry.v2" if paired_profile else "endfield.mission-trace-decoded-entry.v1", "sequence": sequence, "qpc": qpc, "tickNs": tick,
                            "qpcOffset": qpc - start_qpc, "qpcFrequency": frequency, "secondsFromStart": (qpc - start_qpc) / frequency,
                            "threadId": thread, "hookIndex": index, "hook": hook["name"], "returnAddress": return_address,
                            "callerGameAssemblyRva": expected_caller, "argsReadMask": mask, "rawArgs": args, "fields": decoded_fields}
+                if paired_profile:
+                    decoded.update({k: row[k] for k in ('invocationId','parentInvocationId','depth','phase','returnValue')})
+                    if paired_return is not None:
+                        decoded['invocationReceipt'] = paired_return
                 receiver = hook.get("receiverIdentity")
                 if isinstance(receiver, dict):
                     argument = integer(receiver.get("arg"), "receiver argument", 7)
@@ -602,6 +942,10 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                 "journal changed before or during decoding")
         require(report["decodedRows"] == integer(summary.get("written"), "written rows") and
                 artifacts[journal_name]["bytes"] == integer(summary.get("bytesWritten"), "written bytes"), "journal/summary row or byte count mismatch")
+        if paired_profile:
+            report['invocations'] = invocations.finish(summary.get('complete') is True)
+            if summary.get('complete') is True:
+                require(summary.get('pairingFailures') == 0, 'complete receipt has invocation failures')
         accounted = all(summary.get(key) == 0 for key in ("dropped", "unrecorded", "undrainedRecordsAtStop")) and summary.get("finalCountersStable") is True
         for name, state in (("unreadableFields", "unreadable"), ("truncatedFields", "truncated"), ("nullFields", "observedNull")):
             count = integer(summary.get(name), name)
@@ -631,8 +975,9 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
             require(accounted and strict and summary.get("healthy") is True and summary.get("writeComplete") is True and
                     all(summary.get(key) is True for key in ("installed", "hooksEverEnabled", "stopped", "quiescent")) and
                     summary.get("disabledTrampolinesRetainedUntilProcessExit") is True and summary.get("missionFiltered") is False and not failure_markers and
-                    all(summary.get(key) is False for key in ("budgetExhausted", "durationBudgetExhausted", "strictPendingRecovery", "returnValuesObserved")) and
-                    summary.get("entryOnly") is True and summary.get("failureReason") == "none" and summary.get("firstFailure") is None and
+                    all(summary.get(key) is False for key in ("budgetExhausted", "durationBudgetExhausted", "strictPendingRecovery")) and
+                    summary.get('returnValuesObserved') is paired_profile and summary.get('entryOnly') is (not paired_profile)
+                    and summary.get("failureReason") == "none" and summary.get("firstFailure") is None and
                     summary.get("activeCallbacksAtStop") == 0 and summary.get("strictRecoveryAttempts") == 0 and summary.get("strictRecovery") is None and
                     report["decodedRows"] > 0 and integer(summary.get("startUtcFileTime100ns"), "UTC session anchor") > 0 and
                     states["unreadable"] == states["truncated"] == 0,
@@ -649,15 +994,17 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                                                  for identity, count in sorted(values.items())] for key, values in identifiers.items()})
         report["receiptFacts"]["allJournalRowsAccounted"] = accounted
         partial.rename(output_dir / "decoded.events.jsonl")
-    except (InspectionError, OSError, UnicodeError, RecursionError, KeyError, TypeError, AttributeError) as exc:
+    except (InspectionError, InvocationError, OSError, UnicodeError, RecursionError, KeyError, TypeError, AttributeError) as exc:
         report["status"] = "failed"
         report["failure"] = str(exc)[:2048]
         report["decodedOutput"] = "decoded.events.partial.jsonl" if partial.exists() else None
-        with (output_dir / "inspection.json").open("x", encoding="ascii") as target:
+        with (output_dir / report_name).open("x", encoding="ascii") as target:
             target.write(json.dumps(report, ensure_ascii=True, indent=2, allow_nan=False) + "\n")
         raise InspectionError(report["failure"]) from exc
     report["decodedOutput"] = "decoded.events.jsonl"
-    with (output_dir / "inspection.json").open("x", encoding="ascii") as target:
+    if local_files:
+        report["status"] = "analyzed"
+    with (output_dir / report_name).open("x", encoding="ascii") as target:
         target.write(json.dumps(report, ensure_ascii=True, indent=2, allow_nan=False) + "\n")
     return report
 
@@ -667,14 +1014,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--session", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--join-sources", action="store_true", help="Add explicit assignments from verified archived MissionRuntimeAsset questDic rows.")
+    parser.add_argument("--local-files", action="store_true", help="Analyze the current path/size collection and selected source-files context without legacy hash admission.")
     args = parser.parse_args(argv)
     try:
-        report = inspect_session(args.session, args.output_dir, join_sources=args.join_sources)
+        report = inspect_session(args.session, args.output_dir, join_sources=args.join_sources, local_files=args.local_files)
     except (InspectionError, OSError) as exc:
         print(f"[mission_trace_inspect] failed: {exc}")
         return 1
     observed = sum(row["status"] == "observed" for row in report["hookCoverage"])
-    print(f"[mission_trace_inspect] verified {report['inventory']['artifacts']} artifacts; decoded {report['decodedRows']} rows; "
+    verb = "locally analyzed" if args.local_files else "verified"
+    print(f"[mission_trace_inspect] {verb} {report['inventory']['artifacts']} artifacts; decoded {report['decodedRows']} rows; "
           f"observed {observed}/{len(report['hookCoverage'])} hooks; native execution is not re-validated")
     return 0
 

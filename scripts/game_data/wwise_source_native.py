@@ -386,20 +386,25 @@ def validate_source_bodies(contract: dict[str, Any], bodies: dict[int, bytes]) -
 def _collect_source_image(path: Path, mapper: Any) -> tuple[Any, dict[int, bytes], dict[int, tuple[int, int, int]]]:
     """One selected PE supplies code extents, hashes and unwind identities."""
     image = mapper.PeImage(path)
+    return _collect_opened_source_image(image, path.name)
+
+
+def _collect_opened_source_image(image: Any, label: str) -> tuple[Any, dict[int, bytes], dict[int, tuple[int, int, int]]]:
+    """Collect unwind identities on an already selected image without reopening it."""
     sections = [row for row in image.sections if row["name"] == ".pdata" and row["rawSize"]]
     if len(sections) != 1:
-        raise SourceContractError("exceptionDirectory", path.name, "one stored .pdata", len(sections))
+        raise SourceContractError("exceptionDirectory", label, "one stored .pdata", len(sections))
     section = sections[0]
     size = min(section["virtualSize"] or section["rawSize"], section["rawSize"])
     if not 12 <= size <= 4 * 1024 * 1024:
-        raise SourceContractError("exceptionDirectoryExtent", path.name, "12..4194304 bytes", size)
+        raise SourceContractError("exceptionDirectoryExtent", label, "12..4194304 bytes", size)
     records: dict[int, tuple[int, int, int]] = {}
     for offset in range(0, size - 11, 12):
         row = struct.unpack_from("<III", image.buf, section["rawPointer"] + offset)
         if not row[0] or row[1] <= row[0]:
             continue
         if row[0] in records:
-            raise SourceContractError("duplicateExceptionExtent", path.name, "unique start RVA", row[0])
+            raise SourceContractError("duplicateExceptionExtent", label, "unique start RVA", row[0])
         records[row[0]] = row
     bodies = {start: image.bytes_at_va(image.image_base + start, row[1] - start) for start, row in records.items()}
     return image, bodies, records

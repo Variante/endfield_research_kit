@@ -1,0 +1,888 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v14",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "name": "damage.Action.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [],
+      "observationMode": "paired",
+      "semanticRole": "Combat numerical kernel inputs and settlement",
+      "evidenceBoundary": {
+        "conditional": "Selected native ABI and synchronous complete paired roots; observations only.",
+        "unresolved": "Loaded node selection, callback effects and server acknowledgement are separate."
+      }
+    },
+    {
+      "name": "damage.Formula.CalculateDamage",
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "CalculateDamage",
+      "returnType": "double",
+      "static": true,
+      "parameters": [
+        {
+          "name": "packData",
+          "type": "Beyond.Gameplay.Core.DamagePackData"
+        },
+        {
+          "name": "isCritical",
+          "type": "bool"
+        },
+        {
+          "name": "isBlocked",
+          "type": "bool"
+        },
+        {
+          "name": "reportInfo",
+          "type": "Proto.BATTLE_REPORT_INFO"
+        }
+      ],
+      "fields": [
+        {
+          "label": "packBaseValue",
+          "argument": "packData",
+          "type": "double",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 240
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DamagePackData::calcResult",
+              "type": "Beyond.Gameplay.Core.CalcResult",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.CalcResult::value",
+              "type": "double"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "damageType",
+          "argument": "packData",
+          "type": "Beyond.GEnums.DamageType",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 240
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DamagePackData::damageType",
+              "type": "Beyond.GEnums.DamageType"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "damageMask",
+          "argument": "packData",
+          "type": "Beyond.Gameplay.DamageDecorateMask",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 240
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DamagePackData::damageDecorateMask",
+              "type": "Beyond.Gameplay.DamageDecorateMask"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "isCritical",
+          "argument": "isCritical",
+          "type": "bool",
+          "argumentRepresentation": {
+            "mode": "scalarByRef",
+            "type": "bool"
+          },
+          "role": "out-parameter-return-only"
+        },
+        {
+          "label": "isBlocked",
+          "argument": "isBlocked",
+          "type": "bool",
+          "argumentRepresentation": {
+            "mode": "scalarByRef",
+            "type": "bool"
+          },
+          "role": "out-parameter-return-only"
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Combat numerical kernel inputs and settlement",
+      "evidenceBoundary": {
+        "conditional": "Selected native ABI and synchronous complete paired roots; observations only.",
+        "unresolved": "Loaded node selection, callback effects and server acknowledgement are separate."
+      }
+    },
+    {
+      "name": "damage.Pack.GetFinalAttackValue",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "GetFinalAttackValue",
+      "returnType": "double",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "packBaseValue",
+          "argument": "this",
+          "type": "double",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 240
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DamagePackData::calcResult",
+              "type": "Beyond.Gameplay.Core.CalcResult",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.CalcResult::value",
+              "type": "double"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "damageType",
+          "argument": "this",
+          "type": "Beyond.GEnums.DamageType",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 240
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DamagePackData::damageType",
+              "type": "Beyond.GEnums.DamageType"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "damageMask",
+          "argument": "this",
+          "type": "Beyond.Gameplay.DamageDecorateMask",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 240
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DamagePackData::damageDecorateMask",
+              "type": "Beyond.Gameplay.DamageDecorateMask"
+            }
+          ],
+          "role": "value-source-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Combat numerical kernel inputs and settlement",
+      "evidenceBoundary": {
+        "conditional": "Selected native ABI and synchronous complete paired roots; observations only.",
+        "unresolved": "Loaded node selection, callback effects and server acknowledgement are separate."
+      }
+    },
+    {
+      "name": "damage.Pack.DumpAttributes",
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "_DumpAttributes",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [],
+      "observationMode": "paired",
+      "semanticRole": "Combat numerical kernel inputs and settlement",
+      "evidenceBoundary": {
+        "conditional": "Selected native ABI and synchronous complete paired roots; observations only.",
+        "unresolved": "Loaded node selection, callback effects and server acknowledgement are separate."
+      }
+    },
+    {
+      "name": "buff.Attributes.GetValue",
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "GetValue",
+      "returnType": "double",
+      "static": false,
+      "parameters": [
+        {
+          "name": "attributeType",
+          "type": "Beyond.GEnums.AttributeType"
+        }
+      ],
+      "fields": [
+        {
+          "label": "attributeType",
+          "argument": "attributeType",
+          "type": "Beyond.GEnums.AttributeType"
+        },
+        {
+          "label": "attributesInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Attributes::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        }
+      ],
+      "observationMode": "paired",
+      "captureScope": "paired-ancestor",
+      "semanticRole": "Completed attacker/defender damage snapshot values at the two native dump callers",
+      "evidenceBoundary": {
+        "direct": "Retained getter return and attribute index; immediate return RVA distinguishes the two dump callers.",
+        "conditional": "Selected typed ABI, healthy complete synchronous pairs and stable actor/array storage.",
+        "unresolved": "No whole attribute modifier decomposition, serialized live node identity or server acknowledgement."
+      },
+      "captureCallerHooks": [
+        "damage.Pack.DumpAttributes"
+      ]
+    },
+    {
+      "name": "buff.AbilitySystem.ApplyModifier",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "ApplyModifier",
+      "returnType": "Beyond.Gameplay.Core.AbilitySystem+Modifier+ApplyResult",
+      "static": false,
+      "parameters": [
+        {
+          "name": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier"
+        }
+      ],
+      "fields": [
+        {
+          "label": "targetServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetBattleInstanceId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverBattleInstId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetEntityName",
+          "argument": "this",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "storedClientHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>::<clientValue>k__BackingField",
+              "type": "double",
+              "mode": "inline",
+              "layoutWitness": "Beyond.Gameplay.Core.AbilitySystem"
+            }
+          ]
+        },
+        {
+          "label": "cachedServerHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_cachedServerHp",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "modifierValue",
+          "argument": "modifier",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<value>k__BackingField",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "realDelta",
+          "argument": "modifier",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<realDelta>k__BackingField",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "environmentId",
+          "argument": "modifier",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<environmentId>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "deltaType",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<deltaType>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "cancelReason",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+CancelReason",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<cancelReason>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+CancelReason",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "targetType",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+TargetType",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<targetType>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+TargetType",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "attributesIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Attributes",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            }
+          ]
+        },
+        {
+          "label": "attributesInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Attributes::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "damageType",
+          "argument": "modifier",
+          "type": "Beyond.GEnums.DamageType",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<damageType>k__BackingField",
+              "type": "Beyond.GEnums.DamageType"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "damageUnitIndex",
+          "argument": "modifier",
+          "type": "int",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<damageUnitIndex>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "serverActionIndex",
+          "argument": "modifier",
+          "type": "int",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<serverActionIndex>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "sharedFlagMask",
+          "argument": "modifier",
+          "type": "int",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::m_sharedFlagMask",
+              "type": "int"
+            }
+          ],
+          "role": "value-source-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Damage modifier submission, residual HP value and recorded readback difference",
+      "evidenceBoundary": {
+        "direct": "Stored modifier fields, stored client HP and paired ApplyResult; numeric observations only.",
+        "conditional": "Selected typed ABI and complete pairs; HP comparison requires the ordinary base accessor path.",
+        "unresolved": "Virtual part/main-body HP, intermediate callbacks and server authority are separate."
+      }
+    },
+    {
+      "name": "buff.AbilitySystem._DoApplyModifier",
+      "type": "Beyond.Gameplay.Core.AbilitySystem",
+      "method": "_DoApplyModifier",
+      "returnType": "Beyond.Gameplay.Core.AbilitySystem+Modifier+ApplyResult",
+      "static": false,
+      "parameters": [
+        {
+          "name": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier"
+        }
+      ],
+      "fields": [
+        {
+          "label": "targetServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetBattleInstanceId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverBattleInstId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "targetEntityName",
+          "argument": "this",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "storedClientHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_hp",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+SyncedValue`1<double>::<clientValue>k__BackingField",
+              "type": "double",
+              "mode": "inline",
+              "layoutWitness": "Beyond.Gameplay.Core.AbilitySystem"
+            }
+          ]
+        },
+        {
+          "label": "cachedServerHp",
+          "argument": "this",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_cachedServerHp",
+              "type": "double",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "modifierValue",
+          "argument": "modifier",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<value>k__BackingField",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "realDelta",
+          "argument": "modifier",
+          "type": "double",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<realDelta>k__BackingField",
+              "type": "double",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "environmentId",
+          "argument": "modifier",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<environmentId>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "deltaType",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<deltaType>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DeltaType",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "cancelReason",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+CancelReason",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<cancelReason>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+CancelReason",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "targetType",
+          "argument": "modifier",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+TargetType",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<targetType>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+TargetType",
+              "mode": "reference"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          }
+        },
+        {
+          "label": "attributesIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Attributes",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            }
+          ]
+        },
+        {
+          "label": "attributesInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Attributes::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "damageType",
+          "argument": "modifier",
+          "type": "Beyond.GEnums.DamageType",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<damageType>k__BackingField",
+              "type": "Beyond.GEnums.DamageType"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "damageUnitIndex",
+          "argument": "modifier",
+          "type": "int",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<damageUnitIndex>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "serverActionIndex",
+          "argument": "modifier",
+          "type": "int",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::<serverActionIndex>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "role": "value-source-observation"
+        },
+        {
+          "label": "sharedFlagMask",
+          "argument": "modifier",
+          "type": "int",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 608
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::m_sharedFlagMask",
+              "type": "int"
+            }
+          ],
+          "role": "value-source-observation"
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Damage modifier submission, residual HP value and recorded readback difference",
+      "evidenceBoundary": {
+        "direct": "Stored modifier fields, stored client HP and paired ApplyResult; numeric observations only.",
+        "conditional": "Selected typed ABI and complete pairs; HP comparison requires the ordinary base accessor path.",
+        "unresolved": "Virtual part/main-body HP, intermediate callbacks and server authority are separate."
+      }
+    },
+    {
+      "name": "damage.Const.EfficiencyOfDef",
+      "type": "Beyond.Cfg.Tables+BattleConst",
+      "method": "get_efficiencyOfDEF",
+      "returnType": "float",
+      "static": false,
+      "parameters": [],
+      "fields": [],
+      "observationMode": "paired",
+      "semanticRole": "Combat numerical kernel inputs and settlement",
+      "evidenceBoundary": {
+        "conditional": "Selected native ABI and synchronous complete paired roots; observations only.",
+        "unresolved": "Loaded node selection, callback effects and server acknowledgement are separate."
+      }
+    }
+  ],
+  "coverageGaps": [
+    "No global IFix observer. Critical/blocked outputs are interpreted only on normal return; entry bytes are uninitialized outputs. Modifier flags remain a separate later observation.",
+    "Attribute returns are scoped to DamagePackData dump callers; actual snapshot publication and loaded branches remain conditional.",
+    "Part transfer and non-base accessors retain their distinct routes. Complete healthy pairs are required for numerical admission."
+  ],
+  "evidenceBoundary": {
+    "conditional": "Named input/return/HP observations for a short combat kernel capture. No game getters invoked by callbacks.",
+    "unresolved": "No whole-game system completeness, exact RNG seed, serialized action identity or server authority claim."
+  }
+}

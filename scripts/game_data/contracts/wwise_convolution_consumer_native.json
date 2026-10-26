@@ -1,0 +1,404 @@
+{
+  "schema": "endfield.wwise-convolution-consumer-native.v3",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "evidenceBoundary": "direct",
+  "meaningBoundary": "Conditional registered native consumer chain and direct anonymous reads only. Child initializers establish a copied header, padded prefix and variant pointer strides; they do not prove complete payload extents or sample encoding. Public control names and units, runtime invocation, selection, buffer validity and audible DSP remain unresolved.",
+  "classId": "0x007f0003",
+  "methods": {
+    "factory": {
+      "rva": "0x002544e0",
+      "bodyLength": 369,
+      "bodySha256": "b714171e501de2cbf2002e89a37984c02bd8fe71bf7cba3db123e6e9f94d84f1"
+    },
+    "init": {
+      "rva": "0x002552b0",
+      "bodyLength": 1179,
+      "bodySha256": "45484513109b39648af1797e33e368a9a8c81e978ab3d6bc6feffbc81976399b"
+    },
+    "copy": {
+      "rva": "0x00257fa0",
+      "bodyLength": 40,
+      "bodySha256": "65df933f1ad0a5438c289525f516aa86246e6529dd5ac4bb0b646bf12004bbd2"
+    },
+    "prepare": {
+      "rva": "0x00255750",
+      "bodyLength": 515,
+      "bodySha256": "29a72223b3eb4a275b25ff8db3a8145ca15af5927259f6f94ce13d07f331e7a3"
+    },
+    "execute": {
+      "rva": "0x00254660",
+      "bodyLength": 2380,
+      "bodySha256": "0051d50dca12937bcbc413e6d75912ce92ed7fe236d36c13c9273982afdf0c78"
+    },
+    "child0_ctor": {
+      "rva": "0x258480",
+      "bodyLength": 53,
+      "bodySha256": "b3d85ff876c2ee6bd622eb3b370ecd06b3b5bbf92ff7bea391fbca3e12234b08"
+    },
+    "child0_init": {
+      "rva": "0x2589c0",
+      "bodyLength": 505,
+      "bodySha256": "b0b1aea15f9aaf1143b6216e526f521ab98bbebc05cbf4ee3dcd047adf32ab14"
+    },
+    "child2_ctor": {
+      "rva": "0x258eb0",
+      "bodyLength": 89,
+      "bodySha256": "fc8b28ac8cac47990d03b053189c40949f5234eff36b0a8d8e32d6f703b7b108"
+    },
+    "child2_init": {
+      "rva": "0x259410",
+      "bodyLength": 648,
+      "bodySha256": "2fed18f30a3b971532b4056b985c3ca4d8023881431cd5b9c1c7578f7bf620b3"
+    },
+    "child2_execute": {
+      "rva": "0x258f40",
+      "bodyLength": 1217,
+      "bodySha256": "0e05a01e21a3888ae7d9732fa5c4ba77959fed6fd8b565f459f949ebb3cb3360"
+    },
+    "child2_defaultKernel": {
+      "rva": "0x25aec0",
+      "bodyLength": 432,
+      "bodySha256": "448d9cca963c7c7891f2d08e1df647097925e04a30b17c64cf739f8cc0802dc5"
+    }
+  },
+  "effectVtableRva": "0x002db7e0",
+  "callbackSlots": {
+    "init": 48,
+    "execute": 56
+  },
+  "layout": {
+    "parameterPointer": 272,
+    "currentState": 24,
+    "contextPointer": 8,
+    "allocatorPointer": 280,
+    "parameterCopySource": 8,
+    "parameterCopyBytes": 60,
+    "formatWord": 188,
+    "processingPointer": 16
+  },
+  "mediaAdmission": {
+    "formatArgumentStackOffset": 144,
+    "sizeOutputStackOffset": 144,
+    "pointerOutputStackOffset": 120,
+    "requestedIndex": 0,
+    "contextSlot": 32,
+    "headerComparisonOffset": 8,
+    "discriminatorOffset": 2,
+    "acceptedDiscriminators": [
+      0,
+      2
+    ]
+  },
+  "numericConsumer": {
+    "scaleRva": "0x002922f8",
+    "scaleHex": "6f12833a"
+  },
+  "witnesses": {
+    "factoryVtableLea": {
+      "method": "factory",
+      "bodyOffset": 37,
+      "instructionHex": "488d0dd4720800"
+    },
+    "factoryVtableStore": {
+      "method": "factory",
+      "bodyOffset": 56,
+      "instructionHex": "488908"
+    },
+    "initRetainAllocator": {
+      "method": "init",
+      "bodyOffset": 16,
+      "instructionHex": "488991180100004c8bfa"
+    },
+    "initCopyArguments": {
+      "method": "init",
+      "bodyOffset": 26,
+      "instructionHex": "488d51184c898910010000488bf14c894108498bc94d8bf0"
+    },
+    "initCopyCall": {
+      "method": "init",
+      "bodyOffset": 50,
+      "instructionHex": "e8b92c0000"
+    },
+    "prepareCopyArguments": {
+      "method": "prepare",
+      "bodyOffset": 19,
+      "instructionHex": "488d7918488bd9488b8910010000488bd7"
+    },
+    "prepareCopyCall": {
+      "method": "prepare",
+      "bodyOffset": 36,
+      "instructionHex": "e827280000"
+    },
+    "executeReceiver": {
+      "method": "execute",
+      "bodyOffset": 34,
+      "instructionHex": "488b4110488bfa488bf14885c0"
+    },
+    "executePrepareCall": {
+      "method": "execute",
+      "bodyOffset": 57,
+      "instructionHex": "e8b2100000"
+    },
+    "initFormatPointer": {
+      "method": "init",
+      "bodyOffset": 55,
+      "instructionHex": "4c8ba42490000000"
+    },
+    "mediaSizeOutput": {
+      "method": "init",
+      "bodyOffset": 63,
+      "instructionHex": "4c8d8c2490000000"
+    },
+    "mediaPointerOutput": {
+      "method": "init",
+      "bodyOffset": 74,
+      "instructionHex": "4c8d442478"
+    },
+    "mediaContextAndIndex": {
+      "method": "init",
+      "bodyOffset": 83,
+      "instructionHex": "488b4e0833d2"
+    },
+    "mediaOutputZeros": {
+      "method": "init",
+      "bodyOffset": 157,
+      "instructionHex": "488944247889842490000000"
+    },
+    "mediaOutputZeroSource": {
+      "method": "init",
+      "bodyOffset": 149,
+      "instructionHex": "33c0"
+    },
+    "mediaContextCall": {
+      "method": "init",
+      "bodyOffset": 169,
+      "instructionHex": "488b01ff5020"
+    },
+    "mediaResult": {
+      "method": "init",
+      "bodyOffset": 175,
+      "instructionHex": "4c8b6c2478498bce4d8b0e4d85ed"
+    },
+    "formatWordStore": {
+      "method": "init",
+      "bodyOffset": 139,
+      "instructionHex": "418b04248986bc000000"
+    },
+    "mediaFormatComparison": {
+      "method": "init",
+      "bodyOffset": 229,
+      "instructionHex": "418b042441394508"
+    },
+    "mediaDiscriminator": {
+      "method": "init",
+      "bodyOffset": 385,
+      "instructionHex": "410fb745020f44df6685c0"
+    },
+    "mediaSecondDiscriminator": {
+      "method": "init",
+      "bodyOffset": 398,
+      "instructionHex": "6683f802"
+    },
+    "nonnullMediaBranch": {
+      "method": "init",
+      "bodyOffset": 189,
+      "instructionHex": "7526"
+    },
+    "formatMatchBranch": {
+      "method": "init",
+      "bodyOffset": 237,
+      "instructionHex": "7425"
+    },
+    "zeroDiscriminatorBranch": {
+      "method": "init",
+      "bodyOffset": 396,
+      "instructionHex": "7456"
+    },
+    "secondDiscriminatorBranch": {
+      "method": "init",
+      "bodyOffset": 402,
+      "instructionHex": "7420"
+    },
+    "firstStoredWordAsFloat": {
+      "method": "init",
+      "bodyOffset": 702,
+      "instructionHex": "f30f104e18"
+    },
+    "secondStoredWordAsFloat": {
+      "method": "init",
+      "bodyOffset": 818,
+      "instructionHex": "f30f104e1cf30f584e18"
+    },
+    "firstScale": {
+      "method": "init",
+      "bodyOffset": 710,
+      "instructionHex": "f30f590d7acd0300"
+    },
+    "sumScale": {
+      "method": "init",
+      "bodyOffset": 846,
+      "instructionHex": "f30f590df2cc0300"
+    },
+    "firstFormatToFloat": {
+      "method": "init",
+      "bodyOffset": 729,
+      "instructionHex": "f3480f2ac0"
+    },
+    "firstMultiplyTruncate": {
+      "method": "init",
+      "bodyOffset": 746,
+      "instructionHex": "f30f59c8f3480f2cc189442470"
+    },
+    "sumFormatToFloatAndTruncate": {
+      "method": "init",
+      "bodyOffset": 854,
+      "instructionHex": "f3480f2ac0f30f59c8f3480f2cc1"
+    },
+    "childStore": {
+      "method": "init",
+      "bodyOffset": 538,
+      "instructionHex": "48894e104885c9"
+    },
+    "childInitArguments": {
+      "method": "init",
+      "bodyOffset": 557,
+      "instructionHex": "488b01498bd7448b8c24900000004c8b442478895c2420"
+    },
+    "childInitCall": {
+      "method": "init",
+      "bodyOffset": 580,
+      "instructionHex": "ff5008"
+    },
+    "parentChildExecute": {
+      "method": "execute",
+      "bodyOffset": 1052,
+      "instructionHex": "488b4e10458bcdf30f10464c458bc6498bd7488b014c8b5038488b86c00000004889442428f30f1144242041ffd2"
+    },
+    "kernelDefaultLea": {
+      "method": "child2_init",
+      "bodyOffset": 464,
+      "instructionHex": "488d05d9180000"
+    },
+    "kernelDefaultStore": {
+      "method": "child2_init",
+      "bodyOffset": 471,
+      "instructionHex": "488983a0000000"
+    },
+    "kernelReceiver": {
+      "method": "child2_execute",
+      "bodyOffset": 29,
+      "instructionHex": "488bf9"
+    },
+    "kernelMediaPointer": {
+      "method": "child2_execute",
+      "bodyOffset": 616,
+      "instructionHex": "488b4750448b6f6c4c8b7f784c8b34c8"
+    },
+    "kernelCallArguments": {
+      "method": "child2_execute",
+      "bodyOffset": 637,
+      "instructionHex": "450fb70f4d8bc6488b87a0000000453bcc488b542440488bcd450f43ccffd0"
+    },
+    "kernelSourceRegister": {
+      "method": "child2_defaultKernel",
+      "bodyOffset": 32,
+      "instructionHex": "498bf80f2978d8482bfa"
+    },
+    "kernelSourceRebase": {
+      "method": "child2_defaultKernel",
+      "bodyOffset": 99,
+      "instructionHex": "488d1c17"
+    },
+    "kernelMaskRead": {
+      "method": "child2_defaultKernel",
+      "bodyOffset": 86,
+      "instructionHex": "66440f6f2df1140800"
+    },
+    "kernelExpansion": {
+      "method": "child2_defaultKernel",
+      "bodyOffset": 183,
+      "instructionHex": "f30f6f2c83f30f6f7c831066440f6fd5410f54ed66410f72f21066440f6fc766410f72f010410f28da440f59d4410f28d0440f59c60f28cd0f59cc410f54fd410f59d9410f59d3410f59e9"
+    }
+  },
+  "branches": [
+    {
+      "role": "nonnullMediaBranch",
+      "opcodeHex": "75",
+      "targetBodyOffset": 229
+    },
+    {
+      "role": "formatMatchBranch",
+      "opcodeHex": "74",
+      "targetBodyOffset": 276
+    },
+    {
+      "role": "zeroDiscriminatorBranch",
+      "opcodeHex": "74",
+      "targetBodyOffset": 484
+    },
+    {
+      "role": "secondDiscriminatorBranch",
+      "opcodeHex": "74",
+      "targetBodyOffset": 436
+    }
+  ],
+  "childMedia": {
+    "headerBytes": 48,
+    "headerDestinationOffset": 16,
+    "prefixCountHeaderOffset": 28,
+    "prefixElementBytes": 2,
+    "prefixAlignment": 16,
+    "pointerCountHeaderOffset": 12,
+    "pointerCountMask": 255,
+    "payloadStrideCountHeaderOffset": 32,
+    "pointerTableOffset": 80,
+    "invalidReturnCode": 31,
+    "variants": [
+      {
+        "discriminator": 0,
+        "constructor": "child0_ctor",
+        "initializer": "child0_init",
+        "vtableRva": "0x2dc1f0",
+        "constructorCallBodyOffset": 519,
+        "allocationBodyOffset": 500,
+        "selectionTargetBodyOffset": 484,
+        "allocationBytes": 144,
+        "payloadElementStride": 8,
+        "prefixPointerOffset": 104,
+        "invalidBodyOffset": 466
+      },
+      {
+        "discriminator": 2,
+        "constructor": "child2_ctor",
+        "initializer": "child2_init",
+        "vtableRva": "0x2dc2b0",
+        "constructorCallBodyOffset": 471,
+        "allocationBodyOffset": 452,
+        "selectionTargetBodyOffset": 436,
+        "allocationBytes": 176,
+        "payloadElementStride": 4,
+        "prefixPointerOffset": 120,
+        "invalidBodyOffset": 609
+      }
+    ]
+  },
+  "packedKernel": {
+    "discriminator": 2,
+    "executeVtableSlot": 56,
+    "executeMethod": "child2_execute",
+    "kernelMethod": "child2_defaultKernel",
+    "kernelPointerOffset": 160,
+    "maskRva": "0x2dc410",
+    "maskHex": "0000ffff0000ffff0000ffff0000ffff",
+    "evidenceBoundary": "conditional",
+    "condition": "The child initializer default kernel pointer is retained and this processing branch is reached; alternate flag-selected kernels and runtime selection are outside this claim.",
+    "representation": "Each packed 32-bit cell expands to float32 bit patterns (cell << 16) & 0xffffffff and cell & 0xffff0000. These are upper-half float32 words, not a proved IEEE binary16 conversion.",
+    "completePayloadBoundsProven": false
+  }
+}

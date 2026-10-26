@@ -1,0 +1,1230 @@
+{
+  "schema": "endfield.wwise-room-history-native.v4",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "roomToneKernel",
+      "entryRva": "0x177d80",
+      "windows": [
+        {
+          "rva": "0x177d80",
+          "bodyLength": 74,
+          "bodySha256": "13e93ad7b504a7c5a7a7b4342d7525d090cca1e3277395ba6da178fbcedc9d25",
+          "unwindRva": "0x30ecb8",
+          "unwindInfoHex": "014a19004af8030044e804003ed8050038c8060033b807002ea808002998090024880a001c780b0015680c0010741e0010011a0009e00000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x177dca",
+          "bodyLength": 14,
+          "bodySha256": "b3db0387eadc372d5ea98f6134b15ffdeff9c45388ab14408511ef9aa636b1d1",
+          "unwindRva": "0x30ed38",
+          "unwindInfoHex": "2104020004341c00807d1700ca7d1700b8ec3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x177dd8",
+          "bodyLength": 44,
+          "bodySha256": "fe22bd17d0ac61f4480bfc21adf0d8e18f4cf6920c8b6bdfd784d78f27471149",
+          "unwindRva": "0x30ed4c",
+          "unwindInfoHex": "2104020004641d00ca7d1700d87d170038ed3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x177e04",
+          "bodyLength": 108,
+          "bodySha256": "d938425654cada29f0d55f853ad025e933e54967899f4576f978c82bee37f449",
+          "unwindRva": "0x30ed60",
+          "unwindInfoHex": "21000000ca7d1700d87d170038ed3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x177e70",
+          "bodyLength": 230,
+          "bodySha256": "62e2772c75824dfc62e0afa17fde9a470074c0aba7d3173bdfb1d3e9196c19c6",
+          "unwindRva": "0x30ed70",
+          "unwindInfoHex": "21000000807d1700ca7d1700b8ec3000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "source",
+        "coefficientMatrix",
+        "history",
+        "multiply",
+        "add",
+        "output",
+        "historyInputLast",
+        "historyOutputLast"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "source",
+          "rva": "0x177e70",
+          "instructionHex": "498b06"
+        },
+        {
+          "role": "coefficientMatrix",
+          "rva": "0x177e13",
+          "instructionHex": "440f100b"
+        },
+        {
+          "role": "history",
+          "rva": "0x177e1c",
+          "instructionHex": "f30f1032"
+        },
+        {
+          "role": "multiply",
+          "rva": "0x177e77",
+          "instructionHex": "0f59c6"
+        },
+        {
+          "role": "add",
+          "rva": "0x177eae",
+          "instructionHex": "0f58d0"
+        },
+        {
+          "role": "output",
+          "rva": "0x177eda",
+          "instructionHex": "420f111c80"
+        },
+        {
+          "role": "historyInputLast",
+          "rva": "0x177f2d",
+          "instructionHex": "f30f1132"
+        },
+        {
+          "role": "historyOutputLast",
+          "rva": "0x177f36",
+          "instructionHex": "f30f117a08"
+        }
+      ]
+    },
+    {
+      "key": "roomDiffusionKernel",
+      "entryRva": "0x2327f0",
+      "windows": [
+        {
+          "rva": "0x2327f0",
+          "bodyLength": 29,
+          "bodySha256": "86c75eff30b9ca896709f615acc5d37ed097320b75edb21f19b784233179ff11",
+          "unwindRva": "0x318598",
+          "unwindInfoHex": "010f03000f3404000f600000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x23280d",
+          "bodyLength": 486,
+          "bodySha256": "d53fa1cf971e667a12226a0c3d87565f733980641b68464c94717bc2d8cfe7f7",
+          "unwindRva": "0x3185a4",
+          "unwindInfoHex": "210d04000d74030005540200f02723000d28230098853100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2329f3",
+          "bodyLength": 1,
+          "bodySha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e",
+          "unwindRva": "0x3185bc",
+          "unwindInfoHex": "21000000f02723000d28230098853100",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "index",
+        "ring",
+        "doubleIndex",
+        "gain",
+        "subtract",
+        "multiply",
+        "add",
+        "storeHistory",
+        "output",
+        "wrap",
+        "gainField"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "index",
+          "rva": "0x2327ff",
+          "instructionHex": "8b5910"
+        },
+        {
+          "role": "ring",
+          "rva": "0x232805",
+          "instructionHex": "488b4108"
+        },
+        {
+          "role": "doubleIndex",
+          "rva": "0x23281c",
+          "instructionHex": "448d0c1b"
+        },
+        {
+          "role": "gain",
+          "rva": "0x23283c",
+          "instructionHex": "f3410f1028"
+        },
+        {
+          "role": "subtract",
+          "rva": "0x232876",
+          "instructionHex": "0f5cd8"
+        },
+        {
+          "role": "multiply",
+          "rva": "0x232880",
+          "instructionHex": "0f59dd"
+        },
+        {
+          "role": "add",
+          "rva": "0x232883",
+          "instructionHex": "0f58da"
+        },
+        {
+          "role": "storeHistory",
+          "rva": "0x232890",
+          "instructionHex": "410f1102"
+        },
+        {
+          "role": "output",
+          "rva": "0x2328a1",
+          "instructionHex": "0f111a"
+        },
+        {
+          "role": "wrap",
+          "rva": "0x2329d7",
+          "instructionHex": "41896b10"
+        },
+        {
+          "role": "gainField",
+          "rva": "0x232809",
+          "instructionHex": "4c8d4114"
+        }
+      ]
+    },
+    {
+      "key": "roomLateTonePreparation",
+      "entryRva": "0x230870",
+      "windows": [
+        {
+          "rva": "0x230870",
+          "bodyLength": 40,
+          "bodySha256": "b49f82c02bb896dc6e810a174cd7bef18dda06bbdcdaedbacd9d04d15a8ee5a2",
+          "unwindRva": "0x3048e0",
+          "unwindInfoHex": "010f06000f640b000f540a000f520b70",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x230898",
+          "bodyLength": 95,
+          "bodySha256": "84daeea320a415b2694af4c9e4d39284c690a2b0d7c25fb6a30d05b64a3783b8",
+          "unwindRva": "0x318178",
+          "unwindInfoHex": "21050200053409007008230098082300e0483000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2308f7",
+          "bodyLength": 16,
+          "bodySha256": "cf9d498bb6486d3dbff549636ee73f24c716126eb7fc47a07bd24722fc7ad87e",
+          "unwindRva": "0x31818c",
+          "unwindInfoHex": "210000007008230098082300e0483000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "toneEnabled",
+        "slotArray",
+        "slotMode2",
+        "matrix",
+        "historyStack",
+        "toneCall"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "toneEnabled",
+          "rva": "0x23088f",
+          "instructionHex": "80b89800000000"
+        },
+        {
+          "role": "slotArray",
+          "rva": "0x2308bb",
+          "instructionHex": "48039748010000"
+        },
+        {
+          "role": "slotMode2",
+          "rva": "0x2308c2",
+          "instructionHex": "83ba9000000002"
+        },
+        {
+          "role": "matrix",
+          "rva": "0x2308cb",
+          "instructionHex": "4c8d4a10"
+        },
+        {
+          "role": "historyStack",
+          "rva": "0x2308cf",
+          "instructionHex": "4889542420"
+        },
+        {
+          "role": "toneCall",
+          "rva": "0x2308e3",
+          "instructionHex": "e89874f4ff"
+        }
+      ]
+    },
+    {
+      "key": "roomParameterRefresh",
+      "entryRva": "0x230440",
+      "windows": [
+        {
+          "rva": "0x230440",
+          "bodyLength": 9,
+          "bodySha256": "de6a7940819676114c24e2e19757a6270f7072c73e9cacfc21c48a48e6af4b2b",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x230449",
+          "bodyLength": 50,
+          "bodySha256": "d4aac8cf4a95b7d20ab55abee46bdfada35ba5bc6a3afa4340318ca88c310608",
+          "unwindRva": "0x318108",
+          "unwindInfoHex": "21050200056406004004230049042300bcfa2e00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x23047b",
+          "bodyLength": 159,
+          "bodySha256": "3c5b4dc7230498f9bffd3fe6b7221d6290a82b60a1cc3a227dd49442a4d30b87",
+          "unwindRva": "0x31811c",
+          "unwindInfoHex": "210c04000ce4080005740700490423007b04230008813100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x23051a",
+          "bodyLength": 211,
+          "bodySha256": "7f80392c09158318847e3b8c67fc5b280b4f153f2c859d0cac5c39f707fccd19",
+          "unwindRva": "0x318134",
+          "unwindInfoHex": "21000000490423007b04230008813100",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x2305ed",
+          "bodyLength": 110,
+          "bodySha256": "9a17b90d02467bc39dcbc9432c970b237c1f77e0083f4c1fa88db254e546110f",
+          "unwindRva": "0x318144",
+          "unwindInfoHex": "210000004004230049042300bcfa2e00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "controlRead",
+        "changeSelection",
+        "scale",
+        "firstClamp",
+        "firstGainStore",
+        "secondGainStore",
+        "thirdGainStore",
+        "fourthGainStore",
+        "clearRefreshFlag"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "controlRead",
+          "rva": "0x23051a",
+          "instructionHex": "f30f104110"
+        },
+        {
+          "role": "changeSelection",
+          "rva": "0x23051f",
+          "instructionHex": "0f2e8370010000"
+        },
+        {
+          "role": "scale",
+          "rva": "0x23053b",
+          "instructionHex": "f30f59c3"
+        },
+        {
+          "role": "firstClamp",
+          "rva": "0x230547",
+          "instructionHex": "f30f5fc2"
+        },
+        {
+          "role": "firstGainStore",
+          "rva": "0x23054f",
+          "instructionHex": "f30f11431c"
+        },
+        {
+          "role": "secondGainStore",
+          "rva": "0x23056d",
+          "instructionHex": "f30f114334"
+        },
+        {
+          "role": "thirdGainStore",
+          "rva": "0x230587",
+          "instructionHex": "f30f11434c"
+        },
+        {
+          "role": "fourthGainStore",
+          "rva": "0x23059d",
+          "instructionHex": "f30f114364"
+        },
+        {
+          "role": "clearRefreshFlag",
+          "rva": "0x230651",
+          "instructionHex": "c6405800"
+        }
+      ]
+    }
+  ],
+  "borrowedGroups": [
+    "roomVerbStereo",
+    "roomInputPreparation"
+  ],
+  "callBindings": [
+    {
+      "group": "roomInputPreparation",
+      "rva": "0x2312a3",
+      "targetGroup": "roomToneKernel",
+      "returnRva": "0x2312a8",
+      "role": "inputTone"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d926",
+      "targetGroup": "roomToneKernel",
+      "returnRva": "0x22d92b",
+      "role": "earlyLeftTone"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d954",
+      "targetGroup": "roomToneKernel",
+      "returnRva": "0x22d959",
+      "role": "earlyRightTone"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d979",
+      "targetGroup": "roomDiffusionKernel",
+      "returnRva": "0x22d97e",
+      "role": "serialDiffusion"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d991",
+      "targetGroup": "roomLateTonePreparation",
+      "returnRva": "0x22d996",
+      "role": "lateTonePreparation"
+    },
+    {
+      "group": "roomLateTonePreparation",
+      "rva": "0x2308e3",
+      "targetGroup": "roomToneKernel",
+      "returnRva": "0x2308e8",
+      "role": "lateTone"
+    }
+  ],
+  "layout": {
+    "diffusionLength": 0,
+    "diffusionRing": 8,
+    "diffusionIndex": 16,
+    "diffusionGain": 20,
+    "diffusionHistoryStrideBytes": 8,
+    "diffusionFirstState": 8,
+    "diffusionStateStride": 24,
+    "diffusionStateCount": 4,
+    "toneHistoryWords": 4,
+    "toneMatrixWords": 32,
+    "toneMatrixHistoryOffset": -16
+  },
+  "models": {
+    "diffusion": {
+      "operationOrder": [
+        "sub32(input,oldOutput)",
+        "mul32(difference,gain)",
+        "add32(product,oldInput)"
+      ],
+      "historyWrites": [
+        "input",
+        "output"
+      ],
+      "index": "(initialIndex+frames)%length"
+    },
+    "tone": {
+      "coefficientVectors": 8,
+      "wordsPerVector": 4,
+      "historyOrder": [
+        "previousInputLast",
+        "previousInputSecondLast",
+        "previousOutputLast",
+        "previousOutputSecondLast"
+      ],
+      "arithmetic": "separate mul/add in recorded native instruction order"
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Complete native tone kernel and serial diffusion kernel with direct input, early and post-diffusion late-tone callers. Diffusion uses paired delayed input/output history; the tone kernel uses an expanded coefficient matrix and four history words.",
+    "conditional": "Private original owned-buffer comparisons and captured operands can establish bounded numerical parity separately. Native structure does not establish which calls executed in a live recording.",
+    "unresolved": "Live tone matrices and diffusion history were not recorded by the input recipe. ER tap generation, late reverberation feedback, complete live history and isolated Event attribution remain unresolved."
+  },
+  "fieldBindings": [
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d965",
+      "instructionHex": "488d5e08",
+      "layoutField": "diffusionFirstState"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d969",
+      "instructionHex": "bf04000000",
+      "layoutField": "diffusionStateCount"
+    },
+    {
+      "group": "roomVerbStereo",
+      "rva": "0x22d97e",
+      "instructionHex": "4883c318",
+      "layoutField": "diffusionStateStride"
+    }
+  ],
+  "selection": {
+    "blockFrames": [
+      64,
+      128,
+      256
+    ],
+    "prefixWords": 4,
+    "matrixWords": 32
+  },
+  "hooks": [
+    {
+      "index": 53,
+      "name": "AkSoundEngine.roomToneKernel",
+      "sourceKind": "roomToneKernel",
+      "ownerGroup": "roomToneKernel",
+      "abiId": "win64.void_integer5_result.v1",
+      "memory": [
+        {
+          "name": "frames",
+          "argIndex": 1,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 0
+        },
+        {
+          "name": "coefficientPointer",
+          "argIndex": 3,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyPointer",
+          "argIndex": 6,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 4
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 12
+        },
+        {
+          "name": "sampleWord0",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "sampleWord1",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 4,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "sampleWord2",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "sampleWord3",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 12,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "coefficientMatrix",
+          "argIndex": 3,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 128
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "frames",
+          "argIndex": 1,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "samplePointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 0
+        },
+        {
+          "name": "coefficientPointer",
+          "argIndex": 3,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyPointer",
+          "argIndex": 6,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 4
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 8
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 6,
+          "kind": "u32",
+          "offset": 12
+        },
+        {
+          "name": "sampleWord0",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "sampleWord1",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 4,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "sampleWord2",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 8,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "sampleWord3",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 12,
+          "pointerOffsets": [
+            0
+          ],
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "coefficientMatrix",
+          "argIndex": 3,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 128
+        }
+      ]
+    },
+    {
+      "index": 54,
+      "name": "AkSoundEngine.roomDiffusionKernel",
+      "sourceKind": "roomDiffusionKernel",
+      "ownerGroup": "roomDiffusionKernel",
+      "abiId": "win64.void_integer3_result.v1",
+      "memory": [
+        {
+          "name": "frames",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "length",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "ringPointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 8
+        },
+        {
+          "name": "ringIndex",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 16
+        },
+        {
+          "name": "gainBits",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 20
+        },
+        {
+          "name": "input",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 0,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 4,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 8,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 12,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord4",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 16,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord5",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 20,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord6",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 24,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord7",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 28,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ],
+      "resultMemory": [
+        {
+          "name": "frames",
+          "argIndex": 2,
+          "kind": "argumentU32",
+          "offset": 0
+        },
+        {
+          "name": "length",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 0
+        },
+        {
+          "name": "ringPointer",
+          "argIndex": 0,
+          "kind": "pointer",
+          "offset": 8
+        },
+        {
+          "name": "ringIndex",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 16
+        },
+        {
+          "name": "gainBits",
+          "argIndex": 0,
+          "kind": "u32",
+          "offset": 20
+        },
+        {
+          "name": "input",
+          "argIndex": 1,
+          "kind": "argument",
+          "offset": 0
+        },
+        {
+          "name": "historyWord0",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 0,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord1",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 4,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord2",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 8,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord3",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 12,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord4",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 16,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord5",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 20,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord6",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 24,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "historyWord7",
+          "argIndex": 0,
+          "kind": "ringPairU32",
+          "offset": 28,
+          "pointerOffsets": [
+            8
+          ],
+          "indexField": "ringIndex",
+          "lengthField": "length",
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord0",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 0,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord1",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 4,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord2",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 8,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "inputWord3",
+          "argIndex": 1,
+          "kind": "u32",
+          "offset": 12,
+          "requireMemory": {
+            "name": "frames",
+            "nonzero": true
+          }
+        },
+        {
+          "name": "prefix",
+          "argIndex": 1,
+          "kind": "bytes",
+          "offset": 0,
+          "countField": "frames",
+          "stride": 4,
+          "maxBytes": 16
+        }
+      ]
+    }
+  ],
+  "diffusionConfiguration": {
+    "group": "roomParameterRefresh",
+    "parameterOwnerContract": "wwise_effect_parameters_native",
+    "classId": "0x00760003",
+    "serializedOffset": 8,
+    "storedControlOffset": 16,
+    "cachedControlOffset": 368,
+    "refreshFlagOffset": 88,
+    "bulkTransport": [
+      {
+        "role": "sourceBase",
+        "rva": "0x231d5c",
+        "instructionHex": "488d5a08"
+      },
+      {
+        "role": "readControl",
+        "rva": "0x231d6c",
+        "instructionHex": "f30f1003"
+      },
+      {
+        "role": "storeControl",
+        "rva": "0x231d70",
+        "instructionHex": "f30f114110"
+      }
+    ],
+    "constants": [
+      {
+        "role": "maximum",
+        "rva": "0x2d9d78",
+        "loadRva": "0x230528",
+        "instructionHex": "f30f100d48980a00",
+        "word": 1058944823
+      },
+      {
+        "role": "scale",
+        "rva": "0x2d9d74",
+        "loadRva": "0x230533",
+        "instructionHex": "f30f101d39980a00",
+        "word": 1019905053
+      },
+      {
+        "role": "firstThreshold",
+        "rva": "0x2d9d84",
+        "loadRva": "0x23053f",
+        "instructionHex": "f30f5c053d980a00",
+        "word": 1072517842
+      },
+      {
+        "role": "secondThreshold",
+        "rva": "0x2d9d80",
+        "loadRva": "0x23055d",
+        "instructionHex": "f30f5c051b980a00",
+        "word": 1067333431
+      }
+    ],
+    "stateGainOffsets": [
+      28,
+      52,
+      76,
+      100
+    ],
+    "model": "clamp32(mul32(diffusionPercent,scale)-threshold,positiveZero,maximum)",
+    "thresholdRoles": [
+      "firstThreshold",
+      "secondThreshold",
+      "maximum",
+      "positiveZero"
+    ],
+    "evidenceBoundary": {
+      "direct": "Authored serialized diffusion control is copied to the parameter object; selected refresh compares its cached value and writes the four serial diffusion gain fields.",
+      "conditional": "Owned original bulk-loader/refresh comparisons isolate this update with every other cached parameter equal. Exact native numeric constants and separate multiply/subtract/clamp order; does not execute complete effect initialization.",
+      "unresolved": "Live authored effect occurrence, complete initial configuration, derived FDN/tap/tone coefficients and update/lifetime identity."
+    }
+  }
+}

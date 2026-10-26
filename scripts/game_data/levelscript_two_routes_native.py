@@ -60,6 +60,12 @@ def _reviewed() -> tuple[dict[str, Any], dict[str, Any]]:
     )
     catalog = json.loads((CONTRACTS_DIR / "levelscript_union_tags.json").read_bytes())
     layouts = json.loads(LAYOUT_PATH.read_bytes()).get("layouts", [])
+    _check_shape(contract, catalog, layouts)
+    return contract, catalog
+
+
+def _check_shape(contract: dict[str, Any], catalog: dict[str, Any], layouts: list[dict[str, Any]]) -> None:
+    """Reviewed route-plan shape; shared by the loader and the regenerator."""
     routes = contract.get("routes")
     if (
         contract.get("catalogContract") != "levelscript_union_tags.json"
@@ -80,7 +86,8 @@ def _reviewed() -> tuple[dict[str, Any], dict[str, Any]]:
         setters = route.get("setterMethods")
         setter_calls = route.get("setterCallsites")
         matching_layouts = [row for row in layouts if
-                            (row.get("family"), row.get("tag")) == key]
+                            (row.get("family"), row.get("wrapperName"))
+                            == (key[0], route.get("wrapperName"))]
         layout = matching_layouts[0] if len(matching_layouts) == 1 else None
         cursor = layout.get("cursorEvidence") if layout else None
         if not isinstance(fields, list) or not all(
@@ -135,7 +142,6 @@ def _reviewed() -> tuple[dict[str, Any], dict[str, Any]]:
             or not isinstance(cursor.get("unionOffset"), int)
         ):
             raise ValueError(f"{LABEL}.contract:source-shape={key}")
-    return contract, catalog
 
 
 def reviewed_route(family: str, tag: int) -> dict[str, Any]:
@@ -258,9 +264,12 @@ def _validate_context(image: Any, context: dict[str, Any], expected_type: str) -
             raise ValueError(f"{LABEL}.native:child-value-type")
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(
+    contract: dict[str, Any] | None = None, catalog: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Authenticate the selected routes and complete source read sequences."""
-    contract, catalog = _reviewed()
+    if contract is None or catalog is None:
+        contract, catalog = _reviewed()
     expected = contract["nativeInputs"]
     if (
         expected["GameAssembly.dll"] != catalog["nativeInputs"]["gameAssemblySha256"]
@@ -361,3 +370,294 @@ def validate_current_native_contract() -> dict[str, Any]:
             "sourceFragmentCount": len(fragments.get(source_ptr, ())),
         })
     return {"status": "validated", "nativeInputs": expected, "routes": results}
+
+
+# --- Regeneration against the selected build -------------------------------
+
+class RouteRefused(ValueError):
+    """A reviewed route claim that cannot be re-proved on the selected build."""
+
+
+def _sha256_upper(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest().upper()
+
+
+def _window(image: Any, start: int, end: int, boundary: str) -> dict[str, Any]:
+    base = image.pe.image_base
+    return {"startRva": start - base, "endRva": end - base,
+            "sha256": _sha256_upper(image.pe.bytes_at_va(start, end - start)), "boundary": boundary}
+
+
+def _deserialize_method(image: Any, type_name: str, *, nested_of: str | None = None) -> list[Any]:
+    md = image.metadata
+    rows = []
+    for definition in range(len(md.types)):
+        name = image.type_name(definition)
+        if (name != type_name) if nested_of is None else not name.startswith(nested_of + "+"):
+            continue
+        owner = md.types[definition]
+        for index in range(owner.method_start, owner.method_start + owner.method_count):
+            if md.string(md.methods[index].name_index) == "Deserialize":
+                rows.append([index, name, "Deserialize",
+                             image.method_pointer_va(md.methods[index]) - image.pe.image_base])
+    if len(rows) != 1:
+        raise RouteRefused(f"deserialize-method={nested_of or type_name}:found={len(rows)}")
+    return rows[0]
+
+
+def _call_target(row: dict[str, Any]) -> int | None:
+    text = row["text"]
+    return int(text.split()[1], 16) if text.startswith("call 0x") else None
+
+
+def check_reviewed_fields(wrapper: str, reviewed: list[list[str]], installed: list[list[str]]) -> None:
+    """Refuse unless the installed member list equals the reviewed one.
+
+    A non-append change names the first differing member; an append-only
+    change is still refused, because new members need a reviewed kind and
+    semantic claim before the contract may carry them.
+    """
+    if installed[:len(reviewed)] != reviewed:
+        first = next((i for i, (a, b) in enumerate(zip(installed, reviewed)) if a != b),
+                     min(len(installed), len(reviewed)))
+        raise RouteRefused(
+            f"field-order={wrapper}:member={first}"
+            f":reviewed={reviewed[first] if first < len(reviewed) else None}"
+            f":installed={installed[first] if first < len(installed) else None}")
+    if installed != reviewed:
+        raise RouteRefused(f"appended-fields={wrapper}:{installed[len(reviewed):]}:review-required")
+
+
+def _regenerate_route(image: Any, route: dict[str, Any], catalog: dict[str, Any],
+                      layouts: list[dict[str, Any]], switch: dict[str, Any]) -> dict[str, Any]:
+    """Re-derive one route; reviewed identity and field order must still hold."""
+    base = image.pe.image_base
+    family, wrapper = route["nativeFamily"], route["wrapperName"]
+    entries = [e for e in switch["entries"] if e.get("wrapperName") == wrapper]
+    if len(entries) != 1:
+        raise RouteRefused(f"switch-entry={wrapper}:found={len(entries)}")
+    entry = entries[0]
+    tag = entry["tag"]
+    catalog_row = catalog["families"][family][tag]
+    if (catalog_row.get("wrapperName"), catalog_row.get("wrappedType")) != (wrapper, route["typeName"]):
+        raise RouteRefused(f"catalog-identity={family}:{tag}:{catalog_row.get('wrapperName')}")
+    layout = [r for r in layouts if (r.get("family"), r.get("wrapperName")) == (route["codecFamily"], wrapper)]
+    if len(layout) != 1:
+        raise RouteRefused(f"layout-row={wrapper}:found={len(layout)}")
+    fields = layout[0]["fields"]
+    check_reviewed_fields(wrapper, route["fields"], fields)
+    if catalog_row.get("memberCount") != len(fields):
+        raise RouteRefused(f"member-count={wrapper}:catalog={catalog_row.get('memberCount')}:fields={len(fields)}")
+
+    table_va = int(switch["tableVa"], 16)
+    count = switch["entryCount"]
+    target = int(entry["targetVa"], 16)
+    body = int(entry["bodyVa"], 16)
+    head = image.pe.bytes_at_va(target, 5)
+    old = route["dispatcher"]
+    branch_len = old["branchWindow"]["endRva"] - old["branchWindow"]["startRva"]
+    load_offset = old["typeLoadRva"] - old["branchRva"]
+    load = image.pe.bytes_at_va(body + load_offset, 7)
+    cell = (body + load_offset + 7 + struct.unpack_from("<i", load, 3)[0]
+            if load[:3] == b"\x48\x8B\x15" else None)
+    if head[0] != 0xE9 or cell != int(entry["usageCellVa"], 16):
+        raise RouteRefused(f"branch-shape={wrapper}:type-load-offset={load_offset:#x}")
+    dispatcher = {
+        "switchTableRva": table_va - base, "switchEntryCount": count,
+        "switchTableSha256": _sha256_upper(image.pe.bytes_at_va(table_va, count * 4)),
+        "switchTargetRva": target - base, "switchEntryHex": head.hex().upper(),
+        "branchRva": body - base,
+        "branchWindow": _window(image, body, body + branch_len, old["branchWindow"]["boundary"]),
+        "typeLoadRva": body + load_offset - base, "typeLoadHex": load.hex().upper(),
+        "usageCellRva": cell - base, "usageRawHex": image.pe.bytes_at_va(cell, 8).hex().upper(),
+        "registeredTypeIndex": entry["registeredTypeIndex"], "wrapperTypeDefinition": entry["typeDefinition"],
+    }
+    methods = [_deserialize_method(image, wrapper), _deserialize_method(image, wrapper, nested_of=wrapper)]
+    extents = image.mapper.pdata_function_extents(image.pe)
+    fragments = BodyIndex(image).chained_fragments
+    source, formatter = base + methods[0][3], base + methods[1][3]
+    pieces = [(source, extents[source])] + [(s, s + n) for s, n in fragments.get(source, ())]
+    windows = [_window(image, s, end, "complete selected source reader hot body" if i == 0
+                       else "chained selected source reader fragment") for i, (s, end) in enumerate(pieces)]
+    windows.append(_window(image, formatter, extents[formatter], route["codeWindows"][-1]["boundary"]))
+    rows: list[dict[str, Any]] = []
+    for s, end in sorted(pieces):
+        rows.extend(image.mapper.decode_x64_subset(image.pe.bytes_at_va(s, end - s), s, stop_offset=end - s))
+    for row in rows:
+        row["vaInt"] = int(row["va"], 16)
+        row["raw"] = bytes.fromhex(row["bytes"].replace(" ", ""))
+    headers = [r for r in rows if r["text"].startswith("cmp ") and r["text"].endswith(f", {len(fields):#x}")
+               and r["raw"][-1] == len(fields)]
+    if len(headers) != 1 or len(headers[0]["raw"]) not in (4, 5):
+        raise RouteRefused(f"member-count-instruction={wrapper}:found={len(headers)}")
+    header = headers[0]
+    owner = image.metadata.types[entry["typeDefinition"]]
+    setters = image.setter_methods(owner, parameter="typeName", label=LABEL)
+    setter_targets = {image.method_pointer_va(image.metadata.methods[r[0]]) for r in setters}
+    reads: list[dict[str, Any]] = []
+    calls: list[dict[str, Any]] = []
+    contexts: list[dict[str, Any]] = []
+    pending_load = None
+    for i, row in enumerate(rows):
+        if row["vaInt"] <= header["vaInt"]:
+            continue
+        if row["text"].startswith("mov rdx, [rip") and row["raw"][:3] == b"\x48\x8B\x15":
+            pending_load = row
+        callee = _call_target(row)
+        if callee is None:
+            continue
+        if callee in setter_targets:
+            calls.append({"memberIndex": len(reads) - 1, "callsiteRva": row["vaInt"] - base,
+                          "callHex": row["raw"].hex().upper(), "targetRva": callee - base})
+            continue
+        back = [r["text"] for r in rows[max(0, i - 3):i]]
+        if "mov rcx, rdi" in back and len(reads) < len(fields):
+            member = len(reads)
+            name, kind = fields[member]
+            reads.append({"memberIndex": member, "fieldName": name, "readKind": kind,
+                          "sourceCallsiteRva": row["vaInt"] - base, "sourceCallHex": row["raw"].hex().upper(),
+                          "sourceTargetRva": callee - base})
+            if kind.startswith("Param<"):
+                if pending_load is None:
+                    raise RouteRefused(f"param-context-load={wrapper}:member={member}")
+                contexts.append(_derive_context(image, member, pending_load, PARAM_ELEMENT_TYPES[kind]))
+            pending_load = None
+    if len(reads) != len(fields):
+        raise RouteRefused(f"source-reads={wrapper}:found={len(reads)}:fields={len(fields)}")
+    regenerated = dict(route)
+    regenerated.update({
+        "tag": tag, "serializedMemberCount": len(fields), "fields": fields, "dispatcher": dispatcher,
+        "methods": methods, "codeWindows": windows,
+        "memberCountInstruction": {"rva": header["vaInt"] - base, "hex": header["raw"].hex().upper()},
+        "setterMethods": setters, "setterCallsites": calls, "orderedSourceReads": reads,
+        "nestedContexts": contexts,
+    })
+    return regenerated
+
+
+def _derive_context(image: Any, member: int, load: dict[str, Any], expected_type: str) -> dict[str, Any]:
+    base = image.pe.image_base
+    va = load["vaInt"]
+    cell = va + 7 + struct.unpack_from("<i", load["raw"], 3)[0]
+    usage = image.pe.bytes_at_va(cell, 8)
+    index = method_spec_usage_index(usage, image.registration["methodSpecsCount"], source=LABEL, offset=cell)
+    address = int(image.registration["methodSpecs"], 16) + index * 12
+    spec = method_spec_record(image.pe.bytes_at_va(address, 12), len(image.metadata.methods),
+                              image.registration["genericInstsCount"], source=LABEL, offset=address)
+    instance = image.instantiations.resolve(spec[2])
+    if len(instance.arguments) != 1:
+        raise RouteRefused(f"context-arity=member={member}")
+    argument = instance.arguments[0]
+    raw = bytes.fromhex(argument.raw_type_record_hex)
+    carrier_ptr = struct.unpack_from("<Q", raw)[0]
+    carrier_raw = image.pe.bytes_at_va(carrier_ptr, 32)
+    base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
+    carrier = generic_type_carrier(raw, carrier_raw, base_raw, type_pointer=argument.type_pointer_va,
+                                   type_count=len(image.metadata.types), source=LABEL)
+    child = image.instantiations.resolve_pointer(carrier["classInstantiationPointerVa"])
+    child_row = child.as_dict()
+    child_row["arguments"] = list(child_row["arguments"])
+    element = bytes.fromhex(child.arguments[0].raw_type_record_hex)
+    definition = None if element[10] != 0x11 else struct.unpack_from("<Q", element)[0]
+    name = image.type_name(definition) if definition is not None else {
+        2: "System.Boolean", 8: "System.Int32", 12: "System.Single"}.get(element[10])
+    if name != expected_type:
+        raise RouteRefused(f"context-element=member={member}:expected={expected_type}:installed={name}")
+    return {
+        "memberIndex": member, "instructionRva": va - base, "instructionHex": load["raw"].hex().upper(),
+        "cellRva": cell - base, "usageRawHex": usage.hex().upper(), "methodSpecIndex": index,
+        "methodSpec": list(spec), "argumentRawHex": raw.hex().upper(), "typeKind": raw[10],
+        "classCarrier": carrier, "classInstantiation": child_row, "elementRawHex": element.hex().upper(),
+        "elementTypeKind": element[10], "elementTypeDefinition": definition, "elementTypeName": expected_type,
+    }
+
+
+def open_selected_build() -> tuple[Any, dict[str, str]]:
+    """The installed image plus its native input hashes, or a refusal."""
+    gate = check_installed_native_inputs()
+    if gate.status != NATIVE_EVIDENCE_VALIDATED or gate.gameassembly is None:
+        raise RouteRefused(f"native-inputs:{gate.status}:{gate.detail}")
+    unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
+    if not unityplayer.is_file():
+        raise RouteRefused("native-inputs:UnityPlayer.dll:missing")
+    inputs = {"GameAssembly.dll": _sha256_upper(gate.gameassembly.read_bytes()),
+              "global-metadata.dat": _sha256_upper(gate.metadata.read_bytes()),
+              "UnityPlayer.dll": _sha256_upper(unityplayer.read_bytes())}
+    return open_native_image(gate.gameassembly, gate.metadata), inputs
+
+
+def _read_switch(image: Any, family: str, cache: dict[str, Any]) -> dict[str, Any]:
+    from scripts.game_data.memorypack.union_dispatch import read_union_switch
+    from scripts.game_data.memorypack.wrapper_members import derive_from_image
+    if family not in cache:
+        if "_wrappers" not in cache:
+            cache["_wrappers"] = derive_from_image(image)
+        cache[family] = read_union_switch(
+            image, f"Beyond_Gameplay_Actions_{family}ForMemoryPack", wrappers=cache["_wrappers"])
+    return cache[family]
+
+
+def regenerate(contract: dict[str, Any], *, opener: Any = open_selected_build,
+               route_builder: Any = _regenerate_route, switch_reader: Any = _read_switch,
+               validator: Any = None) -> tuple[dict[str, Any], list[str]]:
+    """Rebuild every route for the selected build, or name each refused claim.
+
+    Nothing is regenerated partially: one refused route refuses the contract,
+    because the loader requires every reviewed route to validate.
+    """
+    validator = validator or validate_current_native_contract
+    catalog = json.loads((CONTRACTS_DIR / "levelscript_union_tags.json").read_bytes())
+    layouts = json.loads(LAYOUT_PATH.read_bytes()).get("layouts", [])
+    try:
+        image, inputs = opener()
+    except RouteRefused as exc:
+        return contract, [str(exc)]
+    if (inputs["GameAssembly.dll"], inputs["global-metadata.dat"]) != (
+            catalog["nativeInputs"]["gameAssemblySha256"].upper(),
+            catalog["nativeInputs"]["metadataSha256"].upper()):
+        return contract, ["catalog-inputs:levelscript_union_tags.json is not regenerated for the selected build"]
+    cache: dict[str, Any] = {}
+    refused, routes = [], []
+    for route in contract["routes"]:
+        try:
+            switch = switch_reader(image, route["nativeFamily"], cache)
+            routes.append(route_builder(image, route, catalog, layouts, switch))
+        except (RouteRefused, KeyError, IndexError) as exc:
+            refused.append(f"{route['codecFamily']}:{route['wrapperName']}:{type(exc).__name__}:{exc}")
+    if refused:
+        return contract, refused
+    regenerated = dict(contract)
+    regenerated["nativeInputs"] = inputs
+    regenerated["routes"] = routes
+    try:
+        _check_shape(regenerated, catalog, layouts)
+        validator(regenerated, catalog)
+    except ValueError as exc:
+        return contract, [f"post-validation:{exc}"]
+    return regenerated, []
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--regenerate", action="store_true")
+    parser.add_argument("--write", action="store_true")
+    args = parser.parse_args(argv)
+    if not args.regenerate:
+        print(json.dumps(validate_current_native_contract(), indent=1))
+        return 0
+    contract = json.loads(CONTRACT_PATH.read_bytes().decode("utf-8-sig"))
+    regenerated, refused = regenerate(contract)
+    print(json.dumps({"refused": refused,
+                      "routes": [[r["codecFamily"], r["tag"]] for r in regenerated["routes"]],
+                      "written": bool(args.write and not refused)}, indent=1))
+    if refused:
+        return 1
+    if args.write:
+        text = json.dumps(regenerated, indent=2, ensure_ascii=False).replace("\n", "\r\n") + "\r\n"
+        CONTRACT_PATH.write_bytes(text.encode("utf-8"))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

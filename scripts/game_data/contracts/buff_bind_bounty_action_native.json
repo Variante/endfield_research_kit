@@ -1,0 +1,126 @@
+{
+  "schema": "endfield.buff-bind-bounty-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "bindBounty": {
+      "sourceContract": "buff_17_native.json",
+      "wrapperTypeDefinition": 15929,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BindBountyEnemyAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9239,
+      "runtimeTypeName": "Beyond.Gameplay.Core.BindBountyEnemyAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        118647,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_BindBountyEnemyAction_DataForMemoryPack",
+        "Deserialize",
+        63367888
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 63368032,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63368055,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84F50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 63368073,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63368095,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84CC0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 63368060
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 63368106,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63368128,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84AB0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 63368139,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63368161,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F848A0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "bountyKey",
+          "declaredType": "Beyond.Blackboard+BlackboardString",
+          "setterMethodIndex": 118644,
+          "kind": "blackboard-string-profile",
+          "sourceCall": {
+            "rva": 63368179,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63368198,
+            "targetRva": 63368864,
+            "methodIndex": 118644
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 63368166
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "23": "bindBounty"
+  },
+  "childSourceContract": "buff_blackboard_string_child_native.json",
+  "evidenceBoundary": {
+    "exact": "Current five-member parent source order, type contexts, dispatcher and generated setter joins. Original action closure requires an independent bounded BlackboardString receipt.",
+    "direct": "The bountyKey context names BlackboardString; inherited byte/three DWORDs remain separate from its nullable key/flag/value object.",
+    "structuralOnly": "Raw child byte payloads and stored flags are preserved without decoding or evaluating blackboard data.",
+    "conditional": "Selected native/source gates, normal helper/formatter paths and valid separately bounded original child/parent spans.",
+    "unresolved": "Bounty/enemy identity, key evaluation, binding effect, full-family/root admission and runtime execution."
+  }
+}

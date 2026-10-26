@@ -1,0 +1,133 @@
+{
+  "schema": "endfield.buff-name-cache-handler-guard-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "signed-index-shared-storage-and-static-guard-tail-control",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "guardEnter": {
+      "entryRva": 1806444,
+      "ownershipKind": "closedIndirectTailProgram",
+      "codeWindows": [
+        {
+          "startRva": 1806444,
+          "endRva": 1806469,
+          "sha256": "FBED7D2C6DC1A74B932B6AB0EA85D01656EAA081DDF3EF2E1AEB3F65F3F5A2D3"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1819944,
+        "targetRva": 1806444,
+        "instructionHex": "E83FCBFFFF"
+      },
+      "tailImportSlotRva": 176354752
+    },
+    "guardLeave": {
+      "entryRva": 1806528,
+      "ownershipKind": "closedIndirectTailProgram",
+      "codeWindows": [
+        {
+          "startRva": 1806528,
+          "endRva": 1806553,
+          "sha256": "A05D24A151BD5109098D736FA0AC2B3926874C6699967E3E0B45F864FCCFB78F"
+        }
+      ],
+      "actualParentCall": {
+        "siteRva": 1819977,
+        "targetRva": 1806528,
+        "instructionHex": "E872CBFFFF"
+      },
+      "tailImportSlotRva": 176354480
+    }
+  },
+  "arrayBaseRva": 230664144,
+  "strideBytes": 40,
+  "importDeclaration": {
+    "selectedImports": [
+      {
+        "slotRva": 176354480,
+        "descriptorRva": 217639872,
+        "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+        "libraryNameRva": 217644624,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 217640168,
+        "firstThunkRva": 176353352,
+        "thunkIndex": 141,
+        "actualThunkCount": 181,
+        "terminatedLookupBytes": 1456,
+        "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+        "lookupEntryRva": 217641296,
+        "lookupEntryHex": "9c f5 f8 0c 00 00 00 00",
+        "iatEntryHex": "9c f5 f8 0c 00 00 00 00",
+        "hintNameRva": 217642396,
+        "hint": 1008,
+        "hintHex": "f0 03",
+        "symbolName": "LeaveCriticalSection",
+        "symbolNameHex": "4c 65 61 76 65 43 72 69 74 69 63 61 6c 53 65 63 74 69 6f 6e 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      },
+      {
+        "slotRva": 176354752,
+        "descriptorRva": 217639872,
+        "descriptorHex": "e8 ec f8 0c 00 00 00 00 00 00 00 00 50 fe f8 0c 48 f0 82 0a",
+        "libraryNameRva": 217644624,
+        "libraryName": "KERNEL32.dll",
+        "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
+        "originalThunkRva": 217640168,
+        "firstThunkRva": 176353352,
+        "thunkIndex": 175,
+        "actualThunkCount": 181,
+        "terminatedLookupBytes": 1456,
+        "terminatedLookupSha256": "372C393DBDA2211B3763E247D0FA5554A8A9252C8002BAC7A4B81A5F9513518C",
+        "lookupEntryRva": 217641568,
+        "lookupEntryHex": "30 f5 f8 0c 00 00 00 00",
+        "iatEntryHex": "30 f5 f8 0c 00 00 00 00",
+        "hintNameRva": 217642288,
+        "hint": 343,
+        "hintHex": "57 01",
+        "symbolName": "EnterCriticalSection",
+        "symbolNameHex": "45 6e 74 65 72 43 72 69 74 69 63 61 6c 53 65 63 74 69 6f 6e 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    ],
+    "importDirectoryRva": 217639872,
+    "importDirectoryBytes": 220,
+    "importDirectoryHeader": {
+      "fileOffset": 456,
+      "rawHex": "c0 eb f8 0c dc 00 00 00"
+    },
+    "iatDirectoryRva": 176353280,
+    "iatDirectoryBytes": 2176,
+    "iatDirectoryHeader": {
+      "fileOffset": 544,
+      "rawHex": "00 f0 82 0a 80 08 00 00"
+    },
+    "walkedDescriptors": 10,
+    "descriptorNullTerminatorRva": 217640072,
+    "actualTerminatedTableOwnershipChecked": true,
+    "completeImportSymbolCatalogProved": false,
+    "liveIatValueOrCalleeSelected": false
+  },
+  "conditionalDomain": {
+    "arithmetic": "Pointer is native-word wrapping array base plus stride times sign-extended ECX. No arbitrary-index range or nonwrap guarantee is inferred.",
+    "api": "A standard live Enter/LeaveCriticalSection binding and valid initialized object are required for ownership/release effects; neither is established by import names.",
+    "state": "Both getter calls pass ECX zero and therefore choose the same base object under compatible completion. All writer protection, lifecycle ordering and common cookie/encoded epoch remain open."
+  },
+  "evidenceBoundary": {
+    "exact": "Selected actual-call no-frame indirect-tail bytes, exact signed index/scaled address/import-slot operands and on-disk named declaration ownership.",
+    "direct": "Both helpers compute arrayBase plus 40 times sign-extended ECX and tail to their selected Enter/LeaveCriticalSection declarations; zero selects the common base.",
+    "conditional": "Under valid initialized storage and a standard live API binding, the calls have documented critical-section semantics. No such runtime initialization/binding is observed.",
+    "structuralOnly": "Candidate initialization/cleanup and selected writer bodies are separate pending consumer claims. Tail argument equality is not mutex acquisition or all-writer protection.",
+    "unresolved": "Initialization/lifecycle and count invariants, selected/all writer guard coverage, live bindings/ownership and cache alias isolation, callback identity and positive parent/root admission."
+  },
+  "apiReferences": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-entercriticalsection",
+    "https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-leavecriticalsection"
+  ]
+}

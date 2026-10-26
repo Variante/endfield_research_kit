@@ -1,0 +1,293 @@
+{
+  "schema": "endfield.buff-teleport-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "teleport": {
+      "sourceContract": "buff_17c_native.json",
+      "wrapperTypeDefinition": 16521,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TeleportAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9916,
+      "runtimeTypeName": "Beyond.Gameplay.Core.TeleportAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member14",
+      "readerMethod": [
+        123465,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TeleportAction_DataForMemoryPack",
+        "Deserialize",
+        66738544
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66738688,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738711,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F844D0200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66738729,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738751,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84240200004533C08BD0488BCE",
+          "sourceContextInstructionRva": 66738716
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66738762,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738784,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84030200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66738795,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738817,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84E20100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "actionOnTargetPointInvalid",
+          "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+          "setterMethodIndex": 123453,
+          "kind": "sequence",
+          "sourceCall": {
+            "rva": 66738835,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738858,
+            "targetRva": 66739312,
+            "methodIndex": 123453
+          },
+          "sourceToDestinationHex": "4885F60F84BA0100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 66738822
+        },
+        {
+          "fieldName": "allowCheckMainCharPosToDestPathAvailable",
+          "declaredType": "bool",
+          "setterMethodIndex": 123454,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66738869,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738892,
+            "targetRva": 66739360,
+            "methodIndex": 123454
+          },
+          "sourceToDestinationHex": "4885F60F84980100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "checkMaxDistance",
+          "declaredType": "bool",
+          "setterMethodIndex": 123455,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66738903,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738926,
+            "targetRva": 66739408,
+            "methodIndex": 123455
+          },
+          "sourceToDestinationHex": "4885F60F84760100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "clampDirToXZ",
+          "declaredType": "bool",
+          "setterMethodIndex": 123456,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66738937,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738960,
+            "targetRva": 66739456,
+            "methodIndex": 123456
+          },
+          "sourceToDestinationHex": "4885F60F84540100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "ignoreNavmeshLink",
+          "declaredType": "bool",
+          "setterMethodIndex": 123457,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66738971,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66738994,
+            "targetRva": 66739504,
+            "methodIndex": 123457
+          },
+          "sourceToDestinationHex": "4885F60F84320100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "maxDistance",
+          "declaredType": "float",
+          "setterMethodIndex": 123458,
+          "kind": "raw4",
+          "sourceCall": {
+            "rva": 66739005,
+            "targetRva": 46828464
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66739028,
+            "targetRva": 66739552,
+            "methodIndex": 123458
+          },
+          "sourceToDestinationHex": "4885F60F84100100004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "radius",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 123459,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 66739046,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66739069,
+            "targetRva": 66739600,
+            "methodIndex": 123459
+          },
+          "sourceToDestinationHex": "4885F60F84E70000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 66739033
+        },
+        {
+          "fieldName": "snapToFloor",
+          "declaredType": "bool",
+          "setterMethodIndex": 123460,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66739080,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66739103,
+            "targetRva": 66739648,
+            "methodIndex": 123460
+          },
+          "sourceToDestinationHex": "4885F60F84C50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "teleportTo",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 123461,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 66739121,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66739144,
+            "targetRva": 66739696,
+            "methodIndex": 123461
+          },
+          "sourceToDestinationHex": "4885F60F849C0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 66739108
+        },
+        {
+          "fieldName": "throughWall",
+          "declaredType": "bool",
+          "setterMethodIndex": 123462,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66739155,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66739174,
+            "targetRva": 66739744,
+            "methodIndex": 123462
+          },
+          "sourceToDestinationHex": "4885DB747E4533C00FB6D0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "380": "teleport"
+  },
+  "scalarSourceContract": "buff_24_native.json",
+  "scalarSourceWindows": [
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "four-byte MOVSS source helper normal through RET"
+    }
+  ],
+  "childTypes": {
+    "sequence": "Beyond.Gameplay.Core.SequenceActionData",
+    "scalar-payload": "Beyond.Blackboard+BlackboardDouble",
+    "target": "Beyond.Gameplay.Core.TargetSettings"
+  },
+  "evidenceBoundary": {
+    "direct": "Current action route, source read order, generated setter destinations and declared child types.",
+    "exact": "Pinned current native programs and typed static contexts; independently framed original fields and recursive children are required for stored admission.",
+    "conditional": "Compatible initialized default formatter bindings and bounded input storage.",
+    "unresolved": "Actual provider/MethodInfo selection, executed invalid-point sequence, evaluated radius/target, navmesh decisions, allocation/refill/failure effects and teleport movement."
+  }
+}

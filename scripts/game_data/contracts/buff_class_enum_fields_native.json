@@ -1,0 +1,433 @@
+{
+  "schema": "endfield.buff-class-enum-fields-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-class-constructor-type-helper-and-selected-enum-field-and-primitive-cell-flow",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "functions": {
+    "constructor": {
+      "entryRva": 2979872,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 2979872,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              2979872,
+              2980799,
+              211643176
+            ],
+            "tableRowRva": 251914436,
+            "runtimeTripleRawHex": "20782D00BF7B2D00286B9D0C",
+            "codeBytes": 927,
+            "unwindRawHex": "011A0A001A7409001A6408001A5407001A3406001A3216E0",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 2979872,
+          "endRva": 2980799,
+          "sha256": "BFB975F36A64975240720253EB1391D00D2DFBD48317ED38291DAB6683EA00F0"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    },
+    "classHelper": {
+      "entryRva": 27392,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 27392,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              27392,
+              28236,
+              211637216
+            ],
+            "tableRowRva": 251729084,
+            "runtimeTripleRawHex": "006B00004C6E0000E0539D0C",
+            "codeBytes": 844,
+            "unwindRawHex": "0106020006320230",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              3038780,
+              3038799,
+              211655064
+            ],
+            "tableRowRva": 251919236,
+            "runtimeTripleRawHex": "3C5E2E004F5E2E0098999D0C",
+            "codeBytes": 19,
+            "unwindRawHex": "21000000006B00004C6E0000E0539D0C",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  3038780,
+                  3038799,
+                  211655064
+                ],
+                "parent": [
+                  27392,
+                  28236,
+                  211637216
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 27392,
+          "endRva": 27835,
+          "sha256": "E4669F64BAFEF99CD70F7759EED6F3681A6E954DCB0EE74D19248ED876620A37"
+        },
+        {
+          "startRva": 3038780,
+          "endRva": 3038799,
+          "sha256": "D39C16993FB5CAC7EF421954D9B7A9CD9B69C2D3715E28337EB388017E362DEC"
+        }
+      ],
+      "paddingWindows": [
+        {
+          "startRva": 27835,
+          "endRva": 27836,
+          "sha256": "9E076CEAF246B6003D9C2680A2B4CF0BFFD069805902B0B5EDEEBF49039FE4BD",
+          "rawHex": "90"
+        },
+        {
+          "startRva": 28171,
+          "endRva": 28172,
+          "sha256": "9E076CEAF246B6003D9C2680A2B4CF0BFFD069805902B0B5EDEEBF49039FE4BD",
+          "rawHex": "90"
+        }
+      ],
+      "tableWindows": [
+        {
+          "startRva": 27836,
+          "endRva": 27916,
+          "sha256": "03039BD58528D2C60E3ADF2A57CB39EB5B313AC188E58030DE9C6D400E0D9A41"
+        },
+        {
+          "startRva": 27916,
+          "endRva": 28171,
+          "sha256": "44E47E15A94137F83F6CFC576641DB3248DF5985EBA83E18FD62A9BCBF282780"
+        },
+        {
+          "startRva": 28172,
+          "endRva": 28236,
+          "sha256": "7A31A984062A3FC2D53C7B7E045A2E73AB7160BDE746E8D243F7BA153B54DB22"
+        }
+      ]
+    },
+    "publication": {
+      "entryRva": 89232,
+      "ownershipKind": "exceptionFamily",
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 89232,
+        "tableRva": 251727872,
+        "tableBytes": 8097252,
+        "tableSha256": "3758ECBF8754197ADA1D2D2269176BF7A79220D8AE18A80EDA99A84B676492C1",
+        "tableRowsChecked": 674771,
+        "unwindVersionRows": {
+          "1": 674768,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              89232,
+              94065,
+              211663348
+            ],
+            "tableRowRva": 251731364,
+            "runtimeTripleRawHex": "905C0100716F0100F4B99D0C",
+            "codeBytes": 4833,
+            "unwindRawHex": "11210B0021645D0021345A002101540012F010E00EC00C700B500000AC541900",
+            "unwindVersion": 1,
+            "unwindFlags": 2,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeWindows": [
+        {
+          "startRva": 89232,
+          "endRva": 94065,
+          "sha256": "EDCF30D6AEC6E2E98B7329DCA27C14DB36C754FADC8841648EDC02ADF5726023"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    },
+    "apiWrapper": {
+      "entryRva": 170912,
+      "ownershipKind": "closedEntryProgram",
+      "unwindFamily": null,
+      "codeWindows": [
+        {
+          "startRva": 170912,
+          "endRva": 170919,
+          "sha256": "F7157756F6A19723E1E745826A6E0BA86E50EB52E5BE23C1A6FB0D33FFF43657"
+        }
+      ],
+      "paddingWindows": [],
+      "tableWindows": []
+    }
+  },
+  "namedClassFromTypeExport": {
+    "selectedExports": [
+      {
+        "symbolName": "il2cpp_class_from_type",
+        "nameIndex": 53,
+        "namePointerSlotRva": 217626980,
+        "namePointerHex": "f2 c6 f8 0c",
+        "nameRva": 217630450,
+        "nameHex": "69 6c 32 63 70 70 5f 63 6c 61 73 73 5f 66 72 6f 6d 5f 74 79 70 65 00",
+        "ordinalIndexSlotRva": 217628530,
+        "ordinalIndexHex": "35 00",
+        "ordinalIndex": 53,
+        "ordinal": 54,
+        "functionSlotRva": 217625324,
+        "functionSlotHex": "a0 9b 02 00",
+        "targetRva": 170912,
+        "isForwarder": false,
+        "forwarder": null,
+        "forwarderHex": "",
+        "implementationOrLiveBindingProved": false
+      }
+    ],
+    "exportDirectoryRva": 217625072,
+    "exportDirectoryBytes": 14800,
+    "exportDirectoryHeader": {
+      "fileOffset": 448,
+      "rawHex": "f0 b1 f8 0c d0 39 00 00"
+    },
+    "exportDirectoryHex": "00 00 00 00 ff ff ff ff 00 00 00 00 44 c2 f8 0c 01 00 00 00 9e 01 00 00 9e 01 00 00 18 b2 f8 0c 90 b8 f8 0c 08 bf f8 0c",
+    "libraryNameRva": 217629252,
+    "libraryName": "GameAssembly.dll",
+    "libraryNameHex": "47 61 6d 65 41 73 73 65 6d 62 6c 79 2e 64 6c 6c 00",
+    "ordinalBase": 1,
+    "declaredFunctionCount": 414,
+    "declaredNameCount": 414,
+    "functionTableRva": 217625112,
+    "functionTableSha256": "0C0390A8E5063325C2D7EC7A31CE3ED91A3D2BF7319908A9DF5AB90AE5CFABF0",
+    "nameTableRva": 217626768,
+    "nameTableSha256": "7A2FC65B3D792B7D5A1D858B2293037ABE1242FD8CD39D7FC8FA95A85CA2C072",
+    "ordinalTableRva": 217628424,
+    "ordinalTableSha256": "8AA818C09CCCB57973D8F1D7396FEBBD9E845DB143318C401A0B0D8E366F3E0D",
+    "allDeclaredNameOrderAndOrdinalIndicesChecked": true,
+    "completeExportImplementationCatalogProved": false,
+    "liveLoadedLibraryOrBindingProved": false
+  },
+  "layout": {
+    "recordBytes": 92,
+    "typeDefinitionsHeader": 160,
+    "recordBitfield": 84,
+    "genericContainer": 24,
+    "elementIndex": 20,
+    "classFlags": 312,
+    "elementClass": 64,
+    "castClass": 72,
+    "registrationTypes": 56,
+    "typeKind": 10,
+    "restoreRbp": 56,
+    "restoreRbx": 48,
+    "restoreRsi": 64,
+    "restoreRdi": 72
+  },
+  "globals": {
+    "metadataHeader": 233439216,
+    "metadataBase": 233439208,
+    "metadataRegistration": 233507288,
+    "allocatorContext": 233439184,
+    "primitiveInt32": 233436328
+  },
+  "origins": {
+    "recordPointerDefinedRva": 2979940,
+    "allocatedClassSavedRva": 2979983,
+    "zeroEbpRva": 2979981,
+    "genericFlagConstantRva": 2980186,
+    "allocatorCallRva": 2979969,
+    "allocatorEntryRva": 413344
+  },
+  "recordPrefix": {
+    "startRva": 2979898,
+    "endRva": 2979943,
+    "sha256": "7FA71033DC86CCE39D15D5A89CCFA945A44ACD0D5FFF82CB58CF3169AADE4506"
+  },
+  "flagWindow": {
+    "startRva": 2980258,
+    "endRva": 2980306,
+    "sha256": "F247CC78AEEE93FC287A57371CCAECFCCC04D0952CB626AE16EA0766EA0D255C"
+  },
+  "elementWindow": {
+    "startRva": 2980707,
+    "endRva": 2980769,
+    "sha256": "16107870E076462AFEEBC94060734770F1A96B1A71F12CF380144C4CC861AAE7"
+  },
+  "returnWindow": {
+    "startRva": 2980769,
+    "endRva": 2980799,
+    "sha256": "FFD0CF5FB4F8EFF690E3358D852CE1393453FE9B30B8E88770FF361CEE596656"
+  },
+  "typeWrapperEntryRva": 59984,
+  "helperDispatch": {
+    "tables": {
+      "primitiveTargets": {
+        "startRva": 27836,
+        "rawHex": "E36B0000906B00001F6C00004F6C0000CB6B0000436C0000376C0000996B0000FB6B0000136C0000EF6B0000BF6B00002B6C00003F6B0000076C0000686C00008D6C0000D76B0000746C00004B6B0000"
+      },
+      "primitiveSelectors": {
+        "startRva": 27916,
+        "rawHex": "000102030405060708090A0B0C0D131313131313130E130F101313111313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131312"
+      },
+      "complexTargets": {
+        "startRva": 28172,
+        "rawHex": "5B6C0000485E2E00546B0000546B0000806C0000996C0000836B0000485E2E00485E2E00485E2E00485E2E00485E2E003C5E2E00485E2E00A26B0000806C0000"
+      }
+    },
+    "primitiveJumpRva": 27453,
+    "complexJumpRva": 27521,
+    "externalTailRvas": [
+      59984,
+      65536,
+      66752,
+      367680,
+      479696
+    ],
+    "fallbackRva": 27467,
+    "kindEightLoadWindow": {
+      "startRva": 27545,
+      "endRva": 27554,
+      "sha256": "0B4B7E5FB94D8B57B10C03B54447C33BDA467586294A4FD8016B7D6C9EC21453"
+    },
+    "primitiveTestRva": 27462,
+    "primitiveTestWindow": {
+      "startRva": 27462,
+      "endRva": 27467,
+      "sha256": "446B9159AAFA5D0821532AD9486464AA793403AC41AD705C433FD505DA99CAD1"
+    },
+    "fallbackWindow": {
+      "startRva": 27467,
+      "endRva": 27489,
+      "sha256": "389F1FA84C2AF73BEE664883A3641314E18AF2F2CB32C1F486F981B20C2EE816"
+    },
+    "complexWindow": {
+      "startRva": 27495,
+      "endRva": 27523,
+      "sha256": "379E3B0A651DE5AAF555EBCAA11CFF285EDD0AE1E8834A7C7FA2912698AB0263"
+    },
+    "zeroWindow": {
+      "startRva": 3038792,
+      "endRva": 3038799,
+      "sha256": "7B0F64A2E3BB69F7D4F4E787A57D5FA5C2F54F065A7A5903D47AC33CAC60692C"
+    },
+    "restoreWindow": {
+      "startRva": 27489,
+      "endRva": 27495,
+      "sha256": "B13C2122A4910AD1C7F40207D9561E5A2D3418BF2BC40C490E3F913641FD2989"
+    }
+  },
+  "request": {
+    "window": {
+      "startRva": 90140,
+      "endRva": 90173,
+      "sha256": "BC9B42AC9D93D2110F026604E3E1340253760A4AA70A236DCD438A684C8FCA3F"
+    },
+    "typeLiteral": {
+      "rva": 176942108,
+      "rawHex": "496E74333200"
+    },
+    "namespaceLiteral": {
+      "rva": 176356796,
+      "rawHex": "53797374656D00"
+    },
+    "imageCellRva": 233436256,
+    "lookupEntryRva": 434656
+  },
+  "selectedDamageType": {
+    "typeDefinition": 33942,
+    "recordHex": "4B221400E5607E0001BC0100FFFFFFFF8DCA0100CDEC0100FFFFFFFF01010000D2850200FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF31310600100601001000000000000000090000000000170000000300130C00004B0A0002",
+    "bitfieldDwordOffset": 84,
+    "bitfield": 3091,
+    "storedEnumBit": true,
+    "elementTypeIndexFieldOffset": 20,
+    "elementTypeIndex": 126157,
+    "elementTypeName": "int",
+    "elementTypePointerVa": 6664879640,
+    "elementRawTypeHex": "3B8D0000000000000000088000000000",
+    "underlyingField": [
+      "Beyond.GEnums.DamageType",
+      "int",
+      16
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Complete constructor/publication exception families and class-from-type code/table/padding partitions; closed named API wrapper, normal frames and actual local/call/tail targets.",
+    "direct": "Metadata record bitfield to enum flag writes, element/cast self initialization and helper result stores, named System.Int32 request to the cell read by the primitive kind-eight path.",
+    "conditional": "Selected valid record index and loaded metadata/header/base, normal finite ABI calls, valid disjoint frames/records/classes/tables and no interfering child aliases or concurrent mutation. A valid nonnull allocated class is required; no zero allocation is inferred.",
+    "structuralOnly": "The selected metadata enum bit and Int32 element index identify stored inputs, not the live helper result or named class returned by lookup.",
+    "unresolved": "Primitive cell nonnullness and actual named-class identity, loaded source/runtime initialization/global stability/aliases, concrete normalization/shared formatter/provider and positive parent/root admission."
+  }
+}

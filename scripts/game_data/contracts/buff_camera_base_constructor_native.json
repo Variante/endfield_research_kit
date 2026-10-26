@@ -1,0 +1,152 @@
+{
+  "schema": "endfield.buff-camera-base-constructor-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "constructorContract": "buff_camera_list_constructor_native.json",
+  "classContext": {
+    "definition": 54057,
+    "isMethod": false,
+    "token": 33554514,
+    "image": "MemoryPack.dll",
+    "typeName": "MemoryPack.Formatters.ListFormatter`1",
+    "start": 186,
+    "count": 9,
+    "entries": [
+      {
+        "relativeSlot": 0,
+        "rawHex": "02000000000000000C9F328C01000000",
+        "kind": 2,
+        "index": 56616,
+        "typeName": "System.Collections.Generic.List`1<VAR[21878]>"
+      },
+      {
+        "relativeSlot": 1,
+        "rawHex": "030000000000000050A4328C01000000",
+        "kind": 3,
+        "index": 217926,
+        "methodSpec": [
+          286540,
+          19219,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": ".ctor"
+      },
+      {
+        "relativeSlot": 2,
+        "rawHex": "03000000000000009CA6328C01000000",
+        "kind": 3,
+        "index": 217928,
+        "methodSpec": [
+          286563,
+          19219,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "Clear"
+      },
+      {
+        "relativeSlot": 3,
+        "rawHex": "03000000000000000C9C328C01000000",
+        "kind": 3,
+        "index": 516773,
+        "methodSpec": [
+          428394,
+          -1,
+          19219
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatterProvider",
+        "methodName": "GetFormatter"
+      },
+      {
+        "relativeSlot": 4,
+        "rawHex": "02000000000000002098328C01000000",
+        "kind": 2,
+        "index": 211971,
+        "typeName": "MemoryPack.MemoryPackFormatter`1<VAR[21878]>"
+      },
+      {
+        "relativeSlot": 5,
+        "rawHex": "0300000000000000B499328C01000000",
+        "kind": 3,
+        "index": 280202,
+        "methodSpec": [
+          428408,
+          19219,
+          -1
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatter`1",
+        "methodName": "Deserialize"
+      },
+      {
+        "relativeSlot": 6,
+        "rawHex": "030000000000000034A9328C01000000",
+        "kind": 3,
+        "index": 217927,
+        "methodSpec": [
+          286555,
+          19219,
+          -1
+        ],
+        "typeName": "System.Collections.Generic.List`1",
+        "methodName": "Add"
+      },
+      {
+        "relativeSlot": 7,
+        "rawHex": "03000000000000004499328C01000000",
+        "kind": 3,
+        "index": 280277,
+        "methodSpec": [
+          428410,
+          20909,
+          -1
+        ],
+        "typeName": "MemoryPack.MemoryPackFormatter`1",
+        "methodName": ".ctor"
+      },
+      {
+        "relativeSlot": 8,
+        "rawHex": "0200000000000000A898328C01000000",
+        "kind": 2,
+        "index": 60658,
+        "typeName": "MemoryPack.MemoryPackFormatter`1<System.Collections.Generic.List`1<VAR[21878]>>"
+      }
+    ]
+  },
+  "selectedObjectBaseConstructor": {
+    "methodDefinition": 428410,
+    "classArguments": [
+      "object"
+    ],
+    "methodArguments": [],
+    "methodSpecIndex": 285515,
+    "methodSpec": [
+      428410,
+      75,
+      -1
+    ],
+    "indices": [
+      266816,
+      66064,
+      -1
+    ]
+  },
+  "entryProgram": {
+    "startRva": 69846464,
+    "endRva": 69846467,
+    "rawHex": "C20000",
+    "sha256": "B6CBECECF1B07E74F37D57710C68C31F0B92CB08D51093252B321B07542E177B",
+    "boundary": "Closed RET0 execution at the registered pointer; no full physical function extent or unique named body identity."
+  },
+  "evidenceBoundary": {
+    "exact": "Current ListFormatter class-context definitions, declared parent and inherited constructor argument pointers; independent Object base-constructor registration and its closed RET0 entry bytes.",
+    "direct": "The declared inherited constructor and parent both use the same List<T> argument tied to the reciprocal ListFormatter parameter. The selected Object registration points to a folded entry with ordinary zero-cleanup return control.",
+    "structuralOnly": "The metadata slot number does not establish an initialized runtime slot array. Folded definition aliases remain explicit and the strict entry resolver still refuses unique method identity.",
+    "conditional": "If execution begins at this registered RET0 pointer with a valid readable return stack, only RSP/RIP change; flags/general registers are preserved and no explicit data stores occur.",
+    "unresolved": "Actual runtime context population/slot geometry, equality of the cold indirect target with this registered pointer, cold initialization effects under other selections, positive camera list composition and actual gameplay execution."
+  }
+}

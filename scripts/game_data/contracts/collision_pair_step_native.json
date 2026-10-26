@@ -1,0 +1,910 @@
+{
+  "schema": "endfield.collision-pair-step-native.v3",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "layout": {
+    "task": {
+      "owner": 40,
+      "continuation": 24
+    },
+    "scene": {
+      "nphaseCore": 3992,
+      "postBroadPhaseTask": 6632,
+      "postBroadPhaseContTask": 6688,
+      "rigidBodyNarrowPhaseTask": 6520,
+      "updateShapesTask": 7376,
+      "preNarrowPhaseTask": 6296,
+      "npSimulateTask": 9536,
+      "npCollideTask": 9592
+    }
+  },
+  "fieldOperands": [
+    {
+      "role": "post_broadphase_cont_run",
+      "offset": 10,
+      "prefix": "488b79",
+      "mode": "u8",
+      "field": "task.owner"
+    },
+    {
+      "role": "post_broadphase_cont_run",
+      "offset": 16,
+      "prefix": "488b59",
+      "mode": "u8",
+      "field": "task.continuation"
+    },
+    {
+      "role": "post_broadphase_scene",
+      "offset": 63,
+      "prefix": "488b89",
+      "mode": "u32",
+      "field": "scene.nphaseCore"
+    },
+    {
+      "role": "task_dependency_wiring",
+      "offset": 147,
+      "prefix": "488db5",
+      "mode": "u32",
+      "field": "scene.postBroadPhaseTask"
+    },
+    {
+      "role": "task_dependency_wiring",
+      "offset": 103,
+      "prefix": "488d9d",
+      "mode": "u32",
+      "field": "scene.postBroadPhaseContTask"
+    },
+    {
+      "role": "scene_constructor",
+      "offset": 3335,
+      "prefix": "488986",
+      "mode": "u32",
+      "field": "scene.rigidBodyNarrowPhaseTask"
+    },
+    {
+      "role": "scene_constructor_part_1",
+      "offset": 206,
+      "prefix": "488986",
+      "mode": "u32",
+      "field": "scene.updateShapesTask"
+    },
+    {
+      "role": "scene_constructor",
+      "offset": 3024,
+      "prefix": "488986",
+      "mode": "u32",
+      "field": "scene.preNarrowPhaseTask"
+    },
+    {
+      "role": "np_scene_constructor_part_3",
+      "offset": 228,
+      "prefix": "488987",
+      "mode": "u32",
+      "field": "scene.npSimulateTask"
+    },
+    {
+      "role": "np_scene_constructor_part_3",
+      "offset": 305,
+      "prefix": "488987",
+      "mode": "u32",
+      "field": "scene.npCollideTask"
+    }
+  ],
+  "codeWindows": [
+    {
+      "role": "scene_constructor",
+      "rva": 7942832,
+      "bytes": 4096,
+      "sha256": "51d5fc627088e9d57a316ad40cd7d55bc8636b4026f545b5f364363cce626dee",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "scene_constructor_part_1",
+      "rva": 7946928,
+      "bytes": 4096,
+      "sha256": "20c95aaa97d3fdb38b0133441005a9119bccc63a3e4bff04a8b7e3b6cd6e29f1",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "scene_constructor_part_2",
+      "rva": 7951024,
+      "bytes": 809,
+      "sha256": "a0b69188a8b6d72d6c28cbc56259a335f19b97a2f8d145c0940c41c7bd67715a",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "post_broadphase_run",
+      "rva": 8038080,
+      "bytes": 84,
+      "sha256": "b358034ea63b1ccd04f2184050af6192279d5e4b428e7c18d6ae5be2c77d26ea",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "post_broadphase_cont_run",
+      "rva": 8038176,
+      "bytes": 76,
+      "sha256": "4d604747cc7a48efbddc56c494af97a9513186979af8cb34a452f3c14af7c416",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "post_broadphase_scene",
+      "rva": 7990256,
+      "bytes": 346,
+      "sha256": "92038b4b073d4167b936b271a39d3f2c081c9bdbe506f64be8d16248d77c9e69",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "post_broadphase_scene_part_1",
+      "rva": 7990602,
+      "bytes": 299,
+      "sha256": "cbc351f52ed8db1c7b05fd8cbbf48d2ae6d875a238f71988240a0d9ba99e1a81",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "post_broadphase_scene_part_2",
+      "rva": 7990901,
+      "bytes": 32,
+      "sha256": "76e111935b587290181a57858719031c637886af42da0667cbdddadcea3445d9",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "overlap_filter_run",
+      "rva": 8039760,
+      "bytes": 86,
+      "sha256": "17ae3c36669241f3dcefcc7de931cb3b267ef44a957743a3c5e8afc77082da45",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "overlap_filter_batch",
+      "rva": 8105568,
+      "bytes": 138,
+      "sha256": "d12d3f984c780109ad6157206221f40fefbc991daa9ec351aa7e88082cc11db3",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "overlap_filter_batch_part_1",
+      "rva": 8105706,
+      "bytes": 1451,
+      "sha256": "fbc91080fd397081f9724c1c23e95c601bd727fe73f2c2f5511ab7b1b1f92dfb",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "overlap_filter_batch_part_2",
+      "rva": 8107157,
+      "bytes": 32,
+      "sha256": "c57aea9ce8a06890a554c3f44eb17593f0ca3e6cbf6bb9bac7ba7b58666befdd",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "task_dependency_wiring",
+      "rva": 8037168,
+      "bytes": 432,
+      "sha256": "ae64d1267a892d824ea4d47d218a1bec8ecc6261649bfb254ceff43d969f5fe3",
+      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+    },
+    {
+      "role": "np_scene_constructor",
+      "rva": 7805856,
+      "bytes": 13,
+      "sha256": "b150600072ea1aed4854febb94c71c83b348e5aaa43f874dddd73a5ccadaf75b",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "np_scene_constructor_part_1",
+      "rva": 7805869,
+      "bytes": 505,
+      "sha256": "31120f317ac59694903e985c74b95593b7ce436804f7d6570155c620db67aeff",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "np_scene_constructor_part_2",
+      "rva": 7806374,
+      "bytes": 251,
+      "sha256": "8f04d3b02f8dd7b156f13aac10c88a4f097713f5d78ff343bcad8311f200155c",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "np_scene_constructor_part_3",
+      "rva": 7806625,
+      "bytes": 582,
+      "sha256": "432a7c32ab6e1427d821f20d32afc61f8e99a636a79aaa6d6331f02f099c6c05",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "native_scene_simulate",
+      "rva": 8046864,
+      "bytes": 24,
+      "sha256": "f59d4e0ff2d70ac531e964239ebd5af9de20f625dc095905609efaeed76f1aab",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "native_scene_simulate_part_1",
+      "rva": 8046888,
+      "bytes": 165,
+      "sha256": "dd6e3d8662b03bf88f3d1f7fb5f25ecb8f084261af10eb31cde5c61aa74ec2c4",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "native_scene_simulate_part_2",
+      "rva": 8047053,
+      "bytes": 6,
+      "sha256": "4eeabf8bcdc796d3a19ec782d70470e18a3a52ddfa5cfed7abe03e359a03625d",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "native_scene_collide",
+      "rva": 7980400,
+      "bytes": 116,
+      "sha256": "c7da55f0b85f91359bdf0480634be138e73873df0225b76af78616fb1d26ac6a",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "update_shapes_producer",
+      "rva": 7980528,
+      "bytes": 210,
+      "sha256": "ed516846a642202235e8cddb2e7b97d3c4be435b19383e1187dce86389abe691",
+      "boundary": "Complete original unwind family slice."
+    },
+    {
+      "role": "rigid_body_narrowphase_run",
+      "rva": 8038688,
+      "bytes": 13,
+      "sha256": "b1c35d11b958ba22b9c62765c98ec4075787533626d45ee905c152d971bd6574",
+      "boundary": "Complete original leaf thunk."
+    },
+    {
+      "role": "update_shapes_run",
+      "rva": 8037968,
+      "bytes": 13,
+      "sha256": "77996fee7e35f0e315eeee4a539d7ddaf45c821a64d1a5a4f0722a2718fa747f",
+      "boundary": "Complete original leaf thunk."
+    },
+    {
+      "role": "pre_narrowphase_run",
+      "rva": 8038352,
+      "bytes": 13,
+      "sha256": "09131ea772269b087587cee15e6cdee49aaf4058a71e89e4af452fcd30cbd5e2",
+      "boundary": "Complete original leaf thunk."
+    },
+    {
+      "role": "np_simulate_run",
+      "rva": 7894960,
+      "bytes": 13,
+      "sha256": "4a0c3b5734c3026da01eea0f2606f8abb87059579082789a6ad2feeb2363d1b0",
+      "boundary": "Complete original leaf thunk."
+    },
+    {
+      "role": "np_collide_run",
+      "rva": 7894944,
+      "bytes": 13,
+      "sha256": "e2203ada7027f0589fb50d79c094f86c93b05869122c5e586079bfe72a61dd0f",
+      "boundary": "Complete original leaf thunk."
+    },
+    {
+      "role": "np_simulate_bridge",
+      "rva": 7858224,
+      "bytes": 23,
+      "sha256": "102d9eb2c8053f5b9a6b2db6bf9e60408dea9b8d824b92c2698e64dde5e0e669",
+      "boundary": "Complete original leaf thunk."
+    },
+    {
+      "role": "np_collide_bridge",
+      "rva": 7858192,
+      "bytes": 23,
+      "sha256": "2bd67b12b29f5374019a2d72d5966f657ddd183a20c81fa736de62a3e193444d",
+      "boundary": "Complete original leaf thunk."
+    }
+  ],
+  "codeFamilies": [
+    {
+      "role": "scene_constructor",
+      "rva": 7942832,
+      "runtimeRanges": [
+        [
+          7942832,
+          7951833,
+          29111824
+        ]
+      ]
+    },
+    {
+      "role": "post_broadphase_run",
+      "rva": 8038080,
+      "runtimeRanges": [
+        [
+          8038080,
+          8038164,
+          28540940
+        ]
+      ]
+    },
+    {
+      "role": "post_broadphase_cont_run",
+      "rva": 8038176,
+      "runtimeRanges": [
+        [
+          8038176,
+          8038252,
+          28540940
+        ]
+      ]
+    },
+    {
+      "role": "post_broadphase_scene",
+      "rva": 7990256,
+      "runtimeRanges": [
+        [
+          7990256,
+          7990602,
+          29110224
+        ],
+        [
+          7990602,
+          7990901,
+          29110248
+        ],
+        [
+          7990901,
+          7990933,
+          29110268
+        ]
+      ]
+    },
+    {
+      "role": "overlap_filter_run",
+      "rva": 8039760,
+      "runtimeRanges": [
+        [
+          8039760,
+          8039846,
+          28562320
+        ]
+      ]
+    },
+    {
+      "role": "overlap_filter_batch",
+      "rva": 8105568,
+      "runtimeRanges": [
+        [
+          8105568,
+          8105706,
+          29119984
+        ],
+        [
+          8105706,
+          8107157,
+          29119996
+        ],
+        [
+          8107157,
+          8107189,
+          29120036
+        ]
+      ]
+    },
+    {
+      "role": "task_dependency_wiring",
+      "rva": 8037168,
+      "runtimeRanges": [
+        [
+          8037168,
+          8037600,
+          28544920
+        ]
+      ]
+    },
+    {
+      "role": "np_scene_constructor",
+      "rva": 7805856,
+      "runtimeRanges": [
+        [
+          7805856,
+          7805869,
+          29099556
+        ],
+        [
+          7805869,
+          7806374,
+          29099572
+        ],
+        [
+          7806374,
+          7806625,
+          29099596
+        ],
+        [
+          7806625,
+          7807207,
+          29099616
+        ]
+      ]
+    },
+    {
+      "role": "native_scene_simulate",
+      "rva": 8046864,
+      "runtimeRanges": [
+        [
+          8046864,
+          8046888,
+          28672176
+        ],
+        [
+          8046888,
+          8047053,
+          29110728
+        ],
+        [
+          8047053,
+          8047059,
+          29110748
+        ]
+      ]
+    },
+    {
+      "role": "native_scene_collide",
+      "rva": 7980400,
+      "runtimeRanges": [
+        [
+          7980400,
+          7980516,
+          28540940
+        ]
+      ]
+    },
+    {
+      "role": "update_shapes_producer",
+      "rva": 7980528,
+      "runtimeRanges": [
+        [
+          7980528,
+          7980738,
+          28547592
+        ]
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "role": "scene_constructor",
+      "offset": 3442,
+      "hex": "488d057f3613014889beb81900004889bec01900004889bec819000089bed01900004c89aeb81900004889b6d81900004889aee8190000488986e8190000",
+      "label": "Scene constructor initializes postBroadPhase, including its owner and selected vtable."
+    },
+    {
+      "role": "scene_constructor",
+      "offset": 3504,
+      "hex": "488d05a93e1301488986181a0000",
+      "label": "Scene constructor stores the postBroadPhase task name."
+    },
+    {
+      "role": "scene_constructor",
+      "offset": 3518,
+      "hex": "488d05733613014889bef01900004889bef81900004889be001a000089be081a00004c89aef01900004889b6101a00004889ae201a0000488986201a0000",
+      "label": "Scene constructor initializes postBroadPhaseCont, including its owner and selected vtable."
+    },
+    {
+      "role": "scene_constructor",
+      "offset": 3580,
+      "hex": "488d05753e1301488986501a0000",
+      "label": "Scene constructor stores the postBroadPhaseCont task name."
+    },
+    {
+      "role": "post_broadphase_cont_run",
+      "offset": 16,
+      "hex": "488b5918",
+      "label": "Post-broadphase run reads the original continuation."
+    },
+    {
+      "role": "post_broadphase_cont_run",
+      "offset": 58,
+      "hex": "488bcf488b5c24304883c4205fe98444ffff",
+      "label": "Post-broadphase run tail-jumps with original owner and continuation."
+    },
+    {
+      "role": "post_broadphase_scene_part_1",
+      "offset": 94,
+      "hex": "48894b28",
+      "label": "Filter-task constructor stores the exact NPhaseCore owner, distinct from Scene."
+    },
+    {
+      "role": "post_broadphase_scene_part_1",
+      "offset": 111,
+      "hex": "488d05e89a1201488903",
+      "label": "Filter-task constructor assigns the selected filter vtable."
+    },
+    {
+      "role": "overlap_filter_run",
+      "offset": 67,
+      "hex": "488b4928",
+      "label": "Filter run loads its NPhaseCore owner before batch processing."
+    },
+    {
+      "role": "overlap_filter_batch",
+      "offset": 29,
+      "hex": "488b01",
+      "label": "The batch receiver reads its own Scene member before scene filter configuration."
+    },
+    {
+      "role": "overlap_filter_batch_part_1",
+      "offset": 1197,
+      "hex": "f6c20375134584f6740e4584ff7409f6c1017404664123c8",
+      "label": "After shader/callback checks, two kinematic operands clear the first pair flag."
+    },
+    {
+      "role": "task_dependency_wiring",
+      "offset": 103,
+      "hex": "488d9d201a0000c743200100000048897b184885ff7415488b07488bcfff5018488b4318488b481048894b10488db5e8190000c746200100000048895e184885db7415488b03488bcbff5018488b4618488b481048894e10",
+      "label": "Dependency setup wires postBroadPhase to postBroadPhaseCont, retaining it and copying its manager."
+    },
+    {
+      "role": "post_broadphase_scene_part_1",
+      "offset": 209,
+      "hex": "c7432001000000488973184885f67415488b06488bceff5018488b4318488b481048894b10488b03488bcbff5020",
+      "label": "Filter-task producer sets references/continuation/manager before original release."
+    }
+  ],
+  "callLinks": [
+    {
+      "role": "post_broadphase_cont_run",
+      "offset": 71,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "post_broadphase_scene"
+    },
+    {
+      "role": "post_broadphase_scene",
+      "offset": 70,
+      "opcode": "e8",
+      "targetContract": "pairFilter",
+      "targetRole": "scene_packet"
+    },
+    {
+      "role": "overlap_filter_run",
+      "offset": 76,
+      "opcode": "e8",
+      "targetContract": "self",
+      "targetRole": "overlap_filter_batch"
+    },
+    {
+      "role": "rigid_body_narrowphase_run",
+      "offset": 8,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "task_dependency_wiring"
+    },
+    {
+      "role": "update_shapes_run",
+      "offset": 8,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "update_shapes_producer"
+    },
+    {
+      "role": "np_simulate_run",
+      "offset": 8,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "np_simulate_bridge"
+    },
+    {
+      "role": "np_collide_run",
+      "offset": 8,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "np_collide_bridge"
+    },
+    {
+      "role": "np_simulate_bridge",
+      "offset": 18,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "native_scene_simulate"
+    },
+    {
+      "role": "np_collide_bridge",
+      "offset": 18,
+      "opcode": "e9",
+      "targetContract": "self",
+      "targetRole": "native_scene_collide"
+    }
+  ],
+  "taskTypes": [
+    {
+      "role": "postBroadPhase",
+      "vtableRva": 25982632,
+      "runRole": "post_broadphase_run",
+      "ownerKind": "internalScene",
+      "sceneField": "postBroadPhaseTask",
+      "name": "ScScene.postBroadPhase"
+    },
+    {
+      "role": "postBroadPhaseCont",
+      "vtableRva": 25982696,
+      "runRole": "post_broadphase_cont_run",
+      "ownerKind": "internalScene",
+      "sceneField": "postBroadPhaseContTask",
+      "name": "ScScene.postBroadPhaseCont"
+    },
+    {
+      "role": "overlapFilter",
+      "vtableRva": 25987240,
+      "runRole": "overlap_filter_run",
+      "ownerKind": "nphaseCore",
+      "name": "OverlapFilterTask"
+    },
+    {
+      "role": "rigidBodyNarrowPhase",
+      "name": "ScScene.rigidBodyNarrowPhase",
+      "sceneField": "rigidBodyNarrowPhaseTask",
+      "vtableRva": 25982504,
+      "runRole": "rigid_body_narrowphase_run",
+      "ownerKind": "internalScene"
+    },
+    {
+      "role": "updateShapes",
+      "name": "ScScene.collideStep",
+      "sceneField": "updateShapesTask",
+      "vtableRva": 25983336,
+      "runRole": "update_shapes_run",
+      "ownerKind": "internalScene"
+    },
+    {
+      "role": "preNarrowPhase",
+      "name": "ScScene.preRigidBodyNarrowPhase",
+      "sceneField": "preNarrowPhaseTask",
+      "vtableRva": 25982248,
+      "runRole": "pre_narrowphase_run",
+      "ownerKind": "internalScene"
+    },
+    {
+      "role": "npSimulate",
+      "name": "NpScene.execution",
+      "sceneField": "npSimulateTask",
+      "vtableRva": 25970016,
+      "runRole": "np_simulate_run",
+      "ownerKind": "publicScene"
+    },
+    {
+      "role": "npCollide",
+      "name": "NpScene.collide",
+      "sceneField": "npCollideTask",
+      "vtableRva": 25970080,
+      "runRole": "np_collide_run",
+      "ownerKind": "publicScene"
+    }
+  ],
+  "runSlot": 7,
+  "ownerSceneCell": 0,
+  "taskNames": [
+    {
+      "role": "postBroadPhase",
+      "nameRva": 25984784,
+      "text": "ScScene.postBroadPhase"
+    },
+    {
+      "role": "postBroadPhaseCont",
+      "nameRva": 25984808,
+      "text": "ScScene.postBroadPhaseCont"
+    },
+    {
+      "role": "overlapFilter",
+      "getterRva": 7997328,
+      "text": "OverlapFilterTask"
+    },
+    {
+      "role": "rigidBodyNarrowPhase",
+      "text": "ScScene.rigidBodyNarrowPhase",
+      "nameRva": 25984720
+    },
+    {
+      "role": "updateShapes",
+      "text": "ScScene.collideStep",
+      "nameRva": 25985104
+    },
+    {
+      "role": "preNarrowPhase",
+      "text": "ScScene.preRigidBodyNarrowPhase",
+      "nameRva": 25984584
+    },
+    {
+      "role": "npSimulate",
+      "text": "NpScene.execution",
+      "nameRva": 25974080
+    },
+    {
+      "role": "npCollide",
+      "text": "NpScene.collide",
+      "nameRva": 25974104
+    }
+  ],
+  "evidenceBoundary": "Direct original typed public-Scene task, native phase producer, shape-update, narrowphase and broadphase task programs. Live generation requires original producer, reference decrement, queue and run at every handoff; scene/name/time proximity cannot supply a missing edge.",
+  "targetOperands": [],
+  "constructors": [
+    {
+      "taskRole": "postBroadPhase",
+      "windowRole": "scene_constructor",
+      "vtableLea": 3442,
+      "vtableStore": 3497,
+      "ownerStore": 3559,
+      "nameLea": 3504,
+      "nameStore": 3511
+    },
+    {
+      "taskRole": "postBroadPhaseCont",
+      "windowRole": "scene_constructor",
+      "vtableLea": 3518,
+      "vtableStore": 3573,
+      "ownerStore": 3635,
+      "nameLea": 3580,
+      "nameStore": 3587
+    },
+    {
+      "taskRole": "overlapFilter",
+      "windowRole": "post_broadphase_scene_part_1",
+      "vtableLea": 111,
+      "vtableStore": 118,
+      "ownerStore": 94
+    },
+    {
+      "taskRole": "rigidBodyNarrowPhase",
+      "windowRole": "scene_constructor",
+      "vtableLea": 3328,
+      "vtableStore": 3335,
+      "ownerStore": 3407,
+      "nameLea": 3356,
+      "nameStore": 3363
+    },
+    {
+      "taskRole": "updateShapes",
+      "windowRole": "scene_constructor_part_1",
+      "vtableLea": 144,
+      "vtableStore": 206,
+      "ownerStore": 254,
+      "nameLea": 213,
+      "nameStore": 234
+    },
+    {
+      "taskRole": "preNarrowPhase",
+      "windowRole": "scene_constructor",
+      "vtableLea": 2969,
+      "vtableStore": 3024,
+      "ownerStore": 3086,
+      "nameLea": 3031,
+      "nameStore": 3038
+    },
+    {
+      "taskRole": "npSimulate",
+      "windowRole": "np_scene_constructor_part_3",
+      "vtableLea": 172,
+      "vtableStore": 228,
+      "ownerStore": 534,
+      "nameLea": 235,
+      "nameStore": 242
+    },
+    {
+      "taskRole": "npCollide",
+      "windowRole": "np_scene_constructor_part_3",
+      "vtableLea": 249,
+      "vtableStore": 305,
+      "ownerStore": 541,
+      "nameLea": 312,
+      "nameStore": 319
+    }
+  ],
+  "taskNameField": 48,
+  "nameGetterLeaves": [
+    {
+      "role": "embedded",
+      "rva": 5803712,
+      "hex": "488b4130c3"
+    },
+    {
+      "role": "overlapFilter",
+      "rva": 7997328,
+      "hex": "488d0551811201c3"
+    }
+  ],
+  "hooks": [
+    {
+      "role": "task_dependencies",
+      "kind": 84,
+      "module": "unityPlayer",
+      "windowRole": "task_dependency_wiring",
+      "entryHex": "48895c240848896c2410488974241857",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "role": "filter_task_producer",
+      "kind": 85,
+      "module": "unityPlayer",
+      "windowRole": "post_broadphase_scene",
+      "entryHex": "48895c241848896c2420565741554156",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      }
+    },
+    {
+      "kind": 91,
+      "role": "native_scene_simulate",
+      "windowRole": "native_scene_simulate",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "f32",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "40574883ec200f57c0488bf90f2ec80f",
+      "module": "unityPlayer"
+    },
+    {
+      "kind": 92,
+      "role": "native_scene_collide",
+      "windowRole": "native_scene_collide",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "f32",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "48895c2408574883ec20f30f1189c007",
+      "module": "unityPlayer"
+    },
+    {
+      "kind": 93,
+      "role": "update_shapes_producer",
+      "windowRole": "update_shapes_producer",
+      "abi": {
+        "arguments": [
+          "pointer",
+          "pointer"
+        ],
+        "returnMode": "void"
+      },
+      "entryHex": "48895c24084889742410574883ec2048",
+      "module": "unityPlayer"
+    }
+  ],
+  "limits": {
+    "maxProducers": 8192,
+    "maxSeeds": 1024
+  },
+  "leafWindows": [
+    "rigid_body_narrowphase_run",
+    "update_shapes_run",
+    "pre_narrowphase_run",
+    "np_simulate_run",
+    "np_collide_run",
+    "np_simulate_bridge",
+    "np_collide_bridge"
+  ],
+  "publicSceneDelta": -16,
+  "simulationSeedRole": "npSimulate",
+  "simulationSeedOperands": [
+    {
+      "offset": 550,
+      "prefix": "488b86"
+    },
+    {
+      "offset": 557,
+      "prefix": "488d8e"
+    }
+  ]
+}

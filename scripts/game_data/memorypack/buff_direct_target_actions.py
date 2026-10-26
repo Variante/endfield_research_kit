@@ -59,7 +59,10 @@ def _contracts():
 
 
 def supported_tags():
-    return frozenset(row['unionTag'] for row in _contracts()[0]['routes'])
+    # The recursive dispatcher builds its tag set at import. Like the sibling
+    # adapters, list the contract's routes here and leave validation against
+    # the selected build to the decode path, which fails closed per action.
+    return frozenset(row['unionTag'] for row in json.loads(CONTRACT_PATH.read_bytes())['routes'])
 
 
 def _fail(check, *, tag, source, expected, actual, record='', field=''):

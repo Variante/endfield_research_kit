@@ -30,6 +30,7 @@ import struct
 from functools import lru_cache
 from typing import Any
 
+from scripts.game_data.memorypack.buff import _ability_action_tag_text as _AT
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
@@ -78,7 +79,7 @@ def _dependencies() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
             "unityplayerSha256": native_inputs["UnityPlayer.dll"],
         }
         or provider.get("status") != "authenticated-static-provider-chain-with-exact-corpus-cursor"
-        or provider.get("physicalTag") != "0x00C9"
+        or provider.get("physicalTag") != _AT("Core_IfElseAction_IfElseActionData")
         or provider.get("serializedMemberCount") != IF_ELSE_ACTION_MEMBER_COUNT
         or provider.get("wrapperName") != wrapper["typeName"]
         or provider.get("recursionLimit") != SEQUENCE_RECURSION_LIMIT

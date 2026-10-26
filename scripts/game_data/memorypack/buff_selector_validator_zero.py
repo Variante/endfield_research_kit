@@ -1,7 +1,7 @@
 """Selected zero-member validator children in Buff SelectorData lists.
 
 The selected ``SelectorValidator`` switch and generated setter plans close
-tags 5 (``ExcludeOwner``) and 9 (``MainCharacter``). Both have zero
+tags 5 (``ExcludeOwner``), 9 (``MainCharacter``) and 10 (``SkillCastId``). They have zero
 serialized members and consume only their union tag and wrapper header; the
 currently reached wrappers are nonnull, and each list ends at its parent's
 independently fixed one-entry list extent. A stored validator is not a
@@ -18,6 +18,7 @@ from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.il2cpp.context_audit_memorypack import buff_action_read_order
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
@@ -29,16 +30,18 @@ FAMILY = "SelectorValidator"
 TYPE_NAMES = {
     5: "Beyond.Gameplay.Core.Selector+ExcludeOwnerValidator+Data",
     9: "Beyond.Gameplay.Core.Selector+MainCharacterValidator+Data",
+    10: "Beyond.Gameplay.Core.Selector+SkillCastIdValidator+Data",
 }
 WRAPPER_NAMES = {
     5: "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack",
     9: "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack",
+    10: "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack",
 }
 
 
 def _contract() -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
-        CONTRACT_PATH, schema="endfield.buff-selector-validator-zero-native-contract.v1",
+        CONTRACT_PATH, schema="endfield.buff-selector-validator-zero-native-contract.v2",
         status="exact-current-build", label=LABEL,
     )
     if (contract.get("switchContract") != "skill_selector_validator_in_screen_native.json"
@@ -59,11 +62,13 @@ def _contract() -> dict[str, Any]:
                 or len(row.get("codeWindows", ())) != 2):
             raise ValueError(f"{LABEL}.contract:route-shape:{tag}")
         order = row.get("readOrder", {})
-        if tag == 5:
+        if tag in (5, 10):
             if (set(order) != {"headerCall", "zeroMemberTest"}
                     or bytes.fromhex(order["zeroMemberTest"][1]) != b"\x40\x84\xff"
                     or order["headerCall"][2] != contract["sharedHeaderWindow"]["startRva"]):
                 raise ValueError(f"{LABEL}.contract:header-route")
+            if tag==10 and row.get('sourceContract')!='buff_b2_native.json':
+                raise ValueError(f"{LABEL}.contract:skill-cast-source")
         else:
             forms = {
                 "sourceByteRead": b"\x0f\xb6\x30",
@@ -85,8 +90,9 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract(*, selector_native: dict[str, Any]) -> dict[str, Any]:
-    """Reprove two selected switch routes and their zero-member readers."""
+def validate_current_native_contract(*, selector_native: dict[str, Any],
+        gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
+    """Reprove selected switch routes and their zero-member readers."""
     if selector_native.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:selector-not-validated")
     contract = _contract()
@@ -109,6 +115,7 @@ def validate_current_native_contract(*, selector_native: dict[str, Any]) -> dict
         raise ValueError(f"{LABEL}.native:catalog")
     gate = check_installed_native_inputs(
         expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly,metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
@@ -152,7 +159,11 @@ def validate_current_native_contract(*, selector_native: dict[str, Any]) -> dict
                    for method in row["methods"]]
         image.check_windows(row["codeWindows"], label=LABEL)
         image.check_instruction_windows(row["readOrder"].values(), label=LABEL)
-        if tag == 5:
+        if tag==10:
+            buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,
+                image.modules,image.owners,source=str(gate.gameassembly),
+                contract_path=CONTRACTS_DIR/row['sourceContract'])
+        if tag in (5,10):
             rva, raw_hex, target = row["readOrder"]["headerCall"]
             raw = bytes.fromhex(raw_hex)
             if (len(raw) != 5 or raw[0] != 0xE8
@@ -167,6 +178,14 @@ def validate_current_native_contract(*, selector_native: dict[str, Any]) -> dict
             raise ValueError(f"{LABEL}.native:wrapper-plan:{tag}")
         selected[tag] = {"wrappedType": TYPE_NAMES[tag], "wrapperName": WRAPPER_NAMES[tag],
                          "methodIndices": methods, "serializedMemberCount": 0}
+    after=check_installed_native_inputs(expected['GameAssembly.dll'],expected['global-metadata.dat'],
+        gameassembly=gate.gameassembly,metadata=gate.metadata)
+    if after.status!='validated':
+        return {'status':after.status,'detail':after.detail,'nativeInputs':expected,'selectedTags':{}}
+    if not unityplayer.is_file():
+        return {'status':'missing','detail':'UnityPlayer.dll disappeared during validation','nativeInputs':expected,'selectedTags':{}}
+    if hashlib.sha256(unityplayer.read_bytes()).hexdigest().upper()!=expected['UnityPlayer.dll']:
+        return {'status':'mismatched','detail':'UnityPlayer.dll changed during validation','nativeInputs':expected,'selectedTags':{}}
     return {"status": "validated", "nativeInputs": expected,
             "selectedTags": selected, "evidenceBoundary": contract["evidenceBoundary"]}
 

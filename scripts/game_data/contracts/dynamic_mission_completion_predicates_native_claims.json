@@ -1,0 +1,144 @@
+{
+  "schema": "endfield.dynamic-mission-completion-predicates-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_stored_state_native_claims.json",
+      "schema": "endfield.dynamic-mission-stored-state-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_state_cache_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-cache-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_state_symbols_native_claims.json",
+      "schema": "endfield.dynamic-mission-state-symbols-native-claims.v1",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "mission": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "IsMissionCompleted",
+      "callAbi": "instance",
+      "returnType": "Boolean",
+      "parameters": [
+        "String"
+      ]
+    },
+    "quest": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "IsQuestCompleted",
+      "callAbi": "instance",
+      "returnType": "Boolean",
+      "parameters": [
+        "String"
+      ]
+    }
+  },
+  "programs": {
+    "mission": [
+      [
+        "mov [rsp+0x8], rbx",
+        "push rdi",
+        "sub rsp, 0x20",
+        "mov rbx, rdx",
+        "mov rdi, rcx",
+        "xor edx, edx",
+        "mov ecx, 0x62fb",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "xor r9d, r9d",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rdi",
+        "call *",
+        "test rax, rax",
+        "je *",
+        "cmp [rax+0x18], 0x3",
+        "jne *",
+        "mov al, 0x1",
+        "mov rbx, [rsp+0x30]",
+        "add rsp, 0x20",
+        "pop rdi",
+        "ret",
+        "xor al, al",
+        "jmp *"
+      ],
+      [
+        "xor edx, edx",
+        "mov ecx, 0x62fb",
+        "call *",
+        "test rax, rax",
+        "jne *",
+        "call *",
+        "int3",
+        "xor r9d, r9d",
+        "mov r8, rbx",
+        "mov rdx, rdi",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ],
+    "quest": [
+      [
+        "mov [rsp+0x8], rbx",
+        "push rdi",
+        "sub rsp, 0x20",
+        "mov rbx, rdx",
+        "mov rdi, rcx",
+        "xor edx, edx",
+        "mov ecx, 0x51a2",
+        "call *",
+        "test al, al",
+        "jne *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rdi",
+        "call *",
+        "cmp eax, 0x3",
+        "sete al",
+        "jmp *",
+        "xor edx, edx",
+        "mov ecx, 0x51a2",
+        "call *",
+        "test rax, rax",
+        "jne *",
+        "call *",
+        "int3",
+        "xor r9d, r9d",
+        "mov r8, rbx",
+        "mov rdx, rdi",
+        "mov rcx, rax",
+        "call *",
+        "mov rbx, [rsp+0x30]",
+        "add rsp, 0x20",
+        "pop rdi",
+        "ret"
+      ]
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "Selected false-patch predicates return normalized Boolean low-byte comparisons against the actual typed mission field/quest getter bits, with Mission null data returning false.",
+    "conditional": [
+      "Actual false selected IFix, valid original receiver/String and normally returning opaque lookup/state callees under ordinary Win64 with watched storage preserved."
+    ],
+    "exact": "Qualified actual call pointers, ordinary Boolean and enum ABI, selected owned frame/CFG, typed field and static enum declaration identity.",
+    "structuralOnly": "Underlying return bits and stored enum field; no live/source classification by enum name.",
+    "unresolved": [
+      "Actual live completion observation, ordering, transitions, GetMissionData selection and Quest getter internal implementation."
+    ]
+  }
+}

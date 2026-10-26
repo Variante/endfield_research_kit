@@ -1,0 +1,152 @@
+{
+  "schema": "endfield.dynamic-level-state-predicates-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_level_predicate_value_sources_native_claims.json",
+      "schema": "endfield.dynamic-level-predicate-value-sources-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_level_state_writes_native_claims.json",
+      "schema": "endfield.dynamic-level-state-writes-native-claims.v1",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "isLoaded": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "get_isLoaded",
+      "callAbi": "instance",
+      "returnType": "Boolean",
+      "parameters": []
+    },
+    "isReady": {
+      "type": "Beyond.Gameplay.Core.GameLevel",
+      "image": "Gameplay.Beyond.dll",
+      "method": "get_isReady",
+      "callAbi": "instance",
+      "returnType": "Boolean",
+      "parameters": []
+    }
+  },
+  "programs": {
+    "isLoaded": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "mov rbx, rcx",
+        "xor edx, edx",
+        "mov ecx, 0x5ef2",
+        "call *",
+        "test al, al",
+        "jcc *",
+        "cmp [rbx+0x10], 0x1",
+        "setge al",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret"
+      ],
+      [
+        "xor edx, edx",
+        "mov ecx, 0x5ef2",
+        "call *",
+        "test rax, rax",
+        "jne *",
+        "call *",
+        "int3",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ],
+    "isReady": [
+      [
+        "push rbx",
+        "sub rsp, 0x20",
+        "mov rbx, rcx",
+        "mov rcx, [rip+*",
+        "cmp [rcx+0xe0], 0x0",
+        "je *",
+        "mov rax, [rcx+0xb8]",
+        "mov rax, [rax]",
+        "test rax, rax",
+        "je *",
+        "cmp [rax+0x18], 0x5f01",
+        "jcc *",
+        "cmp [rbx+0x10], 0x3",
+        "setge al",
+        "add rsp, 0x20",
+        "pop rbx",
+        "ret",
+        "call *",
+        "mov rcx, [rip+*",
+        "jmp *",
+        "cmp [rcx+0x2f828], 0x0",
+        "je *",
+        "jmp *",
+        "call *",
+        "int3"
+      ],
+      [
+        "cmp [rcx+0xe0], 0x0",
+        "jne *",
+        "call *",
+        "mov rcx, [rip+*",
+        "mov rax, [rcx+0xb8]",
+        "mov rcx, [rax]",
+        "test rcx, rcx",
+        "jcc *",
+        "cmp [rcx+0x18], 0x5f01",
+        "jcc *",
+        "call *",
+        "int3",
+        "xor edx, edx",
+        "mov ecx, 0x5f01",
+        "call *",
+        "test rax, rax",
+        "jcc *",
+        "xor r8d, r8d",
+        "mov rdx, rbx",
+        "mov rcx, rax",
+        "call *",
+        "nop",
+        "jmp *"
+      ]
+    ]
+  },
+  "ownedByteCounts": {
+    "isLoaded": [
+      42,
+      43
+    ],
+    "isReady": [
+      101,
+      100
+    ]
+  },
+  "predicates": {
+    "isLoaded": {
+      "thresholdBits": 1,
+      "patchArgumentBits": 24306
+    },
+    "isReady": {
+      "thresholdBits": 3,
+      "guardComparisonBits": 24321
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Selected normal-return paths read concrete GameLevel.State Int32 and normalize signed threshold comparison into AL.",
+    "conditional": "Writer declaration comparison table assumes independent writer authentication, same receiver and stable State storage and the getter selected normal path.",
+    "unresolved": "No full-RAX normalization, runtime readiness, lifecycle, cache/header meaning or current writer-body reauthentication."
+  }
+}

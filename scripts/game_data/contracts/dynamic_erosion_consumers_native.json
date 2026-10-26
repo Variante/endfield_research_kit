@@ -1,0 +1,518 @@
+{
+  "schema": "endfield.dynamic-erosion-consumers-native-contract.v3",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": {
+    "collector": {
+      "index": 87370,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneErosionSystem",
+      "method": "_FillPosListFromFB",
+      "parameters": [
+        "System.UInt64",
+        "<type-index:59240>"
+      ],
+      "parameterNames": [
+        "compId",
+        "posList"
+      ],
+      "returnType": "System.Void",
+      "rva": 104970264,
+      "bodyExtent": 463,
+      "bodySha256": "B1578F0EEFBFD1175CA9C3356F9E5641EDBC7CDFA31C6BDBA47F7438B8A35177",
+      "boundary": "primary pdata body"
+    },
+    "decoder": {
+      "index": 88842,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneUtil",
+      "method": "DecodeFromFbData",
+      "parameters": [
+        "<type-index:93980>"
+      ],
+      "parameterNames": [
+        "vec"
+      ],
+      "returnType": "UnityEngine.Vector3",
+      "rva": 57988896,
+      "bodyExtent": 100,
+      "bodySha256": "2B034DBB386AED1DA680189959FE0E87555652F05C5A858BFC9F2D10DD0042F0",
+      "boundary": "primary pdata body"
+    },
+    "constructor": {
+      "index": 358727,
+      "type": "UnityEngine.Vector3",
+      "method": ".ctor",
+      "parameters": [
+        "System.Single",
+        "System.Single",
+        "System.Single"
+      ],
+      "parameterNames": [
+        "x",
+        "y",
+        "z"
+      ],
+      "returnType": "System.Void",
+      "rva": 77894784,
+      "bodyExtent": 15,
+      "bodySha256": "0C6C1D41E1E0C2FA6F3A09BDCEC14DE0410DFD4889DDDEB969FBF55217B5B0F2",
+      "boundary": "closed three MOVSS stores followed by RET"
+    },
+    "patchCheck": {
+      "index": 102181,
+      "type": "IFix.WrappersManagerImpl",
+      "method": "IsPatched",
+      "parameters": [
+        "System.Int32"
+      ],
+      "parameterNames": [
+        "id"
+      ],
+      "returnType": "System.Boolean",
+      "rva": 46758256,
+      "bodyExtent": 134,
+      "bodySha256": "60B466201792D0ED06291A5CADB56C9910B934D7D7505B8D7D9C570B90A2CF4E",
+      "boundary": "primary pdata body"
+    },
+    "coreReturn": {
+      "index": 87371,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneErosionSystem",
+      "method": "_GetErosionIdFromFB",
+      "rva": 104970728,
+      "parameters": [
+        "System.UInt64"
+      ],
+      "returnType": "System.UInt64",
+      "bodyExtent": 181,
+      "bodySha256": "1E8ED8D355470A9E2AB95E176DB5E5EC584B571D6C3EF04D54A1569E360FBB80"
+    }
+  },
+  "windows": {
+    "collector": {
+      "rva": 104970264,
+      "bodyExtent": 463,
+      "bodySha256": "B1578F0EEFBFD1175CA9C3356F9E5641EDBC7CDFA31C6BDBA47F7438B8A35177"
+    },
+    "decoder": {
+      "rva": 57988896,
+      "bodyExtent": 100,
+      "bodySha256": "2B034DBB386AED1DA680189959FE0E87555652F05C5A858BFC9F2D10DD0042F0"
+    },
+    "constructor": {
+      "rva": 77894784,
+      "bodyExtent": 15,
+      "bodySha256": "0C6C1D41E1E0C2FA6F3A09BDCEC14DE0410DFD4889DDDEB969FBF55217B5B0F2"
+    },
+    "patchCheck": {
+      "rva": 46758256,
+      "bodyExtent": 134,
+      "bodySha256": "60B466201792D0ED06291A5CADB56C9910B934D7D7505B8D7D9C570B90A2CF4E"
+    },
+    "vectorClone": {
+      "rva": 57985616,
+      "bodyExtent": 146,
+      "bodySha256": "8A72BD94FB5A253BD51609B00D0922B50B42C91C759616985F9C88B3A7F1BAA6",
+      "boundary": "primary pdata helper body"
+    },
+    "valueForwarder": {
+      "rva": 3181688,
+      "bodyExtent": 36,
+      "bodySha256": "573C944EB273A9A7D289BF733E7F3E16FD4048C955B9A306380A123D6FD21B60",
+      "boundary": "primary pdata helper body"
+    },
+    "coreReturn": {
+      "rva": 104970728,
+      "bodyExtent": 181,
+      "bodySha256": "1E8ED8D355470A9E2AB95E176DB5E5EC584B571D6C3EF04D54A1569E360FBB80"
+    }
+  },
+  "dependencies": [
+    {
+      "path": "dynamic_main_vector_native.json",
+      "schema": "endfield.dynamic-main-vector-native-contract.v1",
+      "methodRoles": {
+        "gridErosion": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+          "method": "ErosionRootComp"
+        },
+        "vectorOriginal": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+          "method": "Vector3"
+        }
+      }
+    },
+    {
+      "path": "dynamic_group_components_native.json",
+      "schema": "endfield.dynamic-group-components-native-contract.v2",
+      "methodRoles": {
+        "posList": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+          "method": "get_PosList"
+        },
+        "coreId": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneErosionRootComp",
+          "method": "get_ErosionCoreId"
+        }
+      }
+    },
+    {
+      "path": "dynamic_root_comp_native.json",
+      "schema": "endfield.dynamic-root-comp-native-contract.v7",
+      "methodRoles": {
+        "num": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "method": "get_Num"
+        },
+        "groupIndex": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+          "method": "get_Index"
+        }
+      }
+    },
+    {
+      "path": "dynamic_data_index_native.json",
+      "schema": "endfield.dynamic-data-index-native-contract.v1",
+      "methodRoles": {
+        "index": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
+          "method": "get_Index"
+        }
+      }
+    },
+    {
+      "path": "dynamic_scalar_components_native.json",
+      "schema": "endfield.dynamic-scalar-components-native-contract.v3",
+      "methodRoles": {
+        "x": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVector3",
+          "method": "get_X"
+        },
+        "y": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVector3",
+          "method": "get_Y"
+        },
+        "z": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVector3",
+          "method": "get_Z"
+        }
+      }
+    }
+  ],
+  "probes": {
+    "initialCounter": {
+      "window": "collector",
+      "offset": 31,
+      "bytes": "33DB"
+    },
+    "saveList": {
+      "window": "collector",
+      "offset": 33,
+      "bytes": "498BF8"
+    },
+    "saveComp": {
+      "window": "collector",
+      "offset": 42,
+      "bytes": "488BF2"
+    },
+    "saveThis": {
+      "window": "collector",
+      "offset": 45,
+      "bytes": "4C8BF1"
+    },
+    "selectGridAndRoot": {
+      "window": "collector",
+      "offset": 142,
+      "bytes": "4C8D4DC7488BD64C8D4507498BCE"
+    },
+    "rootGetterArgs": {
+      "window": "collector",
+      "offset": 161,
+      "bytes": "448B45C7488D5507488D4D27"
+    },
+    "groupGetterArgs": {
+      "window": "collector",
+      "offset": 178,
+      "bytes": "4533C0488D55CF488D4D270F10000F1048100F1145CF0F114DDF"
+    },
+    "groupNumArgs": {
+      "window": "collector",
+      "offset": 209,
+      "bytes": "33D2488D4DCF0F10000F1048100F1145CF0F114DDF"
+    },
+    "groupIndexArgs": {
+      "window": "collector",
+      "offset": 235,
+      "bytes": "4533C0488D55CF488D4D278BF0"
+    },
+    "indexArgs": {
+      "window": "collector",
+      "offset": 253,
+      "bytes": "33D2488D4DCF0F10000F1048100F1145CF0F114DDF"
+    },
+    "numCapture": {
+      "window": "collector",
+      "offset": 246,
+      "bytes": "8BF0"
+    },
+    "indexCapture": {
+      "window": "collector",
+      "offset": 279,
+      "bytes": "448BF0"
+    },
+    "numGuard": {
+      "window": "collector",
+      "offset": 282,
+      "bytes": "85F60F8E90000000"
+    },
+    "loopIndex": {
+      "window": "collector",
+      "offset": 290,
+      "bytes": "468D0433488D5507488D4D27"
+    },
+    "decodeArgs": {
+      "window": "collector",
+      "offset": 334,
+      "bytes": "488D55CF488D4D47"
+    },
+    "listArgs": {
+      "window": "collector",
+      "offset": 354,
+      "bytes": "488D55F7488BCFF20F10008B4008F20F1145F78945FF"
+    },
+    "loopControl": {
+      "window": "collector",
+      "offset": 381,
+      "bytes": "FFC33BDE7C9F"
+    },
+    "returnFrame": {
+      "window": "collector",
+      "offset": 434,
+      "bytes": "4C8D9C24C0000000498B5B10498B7318498B7B204D8B7328498BE35DC3"
+    },
+    "patchBranch": {
+      "window": "collector",
+      "offset": 119,
+      "bytes": "84C00F8506010000"
+    },
+    "decoderSaveSource": {
+      "window": "decoder",
+      "offset": 10,
+      "bytes": "488BDA"
+    },
+    "decoderSaveOutput": {
+      "window": "decoder",
+      "offset": 18,
+      "bytes": "488BF9"
+    },
+    "decoderXSave": {
+      "window": "decoder",
+      "offset": 41,
+      "bytes": "0F28F8"
+    },
+    "decoderYSave": {
+      "window": "decoder",
+      "offset": 54,
+      "bytes": "0F28F0"
+    },
+    "decoderXStore": {
+      "window": "decoder",
+      "offset": 70,
+      "bytes": "F30F113F"
+    },
+    "decoderYStore": {
+      "window": "decoder",
+      "offset": 79,
+      "bytes": "F30F117704"
+    },
+    "decoderZStore": {
+      "window": "decoder",
+      "offset": 89,
+      "bytes": "F30F114708"
+    },
+    "decoderReturn": {
+      "window": "decoder",
+      "offset": 67,
+      "bytes": "488BC7"
+    },
+    "constructorXStore": {
+      "window": "constructor",
+      "offset": 0,
+      "bytes": "F30F1109"
+    },
+    "constructorYStore": {
+      "window": "constructor",
+      "offset": 4,
+      "bytes": "F30F115104"
+    },
+    "constructorZStore": {
+      "window": "constructor",
+      "offset": 9,
+      "bytes": "F30F115908"
+    },
+    "cloneSlot": {
+      "window": "vectorClone",
+      "offset": 24,
+      "bytes": "BA10000000"
+    },
+    "cloneIndex": {
+      "window": "vectorClone",
+      "offset": 29,
+      "bytes": "418BF0"
+    },
+    "cloneStride": {
+      "window": "vectorClone",
+      "offset": 68,
+      "bytes": "8D0C76"
+    },
+    "clonePosition": {
+      "window": "vectorClone",
+      "offset": 81,
+      "bytes": "8D1488"
+    },
+    "forwardValue": {
+      "window": "valueForwarder",
+      "offset": 0,
+      "bytes": "4883EC38F20F10028B4208488D542420F20F1144242089442428E80906C2024883C438C3"
+    }
+  },
+  "calls": [
+    {
+      "window": "collector",
+      "offset": 114,
+      "target": "patchCheck"
+    },
+    {
+      "window": "collector",
+      "offset": 173,
+      "target": "gridErosion"
+    },
+    {
+      "window": "collector",
+      "offset": 204,
+      "target": "posList"
+    },
+    {
+      "window": "collector",
+      "offset": 230,
+      "target": "num"
+    },
+    {
+      "window": "collector",
+      "offset": 248,
+      "target": "groupIndex"
+    },
+    {
+      "window": "collector",
+      "offset": 274,
+      "target": "index"
+    },
+    {
+      "window": "collector",
+      "offset": 302,
+      "target": "vectorClone"
+    },
+    {
+      "window": "collector",
+      "offset": 342,
+      "target": "decoder"
+    },
+    {
+      "window": "collector",
+      "offset": 376,
+      "target": "valueForwarder"
+    },
+    {
+      "window": "decoder",
+      "offset": 31,
+      "target": "x"
+    },
+    {
+      "window": "decoder",
+      "offset": 44,
+      "target": "y"
+    },
+    {
+      "window": "decoder",
+      "offset": 57,
+      "target": "z"
+    }
+  ],
+  "coreIdFlow": {
+    "probes": {
+      "saveComp": {
+        "offset": 19,
+        "bytes": "488BDA"
+      },
+      "saveThis": {
+        "offset": 22,
+        "bytes": "488BF9"
+      },
+      "lookupArgs": {
+        "offset": 49,
+        "bytes": "4C8D8C2498000000488BD34C8D442430488BCF"
+      },
+      "rootArgs": {
+        "offset": 73,
+        "bytes": "448B842498000000488D542430488D4C2450"
+      },
+      "coreArgs": {
+        "offset": 96,
+        "bytes": "33D2488D4C24300F10000F1048100F114424300F114C2440"
+      },
+      "returnFrame": {
+        "offset": 167,
+        "bytes": "488B9C24800000004883C4705FC3"
+      },
+      "patchBranch": {
+        "offset": 45,
+        "bytes": "84C0754E",
+        "target": 127
+      },
+      "getterReturnBranch": {
+        "offset": 125,
+        "bytes": "EB28",
+        "target": 167
+      }
+    },
+    "calls": [
+      {
+        "offset": 40,
+        "target": "patchCheck"
+      },
+      {
+        "offset": 91,
+        "target": "gridErosion"
+      },
+      {
+        "offset": 120,
+        "target": "coreId"
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native method identities, primitive/explicit type ABI records and authenticated primary/leaf code windows. Complete instruction partition and direct-call boundaries exclude opcode bytes inside immediates/displacements.",
+    "direct": "PosList Num/Index feed same supplied grid Vector3 accessor; named axis getters feed Unity constructor-aligned return slots and original typed List receiver/value arguments. ErosionCoreId UInt64 getter result reaches function return unchanged.",
+    "conditional": "Selected non-replacement collector and generated-accessor fast paths. Explicit FB proxy flag20 is checked separately from ordinary primitive and typed List/value ABI. Normal Win64 calls preserve nonvolatile RDI and XMM6/XMM7; ordinary primitive and concrete owner/static-instance roles are authenticated. Valid pointers and normal returns are required. Caller FB carrier, Unity return and list-value local spans are disjoint; decoded intervals exclude actual watched-register writes and additional volatile-clobbering calls.",
+    "unresolved": "Opaque list forwarding and nested callee do not prove successful insertion. Runtime grid/file/comp selection, patch routes, CoreId target, world space, units and activation are unresolved."
+  },
+  "methodCallAbi": {
+    "collector": "instance",
+    "constructor": "instance",
+    "coreId": "instance",
+    "coreReturn": "instance",
+    "decoder": "static",
+    "gridErosion": "instance",
+    "groupIndex": "instance",
+    "index": "instance",
+    "num": "instance",
+    "patchCheck": "static",
+    "posList": "instance",
+    "vectorOriginal": "instance",
+    "x": "instance",
+    "y": "instance",
+    "z": "instance"
+  }
+}

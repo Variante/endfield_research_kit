@@ -1,0 +1,140 @@
+{
+  "schema": "endfield.dynamic-quest-objective-boolean-native-claims.v1",
+  "status": "reviewed",
+  "dependencies": [
+    {
+      "path": "dynamic_quest_state_value_source_native_claims.json",
+      "schema": "endfield.dynamic-quest-state-value-source-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_quest_state_message_writes_native_claims.json",
+      "schema": "endfield.dynamic-quest-state-message-writes-native-claims.v1",
+      "status": "reviewed"
+    },
+    {
+      "path": "dynamic_mission_string_providers_native_claims.json",
+      "schema": "endfield.dynamic-mission-string-providers-native-claims.v2",
+      "status": "reviewed"
+    }
+  ],
+  "methods": {
+    "predicate": {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "image": "Gameplay.Beyond.dll",
+      "method": "IsObjectiveCompleted",
+      "callAbi": "instance",
+      "returnType": "Boolean",
+      "parameters": [
+        "String",
+        "Int32"
+      ]
+    }
+  },
+  "fields": {
+    "objectives": {
+      "name": "questObjectives",
+      "offset": 32
+    },
+    "completed": {
+      "name": "isCompleted",
+      "offset": 40,
+      "type": "Boolean"
+    }
+  },
+  "program": [
+    "mov [rsp+0x8], rbx",
+    "mov [rsp+0x10], rsi",
+    "push rdi",
+    "sub rsp, 0x40",
+    "cmp [rip+*",
+    "mov ebx, r8d",
+    "mov rsi, rdx",
+    "mov rdi, rcx",
+    "jne *",
+    "lea rcx, [rip+*",
+    "call *",
+    "lea rcx, [rip+*",
+    "call *",
+    "lea rcx, [rip+*",
+    "call *",
+    "mov [rip+*",
+    "and [rsp+0x30], 0x0",
+    "xor edx, edx",
+    "mov ecx, 0x641b",
+    "call *",
+    "test al, al",
+    "jne *",
+    "mov rcx, [rdi+0xe0]",
+    "test rcx, rcx",
+    "je *",
+    "mov r9, [rip+*",
+    "lea r8, [rsp+0x30]",
+    "mov rdx, rsi",
+    "call *",
+    "test al, al",
+    "je *",
+    "mov rcx, [rsp+0x30]",
+    "test rcx, rcx",
+    "je *",
+    "mov rax, [rcx+0x20]",
+    "test rax, rax",
+    "je *",
+    "cmp ebx, [rax+0x18]",
+    "jge *",
+    "mov r8, [rip+*",
+    "mov edx, ebx",
+    "mov rcx, rax",
+    "call *",
+    "test rax, rax",
+    "je *",
+    "cmp [rax+0x28], 0x0",
+    "setne al",
+    "jmp *",
+    "xor al, al",
+    "jmp *",
+    "xor edx, edx",
+    "mov ecx, 0x641b",
+    "call *",
+    "test rax, rax",
+    "jne *",
+    "call *",
+    "int3",
+    "and [rsp+0x20], 0x0",
+    "mov r9d, ebx",
+    "mov r8, rsi",
+    "mov rdx, rdi",
+    "mov rcx, rax",
+    "call *",
+    "mov rbx, [rsp+0x50]",
+    "mov rsi, [rsp+0x58]",
+    "add rsp, 0x40",
+    "pop rdi",
+    "ret"
+  ],
+  "evidenceBoundary": {
+    "direct": [
+      "compatible concrete ObjectiveData.isCompleted byte zero/nonzero -> SETNE AL normalized0/1",
+      "opaque first request AL zero or original Int32 signed>=anonymous storedInt32 lane -> AL0"
+    ],
+    "conditional": [
+      "actual patch check false",
+      "normal opaque callees preserve original saved registers/caller frame",
+      "first outslot result independently compatible nonnull QuestData",
+      "questObjectives reference independently compatible valid nonnull closed List<ObjectiveData> storage with readable anonymous signedInt32 lane",
+      "indexed request normal return independently compatible nonnull ObjectiveData with stable readable Boolean field"
+    ],
+    "structuralOnly": [
+      "passed indexed request MethodSpec describes get_Item(Int32), its VAR0 return and same concrete ObjectiveData classinst as field"
+    ],
+    "unresolved": [
+      "first Stringsharing API identity/selection",
+      "actual indexed nativeAPI identity: no exact selected candidate currently",
+      "generic stored lane ownership/size/Count",
+      "valid index/item ordinal/list contents/mutation",
+      "provider/source/live completion/capture ordering"
+    ],
+    "lowByteOnly": true
+  },
+  "objectiveType": "Beyond.Gameplay.MissionSystem+ObjectiveData"
+}

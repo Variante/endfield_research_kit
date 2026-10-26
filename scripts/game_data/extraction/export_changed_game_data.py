@@ -16,6 +16,9 @@ summary; otherwise it fails closed and requires a full export. Bundle-derived
 outputs are refreshed by the WebUI synchronization orchestrator, because a
 changed bundle does not prove per-output ownership. This low-level structured
 phase never reads or writes Updates state.
+
+CLI exit code 1 permits the wrapper to repair unavailable delta evidence with
+a full export. Reader-command failures use exit code 2 and must stop instead.
 """
 
 from __future__ import annotations
@@ -85,6 +88,13 @@ LOCK_BYTE_COUNT = 1
 
 class ChangedExportError(RuntimeError):
     pass
+
+
+class ChangedExportCommandError(ChangedExportError):
+    """Extraction failed; a full scan cannot repair a failed reader command."""
+
+
+COMMAND_FAILURE_EXIT_CODE = 2
 
 
 def _acquire_workflow_lock(descriptor: int) -> None:
@@ -212,7 +222,7 @@ def _run(command: list[str], *, cwd: Path = ROOT) -> None:
     try:
         subprocess.run(command, cwd=cwd, check=True)
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise ChangedExportError(f"command failed: {command[0]} ({exc})") from exc
+        raise ChangedExportCommandError(f"command failed: {command[0]} ({exc})") from exc
 
 
 def _load_index_rows(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -1028,6 +1038,9 @@ def main(argv: list[str] | None = None) -> int:
             operation = finalize if args.action == "finalize" else abort
         with exclusive_workflow_lock(output_root):
             payload = operation(args)
+    except ChangedExportCommandError as exc:
+        print(f"[changed-export] {exc}; stopping without a full-extraction fallback", file=sys.stderr)
+        return COMMAND_FAILURE_EXIT_CODE
     except ChangedExportError as exc:
         print(f"[changed-export] {exc}", file=sys.stderr)
         return 1

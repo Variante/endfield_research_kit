@@ -101,11 +101,11 @@ def _contract(path: Path) -> dict[str, Any]:
         raise ValueError(f"{LABEL}.contract:shape")
     layouts = json.loads(LAYOUT_PATH.read_bytes())
     matches = [row for row in layouts.get("layouts", []) if
-               (row.get("family"), row.get("tag")) == (route["family"], route["tag"])]
+               (row.get("family"), row.get("wrapperName")) == (route["family"], route.get("wrapperName"))]
     layout = matches[0] if len(matches) == 1 else None
     cursor = layout.get("cursorEvidence") if layout else None
     if (
-        layouts.get("schema") != "endfield.action-map-layouts.v3"
+        layouts.get("schema") != "endfield.action-map-layouts.v5"
         or layout is None or layout.get("nativeGate") != "levelscript_entities_visibility_native"
         or layout.get("wrapperName") != route["wrapperName"]
         or layout.get("memberCount") != route["memberCount"]

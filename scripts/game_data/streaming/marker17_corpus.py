@@ -91,35 +91,7 @@ def _fingerprint_rows(outer: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _snapshot_outer_fingerprints(outer: dict[str, Any], failures: list[dict[str, Any]], stage: str) -> list[dict[str, Any]]:
-    rows = _fingerprint_rows(outer)
-    if not rows:
-        failures.append(_failure("outer-summary", stage, "nonempty fingerprint inventory", 0,
-                                 field="sourceFingerprints+buildFingerprints"))
-        return []
-    seen: set[str] = set()
-    result: list[dict[str, Any]] = []
-    for index, row in enumerate(rows):
-        source = f"outer-fingerprint[{index}]"
-        raw_path = row.get("path")
-        if not isinstance(raw_path, str) or not raw_path:
-            failures.append(_failure(source, stage, "nonempty path", raw_path, field="path"))
-            continue
-        path = Path(raw_path)
-        canonical = str(path.resolve()).casefold()
-        if canonical in seen:
-            failures.append(_failure(source, stage, "unique resolved path", str(path.resolve()), field="path"))
-            continue
-        seen.add(canonical)
-        try:
-            length = path.stat().st_size
-            digest = sha256_file(path)
-        except OSError as exc:
-            failures.append(_failure(path.as_posix(), stage, "readable fingerprint source", f"{type(exc).__name__}: {exc}"))
-            continue
-        _require(failures, path.as_posix(), stage, "length", length, row.get("length"))
-        _require(failures, path.as_posix(), stage, "sha256", digest, str(row.get("sha256", "")).upper())
-        result.append({"path": path.as_posix(), "length": length, "sha256": digest})
-    return result
+    return corpus.snapshot_outer_fingerprints(outer, failures, stage)
 
 
 def _read_json(path: Path, failures: list[dict[str, Any]], stage: str) -> dict[str, Any] | None:

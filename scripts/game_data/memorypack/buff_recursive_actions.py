@@ -1,12 +1,14 @@
 """Reusable recursive action composition using reviewed typed child joins.
 
-The caller must independently prove its parent map/sequence typed join. Positive
+The caller must independently prove its parent map/sequence typed join. Unproved
 target recursion, selectors with unsupported processors/validators, inherited skill lists,
 and unresolved EffectActionCfg terrain-effect arrays still refuse the action.
 """
 from __future__ import annotations
 import struct
+from pathlib import Path
 from typing import Any
+from scripts.common import check_installed_native_inputs
 from scripts.game_data.memorypack import (
     buff_blackboard_double_child_receipt as blackboard,
     buff_create_buff_action_receipt as create,
@@ -60,6 +62,8 @@ from scripts.game_data.memorypack.buff_actions import SEQUENCE_RECURSION_LIMIT
 from scripts.game_data.memorypack import buff_global_creation_action as global_creation
 from scripts.game_data.memorypack import buff_finish_global_action as finish_global
 from scripts.game_data.memorypack import buff_blow_off_character_action as blow_off
+from scripts.game_data.memorypack import buff_blow_off_action as blow_off_action
+from scripts.game_data.memorypack import buff_self_rotate_action as self_rotate_action
 from scripts.game_data.memorypack import buff_cast_skill_action as cast_skill
 from scripts.game_data.memorypack import buff_animator_param_action as animator_param
 from scripts.game_data.memorypack import buff_camera_control_state_action as camera_control_state
@@ -67,6 +71,8 @@ from scripts.game_data.memorypack import buff_selector_fixed_point_finder as fix
 from scripts.game_data.memorypack import buff_switch_action as switch
 from scripts.game_data.memorypack import buff_weapon_visual_action as weapon_visual
 from scripts.game_data.memorypack import buff_selector_random_point_finder as random_point
+from scripts.game_data.memorypack import buff_selector_point_finder as point_finder
+from scripts.game_data.memorypack import buff_continuous_find_target as continuous_find_target
 from scripts.game_data.memorypack import buff_recover_poise_action as recover_poise
 from scripts.game_data.memorypack import buff_spell_infliction_action as spell_infliction
 from scripts.game_data.memorypack import buff_custom_ability_event_condition as custom_event
@@ -77,11 +83,25 @@ from scripts.game_data.memorypack import buff_collider_shape as collider_shape
 from scripts.game_data.memorypack import buff_pick_target_action as pick_target
 from scripts.game_data.memorypack import buff_effect_line_center_action as effect_line_center
 from scripts.game_data.memorypack import buff_tick_interval_action as tick_interval
+from scripts.game_data.memorypack import buff_check_target_contains_action as target_contains
+from scripts.game_data.memorypack import buff_merge_target_action as merge_target
+from scripts.game_data.memorypack import buff_move_to as move_to
+from scripts.game_data.memorypack import buff_teleport_action as teleport
+from scripts.game_data.memorypack import buff_target_mask_conditions as target_mask_conditions
+from scripts.game_data.memorypack import buff_skill_lifetime_weakness_actions as skill_lifetime_weakness
+from scripts.game_data.memorypack import buff_ai_marker_blackboard_actions as ai_marker_blackboard
+from scripts.game_data.memorypack import buff_refrain_obtain_usp as refrain_usp
+from scripts.game_data.memorypack import buff_check_consume_layer as consume_layer
+from scripts.game_data.memorypack import buff_bind_bounty_action as bind_bounty
+from scripts.game_data.memorypack import buff_archery_chip_action as archery_chip
+from scripts.game_data.memorypack import buff_save_heal_value_action as save_heal_value
+from scripts.game_data.memorypack import buff_channeling_action as channeling
 
 LABEL = "buffRecursiveActions"
 SUPPORTED_TAGS = frozenset((create.TAG, effect.TAG, armor.TAG, finish.TAG, damage.TAG)) | direct_target_actions.supported_tags() | control.SUPPORTED_TAGS | find_target.supported_tags() | aura_heal.supported_tags() | skill_stack_interrupt.supported_tags() | vitals.supported_tags() | data_transfer.supported_tags() | probability.supported_tags() | entity_count.supported_tags() | passive_ui.supported_tags() | cost.supported_tags() | timed_marker.supported_tags() | armor_condition.supported_tags() | debug_print.supported_tags() | curve_actions.supported_tags() | marker_mask_actions.supported_tags() | tag_sequence_actions.supported_tags() | spawn_entity.supported_tags() | camera_impulse.supported_tags() | leaf_actions.supported_tags() | keyword_actions.supported_tags() | launch_projectile.supported_tags() | ignite_text.supported_tags() | global_creation.supported_tags() | switch.supported_tags() | weapon_visual.supported_tags()
 
 SUPPORTED_TAGS |= recover_poise.supported_tags()
+SUPPORTED_TAGS |= continuous_find_target.supported_tags()
 SUPPORTED_TAGS |= spell_infliction.supported_tags()
 SUPPORTED_TAGS |= custom_event.supported_tags()
 SUPPORTED_TAGS |= animation_sequences.supported_tags()
@@ -90,12 +110,49 @@ SUPPORTED_TAGS |= pick_target.supported_tags()
 SUPPORTED_TAGS |= effect_line_center.supported_tags()
 SUPPORTED_TAGS |= finish_global.supported_tags()
 SUPPORTED_TAGS |= blow_off.supported_tags()
+SUPPORTED_TAGS |= blow_off_action.supported_tags()
+SUPPORTED_TAGS |= self_rotate_action.supported_tags()
 SUPPORTED_TAGS |= cast_skill.supported_tags()
 SUPPORTED_TAGS |= animator_param.supported_tags()
 SUPPORTED_TAGS |= camera_control_state.supported_tags()
 SUPPORTED_TAGS |= tick_interval.supported_tags()
+SUPPORTED_TAGS |= refrain_usp.supported_tags()
+SUPPORTED_TAGS |= target_contains.supported_tags()
+SUPPORTED_TAGS |= merge_target.supported_tags()
+SUPPORTED_TAGS |= move_to.supported_tags()
+SUPPORTED_TAGS |= teleport.supported_tags()
+SUPPORTED_TAGS |= target_mask_conditions.supported_tags()
+SUPPORTED_TAGS |= skill_lifetime_weakness.supported_tags()
+SUPPORTED_TAGS |= ai_marker_blackboard.supported_tags()
+SUPPORTED_TAGS |= consume_layer.supported_tags()
+SUPPORTED_TAGS |= bind_bounty.supported_tags()
+SUPPORTED_TAGS |= archery_chip.supported_tags()
+SUPPORTED_TAGS |= save_heal_value.supported_tags()
+SUPPORTED_TAGS |= channeling.supported_tags()
 
-def validate_current_native_contract() -> dict[str, Any]:
+def _validate_move_to(children: dict[str, Any], *, gameassembly: Path | None = None,
+                      metadata: Path | None = None) -> dict[str, Any]:
+    pins = move_to.source_owner._contract()['nativeInputs']
+    gate = check_installed_native_inputs(pins['GameAssembly.dll'], pins['global-metadata.dat'],
+        gameassembly=gameassembly, metadata=metadata)
+    if gate.status != 'validated':
+        return {'status': gate.status, 'detail': gate.detail, 'nativeInputs': pins}
+    return move_to.validate_current_native_contract(gameassembly=gate.gameassembly,
+        metadata=gate.metadata, children=children)
+
+
+def _validate_refrain_usp(children, *, gameassembly=None, metadata=None):
+    pins = refrain_usp._contract()['nativeInputs']
+    selected = check_installed_native_inputs(pins['GameAssembly.dll'], pins['global-metadata.dat'],
+        gameassembly=gameassembly, metadata=metadata)
+    if selected.status != 'validated':
+        return {'status': selected.status, 'detail': selected.detail, 'nativeInputs': pins}
+    return refrain_usp.validate_current_native_contract(children=children,
+        gameassembly=selected.gameassembly, metadata=selected.metadata)
+
+
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
     children = {"create": create.validate_current_native_contract(),
                 "iconDuration": icon_duration.validate_current_native_contract(),
                 "createInput": create_input.validate_current_native_contract(),
@@ -129,6 +186,8 @@ def validate_current_native_contract() -> dict[str, Any]:
         selector_native=children["selector"], vector_native=children["effectVectors"])
     children["randomPointFinder"] = random_point.validate_current_native_contract(
         selector_native=children["selector"], vector_native=children["effectVectors"])
+    children["pointFinder"] = point_finder.validate_current_native_contract(
+        selector_native=children["selector"], vector_native=children["effectVectors"])
     children["colliderShape"] = collider_shape.validate_current_native_contract()
     children["shapeFinder"] = shape_finder.validate_current_native_contract(
         selector_native=children["selector"], collider_native=children["colliderShape"])
@@ -142,6 +201,8 @@ def validate_current_native_contract() -> dict[str, Any]:
         vector_native=children["effectVectors"], target_native=children["target"])
     children["recoverPoise"] = recover_poise.validate_current_native_contract(children=children)
     children["spellInfliction"] = spell_infliction.validate_current_native_contract(children=children)
+    children["checkTargetContains"] = target_contains.validate_current_native_contract(children=children)
+    children["mergeTarget"] = merge_target.validate_current_native_contract(children=children)
     children["customAbilityEvent"] = custom_event.validate_current_native_contract(children=children)
     children["auraHeal"] = aura_heal.validate_current_native_contract(children=children)
     children["skillStackInterrupt"] = skill_stack_interrupt.validate_current_native_contract(children=children)
@@ -163,21 +224,50 @@ def validate_current_native_contract() -> dict[str, Any]:
     children["tagSequenceActions"] = tag_sequence_actions.validate_current_native_contract(children=children)
     children["spawnEntity"] = spawn_entity.validate_current_native_contract(children=children)
     children["cameraImpulse"] = camera_impulse.validate_current_native_contract(children=children)
-    children["leafActions"] = leaf_actions.validate_current_native_contract()
+    children["leafActions"] = leaf_actions.validate_current_native_contract(
+        gameassembly=gameassembly, metadata=metadata)
     children["keywordActions"] = keyword_actions.validate_current_native_contract(children=children)
     children["launchProjectile"] = launch_projectile.validate_current_native_contract(children=children)
     children["igniteText"] = ignite_text.validate_current_native_contract(children=children)
     children["globalCreation"] = global_creation.validate_current_native_contract(children=children)
     children["finishGlobal"] = finish_global.validate_current_native_contract(children=children)
     children["blowOff"] = blow_off.validate_current_native_contract(children=children)
+    children["blowOffAction"] = blow_off_action.validate_current_native_contract(children=children)
     children["castSkill"] = cast_skill.validate_current_native_contract(children=children)
     children["animatorParamAction"] = animator_param.validate_current_native_contract()
     children["switch"] = switch.validate_current_native_contract(children=children)
     children["weaponVisual"] = weapon_visual.validate_current_native_contract()
     children["pickTarget"] = pick_target.validate_current_native_contract(children=children)
+    children["blackboardInt"] = children["pickTarget"]["integerNative"]
+    children["sourceString"] = children["blackboardInt"]["stringSource"]
+    children["selfRotateAction"] = self_rotate_action.validate_current_native_contract(
+        children=children, gameassembly=gameassembly, metadata=metadata)
+    children["consumeLayer"] = consume_layer.validate_current_native_contract(children=children,
+        gameassembly=gameassembly,metadata=metadata)
+    children["bindBounty"] = bind_bounty.validate_current_native_contract(children=children,
+        gameassembly=gameassembly,metadata=metadata)
+    children["archeryChip"] = archery_chip.validate_current_native_contract(children=children,
+        gameassembly=gameassembly,metadata=metadata)
+    children["saveHealValue"] = save_heal_value.validate_current_native_contract(
+        string_native=children["blackboardInt"]["stringSource"],gameassembly=gameassembly,metadata=metadata)
+    children["channeling"] = channeling.validate_current_native_contract(
+        children=children,gameassembly=gameassembly,metadata=metadata)
+    children["continuousFindTarget"] = continuous_find_target.validate_current_native_contract(children=children,
+        gameassembly=gameassembly,metadata=metadata)
     children["effectLineCenter"] = effect_line_center.validate_current_native_contract(children=children)
     children["tickInterval"] = tick_interval.composition.validate_current_native_contract()
     children["tickIntervalUnionRoute"] = tick_interval.unions.validate_current_native_contract()
+    children["moveTo"] = _validate_move_to(children, gameassembly=gameassembly, metadata=metadata)
+    children["teleport"] = teleport.validate_current_native_contract(children=children,
+        gameassembly=gameassembly, metadata=metadata)
+    children["targetMaskConditions"] = target_mask_conditions.validate_current_native_contract(children=children,
+        gameassembly=gameassembly, metadata=metadata)
+    children["skillLifetimeWeakness"] = skill_lifetime_weakness.validate_current_native_contract(children=children,
+        gameassembly=gameassembly, metadata=metadata)
+    children["aiMarkerBlackboard"] = ai_marker_blackboard.validate_current_native_contract(children=children,
+        gameassembly=gameassembly, metadata=metadata)
+    children["refrainObtainUsp"] = _validate_refrain_usp(children,
+        gameassembly=gameassembly, metadata=metadata)
     armor_target_binding(children["armor"], children["target"])
     finish_settings_binding(children["finish"], children["findSettings"])
     expected = children["create"]["nativeInputs"]
@@ -345,6 +435,21 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
         raise ValueError(f"{LABEL}.action:depth-limit")
     if native_validation.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:unvalidated")
+    if tag in ai_marker_blackboard.supported_tags():
+        return ai_marker_blackboard.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,
+            native_validation=native_validation,depth=depth,target_decoder=recursive_target)
+    if tag in skill_lifetime_weakness.supported_tags():
+        return skill_lifetime_weakness.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,
+            native_validation=native_validation,depth=depth,target_decoder=recursive_target)
+    if tag in teleport.supported_tags():
+        return teleport.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,
+            native_validation=native_validation,depth=depth,target_decoder=recursive_target)
+    if tag in move_to.supported_tags():
+        child = native_validation.get('children', {}).get('moveTo', {})
+        if child.get('status') != 'validated' or child.get('nativeInputs') != native_validation.get('nativeInputs'):
+            raise ValueError(f"{LABEL}.moveTo:unvalidated-or-build-drift")
+        return move_to.decode_move_to(data, source=source, digest=digest, start=start, end=end,
+            native_validation=child, target_decoder=recursive_target)
     if tag in tick_interval.supported_tags():
         return tick_interval.decode_recursive_action(data, source=source, digest=digest, start=start, end=end,
             tag=tag, native_validation=native_validation, depth=depth)
@@ -365,6 +470,18 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
     if tag in spell_infliction.supported_tags():
         return spell_infliction.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
             native_validation=native_validation, target_decoder=recursive_target)
+    if tag in target_mask_conditions.supported_tags():
+        return target_mask_conditions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target, depth=depth)
+    if tag in refrain_usp.supported_tags():
+        return refrain_usp.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target, depth=depth)
+    if tag in target_contains.supported_tags():
+        return target_contains.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in merge_target.supported_tags():
+        return merge_target.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
     if tag in animation_sequences.supported_tags():
         return animation_sequences.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
             native_validation=native_validation, depth=depth)
@@ -383,6 +500,12 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
     if tag in blow_off.supported_tags():
         return blow_off.decode_action(data, source=source, digest=digest, start=start, end=end,
             tag=tag, native_validation=native_validation, target_decoder=recursive_target)
+    if tag in blow_off_action.supported_tags():
+        return blow_off_action.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, target_decoder=recursive_target, depth=depth)
+    if tag in self_rotate_action.supported_tags():
+        return self_rotate_action.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, target_decoder=recursive_target, depth=depth)
     if tag in cast_skill.supported_tags():
         return cast_skill.decode_action(data, source=source, digest=digest, start=start, end=end,
             tag=tag, native_validation=native_validation, target_decoder=recursive_target)
@@ -444,6 +567,24 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
     if tag in camera_impulse.supported_tags():
         return camera_impulse.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
             native_validation=native_validation, target_decoder=recursive_target)
+    if tag in archery_chip.supported_tags():
+        return archery_chip.decode_action(data,source=source,digest=digest,start=start,end=end,
+            tag=tag,native_validation=native_validation)
+    if tag in save_heal_value.supported_tags():
+        return save_heal_value.decode_action(data,source=source,digest=digest,start=start,end=end,
+            tag=tag,native_validation=native_validation)
+    if tag in channeling.supported_tags():
+        return channeling.decode_action(data,source=source,digest=digest,start=start,end=end,
+            tag=tag,native_validation=native_validation,target_decoder=recursive_target,depth=depth)
+    if tag in continuous_find_target.supported_tags():
+        return continuous_find_target.decode_action(data,source=source,digest=digest,start=start,end=end,
+            tag=tag,native_validation=native_validation,target_decoder=recursive_target,depth=depth)
+    if tag in bind_bounty.supported_tags():
+        return bind_bounty.decode_action(data,source=source,digest=digest,start=start,end=end,
+            tag=tag,native_validation=native_validation)
+    if tag in consume_layer.supported_tags():
+        return consume_layer.decode_action(data,source=source,digest=digest,start=start,end=end,
+            tag=tag,native_validation=native_validation)
     if tag in leaf_actions.supported_tags():
         return leaf_actions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
             native_validation=native_validation)

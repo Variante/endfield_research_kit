@@ -30,12 +30,16 @@ import json
 import struct
 import sys
 import time
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import NativeImage
+from scripts.game_data.il2cpp.native_image import NativeImage, NATIVE_MAPPER_PATH, METADATA_HELPER_PATH
+from scripts.game_data.dependency_snapshot import local_dependency_paths
+from scripts.game_data.corpus_common import atomic_write_text
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
+from scripts.game_data.memorypack.union_dispatch import read_union_switch, UnionDispatchError
 from scripts.repo_paths import REPO_ROOT as REPO
 from scripts.game_data.il2cpp.context import (
     GenericInstantiationTable,
@@ -64,7 +68,7 @@ SUPPORTED_SCHEMAS: dict[str, tuple[str, frozenset[str | None]]] = {
     "endfield.buff-frontier9-native-contract.v1": ("actions", frozenset({"exact-current-build"})),
     "endfield.buff-residual-frontier-native-contract.v1": ("actions", frozenset({"exact-current-build"})),
     "endfield.levelscript-task-condition-native.v1": ("levelscript_condition", frozenset({"validated"})),
-    "endfield.action-map-layouts.v3": ("levelscript_actions", frozenset({None})),
+    "endfield.action-map-layouts.v5": ("levelscript_actions", frozenset({None})),
     "endfield.skill-timeline-continuous-find-target-native-contract.v1": ("selector_routes", frozenset({"exact-current-build"})),
     "endfield.skill-timeline-create-buff-native-contract.v1": ("dispatcher", frozenset({"exact-current-build"})),
     "endfield.skill-timeline-find-target-native-contract.v1": ("selector_routes", frozenset({"exact-current-build"})),
@@ -158,6 +162,15 @@ class NativeContext:
         self._switch_tables: dict[tuple[int, int], bytes] = {}
         self._generic_instantiations: GenericInstantiationTable | None = None
 
+    @cached_property
+    def wrapper_members(self) -> dict[int, Any]:
+        return derive_from_image(self.image)
+
+    @cached_property
+    def condition_switch(self) -> dict[str, Any]:
+        return read_union_switch(self.image, "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+                                 wrappers=self.wrapper_members)
+
     def bytes_at_rva(self, rva: int, size: int) -> bytes:
         return self.pe.bytes_at_va(self.pe.image_base + rva, size)
 
@@ -209,7 +222,7 @@ class NativeContext:
         usage_va = self.pe.image_base + _int(row[rva_key]) if rva_key else _int(row[va_key])
         raw = self.pe.bytes_at_va(usage_va, 8)
         if raw.hex().upper() != row["usageRawHex"].upper():
-            raise ValueError(f"usage-cell={usage_va:#x}")
+            raise ValueError(f"usage-cell={usage_va:#x}:expected={row['usageRawHex'].upper()}:actual={raw.hex().upper()}")
         if "registeredTypeIndex" not in row:
             return
         index = unresolved_usage_index(
@@ -217,21 +230,22 @@ class NativeContext:
             source="GameAssembly.dll", offset=usage_va,
         )
         if index != row["registeredTypeIndex"]:
-            raise ValueError(f"registered-type-index={usage_va:#x}:{index}")
+            raise ValueError(f"registered-type-index={usage_va:#x}:expected={row['registeredTypeIndex']}:actual={index}")
         type_pointer = self.pe.u64_at_va(int(self.registration["types"], 16) + index * 8)
         if "typePointerVa" in row and type_pointer != int(row["typePointerVa"], 0):
-            raise ValueError(f"type-pointer={usage_va:#x}:{type_pointer:#x}")
+            raise ValueError(f"type-pointer={usage_va:#x}:expected={int(row['typePointerVa'], 0):#x}:actual={type_pointer:#x}")
         if "typePointerRva" in row and type_pointer != self.pe.image_base + _int(row["typePointerRva"]):
-            raise ValueError(f"type-pointer={usage_va:#x}:{type_pointer:#x}")
+            expected = self.pe.image_base + _int(row["typePointerRva"])
+            raise ValueError(f"type-pointer={usage_va:#x}:expected={expected:#x}:actual={type_pointer:#x}")
         definition = struct.unpack_from("<Q", self.pe.bytes_at_va(type_pointer, 16))[0]
         expected_definition = row.get("wrapperTypeDefinition", row.get("typeDefinition"))
         if expected_definition is not None and definition != expected_definition:
-            raise ValueError(f"type-definition={usage_va:#x}:{definition}")
+            raise ValueError(f"type-definition={usage_va:#x}:expected={expected_definition}:actual={definition}")
         expected_name = row.get("wrapperName")
         if expected_name is not None:
             actual_name = self.md.type_full_name(self.md.types[definition])
             if actual_name != expected_name:
-                raise ValueError(f"type-name={usage_va:#x}:{actual_name}")
+                raise ValueError(f"type-name={usage_va:#x}:expected={expected_name!r}:actual={actual_name!r}")
 
     def validate_method_spec_provider(self, row: dict[str, Any]) -> None:
         """Authenticate one RIP-loaded MethodSpec and its concrete type argument."""
@@ -324,6 +338,10 @@ class NativeContext:
             raise ValueError(f"switch-target={row['unionTag']:#x}:{target:#x}")
 
     def validate_action_map_identity(self, identity: dict[str, Any]) -> None:
+        anchors = ("dispatcherTypeDefinition", "dispatcherMethodToken", "dispatcherMethodVa")
+        missing = [name for name in anchors if name not in identity]
+        if missing:
+            raise ValueError(f"action-map-dispatcher-anchors:expected={list(anchors)!r}:actual=missing{missing!r}")
         start = _int(identity["branchBodyVa"])
         expected = bytes.fromhex(identity["branchCodeHex"])
         if self.pe.bytes_at_va(start, len(expected)) != expected:
@@ -340,6 +358,33 @@ class NativeContext:
             raise ValueError(f"action-map-dispatcher-pointer={definition}:{token:#x}")
         self.validate_usage(identity)
 
+    def validate_condition_map_identity(self, row: dict[str, Any]) -> None:
+        if row.get("family", "GameCondition") != "GameCondition":
+            raise ValueError(f"condition-dispatcher-family={row.get('family')!r}")
+        identity = row["nativeIdentity"]
+        switch = self.condition_switch
+        tag = row["tag"]
+        if not isinstance(tag, int) or not 0 <= tag < len(switch["entries"]):
+            raise ValueError(f"condition-dispatcher-tag={tag!r}:entry-count={len(switch['entries'])}")
+        entry = switch["entries"][tag]
+        expected = (identity.get("dispatcherVa", identity.get("dispatcherMethodVa")),
+                    identity["switchTableVa"], identity["switchTargetVa"], identity["branchBodyVa"],
+                    identity["usageCellVa"], identity["registeredTypeIndex"], identity["typeDefinition"], row["wrapperName"])
+        actual = (switch["dispatcherVa"], switch["tableVa"], entry["targetVa"], entry["bodyVa"],
+                  entry["usageCellVa"], entry["registeredTypeIndex"], entry["typeDefinition"], entry["wrapperName"])
+        if tuple(str(item).lower() for item in actual) != tuple(str(item).lower() for item in expected):
+            raise ValueError(f"condition-dispatcher-identity=expected={expected!r}:actual={actual!r}")
+        start = _int(identity["branchBodyVa"])
+        expected_bytes = bytes.fromhex(identity["branchCodeHex"])
+        actual_bytes = self.pe.bytes_at_va(start, len(expected_bytes))
+        if actual_bytes != expected_bytes:
+            raise ValueError(f"condition-branch={start:#x}:expected={expected_bytes.hex()}:actual={actual_bytes.hex()}")
+        # Legacy method-token anchors remain mandatory when present.
+        if "dispatcherTypeDefinition" in identity:
+            self.validate_action_map_identity({**identity, "wrapperName": row["wrapperName"]})
+        else:
+            self.validate_usage({**identity, "wrapperName": row["wrapperName"]})
+
     def validate_dispatcher_identity(self, identity: dict[str, Any]) -> None:
         definition = _int(identity["typeDefinition"])
         token = _int(identity["methodToken"])
@@ -355,6 +400,13 @@ class NativeContext:
 
 
 def _validate_contract_native(ctx: NativeContext, value: dict[str, Any]) -> dict[str, int]:
+    def checked(check: str, node: dict[str, Any], proof: dict[str, Any]) -> None:
+        try:
+            getattr(ctx, check)(proof)
+        except (ValueError, KeyError, IndexError, TypeError, struct.error, UnionDispatchError) as error:
+            identity = {key: node[key] for key in ("family", "tag", "wrapperName") if key in node}
+            raise ValueError(f"native-check={check}:row={json.dumps(identity, sort_keys=True)}:detail={error}") from error
+
     counts = {"methods": 0, "dispatcherMethods": 0, "windows": 0, "instructions": 0,
               "switchRoutes": 0, "usageCells": 0, "methodSpecs": 0,
               "actionMapIdentities": 0}
@@ -363,7 +415,7 @@ def _validate_contract_native(ctx: NativeContext, value: dict[str, Any]) -> dict
     instructions: set[tuple[int, str]] = set()
     usages: set[tuple[str, str]] = set()
     switches: set[tuple[int, int, int]] = set()
-    action_identities: set[tuple[str, str]] = set()
+    action_identities: set[tuple[Any, ...]] = set()
     dispatcher_identities: set[tuple[int, int]] = set()
     method_spec_providers: set[tuple[str, int]] = set()
     for node in _walk(value):
@@ -389,18 +441,24 @@ def _validate_contract_native(ctx: NativeContext, value: dict[str, Any]) -> dict
         if ("usageCellRva" in node or "usageCellVa" in node) and "usageRawHex" in node:
             key = (str(node.get("usageCellRva", node.get("usageCellVa"))), node["usageRawHex"])
             if key not in usages:
-                ctx.validate_usage(node)
+                checked("validate_usage", node, node)
                 usages.add(key)
         if {"switchTableRva", "switchEntryCount", "unionTag"} <= node.keys():
             key = (node["switchTableRva"], node["switchEntryCount"], node["unionTag"])
             if key not in switches:
-                ctx.validate_switch(node)
+                checked("validate_switch", node, node)
                 switches.add(key)
         identity = node.get("nativeIdentity")
         if isinstance(identity, dict) and "branchCodeHex" in identity:
-            key = (identity["branchBodyVa"], identity["usageRawHex"])
+            key = (node.get("family"), node.get("tag"), identity["branchBodyVa"], identity["usageRawHex"])
             if key not in action_identities:
-                ctx.validate_action_map_identity(identity)
+                if node.get("family") == "GameCondition":
+                    checked("validate_condition_map_identity", node, node)
+                else:
+                    merged = {**identity}
+                    if "wrapperName" in node:
+                        merged["wrapperName"] = node["wrapperName"]
+                    checked("validate_action_map_identity", node, merged)
                 action_identities.add(key)
         elif isinstance(identity, dict) and ("usageCellRva" in identity or "usageCellVa" in identity):
             merged = {**identity}
@@ -408,17 +466,17 @@ def _validate_contract_native(ctx: NativeContext, value: dict[str, Any]) -> dict
                 merged["wrapperName"] = node["wrapperName"]
             key = (str(merged.get("usageCellRva", merged.get("usageCellVa"))), merged["usageRawHex"])
             if key not in usages:
-                ctx.validate_usage(merged)
+                checked("validate_usage", node, merged)
                 usages.add(key)
         if {"typeDefinition", "methodToken", "methodRva"} <= node.keys():
             key = (_int(node["typeDefinition"]), _int(node["methodToken"]))
             if key not in dispatcher_identities:
-                ctx.validate_dispatcher_identity(node)
+                checked("validate_dispatcher_identity", node, node)
                 dispatcher_identities.add(key)
         if node.get("methodSpecProvider") is True:
             key = (str(node.get("usageCellRva")), int(node.get("index", -1)))
             if key not in method_spec_providers:
-                ctx.validate_method_spec_provider(node)
+                checked("validate_method_spec_provider", node, node)
                 method_spec_providers.add(key)
     for method in sorted(methods):
         ctx.validate_method(list(method))
@@ -491,13 +549,18 @@ def _atlas_rows(contract_path: Path, value: dict[str, Any], digest: str) -> list
                     "trust": "dependency-hash-validated-composite-row",
                 })
     if adapter == "levelscript_actions":
-        for layout in value["layouts"]:
+        # v5 rows carry no per-build tag; the codec resolves each by wrapper
+        # through the build-gated union-tags contract and yields nothing
+        # unless that gate validates.
+        from scripts.game_data.codecs.levelscript import action_map
+
+        layouts, conditions, _audit = action_map._resolved()
+        for layout in [*layouts, *conditions]:
             rows.append({
                 **common, "dispatcherFamily": f"LevelScript:{layout['family']}",
                 "physicalTag": layout["tag"], "serializedMemberCount": layout["memberCount"],
                 "wrapperName": layout["wrapperName"], "readOrder": layout.get("fields"),
-                "setterMethods": layout.get("nativeIdentity", {}).get("generatedSetterOrder"),
-                "trust": "native-validated-reviewed-row",
+                "trust": "union-tag-resolved-reviewed-row",
             })
     if adapter == "levelscript_condition":
         for row in value.get("rows", []):
@@ -510,7 +573,7 @@ def _atlas_rows(contract_path: Path, value: dict[str, Any], digest: str) -> list
     return rows
 
 
-def _enrich_generated_members(image: NativeImage, rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _enrich_generated_members(image: NativeImage, rows: list[dict[str, Any]], *, derived: dict[int, Any] | None = None) -> dict[str, Any]:
     """Name each row's serialized members from the selected build's wrappers.
 
     A reviewed row records whichever order its own recovery proved, and several
@@ -525,7 +588,7 @@ def _enrich_generated_members(image: NativeImage, rows: list[dict[str, Any]]) ->
     instead of overwriting it.  Where a row already names its members, the
     derived order is compared against them rather than replacing them.
     """
-    derived = derive_from_image(image)
+    derived = derive_from_image(image) if derived is None else derived
     by_name: dict[str, Any] = {}
     for wrapper in derived.values():
         by_name[wrapper.name] = None if wrapper.name in by_name else wrapper
@@ -626,17 +689,54 @@ def _normalize_atlas_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return normalized
 
 
-def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
+def _proof_sources(contracts: list[Path]) -> list[dict[str, Any]]:
+    paths = {Path(__file__).resolve(), *(path.resolve() for path in contracts),
+             *local_dependency_paths(["scripts.game_data.native_union_atlas"]),
+             NATIVE_MAPPER_PATH.resolve(), METADATA_HELPER_PATH.resolve()}
+    for folder in {NATIVE_MAPPER_PATH.parent, METADATA_HELPER_PATH.parent}:
+        paths.update(path.resolve() for path in folder.rglob("*.py") if path.is_file())
+    return [{"path": str(path), "sha256": _sha(path)} for path in sorted(paths)]
+
+
+def _guard_output(output: Path, inputs: Iterable[Path]) -> None:
+    reports = (REPO / "reports").resolve()
+    if reports not in output.resolve().parents:
+        raise ValueError(f"output-must-be-under={reports}")
+    for source in inputs:
+        source = Path(source).resolve()
+        if output.resolve() == source or (output.exists() and source.exists() and output.samefile(source)):
+            raise ValueError(f"output-input-alias=output={output}:source={source}")
+
+
+def _proof_source_changes(expected: list[dict[str, Any]], actual: list[dict[str, Any]]) -> dict[str, Any]:
+    before = {row["path"]: row["sha256"] for row in expected}
+    after = {row["path"]: row["sha256"] for row in actual}
+    paths = [path for path in sorted(before.keys() | after.keys()) if before.get(path) != after.get(path)]
+    return {"changedFiles": len(paths), "changes": [
+        {"path": path, "expectedSha256": before.get(path), "actualSha256": after.get(path)}
+        for path in paths[:10]]}
+
+
+def build(output: Path, contracts: list[Path], *, gameassembly: Path | None = None,
+          metadata: Path | None = None) -> dict[str, Any]:
     started = time.perf_counter()
     output = output.resolve()
-    reports = (REPO / "reports").resolve()
-    if reports not in output.parents:
-        raise ValueError(f"output-must-be-under={reports}")
+    _guard_output(output, contracts)
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError("selected-native-pair-requires-gameassembly-and-metadata")
+    _guard_output(output, [path for path in (gameassembly, metadata) if path is not None])
+    proof_sources = _proof_sources(contracts)
+    proof_inputs = [Path(row["path"]) for row in proof_sources]
+    _guard_output(output, proof_inputs)
+    proof_digests = {Path(row["path"]).resolve(): row["sha256"] for row in proof_sources}
     loaded: list[tuple[Path, dict[str, Any], str]] = []
     expected_inputs: dict[str, str] | None = None
     for path in contracts:
         raw = path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest().upper()
+        expected_digest = proof_digests.get(path.resolve())
+        if digest != expected_digest:
+            raise ValueError(f"contract-read-source-drift={path}:expected={expected_digest}:actual={digest}")
         value = json.loads(raw)
         schema = value.get("schema")
         if schema not in SUPPORTED_SCHEMAS:
@@ -645,6 +745,11 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             raise ValueError(
                 f"contract-status={path.relative_to(REPO)}:{value.get('status')!r}"
             )
+        if "nativeInputs" not in value:
+            # Build-neutral contracts (action-map v5) pin no build; their
+            # per-build tags come from the union-tags contract, which does.
+            loaded.append((path, value, digest))
+            continue
         native = _native_inputs(value["nativeInputs"])
         # Contracts pin different subsets of the same build: every one pins
         # GameAssembly and the metadata, only some also pin UnityPlayer.  Compare
@@ -666,10 +771,13 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
         loaded.append((path, value, digest))
     assert expected_inputs is not None
     gate = check_installed_native_inputs(
-        expected_inputs["GameAssembly.dll"], expected_inputs["global-metadata.dat"]
+        expected_inputs["GameAssembly.dll"], expected_inputs["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != "validated":
         raise ValueError(f"installed-native-inputs={gate.status}:{gate.detail}")
+    native_paths = [gate.gameassembly, gate.metadata, gate.gameassembly.parent / "UnityPlayer.dll"]
+    _guard_output(output, [*proof_inputs, *native_paths])
     if "UnityPlayer.dll" in expected_inputs:
         actual_unity = _sha(gate.gameassembly.parent / "UnityPlayer.dll")
         if actual_unity != expected_inputs["UnityPlayer.dll"]:
@@ -685,7 +793,10 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
               "switchRoutes": 0, "usageCells": 0, "methodSpecs": 0,
               "actionMapIdentities": 0}
     for path, value, digest in loaded:
-        counts = _validate_contract_native(ctx, value)
+        try:
+            counts = _validate_contract_native(ctx, value)
+        except (ValueError, KeyError, IndexError, TypeError, struct.error) as error:
+            raise ValueError(f"contract={path}:source-sha256={digest}:detail={error}") from error
         for key, count in counts.items():
             totals[key] += count
         rows = _atlas_rows(path, value, digest)
@@ -696,12 +807,13 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             "validatedNativeFacts": counts, "atlasRows": len(rows),
         })
     atlas = _normalize_atlas_rows(source_rows)
-    enrichment = _enrich_generated_members(ctx.image, atlas)
+    enrichment = _enrich_generated_members(ctx.image, atlas, derived=ctx.wrapper_members)
     report = {
         "schema": "endfield.jsondata-native-union-atlas.v1",
         "status": "validated",
         "generatedBy": Path(__file__).relative_to(REPO).as_posix(),
         "nativeInputs": expected_inputs,
+        "proofSources": proof_sources,
         "context": {
             "gameassembly": str(gate.gameassembly), "metadata": str(gate.metadata),
             "imageBase": ctx.pe.image_base, "codeRegistrationVa": ctx.code_registration,
@@ -721,12 +833,28 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             "The atlas indexes reviewed facts; it does not discover or promote an unknown tag.",
             "Composite Skill rows authenticate dependency bytes but do not repeat every dependency's native proof.",
             "Setter parameter types, nested generic contexts, and prose boundaries are retained in source contracts rather than normalized completely.",
-            "LevelScript switch-table entry bytes are not re-decoded generically; dispatcher method pointers, branch bytes, usage cells, registered types, and contract bytes are authenticated.",
+            "LevelScript GameCondition rows are joined to their independently decoded named dispatcher switch; other LevelScript switch-table entry bytes are not re-decoded generically. Recorded dispatcher method pointers, branch bytes, usage cells, registered types, and contract bytes are authenticated.",
             "Only explicitly supported contract schema versions are admitted; a new shape requires a reviewed adapter update.",
         ],
     }
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    after = check_installed_native_inputs(
+        expected_inputs["GameAssembly.dll"], expected_inputs["global-metadata.dat"],
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    if after.status != "validated":
+        raise ValueError(f"publication-native-inputs={after.status}:{after.detail}")
+    if "UnityPlayer.dll" in expected_inputs:
+        actual_unity = _sha(gate.gameassembly.parent / "UnityPlayer.dll")
+        if actual_unity != expected_inputs["UnityPlayer.dll"]:
+            raise ValueError(
+                f"publication-UnityPlayer.dll-sha256=expected={expected_inputs['UnityPlayer.dll']}:actual={actual_unity}"
+            )
+    current_sources = _proof_sources(contracts)
+    if current_sources != proof_sources:
+        changes = _proof_source_changes(proof_sources, current_sources)
+        raise ValueError("publication-proof-sources-drift:" + json.dumps(changes, sort_keys=True))
+    _guard_output(output, [*proof_inputs, *native_paths])
+    atomic_write_text(output, json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     return report
 
 
@@ -735,10 +863,12 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--contract", action="append", type=Path,
                         help="explicit reviewed contract; repeat to override default discovery")
+    parser.add_argument("--gameassembly", type=Path)
+    parser.add_argument("--metadata", type=Path)
     args = parser.parse_args()
     contracts = [path.resolve() for path in args.contract] if args.contract else _default_contracts()
     try:
-        report = build(args.output, contracts)
+        report = build(args.output, contracts, gameassembly=args.gameassembly, metadata=args.metadata)
     except (OSError, ValueError, KeyError, IndexError, TypeError, struct.error) as error:
         print(json.dumps({"status": "failed", "detail": str(error)}), file=sys.stderr)
         return 1

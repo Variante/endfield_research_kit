@@ -29,6 +29,7 @@ if __package__ in {None, ""}:
 from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
 from scripts.source_paths import PACKED_GAME_DIRS, ExportLayout, ExportLayoutError, packed_game_dir
 from scripts.game_data.game_file_store import open_game_files_if_present
+from scripts.game_data.extraction.unity_dependencies import auxiliary_drift
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
@@ -413,6 +414,10 @@ def build_report(
             continue
         stamp = output_stamp(provenance, summary, section, key)
         drift = stamp_drift(stamp, current_source_sizes, selected_sources)
+        if "auxiliaryInputs" in (stamp or {}):
+            auxiliary = auxiliary_drift(stamp["auxiliaryInputs"], game_root)
+            if auxiliary:
+                drift["auxiliaryInputs"] = auxiliary
         partial = (stamp or {}).get("partial")
         refused_partial = bool(partial) and key not in requirements.partial_ok
         row["extractedBy"] = (stamp or {}).get("run")

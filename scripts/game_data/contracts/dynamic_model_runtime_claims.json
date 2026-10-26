@@ -1,0 +1,120 @@
+{
+  "schema": "endfield.dynamic-model-runtime-claims.v1",
+  "groups": {
+    "storedModelTransform": {
+      "methods": {
+        "DynamicSceneModelSystem._GetModelTransform": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+          "method": "_GetModelTransform",
+          "contract": "The selected body contains stored position/rotation/scale reads and a grid-matrix transform route. Call presence does not prove complete argument dataflow or a live grid value.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneTransform.get_Pos",
+                "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneTransform.get_Rot",
+                "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneTransform.get_Scl",
+                "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.GetMat",
+                "UnityEngine.Matrix4x4.MultiplyPoint",
+                "UnityEngine.Matrix4x4.MultiplyVector",
+                "UnityEngine.Quaternion.LookRotation"
+              ]
+            }
+          ]
+        },
+        "DynamicSceneModelSystem._DoInitInstantiateModel": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+          "method": "_DoInitInstantiateModel",
+          "contract": "The selected instantiated-model body has model-transform calculation and Transform parenting calls. The concrete instantiated prefab, selected parent and final transform remain separate joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem._GetModelTransform",
+                "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem.GetRootTrans",
+                "UnityEngine.Transform.SetParent"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "modelColliderActivation": {
+      "methods": {
+        "DynamicSceneModelSystem._SetColliderEnable": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+          "method": "_SetColliderEnable",
+          "contract": "The selected body can query child collider components and call Collider.set_enabled, with a collider-cache read/write path. Saved prefab enabled/active flags do not establish runtime activation.",
+          "claims": [
+            {
+              "calls": [
+                "UnityEngine.GameObject.GetComponentsInChildren",
+                "UnityEngine.Collider.set_enabled"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem::m_colliderBackupListMap"
+            }
+          ]
+        }
+      }
+    },
+    "authoredPrefabLoad": {
+      "methods": {
+        "DynamicSceneModelSystem._DoInitModel": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneModelSystem",
+          "method": "_DoInitModel",
+          "contract": "The selected body reads the stored Model.PathHash and calls the asynchronous prefab instantiator. This named-call claim does not validate the instantiator's hidden return carrier or all call arguments.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneModel.get_PathHash",
+                "Beyond.Resource.ResourceManager.InstantiatePrefabAsync"
+              ],
+              "ordered": true
+            }
+          ]
+        }
+      }
+    },
+    "runtimeSceneMatrix": {
+      "methods": {
+        "DynamicStreamingScene.GetMat": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+          "method": "GetMat",
+          "contract": "The scene-matrix getter reads the runtime map-data array and its selected element. A stored Model transform alone does not supply this runtime entry.",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene::m_runtimeMapData"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SparseNativeArray`1.ElementAt"
+              ]
+            }
+          ]
+        },
+        "DynamicStreamingScene.OnAddUniqueId": {
+          "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+          "method": "OnAddUniqueId",
+          "contract": "The registration route allocates a runtime unique id, accesses runtime map data and calculates Matrix4x4.TRS. The public direction/position arguments and concrete live registration are separate from stored Model fields.",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene::m_runtimeMapData"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene._AllocateUniqueId",
+                "Beyond.Gameplay.Core.SparseNativeArray`1.ElementAt",
+                "UnityEngine.Matrix4x4.TRS"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Named calls and the collider-cache field read are reproved on the explicitly selected native/metadata inputs, including bounded owned fragments and the evaluator's one-helper call boundary.",
+    "conditional": "These are offline selected-body routes. Other branches, missing resources, caches and IFix patches can take different paths.",
+    "unresolved": "Complete transform and prefab-loader argument dataflow, the selected runtime unique-id matrix and parent, live instances, IFix branches, animation and actual collider activation are not established by named call/read claims. Stored authored model-to-asset path joins are proved separately by dynamic_model_native."
+  }
+}

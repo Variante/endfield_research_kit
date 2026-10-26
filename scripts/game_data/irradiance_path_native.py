@@ -4,7 +4,8 @@ This proves selected scene/Gacha index-file suffix construction, one
 serialized proxy source route, a path-keyed stream-buffer pointer handoff,
 the selected queued request's exact-read outer I/O gate, and the absence of a
 final EOF comparison in the selected parser body. It also checks the room
-header, copied-record command binding and count-sized virtual dispatch. The
+header, named command bindings, keyed operation selection and count-sized
+virtual dispatch. The
 default provider's OS-file method set is a conditional registry fallback. Its
 selected runtime provider and concrete VFS source remain unresolved.
 The reviewed contract pins the selected native inputs and instruction windows.
@@ -25,6 +26,10 @@ supplied-root directory plus formatted-basename path assembly, the shared
 lookup/stream route, the ready-buffer room-header parser and the conditional
 8- or 16-byte grid-record copy, plus the copied-record allocation descriptor's
 callback handoff, command binding and grid-cell-count-sized virtual dispatch.
+The global property registrations join the selected callback's configuration
+allocation to ``_Input0``, its copied-record allocation to ``_Input1`` and two
+resource handles to ``_Output0``/``_Output1``. These generic names establish
+slots, not the meaning of any record word or a selected shader kernel.
 
 Boundaries: the complete selected parser body has no final EOF comparison, and
 its byte and u32 readers have no local length check; the read gate bounds
@@ -96,7 +101,16 @@ descriptor, packs it with the copied-record allocation descriptor into a
 allocation descriptor's first word (payload ``+0x28``) to a native binding
 helper and requests a virtual dispatch of ``ceil(nx*ny*nz/64)``, 1, 1 groups.
 This supports the offline header and stride framing and shows a command-side
-consumer of the record allocation; it names no tuple axis or record field.
+consumer of the record allocation. The selected callback compares its supplied
+key to the first word of each native operation entry and reuses the matched
+ordinal for the record/output bindings and dispatch. The authenticated global
+property-table constructor registers the exact ``_Input0``, ``_Input1``,
+``_Output0`` and ``_Output1`` cells the callback uses. ``_Input0`` receives three
+allocation-descriptor words, not the grid dimensions directly; ``_Input1``
+receives the copied-record allocation descriptor's first word. The two output
+slots receive the first word of each resolved resource handle. These reads
+establish command routing, with no tuple axis, record field, selected kernel
+identity, texture format or successful GPU execution claimed.
 """
 
 from __future__ import annotations
@@ -116,7 +130,7 @@ from scripts.game_data.il2cpp.protocol import load_native_mapper, runtime_type_f
 from scripts.repo_paths import REPO_ROOT
 
 
-SCHEMA = "endfield.irradiance-v3-path-native-contract.v13"
+SCHEMA = "endfield.irradiance-v3-path-native-contract.v14"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "irradiance_v3_path_native.json"
 DEFAULT_OUTPUT = REPO_ROOT / "reports/irradiance/v3_path_native.json"
 
@@ -414,6 +428,123 @@ def _check_region_room_consumer(pe: Any, extents: dict[int, int],
             "binding": "allocation descriptor first word to native command slot",
             "dispatchGroups": "ceil(gridCellCount/64) x 1 x 1",
             "recordFields": "unresolved", "gpuExecution": "unresolved",
+            "boundary": block["boundary"]}
+
+
+def _check_region_room_bindings(pe: Any, extents: dict[int, int],
+                                contract: dict[str, Any]) -> dict[str, Any]:
+    """Join room callback slots to their registered names, without naming record fields."""
+    block = contract["nativeRegionRoomBindings"]
+    windows = {row["role"]: row for row in block["codeWindows"]}
+    if set(windows) != {"property global construction", "property constructor entry",
+                        "property registrations", "property identifier constructor",
+                        "operation selector", "descriptor binding wrapper"}:
+        raise ValueError("irradiance.path:region-room-bindings-window-roles")
+
+    def check_window(row: dict[str, Any], *, complete: bool = False) -> tuple[int, int]:
+        start, end = _int(row["startRva"]), _int(row["endRva"])
+        role = row["role"]
+        if end <= start or (complete and extents.get(start) != end):
+            raise ValueError(f"irradiance.path:region-room-bindings-range={role}")
+        digest = hashlib.sha256(pe.bytes_at_va(pe.image_base + start, end - start)).hexdigest().upper()
+        if digest != row["sha256"].upper():
+            raise ValueError(f"irradiance.path:region-room-bindings-window={role}:"
+                             f"expected={row['sha256'].upper()}:actual={digest}")
+        return start, end
+
+    for role, row in windows.items():
+        check_window(row, complete=role in {"property identifier constructor",
+                                           "operation selector", "descriptor binding wrapper"})
+    table = _int(block["propertyTableBaseRva"])
+    site = _int(block["propertyTableLoadRva"])
+    load = bytes.fromhex(block["propertyTableLoadHex"])
+    if (len(load) != 7 or load[:3] != b"\x48\x8d\x0d"
+            or pe.bytes_at_va(pe.image_base + site, 7) != load
+            or site + 7 + struct.unpack_from("<i", load, 3)[0] != table
+            or _rel_target(pe, _int(block["propertyTableConstructorCallRva"]), 0xE8)
+            != _int(block["propertyConstructorRva"])
+            or _int(block["propertyConstructorRva"])
+            != _int(windows["property constructor entry"]["startRva"])):
+        raise ValueError("irradiance.path:region-room-bindings-property-table")
+    registration_start = _int(windows["property registrations"]["startRva"])
+    registration_end = _int(windows["property registrations"]["endRva"])
+    identifier = _int(block["propertyIdentifierConstructorRva"])
+    if identifier != _int(windows["property identifier constructor"]["startRva"]):
+        raise ValueError("irradiance.path:region-room-bindings-property-constructor")
+    consumer = contract["nativeRegionRoomConsumer"]
+    callback = next(row for row in consumer["codeWindows"] if row["role"] == "callback body")
+    callback_start, callback_end = _int(callback["startRva"]), _int(callback["endRva"])
+    slots = {row["role"]: row for row in block["slots"]}
+    if (set(slots) != {"configuration allocation", "copied room records",
+                      "first resource handle", "second resource handle"}
+            or len({row["name"] for row in slots.values()}) != len(slots)
+            or len({_int(row["tableOffset"]) for row in slots.values()}) != len(slots)):
+        raise ValueError("irradiance.path:region-room-bindings-slot-roles")
+    names = {}
+    for role, row in slots.items():
+        offset, setup = _int(row["tableOffset"]), _int(row["constructorSlotRva"])
+        literal_site, call = _int(row["literalLoadRva"]), _int(row["constructorCallRva"])
+        if (not 0 <= offset <= 0x7F or not registration_start <= setup < call + 5 <= registration_end
+                or literal_site != setup + 4 or call != literal_site + 7
+                or pe.bytes_at_va(pe.image_base + setup, 4) != b"\x48\x8d\x4b" + bytes((offset,))
+                or _rel_target(pe, call, 0xE8) != identifier):
+            raise ValueError(f"irradiance.path:region-room-bindings-slot-registration={role}")
+        literal_load = pe.bytes_at_va(pe.image_base + literal_site, 7)
+        literal = _int(row["literalRva"])
+        if (literal_load[:3] != b"\x48\x8d\x15"
+                or literal_site + 7 + struct.unpack_from("<i", literal_load, 3)[0] != literal
+                or pe.c_string_at_va(pe.image_base + literal) != row["name"]):
+            raise ValueError(f"irradiance.path:region-room-bindings-slot-name={role}")
+        argument_start, argument_end = check_window(row["callbackArgumentWindow"])
+        site, load = _int(row["callbackPropertyLoadRva"]), bytes.fromhex(row["callbackPropertyLoadHex"])
+        call, target = _int(row["callbackCallRva"]), _int(row["callbackTargetRva"])
+        if (not callback_start <= argument_start <= site < site + 7 <= call
+                or call + 5 != argument_end or argument_end > callback_end
+                or len(load) != 7 or load[:3] not in {b"\x48\x8d\x15", b"\x4c\x8d\x05"}
+                or pe.bytes_at_va(pe.image_base + site, 7) != load
+                or site + 7 + struct.unpack_from("<i", load, 3)[0] != table + offset
+                or _rel_target(pe, call, 0xE8) != target):
+            raise ValueError(f"irradiance.path:region-room-bindings-slot-use={role}")
+        names[role] = row["name"]
+    record_call = next(row for row in consumer["calls"] if row["role"] == "bind record descriptor")
+    if ((_int(slots["copied room records"]["callbackCallRva"]),
+         _int(slots["copied room records"]["callbackTargetRva"]))
+            != (_int(record_call["callRva"]), _int(record_call["targetRva"]))
+            or _int(slots["configuration allocation"]["callbackTargetRva"])
+            != _int(windows["descriptor binding wrapper"]["startRva"])
+            or slots["first resource handle"]["callbackTargetRva"]
+            != slots["second resource handle"]["callbackTargetRva"]):
+        raise ValueError("irradiance.path:region-room-bindings-shared-call")
+    forward = block["descriptorBindingCall"]
+    if _rel_target(pe, _int(forward["callRva"]), 0xE8) != _int(forward["targetRva"]):
+        raise ValueError("irradiance.path:region-room-bindings-descriptor-call")
+    selector = block["selector"]
+    setup = selector["callbackSetup"]
+    setup_site, raw = _int(setup["rva"]), bytes.fromhex(setup["hex"])
+    selector_rva = _int(selector["functionRva"])
+    if (not callback_start <= setup_site < setup_site + len(raw) <= callback_end
+            or len(raw) != 10 or raw[:6] != b"\x48\x8b\xf1\x48\x8d\x51"
+            or raw[6] != _int(selector["payloadKeyOffset"]) or raw[7:] != b"\x48\x8b\x09"
+            or pe.bytes_at_va(pe.image_base + setup_site, len(raw)) != raw
+            or _rel_target(pe, _int(selector["callbackCallRva"]), 0xE8) != selector_rva
+            or selector_rva != _int(windows["operation selector"]["startRva"])):
+        raise ValueError("irradiance.path:region-room-bindings-selector-call")
+    instructions = {row["role"]: row for row in selector["instructions"]}
+    if set(instructions) != {"read supplied key", "compare entry first word",
+                             "advance entry", "return matched ordinal"}:
+        raise ValueError("irradiance.path:region-room-bindings-selector-roles")
+    for role, row in instructions.items():
+        site, raw = _int(row["rva"]), bytes.fromhex(row["hex"])
+        if pe.bytes_at_va(pe.image_base + site, len(raw)) != raw:
+            raise ValueError(f"irradiance.path:region-room-bindings-selector-instruction={role}")
+    stride = bytes.fromhex(instructions["advance entry"]["hex"])
+    if len(stride) != 4 or stride[:3] != b"\x48\x83\xc0" or stride[3] != _int(selector["entryStride"]):
+        raise ValueError("irradiance.path:region-room-bindings-selector-stride")
+    check_window(selector["keyCopyWindow"])
+    return {"slots": names,
+            "operationSelection": "callback key compared to entry first words; matched ordinal reused for record/output bindings and dispatch",
+            "recordFields": "unresolved", "kernelIdentity": "unresolved",
+            "textureFormat": "unresolved", "gpuExecution": "unresolved",
             "boundary": block["boundary"]}
 
 
@@ -967,6 +1098,7 @@ def _check_unity(unity_path: Path, contract: dict[str, Any]) -> dict[str, Any]:
     region_room_parse = _check_region_room_parse(pe, extents, contract)
     region_room_assembly = _check_region_room_assembly(pe, contract)
     region_room_consumer = _check_region_room_consumer(pe, extents, contract)
+    region_room_bindings = _check_region_room_bindings(pe, extents, contract)
     return {
         "icallName": table["name"],
         "proxyConverter": {"icallSlot": proxy_slot, "functionRva": proxy["functionRva"]},
@@ -990,6 +1122,7 @@ def _check_unity(unity_path: Path, contract: dict[str, Any]) -> dict[str, Any]:
         "regionRoomParse": region_room_parse,
         "regionRoomAssembly": region_room_assembly,
         "regionRoomConsumer": region_room_consumer,
+        "regionRoomBindings": region_room_bindings,
     }
 
 
@@ -1007,7 +1140,7 @@ def audit(
         gameassembly=gameassembly, metadata=metadata,
     )
     report: dict[str, Any] = {
-        "schema": "endfield.irradiance-v3-path-native-audit.v13",
+        "schema": "endfield.irradiance-v3-path-native-audit.v14",
         "contract": {"path": str(contract_path), "sha256": contract_sha},
         "source": {
             "gameAssembly": str(gate.gameassembly),

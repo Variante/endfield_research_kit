@@ -1,0 +1,319 @@
+{
+  "schema": "endfield.buff-condition-context-adapter-native-contract.v2",
+  "status": "exact-current-build",
+  "scope": "complete-adapter-selector-source-and-fallback-interface-slot-static-control",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_formatter_class_creation_native.json",
+  "adapter": {
+    "entryRva": 51373712,
+    "ownedWindows": [
+      {
+        "startRva": 51373712,
+        "endRva": 51373797,
+        "sha256": "FB5212303D1B260A91D05B9931FF35B31218B6E7D247B5DD047DE47D9F11F980",
+        "rawHex": "4883EC28488B018B801C0100003DAB04000074202DA7010000742E2D05030000741E83E8010F8589B6A101488B41204883C428C3488B81800000004883C428C3488B41184883C428C3488B81700100004883C428C3"
+      },
+      {
+        "startRva": 78748996,
+        "endRva": 78749024,
+        "sha256": "025A6BC7334D44F95116C89D9CC015FF26D7AE475A9E553E628C5639EFDD2FD6",
+        "rawHex": "83F801740E4C8BC1E8A7F98DFB90E974495EFE488B4168E96B495EFE"
+      }
+    ]
+  },
+  "fallback": {
+    "entryRva": 4167416,
+    "ownedWindows": [
+      {
+        "startRva": 4167416,
+        "endRva": 4167569,
+        "rawHex": "48895C24084889742410574883EC20498B18498BF8488B35E465CB0C488BCBE874B4C0FF440FB7833001000033C966413BC8731C488B93B00000000FB7C14803C0483934C2743666FFC166413BC872EB41B804000000488BD6488BCFE82774C1FF4C8B00488BCF488B5008488B5C2430488B7424384883C4205F49FFE00FB7C94803C98B44CA0883C00448984883C01448C1E0044803C3EBC8",
+        "sha256": "F7DF155BC989626CA4899F5F188BD2FBADC413BC5667527782B070FFFCF017A4"
+      }
+    ]
+  },
+  "metadataColumn": {
+    "recordBytes": 92,
+    "columnByteOffset": 64,
+    "columnSemanticNameProved": false,
+    "runtimeRecordPointerIdentityProved": false
+  },
+  "allocationSelectorCopy": {
+    "freshSourceDwordCopiedToAllocationSelectorProved": true,
+    "sourceColumnByteOffset": 64,
+    "allocationSelectorByteOffset": 284,
+    "allocationCallRva": 2979969,
+    "sourceLoadRva": 2980617,
+    "selectorStoreRva": 2980620,
+    "sourceAndAllocationNonvolatileRegistersConditionallyPreserved": true,
+    "selectorStoreDominatesEveryNormalLocalReturn": true,
+    "uniqueDirectUnindexedAllocationStoreOverlappingSelector": true,
+    "actualMetadataSourcePointerAndIndexProved": false,
+    "selectorUnchangedByChildrenOrAliasesProved": false,
+    "adapterReceiverIsThisAllocationProved": false,
+    "wholeRootAdmitted": false
+  },
+  "cases": [
+    {
+      "selectorWord": 1195,
+      "returnKind": "fresh-QWORD-input-field",
+      "inputByteOffset": 128,
+      "loadRva": 51373764,
+      "returnRva": 51373775,
+      "uniqueCurrentMetadataType": {
+        "typeDefinition": 9045,
+        "typeName": "Beyond.Gameplay.Core.Ability",
+        "recordAbsoluteOffset": 47626168,
+        "selectorWord": 1195
+      },
+      "typeIsValueType": false,
+      "declaredInterfaces": [
+        "Beyond.Gameplay.Core.IActionEnvironment",
+        "Beyond.IPtrObject",
+        "Beyond.Gameplay.Core.IBuffRoot"
+      ],
+      "namedContextField": {
+        "field": "Beyond.Gameplay.Core.Ability::<context>k__BackingField",
+        "declaredType": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+        "instanceByteOffset": 128,
+        "isStatic": false,
+        "fieldAttributes": 1
+      },
+      "namedGetter": {
+        "method": [
+          55798,
+          "Beyond.Gameplay.Core.Ability",
+          "get_context",
+          77881744
+        ],
+        "registeredEntryProved": true,
+        "closedFieldLoadReturnProved": true,
+        "closedEntryBytes": 8,
+        "rawHex": "488B8180000000C3",
+        "sha256": "F2F31F708BAC409FFC68AB28B6C5B7B7EEDF0564B482C1B8955DAB692380EAD8",
+        "completePhysicalExtentOrPaddingProved": false
+      },
+      "adapterRuntimeReceiverTypeProved": false
+    },
+    {
+      "selectorWord": 423,
+      "returnKind": "fresh-QWORD-input-field",
+      "inputByteOffset": 368,
+      "loadRva": 51373785,
+      "returnRva": 51373796,
+      "uniqueCurrentMetadataType": {
+        "typeDefinition": 10044,
+        "typeName": "Beyond.Gameplay.Core.Buff",
+        "recordAbsoluteOffset": 47718076,
+        "selectorWord": 423
+      },
+      "typeIsValueType": false,
+      "declaredInterfaces": [
+        "Beyond.IReusableObject",
+        "Beyond.PoolCore.IReusable",
+        "Beyond.IPtrObject",
+        "Beyond.Gameplay.Core.Attributes+IAttributesModifier",
+        "Beyond.ILuaCallCSharp",
+        "Beyond.Gameplay.Core.IDamageModifierSource",
+        "Beyond.Gameplay.Core.IGlobalModifierSource",
+        "Beyond.Gameplay.Core.IHealModifierSource",
+        "Beyond.Gameplay.Core.IPoiseModifierSource",
+        "Beyond.Gameplay.Core.IActionEnvironment",
+        "System.IComparable`1<Beyond.Gameplay.Core.Buff>",
+        "Beyond.Gameplay.Core.IBuffRoot"
+      ],
+      "namedContextField": {
+        "field": "Beyond.Gameplay.Core.Buff::<context>k__BackingField",
+        "declaredType": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+        "instanceByteOffset": 368,
+        "isStatic": false,
+        "fieldAttributes": 1
+      },
+      "namedGetter": {
+        "method": [
+          60669,
+          "Beyond.Gameplay.Core.Buff",
+          "get_context",
+          77920368
+        ],
+        "registeredEntryProved": true,
+        "closedFieldLoadReturnProved": true,
+        "closedEntryBytes": 8,
+        "rawHex": "488B8170010000C3",
+        "sha256": "37328E8AD47257E7646BC6B6ABE65A0E856AD92781DAFBBB2362B0D5321C773A",
+        "completePhysicalExtentOrPaddingProved": false
+      },
+      "adapterRuntimeReceiverTypeProved": false
+    },
+    {
+      "selectorWord": 1196,
+      "returnKind": "fresh-QWORD-input-field",
+      "inputByteOffset": 24,
+      "loadRva": 51373776,
+      "returnRva": 51373784,
+      "uniqueCurrentMetadataType": {
+        "typeDefinition": 9047,
+        "typeName": "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment",
+        "recordAbsoluteOffset": 47626352,
+        "selectorWord": 1196
+      },
+      "typeIsValueType": false,
+      "declaredInterfaces": [
+        "Beyond.Gameplay.Core.IActionEnvironment",
+        "Beyond.IPtrObject"
+      ],
+      "namedContextField": {
+        "field": "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment::<context>k__BackingField",
+        "declaredType": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+        "instanceByteOffset": 24,
+        "isStatic": false,
+        "fieldAttributes": 33
+      },
+      "namedGetter": {
+        "method": [
+          55956,
+          "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment",
+          "get_context",
+          12478592
+        ],
+        "registeredEntryProved": true,
+        "closedFieldLoadReturnProved": true,
+        "closedEntryBytes": 5,
+        "rawHex": "488B4118C3",
+        "sha256": "0C6B8858E139E1A255688DFC8B1FCA61C89CCEA689E8DA8BCD4276A9918F1DBE",
+        "completePhysicalExtentOrPaddingProved": false
+      },
+      "adapterRuntimeReceiverTypeProved": false
+    },
+    {
+      "selectorWord": 1197,
+      "returnKind": "fresh-QWORD-input-field",
+      "inputByteOffset": 32,
+      "loadRva": 51373755,
+      "returnRva": 51373763,
+      "uniqueCurrentMetadataType": {
+        "typeDefinition": 10353,
+        "typeName": "Beyond.Gameplay.Core.BattleManager+ComboSkillEnvironment",
+        "recordAbsoluteOffset": 47746504,
+        "selectorWord": 1197
+      },
+      "typeIsValueType": false,
+      "declaredInterfaces": [
+        "Beyond.Gameplay.Core.IActionEnvironment",
+        "Beyond.IPtrObject"
+      ],
+      "namedContextField": {
+        "field": "Beyond.Gameplay.Core.BattleManager+ComboSkillEnvironment::<context>k__BackingField",
+        "declaredType": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+        "instanceByteOffset": 32,
+        "isStatic": false,
+        "fieldAttributes": 33
+      },
+      "namedGetter": {
+        "method": [
+          62460,
+          "Beyond.Gameplay.Core.BattleManager+ComboSkillEnvironment",
+          "get_context",
+          77881824
+        ],
+        "registeredEntryProved": true,
+        "closedFieldLoadReturnProved": true,
+        "closedEntryBytes": 5,
+        "rawHex": "488B4120C3",
+        "sha256": "8DD1A729F135C61D0575A363385037834E1C6AF6F857A82D4CFA05DB2B7CDCC7",
+        "completePhysicalExtentOrPaddingProved": false
+      },
+      "adapterRuntimeReceiverTypeProved": false
+    },
+    {
+      "selectorWord": 1198,
+      "returnKind": "fresh-QWORD-input-field",
+      "inputByteOffset": 104,
+      "loadRva": 78749015,
+      "returnRva": 51373775,
+      "uniqueCurrentMetadataType": {
+        "typeDefinition": 10405,
+        "typeName": "Beyond.Gameplay.Core.GlobalBuff",
+        "recordAbsoluteOffset": 47751288,
+        "selectorWord": 1198
+      },
+      "typeIsValueType": false,
+      "declaredInterfaces": [
+        "Beyond.IReusableObject",
+        "Beyond.PoolCore.IReusable",
+        "Beyond.IPtrObject",
+        "System.IComparable`1<Beyond.Gameplay.Core.GlobalBuff>",
+        "Beyond.Gameplay.Core.IBuffRoot",
+        "Beyond.Gameplay.Core.IGlobalModifierSource",
+        "Beyond.Gameplay.Core.IActionEnvironment",
+        "Beyond.Gameplay.Core.IBuffIconDurationSource"
+      ],
+      "namedContextField": {
+        "field": "Beyond.Gameplay.Core.GlobalBuff::<context>k__BackingField",
+        "declaredType": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+        "instanceByteOffset": 104,
+        "isStatic": false,
+        "fieldAttributes": 1
+      },
+      "namedGetter": {
+        "method": [
+          62588,
+          "Beyond.Gameplay.Core.GlobalBuff",
+          "get_context",
+          77881712
+        ],
+        "registeredEntryProved": true,
+        "closedFieldLoadReturnProved": true,
+        "closedEntryBytes": 5,
+        "rawHex": "488B4168C3",
+        "sha256": "FB6BF83D7403F34405349E1715C8966083AF4295FE7DC65BAD96D9A60589F9AA",
+        "completePhysicalExtentOrPaddingProved": false
+      },
+      "adapterRuntimeReceiverTypeProved": false
+    }
+  ],
+  "interfaceSlot": {
+    "usageCellRva": 218823928,
+    "usageRawHex": "4FC7032000000000",
+    "registeredTypeIndex": 123815,
+    "typeName": "Beyond.Gameplay.Core.IActionEnvironment",
+    "typeDefinition": 9187,
+    "typeFlags": 161,
+    "typeIsInterface": true,
+    "interfaceMethod": {
+      "methodDefinition": 57253,
+      "name": "get_context",
+      "slot": 4,
+      "parameterCount": 0,
+      "flags": 3526,
+      "returnType": "Beyond.Gameplay.Core.IActionEnvironment+Context"
+    },
+    "runtimeUsageCellResolvedIdentityProved": false,
+    "runtimePairMethodIdentityProved": false
+  },
+  "conditions": [
+    "Compatible stable actual metadata header/source record and class allocation binding; anonymous selector unchanged by aliases or children.",
+    "Readable receiver/class/count/record-array/selected pair storage and valid compatible method target.",
+    "Proper runtime interface usage-cell initialization and coherent interface/class/pair state.",
+    "Returning ABI-compatible children preserve nonvolatile state and disjoint caller homes; compatible normal tail target."
+  ],
+  "evidenceBoundary": {
+    "exact": [
+      "Complete owned adapter and fallback local programs, measured anonymous metadata column and unique named fields/getters.",
+      "Captured on-disk type-usage encoding and unique declared IActionEnvironment get_context method slot."
+    ],
+    "direct": [
+      "Adjacent saved metadata-source DWORD to allocated selector copy and normal field/argument/result transfers."
+    ],
+    "conditional": [
+      "Allocation-to-receiver binding, stable initialized storage, normal ABI children and compatible indirect target."
+    ],
+    "unresolved": [
+      "Anonymous column semantic name, live metadata/class/context/interface/pair/target identities, child effects/termination, pair capacity and actual whole-condition execution."
+    ]
+  }
+}

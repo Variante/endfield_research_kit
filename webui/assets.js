@@ -12,6 +12,11 @@
 //     prefix never produces one, and an absent sidecar only removes the fact.
 //   * Filter chip counts are totals over grouped entries. Their tooltips and
 //     the empty-list message explain why combined filters can return no rows.
+//   * FBX matching with instance labels, placement, pose and bind matrices
+//     excluded (`fc`),
+//     or byte-identical files (`h`), shares one preview and all resource paths.
+//     Pose/bind differences are selectable variants; path/name aliases share
+//     each variant. Every original file has its own download.
 //   * A Sprite index entry with `crop` (its texture's path) has no file and no
 //     `s`; the page shows its pixel size and a Cropped from fact. Every page
 //     still links to .../game/Unity/Sprite/<name>.png: serve.py answers with
@@ -104,7 +109,7 @@
       title: "\u89c6\u89c9\u8d44\u4ea7",
       countLabel: "\u9879\u8d44\u6e90",
       basicFilters: "\u57fa\u7840\u7b5b\u9009",
-      searchPlaceholder: "\u641c\u7d22\u8def\u5f84 / \u540d\u79f0 / \u6587\u4ef6\u5939 / \u5206\u7ec4",
+      searchPlaceholder: "搜索路径 / 名称 / 文件夹 / 分组 / 证据",
       type: "\u7c7b\u578b",
       category: "\u5206\u7c7b",
       source: "\u6765\u6e90",
@@ -126,6 +131,12 @@
       preview: "\u9884\u89c8",
       previewBackground: "\u80cc\u666f",
       modelColor: "模型颜色",
+      modelOnly: "仅显示模型",
+      modelLodBest: "各部件最高细节",
+      modelRecovery: "导出完整性",
+      modelRecoveryGap: "已导出 {exported}/{expected} 个源网格实例。部分引用的网格数据尚未找到。",
+      modelEmission: "显示发光",
+      modelEmissionHelp: "开启材质发光；强光可能遮住表面细节。关闭可查看原有贴图和形状。",
       previewBackgroundCustom: "\u81ea\u5b9a\u4e49\u80cc\u666f\u8272",
       previewBackgroundPreset: "\u80cc\u666f\u8272 {color}",
       previewPlaceholder: "\u9884\u89c8\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002",
@@ -150,6 +161,10 @@
       factSource: "\u6765\u6e90",
       factFolder: "\u5206\u7ec4",
       factAssetPath: "\u8d44\u6e90\u8def\u5f84",
+      factAssetPaths: "\u8d44\u6e90\u8def\u5f84",
+      factResourceFiles: "\u8d44\u6e90\u6587\u4ef6",
+      factVariantDifferences: "变体差异",
+      fbxPoseDifferences: "包含位置、姿态或蒙皮绑定差异。",
       modelObjects: "\u5bf9\u8c61\uff08{count}\uff09",
       modelLod: "LOD {lod}",
       modelLodShared: "\u6240\u6709 LOD",
@@ -196,7 +211,98 @@
       emptyModelTag: "空网格 / 无可绘制面",
       collisionTag: "碰撞网格",
       collisionHint: "显示从已验证的烘焙数据恢复的碰撞网格。",
-      collisionPreviewHint: "碰撞几何 · 网格局部坐标；场景位置和运行时归属尚未验证。",
+      collisionPreviewHint: "碰撞几何 · 网格局部坐标；运行时证据见详情，预览未应用场景变换。",
+      collisionEvidence: "碰撞证据",
+      collisionDecoded: "已解码存储几何",
+      collisionQueryObserved: "查询中已观察到此几何 · {count} 次结果",
+      collisionNotObserved: "暂无已验证的运行时观察；不代表游戏未使用",
+      collisionMovement: "已唯一匹配移动查询返回结果 · {count} 次（可行走地面 {floor} 次）",
+      collisionFilter: "已接受的过滤候选 · {count} 次；不代表最终移动结果",
+      collisionArrays: "运行时顶点/索引数组",
+      collisionArraysComplete: "完整数组与存储数据一致 · {count} 次",
+      collisionArraysPrefix: "仅已捕获前缀一致 · {count} 次；未捕获尾部未知",
+      collisionSurface: "有条件的表面比较 · {count} 次；位姿分别采样",
+      collisionExcludedPoints: "初始重叠或非正距离扫掠 · {count} 次；未用作表面点",
+      collisionSolver: "求解器接触参与尚未证明",
+      collisionAuthoredOwners: "存储的预制体归属",
+      collisionAuthoredHierarchy: "存储的碰撞体层级",
+      collisionAuthoredFlags: "存储设置：启用 {enabled}；整个层级激活 {active}",
+      collisionAuthoredYes: "是",
+      collisionAuthoredNo: "否",
+      collisionAuthoredBoundary: "以上为存储配置；运行时实例、激活状态和世界位置尚未证明。",
+      collisionAuthoredUnavailable: "存储归属证据不可用：{reason}",
+      collisionModelSources: "定义此预制体的 Model 源记录",
+      collisionModelRecord: "网格 ID {grid} · Model 序号 {ordinal}",
+      collisionModelPosition: "存储位置",
+      collisionModelRotation: "存储旋转轴值",
+      collisionModelScale: "存储缩放",
+      collisionModelBoundary: "这些是定义数据；网格变换、运行时父级和最终世界位置尚未证明。预览未应用这些数值。",
+      collisionModelUnavailable: "Model 源证据不可用：{reason}",
+      collisionPrefabAssemblies: "存储的碰撞组合",
+      collisionPrefabPreview: "预览组合",
+      collisionPrefabReset: "恢复单个网格",
+      collisionPrefabDownload: "下载组合 OBJ",
+      collisionPrefabSummary: "已选碰撞体 {count} 个（网格 {meshes} · 盒 {boxes}）· 存储禁用 {disabled} 个 · 层级未激活 {inactive} 个 · 已选未恢复 {missing} 个",
+      collisionPrefabBoundary: "组合已选 MeshCollider 及单独验证的 BoxCollider，包含存储禁用项；应用根节点及子节点的存储变换。盒形按存储中心及完整尺寸绘制。不含其他基本形状或自定义碰撞体，不表示运行时物理形状、激活或世界位置。",
+      collisionBoxPart: "存储的盒形 · 大小 [{size}] · 中心 [{center}] · 触发器 {trigger}",
+      collisionBoxUnavailable: "存储盒形证据不可用：{reason}",
+      collisionRenderers: "同一预制体的存储渲染组件",
+      collisionRendererSummary: "MeshRenderer {count} 个 · 已验证网格对象引用 {meshes} 个 · 材质槽 {slots} 个",
+      collisionRendererRecord: "{hierarchy} · 材质槽 {slots} 个 · 存储启用 {enabled}",
+      collisionRendererMesh: "网格引用",
+      collisionRendererSlot: "材质槽 {slot}",
+      collisionRendererPointer: "文件槽 {file} · PathID {path}",
+      collisionRendererExact: "已验证选中目标的存储身份",
+      collisionRendererUnwitnessed: "外部文件槽尚未验证",
+      collisionRendererExternal: "外部 CAB 已验证，目标对象未选入",
+      collisionRendererExcluded: "目标对象未选入",
+      collisionRendererAmbiguous: "外部目标物理来源不唯一",
+      collisionRendererNoFilter: "MeshFilter 未恢复",
+      collisionRendererNull: "空引用",
+      collisionRendererBoundary: "组件通过实际预制体根节点、GameObject 回链及存储层级关联。材质槽保留顺序；未恢复的资源引用明确标注。组件链接本身证明存储归属与引用，不证明运行时绘制，也不覆盖其他 Renderer 类型。",
+      collisionRendererUnavailable: "存储渲染组件证据不可用：{reason}",
+      collisionRenderPreview: "预览存储渲染网格",
+      collisionRenderLOD: "预览存储 LOD {lod}",
+      collisionRenderUngrouped: "预览未分组的存储渲染组件",
+      collisionRenderDownload: "下载渲染 OBJ",
+      collisionRenderMaterial: "材质存储字段 JSON",
+      collisionShaderDetails: "存储 Shader 分析",
+      collisionShaderUnavailable: "未找到与此材质文件匹配的 Shader 分析。",
+      collisionShaderKeywords: "存储有效关键字：{keywords}",
+      collisionShaderInvalid: "存储无效关键字：{keywords}",
+      collisionShaderPasses: "存储 Pass：{passes}",
+      collisionShaderCandidates: "条件候选 {count} / {total} 个编译程序记录（允许额外引擎关键字）",
+      collisionShaderUnknown: "Shader 未声明的有效关键字：{keywords}",
+      collisionShaderBoundary: "候选来自存储关键字与编译记录；运行时程序选择、Pass 执行和资源绑定尚未证明。预览仍使用中性色。",
+      collisionShaderDownload: "下载 Shader 分析 JSON",
+      collisionShaderParameters: "材质值与条件参数布局",
+      collisionShaderStoredValues: "材质显式存储值",
+      collisionShaderDefaults: "未被显式数值覆盖的 Shader 声明（{count} 个；完整字段见 JSON）",
+      collisionShaderParameterPass: "{pass} · LOD {lod} · {count} 个条件程序记录",
+      collisionShaderResource: "参数表资源名：{name} · 出现于 {count}/{total} 个记录",
+      collisionShaderField: "{buffer}.{name} · 出现于 {count}/{total} 个记录 · 字节偏移 {offsets}",
+      collisionShaderInstructions: "编译指令的静态引用（条件候选）",
+      collisionShaderInstructionPass: "{pass} · LOD {lod} · {stage} · {count} 个候选程序",
+      collisionShaderInstructionStatus: "寄存器关联完整 {complete}/{total}；含动态索引 {dynamic}；含匿名字节读取 {anonymous}。",
+      collisionShaderInstructionResource: "{kind} · {name} · {count}/{total} 个程序引用",
+      collisionShaderInstructionField: "{buffer}.{name} · {count}/{total} 个程序引用 · 字节偏移 {offsets}",
+      collisionShaderInstructionBoundary: "这是保守的编译指令静态引用；已支持的指令形式按分量掩码读取，其他形式保留可能引用，不代表游戏选中或执行了该程序。动态索引和匿名偏移保留为缺口；GPU 常量、纹理视图、采样器及最终光照仍需同一绘制的运行时证据。",
+      collisionTextureInspect: "在此材质槽上检查贴图",
+      collisionTextureChannel: "检查贴图通道",
+      collisionTextureInspectNote: "存储贴图检查：{property} · 材质槽 {slot} · UV{uv} 缩放/偏移 · {channel}。仅显示解码最高 mip；其他槽保持中性色。未应用游戏材质运算、颜色转换或运行时采样。",
+      collisionRenderTextures: "存储贴图 · {count} 个非空引用",
+      collisionRenderTextureUnavailable: "解码图像不可用；存储引用与字段仍保留。",
+      collisionRenderTextureUV: "UV 集 {uv} · 缩放 [{scale}] · 偏移 [{offset}]",
+      collisionRenderTextureInfo: "{width}×{height} · {format} · {mips} 层 mip · 存储色彩空间枚举 {space}",
+      collisionRenderTextureBoundary: "贴图预览保留解码通道并按导出图像坐标上下翻转；未做色彩转换、法线重建或材质着色，不表示运行时采样结果。",
+      collisionRenderBoundary: "存储的渲染几何及 LOD 成员关系，预览使用中性色。组合应用根节点和子节点的存储变换；未恢复材质外观、额外顶点流、动画、运行时 LOD 选择或世界位置。",
+      collisionRenderMissing: "渲染组件 {count} 个 · 已选未恢复 {missing} 个",
+      collisionRenderDirectoryMissing: "外部文件槽已验证，目标目录未选入",
+      collisionRenderAbsent: "完整选中目录中无此对象",
+      collisionRenderBodyUnselected: "目标身份已验证，对象内容未选入",
+      collisionRenderMembership: "存储 LOD {lod} · 屏幕比例阈值 {height}",
+      collisionPrefabUnavailable: "碰撞组合不可用：{reason}",
+      collisionRuntimeUnavailable: "运行时证据不可用：{reason}",
       collisionBuffer: "烘焙碰撞数据 SHA-256",
       collisionIdentity: "Unity 对象标识",
       collisionTriangle: "三角形碰撞网格",
@@ -229,7 +335,7 @@
       title: "Exported Assets",
       countLabel: "assets",
       basicFilters: "Basic filters",
-      searchPlaceholder: "Search path / name / folder / group",
+      searchPlaceholder: "Search path / name / folder / group / evidence",
       type: "Type",
       category: "Category",
       source: "Source",
@@ -251,6 +357,12 @@
       preview: "Preview",
       previewBackground: "Background",
       modelColor: "Model color",
+      modelOnly: "Model only",
+      modelLodBest: "Best per part",
+      modelRecovery: "Export completeness",
+      modelRecoveryGap: "{exported}/{expected} source mesh instances exported. Some referenced mesh data has not been located.",
+      modelEmission: "Show emission",
+      modelEmissionHelp: "Enable material emission. Bright glow can obscure surface details; turn it off to inspect the base texture and shape.",
       previewBackgroundCustom: "Custom background color",
       previewBackgroundPreset: "Background {color}",
       previewPlaceholder: "Preview will appear here.",
@@ -275,6 +387,10 @@
       factSource: "Source",
       factFolder: "Group",
       factAssetPath: "Asset path",
+      factAssetPaths: "Resource paths",
+      factResourceFiles: "Resource files",
+      factVariantDifferences: "Variant differences",
+      fbxPoseDifferences: "Includes differences in placement, pose or skin binding.",
       modelObjects: "Objects ({count})",
       modelLod: "LOD {lod}",
       modelLodShared: "All LODs",
@@ -321,7 +437,98 @@
       emptyModelTag: "Empty mesh / no drawable faces",
       collisionTag: "Collision",
       collisionHint: "Include collision meshes recovered from validated cooked data.",
-      collisionPreviewHint: "Collision geometry in mesh local coordinates; scene placement and runtime ownership are unverified.",
+      collisionPreviewHint: "Collision geometry in mesh local coordinates. Runtime evidence is in the details; no scene transform is applied to this preview.",
+      collisionEvidence: "Collision evidence",
+      collisionDecoded: "Decoded stored geometry",
+      collisionQueryObserved: "Observed query geometry · {count} results",
+      collisionNotObserved: "No validated runtime observation; this does not mean unused",
+      collisionMovement: "Uniquely matched movement query returns · {count} (walkable floor: {floor})",
+      collisionFilter: "Accepted filter candidates · {count}; these do not prove final movement results",
+      collisionArrays: "Runtime vertex/index arrays",
+      collisionArraysComplete: "Samples with complete arrays matching stored data: {count}",
+      collisionArraysPrefix: "Samples with matching captured prefixes: {count}; uncaptured tails remain unknown",
+      collisionSurface: "Conditional surface comparisons · {count}; poses sampled separately",
+      collisionExcludedPoints: "Initial-overlap/nonpositive-distance sweeps · {count}; excluded as surface points",
+      collisionSolver: "Solver-contact participation unproved",
+      collisionAuthoredOwners: "Stored prefab owners",
+      collisionAuthoredHierarchy: "Stored collider hierarchies",
+      collisionAuthoredFlags: "Stored settings: enabled {enabled}; whole hierarchy active {active}",
+      collisionAuthoredYes: "Yes",
+      collisionAuthoredNo: "No",
+      collisionAuthoredBoundary: "Stored configuration; live instances, activation and world placement remain unproved.",
+      collisionAuthoredUnavailable: "Stored owner evidence unavailable: {reason}",
+      collisionModelSources: "Model source records defining this prefab",
+      collisionModelRecord: "Grid ID {grid} · Model ordinal {ordinal}",
+      collisionModelPosition: "Stored position",
+      collisionModelRotation: "Stored rotation axes",
+      collisionModelScale: "Stored scale",
+      collisionModelBoundary: "Definition data; grid transforms, runtime parents and final world placement remain unproved. The preview does not apply these values.",
+      collisionModelUnavailable: "Model source evidence unavailable: {reason}",
+      collisionPrefabAssemblies: "Stored collision assemblies",
+      collisionPrefabPreview: "Preview assembly",
+      collisionPrefabReset: "Restore single mesh",
+      collisionPrefabDownload: "Download assembly OBJ",
+      collisionPrefabSummary: "Selected colliders: {count} (mesh {meshes} · box {boxes}) · stored disabled: {disabled} · inactive hierarchy: {inactive} · selected unrecovered: {missing}",
+      collisionPrefabBoundary: "Selected MeshColliders and separately admitted BoxColliders, including stored disabled definitions; applies root and descendant stored transforms. Boxes use stored center and full size. Other primitive/custom colliders, effective runtime shapes, activation and world placement are not reconstructed.",
+      collisionBoxPart: "Stored box · size [{size}] · center [{center}] · trigger {trigger}",
+      collisionBoxUnavailable: "Stored box evidence unavailable: {reason}",
+      collisionRenderers: "Stored render components in the same prefab",
+      collisionRendererSummary: "MeshRenderers: {count} · verified Mesh object references: {meshes} · material slots: {slots}",
+      collisionRendererRecord: "{hierarchy} · material slots: {slots} · stored enabled: {enabled}",
+      collisionRendererMesh: "Mesh reference",
+      collisionRendererSlot: "Material slot {slot}",
+      collisionRendererPointer: "File slot {file} · PathID {path}",
+      collisionRendererExact: "Verified selected target identity",
+      collisionRendererUnwitnessed: "External file slot unverified",
+      collisionRendererExternal: "External CAB witnessed; target outside selection",
+      collisionRendererExcluded: "Target outside selection",
+      collisionRendererAmbiguous: "External physical target ambiguous",
+      collisionRendererNoFilter: "MeshFilter unavailable",
+      collisionRendererNull: "Null reference",
+      collisionRendererBoundary: "Links use the actual prefab root, reciprocal GameObject components and stored hierarchy. Material slot order is retained; unresolved resources are labelled. Component links establish stored ownership and references; runtime drawing and other Renderer classes remain outside this scope.",
+      collisionRendererUnavailable: "Stored render component evidence unavailable: {reason}",
+      collisionRenderPreview: "Preview stored render mesh",
+      collisionRenderLOD: "Preview stored LOD {lod}",
+      collisionRenderUngrouped: "Preview ungrouped stored renderers",
+      collisionRenderDownload: "Download render OBJ",
+      collisionRenderMaterial: "Stored material fields JSON",
+      collisionShaderDetails: "Stored Shader analysis",
+      collisionShaderUnavailable: "No matching Shader analysis for this Material artifact.",
+      collisionShaderKeywords: "Stored valid keywords: {keywords}",
+      collisionShaderInvalid: "Stored invalid keywords: {keywords}",
+      collisionShaderPasses: "Stored passes: {passes}",
+      collisionShaderCandidates: "Conditional candidates: {count} / {total} compiled program records (additional engine keywords allowed)",
+      collisionShaderUnknown: "Valid keywords undeclared by this Shader: {keywords}",
+      collisionShaderBoundary: "Candidates join stored keywords to compiled records; runtime program selection, pass execution and resource binding remain unproved. The preview keeps its neutral tint.",
+      collisionShaderDownload: "Download Shader analysis JSON",
+      collisionShaderParameters: "Material values and conditional parameter layouts",
+      collisionShaderStoredValues: "Explicit stored material values",
+      collisionShaderDefaults: "Shader declarations without explicit numeric overrides ({count}; full fields in JSON)",
+      collisionShaderParameterPass: "{pass} · LOD {lod} · {count} conditional program records",
+      collisionShaderResource: "Parameter-table resource name: {name} · present in {count}/{total} records",
+      collisionShaderField: "{buffer}.{name} · present in {count}/{total} records · byte offsets {offsets}",
+      collisionShaderInstructions: "Static compiled instruction references (conditional candidates)",
+      collisionShaderInstructionPass: "{pass} · LOD {lod} · {stage} · {count} candidate programs",
+      collisionShaderInstructionStatus: "Complete register joins {complete}/{total}; programs with dynamic indices {dynamic}; anonymous byte reads {anonymous}.",
+      collisionShaderInstructionResource: "{kind} · {name} · referenced by {count}/{total} programs",
+      collisionShaderInstructionField: "{buffer}.{name} · referenced by {count}/{total} programs · byte offsets {offsets}",
+      collisionShaderInstructionBoundary: "These are conservative static instruction references. Supported operand forms use component masks; other forms retain possible references. They do not prove game selection or execution. Dynamic indices and anonymous offsets remain explicit; GPU constants, texture views, samplers and final lighting require runtime evidence from the same draw.",
+      collisionTextureInspect: "Inspect texture on this material slot",
+      collisionTextureChannel: "Texture inspection channel",
+      collisionTextureInspectNote: "Stored texture inspection: {property} · material slot {slot} · UV{uv} scale/offset · {channel}. Decoded top mip only; other slots keep a neutral tint. Game material arithmetic, colour conversion and runtime sampling are not applied.",
+      collisionRenderTextures: "Stored textures · {count} non-null references",
+      collisionRenderTextureUnavailable: "Decoded image unavailable; stored references and fields are retained.",
+      collisionRenderTextureUV: "UV set {uv} · scale [{scale}] · offset [{offset}]",
+      collisionRenderTextureInfo: "{width}×{height} · {format} · mip count {mips} · stored colour-space enum {space}",
+      collisionRenderTextureBoundary: "Texture previews retain decoded channels and flip vertically for exported image coordinates; no colour conversion, normal reconstruction or material shading, and no runtime sampling claim.",
+      collisionRenderBoundary: "Stored render geometry and LOD membership, previewed with a neutral tint. Assemblies apply root and descendant stored transforms; material appearance, additional vertex streams, animation, runtime LOD selection and world placement are not reconstructed.",
+      collisionRenderMissing: "Renderers: {count} · selected unrecovered: {missing}",
+      collisionRenderDirectoryMissing: "External slot verified; target directory outside selection",
+      collisionRenderAbsent: "Target absent from complete selected directory",
+      collisionRenderBodyUnselected: "Target identity verified; body outside selection",
+      collisionRenderMembership: "Stored LOD {lod} · screen-relative threshold {height}",
+      collisionPrefabUnavailable: "Collision assembly unavailable: {reason}",
+      collisionRuntimeUnavailable: "Runtime evidence unavailable: {reason}",
       collisionBuffer: "Cooked collision SHA-256",
       collisionIdentity: "Unity object identity",
       collisionTriangle: "Triangle collision mesh",
@@ -376,6 +583,11 @@
     initialAssetHandled: false,
     previewBackground: DEFAULT_PREVIEW_BACKGROUND,
     modelColor: DEFAULT_MODEL_COLOR,
+    modelOnly: false,
+    // Base textures expose the shape by default. Stored HDR emission can
+    // saturate the LDR canvas and look like missing horns or other details.
+    // Keep the authored values available through a separate display control.
+    modelEmission: false,
     qTimer: null,
     detailToken: 0,
     imageObjectUrl: "",
@@ -579,6 +791,14 @@
     modelInput.value = ASSET_STATE.modelColor;
     modelLabel.textContent = assetUiText("modelColor");
     modelInput.setAttribute("aria-label", assetUiText("modelColor"));
+    $("#asset-model-only-label").hidden = !isModel;
+    $("#asset-model-only-text").textContent = assetUiText("modelOnly");
+    $("#asset-model-only").checked = ASSET_STATE.modelOnly;
+    $("#asset-model-emission-label").hidden = !isModel;
+    $("#asset-model-emission-text").textContent = assetUiText("modelEmission");
+    $("#asset-model-emission-label").title = assetUiText("modelEmissionHelp");
+    $("#asset-model-emission").checked = ASSET_STATE.modelEmission;
+    $("#asset-model-emission").disabled = ASSET_STATE.modelOnly;
     stage.classList.toggle("has-preview-bg", enabled);
     stage.style.setProperty("--asset-preview-bg-color", color);
     if (input.value.toLowerCase() !== color) input.value = color;
@@ -864,6 +1084,15 @@
       ASSET_STATE.modelColor = normalizePreviewBackground(ev.target.value);
       queueModelRender();
     });
+    $("#asset-model-only").addEventListener("change", (ev) => {
+      ASSET_STATE.modelOnly = ev.target.checked;
+      syncPreviewBackgroundControls();
+      queueModelRender();
+    });
+    $("#asset-model-emission").addEventListener("change", (ev) => {
+      ASSET_STATE.modelEmission = ev.target.checked;
+      queueModelRender();
+    });
     $("#asset-preview-bg-color").addEventListener("input", (ev) => {
       setPreviewBackground(ev.target.value);
     });
@@ -989,6 +1218,90 @@
         });
     }
     return ASSET_STATE.relationsPromise;
+  }
+
+  let storedShaderPromise;
+  function validStoredShaderInstructions(value) {
+    const count = (v) => Number.isSafeInteger(v) && v >= 0;
+    return value && Array.isArray(value.passes) && value.passes.every((p) =>
+      typeof p.passName === "string" && ["vertex","fragment"].includes(p.stage) && count(p.shaderLOD) &&
+      count(p.candidatePrograms) && [p.completeRegisterJoins,p.dynamicReadPrograms,p.anonymousReadPrograms].every((v) => count(v) && v <= p.candidatePrograms) &&
+      Array.isArray(p.namedResourceReads) && p.namedResourceReads.every((r) => typeof r.name === "string" && ["t","s","u"].includes(r.kind) && count(r.presentPrograms) && r.presentPrograms <= p.candidatePrograms) &&
+      Array.isArray(p.namedFieldReads) && p.namedFieldReads.every((f) => typeof f.name === "string" && typeof f.buffer === "string" &&
+        count(f.presentPrograms) && f.presentPrograms <= p.candidatePrograms && Array.isArray(f.byteOffsets) && f.byteOffsets.every(count)) &&
+      Array.isArray(p.gaps) && p.gaps.every((g) => typeof g.register === "string" && typeof g.reason === "string" && count(g.presentPrograms) && g.presentPrograms <= p.candidatePrograms));
+  }
+  function storedShaderDetails(asset) {
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = assetUiText("collisionShaderDetails");
+    const body = document.createElement("div");
+    details.append(summary, body);
+    details.addEventListener("toggle", async () => {
+      if (!details.open || details.dataset.loaded) return;
+      details.dataset.loaded = "1";
+      storedShaderPromise ||= fetch("data/assets/shader_analysis/index.json")
+        .then((r) => r.ok ? r.json() : null).catch(() => null);
+      const payload = await storedShaderPromise;
+      const info = payload?.schema === "endfield.assets-shader-analysis.v3" && payload.status === "validated"
+        ? payload.bindings?.[asset.rel] : null;
+      const keywordArrays = [info?.validKeywords, info?.invalidKeywords, info?.passNames, info?.undeclaredValidKeywords];
+      if (!info || info.schema !== "endfield.stored-material-shader-info.v3" || typeof asset.sha256 !== "string" || !asset.sha256 ||
+          info.materialArtifactSha256 !== asset.sha256 || typeof info.name !== "string" ||
+          !keywordArrays.every((a) => Array.isArray(a) && a.every((v) => typeof v === "string")) ||
+          !Number.isSafeInteger(info.conditionalCandidateCount) || !Number.isSafeInteger(info.compiledVariantCount) ||
+          info.conditionalCandidateCount < 0 || info.compiledVariantCount < info.conditionalCandidateCount ||
+          (info.instructions !== undefined && !validStoredShaderInstructions(info.instructions))) {
+        body.textContent = assetUiText("collisionShaderUnavailable");
+        return;
+      }
+      body.textContent = [info.name,
+        assetUiText("collisionShaderKeywords", {keywords:info.validKeywords.join(", ") || "—"}),
+        assetUiText("collisionShaderInvalid", {keywords:info.invalidKeywords.join(", ") || "—"}),
+        assetUiText("collisionShaderPasses", {passes:info.passNames.join(", ") || "—"}),
+        assetUiText("collisionShaderCandidates", {count:info.conditionalCandidateCount,total:info.compiledVariantCount}),
+        ...(info.undeclaredValidKeywords.length ? [assetUiText("collisionShaderUnknown", {keywords:info.undeclaredValidKeywords.join(", ")})] : []),
+        assetUiText("collisionShaderBoundary")].join("\n");
+      if (typeof info.shaderAnalysisUrl === "string" && info.shaderAnalysisUrl.startsWith("/data/assets/shader_analysis/selection-")) {
+        const link = document.createElement("a");
+        link.href = info.shaderAnalysisUrl; link.download = info.shaderAnalysisUrl.split("/").pop();
+        link.textContent = assetUiText("collisionShaderDownload");
+        body.append(document.createTextNode("\n"), link);
+      }
+      if (info.parameters) {
+        const parameters = document.createElement("details"), title = document.createElement("summary");
+        title.textContent = assetUiText("collisionShaderParameters"); parameters.appendChild(title);
+        const values = document.createElement("details"), valuesTitle = document.createElement("summary"), valueRows = document.createElement("div");
+        valuesTitle.textContent = assetUiText("collisionShaderStoredValues") + ` (${info.parameters.storedValues.length})`;
+        valueRows.textContent = info.parameters.storedValues.map((v) => v.name + " = " + JSON.stringify(v.value)).join("\n");
+        values.append(valuesTitle,valueRows); parameters.append(values,document.createTextNode(assetUiText("collisionShaderDefaults", {count:info.parameters.unoverriddenDeclarations.length})));
+        for (const pass of info.parameters.passes) {
+          const section = document.createElement("details"), heading = document.createElement("summary");
+          heading.textContent = assetUiText("collisionShaderParameterPass", {pass:pass.passName,lod:pass.shaderLOD,count:pass.candidateRecords});
+          const fields = document.createElement("div");
+          fields.textContent = [...pass.namedResources.map((r) => assetUiText("collisionShaderResource", {name:r.name,count:r.presentRecords,total:pass.candidateRecords})),
+            ...pass.namedFields.map((f) => assetUiText("collisionShaderField", {buffer:f.buffer,name:f.name,count:f.presentRecords,total:pass.candidateRecords,
+              offsets:[...new Set(f.alternatives.map((a) => a.byteOffset))].join(", ")}))].join("\n");
+          section.append(heading, fields); parameters.appendChild(section);
+        }
+        parameters.appendChild(document.createTextNode(assetUiText("collisionShaderBoundary"))); body.appendChild(parameters);
+      }
+      if (info.instructions?.passes.length) {
+        const instructions = document.createElement("details"), title = document.createElement("summary");
+        title.textContent = assetUiText("collisionShaderInstructions"); instructions.append(title);
+        for (const pass of info.instructions.passes) {
+          const section = document.createElement("details"), heading = document.createElement("summary"), reads = document.createElement("div");
+          heading.textContent = assetUiText("collisionShaderInstructionPass", {pass:pass.passName,lod:pass.shaderLOD,stage:pass.stage,count:pass.candidatePrograms});
+          reads.textContent = [assetUiText("collisionShaderInstructionStatus", {complete:pass.completeRegisterJoins,total:pass.candidatePrograms,dynamic:pass.dynamicReadPrograms,anonymous:pass.anonymousReadPrograms}),
+            ...pass.namedResourceReads.map((r) => assetUiText("collisionShaderInstructionResource", {kind:r.kind,name:r.name,count:r.presentPrograms,total:pass.candidatePrograms})),
+            ...pass.namedFieldReads.map((f) => assetUiText("collisionShaderInstructionField", {buffer:f.buffer,name:f.name,count:f.presentPrograms,total:pass.candidatePrograms,offsets:f.byteOffsets.join(", ")})),
+            ...pass.gaps.map((g) => `${g.register}: ${g.reason} (${g.presentPrograms}/${pass.candidatePrograms})`)].join("\n");
+          section.append(heading,reads); instructions.append(section);
+        }
+        instructions.append(document.createTextNode(assetUiText("collisionShaderInstructionBoundary"))); body.append(instructions);
+      }
+    });
+    return details;
   }
 
   function normalizeImageCategory(value) {
@@ -1138,6 +1451,13 @@
     return values.join(" / ");
   }
 
+  function modelRecoveryForRaw(raw) {
+    const recovery = raw.mr;
+    return recovery?.status === "incomplete_geometry" && recovery.h && recovery.h === raw.h
+      && Number.isSafeInteger(recovery.expected) && Number.isSafeInteger(recovery.exported)
+      && recovery.exported >= 0 && recovery.expected > recovery.exported ? recovery : null;
+  }
+
   function hydrateEntries(entries) {
     const hydrated = entries.map((raw) => {
       // Unity object documents are browsed on the Data page; an index built
@@ -1158,9 +1478,12 @@
       const groupInfo = deriveAssetGroupInfo(kind, stem, ext);
       const textureVariant = kind === "image" ? inferTextureVariantStem(stem, ext) : null;
       // Animator FBX: the prefab path recovered from the asset map. Same-name
-      // prefabs at different paths are different models, so an FBX forms a
-      // variant set (LOD levels) only within its own prefab path.
+      // prefabs at different paths can differ, so LOD families stay scoped to
+      // their prefab path. Identical exported content is collapsed below.
       const container = kind === "model" ? String(raw.c || "") : "";
+      const resourcePaths = kind === "model"
+        ? Array.from(new Set([container, ...(raw.cs || [])].filter(Boolean)))
+        : [];
       const variantScope = raw.cl ? `${source}::${raw.cl.key}` : ext === "fbx" ? `${source}::${container || rel}` : (kind === "model" || textureVariant ? source : dir);
       const lodMatch = kind === "model" ? stem.match(/(?:^|[_-])lod(\d+)$/i) : null;
       const lod = lodMatch ? Number(lodMatch[1]) : null;
@@ -1173,6 +1496,7 @@
         rel,
         size: Number(raw.s || 0),
         noDrawableFaces: kind === "model" && raw.nd === true,
+        modelRecovery: kind === "model" ? modelRecoveryForRaw(raw) : null,
         collision: kind === "model" && raw.cl ? raw.cl : null,
         // A Sprite image has no file: it is a crop of this texture.
         cropOf: String(raw.crop || ""),
@@ -1181,12 +1505,15 @@
         dir,
         variantScope,
         container,
+        resourcePaths,
         source,
         ext,
         stem,
         rawStem: stemInfo.rawStem,
         pathId: stemInfo.pathId || String(raw.pid || ""),
         contentHash: String(raw.h || raw.hash || raw.sha256 || ""),
+        fbxContentHash: ext === "fbx" ? String(raw.fc || "") : "",
+        fbxVariantHash: ext === "fbx" ? String(raw.fv || "") : "",
         exactFileDuplicate: String(raw.d || ""),
         family: stripAssetLodSuffix(stem),
         familyKey: `${source}::${groupInfo.key}`.toLowerCase(),
@@ -1288,7 +1615,7 @@
       const lodFamilyKey = `${scopeKey}::${entry.family}`.toLowerCase();
       const suffixFamilyKey = suffixed ? `${scopeKey}::${suffixed.parentStem}`.toLowerCase() : "";
 
-      // Separate FBX files are listed one by one; only LOD levels of one
+      // Distinct FBX content stays separate; only LOD levels of one
       // prefab form a variant set, as for OBJ meshes. A prefab name's
       // trailing number is part of the name, so FBX skip suffix families.
       if (supportsAssetVariants(entry.kind) && entry.lod !== null && groupedFamilies.has(lodFamilyKey)) {
@@ -1318,6 +1645,7 @@
       // walking the whole entry for file names cost seconds on 200k rows.
       entry.searchText = [
         window.WebUI.linkedFileSearchText(entry.cropOf, entry.previewRel, entry.collision),
+        collisionEvidenceSearchTerms(entry.collision),
         entry.variantScope,
         entry.familyKey,
         entry.rel,
@@ -1329,6 +1657,7 @@
         entry.groupRaw,
         entry.sceneRoot,
         entry.container,
+        ...entry.resourcePaths,
         entry.rawStem,
         entry.pathId,
         entry.contentHash,
@@ -1346,6 +1675,35 @@
 
     const rawEntryByRel = new Map(hydrated.map((entry) => [entry.rel, entry]));
     return groupAssetEntries(collapseDuplicateAssetEntries(hydrated), rawEntryByRel);
+  }
+
+  function collisionEvidenceSearchTerms(collision) {
+    const authored = collision?.authored;
+    const ownerTerms = authored?.owners?.length ? [
+      "authored owner hierarchy 存储归属 碰撞体层级",
+      ...authored.owners.flatMap((owner) => owner.hierarchy.map((node) => node.name)),
+    ].join(" ") : "";
+    const runtime = collision?.runtime;
+    const modelTerms = collision?.models?.records?.length ? "configured model source 定义场景" : "";
+    const prefabTerms = collision?.prefabs?.assemblies?.length ? "assembly prefab 组合预览" : "";
+    const boxTerms = collision?.prefabs?.assemblies?.some((a) => a.boxColliderCount > 0) ? "stored box BoxCollider 存储盒形" : "";
+    const rendererTerms = collision?.renderers?.prefabs?.length ? ["MeshRenderer MeshFilter material slots 渲染组件 材质槽",
+      ...collision.renderers.prefabs.flatMap((p) => p.records.flatMap((r) => [
+        ...r.hierarchy.map((n) => n.name), r.mesh.target?.name || "", ...r.materials.map((m) => m.target?.name || "")]))].join(" ") : "";
+    if (!runtime?.queryObserved) return `${ownerTerms} ${modelTerms} ${prefabTerms} ${boxTerms} ${rendererTerms}`;
+    const counts = runtime.counts;
+    return [
+      ownerTerms,
+      modelTerms,
+      prefabTerms,
+      boxTerms,
+      rendererTerms,
+      "observed query 已观察查询",
+      counts.movementResults ? "movement result 移动结果" : "",
+      counts.acceptedFilterCandidates ? "accepted filter 已接受过滤" : "",
+      counts.completeArraySamples ? "complete arrays 完整数组" : "",
+      counts.prefixArraySamples ? "captured prefix 捕获前缀" : "",
+    ].join(" ");
   }
 
   function assetContentHash(entry) {
@@ -1384,13 +1742,36 @@
   }
 
   function collapseDuplicateAssetEntries(entries) {
+    // Either exact file equality or the naming-independent content key can
+    // join FBX copies. A missing/different `fc` must not split equal bytes.
+    const fbxParents = new Map();
+    const fbxKeys = (entry) => [
+      entry.fbxContentHash ? `fbx-content::${entry.fbxContentHash}` : "",
+      assetContentHash(entry) ? `fbx-file::${assetContentHash(entry)}` : "",
+    ].filter(Boolean);
+    const fbxRoot = (key, parents = fbxParents) => {
+      const trail = [];
+      while (parents.get(key) !== key) {
+        trail.push(key);
+        key = parents.get(key);
+      }
+      for (const prior of trail) parents.set(prior, key);
+      return key;
+    };
+    for (const entry of entries) {
+      if (entry.ext !== "fbx") continue;
+      const keys = fbxKeys(entry);
+      for (const key of keys) if (!fbxParents.has(key)) fbxParents.set(key, key);
+      if (keys.length === 2) fbxParents.set(fbxRoot(keys[1]), fbxRoot(keys[0]));
+    }
     const buckets = new Map();
     for (const entry of entries) {
       const hash = assetContentHash(entry);
       const identity = supportsAssetVariants(entry.kind) ? entry.stem : entry.rel;
-      // FBX of the same name collapse only when byte-identical.
+      // `fc` ignores instance placement, pose and bind matrices as well as labels.
+      // `h` still means the full-file hash of the unchanged original.
       const key = entry.ext === "fbx"
-        ? (hash ? `hash::${hash}` : `rel::${entry.rel}`.toLowerCase())
+        ? (fbxKeys(entry).length ? fbxRoot(fbxKeys(entry)[0]) : `rel::${entry.rel}`.toLowerCase())
         : supportsAssetVariants(entry.kind)
         ? `${entry.kind}::${entry.ext}::${entry.source}::${entry.stem}::${entry.sceneRoot || ""}::${entry.collision?.key || "render"}::${entry.noDrawableFaces ? "empty" : "geometry"}`.toLowerCase()
         : (hash ? `hash::${hash}` : `${entry.kind}::${entry.ext}::${entry.source}::${identity}`.toLowerCase());
@@ -1410,6 +1791,58 @@
       primary.rawRels = bucket.map((entry) => entry.rel);
       if (assetContentHash(primary)) {
         primary.sameHashFiles = bucket.filter((entry) => assetContentHash(entry) === assetContentHash(primary)).flatMap((entry) => (entry.rawRels || [entry.rel]).map((rel) => ({ rel, hash: assetContentHash(entry) })));
+      }
+      if (primary.ext === "fbx") {
+        primary.resourcePaths = Array.from(new Set(bucket.flatMap((entry) => entry.resourcePaths)));
+        if (bucket.length > 1) {
+          primary.resourceFiles = primary.rawRels;
+        }
+        primary.searchText = bucket.map((entry) => entry.searchText).join(" ");
+        const variantParents = new Map(bucket.filter((entry) => entry.fbxVariantHash)
+          .map((entry) => [entry.fbxVariantHash, entry.fbxVariantHash]));
+        const variantRoot = (key) => fbxRoot(key, variantParents);
+        const keysByHash = new Map();
+        for (const entry of bucket) {
+          const hash = assetContentHash(entry);
+          if (!entry.fbxVariantHash || !hash) continue;
+          const previous = keysByHash.get(hash);
+          if (previous) variantParents.set(variantRoot(entry.fbxVariantHash), variantRoot(previous));
+          else keysByHash.set(hash, entry.fbxVariantHash);
+        }
+        const variantKeys = new Set(Array.from(variantParents.keys(), variantRoot));
+        if (variantKeys.size > 1) {
+          const variantBuckets = new Map();
+          for (const entry of bucket) {
+            const known = entry.fbxVariantHash || keysByHash.get(assetContentHash(entry));
+            const key = known ? variantRoot(known) : `file::${entry.rel}`;
+            if (!variantBuckets.has(key)) variantBuckets.set(key, []);
+            variantBuckets.get(key).push(entry);
+          }
+          primary.variants = Array.from(variantBuckets.values(), (files) => {
+            const variant = { ...files[0] };
+            variant.rawRels = files.map((file) => file.rel);
+            variant.duplicateCount = files.length;
+            variant.resourcePaths = Array.from(new Set(files.flatMap((file) => file.resourcePaths)));
+            variant.resourceFiles = variant.rawRels;
+            variant.sameHashFiles = files.filter((file) => assetContentHash(file) === assetContentHash(variant))
+              .map((file) => ({ rel: file.rel, hash: assetContentHash(file) }));
+            variant.searchText = files.map((file) => file.searchText).join(" ");
+            variant.variantLabel = variant.lod === null ? variant.stem : `LOD ${variant.lod} / ${variant.stem}`;
+            return variant;
+          });
+          const labels = new Map();
+          for (const variant of primary.variants) labels.set(variant.variantLabel, (labels.get(variant.variantLabel) || 0) + 1);
+          for (const variant of primary.variants) {
+            if (labels.get(variant.variantLabel) > 1) variant.variantLabel += ` / p${variant.pathId}`;
+          }
+          primary.fbxPoseVariants = true;
+          primary.resourceFiles = primary.rawRels;
+          primary.variantCount = primary.variants.length;
+          primary.variantSummary = summarizeVariantLabels(primary.variants);
+          primary.size = primary.variants.reduce((sum, variant) => sum + variant.size, 0);
+        }
+        deduped.push(primary);
+        continue;
       }
       if (bucket.length > 1) {
         primary.variants = bucket.map(rawFileVariant);
@@ -1506,6 +1939,7 @@
         assetGroups.set(key, group);
       }
       if (Array.isArray(entry.variants) && entry.variants.length) {
+        if (entry.fbxPoseVariants) group.fbxPoseVariants = true;
         for (const variant of entry.variants) {
           group.variants.push({
             ...variant,
@@ -1523,6 +1957,12 @@
     }
 
     for (const group of assetGroups.values()) {
+      if (group.ext === "fbx" && group.variants.length === 1) {
+        const entry = { ...group.variants[0], grouped: false };
+        groupedEntries.push(entry);
+        for (const rel of entry.rawRels) entryByRel.set(rel, entry);
+        continue;
+      }
       group.variants.sort(compareVariants);
       group.rel = group.variants[0].rel;
       group.size = group.variants.reduce((sum, variant) => sum + variant.size, 0);
@@ -1532,6 +1972,10 @@
       group.modelCategories = group.kind === "model" ? chooseModelCategories(group.variants) : [];
       group.variantCount = group.variants.length;
       group.rawRels = group.variants.flatMap((variant) => variant.rawRels || [variant.rel]);
+      if (group.fbxPoseVariants) {
+        group.resourceFiles = group.rawRels;
+        group.resourcePaths = Array.from(new Set(group.variants.flatMap((variant) => variant.resourcePaths || [])));
+      }
       group.duplicateCount = group.rawRels.length;
       group.variantSummary = summarizeVariantLabels(group.variants);
       group.searchText = [
@@ -1629,6 +2073,18 @@
       className: "asset-filter-chip",
       title: (value) => value === "collision" && ASSET_STATE.collisionStatus?.diagnostic
         ? assetUiText("collisionUnavailable", { reason: ASSET_STATE.collisionStatus.diagnostic })
+        : value === "collision" && ASSET_STATE.collisionStatus?.runtime?.status === "unavailable" && ASSET_STATE.collisionStatus.runtime.diagnostic
+          ? assetUiText("collisionRuntimeUnavailable", { reason: ASSET_STATE.collisionStatus.runtime.diagnostic })
+        : value === "collision" && ASSET_STATE.collisionStatus?.authored?.status === "unavailable" && ASSET_STATE.collisionStatus.authored.diagnostic
+          ? assetUiText("collisionAuthoredUnavailable", { reason: ASSET_STATE.collisionStatus.authored.diagnostic })
+        : value === "collision" && ASSET_STATE.collisionStatus?.authored?.models?.status === "unavailable"
+          ? assetUiText("collisionModelUnavailable", { reason: ASSET_STATE.collisionStatus.authored.models.diagnostic })
+        : value === "collision" && ASSET_STATE.collisionStatus?.authored?.prefabs?.status === "unavailable"
+          ? assetUiText("collisionPrefabUnavailable", { reason: ASSET_STATE.collisionStatus.authored.prefabs.diagnostic })
+        : value === "collision" && ASSET_STATE.collisionStatus?.authored?.boxes?.status === "unavailable"
+          ? assetUiText("collisionBoxUnavailable", { reason: ASSET_STATE.collisionStatus.authored.boxes.diagnostic })
+        : value === "collision" && ASSET_STATE.collisionStatus?.authored?.renderers?.status === "unavailable"
+          ? assetUiText("collisionRendererUnavailable", { reason: ASSET_STATE.collisionStatus.authored.renderers.diagnostic })
         : assetUiText(value === "collision" ? "collisionHint" : "emptyModelHint"),
       onToggle: (value, { on }) => {
         ASSET_STATE.filters[value === "collision" ? "showCollision" : "showEmptyModels"] = on;
@@ -2008,12 +2464,11 @@
 
   function resolveInitialVariantRel(entry, requestedRel = "") {
     if (!entry || !Array.isArray(entry.variants)) return null;
-    if (requestedRel && entry.variants.some((variant) => variant.rel === requestedRel)) {
-      return requestedRel;
-    }
-    if (ASSET_STATE.selectedVariantRel && entry.variants.some((variant) => variant.rel === ASSET_STATE.selectedVariantRel)) {
-      return ASSET_STATE.selectedVariantRel;
-    }
+    const findVariant = (rel) => rel && entry.variants.find((variant) => variant.rel === rel || variant.rawRels?.includes(rel));
+    const requested = findVariant(requestedRel);
+    if (requested) return requested.rel;
+    const selected = findVariant(ASSET_STATE.selectedVariantRel);
+    if (selected) return selected.rel;
     return entry.variants[0]?.rel || null;
   }
 
@@ -2165,13 +2620,67 @@
       [assetUiText("factSize"), formatAssetSize(entry)],
     ];
     if (entry.cropOf) facts.push([assetUiText("factCropOf"), entry.cropOf]);
-    if ((activeVariant || entry).container) facts.push([assetUiText("factAssetPath"), (activeVariant || entry).container]);
     const activeFile = activeVariant || entry;
+    const resourcePaths = (entry.fbxPoseVariants ? entry.resourcePaths : activeFile.resourcePaths) || [];
+    if (resourcePaths.length) {
+      facts.push([assetUiText(resourcePaths.length > 1 ? "factAssetPaths" : "factAssetPath"), resourcePaths.join("\n")]);
+    }
+    const resourceFiles = entry.fbxPoseVariants ? entry.resourceFiles : activeFile.resourceFiles;
+    if (resourceFiles?.length > 1) {
+      facts.push([assetUiText("factResourceFiles"), resourceFiles.join("\n")]);
+    }
     if (activeFile.noDrawableFaces) facts.push([assetUiText("geometry"), assetUiText("emptyModelTag")]);
+    if (activeFile.modelRecovery) facts.push([
+      assetUiText("modelRecovery"), assetUiText("modelRecoveryGap", activeFile.modelRecovery),
+    ]);
     if (activeFile.collision) {
       const collision = activeFile.collision;
       const identity = collision.identity;
       facts.push([assetUiText("geometry"), assetUiText(collision.kind === "convex" ? "collisionConvex" : "collisionTriangle")]);
+      const runtime = collision.runtime;
+      const evidence = [assetUiText("collisionDecoded")];
+      if (runtime?.queryObserved) {
+        const counts = runtime.counts;
+        evidence.push(assetUiText("collisionQueryObserved", { count: counts.querySamples }));
+        if (counts.movementResults) evidence.push(assetUiText("collisionMovement", { count: counts.movementResults, floor: counts.walkableFloorResults }));
+        if (counts.acceptedFilterCandidates) evidence.push(assetUiText("collisionFilter", { count: counts.acceptedFilterCandidates }));
+        if (counts.conditionalSurfaceSamples) evidence.push(assetUiText("collisionSurface", { count: counts.conditionalSurfaceSamples }));
+        if (counts.excludedSweepPoints) evidence.push(assetUiText("collisionExcludedPoints", { count: counts.excludedSweepPoints }));
+        const arrays = [];
+        if (counts.completeArraySamples) arrays.push(assetUiText("collisionArraysComplete", { count: counts.completeArraySamples }));
+        if (counts.prefixArraySamples) arrays.push(assetUiText("collisionArraysPrefix", { count: counts.prefixArraySamples }));
+        if (arrays.length) evidence.push(arrays.join("\n"));
+      } else {
+        evidence.push(assetUiText("collisionNotObserved"));
+      }
+      evidence.push(assetUiText("collisionSolver"));
+      facts.push([assetUiText("collisionEvidence"), evidence.join("\n")]);
+      const owners = collision.authored?.owners || [];
+      if (owners.length) {
+        const prefabs = [...new Set(owners.flatMap((owner) => owner.prefabPaths))];
+        if (prefabs.length) facts.push([assetUiText("collisionAuthoredOwners"), prefabs.join("\n")]);
+        facts.push([assetUiText("collisionAuthoredHierarchy"), owners.map((owner) =>
+          `${owner.hierarchy.map((node) => node.name).join(" / ")}\n${assetUiText("collisionAuthoredFlags", {
+            enabled: assetUiText(owner.enabled ? "collisionAuthoredYes" : "collisionAuthoredNo"),
+            active: assetUiText(owner.hierarchy.every((node) => node.active) ? "collisionAuthoredYes" : "collisionAuthoredNo"),
+          })}`).join("\n\n") + `\n\n${assetUiText("collisionAuthoredBoundary")}`]);
+      }
+      const modelRecords = collision.models?.records || [];
+      if (collision.prefabs?.assemblies?.length) {
+        facts.push([assetUiText("collisionPrefabAssemblies"), ""]);
+      }
+      if (collision.renderers?.prefabs?.length) facts.push([assetUiText("collisionRenderers"), ""]);
+      if (modelRecords.length) {
+        const sources = new Map();
+        for (const row of modelRecords) sources.set(JSON.stringify([row.source, row.gridOrdinal, row.ordinal, row.byteOffset]), row);
+        const axes = (vector) => ["X", "Y", "Z"].map((axis) => typeof vector[axis] === "number" ? String(vector[axis]) : vector[axis].special).join(", ");
+        facts.push([assetUiText("collisionModelSources"), [...sources.values()].map((row) =>
+          `${row.source}\n${assetUiText("collisionModelRecord", { grid: row.uniqueId, ordinal: row.ordinal })}\n` +
+          `${assetUiText("collisionModelPosition")}: [${axes(row.storedTransform.Pos)}]\n` +
+          `${assetUiText("collisionModelRotation")}: [${axes(row.storedTransform.Rot)}]\n` +
+          `${assetUiText("collisionModelScale")}: [${axes(row.storedTransform.Scl)}]`
+        ).join("\n\n") + `\n\n${assetUiText("collisionModelBoundary")}`]);
+      }
       facts.push([assetUiText("collisionIdentity"), `${identity.sourceFile} / PathID ${identity.pathId}\n${identity.sourceOriginalPath} @ ${identity.sourceOffset}`]);
       facts.push([assetUiText("collisionBuffer"), collision.bufferSha256]);
     }
@@ -2198,6 +2707,7 @@
     if (sameHashRels.length > 1) facts.push([assetUiText("factSameHashFiles"), formatAssetRelSummary(sameHashRels)]);
     if (isVariantGroup(entry)) {
       facts.push([assetUiText("factLodVariants"), String(entry.variantCount)]);
+      if (entry.fbxPoseVariants) facts.push([assetUiText("factVariantDifferences"), assetUiText("fbxPoseDifferences")]);
       facts.push([assetUiText("factSelectedRawFile"), activeVariant ? activeVariant.rel : entry.rel]);
       facts.push([assetUiText("factLodSet"), entry.variantSummary || assetUiText("none")]);
     }
@@ -2223,7 +2733,150 @@
 
       const factValue = document.createElement("div");
       factValue.className = "asset-fact-value";
-      factValue.textContent = value;
+      if (String(value).includes("\n")) factValue.classList.add("asset-fact-multiline");
+      if (label === assetUiText("factResourceFiles")) {
+        for (const [index, rel] of resourceFiles.entries()) {
+          if (index) factValue.appendChild(document.createTextNode("\n"));
+          const link = document.createElement("a");
+          link.href = assetHref(rel);
+          link.download = rel.split("/").pop();
+          link.textContent = rel;
+          factValue.appendChild(link);
+        }
+      } else if (label === assetUiText("collisionPrefabAssemblies")) {
+        for (const assembly of activeFile.collision.prefabs.assemblies) {
+          const block = document.createElement("div");
+          block.className = "asset-fact-multiline";
+          block.textContent = assembly.prefabPaths.join("\n") + "\n" + assetUiText("collisionPrefabSummary", {
+            count: assembly.colliderCount, disabled: assembly.storedDisabledCount,
+            inactive: assembly.storedInactiveCount, missing: assembly.selectedMissingCount,
+            meshes: assembly.meshColliderCount ?? assembly.colliderCount, boxes: assembly.boxColliderCount ?? 0,
+          }) + "\n";
+          for (const box of assembly.boxParts || []) {
+            block.appendChild(document.createTextNode(box.hierarchy.map((n) => n.name).join(" / ") + "\n" +
+              assetUiText("collisionBoxPart", {size:box.size.join(", "), center:box.center.join(", "),
+                trigger:assetUiText(box.isTrigger ? "collisionAuthoredYes" : "collisionAuthoredNo")}) + "\n"));
+          }
+          const preview = document.createElement("button");
+          preview.type = "button";
+          preview.className = "asset-variant-chip";
+          preview.textContent = assetUiText("collisionPrefabPreview");
+          preview.addEventListener("click", () => renderCollisionAssemblyPreview(assembly));
+          const download = document.createElement("a");
+          download.href = assetHref(assembly.rel);
+          download.download = assembly.rel.split("/").pop();
+          download.textContent = assetUiText("collisionPrefabDownload");
+          block.append(preview, document.createTextNode(" "), download);
+          factValue.appendChild(block);
+        }
+        const reset = document.createElement("button");
+        reset.type = "button";
+        reset.className = "asset-variant-chip";
+        reset.textContent = assetUiText("collisionPrefabReset");
+        reset.addEventListener("click", () => renderModelPreview(entry));
+        factValue.append(reset, document.createTextNode("\n" + assetUiText("collisionPrefabBoundary")));
+      } else if (label === assetUiText("collisionRenderers")) {
+        item.classList.add("asset-fact-renderer");
+        const statusKeys = {exact_selected_target_identity:"collisionRendererExact", external_slot_unwitnessed:"collisionRendererUnwitnessed",
+          external_target_outside_selection:"collisionRendererExternal", target_body_outside_selection:"collisionRendererExcluded",
+          external_physical_target_ambiguous:"collisionRendererAmbiguous", mesh_filter_unavailable:"collisionRendererNoFilter", null:"collisionRendererNull",
+          external_directory_unavailable:"collisionRenderDirectoryMissing", target_absent_from_complete_directory:"collisionRenderAbsent",
+          exact_directory_target_body_unselected:"collisionRenderBodyUnselected"};
+        const describe = (pointer) => [assetUiText(statusKeys[pointer.status] || "collisionRendererUnwitnessed"),
+          pointer.target?.name || "",
+          pointer.pathId !== undefined ? assetUiText("collisionRendererPointer", {file:pointer.fileId, path:pointer.pathId}) : "",
+          pointer.target?.identity?.sourceFile || pointer.expectedCab || ""].filter(Boolean).join(" · ");
+        for (const prefab of activeFile.collision.renderers.prefabs) {
+          const block = document.createElement("div");
+          block.className = "asset-fact-multiline";
+          block.textContent = prefab.prefabPaths.join("\n") + "\n" + assetUiText("collisionRendererSummary", {
+            count:prefab.records.length, meshes:prefab.records.filter((r) => r.mesh.status === "exact_selected_target_identity").length,
+            slots:prefab.records.reduce((total, r) => total + r.materials.length, 0),
+          }) + "\n";
+          for (const assembly of prefab.renderAssemblies || []) {
+            const preview = document.createElement("button"); preview.type = "button"; preview.className = "asset-variant-chip";
+            preview.textContent = assetUiText(assembly.lodOrdinal === null ? "collisionRenderUngrouped" : "collisionRenderLOD", {lod:assembly.lodOrdinal});
+            preview.addEventListener("click", () => renderDecodedObjPreview(assembly, "collisionRenderBoundary", "collisionRendererUnavailable"));
+            const download = document.createElement("a"); download.href = assetHref(assembly.rel); download.download = assembly.rel.split("/").pop();
+            download.textContent = assetUiText("collisionRenderDownload");
+            block.append(preview, document.createTextNode(" "), download, document.createTextNode("\n" + assetUiText("collisionRenderMissing", {
+              count:assembly.rendererCount, missing:assembly.selectedMissingCount}) + "\n"));
+          }
+          for (const renderer of prefab.records) {
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = assetUiText("collisionRendererRecord", {hierarchy:renderer.hierarchy.map((n) => n.name).join(" / "),
+              slots:renderer.materials.length, enabled:assetUiText(renderer.enabled ? "collisionAuthoredYes" : "collisionAuthoredNo")});
+            const refs = document.createElement("div");
+            refs.textContent = [assetUiText("collisionRendererMesh") + ": " + describe(renderer.mesh),
+              ...(renderer.lodMemberships || []).map((m) => assetUiText("collisionRenderMembership", {lod:m.ordinal, height:m.screenRelativeHeight})),
+              ...renderer.materials.map((p, i) => assetUiText("collisionRendererSlot", {slot:i}) + ": " + describe(p))].join("\n");
+            if (renderer.mesh.target?.asset) {
+              const preview = document.createElement("button"); preview.type = "button"; preview.className = "asset-variant-chip";
+              preview.textContent = assetUiText("collisionRenderPreview");
+              preview.addEventListener("click", () => renderDecodedObjPreview(renderer.mesh.target.asset, "collisionRenderBoundary", "collisionRendererUnavailable"));
+              refs.append(document.createTextNode("\n"), preview);
+            }
+            for (const [slot, material] of renderer.materials.entries()) {
+              if (!material.target?.asset) continue;
+              const link = document.createElement("a"); link.href = assetHref(material.target.asset.rel); link.download = material.target.asset.rel.split("/").pop();
+              link.textContent = material.target.name + " · " + assetUiText("collisionRenderMaterial");
+              refs.append(document.createTextNode("\n"), link);
+              refs.appendChild(storedShaderDetails(material.target.asset));
+              const textures = (material.target.storedTextures || []).filter((t) => t.reference.status !== "null");
+              if (textures.length) {
+                const textureDetails = document.createElement("details");
+                const textureSummary = document.createElement("summary");
+                textureSummary.textContent = assetUiText("collisionRenderTextures", {count:textures.length});
+                textureDetails.appendChild(textureSummary);
+                for (const texture of textures) {
+                  const textureRow = document.createElement("div"); textureRow.className = "asset-stored-texture";
+                  textureRow.textContent = texture.property + " · " + (texture.target?.name || texture.reference.status) + "\n" +
+                    assetUiText("collisionRenderTextureUV", {uv:texture.uvSet, scale:[texture.scale.x, texture.scale.y].join(", "), offset:[texture.offset.x, texture.offset.y].join(", ")});
+                  const preview = texture.target?.preview;
+                  if (preview) {
+                    const imageLink = document.createElement("a"); imageLink.href = assetHref(preview.rel); imageLink.target = "_blank"; imageLink.rel = "noopener";
+                    const image = document.createElement("img"); image.src = imageLink.href; image.alt = texture.target.name; image.loading = "lazy";
+                    image.width = Math.min(128, preview.width); image.height = Math.round(image.width * preview.height / preview.width);
+                    imageLink.appendChild(image); textureRow.append(document.createTextNode("\n"), imageLink,
+                      document.createTextNode("\n" + assetUiText("collisionRenderTextureInfo", {width:preview.width,height:preview.height,format:preview.format,mips:preview.mipCount,space:preview.storedColorSpace})));
+                    if (renderer.mesh.target?.asset && (texture.uvSet === 0 && renderer.mesh.target.asset.hasUV0 || texture.uvSet === 1 && renderer.mesh.target.asset.hasUV1)) {
+                      const channel = document.createElement("select"); channel.setAttribute("aria-label", assetUiText("collisionTextureChannel"));
+                      for (const [i, name] of ["RGB", "R", "G", "B", "A"].entries()) {
+                        const option = document.createElement("option"); option.value = i; option.textContent = name; channel.appendChild(option);
+                      }
+                      const inspect = document.createElement("button"); inspect.type = "button"; inspect.className = "asset-variant-chip";
+                      inspect.textContent = assetUiText("collisionTextureInspect");
+                      inspect.addEventListener("click", () => renderStoredTextureInspection({...renderer.mesh.target.asset,sourceMeshRawSha256:renderer.mesh.target.rawSha256}, texture, slot, Number(channel.value)));
+                      textureRow.append(document.createTextNode("\n"), channel, inspect);
+                    }
+                  } else textureRow.appendChild(document.createTextNode("\n" + assetUiText("collisionRenderTextureUnavailable")));
+                  textureDetails.appendChild(textureRow);
+                }
+                textureDetails.appendChild(document.createTextNode(assetUiText("collisionRenderTextureBoundary")));
+                refs.appendChild(textureDetails);
+              }
+            }
+            details.append(summary, refs); block.appendChild(details);
+          }
+          factValue.appendChild(block);
+        }
+        factValue.appendChild(document.createTextNode("\n" + assetUiText("collisionRendererBoundary") + "\n" + assetUiText("collisionRenderBoundary")));
+      } else if (label === assetUiText("collisionModelSources")) {
+        const names = new Map((activeFile.collision?.models?.records || []).filter((row) => row.dataName).map((row) => [row.source, row.dataName]));
+        for (const [index, line] of String(value).split("\n").entries()) {
+          if (index) factValue.appendChild(document.createTextNode("\n"));
+          if (names.has(line)) {
+            const link = document.createElement("a");
+            link.href = window.WebUI.dataPageUrl({ store: "undecoded", group: "DynamicStreaming", name: names.get(line) });
+            link.dataset.dataPageLink = "";
+            link.textContent = line;
+            factValue.appendChild(link);
+          } else factValue.appendChild(document.createTextNode(line));
+        }
+      } else {
+        factValue.textContent = value;
+      }
       item.appendChild(factValue);
 
       fragment.appendChild(item);
@@ -2251,6 +2904,7 @@
       button.textContent = variant.variantLabel || variant.name;
       button.title = [
         `${variant.rel} (${formatBytes(variant.size)})`,
+        ...(variant.resourcePaths || []),
         hasHiddenDuplicateFiles(variant) ? assetUiText("copiesCount", { count: variant.duplicateCount }) : "",
       ].filter(Boolean).join(" / ");
       button.addEventListener("click", () => {
@@ -2775,16 +3429,17 @@
     const lodChips = [];
     const syncLods = () => {
       for (const [lod, chip] of lodChips) chip.classList.toggle("is-active", lod === model.lod);
-      for (const [lod, section] of sections) section.classList.toggle("is-inactive", lod !== null && lod !== model.lod);
+      for (const [lod, section] of sections) section.classList.toggle("is-inactive", lod !== null && (model.lod === "best"
+        ? !objects.some((object) => object.lod === lod && object.bestLod === lod) : lod !== model.lod));
     };
     if (lods.length > 1) {
       const bar = document.createElement("div");
       bar.className = "asset-variant-list asset-lod-list";
-      for (const lod of lods) {
+      for (const lod of model.mixedLods ? ["best", ...lods] : lods) {
         const chip = document.createElement("button");
         chip.type = "button";
         chip.className = "asset-variant-chip";
-        chip.textContent = assetUiText("modelLod", { lod });
+        chip.textContent = lod === "best" ? assetUiText("modelLodBest") : assetUiText("modelLod", { lod });
         chip.addEventListener("click", () => {
           model.lod = lod;
           syncLods();
@@ -2836,6 +3491,132 @@
       sections.get(lod).lastChild.append(label);
     }
     syncLods();
+  }
+
+  async function renderCollisionAssemblyPreview(assembly) {
+    return renderDecodedObjPreview(assembly, "collisionPrefabBoundary", "collisionPrefabUnavailable");
+  }
+
+  async function renderDecodedObjPreview(assembly, boundaryKey, errorKey) {
+    const token = ++ASSET_STATE.detailToken;
+    const note = $("#asset-preview-note");
+    note.textContent = assetUiText("loadingObjPreview");
+    try {
+      const model = await loadObjModel(assembly.rel);
+      if (token !== ASSET_STATE.detailToken) return;
+      $("#asset-model-canvas").hidden = false;
+      $("#asset-preview-placeholder").hidden = true;
+      $("#asset-model-stats-wrap").hidden = false;
+      renderModelStatGrid(meshModelStats(model));
+      showViewerModel(model);
+      note.textContent = assetUiText(boundaryKey);
+    } catch (error) {
+      if (token === ASSET_STATE.detailToken) {
+        note.textContent = assetUiText(errorKey, { reason: String(error.message || error) });
+      }
+    }
+  }
+
+  async function verifiedStoredBytes(asset) {
+    if (!/^(StoredRender|StoredUV)\/[^/\\]+$/.test(asset.rel) || !/^[a-f0-9]{64}$/.test(asset.sha256)) throw new Error("Invalid stored artifact descriptor");
+    const response = await fetch(assetHref(asset.rel));
+    if (!response.ok) throw new Error(`Stored artifact HTTP ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    const digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map((n) => n.toString(16).padStart(2, "0")).join("");
+    if (digest !== asset.sha256) throw new Error("Stored artifact hash differs");
+    return bytes;
+  }
+
+  function storedTextureInspection(model, asset, texture, slot, channel) {
+    if (!asset.hasUV0 || texture.uvSet !== (asset.uvSet ?? 0) || !Number.isInteger(slot) || slot < 0 || slot >= asset.submeshCount ||
+        !Number.isInteger(channel) || channel < 0 || channel > 4) throw new Error("Stored UV/material slot unavailable");
+    const scale = [texture.scale.x, texture.scale.y], offset = [texture.offset.x, texture.offset.y];
+    if (![...scale, ...offset].every(Number.isFinite)) throw new Error("Stored UV transform is non-finite");
+    const sampler = texture.target.preview.sampler;
+    if (![sampler.m_WrapU, sampler.m_WrapV].every((v) => Number.isInteger(v) && v >= 0 && v <= 3) ||
+        ![0, 1, 2].includes(sampler.m_FilterMode)) throw new Error("Stored texture sampler unsupported");
+    let found = false;
+    const groups = model.groups.map((group) => {
+      const match = group.name.match(/_submesh_(\d+)$/);
+      if (!match || Number(match[1]) >= asset.submeshCount) throw new Error("Stored OBJ submesh census differs");
+      const selected = Number(match[1]) === slot;
+      if (selected && (!model.uvs || group.hasUvs === false)) throw new Error("Stored submesh has no complete projected UV coordinates");
+      found ||= selected;
+      return {...group,material:"",textureRel:"",blend:null,inspection:selected ? {scale,offset,channel,sampler} : null};
+    });
+    if (!found) throw new Error("Stored material slot has no drawable submesh");
+    return {...model,groups}; // Immutable cache geometry; inspection never leaks to a neutral view.
+  }
+
+  async function storedInspectionTexture(state, descriptor) {
+    const sampler = descriptor.sampler;
+    const key = `inspection:${descriptor.sha256}:${sampler.m_WrapU}:${sampler.m_WrapV}:${sampler.m_FilterMode}`;
+    if (state.textures.has(key)) return state.textures.get(key).promise;
+    const promise = (async () => {
+      const bytes = await verifiedStoredBytes(descriptor);
+      const image = await createImageBitmap(new Blob([bytes], {type:"image/png"}),
+        {imageOrientation:"flipY",premultiplyAlpha:"none",colorSpaceConversion:"none"});
+      try {
+        if (state.lost || image.width !== descriptor.width || image.height !== descriptor.height) throw new Error("Stored PNG dimensions/context differ");
+        const powerOfTwo = (n) => n > 0 && (n & (n - 1)) === 0;
+        if (!state.isWebGl2 && (!powerOfTwo(image.width) || !powerOfTwo(image.height)) &&
+            [sampler.m_WrapU,sampler.m_WrapV].some((v) => v === 0 || v === 2)) throw new Error("WebGL1 cannot wrap this stored NPOT image");
+        const gl = state.context;
+        if (Math.max(image.width,image.height) > gl.getParameter(gl.MAX_TEXTURE_SIZE)) throw new Error("Stored PNG exceeds this WebGL texture limit");
+        const texture = gl.createTexture();
+        if (!texture) throw new Error("WebGL texture allocation failed");
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        const unpack = [gl.UNPACK_COLORSPACE_CONVERSION_WEBGL,gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,gl.UNPACK_FLIP_Y_WEBGL];
+        const previous = unpack.map((key) => gl.getParameter(key));
+        try {
+          gl.pixelStorei(unpack[0],gl.NONE); gl.pixelStorei(unpack[1],false); gl.pixelStorei(unpack[2],false);
+          gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);
+        } catch (e) {gl.deleteTexture(texture);throw e;}
+        finally {unpack.forEach((key,i) => gl.pixelStorei(key,previous[i]));}
+        const wrap = (v) => [gl.REPEAT,gl.CLAMP_TO_EDGE,gl.MIRRORED_REPEAT,gl.CLAMP_TO_EDGE][v];
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap(sampler.m_WrapU));
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap(sampler.m_WrapV));
+        const filter = sampler.m_FilterMode === 0 ? gl.NEAREST : gl.LINEAR;
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+        return texture; // Top mip only; no invented mip chain or live sampler override.
+      } finally {image.close();}
+    })();
+    state.textures.set(key,{promise});
+    try {return await promise;} catch (e) {state.textures.delete(key);throw e;}
+  }
+
+  async function renderStoredTextureInspection(asset, texture, slot, channel) {
+    const token = ++ASSET_STATE.detailToken, note = $("#asset-preview-note");
+    note.textContent = assetUiText("loadingObjPreview");
+    try {
+      const projected = await storedUvAsset(asset,texture.uvSet);
+      const bytes = await verifiedStoredBytes(projected);
+      const model = storedTextureInspection(parseObj(new TextDecoder().decode(bytes)),projected,texture,slot,channel);
+      const state = ASSET_STATE.viewer.gl;
+      if (!state || ASSET_STATE.modelOnly) throw new Error("Texture inspection requires WebGL with Model only turned off");
+      const image = await storedInspectionTexture(state,texture.target.preview);
+      if (token !== ASSET_STATE.detailToken) return;
+      for (const group of model.groups) if (group.inspection) group.inspection.texture = image;
+      $("#asset-model-canvas").hidden = false; $("#asset-preview-placeholder").hidden = true;
+      $("#asset-model-stats-wrap").hidden = false; renderModelStatGrid(meshModelStats(model)); showViewerModel(model);
+      note.textContent = assetUiText("collisionTextureInspectNote", {property:texture.property,slot,uv:texture.uvSet,channel:["RGB","R","G","B","A"][channel]});
+    } catch (e) {
+      if (token === ASSET_STATE.detailToken) note.textContent = assetUiText("collisionRendererUnavailable", {reason:String(e.message || e)});
+    }
+  }
+
+  let storedUvPromise;
+  async function storedUvAsset(asset,uvSet) {
+    if (uvSet === 0) return asset;
+    if (uvSet !== 1 || !asset.hasUV1) throw new Error("Stored UV channel unavailable");
+    storedUvPromise ||= fetch("data/assets/mesh_uv/index.json").then((r) => r.ok ? r.json() : null).catch(() => null);
+    const payload = await storedUvPromise;
+    const target = payload?.schema === "endfield.assets-stored-mesh-uv.v2" && payload.status === "validated" ? payload.bindings?.[asset.rel] : null;
+    if (!target || target.originalMeshArtifactSha256 !== asset.sha256 || typeof asset.sourceMeshRawSha256 !== "string" ||
+        target.originalMeshRawSha256 !== asset.sourceMeshRawSha256 || payload.originalStoredRenderRoot !== ASSET_STATE.sourceRoots.StoredRender || target.uvSet !== 1 ||
+        !/^StoredUV\/[^/\\]+$/.test(target.rel) || !/^webui\/data\/assets\/mesh_uv\/selection-[^/\\]+$/.test(payload.sourceRoot)) throw new Error("No matching admitted UV1 projection");
+    ASSET_STATE.sourceRoots.StoredUV = payload.sourceRoot;
+    return target;
   }
 
   async function renderModelPreview(entry) {
@@ -2976,7 +3757,8 @@
       viewer.lastY = ev.clientY;
       if (viewer.dragMode === "pan") {
         // One CSS pixel moves the model by the same distance on screen.
-        const worldPerPixel = (2 * VIEWER_FOV_TAN * VIEWER_DISTANCE / viewer.zoom) / Math.max(1, canvas.clientHeight);
+        const distance = viewerCameraDistance(viewer.model, canvas.clientWidth / Math.max(1, canvas.clientHeight));
+        const worldPerPixel = (2 * VIEWER_FOV_TAN * distance) / Math.max(1, canvas.clientHeight);
         viewer.panX += dx * worldPerPixel;
         viewer.panY -= dy * worldPerPixel;
       } else {
@@ -3049,8 +3831,18 @@
     ];
   }
 
+  function viewerCameraDistance(model, aspect = 1) {
+    // The normalized AABB fits a cube, whose diagonal can exceed the camera's
+    // field of view after orbiting. Fit its enclosing sphere to the smaller
+    // viewport dimension; keep the user's zoom relative to that default fit.
+    const radius = Number.isFinite(model.fitRadius) && model.fitRadius > 0 ? model.fitRadius : Math.sqrt(3);
+    const halfAngle = Math.atan(VIEWER_FOV_TAN * Math.min(1, Math.max(0.01, aspect)));
+    const fitted = radius * 1.08 / Math.sin(halfAngle);
+    return Math.max(VIEWER_DISTANCE, fitted) / ASSET_STATE.viewer.zoom;
+  }
+
   // Column-major model-view matrix: pan * orbit * fit-to-unit-cube.
-  function viewerModelViewMatrix(model) {
+  function viewerModelViewMatrix(model, aspect = 1) {
     const viewer = ASSET_STATE.viewer;
     const r = viewerRotation();
     const s = model.scale;
@@ -3066,7 +3858,7 @@
     }
     m[12] += viewer.panX;
     m[13] += viewer.panY;
-    m[14] -= VIEWER_DISTANCE / viewer.zoom;
+    m[14] -= viewerCameraDistance(model, aspect);
     m[15] = 1;
     return m;
   }
@@ -3185,9 +3977,20 @@
     uniform sampler2D uTexture;
     uniform float uHasTexture;
     uniform vec4 uTint;
+    uniform float uAvatar;
+    uniform vec3 uAvatarBase;
+    uniform vec3 uAvatarTint;
+    uniform vec3 uAvatarAdd;
+    uniform vec3 uEmission;
+    uniform sampler2D uEmissionTexture;
+    uniform float uHasEmissionTexture;
     uniform float uAlphaClip;
     uniform float uEffect;
     uniform float uPremultiply;
+    uniform float uInspection;
+    uniform float uChannel;
+    uniform vec4 uUvTransform;
+    uniform vec2 uMirrorOnce;
     void main() {
       vec3 n = normalize(vNormal);
       if (!gl_FrontFacing) n = -n;
@@ -3199,18 +4002,37 @@
       vec3 color;
       float alpha = uTint.a;
       if (uHasTexture > 0.5) {
-        vec4 texel = texture2D(uTexture, vUv);
-        alpha *= texel.a;
+        vec2 uv = vUv * uUvTransform.xy + uUvTransform.zw;
+        if (uInspection > 0.5) uv = mix(uv, clamp(abs(uv), 0.0, 1.0), uMirrorOnce);
+        vec4 texel = texture2D(uTexture, uv);
+        if (uInspection > 0.5) {
+          vec3 inspected = texel.rgb;
+          if (uChannel > 0.5 && uChannel < 1.5) inspected = vec3(texel.r);
+          else if (uChannel < 2.5 && uChannel > 1.5) inspected = vec3(texel.g);
+          else if (uChannel < 3.5 && uChannel > 2.5) inspected = vec3(texel.b);
+          else if (uChannel > 3.5) inspected = vec3(texel.a);
+          gl_FragColor = vec4(inspected, 1.0); return;
+        }
+        texel *= uTint;
+        if (uAvatar > 0.5) {
+          // CharacterNPR: G mixes base tint -> base colour, B selects the
+          // additional tint, and R is the intensity of that result.
+          texel.rgb = mix(mix(uAvatarTint, uAvatarBase, texel.g), uAvatarAdd, texel.b) * texel.r;
+        }
+        alpha = texel.a;
         if (alpha < uAlphaClip) discard;
         // Transparent effects (glows, beams) are unlit: texture times tint.
         color = uEffect > 0.5
-          ? texel.rgb * uTint.rgb
+          ? texel.rgb
           : texel.rgb * (0.55 + key * 0.4 + fill * 0.12) + vec3(0.08) * rim;
       } else {
         color = uEffect > 0.5
           ? uColor * uTint.rgb
-          : uColor * (0.24 + key * 0.62 + fill * 0.22) + vec3(0.32) * rim + vec3(0.18) * spec;
+          : uColor * uTint.rgb * (0.24 + key * 0.62 + fill * 0.22) + vec3(0.32) * rim + vec3(0.18) * spec;
       }
+      vec3 emission = uEmission;
+      if (uHasEmissionTexture > 0.5) emission *= texture2D(uEmissionTexture, vUv).rgb;
+      color += emission;
       if (uPremultiply > 0.5) color *= alpha;
       gl_FragColor = vec4(color, alpha);
     }
@@ -3254,9 +4076,20 @@
         uTexture: gl.getUniformLocation(program, "uTexture"),
         uHasTexture: gl.getUniformLocation(program, "uHasTexture"),
         uTint: gl.getUniformLocation(program, "uTint"),
+        uAvatar: gl.getUniformLocation(program, "uAvatar"),
+        uAvatarBase: gl.getUniformLocation(program, "uAvatarBase"),
+        uAvatarTint: gl.getUniformLocation(program, "uAvatarTint"),
+        uAvatarAdd: gl.getUniformLocation(program, "uAvatarAdd"),
+        uEmission: gl.getUniformLocation(program, "uEmission"),
+        uEmissionTexture: gl.getUniformLocation(program, "uEmissionTexture"),
+        uHasEmissionTexture: gl.getUniformLocation(program, "uHasEmissionTexture"),
         uAlphaClip: gl.getUniformLocation(program, "uAlphaClip"),
         uEffect: gl.getUniformLocation(program, "uEffect"),
         uPremultiply: gl.getUniformLocation(program, "uPremultiply"),
+        uInspection: gl.getUniformLocation(program, "uInspection"),
+        uChannel: gl.getUniformLocation(program, "uChannel"),
+        uUvTransform: gl.getUniformLocation(program, "uUvTransform"),
+        uMirrorOnce: gl.getUniformLocation(program, "uMirrorOnce"),
         textures: new Map(),
         uploaded: null,
         buffers: null,
@@ -3301,7 +4134,8 @@
   }
 
   // How a material blends (index `blend`: render queue, Unity BlendMode
-  // src/dst, depth write, alpha-test threshold, cull, tint), by material name.
+  // src/dst, depth write, alpha-test threshold, cull, tint, avatar masks and
+  // emission), by material name.
   // Same-name materials take the one whose base texture the viewer chose.
   function materialBlendIndex() {
     if (ASSET_STATE.materialBlends?.source === ASSET_STATE.relations) return ASSET_STATE.materialBlends.byName;
@@ -3372,6 +4206,7 @@
       gl.deleteBuffer(state.buffers.normal);
       if (state.buffers.uv) gl.deleteBuffer(state.buffers.uv);
       if (state.buffers.index) gl.deleteBuffer(state.buffers.index);
+      if (state.buffers.sortedIndex) gl.deleteBuffer(state.buffers.sortedIndex);
     }
 
     let positions = model.positions;
@@ -3420,6 +4255,7 @@
       normal,
       uv,
       index,
+      sortedIndex: null,
       indexType: indices instanceof Uint16Array ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT,
       indexSize: indices instanceof Uint16Array ? 2 : 4,
       count,
@@ -3436,16 +4272,21 @@
 
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.clearColor(background.r / 255, background.g / 255, background.b / 255, 1);
+    // Reset before clearing, since depthMask also controls depth-buffer clears.
+    // Opaque and alpha-tested surfaces must occlude their rear triangles.
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.disable(gl.CULL_FACE);
 
     gl.useProgram(state.program);
-    gl.uniformMatrix4fv(state.uModelView, false, viewerModelViewMatrix(model));
-    gl.uniformMatrix4fv(state.uProjection, false, viewerProjectionMatrix(width / height, VIEWER_DISTANCE / ASSET_STATE.viewer.zoom));
+    gl.uniformMatrix4fv(state.uModelView, false, viewerModelViewMatrix(model, width / height));
+    gl.uniformMatrix4fv(state.uProjection, false, viewerProjectionMatrix(width / height, viewerCameraDistance(model, width / height)));
     const color = ASSET_STATE.modelColor;
     gl.uniform3f(state.uColor, ...[1, 3, 5].map((offset) => Number.parseInt(color.slice(offset, offset + 2), 16) / 255));
     gl.uniform1i(state.uTexture, 0);
+    gl.uniform1i(state.uEmissionTexture, 1);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
     gl.enableVertexAttribArray(state.aPosition);
@@ -3469,22 +4310,60 @@
     // queue order with their own blend factors and depth write, so glass,
     // hair cards and light effects (additive, unlit) composite over the body.
     const blends = materialBlendIndex();
+    const modelOnly = ASSET_STATE.modelOnly;
     const visible = buffers.groups
       .filter((group) => !modelGroupHidden(model, group))
-      .map((group) => ({ group, blend: group.blend ?? blends.get(String(group.material || "").toLowerCase()) ?? null }));
+      .map((group) => ({ group, blend: modelOnly ? null : group.blend ?? blends.get(String(group.material || "").toLowerCase()) ?? null }));
     const transparent = (item) => item.blend && item.blend.src !== undefined;
     const draw = ({ group, blend }) => {
-      const texture = buffers.uv && group.hasUvs !== false ? modelGroupTexture(state, group.material, group.textureRel) : null;
+      const inspection = !modelOnly ? group.inspection : null;
+      const texture = !modelOnly && buffers.uv && group.hasUvs !== false ? inspection?.texture || modelGroupTexture(state, group.material, group.textureRel) : null;
+      gl.uniform1f(state.uInspection, inspection ? 1 : 0); gl.uniform1f(state.uChannel, inspection?.channel || 0);
+      gl.uniform4f(state.uUvTransform, ...(inspection ? [...inspection.scale,...inspection.offset] : [1,1,0,0]));
+      gl.uniform2f(state.uMirrorOnce, inspection?.sampler.m_WrapU === 3 ? 1 : 0, inspection?.sampler.m_WrapV === 3 ? 1 : 0);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.uniform1f(state.uHasTexture, texture ? 1 : 0);
       const tint = blend?.tint || [1, 1, 1, 1];
       gl.uniform4f(state.uTint, tint[0], tint[1], tint[2], tint[3]);
+      const avatar = blend?.avatar;
+      gl.uniform1f(state.uAvatar, avatar ? 1 : 0);
+      gl.uniform3f(state.uAvatarBase, ...(avatar?.[0] || [1, 1, 1]));
+      gl.uniform3f(state.uAvatarTint, ...(avatar?.[1] || [1, 1, 1]));
+      gl.uniform3f(state.uAvatarAdd, ...(avatar?.[2] || [1, 1, 1]));
+      const emission = ASSET_STATE.modelEmission ? blend?.emission : null;
+      const emissionTexture = buffers.uv && group.hasUvs !== false && emission?.textureRel
+        ? modelGroupTexture(state, "", emission.textureRel) : null;
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, emissionTexture);
+      gl.uniform1f(state.uHasEmissionTexture, emissionTexture ? 1 : 0);
+      // Keep mapped emission off until its map loads, including UV-less groups.
+      gl.uniform3f(state.uEmission, ...(emission && (!emission.textureRel || emissionTexture) ? emission.color : [0, 0, 0]));
       gl.uniform1f(state.uAlphaClip, blend?.clip ?? -1);
       const additive = transparent({ blend }) && blend.dst === 1;
       gl.uniform1f(state.uEffect, additive ? 1 : 0);
       gl.uniform1f(state.uPremultiply, transparent({ blend }) && blend.src === 1 && !additive ? 1 : 0);
-      if (buffers.index) {
+      if (transparent({ blend }) && !blend.zw && blend.dst !== 1) {
+        // Without depth writes, rear faces must blend before front faces.
+        // Keep queue/material ranges intact; reorder only this draw's triangles.
+        const order = modelTriangleDepthOrder(model, group, viewerModelViewMatrix(model));
+        if (buffers.index) {
+          const IndexArray = buffers.indexSize === 2 ? Uint16Array : Uint32Array;
+          const sorted = new IndexArray(group.count);
+          for (let i = 0; i < order.length; i += 1) {
+            const start = order[i];
+            sorted.set(model.indices.subarray(start, start + 3), i * 3);
+          }
+          buffers.sortedIndex ||= gl.createBuffer();
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.sortedIndex);
+          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sorted, gl.DYNAMIC_DRAW);
+          gl.drawElements(gl.TRIANGLES, sorted.length, buffers.indexType, 0);
+        } else {
+          // Expanded vertices preserve the original index offsets.
+          for (const start of order) gl.drawArrays(gl.TRIANGLES, start, 3);
+        }
+      } else if (buffers.index) {
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
         gl.drawElements(gl.TRIANGLES, group.count, buffers.indexType, group.start * buffers.indexSize);
       } else {
         gl.drawArrays(gl.TRIANGLES, group.start, group.count);
@@ -3509,10 +4388,28 @@
     return Boolean(object) && !modelObjectShown(model, object);
   }
 
+  function modelTriangleDepthOrder(model, group, matrix) {
+    const triangles = [];
+    const positions = model.positions;
+    for (let start = group.start; start < group.start + group.count; start += 3) {
+      let depth = 0;
+      for (let k = 0; k < 3; k += 1) {
+        const vertex = model.indices[start + k] * 3;
+        depth += matrix[2] * positions[vertex] + matrix[6] * positions[vertex + 1]
+          + matrix[10] * positions[vertex + 2];
+      }
+      triangles.push({ start, depth });
+    }
+    // Camera-space Z is negative ahead of the eye: smaller means farther.
+    triangles.sort((a, b) => a.depth - b.depth || a.start - b.start);
+    return triangles.map((triangle) => triangle.start);
+  }
+
   // A part draws when its own switch is on and it belongs to the selected LOD;
   // changing the LOD leaves every switch as the user set it.
   function modelObjectShown(model, object) {
-    return object.visible !== false && (object.lod === null || model.lod === null || model.lod === undefined || object.lod === model.lod);
+    const selected = model.lod === "best" ? object.bestLod : model.lod;
+    return object.visible !== false && (object.lod === null || selected === null || selected === undefined || object.lod === selected);
   }
 
   // Software fallback for browsers without WebGL: painter-sorted triangles,
@@ -3524,7 +4421,7 @@
     ctx.fillStyle = normalizePreviewBackground(ASSET_STATE.previewBackground);
     ctx.fillRect(0, 0, width, height);
 
-    const mv = viewerModelViewMatrix(model);
+    const mv = viewerModelViewMatrix(model, width / height);
     const focal = (height * 0.5) / VIEWER_FOV_TAN;
     const vertexCount = model.vertexCount;
     const screen = new Float32Array(vertexCount * 3);
@@ -3640,7 +4537,7 @@
     }
 
     const hasBounds = vertexCount > 0;
-    const maxSpan = hasBounds ? Math.max(maxX - minX || 1, maxY - minY || 1, maxZ - minZ || 1) : 1;
+    const maxSpan = hasBounds ? Math.max(maxX - minX, maxY - minY, maxZ - minZ) || 1 : 1;
     return {
       positions,
       normals,
@@ -3651,6 +4548,7 @@
       objectCount,
       center: hasBounds ? [(minX + maxX) * 0.5, (minY + maxY) * 0.5, (minZ + maxZ) * 0.5] : [0, 0, 0],
       scale: 2 / maxSpan,
+      fitRadius: hasBounds ? Math.hypot(maxX - minX, maxY - minY, maxZ - minZ) / maxSpan : 1,
     };
   }
 
@@ -4078,31 +4976,46 @@
     return { values, index, byPolygonVertex };
   }
 
-  // Bakes every Geometry "Mesh" into one indexed mesh in scene space, placing
-  // it through its Model chain (Connections "OO" child -> parent). Vertices are
-  // emitted per polygon-vertex so UVs survive; triangles are grouped by the
-  // owner Model's material (LayerElementMaterial slot -> connected Material).
+  function isFbxShadowName(name) {
+    if (/shadow_?proxy|eyes?[_\s-]?shadow|hair[_\s-]?shadow/i.test(name)) return true;
+    // `hs` abbreviates character hair-shadow meshes, but also occurs in
+    // ordinary machine/region names. Require character context or an actual
+    // terminal HS label; `hs_machine` must not hide a mechanical surface.
+    return /(?:^|[_\s-])hs(?:[_\s\d-]|$)/i.test(name)
+      && (/(?:^|[_\s-])(?:actor|npc|chr|character)(?:[_\s\d-]|$)/i.test(name)
+        || /(?:^|[_\s-])hs(?:[_\s-]*\d+)?(?:[_-]lod\d+)?$/i.test(name));
+  }
+
+  // Bakes every Geometry "Mesh" into one indexed mesh in scene space, using
+  // connected skin clusters for the stored skeleton pose, or its Model chain
+  // for a rigid mesh. Vertices are emitted per polygon-vertex so UVs survive;
+  // triangles use the owner Model's connected material slots.
   async function buildFbxMesh(tree, buffer) {
     const objects = tree.nodes.find((node) => node.name === "Objects");
     if (!objects) return null;
     const connections = tree.nodes.find((node) => node.name === "Connections");
 
     const models = new Map();
+    const deformers = new Map();
     const materialNames = new Map();
     const geometries = [];
     for (const node of objects.children) {
       if (node.name === "Model") models.set(node.props[0], node);
+      else if (node.name === "Deformer") deformers.set(node.props[0], node);
       else if (node.name === "Material") materialNames.set(node.props[0], String(node.props[1] || "").split("\u0000\u0001")[0]);
       else if (node.name === "Geometry" && node.props[2] === "Mesh") geometries.push(node);
     }
 
     const parentsOf = new Map();
+    const childrenOf = new Map();
     const modelMaterials = new Map();
     for (const record of connections?.children || []) {
       if (record.name !== "C" || record.props[0] !== "OO") continue;
       const [, child, parent] = record.props;
       if (!parentsOf.has(child)) parentsOf.set(child, []);
       parentsOf.get(child).push(parent);
+      if (!childrenOf.has(parent)) childrenOf.set(parent, []);
+      childrenOf.get(parent).push(child);
       if (materialNames.has(child)) {
         if (!modelMaterials.has(parent)) modelMaterials.set(parent, []);
         modelMaterials.get(parent).push(materialNames.get(child));
@@ -4120,11 +5033,82 @@
       return world;
     };
 
+    const skinClusters = async (geometryId, vertexCount) => {
+      const clusters = [];
+      for (const skinId of childrenOf.get(geometryId) || []) {
+        const skin = deformers.get(skinId);
+        if (skin?.props[2] !== "Skin") continue;
+        const skinningType = fbxChild(skin, "SkinningType")?.props[0];
+        if (skinningType !== undefined && ![0, 1, "Rigid", "Linear"].includes(skinningType)) {
+          throw new Error(`Unsupported FBX skinning type: ${skinningType}`);
+        }
+        for (const clusterId of childrenOf.get(skinId) || []) {
+          const cluster = deformers.get(clusterId);
+          if (cluster?.props[2] !== "Cluster") continue;
+          const indexes = await decodeFbxArray(buffer, fbxChild(cluster, "Indexes")?.props[0]);
+          const weights = await decodeFbxArray(buffer, fbxChild(cluster, "Weights")?.props[0]);
+          if (!indexes?.length && !weights?.length) continue;
+          const bone = (childrenOf.get(clusterId) || []).find((id) => models.has(id));
+          const bind = await decodeFbxArray(buffer, fbxChild(cluster, "Transform")?.props[0]);
+          const mode = String(fbxChild(cluster, "Mode")?.props[0] || "Normalize");
+          if (!indexes || !weights || indexes.length !== weights.length || !bone || bind?.length !== 16
+            || !Array.from(bind).every(Number.isFinite)) {
+            throw new Error(`Invalid FBX skin cluster: ${clusterId}`);
+          }
+          if (!["Normalize", "Total1"].includes(mode)) throw new Error(`Unsupported FBX cluster mode: ${mode}`);
+          for (let i = 0; i < indexes.length; i += 1) {
+            if (!Number.isInteger(indexes[i]) || indexes[i] < 0 || indexes[i] >= vertexCount
+              || !Number.isFinite(weights[i]) || weights[i] < 0) {
+              throw new Error(`Invalid FBX skin influence: ${clusterId} at ${i}`);
+            }
+          }
+          // The binary cluster's Transform is already mesh-to-bind-bone
+          // (inverse(TransformLink) * meshBind), unlike the SDK getter's
+          // meshBind matrix. Apply the current bone world matrix directly;
+          // applying the mesh world matrix again would double its placement.
+          clusters.push({ indexes, weights, mode, matrix: mat4Multiply(worldMatrix(bone), bind) });
+        }
+      }
+      if (new Set(clusters.map((cluster) => cluster.mode)).size > 1) throw new Error("Mixed FBX cluster modes");
+      return clusters;
+    };
+
+    const skinVertices = (vertices, clusters, meshWorld, geometric) => {
+      if (!clusters.length) return null;
+      const posed = new Float64Array(vertices.length);
+      const weightSums = new Float64Array(vertices.length / 3);
+      for (const { indexes, weights, matrix } of clusters) {
+        const m = mat4Multiply(matrix, geometric);
+        for (let i = 0; i < indexes.length; i += 1) {
+          const cp = indexes[i], at = cp * 3, weight = weights[i];
+          const x = vertices[at], y = vertices[at + 1], z = vertices[at + 2];
+          posed[at] += weight * (m[0] * x + m[4] * y + m[8] * z + m[12]);
+          posed[at + 1] += weight * (m[1] * x + m[5] * y + m[9] * z + m[13]);
+          posed[at + 2] += weight * (m[2] * x + m[6] * y + m[10] * z + m[14]);
+          weightSums[cp] += weight;
+        }
+      }
+      for (let cp = 0; cp < weightSums.length; cp += 1) {
+        const at = cp * 3, sum = weightSums[cp];
+        if (sum > 0 && clusters[0].mode === "Normalize") {
+          posed[at] /= sum; posed[at + 1] /= sum; posed[at + 2] /= sum;
+        } else {
+          // Total1 retains the uninfluenced fraction; an unweighted control
+          // point in either mode keeps its ordinary mesh placement.
+          const rest = sum > 0 ? 1 - sum : 1;
+          const x = vertices[at], y = vertices[at + 1], z = vertices[at + 2], m = meshWorld;
+          posed[at] += rest * (m[0] * x + m[4] * y + m[8] * z + m[12]);
+          posed[at + 1] += rest * (m[1] * x + m[5] * y + m[9] * z + m[13]);
+          posed[at + 2] += rest * (m[2] * x + m[6] * y + m[10] * z + m[14]);
+        }
+      }
+      return posed;
+    };
+
     // Prefabs carry every LOD and an untransformed shadow proxy beside the
     // render meshes; the viewer shows one LOD at a time and starts with the
     // shadow proxies off so copies do not overlap.
     const modelName = (id) => String(models.get(id)?.props[1] || "").split("\u0000\u0001")[0];
-    const shadowPattern = /shadow_?proxy|eyes?[_\s-]?shadow|hair[_\s-]?shadow|(?:^|[_\s-])hs(?:[_\s\d-]|$)/i;
     const lodOf = (id) => {
       for (let current = id, depth = 0; current && depth < 256; depth += 1) {
         const match = modelName(current).match(/(?:^|[_-])lod(\d+)$/i);
@@ -4133,9 +5117,23 @@
       }
       return null;
     };
+    const lodFamilyOf = (id) => {
+      const chain = [];
+      for (let current = id, depth = 0; current && depth < 256; depth += 1) {
+        chain.unshift({ id: current, name: modelName(current) });
+        current = (parentsOf.get(current) || []).find((candidate) => models.has(candidate));
+      }
+      const pattern = /(?:^|[_-])lod\d+$/i;
+      const first = chain.findIndex((node) => pattern.test(node.name));
+      if (first < 0) return null;
+      // Keep the owning branch's identity: same-name sibling instances may
+      // have different available LODs and must not suppress one another.
+      return JSON.stringify([first ? chain[first - 1].id : 0,
+        ...chain.slice(first).map((node) => node.name.replace(pattern, "_lod#").toLowerCase())]);
+    };
     const isShadowPart = (id) => {
       for (let current = id, depth = 0; current && depth < 256; depth += 1) {
-        if (shadowPattern.test(modelName(current))) return true;
+        if (isFbxShadowName(modelName(current))) return true;
         current = (parentsOf.get(current) || []).find((candidate) => models.has(candidate));
       }
       return false;
@@ -4183,15 +5181,22 @@
       // Every mesh object is kept so the viewer can toggle it; only the
       // lowest LOD outside the shadow proxy starts visible.
       const owners = (parentsOf.get(geometry.props[0]) || []).filter((id) => models.has(id));
+      const clusters = await skinClusters(geometry.props[0], vertexCount);
       const placements = owners.length
-        ? owners.map((id) => ({
+        ? owners.map((id) => {
+          const { geometric } = fbxModelLocalMatrix(models.get(id));
+          return {
             object: id,
-            transform: mat4Multiply(worldMatrix(id), fbxModelLocalMatrix(models.get(id)).geometric),
+            transform: mat4Multiply(worldMatrix(id), geometric),
+            geometric,
             materials: modelMaterials.get(id) || [],
-          }))
+          };
+        })
         : [{ object: geometry.props[0], transform: null, materials: [] }];
-      for (const { object, transform, materials } of placements) {
-        parts.push({ object, vertices, polygonIndex, controlPoint, uv, triangles, triangleSlots, transform, materials });
+      for (const { object, transform, geometric, materials } of placements) {
+        const posed = transform ? skinVertices(vertices, clusters, transform, geometric) : null;
+        parts.push({ object, vertices: posed || vertices, polygonIndex, controlPoint, uv, triangles, triangleSlots,
+          transform: posed ? null : transform, materials });
         totalVertices += polygonIndex.length;
       }
     }
@@ -4206,6 +5211,7 @@
         id: object,
         name: models.has(object) ? modelName(object) : "Mesh",
         lod: models.has(object) ? lodOf(object) : null,
+        lodFamily: models.has(object) ? lodFamilyOf(object) : null,
         kind: models.has(object) && isShadowPart(object) ? "shadow" : null,
         materials: new Set(),
       });
@@ -4217,7 +5223,7 @@
     // unless the prefab is nothing but effects.
     const vfxPattern = /(?:^|[_\s-])v?fx(?:part)?(?:[_\s\d-]|$)|effect/i;
     for (const object of meshObjects) {
-      if (!object.kind && [...object.materials].some((name) => shadowPattern.test(name))) {
+      if (!object.kind && [...object.materials].some(isFbxShadowName)) {
         object.kind = "shadow";
       }
       if (!object.kind && (vfxPattern.test(object.name) || [...object.materials].some((name) => vfxPattern.test(name)))) {
@@ -4227,11 +5233,23 @@
     }
     const hasPlain = meshObjects.some((object) => !object.kind);
     const lodLevels = [...new Set(meshObjects.map((object) => object.lod).filter((lod) => lod !== null))].sort((a, b) => a - b);
-    const lod = lodLevels.length ? lodLevels[0] : null;
+    const bestByFamily = new Map();
+    for (const object of meshObjects) {
+      if (object.lod === null) continue;
+      bestByFamily.set(object.lodFamily, Math.min(bestByFamily.get(object.lodFamily) ?? Infinity, object.lod));
+    }
+    const visibleLevels = [];
     for (const object of meshObjects) {
       object.defaultVisible = object.kind === "shadow" ? false : object.kind === "vfx" ? !hasPlain : true;
-      object.framed = object.defaultVisible && (object.lod === null || object.lod === lod);
+      object.bestLod = object.lod === null ? null : bestByFamily.get(object.lodFamily);
+      if (object.defaultVisible && object.lod !== null) visibleLevels.push(object.bestLod);
     }
+    // A low-detail-only body and a multi-LOD accessory are independent parts.
+    // A single global LOD number used to hide the whole body. This is a stored
+    // geometry inspection preset, not a claim about the game's LOD selection.
+    const mixedLods = new Set(visibleLevels).size > 1;
+    const lod = mixedLods ? "best" : visibleLevels.length ? visibleLevels.reduce((a, b) => Math.min(a, b)) : lodLevels[0] ?? null;
+    for (const object of meshObjects) object.framed = object.defaultVisible && (object.lod === null || object.lod === (lod === "best" ? object.bestLod : lod));
 
     // Group triangles by object and material name so each group is one draw
     // call that can be hidden with its object.
@@ -4306,13 +5324,14 @@
     // Frame the objects shown by default, not hidden LODs or proxies.
     if (minX <= maxX) {
       mesh.center = [(minX + maxX) * 0.5, (minY + maxY) * 0.5, (minZ + maxZ) * 0.5];
-      mesh.scale = 2 / Math.max(maxX - minX || 1, maxY - minY || 1, maxZ - minZ || 1);
+      mesh.scale = 2 / (Math.max(maxX - minX, maxY - minY, maxZ - minZ) || 1);
+      mesh.fitRadius = Math.hypot(maxX - minX, maxY - minY, maxZ - minZ) * mesh.scale * 0.5;
     }
     for (const object of meshObjects) {
       object.visible = object.defaultVisible;
       delete object.framed;
     }
-    return Object.assign(mesh, { uvs, groups, objects: meshObjects, lods: lodLevels, lod });
+    return Object.assign(mesh, { uvs, groups, objects: meshObjects, lods: lodLevels, lod, mixedLods });
   }
 
   function cleanFbxSampleName(value) {

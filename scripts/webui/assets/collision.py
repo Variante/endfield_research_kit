@@ -93,7 +93,7 @@ def publish_collision_previews(receipt_path: Path, *, root: Path, asset_dir: Pat
                     "fallbackAssets": report["provenance"]["fallbackAssets"],
                     "auditBlocks": report["provenance"]["auditBlocks"],
                 }, "coordinates": "Unity mesh local coordinates and original cooked winding; no scene transform.",
-                "evidenceBoundary": "Exact stored collision geometry for the selected serialized identities. Runtime collider ownership and placement are unresolved."}
+                "evidenceBoundary": "Exact stored collision geometry for the selected serialized identities. Sampled runtime evidence, when admitted, is published separately; previews have no scene transform."}
     except (ValueError, KeyError, TypeError, OSError) as error:
         if stage is not None:
             # mkdtemp returned this directory directly below the owned root.

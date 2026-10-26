@@ -7,6 +7,7 @@ import hashlib
 import json
 import struct
 from collections import Counter, defaultdict
+from functools import partial
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -15,6 +16,7 @@ from scripts.webui.audio.semantics.context_utils import append_context as _appen
 from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 
+from scripts.game_data.string_pool import export_string_pool
 from scripts.game_data.interactive_binary import (
     decode_interactive_table,
     decode_model_view_state_controller,
@@ -36,8 +38,9 @@ def collect_physics_audio_semantics(
     Both are read from the export's single effective game/ tree.
     """
     if component_decoder is None or table_decoder is None:
-        component_decoder = component_decoder or find_physics_audio_components
-        table_decoder = table_decoder or decode_interactive_table
+        strings = export_string_pool(ExportLayout(export_root).game / "Json")
+        component_decoder = component_decoder or partial(find_physics_audio_components, strings=strings)
+        table_decoder = table_decoder or partial(decode_interactive_table, strings=strings)
 
     source_roots = ("game",)
     table_paths = [
@@ -351,8 +354,9 @@ def collect_model_view_state_audio_semantics(
     therefore remain authored template associations rather than runtime owners.
     """
     if controller_decoder is None or table_decoder is None:
-        controller_decoder = controller_decoder or decode_model_view_state_controller
-        table_decoder = table_decoder or decode_interactive_table
+        strings = export_string_pool(ExportLayout(export_root).game / "Json")
+        controller_decoder = controller_decoder or partial(decode_model_view_state_controller, strings=strings)
+        table_decoder = table_decoder or partial(decode_interactive_table, strings=strings)
 
     source_roots = ("game",)
     controller_rel = PurePosixPath(

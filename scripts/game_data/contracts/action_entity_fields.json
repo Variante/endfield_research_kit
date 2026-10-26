@@ -6,14 +6,14 @@
   "unresolved": "what each action does with the entity at runtime"
  },
  "nativeInputs": {
-  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+  "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
  },
  "actionCount": 83,
  "actions": [
   {
    "actionName": "AddBuffToTarget",
-   "unionTag": 9,
+   "unionTag": 10,
    "serializedMemberCount": 16,
    "entityFields": [
     {
@@ -40,7 +40,7 @@
   },
   {
    "actionName": "AddBuffToTargetFromGodEntity",
-   "unionTag": 10,
+   "unionTag": 11,
    "serializedMemberCount": 13,
    "entityFields": [
     {
@@ -61,7 +61,7 @@
   },
   {
    "actionName": "AddBuffToTargetV2",
-   "unionTag": 11,
+   "unionTag": 12,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -88,7 +88,7 @@
   },
   {
    "actionName": "AddTrackingPointForEntity",
-   "unionTag": 19,
+   "unionTag": 21,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -109,7 +109,7 @@
   },
   {
    "actionName": "AttachEntityToDecoration",
-   "unionTag": 25,
+   "unionTag": 27,
    "serializedMemberCount": 15,
    "entityFields": [
     {
@@ -130,7 +130,7 @@
   },
   {
    "actionName": "BakeEntityNavmeshArea",
-   "unionTag": 27,
+   "unionTag": 29,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -151,7 +151,7 @@
   },
   {
    "actionName": "CacheDroneEnemy",
-   "unionTag": 51,
+   "unionTag": 53,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -172,7 +172,7 @@
   },
   {
    "actionName": "CharacterPlayMontage",
-   "unionTag": 66,
+   "unionTag": 68,
    "serializedMemberCount": 26,
    "entityFields": [
     {
@@ -193,7 +193,7 @@
   },
   {
    "actionName": "CreateEffectAttachToEntity",
-   "unionTag": 110,
+   "unionTag": 114,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -214,7 +214,7 @@
   },
   {
    "actionName": "DestroyAbilityEntity",
-   "unionTag": 119,
+   "unionTag": 123,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -235,7 +235,7 @@
   },
   {
    "actionName": "EnemyPatrolStart",
-   "unionTag": 140,
+   "unionTag": 146,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -256,20 +256,20 @@
   },
   {
    "actionName": "EnterDollyTrackCamera",
-   "unionTag": 142,
-   "serializedMemberCount": 38,
+   "unionTag": 148,
+   "serializedMemberCount": 41,
    "entityFields": [
     {
      "fieldName": "_follow",
-     "memberOrdinalZeroBased": 17,
+     "memberOrdinalZeroBased": 18,
      "constantPointerOrdinal": 0,
-     "fieldOffset": "0x140"
+     "fieldOffset": "0x148"
     },
     {
      "fieldName": "_lookAt",
-     "memberOrdinalZeroBased": 21,
+     "memberOrdinalZeroBased": 23,
      "constantPointerOrdinal": 1,
-     "fieldOffset": "0x158"
+     "fieldOffset": "0x168"
     }
    ],
    "serializedValueLayout": {
@@ -625,7 +625,7 @@
   },
   {
    "actionName": "EntityAttachToParent",
-   "unionTag": 151,
+   "unionTag": 157,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -652,7 +652,7 @@
   },
   {
    "actionName": "EntityCastSkill",
-   "unionTag": 152,
+   "unionTag": 158,
    "serializedMemberCount": 15,
    "entityFields": [
     {
@@ -679,7 +679,7 @@
   },
   {
    "actionName": "EntityHide",
-   "unionTag": 156,
+   "unionTag": 162,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -700,7 +700,7 @@
   },
   {
    "actionName": "EntityInterruptSkill",
-   "unionTag": 158,
+   "unionTag": 164,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -721,7 +721,7 @@
   },
   {
    "actionName": "EntityMoveToWithDuration",
-   "unionTag": 159,
+   "unionTag": 165,
    "serializedMemberCount": 15,
    "entityFields": [
     {
@@ -742,7 +742,7 @@
   },
   {
    "actionName": "EntityMoveToWithSpeed",
-   "unionTag": 160,
+   "unionTag": 166,
    "serializedMemberCount": 15,
    "entityFields": [
     {
@@ -763,7 +763,7 @@
   },
   {
    "actionName": "EntityRotateDeltaWithDuration",
-   "unionTag": 168,
+   "unionTag": 174,
    "serializedMemberCount": 13,
    "entityFields": [
     {
@@ -784,7 +784,7 @@
   },
   {
    "actionName": "EntityRotateToWithDuration",
-   "unionTag": 170,
+   "unionTag": 176,
    "serializedMemberCount": 13,
    "entityFields": [
     {
@@ -805,7 +805,7 @@
   },
   {
    "actionName": "EntityRotateToWithSpeed",
-   "unionTag": 171,
+   "unionTag": 177,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -826,7 +826,7 @@
   },
   {
    "actionName": "EntityShow",
-   "unionTag": 172,
+   "unionTag": 178,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -847,7 +847,7 @@
   },
   {
    "actionName": "EventArgsAssignEntityPtr",
-   "unionTag": 178,
+   "unionTag": 184,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -868,7 +868,7 @@
   },
   {
    "actionName": "FacBattleBuildingSetEnabled",
-   "unionTag": 191,
+   "unionTag": 197,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -889,7 +889,7 @@
   },
   {
    "actionName": "FacForceBattleBuildingCast",
-   "unionTag": 200,
+   "unionTag": 206,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -916,7 +916,7 @@
   },
   {
    "actionName": "FacSetBattleBuildingLookAt",
-   "unionTag": 215,
+   "unionTag": 221,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -937,7 +937,7 @@
   },
   {
    "actionName": "FinishBuffUsingId",
-   "unionTag": 231,
+   "unionTag": 237,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -958,7 +958,7 @@
   },
   {
    "actionName": "ImmediateStartBambooRaftMove",
-   "unionTag": 266,
+   "unionTag": 272,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -979,7 +979,7 @@
   },
   {
    "actionName": "InteractiveSetVisible",
-   "unionTag": 269,
+   "unionTag": 276,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1000,7 +1000,7 @@
   },
   {
    "actionName": "IsLookAtPointInScreen",
-   "unionTag": 273,
+   "unionTag": 280,
    "serializedMemberCount": 16,
    "entityFields": [
     {
@@ -1021,7 +1021,7 @@
   },
   {
    "actionName": "KillKickableInteractive",
-   "unionTag": 281,
+   "unionTag": 288,
    "serializedMemberCount": 12,
    "entityFields": [
     {
@@ -1042,7 +1042,7 @@
   },
   {
    "actionName": "LevelCameraLookAt",
-   "unionTag": 287,
+   "unionTag": 294,
    "serializedMemberCount": 39,
    "entityFields": [
     {
@@ -1069,7 +1069,7 @@
   },
   {
    "actionName": "ListSetValueEntityPtr",
-   "unionTag": 704,
+   "unionTag": 711,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1090,7 +1090,7 @@
   },
   {
    "actionName": "ManipulateCraneTower",
-   "unionTag": 779,
+   "unionTag": 786,
    "serializedMemberCount": 12,
    "entityFields": [
     {
@@ -1111,7 +1111,7 @@
   },
   {
    "actionName": "MoveBambooLast",
-   "unionTag": 790,
+   "unionTag": 797,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1132,7 +1132,7 @@
   },
   {
    "actionName": "MoveBambooNext",
-   "unionTag": 791,
+   "unionTag": 798,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1153,7 +1153,7 @@
   },
   {
    "actionName": "NpcEnableStim",
-   "unionTag": 800,
+   "unionTag": 807,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1174,7 +1174,7 @@
   },
   {
    "actionName": "NpcPatrolOverrideGait",
-   "unionTag": 806,
+   "unionTag": 814,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1195,7 +1195,7 @@
   },
   {
    "actionName": "NpcPatrolPause",
-   "unionTag": 807,
+   "unionTag": 815,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1216,7 +1216,7 @@
   },
   {
    "actionName": "NpcPatrolStart",
-   "unionTag": 808,
+   "unionTag": 816,
    "serializedMemberCount": 12,
    "entityFields": [
     {
@@ -1237,7 +1237,7 @@
   },
   {
    "actionName": "NpcPatrolStop",
-   "unionTag": 809,
+   "unionTag": 817,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1258,7 +1258,7 @@
   },
   {
    "actionName": "NpcPlayMontage",
-   "unionTag": 812,
+   "unionTag": 820,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -1279,7 +1279,7 @@
   },
   {
    "actionName": "NpcPlayMontageWithRootMotion",
-   "unionTag": 813,
+   "unionTag": 821,
    "serializedMemberCount": 13,
    "entityFields": [
     {
@@ -1300,7 +1300,7 @@
   },
   {
    "actionName": "NpcSwitchToAIBehavior",
-   "unionTag": 836,
+   "unionTag": 845,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1321,7 +1321,7 @@
   },
   {
    "actionName": "OpenBeaconPole",
-   "unionTag": 837,
+   "unionTag": 846,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1342,7 +1342,7 @@
   },
   {
    "actionName": "PauseEnemyAI",
-   "unionTag": 847,
+   "unionTag": 856,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1363,7 +1363,7 @@
   },
   {
    "actionName": "Play3DRadio",
-   "unionTag": 852,
+   "unionTag": 861,
    "serializedMemberCount": 20,
    "entityFields": [
     {
@@ -1384,7 +1384,7 @@
   },
   {
    "actionName": "Play3DRadioAndWait",
-   "unionTag": 853,
+   "unionTag": 862,
    "serializedMemberCount": 20,
    "entityFields": [
     {
@@ -1405,7 +1405,7 @@
   },
   {
    "actionName": "PlayAudioOnTarget",
-   "unionTag": 860,
+   "unionTag": 869,
    "serializedMemberCount": 12,
    "entityFields": [
     {
@@ -1426,7 +1426,7 @@
   },
   {
    "actionName": "PlayVoice",
-   "unionTag": 883,
+   "unionTag": 892,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1447,7 +1447,7 @@
   },
   {
    "actionName": "RemoveEntityNavmeshArea",
-   "unionTag": 916,
+   "unionTag": 927,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1468,7 +1468,7 @@
   },
   {
    "actionName": "SetAnimatorInt",
-   "unionTag": 993,
+   "unionTag": 1011,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1489,7 +1489,7 @@
   },
   {
    "actionName": "SetAnimatorTrigger",
-   "unionTag": 995,
+   "unionTag": 1013,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1510,7 +1510,7 @@
   },
   {
    "actionName": "SetCraneContainerState",
-   "unionTag": 1017,
+   "unionTag": 1035,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1531,14 +1531,14 @@
   },
   {
    "actionName": "SetEnablePlayerAction",
-   "unionTag": 1023,
+   "unionTag": 1041,
    "serializedMemberCount": 11,
    "entityFields": [],
    "nonEntityContract": true
   },
   {
    "actionName": "SetEnemyAIMode",
-   "unionTag": 1028,
+   "unionTag": 1046,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1559,7 +1559,7 @@
   },
   {
    "actionName": "SetEntityEulerAngles",
-   "unionTag": 1031,
+   "unionTag": 1049,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1580,7 +1580,7 @@
   },
   {
    "actionName": "SetEntityEulerAnglesLookAt",
-   "unionTag": 1032,
+   "unionTag": 1050,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1607,7 +1607,7 @@
   },
   {
    "actionName": "SetEntityPosition",
-   "unionTag": 1034,
+   "unionTag": 1052,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1628,7 +1628,7 @@
   },
   {
    "actionName": "SetInteractiveResponseToWaterGun",
-   "unionTag": 1059,
+   "unionTag": 1079,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1649,7 +1649,7 @@
   },
   {
    "actionName": "SetMainCharFocusTarget",
-   "unionTag": 1117,
+   "unionTag": 1137,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1670,7 +1670,7 @@
   },
   {
    "actionName": "SetNpcTransform",
-   "unionTag": 1124,
+   "unionTag": 1144,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1691,7 +1691,7 @@
   },
   {
    "actionName": "SetTargetForceInFight",
-   "unionTag": 1143,
+   "unionTag": 1164,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1712,7 +1712,7 @@
   },
   {
    "actionName": "SetTriggerIsActive",
-   "unionTag": 1147,
+   "unionTag": 1168,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1733,7 +1733,7 @@
   },
   {
    "actionName": "SetWaterPipeRotateState",
-   "unionTag": 1153,
+   "unionTag": 1174,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -1754,14 +1754,14 @@
   },
   {
    "actionName": "ShowUIToast_DevOnly",
-   "unionTag": 1183,
+   "unionTag": 1204,
    "serializedMemberCount": 10,
    "entityFields": [],
    "nonEntityContract": true
   },
   {
    "actionName": "SkipEntityDieDisplay",
-   "unionTag": 1185,
+   "unionTag": 1206,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1782,7 +1782,7 @@
   },
   {
    "actionName": "SpawnOrResetKickableInteractive",
-   "unionTag": 1189,
+   "unionTag": 1210,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1803,7 +1803,7 @@
   },
   {
    "actionName": "SpawnPreloadedEntity",
-   "unionTag": 1190,
+   "unionTag": 1211,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1824,7 +1824,7 @@
   },
   {
    "actionName": "StartSeamlessPortal",
-   "unionTag": 1211,
+   "unionTag": 1232,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1845,7 +1845,7 @@
   },
   {
    "actionName": "StartTrackCamera",
-   "unionTag": 1213,
+   "unionTag": 1234,
    "serializedMemberCount": 14,
    "entityFields": [
     {
@@ -1872,7 +1872,7 @@
   },
   {
    "actionName": "SwitchAudioState",
-   "unionTag": 1230,
+   "unionTag": 1251,
    "serializedMemberCount": 11,
    "entityFields": [
     {
@@ -1893,7 +1893,7 @@
   },
   {
    "actionName": "SwitchToCamera",
-   "unionTag": 1236,
+   "unionTag": 1257,
    "serializedMemberCount": 18,
    "entityFields": [
     {
@@ -1914,7 +1914,7 @@
   },
   {
    "actionName": "WaitCraneTowerOperationsFinish",
-   "unionTag": 1286,
+   "unionTag": 1307,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1935,7 +1935,7 @@
   },
   {
    "actionName": "WaitForEntityStart",
-   "unionTag": 1292,
+   "unionTag": 1313,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1956,7 +1956,7 @@
   },
   {
    "actionName": "ActiveRopeAnim",
-   "unionTag": 1312,
+   "unionTag": 1334,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1977,7 +1977,7 @@
   },
   {
    "actionName": "FreezeSingleAnchorWave",
-   "unionTag": 1319,
+   "unionTag": 1341,
    "serializedMemberCount": 9,
    "entityFields": [
     {
@@ -1998,7 +1998,7 @@
   },
   {
    "actionName": "MoveUnstableRuneColumn",
-   "unionTag": 1322,
+   "unionTag": 1344,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -2025,7 +2025,7 @@
   },
   {
    "actionName": "SetHintPerformEnableState",
-   "unionTag": 1331,
+   "unionTag": 1353,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -2046,7 +2046,7 @@
   },
   {
    "actionName": "SetRuneAnchorPointForbidState",
-   "unionTag": 1334,
+   "unionTag": 1356,
    "serializedMemberCount": 12,
    "entityFields": [
     {
@@ -2094,7 +2094,7 @@
   },
   {
    "actionName": "SetRuneColumnUnstableState",
-   "unionTag": 1337,
+   "unionTag": 1359,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -2115,7 +2115,7 @@
   },
   {
    "actionName": "TemporarilyHideInteractOptions",
-   "unionTag": 1338,
+   "unionTag": 1360,
    "serializedMemberCount": 10,
    "entityFields": [
     {
@@ -2136,7 +2136,7 @@
   },
   {
    "actionName": "UnfreezeSingleAnchorWave",
-   "unionTag": 1339,
+   "unionTag": 1361,
    "serializedMemberCount": 9,
    "entityFields": [
     {

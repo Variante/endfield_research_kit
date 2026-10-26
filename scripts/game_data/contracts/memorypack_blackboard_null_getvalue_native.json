@@ -1,0 +1,563 @@
+{
+  "schema": "endfield.memorypack-blackboard-null-getvalue-native-contract.v1",
+  "status": "exact-current-build",
+  "mode": "initialized-null-board-getvalue-and-scalar-cast-fallback",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": {
+    "public": [
+      980,
+      "Beyond.Blackboard+BlackboardDouble",
+      "GetValue",
+      105954816
+    ],
+    "getDirectValue": [
+      969,
+      "Beyond.Blackboard+BlackboardParamBase`2",
+      "GetDirectValue",
+      137428072
+    ],
+    "castValue": [
+      979,
+      "Beyond.Blackboard+BlackboardDouble",
+      "CastSerializeValueToReturnValue",
+      105954208
+    ],
+    "patchCheck": [
+      102181,
+      "IFix.WrappersManagerImpl",
+      "IsPatched",
+      46758256
+    ],
+    "directLogError": [
+      441486,
+      "Beyond.DLogger",
+      "LogError",
+      63936720
+    ],
+    "classStorageHelper": [
+      -1,
+      "physical",
+      "classStorageHelper",
+      13472
+    ],
+    "classInitHelper": [
+      -1,
+      "physical",
+      "classInitHelper",
+      19344
+    ]
+  },
+  "entries": {
+    "public": 105954816,
+    "direct": 137428072,
+    "cast": 374720,
+    "castThunk": 374720
+  },
+  "ownedCodeWindows": {
+    "public": [
+      {
+        "startRva": 105954816,
+        "endRva": 105955098,
+        "sha256": "9A9B89937A4793CA98B4DFB552219C5E29E3FFF4B0CF31E03D5C98FFEBA15470",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      }
+    ],
+    "direct": [
+      {
+        "startRva": 137428072,
+        "endRva": 137428180,
+        "sha256": "82FAC13686C61B340EFBE512C4D8D013A1AC9B1E1F62CB108352DD63548D27FB",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      }
+    ],
+    "cast": [
+      {
+        "startRva": 374720,
+        "endRva": 375351,
+        "sha256": "DC631297715A06F4738F4A97C6290921AA61BD26EC121B8E3A953F08AE1CEAA4",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      },
+      {
+        "startRva": 375351,
+        "endRva": 375362,
+        "sha256": "D45CF4C084D3D0A0E5748454F9A194A8C34A28ADF65218E61B7B54C5487D5D4C",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      },
+      {
+        "startRva": 375362,
+        "endRva": 375763,
+        "sha256": "13933816C86D362B5E7B01F91239A4099D0E28B27652D7D40EE6D7647292D969",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      },
+      {
+        "startRva": 375763,
+        "endRva": 375859,
+        "sha256": "8F8D99FC3CE923FBFAF4869981FDB84513C96378BC0F27014D63D2A35CBCF254",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      },
+      {
+        "startRva": 375859,
+        "endRva": 375956,
+        "sha256": "383B7DDFFCC92468F1EDB99704B580DD11E2897E71A8CE76C1A0927C0FD42B30",
+        "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+      }
+    ]
+  },
+  "programs": {
+    "publicNull": {
+      "entryRva": 105954816,
+      "program": [
+        [
+          105954816,
+          "48895C2408"
+        ],
+        [
+          105954821,
+          "57"
+        ],
+        [
+          105954822,
+          "4883EC40"
+        ],
+        [
+          105954826,
+          "803DF96A9B0700"
+        ],
+        [
+          105954833,
+          "488BDA"
+        ],
+        [
+          105954836,
+          "0F29742430"
+        ],
+        [
+          105954841,
+          "488BF9"
+        ],
+        [
+          105954844,
+          "7537"
+        ],
+        [
+          105954901,
+          "0F57F6"
+        ],
+        [
+          105954904,
+          "33D2"
+        ],
+        [
+          105954906,
+          "B9EC010000"
+        ],
+        [
+          105954911,
+          "F20F11742468"
+        ],
+        [
+          105954917,
+          "E806BB78FC"
+        ],
+        [
+          105954922,
+          "84C0"
+        ],
+        [
+          105954924,
+          "7574"
+        ],
+        [
+          105954926,
+          "4885DB"
+        ],
+        [
+          105954929,
+          "745E"
+        ],
+        [
+          105955025,
+          "488B15E0EE6B07"
+        ],
+        [
+          105955032,
+          "488BCF"
+        ],
+        [
+          105955035,
+          "E8883DE001"
+        ],
+        [
+          105955040,
+          "EB28"
+        ],
+        [
+          105955082,
+          "488B5C2450"
+        ],
+        [
+          105955087,
+          "0F28742430"
+        ],
+        [
+          105955092,
+          "4883C440"
+        ],
+        [
+          105955096,
+          "5F"
+        ],
+        [
+          105955097,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 105954816,
+          "endRva": 105955098,
+          "sha256": "9A9B89937A4793CA98B4DFB552219C5E29E3FFF4B0CF31E03D5C98FFEBA15470",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        }
+      ],
+      "boundary": "Complete selected initialized normal branch from actual entry through RET or fully restored tail delegation."
+    },
+    "directCast": {
+      "entryRva": 137428072,
+      "program": [
+        [
+          137428072,
+          "4053"
+        ],
+        [
+          137428074,
+          "4883EC20"
+        ],
+        [
+          137428078,
+          "803DB39FBB0500"
+        ],
+        [
+          137428085,
+          "488BD9"
+        ],
+        [
+          137428088,
+          "751F"
+        ],
+        [
+          137428121,
+          "807B1000"
+        ],
+        [
+          137428125,
+          "7512"
+        ],
+        [
+          137428127,
+          "B906000000"
+        ],
+        [
+          137428132,
+          "488BD3"
+        ],
+        [
+          137428135,
+          "4883C420"
+        ],
+        [
+          137428139,
+          "5B"
+        ],
+        [
+          137428140,
+          "E90FBBD4F7"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 137428072,
+          "endRva": 137428180,
+          "sha256": "82FAC13686C61B340EFBE512C4D8D013A1AC9B1E1F62CB108352DD63548D27FB",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        }
+      ],
+      "boundary": "Complete selected initialized normal branch from actual entry through RET or fully restored tail delegation."
+    },
+    "directKeyed": {
+      "entryRva": 137428072,
+      "program": [
+        [
+          137428072,
+          "4053"
+        ],
+        [
+          137428074,
+          "4883EC20"
+        ],
+        [
+          137428078,
+          "803DB39FBB0500"
+        ],
+        [
+          137428085,
+          "488BD9"
+        ],
+        [
+          137428088,
+          "751F"
+        ],
+        [
+          137428121,
+          "807B1000"
+        ],
+        [
+          137428125,
+          "7512"
+        ],
+        [
+          137428145,
+          "488B0DA861D904"
+        ],
+        [
+          137428152,
+          "E8E337CFF7"
+        ],
+        [
+          137428157,
+          "488B0D6CC38B05"
+        ],
+        [
+          137428164,
+          "33D2"
+        ],
+        [
+          137428166,
+          "E8059C9EFB"
+        ],
+        [
+          137428171,
+          "0F57C0"
+        ],
+        [
+          137428174,
+          "4883C420"
+        ],
+        [
+          137428178,
+          "5B"
+        ],
+        [
+          137428179,
+          "C3"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 137428072,
+          "endRva": 137428180,
+          "sha256": "82FAC13686C61B340EFBE512C4D8D013A1AC9B1E1F62CB108352DD63548D27FB",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        }
+      ],
+      "boundary": "Complete selected initialized normal branch from actual entry through RET or fully restored tail delegation."
+    },
+    "castFallback": {
+      "entryRva": 374720,
+      "program": [
+        [
+          374720,
+          "4053"
+        ],
+        [
+          374722,
+          "55"
+        ],
+        [
+          374723,
+          "56"
+        ],
+        [
+          374724,
+          "4883EC30"
+        ],
+        [
+          374728,
+          "0FB7D9"
+        ],
+        [
+          374731,
+          "488BF2"
+        ],
+        [
+          374734,
+          "488B0A"
+        ],
+        [
+          374737,
+          "E8BA93FAFF"
+        ],
+        [
+          374742,
+          "488D4314"
+        ],
+        [
+          374746,
+          "48C1E004"
+        ],
+        [
+          374750,
+          "480306"
+        ],
+        [
+          374753,
+          "4C8B00"
+        ],
+        [
+          374756,
+          "488B5008"
+        ],
+        [
+          374760,
+          "488D05D1551A03"
+        ],
+        [
+          374767,
+          "4C3BC0"
+        ],
+        [
+          374770,
+          "0F856D010000"
+        ],
+        [
+          375141,
+          "488D05348ED303"
+        ],
+        [
+          375148,
+          "4C3BC0"
+        ],
+        [
+          375151,
+          "0F85A1000000"
+        ],
+        [
+          375318,
+          "488D05A399CD02"
+        ],
+        [
+          375325,
+          "4C3BC0"
+        ],
+        [
+          375328,
+          "0F850D020000"
+        ],
+        [
+          375859,
+          "488BCE"
+        ],
+        [
+          375862,
+          "4883C430"
+        ],
+        [
+          375866,
+          "5E"
+        ],
+        [
+          375867,
+          "5D"
+        ],
+        [
+          375868,
+          "5B"
+        ],
+        [
+          375869,
+          "49FFE0"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 374720,
+          "endRva": 375351,
+          "sha256": "DC631297715A06F4738F4A97C6290921AA61BD26EC121B8E3A953F08AE1CEAA4",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        },
+        {
+          "startRva": 375351,
+          "endRva": 375362,
+          "sha256": "D45CF4C084D3D0A0E5748454F9A194A8C34A28ADF65218E61B7B54C5487D5D4C",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        },
+        {
+          "startRva": 375362,
+          "endRva": 375763,
+          "sha256": "13933816C86D362B5E7B01F91239A4099D0E28B27652D7D40EE6D7647292D969",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        },
+        {
+          "startRva": 375763,
+          "endRva": 375859,
+          "sha256": "8F8D99FC3CE923FBFAF4869981FDB84513C96378BC0F27014D63D2A35CBCF254",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        },
+        {
+          "startRva": 375859,
+          "endRva": 375956,
+          "sha256": "383B7DDFFCC92468F1EDB99704B580DD11E2897E71A8CE76C1A0927C0FD42B30",
+          "boundary": "Exact complete entry/chained-unwind ownership; selected paths authenticated separately."
+        }
+      ],
+      "boundary": "Complete selected initialized normal branch from actual entry through RET or fully restored tail delegation."
+    }
+  },
+  "castSlot": 6,
+  "castComparands": [
+    52432320,
+    64571296,
+    47403968
+  ],
+  "globalCells": {
+    "publicInit": 233580810,
+    "directUsage": 230469048,
+    "directInit": 233610280,
+    "loggerClass": 218783328,
+    "directErrorMessage": 230473776
+  },
+  "publicPatchIndex": 492,
+  "directUsage": {
+    "usageCellRva": 230469048,
+    "usageRawHex": "EF1101C000000000",
+    "methodSpecIndex": 35063,
+    "methodSpec": [
+      969,
+      2129,
+      -1
+    ],
+    "registrations": [
+      {
+        "tableIndex": 31682,
+        "methodSpecIndex": 35063,
+        "rawHex": "F7880000A77B0000EBFC0000FFFFFFFF",
+        "indices": [
+          31655,
+          64747,
+          -1
+        ],
+        "pointerRva": 137428072
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Current public/logger/patch/cast identities and signatures; scalar metadata virtual declaration; stored closed direct MethodSpec registration; all owned unwind windows and complete selected instructions/tails.",
+    "direct": "Selected public/direct/cast-fallback aliases, selector read, virtual function/companion cell computation, actual calls, frame restores and public XMM0 return flow.",
+    "conditional": "Initialized public/direct flags, false public/cast patch checks, null incoming Board, unchanged coherent scalar, computed virtual function equal to actual concrete cast, stable valid storage/isolated frames and ordinary helpers/completed SIMD.",
+    "unresolved": "Actual class slot/receiver/runtime/value state, initializer/context mutation and helper/log effects, nonnull public returns and alternate dispatches, provider, complete recursive actions/roots."
+  }
+}

@@ -1,0 +1,989 @@
+{
+  "schema": "endfield.memorypack-blackboard-pair-list-native-contract.v1",
+  "status": "exact-current-build",
+  "mode": "value-pair-constructors-numeric-predicate-and-closed-list-copy",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "pairTypeDefinition": 169,
+  "pairAncestry": [
+    {
+      "definition": 169,
+      "name": "Beyond.Blackboard+DataPair",
+      "fields": [
+        {
+          "index": 1261,
+          "name": "key",
+          "type": {
+            "index": 143278,
+            "pointerRva": 219318360,
+            "rawHex": "C78C00000000000006000E0000000000",
+            "kind": 14,
+            "name": "string"
+          }
+        },
+        {
+          "index": 1262,
+          "name": "valueDouble",
+          "type": {
+            "index": 115144,
+            "pointerRva": 219377640,
+            "rawHex": "088D00000000000006000D8000000000",
+            "kind": 13,
+            "name": "double"
+          }
+        },
+        {
+          "index": 1263,
+          "name": "valueStr",
+          "type": {
+            "index": 143278,
+            "pointerRva": 219318360,
+            "rawHex": "C78C00000000000006000E0000000000",
+            "kind": 14,
+            "name": "string"
+          }
+        },
+        {
+          "index": 1264,
+          "name": "isDynamic",
+          "type": {
+            "index": 108363,
+            "pointerRva": 219393496,
+            "rawHex": "FA8C0000000000000600028000000000",
+            "kind": 2,
+            "name": "bool"
+          }
+        }
+      ],
+      "offsets": {
+        "key": 16,
+        "valueDouble": 24,
+        "valueStr": 32,
+        "isDynamic": 40
+      },
+      "parent": {
+        "index": 147633,
+        "pointerRva": 222351544,
+        "rawHex": "218E0000000000000000120000000000",
+        "kind": 18,
+        "name": "System.ValueType",
+        "definition": 36385
+      }
+    },
+    {
+      "definition": 36385,
+      "name": "System.ValueType",
+      "fields": [],
+      "offsets": null,
+      "parent": {
+        "index": 133396,
+        "pointerRva": 222428568,
+        "rawHex": "068E00000000000000001C0000000000",
+        "kind": 28,
+        "name": "object"
+      }
+    }
+  ],
+  "pairSizeRecord": {
+    "pointerRva": 178295880,
+    "rawHex": "30000000200000000000000000000000",
+    "instanceSize": 48
+  },
+  "unboxedSize": 32,
+  "unboxedCells": {
+    "key": 0,
+    "valueDouble": 8,
+    "valueStr": 16,
+    "isDynamic": 24
+  },
+  "stringLayout": {
+    "definition": 36039,
+    "name": "System.String",
+    "fields": [
+      {
+        "index": 190221,
+        "name": "StackallocIntBufferSizeLimit",
+        "type": {
+          "index": 126187,
+          "pointerRva": 219353128,
+          "rawHex": "3B8D0000000000005180088000000000",
+          "kind": 8,
+          "name": "int"
+        }
+      },
+      {
+        "index": 190222,
+        "name": "PROBABILISTICMAP_BLOCK_INDEX_MASK",
+        "type": {
+          "index": 126187,
+          "pointerRva": 219353128,
+          "rawHex": "3B8D0000000000005180088000000000",
+          "kind": 8,
+          "name": "int"
+        }
+      },
+      {
+        "index": 190223,
+        "name": "PROBABILISTICMAP_BLOCK_INDEX_SHIFT",
+        "type": {
+          "index": 126187,
+          "pointerRva": 219353128,
+          "rawHex": "3B8D0000000000005180088000000000",
+          "kind": 8,
+          "name": "int"
+        }
+      },
+      {
+        "index": 190224,
+        "name": "PROBABILISTICMAP_SIZE",
+        "type": {
+          "index": 126187,
+          "pointerRva": 219353128,
+          "rawHex": "3B8D0000000000005180088000000000",
+          "kind": 8,
+          "name": "int"
+        }
+      },
+      {
+        "index": 190225,
+        "name": "_stringLength",
+        "type": {
+          "index": 126176,
+          "pointerRva": 219353400,
+          "rawHex": "3B8D0000000000008100088000000000",
+          "kind": 8,
+          "name": "int"
+        }
+      },
+      {
+        "index": 190226,
+        "name": "_firstChar",
+        "type": {
+          "index": 110099,
+          "pointerRva": 219389576,
+          "rawHex": "FD8C0000000000008100038000000000",
+          "kind": 3,
+          "name": "char"
+        }
+      },
+      {
+        "index": 190227,
+        "name": "Empty",
+        "type": {
+          "index": 143290,
+          "pointerRva": 219317608,
+          "rawHex": "C78C00000000000036000E0000000000",
+          "kind": 14,
+          "name": "string"
+        }
+      }
+    ],
+    "offsets": {
+      "StackallocIntBufferSizeLimit": 0,
+      "PROBABILISTICMAP_BLOCK_INDEX_MASK": 0,
+      "PROBABILISTICMAP_BLOCK_INDEX_SHIFT": 0,
+      "PROBABILISTICMAP_SIZE": 0,
+      "_stringLength": 16,
+      "_firstChar": 20,
+      "Empty": 0
+    },
+    "parent": {
+      "index": 133396,
+      "pointerRva": 222428568,
+      "rawHex": "068E00000000000000001C0000000000",
+      "kind": 28,
+      "name": "object"
+    }
+  },
+  "stringLengthOffset": 16,
+  "numericDispatchLimit": 432,
+  "constructors": {
+    "numeric": {
+      "method": [
+        953,
+        "Beyond.Blackboard+DataPair",
+        ".ctor",
+        64990976
+      ],
+      "codeWindows": [
+        {
+          "startRva": 64990976,
+          "endRva": 64991023,
+          "sha256": "83949C8AC85B1BF35A1A9DA0540869449230848A4A7DBDD769AEBA679672E75B",
+          "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+        }
+      ],
+      "program": [
+        [
+          64990976,
+          "4883EC28"
+        ],
+        [
+          64990980,
+          "4C8BD1"
+        ],
+        [
+          64990983,
+          "488911"
+        ],
+        [
+          64990986,
+          "E831BC22FC"
+        ],
+        [
+          64990991,
+          "498D4A10"
+        ],
+        [
+          64990995,
+          "F2410F115208"
+        ],
+        [
+          64991001,
+          "49C7421000000000"
+        ],
+        [
+          64991009,
+          "E81ABC22FC"
+        ],
+        [
+          64991014,
+          "45884A18"
+        ],
+        [
+          64991018,
+          "4883C428"
+        ],
+        [
+          64991022,
+          "C3"
+        ]
+      ]
+    },
+    "string": {
+      "method": [
+        954,
+        "Beyond.Blackboard+DataPair",
+        ".ctor",
+        64988816
+      ],
+      "codeWindows": [
+        {
+          "startRva": 64988816,
+          "endRva": 64988864,
+          "sha256": "BF0D0FECB31425C21711738E46DAA85E225DA769208F25F25B85E3986BD2F8DB",
+          "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+        }
+      ],
+      "program": [
+        [
+          64988816,
+          "4883EC28"
+        ],
+        [
+          64988820,
+          "4D8BD0"
+        ],
+        [
+          64988823,
+          "488911"
+        ],
+        [
+          64988826,
+          "4C8BD9"
+        ],
+        [
+          64988829,
+          "E89EC422FC"
+        ],
+        [
+          64988834,
+          "498D4B10"
+        ],
+        [
+          64988838,
+          "4D895310"
+        ],
+        [
+          64988842,
+          "E891C422FC"
+        ],
+        [
+          64988847,
+          "49C7430800000000"
+        ],
+        [
+          64988855,
+          "45884B18"
+        ],
+        [
+          64988859,
+          "4883C428"
+        ],
+        [
+          64988863,
+          "C3"
+        ]
+      ]
+    },
+    "copy": {
+      "method": [
+        955,
+        "Beyond.Blackboard+DataPair",
+        ".ctor",
+        56513200
+      ],
+      "codeWindows": [
+        {
+          "startRva": 56513200,
+          "endRva": 56513260,
+          "sha256": "647D5D9F0CB91E6EF4B81E1E264287529242DD1C4691C991FB6F9298049AE270",
+          "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+        }
+      ],
+      "program": [
+        [
+          56513200,
+          "4883EC28"
+        ],
+        [
+          56513204,
+          "488B02"
+        ],
+        [
+          56513207,
+          "4C8BD2"
+        ],
+        [
+          56513210,
+          "488901"
+        ],
+        [
+          56513213,
+          "4C8BD9"
+        ],
+        [
+          56513216,
+          "E87B18A4FC"
+        ],
+        [
+          56513221,
+          "498B4210"
+        ],
+        [
+          56513225,
+          "498D4B10"
+        ],
+        [
+          56513229,
+          "4D8B4A08"
+        ],
+        [
+          56513233,
+          "49894310"
+        ],
+        [
+          56513237,
+          "4D894B08"
+        ],
+        [
+          56513241,
+          "E86218A4FC"
+        ],
+        [
+          56513246,
+          "450FB64A18"
+        ],
+        [
+          56513251,
+          "45884B18"
+        ],
+        [
+          56513255,
+          "4883C428"
+        ],
+        [
+          56513259,
+          "C3"
+        ]
+      ]
+    }
+  },
+  "numericPredicate": {
+    "method": [
+      950,
+      "Beyond.Blackboard+DataPair",
+      "get_isNumericValue",
+      47214304
+    ],
+    "paths": {
+      "null": {
+        "codeWindows": [
+          {
+            "startRva": 47214304,
+            "endRva": 47214423,
+            "sha256": "E684C9563F98E4F08335D174A387C661F4650B293DE4A658A457F6D4518E8C9D",
+            "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+          },
+          {
+            "startRva": 79913336,
+            "endRva": 79913436,
+            "sha256": "8F7BB0E3E2FB995A07F7A225E9BD9F1D6BE96E29BA1F4D0EC4B6B68A0142AF9D",
+            "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+          }
+        ],
+        "program": [
+          [
+            47214304,
+            "4053"
+          ],
+          [
+            47214306,
+            "4883EC20"
+          ],
+          [
+            47214310,
+            "488BD9"
+          ],
+          [
+            47214313,
+            "488B0DA0C62E0A"
+          ],
+          [
+            47214320,
+            "83B9E000000000"
+          ],
+          [
+            47214327,
+            "743B"
+          ],
+          [
+            47214329,
+            "488B81B8000000"
+          ],
+          [
+            47214336,
+            "488B10"
+          ],
+          [
+            47214339,
+            "4885D2"
+          ],
+          [
+            47214342,
+            "7449"
+          ],
+          [
+            47214344,
+            "817A18B0010000"
+          ],
+          [
+            47214351,
+            "0F8F63F2F201"
+          ],
+          [
+            47214357,
+            "488B4310"
+          ],
+          [
+            47214361,
+            "4885C0"
+          ],
+          [
+            47214364,
+            "740E"
+          ],
+          [
+            47214380,
+            "B001"
+          ],
+          [
+            47214382,
+            "4883C420"
+          ],
+          [
+            47214386,
+            "5B"
+          ],
+          [
+            47214387,
+            "C3"
+          ]
+        ]
+      },
+      "empty": {
+        "codeWindows": [
+          {
+            "startRva": 47214304,
+            "endRva": 47214423,
+            "sha256": "E684C9563F98E4F08335D174A387C661F4650B293DE4A658A457F6D4518E8C9D",
+            "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+          },
+          {
+            "startRva": 79913336,
+            "endRva": 79913436,
+            "sha256": "8F7BB0E3E2FB995A07F7A225E9BD9F1D6BE96E29BA1F4D0EC4B6B68A0142AF9D",
+            "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+          }
+        ],
+        "program": [
+          [
+            47214304,
+            "4053"
+          ],
+          [
+            47214306,
+            "4883EC20"
+          ],
+          [
+            47214310,
+            "488BD9"
+          ],
+          [
+            47214313,
+            "488B0DA0C62E0A"
+          ],
+          [
+            47214320,
+            "83B9E000000000"
+          ],
+          [
+            47214327,
+            "743B"
+          ],
+          [
+            47214329,
+            "488B81B8000000"
+          ],
+          [
+            47214336,
+            "488B10"
+          ],
+          [
+            47214339,
+            "4885D2"
+          ],
+          [
+            47214342,
+            "7449"
+          ],
+          [
+            47214344,
+            "817A18B0010000"
+          ],
+          [
+            47214351,
+            "0F8F63F2F201"
+          ],
+          [
+            47214357,
+            "488B4310"
+          ],
+          [
+            47214361,
+            "4885C0"
+          ],
+          [
+            47214364,
+            "740E"
+          ],
+          [
+            47214366,
+            "83781000"
+          ],
+          [
+            47214370,
+            "7608"
+          ],
+          [
+            47214380,
+            "B001"
+          ],
+          [
+            47214382,
+            "4883C420"
+          ],
+          [
+            47214386,
+            "5B"
+          ],
+          [
+            47214387,
+            "C3"
+          ]
+        ]
+      },
+      "nonempty": {
+        "codeWindows": [
+          {
+            "startRva": 47214304,
+            "endRva": 47214423,
+            "sha256": "E684C9563F98E4F08335D174A387C661F4650B293DE4A658A457F6D4518E8C9D",
+            "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+          },
+          {
+            "startRva": 79913336,
+            "endRva": 79913436,
+            "sha256": "8F7BB0E3E2FB995A07F7A225E9BD9F1D6BE96E29BA1F4D0EC4B6B68A0142AF9D",
+            "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+          }
+        ],
+        "program": [
+          [
+            47214304,
+            "4053"
+          ],
+          [
+            47214306,
+            "4883EC20"
+          ],
+          [
+            47214310,
+            "488BD9"
+          ],
+          [
+            47214313,
+            "488B0DA0C62E0A"
+          ],
+          [
+            47214320,
+            "83B9E000000000"
+          ],
+          [
+            47214327,
+            "743B"
+          ],
+          [
+            47214329,
+            "488B81B8000000"
+          ],
+          [
+            47214336,
+            "488B10"
+          ],
+          [
+            47214339,
+            "4885D2"
+          ],
+          [
+            47214342,
+            "7449"
+          ],
+          [
+            47214344,
+            "817A18B0010000"
+          ],
+          [
+            47214351,
+            "0F8F63F2F201"
+          ],
+          [
+            47214357,
+            "488B4310"
+          ],
+          [
+            47214361,
+            "4885C0"
+          ],
+          [
+            47214364,
+            "740E"
+          ],
+          [
+            47214366,
+            "83781000"
+          ],
+          [
+            47214370,
+            "7608"
+          ],
+          [
+            47214372,
+            "32C0"
+          ],
+          [
+            47214374,
+            "4883C420"
+          ],
+          [
+            47214378,
+            "5B"
+          ],
+          [
+            47214379,
+            "C3"
+          ]
+        ]
+      }
+    }
+  },
+  "listItem": {
+    "method": [
+      286550,
+      "System.Collections.Generic.List`1",
+      "get_Item",
+      47902656
+    ],
+    "codeWindows": [
+      {
+        "startRva": 47902656,
+        "endRva": 47902740,
+        "sha256": "268A339A12174B6DB063A210AE73D2D5E8709F8E40F1EAD9C4BF033BDFEE31E5",
+        "boundary": "Registered entry or exact chained unwind-owned range; discovery only."
+      }
+    ],
+    "program": [
+      [
+        47902656,
+        "4883EC28"
+      ],
+      [
+        47902660,
+        "4C8BC9"
+      ],
+      [
+        47902663,
+        "443B4218"
+      ],
+      [
+        47902667,
+        "733F"
+      ],
+      [
+        47902669,
+        "488B4210"
+      ],
+      [
+        47902673,
+        "4885C0"
+      ],
+      [
+        47902676,
+        "742A"
+      ],
+      [
+        47902678,
+        "443B4018"
+      ],
+      [
+        47902682,
+        "732A"
+      ],
+      [
+        47902684,
+        "4963C8"
+      ],
+      [
+        47902687,
+        "48FFC1"
+      ],
+      [
+        47902690,
+        "48C1E105"
+      ],
+      [
+        47902694,
+        "0F100401"
+      ],
+      [
+        47902698,
+        "0F104C0110"
+      ],
+      [
+        47902703,
+        "498BC1"
+      ],
+      [
+        47902706,
+        "410F1101"
+      ],
+      [
+        47902710,
+        "410F114910"
+      ],
+      [
+        47902715,
+        "4883C428"
+      ],
+      [
+        47902719,
+        "C3"
+      ]
+    ]
+  },
+  "listRegistration": {
+    "pointer": 6490353600,
+    "methodSpecIndex": 255719,
+    "registration": {
+      "tableIndex": 242708,
+      "va": 6642554016,
+      "methodSpecIndex": 255719,
+      "rawHex": "E7E60300D7B20300BED50000FFFFFFFF",
+      "indices": [
+        242391,
+        54718,
+        -1
+      ]
+    },
+    "classInstantiation": {
+      "index": 5404,
+      "table_slot_va": 6626017408,
+      "record_va": 6625672912,
+      "argument_vector_va": 6668389048,
+      "padding_hex": "00000000",
+      "arguments": [
+        {
+          "index": 0,
+          "type_pointer_va": 6664787880,
+          "raw_type_record_hex": "A9000000000000000000118000000000"
+        }
+      ]
+    },
+    "methodInstantiation": {
+      "index": -1,
+      "table_slot_va": null,
+      "record_va": null,
+      "argument_vector_va": null,
+      "padding_hex": "",
+      "arguments": []
+    },
+    "methodDefinitionIndices": [
+      286550
+    ],
+    "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+  },
+  "listReturnParameterOwner": {
+    "parameterIndex": 15651,
+    "parameterOffset": 42810340,
+    "parameterRawHex": "89130000522400000000000000000000",
+    "containerIndex": 5001,
+    "containerOffset": 43046768,
+    "containerRawHex": "919200000100000000000000233D0000",
+    "typeIndex": 37521,
+    "ordinal": 0,
+    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted."
+  },
+  "blackboardTypeDefinition": 179,
+  "blackboardAncestry": [
+    {
+      "definition": 179,
+      "name": "Beyond.Blackboard",
+      "fields": [],
+      "offsets": null,
+      "parent": {
+        "index": 59430,
+        "pointerRva": 205762776,
+        "rawHex": "1835258D010000000000150000000000",
+        "kind": 21,
+        "name": "System.Collections.Generic.List`1<Beyond.Blackboard+DataPair>",
+        "definition": 37521,
+        "definitionRawHex": "91920000000000000000120000000000",
+        "instanceIndex": 5404,
+        "arguments": [
+          {
+            "pointerRva": 222336936,
+            "rawHex": "A9000000000000000000118000000000",
+            "name": "Beyond.Blackboard+DataPair"
+          }
+        ]
+      }
+    },
+    {
+      "definition": 37521,
+      "name": "System.Collections.Generic.List`1",
+      "fields": [
+        {
+          "index": 196502,
+          "name": "DefaultCapacity",
+          "type": {
+            "index": 126187,
+            "pointerRva": 219353128,
+            "rawHex": "3B8D0000000000005180088000000000",
+            "kind": 8,
+            "name": "int"
+          }
+        },
+        {
+          "index": 196503,
+          "name": "_items",
+          "type": {
+            "index": 97100,
+            "pointerRva": 204895736,
+            "rawHex": "78F3408D0100000001001D0000000000",
+            "kind": 29,
+            "name": "VAR[15651][]"
+          }
+        },
+        {
+          "index": 196504,
+          "name": "_size",
+          "type": {
+            "index": 126158,
+            "pointerRva": 219353912,
+            "rawHex": "3B8D0000000000000100088000000000",
+            "kind": 8,
+            "name": "int"
+          }
+        },
+        {
+          "index": 196505,
+          "name": "_version",
+          "type": {
+            "index": 126158,
+            "pointerRva": 219353912,
+            "rawHex": "3B8D0000000000000100088000000000",
+            "kind": 8,
+            "name": "int"
+          }
+        },
+        {
+          "index": 196506,
+          "name": "_syncRoot",
+          "type": {
+            "index": 133409,
+            "pointerRva": 219336520,
+            "rawHex": "068E00000000000081001C0000000000",
+            "kind": 28,
+            "name": "object"
+          }
+        },
+        {
+          "index": 196507,
+          "name": "s_emptyArray",
+          "type": {
+            "index": 97101,
+            "pointerRva": 204896024,
+            "rawHex": "78F3408D0100000031001D0000000000",
+            "kind": 29,
+            "name": "VAR[15651][]"
+          }
+        }
+      ],
+      "offsets": {
+        "DefaultCapacity": 0,
+        "_items": 0,
+        "_size": 0,
+        "_version": 0,
+        "_syncRoot": 0,
+        "s_emptyArray": 0
+      },
+      "parent": {
+        "index": 133396,
+        "pointerRva": 222428568,
+        "rawHex": "068E00000000000000001C0000000000",
+        "kind": 28,
+        "name": "object"
+      }
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Current named nongeneric fields, actual runtime field offsets and type-size records; constructor/numeric/list registered entries, exact owned windows, reciprocal closed list return VAR and DataPair argument.",
+    "direct": "Three complete constructor programs store/copy the named value cells; selected predicate uses the managed String length; complete list success path reads and writes two 16-byte chunks and returns the original output address.",
+    "conditional": "Stable disabled DWORD barrier flag, normal instruction/call return, coherent pair/list/String state, readable source and writable output, selected raw class/dispatch guards and index below both unsigned bounds.",
+    "structuralOnly": "Transferred padding is opaque; managed reference-containing value extent is not a serialized wire schema. Open generic List field names/offsets are not instantiated field proof.",
+    "unresolved": "Enabled barrier effects, initialization/patch/failure paths, actual receiver/state/invocation, whole Blackboard lookup/input origins/outcomes, generic provider/public GetValue, complete actions and roots."
+  }
+}

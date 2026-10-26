@@ -55,6 +55,8 @@ Staging and publication
     ``--skip_sources_file`` with its superseded bundle slots
     (``unity_overlay.py``), so staging holds live objects only. Raw containers
     (bundles, PCKs, streaming chunks) are never dumped.
+    A failed required VFS index records a failure summary and stops before
+    overlay selection or workers; older on-disk indexes are not current results.
 
 Exact-only output
     AnimeStudio writes a non-exact sub-tree as a ``{"$undecoded": ...}``
@@ -117,6 +119,8 @@ Scheduling (each default was measured; re-measure before changing one)
 """
 
 from __future__ import annotations
+
+from scripts.game_data.extraction.unity_dependencies import builtin_inputs, files_for_source, MODEL_TYPES
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1073,7 +1077,7 @@ def asset_entry_identity(entry: dict[str, Any]) -> dict[str, Any]:
 
 def stable_asset_export_signature(item: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
     stage_signature = item.get("stage_signature") or {}
-    return {
+    result = {
         "stage": plan.get("stage"),
         "type_spec": item.get("type_spec"),
         "export_type": stage_signature.get("export_type"),
@@ -1084,6 +1088,9 @@ def stable_asset_export_signature(item: dict[str, Any], plan: dict[str, Any]) ->
         "output_extension": animestudio_convert_output_extension(animestudio_type_name(item.get("type_spec"))),
         "parse_dependencies": stage_signature.get("parse_dependencies"),
     }
+    if "external_dependencies" in stage_signature:
+        result["external_dependencies"] = stage_signature["external_dependencies"]
+    return result
 
 
 ASSET_CACHE_REQUIRED_PLAN_SIGNATURES = (
@@ -2257,6 +2264,8 @@ def build_animestudio_stage_signature(stage: str, options: dict[str, Any], type_
         "logger_flags": list(ANIMESTUDIO_LOGGER_FLAGS),
     }
     dependencies = animestudio_convert_parse_dependencies(stage, options.get("export_type"), type_spec)
+    if type_spec is not None and animestudio_type_name(type_spec) in MODEL_TYPES and options.get("export_type") == "Convert":
+        signature["external_dependencies"] = [dict(row) for row in options.get("unity_dependencies", [])]
     if dependencies:
         signature["parse_dependencies"] = list(dependencies)
     if type_spec is not None and animestudio_type_name(type_spec) == "MonoBehaviour":
@@ -2938,6 +2947,10 @@ def summarize_vfs_index(path: Path, result: CommandResult | None = None) -> dict
         "stdout_log": result.stdout_log if result is not None else None,
         "stderr_log": result.stderr_log if result is not None else None,
     }
+    if result is not None and result.returncode != 0:
+        summary["current"] = False
+        summary["error"] = "index command failed; an existing index belongs to an earlier run"
+        return summary
     if not path.exists():
         return summary
 
@@ -2960,6 +2973,42 @@ def summarize_vfs_index(path: Path, result: CommandResult | None = None) -> dict
             }
         )
     return summary
+
+
+def report_vfs_index_failure(
+    *, game_root: Path, output_root: Path, reports_root: Path, reports_dir: Path,
+    run_id: str, sources: list[str], source_sizes: dict[str, Any],
+    commands: list[CommandResult],
+) -> int:
+    """Record a required catalog failure before overlay selection or Unity work.
+
+    Keep the export's writing marker and published provenance unchanged. The
+    failure receipt never borrows counts from an older on-disk index.
+    """
+    failures = [asdict(item) for item in commands if item.returncode != 0]
+    summary = {
+        "game_root": str(game_root), "output_root": str(output_root),
+        "reports_root": str(reports_root), "reports_run_root": str(reports_dir),
+        "report_run_id": run_id, "sources_selected": sources,
+        "current_source_sizes": source_sizes,
+        "status": "failed", "failure_phase": "vfs_index",
+        "commands": [asdict(item) for item in commands],
+        "command_failure_count": len(failures), "command_failures": failures,
+        "publication_skipped": True,
+    }
+    lines = ["# Full Export Summary", "", "Required VFS indexing failed; publication was skipped.",
+             "Overlay selection, structured dumps and Unity workers were not started.", ""]
+    for failure in failures:
+        detail = (f"command failed: {failure['name']} returncode={failure['returncode']} "
+                  f"stderr={failure['stderr_log']}")
+        log(detail)
+        lines.append(f"- {detail}")
+    for directory in dict.fromkeys((reports_dir, reports_root)):
+        ensure_dir(directory)
+        write_json(directory / "export_full_summary.json", summary)
+        (directory / "export_full_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    log(f"stopped after required VFS index failure; summary={reports_dir / 'export_full_summary.json'}")
+    return 1
 
 
 def summarize_vfs_indexes(
@@ -3608,6 +3657,7 @@ def record_extraction_provenance(
     source_sizes: dict[str, Any],
     previous_summary: dict[str, Any],
     run_id: str,
+    unity_auxiliary_inputs: dict[str, list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """Record which installed build each output published by this run came from.
 
@@ -3649,6 +3699,8 @@ def record_extraction_provenance(
             {**stamp, "partial": partial_unity_types[type_name]}
             if type_name in partial_unity_types else stamp
         )
+        if unity_auxiliary_inputs is not None and type_name in unity_auxiliary_inputs:
+            unity[type_name] = {**unity[type_name], "auxiliaryInputs": unity_auxiliary_inputs[type_name]}
     if asset_map_refreshed:
         provenance.setdefault("meta", {})["asset_map"] = stamp
     ensure_dir(path.parent)
@@ -4617,6 +4669,13 @@ def run_animestudio_stage(
     if export_type is not None:
         cmd.extend(["--export_type", export_type])
     cmd.extend(["--cab_map_dir", str(ensure_dir(ExportLayout(output_root).cab_map_dir))])
+    if use_map_op and "CABMap" in str(map_op) and "Load" in str(map_op):
+        # Persistent prefabs can retain meshes in StreamingAssets. The primary
+        # layer owns duplicate CABs; the other layer supplies absent references.
+        fallback_source = "StreamingAssets" if source == "Persistent" else "Persistent"
+        fallback_map = ExportLayout(output_root).cab_map_dir / f"endfield_{fallback_source.lower()}_assets.bin"
+        if fallback_map.is_file():
+            cmd.extend(["--fallback_cab_map", str(fallback_map)])
     if stage != "maps":
         cmd.extend(["--export_manifest_jsonl", str(animestudio_export_manifest_path(output_root, source, name))])
         skip_sources_file = ANIMESTUDIO_SKIP_SOURCES_FILES.get(source)
@@ -4713,6 +4772,9 @@ def run_animestudio_stage(
     }
     if export_type == "Convert" and {"Animator", "GameObject"} & exported_models:
         cmd.append("--no_model_textures")
+        dependency_files = files_for_source(input_root, source)
+        if dependency_files:
+            cmd.extend(["--dependency_files", *(str(path) for path in dependency_files)])
     # Every document destined for Unity.sqlite goes into a staged store; media
     # remains loose so its file-based conversion cache and browser paths work.
     document_store: Path | None = None
@@ -6541,6 +6603,8 @@ def main() -> int:
 
     if not game_root.exists():
         raise SystemExit(f"Game root not found: {game_root}")
+    uses_unity_model_dependencies = not args.skip_animestudio and bool(MODEL_TYPES & set(extraction.convert_types))
+    unity_model_dependencies = builtin_inputs(game_root) if uses_unity_model_dependencies else []
     if not structured_dumper.exists() and (not args.skip_structured or vfs_index_enabled):
         raise SystemExit(f"structured dumper not found: {structured_dumper}")
     if not animestudio.exists() and not args.skip_animestudio:
@@ -6822,6 +6886,13 @@ def main() -> int:
                 result = run_logged_command(vfs_index_command_name(source, block_name), cmd, ROOT, source_report_dir)
                 command_results.append(result)
                 command_results_by_name[result.name] = result
+                if result.returncode != 0:
+                    return report_vfs_index_failure(
+                        game_root=game_root, output_root=output_root,
+                        reports_root=reports_root, reports_dir=reports_dir,
+                        run_id=report_run_id, sources=list(selected_sources),
+                        source_sizes=source_sizes, commands=command_results,
+                    )
 
         if vfs_index_enabled or any(path.exists() for path in current_vfs_index_paths):
             vfs_index_summary[source] = summarize_vfs_indexes(output_root, source, command_results_by_name)
@@ -6963,6 +7034,7 @@ def main() -> int:
                     managed_reference_diagnostics_include_exact_matches
                 )
                 options["asset_cache_enabled"] = animestudio_asset_cache_enabled
+                options["unity_dependencies"] = unity_model_dependencies
                 options["sprite_images"] = bool(args.sprite_images)
                 options["overlay_skip_sha256"] = overlay_skip_signatures.get(source)
                 options["asset_shards"] = args.animestudio_shards
@@ -7293,6 +7365,8 @@ def main() -> int:
             )
 
     publish_summary: dict[str, Any] = {}
+    if uses_unity_model_dependencies and builtin_inputs(game_root) != unity_model_dependencies:
+        raise RuntimeError("Selected Unity resource dependencies changed during extraction; refusing publication")
     failed_before_publish = [item.name for item in command_results if item.returncode != 0]
     # A stage can exit 0 yet report failed items (for example missing outputs);
     # those block publication just like a failed command.
@@ -7349,6 +7423,7 @@ def main() -> int:
             source_sizes=source_sizes,
             previous_summary=previous_summary,
             run_id=report_run_id,
+            unity_auxiliary_inputs={kind: unity_model_dependencies for kind in MODEL_TYPES} if uses_unity_model_dependencies else None,
         )
 
     unresolved_dir = ensure_dir(ExportLayout(output_root).extraction_failures_dir)
