@@ -1,4 +1,24 @@
-"""PointFinder stored fields composed from independent Vector3 child spans."""
+"""PointFinder stored fields composed from independent Vector3 child spans.
+
+Evidence and admission boundary:
+
+PointFinder has a maintained named reader under
+`buff_selector_point_finder_native.json`
+and `buff_selector_point_finder.py`.
+The current selector union route, source contexts and generated setter
+transfers prove `positionOffset` and `rotationOffset` as two separate
+BlackboardVector3 fields. Each vector owns an independent original byte
+range and reuses the authenticated x/y/z scalar children; null vectors and
+null scalar children remain distinct. Original finder spans also reparse
+their enclosing direct SelectorData field, preserving the recorded tag,
+subtype and exact field boundary. The maintained SelectorData composition
+is also replayed on the same original parent ranges; its remaining two
+lists are independently verified empty. Positive lists retain their own
+separate evidence requirements. This is an `exact` stored component with
+`conditional` composition: complete roots still require the full family
+gate and independent original-root replay. Evaluated offsets, resulting
+coordinates, selected points and runtime execution remain `unresolved`.
+"""
 from __future__ import annotations
 import hashlib
 import json

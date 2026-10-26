@@ -1,4 +1,22 @@
-"""Selected old-array handoff, release thunk/body and ordinary import names."""
+"""Selected old-array handoff, release thunk/body and ordinary import names.
+
+Cleanup uses the same temporary QWORD field populated from the old global
+entry-array pointer. It tests then reloads separately, so field changes can alter
+the actual RCX argument. The release thunk is an exact tail jump preserving
+arguments/stack/flags, without a physical-extent claim. Complete destination
+skips heap/error calls for null; otherwise R8 is entry pointer, RDX zero flags,
+RCX freshly read heap-handle global, through declared HeapFree IAT cell.
+
+pe_imports proves terminated lookup ownership, unbound on-disk IAT equality and
+KERNEL32.dll HeapFree/GetLastError declarations, not live binding or callee.
+Nonzero low EAX skips error; zero calls GetLastError, passes its DWORD through
+local conversion, saves EAX and writes it through another helper's full returned
+pointer. Helper algorithms/writable slot identity remain separate; ordinary
+return is not a whole-function success Boolean. API success interpretation
+requires genuine binding and valid heap/block ownership; thread last-error
+semantics establish no actual release. This is conditional argument/error flow,
+not observed cleanup, live selection or positive camera list/root admission.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

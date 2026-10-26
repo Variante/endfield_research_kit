@@ -1,4 +1,17 @@
-"""Static inherited ctor context and a folded registered closed return entry."""
+"""Static inherited ctor context and a folded registered closed return entry.
+
+The complete ListFormatter class context names inherited constructor slot
+seven and declared parent slot eight. Parent MemoryPackFormatter<List<T>> and
+constructor argument pointers equal the List type tied to the reciprocal
+ListFormatter parameter; this is static identity, not live slot population.
+generic_entries retains folded aliases, null pointers and duplicate rows;
+the strict resolver still refuses folded identity. The shared Object entry
+starts RET 0: its closed program preserves flags/general registers, writes no
+data and pops only the ordinary readable return address. Neither unique named
+body nor physical extent beyond RET follows. The cold indirect target has not
+been observed equal to this pointer. Inflation, runtime geometry/population,
+other effects and positive camera list/root admission remain separate.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

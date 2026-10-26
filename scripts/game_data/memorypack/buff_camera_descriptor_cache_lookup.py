@@ -1,4 +1,22 @@
-"""Selected descriptor triple-key probe and caller frame/layout join."""
+"""Selected descriptor triple-key probe and caller frame/layout join.
+
+For a coherent zero-flag query wrapper, an explicit hit compares all three
+QWORDs (zero/eight/sixteen) with the entry value. Sixteen-byte entries hold a
+DWORD marker and value pointer; nonzero wrapper flags can bypass triple equality.
+Explicit miss stores end as current/end; hit stores selected current and end;
+both return output address. The early count branch delegates to the separately
+proved empty-output helper, whose full false-hit exclusion needs coherent globals.
+
+Caller frame joins the initialized three-QWORD key, zero-flag wrapper and distinct
+iterator output. It compares returned current with a freshly computed global end,
+then reads entry value; new allocation uses the same wrapper for insertion.
+Key stability across opaque calls and stable post-lookup globals remain required.
+Hashing combines anonymous first-pointee DWORD and shifted class/method bits;
+mask starts capacity-minus-one, and each probe increments step, adds to index,
+then masks. descriptor_cache_helper_control proves R9/R10/R11 preservation;
+ordinary Win64 alone cannot. Growth effects, termination, later contents and
+runtime selection remain open; no positive list/parent/root admission.
+"""
 from __future__ import annotations
 import hashlib
 import json

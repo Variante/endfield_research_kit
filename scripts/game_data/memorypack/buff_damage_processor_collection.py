@@ -4,6 +4,25 @@ The typed owner/source join is direct. The shared reference-list formatter's
 wire program is conditional on formatter selection; original owner spans and
 complete following fields are required by callers before root admission.
 No modifier root is fabricated, and stored operands do not prove mutations.
+
+Evidence and admission boundary:
+
+For the separate `damageProcessors` member, selected reads in
+`buff_damage_action_native.json` and `buff_damage_modifier_child_native.json`
+resolve the same closed `List<DamageProcessorBase>` MethodSpec and actual native
+helper. The maintained `buff_damage_processor_collection.py` now binds this
+source to DamageUnit's own member and composes ordered processor elements through
+their independent scalar, scale, text, attribute-modifier and calculation span
+readers. Signed null and empty lists remain distinct. Original source hashes,
+element endpoints and the following tag-list and remaining unit fields must
+rejoin before admission; the root modifier's receipt does not stand in for this
+different parent. The reviewed `buff_damage_processor_collection_native.json`
+authenticates the shared reference-list count program and its registered Object
+instantiation as a conditional grammar reference. Live inflated list/provider
+selection is still unresolved. Unsupported variants and unproved null union
+elements refuse; raw numeric, payload and flag bits do not establish damage
+arithmetic or accepted mutations. Whole-root coverage requires the complete
+family gate and canonical original-byte replay.
 """
 from __future__ import annotations
 

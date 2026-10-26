@@ -1,4 +1,12 @@
-"""Selected-build guarded source-return proof; legacy camera adoption is separate."""
+"""Selected-build guarded source-return proof; legacy camera adoption is separate.
+
+The normal camera-group 'and' path preserves the preceding source helper's
+full reference return into the setter argument when its receiver is nonzero.
+The error-path call before INT3 is not the value origin: a zero receiver has
+no ordinary setter continuation. The legacy camera catalog cannot prove this
+normal source return. Closed list contexts and element/cursor composition
+remain independent obligations.
+"""
 from __future__ import annotations
 import hashlib
 from pathlib import Path

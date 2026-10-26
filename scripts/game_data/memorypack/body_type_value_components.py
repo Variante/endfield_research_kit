@@ -1,4 +1,11 @@
-"""BodyTypeDef's own MC3/default32 grammar below any parent transfer."""
+"""BodyTypeDef's own MC3/default32 grammar below any parent transfer.
+
+MC3 stores byte-backed body enum, Int32 custom id and signed pooled-string
+index, in order. FF is a one-byte default; managed padding/display name consume
+no wire bytes. Complete two-slice setter copy retains both reference lanes
+despite one explicit barrier, under its disabled-collector condition.
+Parent lifetimes/frames, whole-owner/EOF and runtime helpers remain separate.
+"""
 from scripts.game_data.memorypack import body_type_value_sources as source
 
 SCHEMA='endfield.body-type-value-components.v1'

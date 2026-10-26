@@ -1,4 +1,19 @@
-"""Authenticate CastSkill's selected ordinary call-completion return."""
+"""Authenticate CastSkill's selected ordinary call-completion return.
+
+Evidence and admission boundary:
+
+The separate `buff_cast_skill_consumer_flow_native.json` contract and
+`buff_cast_skill_consumer_flow_native` loader authenticate a narrower local
+completion program through `il2cpp.call_completion_return`. The actual
+`TryCastSkillDuringAction` callee returns void. After it returns ordinarily,
+CastSkill assigns true to AL and directly reaches the complete matching
+frame restore and return, preserving that Boolean. The checked entry saves,
+allocation, exit jump and every epilogue instruction exclude a partial
+return-tail claim. This proves the selected compiled completion value; it
+does not prove branch feasibility, skill acceptance or effects, and that
+true value is not a success result returned by the void callee. Other exits,
+flag forwarding and inherited cast information remain separate.
+"""
 from __future__ import annotations
 
 import hashlib

@@ -10,6 +10,12 @@ The source requires coherent selected nominal MethodInfo, sufficient contiguous
 disjoint input/output/Reader storage, nonwrapping counters and normal compatible
 Win64 helpers. Actual parent locals/setters/frames, refill/error paths, runtime
 animation resolution and enclosing owner/physical EOF remain separate proofs.
+
+The selected call independently checks nominal MethodSpec, formal parameter,
+actual R8 context and reached helper; canonical registration does not alias it.
+Adjacent montage fields confirm packed extent. Inline sources separately capture
+all bytes across Advance/getter in preserved vector/integer registers; named
+field/cache transfer and parent frame remain extra joins.
 """
 import hashlib
 import json

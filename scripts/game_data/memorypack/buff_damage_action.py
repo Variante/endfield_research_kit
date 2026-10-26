@@ -21,6 +21,18 @@ calculation and effect values for independently typed parent fields. Strings,
 flags, enums and floats remain
 raw stored values; live formatter selection, evaluated blackboards, damage
 execution and a whole BuffData root are outside this module's proof.
+
+Evidence and admission boundary:
+
+The maintained DamageUnit reader now composes positive `damageTags` through
+the independently authenticated signed nullable list grammar in
+`skill_damage_unit_gameplay_tag_list_native.json` and named GameplayTag elements
+in `buff_aura_heal_actions_native.json`. Null elements carry one byte; non-null
+elements carry their own one-member header and four scalar bytes. The Damage
+contract binds this collection to its named source member and fails closed on
+either missing proof. Skill keeps its own cost-list and tag-list receipts when
+composing the same physical DamageUnit. Cost lists do not gain Buff admission
+from this tag-list proof; tag names and effects remain unresolved.
 """
 from __future__ import annotations
 

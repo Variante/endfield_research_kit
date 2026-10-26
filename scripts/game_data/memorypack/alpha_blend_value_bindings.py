@@ -3,6 +3,13 @@
 The exact managed56 transfer preserves runtime-only floats and padding. Its
 wire capability comes from the independent Alpha/Beyond curve owner. This
 module grants neither a whole montage owner nor runtime provider selection.
+
+Ordinary and closed helper paths retain independent owners; the closed helper
+owns its internal MethodInfo instead of borrowing absent outer context.
+The exact RBP montage transfer uses distinct hidden/argument locals with live
+ranges ending at the setter; later stack reuse is checked against that lifetime.
+Both full copy certificates and all frames remain required. Stack placement or
+shared byte width grants no other value's grammar.
 """
 import hashlib,json
 from scripts.game_data.memorypack import alpha_blend_value_components as owner

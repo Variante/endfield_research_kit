@@ -1,4 +1,21 @@
-"""Complete class-context CFG and conditional slot publication geometry."""
+"""Complete class-context CFG and conditional slot publication geometry.
+
+The complete exception-owned initializer graph checks branch/continuation
+boundaries, aligned call home space and restored normal returns, retaining
+traps/indirect calls without proving termination, effects or live execution.
+The same range start/count select sixteen-byte definitions; normal iterations
+advance definitions by sixteen, output by eight and decrement remaining count.
+Completion reloads the original compatible array return and publishes it.
+
+The method-kind branch reads a declaration payload index, passes distinct
+descriptors to one helper with a saved generic context, constructs a three-QWORD
+key and stores the pointer-producing helper's full return into the output slot.
+Lookup/allocation/fill, substitution, cache selection and intervening effects
+remain unresolved. Compatible class/module, normal helpers and stable disjoint
+frame/definition/output storage condition the geometry: inherited constructor
+slot seven occupies byte offset fifty-six, matching its physical read. No live
+slot value, cold target, positive list or root is thereby observed.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

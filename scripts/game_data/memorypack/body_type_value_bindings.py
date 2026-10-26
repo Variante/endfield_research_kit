@@ -5,6 +5,10 @@ BodyTypeDef source, both reference lanes/padding, complete named setter replay,
 once-only32-byte parent copy, hidden local and all four enclosing frames. Wire
 bytes come exclusively from the separate own MC3 capability. Provider/helper
 selection and runtime behavior retain the source owner's conditions.
+
+The join also replays setter family/hash, actual ReadValue MethodSpec/E8 target
+and all four restored frames. Synthetic refusal fixtures grant no actual parent:
+fresh complete caller and independent MC3/default32 child remain required.
 """
 from scripts.game_data.memorypack import body_type_value_components as owner
 from scripts.game_data.memorypack import body_type_value_codec as codec

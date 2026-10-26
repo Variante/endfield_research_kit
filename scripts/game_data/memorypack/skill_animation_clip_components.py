@@ -4,6 +4,11 @@ This is not a native gate. Fresh generated caller and nominal source owners
 must supply the inputs. Typed hidden36 and literal inline36 are distinct source
 profiles; both must reach their actual named field through all36 bytes and
 complete parent frames. Marshal40 and the separate MC7 wrapper grant no bytes.
+
+Only complete source/owned-field/frame composition emits animation-clip-raw36.
+Every packed byte, including Boolean/padding, is consumed; initial FF is data,
+not an MC7/default header. Montage activation, playback and runtime
+provider/helper effects remain separate.
 """
 import hashlib
 import json

@@ -1,4 +1,25 @@
-"""Current insertion control and conditional entry/output stores."""
+"""Current insertion control and conditional entry/output stores.
+
+New-entry stores write fresh wrapper DWORD marker at zero and value pointer
+at eight in sixteen-byte entries, choosing stored-count increment or auxiliary-
+count decrement. Matched-existing paths omit those local stores; opaque growth/
+rebuild may still write. Both store table/current/end and distinct inserted byte
+(one new, zero matched), returning supplied output with corresponding slot.
+Scalar QWORD memory round-trip preserves end; packed pair and eight-byte shift
+supply table/current. scalar_double_memory proves physical scalar widths only,
+not unused upper lanes.
+
+Complete control retains rebuild/capacity/replacement/publication/release calls
+and trapped error paths; growth reloads capacity/count before rehash. FP routing
+is structural, not load-factor/rounding policy. Proved comparator preserves live
+probe registers; caller reloads query value after probe. Saved nonvolatile
+pointers require ordinary callees and disjoint storage. Composition keeps its
+separate allocation pointer across insertion; the result is not proved to replace
+it with an existing entry. Fresh reads/opaque calls leave pointer/content stability,
+original-allocation insertion and retained-map-return identity unresolved.
+Allocation/migration/release effects, growth policy, termination, concurrency,
+runtime selection and positive camera list/root admission remain separate.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

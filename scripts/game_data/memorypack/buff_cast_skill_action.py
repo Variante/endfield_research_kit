@@ -3,6 +3,19 @@
 The paired BlackboardString retains both raw payloads and its selection flag.
 Two TargetSettings records have separate original spans. No skill invocation,
 cost decision or interrupt behavior is established by these stored operands.
+
+Evidence and admission boundary:
+
+The maintained `buff_cast_skill_action` reader uses
+`buff_cast_skill_action_native.json` to join `buff_27_native.json`'s named
+parent source/destination program to its selected action route. Its `caster`
+and `target` are separately owned TargetSettings records, while `skillId`
+composes the independently authenticated paired BlackboardString. Null wrappers,
+null/empty payloads and noncanonical flag bytes retain their original states.
+These are stored operands; evaluating a skill ID, selecting a caster/target,
+accepting costs, interrupting or invoking a skill are separate consumer claims.
+Unsupported nested target children refuse the action instead of closing it
+through a matching parent name or candidate endpoint.
 """
 from __future__ import annotations
 

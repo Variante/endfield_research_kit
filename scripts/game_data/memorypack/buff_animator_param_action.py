@@ -2,6 +2,19 @@
 
 Raw floats and parameter enum values are retained. The end and primary
 parameter records keep separate null states; no animator effects are claimed.
+
+Evidence and admission boundary:
+
+The maintained `buff_animator_param_action` reader and
+`buff_animator_param_action_native.json` use the separate parent and child
+programs in `buff_14a_native.json`. `endAction` and `paramAction` each have their
+own independently nullable AnimatorParamAction span. That child's ordered
+animator parameter, Boolean value, float value, integer value and typed
+AnimatorControllerParameterType enum retain raw bytes/bits. The required final
+enum precedes the next parent field; truncating it cannot borrow the parent's
+name-payload boundary. Name encoding, action-on-end selection, receiver state
+and animation effects remain unresolved. Complete root admission still needs
+the current family and canonical original-byte gates.
 """
 from __future__ import annotations
 import hashlib

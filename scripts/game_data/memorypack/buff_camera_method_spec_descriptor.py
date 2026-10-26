@@ -1,4 +1,18 @@
-"""Registered MethodSpec descriptor flow and selected inherited-ctor row join."""
+"""Registered MethodSpec descriptor flow and selected inherited-ctor row join.
+
+The complete getter sign-extends its index into twelve-byte MethodSpec rows
+and forwards definition index to the plain definition helper. Separate class
+and method indices use eight-byte pointer-table slots; signed sentinel gives
+zero. The selected constructor row joins List<T> class instantiation and null
+method instantiation. Composition receives definition return and both pointers;
+the cache stores its full return but the ordinary return re-reads that cell.
+The hit branch also tests and reads separately, requiring cache/global stability.
+
+No index bounds check is proved. Nonnegative in-range signed index, compatible
+tables, valid cache and normally returning ABI-preserving helpers are conditions.
+Definition/descriptor identity, substitution, helper effects, cache history and
+runtime cold target remain unresolved; no positive list/parent/root admission.
+"""
 from __future__ import annotations
 import hashlib,json,struct
 from pathlib import Path

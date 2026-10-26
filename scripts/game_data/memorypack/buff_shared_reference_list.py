@@ -1,6 +1,29 @@
 """Selected shared Object list control and instruction representations only.
 
 This validator does not register a stored-action reader or admit any root.
+
+The complete exception-owned graph includes chained ranges, branches,
+indirect continuations, returns and traps. Pointer load, sign-extended DWORD,
+saved stack count, callback output address, QWORD reload and indexed store
+prove eight-byte reference cells on this Object path, not enum wire width.
+Registration comparison normalizes JSON tuple/list representation only.
+
+The count guard compares signed wrapped QWORD total-minus-sign-extended-
+consumed with signed source count. The direct cursor adds four at native
+pointer/DWORD widths; wrapped DWORD subtraction's sign selects the alternate
+helper. These operations alone do not prove valid bounds. Minus one clears
+output without provider/element calls. Every nonnull count, including zero,
+reaches the provider-query candidate before the positive-count test. Explicit
+rejection below minus one is unproved; opaque helpers may reject it.
+
+Each element call receives saved provider candidate and reader, a local output
+address and a fresh companion from a fresh class read. CFG/backedge origin
+checks reject unmodelled overwrites. The bound reload uses its saved DWORD,
+not the register reused for context. Stable bound/output storage, valid
+references, ordinary callees and synchronization progress condition callback
+count arguments; no executed callback count or loop termination is guaranteed.
+GC meaning, callback algorithms, live selection, concrete camera/DamageType
+grammar, whole-list cursor composition and parent/root admission stay separate.
 """
 from __future__ import annotations
 import hashlib,json

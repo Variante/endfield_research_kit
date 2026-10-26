@@ -3556,57 +3556,25 @@ formatter and typed composition, then replay original source spans through the
 maintained readers. Trial variants, coverage and per-source results belong in
 the generated historical-schema leads report.
 
-The maintained `buff_cast_skill_action` reader uses
-`buff_cast_skill_action_native.json` to join `buff_27_native.json`'s named
-parent source/destination program to its selected action route. Its `caster`
-and `target` are separately owned TargetSettings records, while `skillId`
-composes the independently authenticated paired BlackboardString. Null wrappers,
-null/empty payloads and noncanonical flag bytes retain their original states.
-These are stored operands; evaluating a skill ID, selecting a caster/target,
-accepting costs, interrupting or invoking a skill are separate consumer claims.
-Unsupported nested target children refuse the action instead of closing it
-through a matching parent name or candidate endpoint.
+CastSkill composes independent TargetSettings and BlackboardString receipts;
+unsupported children refuse. Casting acceptance/effects remain separate.
+See [`buff_cast_skill_action.py`](../../scripts/game_data/memorypack/buff_cast_skill_action.py).
 
-The independent names-only consumer groups in
-`buff_action_consumers_native.json` prove the incoming owned CastSkill Data
-reads, `caster` flowing to `GetFirstTarget.targetSettings`, and `skillId`
-flowing to `ActionBlackboardExtensions.GetValue.param`. They also prove the
-three flag reads and the named target-view/cast calls. The target-view operand
-forwarding remains a separate obligation: the current reference-flow checker
-excludes that callee's aggregate return ABI. Its false-IFix property path
-returns the typed `CustomReturnType` enum through a complete return epilogue.
+CastSkill's named consumer reads and typed policy do not prove target-view
+aggregate-return operand forwarding.
+See [`buff_action_consumers_native.py`](../../scripts/game_data/buff_action_consumers_native.py).
 
-The separate `buff_cast_skill_consumer_flow_native.json` contract and
-`buff_cast_skill_consumer_flow_native` loader authenticate a narrower local
-completion program through `il2cpp.call_completion_return`. The actual
-`TryCastSkillDuringAction` callee returns void. After it returns ordinarily,
-CastSkill assigns true to AL and directly reaches the complete matching
-frame restore and return, preserving that Boolean. The checked entry saves,
-allocation, exit jump and every epilogue instruction exclude a partial
-return-tail claim. This proves the selected compiled completion value; it
-does not prove branch feasibility, skill acceptance or effects, and that
-true value is not a success result returned by the void callee. Other exits,
-flag forwarding and inherited cast information remain separate.
+Checked ordinary CastSkill completion assigns true after a void cast call;
+branch feasibility, accepted casting and effects remain separate.
+See [`buff_cast_skill_consumer_flow_native.py`](../../scripts/game_data/buff_cast_skill_consumer_flow_native.py).
 
-The maintained `buff_animator_param_action` reader and
-`buff_animator_param_action_native.json` use the separate parent and child
-programs in `buff_14a_native.json`. `endAction` and `paramAction` each have their
-own independently nullable AnimatorParamAction span. That child's ordered
-animator parameter, Boolean value, float value, integer value and typed
-AnimatorControllerParameterType enum retain raw bytes/bits. The required final
-enum precedes the next parent field; truncating it cannot borrow the parent's
-name-payload boundary. Name encoding, action-on-end selection, receiver state
-and animation effects remain unresolved. Complete root admission still needs
-the current family and canonical original-byte gates.
+AnimatorParamAction's independent nullable children preserve ordered raw fields
+and the final enum boundary; full-root gates remain separate.
+See [`buff_animator_param_action.py`](../../scripts/game_data/memorypack/buff_animator_param_action.py).
 
-The separate names-only animator consumer groups prove `OnEnd` reading the
-incoming owned Data's `actionOnEnd` byte, and owner-getter calls in `OnEnd`
-and `ExecuteInternal`. The false-IFix return-policy getter reaches the typed
-`AlwaysReturnTrue` enum through a complete epilogue. These claims do not
-establish the flag branch outcome or selected animator. The two nested
-configuration operands, their helper/receiver ownership and actual parameter
-writes still require independent flow proofs; a return-policy enum is not an
-observed animation result.
+Animator consumer reads and AlwaysReturnTrue policy establish neither selected
+animator nor parameter writes.
+See [`buff_action_consumers_native.py`](../../scripts/game_data/buff_action_consumers_native.py).
 
 Useful current differences have selected evidence owners: the icon's
 `showDirectlyInHeadBuff` flag (`buff_icon_config_native.json`), RandomPointFinder's
@@ -3623,31 +3591,13 @@ ShapeFinder; their selected named source/destination checks now pass against
 `buff_7c_native.json`. Those checks still leave recursive child admission and
 consumer behavior as separate obligations.
 
-The maintained DamageUnit reader now composes positive `damageTags` through
-the independently authenticated signed nullable list grammar in
-`skill_damage_unit_gameplay_tag_list_native.json` and named GameplayTag elements
-in `buff_aura_heal_actions_native.json`. Null elements carry one byte; non-null
-elements carry their own one-member header and four scalar bytes. The Damage
-contract binds this collection to its named source member and fails closed on
-either missing proof. Skill keeps its own cost-list and tag-list receipts when
-composing the same physical DamageUnit. Cost lists do not gain Buff admission
-from this tag-list proof; tag names and effects remain unresolved.
-For the separate `damageProcessors` member, selected reads in
-`buff_damage_action_native.json` and `buff_damage_modifier_child_native.json`
-resolve the same closed `List<DamageProcessorBase>` MethodSpec and actual native
-helper. The maintained `buff_damage_processor_collection.py` now binds this
-source to DamageUnit's own member and composes ordered processor elements through
-their independent scalar, scale, text, attribute-modifier and calculation span
-readers. Signed null and empty lists remain distinct. Original source hashes,
-element endpoints and the following tag-list and remaining unit fields must
-rejoin before admission; the root modifier's receipt does not stand in for this
-different parent. The reviewed `buff_damage_processor_collection_native.json`
-authenticates the shared reference-list count program and its registered Object
-instantiation as a conditional grammar reference. Live inflated list/provider
-selection is still unresolved. Unsupported variants and unproved null union
-elements refuse; raw numeric, payload and flag bits do not establish damage
-arithmetic or accepted mutations. Whole-root coverage requires the complete
-family gate and canonical original-byte replay.
+Positive DamageUnit tags have nullable wrapped GameplayTag elements, distinct
+from packed root tags/cost lists; receipts remain family-specific.
+See [`buff_damage_action.py`](../../scripts/game_data/memorypack/buff_damage_action.py).
+DamageProcessor lists independently join this parent's closed source, ordered
+children and endpoints; live providers, unsupported/null union variants and
+whole-root admission remain constrained.
+See [`buff_damage_processor_collection.py`](../../scripts/game_data/memorypack/buff_damage_processor_collection.py).
 
 CheckDistanceCondition has a maintained named reader under
 `buff_check_distance_condition_native.json`. Its two distinct TargetSettings
@@ -3669,20 +3619,9 @@ child proofs are required; missing or different native inputs refuse even a
 structurally readable finder. Whole-root coverage still requires the complete
 family gate and canonical original-byte replay.
 
-FixedPointFinder has a maintained reader under
-`buff_selector_fixed_point_finder_native.json`, whose selected source windows
-are owned by `buff_119_native.json`. The current finder route and SelectorData
-union plan join the concrete wrapper independently of the action source that
-first exposed it. Position is an inline twelve-byte read and eight-plus-four
-copy; rotation is an inline sixteen-byte read and complete SIMD copy. Both
-programs update the same buffered-reader cursor slots and forward the entire
-temporary through the typed wrapper getter to the named field. Explicit
-temporary-stack and destination-displacement declarations must match every
-read/store instruction; a native value size alone does not prove either wire
-width or transfer. `sampleRadius` composes its independent BlackboardDouble
-receipt, and `snapToNavmesh` retains its original byte. Null union, null wrapper
-and null radius are distinct. These stored geometry/radius operands do not
-establish sampling, snapping, selected coordinates or a target entity.
+FixedPointFinder proves inline vector widths, complete getter/setter transfers,
+radius receipt and raw snap byte. Stored geometry proves no selected target.
+See [`buff_selector_fixed_point_finder.py`](../../scripts/game_data/memorypack/buff_selector_fixed_point_finder.py).
 
 RandomPointFinder now has a maintained named reader under
 `buff_selector_random_point_finder_native.json`. Its selected selector branch,
@@ -3692,50 +3631,15 @@ BlackboardDouble children and the separate Vector3 child compose at their
 original spans; flags and shape enum bits remain raw. This proves stored
 operands, not random choices, navigation snapping or resulting coordinates.
 
-PointFinder has a maintained named reader under
-[`buff_selector_point_finder_native.json`](../../scripts/game_data/contracts/buff_selector_point_finder_native.json)
-and [`buff_selector_point_finder.py`](../../scripts/game_data/memorypack/buff_selector_point_finder.py).
-The current selector union route, source contexts and generated setter
-transfers prove `positionOffset` and `rotationOffset` as two separate
-BlackboardVector3 fields. Each vector owns an independent original byte
-range and reuses the authenticated x/y/z scalar children; null vectors and
-null scalar children remain distinct. Original finder spans also reparse
-their enclosing direct SelectorData field, preserving the recorded tag,
-subtype and exact field boundary. The maintained SelectorData composition
-is also replayed on the same original parent ranges; its remaining two
-lists are independently verified empty. Positive lists retain their own
-separate evidence requirements. This is an `exact` stored component with
-`conditional` composition: complete roots still require the full family
-gate and independent original-root replay. Evaluated offsets, resulting
-coordinates, selected points and runtime execution remain `unresolved`.
+PointFinder joins two independent BlackboardVector3 fields and original
+SelectorData replay with the other lists independently empty; positive lists
+and full-root gates remain separate.
+See [`buff_selector_point_finder.py`](../../scripts/game_data/memorypack/buff_selector_point_finder.py).
 
-ContinuousFindTargetAction has a maintained recursive reader under
-[`buff_continuous_find_target.py`](../../scripts/game_data/memorypack/buff_continuous_find_target.py)
-and its reviewed
-[`buff_continuous_find_target_native.json`](../../scripts/game_data/contracts/buff_continuous_find_target_native.json).
-The source framing contract authenticates nineteen members and the required
-terminal four-byte float read. Both Data and wrapper inheritance pass
-through the FindTarget layer before the common AbilityAction base; every
-parent edge and the declared instance-field owner are checked explicitly.
-The common direct-store proof covers only the four common fields, while
-the generated identities and source/setter joins cover the remaining
-target-selection fields. The
-[`direct_float_sources.py`](../../scripts/game_data/memorypack/direct_float_sources.py)
-profile checks the complete buffered Single helper, the source result in
-XMM0, preservation in XMM6, the typed cached-instance getter and the final
-owned `findInterval` store. These transfers are `conditional` on coherent
-references and ordinary Win64 returns; initialization, cast, refill and
-failure branches remain outside that proof.
-
-Original action ranges compose direction, selector and independent source
-strings and retain the final float as raw bits. Existing child native
-returns retain the authenticated frozen family scope in which they were
-proved; the new parent is separately checked against current native bytes.
-The maintained recursive dispatcher reproduces each complete component
-receipt. This does not replace a new complete family gate or original-root
-replay for the live batch. Evaluated targeting, timing and gameplay effects
-remain `unresolved`; the narrow Skill first-timeline reader keeps its own
-separate evidence scope.
+ContinuousFindTarget proves nineteen-member framing, inheritance and conditional
+Single transfer through XMM0/XMM6/getter/setter. Raw components keep their frozen
+native scope; live-batch family/root gates remain separate.
+See [`buff_continuous_find_target.py`](../../scripts/game_data/memorypack/buff_continuous_find_target.py).
 
 The coherent frozen reader epoch containing ConsumeLayer, BindBounty,
 ArcheryChip, PointFinder and ContinuousFindTarget has now passed the complete
@@ -8904,375 +8808,61 @@ Stored clear flags, tags and targets do not establish actual formatter/provider
 selection, selected entities, USP suppression or clearing. Remaining structures
 and the missing original Skill receipt remain separate acceptance obligations.
 
-The camera group's `and` source has a separately reviewed correction in
-[`buff_camera_condition_group_source_return_native.json`](../../scripts/game_data/contracts/buff_camera_condition_group_source_return_native.json)
-and [its validator](../../scripts/game_data/camera_condition_group_source_return_native.py).
-The earlier camera source catalog selected the error-path call preceding an
-INT3 as the value origin. The normal path instead preserves the preceding
-source helper's full reference return into the setter argument when the receiver
-is nonzero. A zero receiver reaches the error call and trap, with no ordinary
-setter continuation. The legacy catalog remains a historical scope and is not
-accepted as the normal source-return proof for this field.
+## Camera descriptor and shared-list evidence
 
-Both outer camera condition lists and the group's inner list pass their own
-closed `ReadPackable` contexts to the actual shared helper whose selected
-Reader/local-output/return transfer is reviewed by
-[`buff_timeline_root_list_native.json`](../../scripts/game_data/contracts/buff_timeline_root_list_native.json).
-This physical join does not replace either concrete list or element type with
-the shared Object type. Their direct closed compiled entries remain absent;
-static registrations and actual provider selection are distinct obligations.
+The `and` setter receives the normal source helper's full reference return.
+The error helper before INT3 is a separate path, as proved by
+[`camera_condition_group_source_return_native.py`](../../scripts/game_data/camera_condition_group_source_return_native.py).
+The legacy camera catalog does not establish this source return.
 
-[`buff_camera_list_constructor`](../../scripts/game_data/memorypack/buff_camera_list_constructor.py)
-and its [reviewed contract](../../scripts/game_data/contracts/buff_camera_list_constructor_native.json)
-join both concrete list registrations to the independently registered shared
-Object constructor and check its complete exception-owned primary and cold
-ranges. The complete control reads an anonymous context chain, returns without
-calls when its guard is nonzero, and otherwise re-reads the context and calls
-through its slot-zero pointer before rejoining the restored return. It has no
-explicit data stores or dereference of the entry receiver. The cold callee's
-effects, context-slot semantic names, actual generic inflation and provider
-selection remain unresolved. A normally returning indirect call and ordinary
-Win64 stack preservation are conditions of the cold return proof.
+The concrete list registrations join the shared Object constructor, and the
+inherited base constructor/context identities are statically known:
+[`buff_camera_list_constructor.py`](../../scripts/game_data/memorypack/buff_camera_list_constructor.py)
+and [`buff_camera_base_constructor.py`](../../scripts/game_data/memorypack/buff_camera_base_constructor.py).
+The slot-publication program conditionally joins definition iteration, descriptor
+composition and eight-byte slot writes, including the inherited constructor's
+slot geometry. It does not observe a populated runtime slot:
+[`buff_camera_context_slot_publication.py`](../../scripts/game_data/memorypack/buff_camera_context_slot_publication.py).
 
-These source and constructor joins grant no positive condition-list grammar,
-camera parent or complete root admission. Concrete element conversion, list
-cursor composition and actual camera evaluation remain separate work.
+The shared Object list owns a complete exception/continuation graph, exact native
+count arithmetic, null/provider routing and reference-cell callback/store origins.
+Its callback count requires stable bound/output storage and normal compatible
+helpers; termination, callback algorithms and complete concrete-list grammar
+remain unproved. The negative count guard does not explicitly reject every value
+below minus one. See [`buff_shared_reference_list.py`](../../scripts/game_data/memorypack/buff_shared_reference_list.py).
 
-The independently registered shared Object `Deserialize` entry now has a
-complete local control and normal-frame validator in
-[`reference_list_control`](../../scripts/game_data/il2cpp/reference_list_control.py)
-and [`buff_shared_reference_list`](../../scripts/game_data/memorypack/buff_shared_reference_list.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_shared_reference_list_native.json).
-All declared primary and chained ranges are included; the earlier primary-only
-prefix was not the complete program. Selected adjacent instructions load a
-pointer, sign-extend its DWORD and save that DWORD in the caller's stack home.
-The callback output address, QWORD slot reload and indexed QWORD store establish
-an eight-byte reference-cell representation on this compiled Object path.
-That representation does not establish an enum's element wire width or a
-concrete camera/DamageType collection.
+The MethodSpec getter composes definition, class and method inputs, writes its
+cache and re-reads the cache cell for the ordinary return; compatible in-range
+indices and stable globals/cache remain conditions. Descriptor composition
+allocates and initializes a three-QWORD record or reads a cache hit, preserving
+its separately saved return pointer across insertion:
+[`buff_camera_method_spec_descriptor.py`](../../scripts/game_data/memorypack/buff_camera_method_spec_descriptor.py)
+and [`buff_camera_descriptor_composition.py`](../../scripts/game_data/memorypack/buff_camera_descriptor_composition.py).
 
-The complete graph includes local branches, indirect-call continuations,
-ordinary returns and trap sites. It does not prove other memory effects,
-callback algorithms, GC bitmap meaning, loop termination or actual context and
-formatter selection. Whole-list cursor composition and parent/root admission
-remain unresolved. Contract comparison preserves all registration fields while
-normalizing the tuple/list distinction introduced by JSON serialization.
+The zero-flag query joins exact triple equality, probing and iterator output.
+Comparator/iterator preservation and coherent empty-output handling are now
+proved; the older claim that these helpers are entirely opaque is superseded.
+[`buff_camera_descriptor_cache_lookup.py`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_lookup.py)
+and [`buff_camera_descriptor_cache_helpers.py`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_helpers.py)
+own the conditions. Opaque-call key changes, concurrency and later globals
+remain open.
 
-Its count/null/loop slices now have a separate semantic grammar in the same
-owner. The count guard compares the signed interpretation of a wrapped QWORD
-total-minus-sign-extended-consumed calculation with the signed source count.
-The direct cursor update adds four at the native pointer/DWORD widths; its
-alternate helper is selected by the sign flag of a wrapped DWORD subtraction.
-These calculations do not independently establish valid byte bounds.
+Insertion proves separate new/matched branches, marker/value stores and iterator/
+inserted output, with growth/callee stability conditions. Its returned entry does
+not replace composition's separately saved allocation pointer:
+[`buff_camera_descriptor_cache_insertion.py`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_insertion.py).
+The request program is guarded capacity halving; its AL result records path
+selection, not helper success. Publication transfers selected fields, not a
+whole-object swap, and leaves part of the returned packed control unknown:
+[`buff_camera_descriptor_cache_rebuild.py`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_rebuild.py).
 
-After that guard passes, a count of minus one takes an output-clearing branch
-with no provider or element calls. The nonnull branch performs its provider
-query candidate before testing whether the count is positive, so an empty
-count still reaches that query. No explicit rejection of counts below minus
-one is proved here; an opaque constructor or helper can still reject them.
-The element call receives the saved candidate result, saved reader argument,
-local output-slot address and a fresh companion from a fresh class read.
-Selected nonvolatile origins are tracked across the complete graph's joins and
-backedges; an unmodelled setup or loop-body write cannot retain a saved origin.
-The loop reloads its saved DWORD bound rather than the register later reused
-for context. Stable bound/output storage, ordinary callees, valid references
-and synchronization progress remain conditions of a callback-count argument;
-the program does not guarantee a number of executed callbacks.
-
-The inherited list constructor context is independently joined by
-[`list_formatter_base_context`](../../scripts/game_data/memorypack/list_formatter_base_context.py)
-and [`buff_camera_base_constructor`](../../scripts/game_data/memorypack/buff_camera_base_constructor.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_base_constructor_native.json).
-The complete declared ListFormatter class context names its inherited constructor
-at slot seven and declared parent at slot eight. The actual parent type is
-`MemoryPackFormatter<List<T>>`; its argument pointer and the inherited constructor's
-argument pointer both equal the List type tied to the reciprocal ListFormatter
-parameter. This is a static generic identity, not a populated runtime slot receipt.
-
-An independently selected Object base-constructor registration points to code
-shared by other method definitions. The
-[`registration observer`](../../scripts/game_data/il2cpp/generic_entries.py)
-retains those aliases, null pointers and duplicate rows; the strict resolver
-continues to reject folded method identity. The registered entry begins with
-`RET 0`. Its closed entry program preserves flags/general registers, performs
-no explicit data stores and pops only the ordinary return address when entered
-with a readable valid return stack. This establishes neither a unique named
-body nor the full physical function extent beyond that return.
-
-The camera constructor's cold indirect target has not been observed to equal
-that registered pointer. Runtime slot geometry/population, original context
-inflation and other selected call effects remain separate obligations. The
-declared slot, argument equality and folded entry program grant no positive
-camera list, parent or complete-root admission.
-
-The constructor context's publication geometry now joins the complete
-exception-owned initializer instruction graph through
-[`context_slot_initializer_control`](../../scripts/game_data/il2cpp/context_slot_initializer_control.py)
-and [`buff_camera_context_slot_publication`](../../scripts/game_data/memorypack/buff_camera_context_slot_publication.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_context_slot_publication_native.json).
-Every local branch/normal call continuation reaches an instruction boundary;
-normal calls have aligned home space and normal returns restore the entry stack.
-Trap exits and indirect call locations remain explicit. This syntactic graph
-does not prove loop termination, helper effects or actual initialization.
-
-The selected range result supplies the same start and count used by the loop.
-The start indexes sixteen-byte definitions; each normal iteration advances the
-definition pointer by sixteen and the output pointer by eight, then decrements
-the remaining count. At loop completion the original compatible array return
-is reloaded and published into the class context field. Lookup selection,
-allocation/fill semantics and stable disjoint frame/definition/output storage
-remain conditions, rather than observations of a live array.
-
-The method-kind branch reads the declaration payload index, passes two distinct
-descriptor operands to the same helper with one saved generic context, and
-constructs a three-QWORD local key. Its final pointer-producing helper's complete
-return is stored into the current output slot. Descriptor substitution, cache
-contents/selection and the intervening helper effects remain unresolved.
-
-Under those stated compatible-class/module and normal-helper conditions, the
-inherited constructor declaration at slot seven occupies byte offset fifty-six
-in the published slot array, matching the constructor's checked physical read.
-This closes the conditional geometry connection; it does not observe slot seven,
-select its actual cold target or grant positive camera list/root admission.
-
-The method-slot descriptor getter is independently joined by
-[`method_spec_descriptor_control`](../../scripts/game_data/il2cpp/method_spec_descriptor_control.py)
-and [`buff_camera_method_spec_descriptor`](../../scripts/game_data/memorypack/buff_camera_method_spec_descriptor.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_method_spec_descriptor_native.json).
-Its complete exception-owned control sign-extends the input index, addresses a
-twelve-byte MethodSpec record and forwards its definition index to the plain
-definition helper. Class and method instantiation indices remain separate:
-each uses an eight-byte pointer-table slot, while the signed sentinel produces
-a zero argument. The selected inherited-constructor row independently joins
-the previously proved List<T> class instantiation and null method instantiation.
-
-The cold composition receives the definition helper's return and both selected
-instantiation pointers. Its full return is written to the indexed descriptor
-cache cell, but the ordinary return re-reads that cell. The hit branch likewise
-tests and reads the cache separately. Concurrent cache/global changes can
-therefore change the later return; neither a nonzero test nor a stored pointer
-proves the eventual returned value without a stability condition.
-
-The helper performs no input-index bounds check. Nonnegative in-range signed
-indices, compatible registration/tables, valid cache storage and normally
-returning ABI-preserving helpers remain explicit conditions. Descriptor
-identity, definition helper and cache effects, actual cache history, parameter
-substitution and the runtime cold target remain unresolved. This descriptor
-join does not admit a positive camera list, parent or whole root.
-
-The actual composition callee now has a complete exception-owned graph and
-CFG-joined argument origins in
-[`descriptor_composition_control`](../../scripts/game_data/il2cpp/descriptor_composition_control.py)
-and [`buff_camera_descriptor_composition`](../../scripts/game_data/memorypack/buff_camera_descriptor_composition.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_descriptor_composition_native.json).
-The new branch requests twenty-four bytes and emits three QWORD stores at
-offsets zero, eight and sixteen. Their sources are respectively the plain
-definition helper return, class instantiation pointer and method instantiation
-pointer already proved at the caller. Entry arguments are saved in nonvolatile
-registers; all local branches and backedges join their origins before each store.
-The proof refuses partial-register overwrites and bypass paths rather than
-assuming that address order establishes preservation.
-
-The hit branch reads the selected cache entry's value pointer, while the new
-branch saves the allocation return. Both pass the saved pointer to the normal
-return through the complete suffix. This establishes the emitted triple layout
-under valid disjoint allocation/storage and normal Win64 nonvolatile/stack-
-preserving callees. It does not prove allocation success, that the lookup key
-equals the supplied triple, or that insertion and later synchronization calls
-leave its pointee contents intact. Those calls and the retry loop remain visible
-in the complete graph; termination, concurrency and actual effects are open.
-
-Definition identity, instantiation transformation, final method-pointer lookup,
-runtime cold-target selection and positive camera list grammar still need their
-own evidence. No positive list, parent or whole root is admitted by this scope.
-
-The composition's lookup call now joins the complete explicit probe in
-[`descriptor_cache_lookup_control`](../../scripts/game_data/il2cpp/descriptor_cache_lookup_control.py)
-and [`buff_camera_descriptor_cache_lookup`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_lookup.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_descriptor_cache_lookup_native.json).
-For a coherent zero-flag query wrapper, an explicit probe hit requires equality
-of all three QWORDs at offsets zero, eight and sixteen between the query triple
-and the selected entry's value. The entry stores a DWORD marker and its value
-pointer in a sixteen-byte stride. A nonzero wrapper flag can bypass the triple
-comparison; that separate branch does not acquire the zero-flag claim.
-
-The complete graph distinguishes an explicit miss, which stores the end pointer
-as both current and end, from a hit, which stores the selected current pointer
-and end separately. Both return the supplied output address. The early
-count-comparison branch delegates to an empty-output helper. Its conditional
-end stores are joined below; the original explicit-probe proof alone did not
-establish every result the caller might interpret as a cache hit.
-
-The caller's frame joins the initialized temporary three-QWORD key, its
-zero-flag wrapper and the separate iterator output. It reads the output's
-current pointer, compares it with a freshly computed global end, then reads
-the selected entry's value pointer on its hit branch. The new allocation is
-passed through the same wrapper shape to the separate insertion call. Local
-key contents across preceding opaque calls and current/global values after
-lookup require stability conditions; frame geometry alone does not prove them.
-
-Hashing reads an anonymous DWORD from the first key pointee and combines it
-with shifted class/method pointer bits. Each advance increments a step counter,
-adds it to the current index and masks again. The mask is initially capacity
-minus one. The helper proof below joins the actual preservation of R9, R10
-and R11; ordinary Win64 preservation alone could not establish those values.
-Scan termination, opaque growth effects and subsequent descriptor contents remain unresolved; the local insertion stores are joined below. No runtime
-selection, positive camera list or whole root is admitted by this scope.
-
-The comparator and empty-output helpers now have their own
-[`descriptor_cache_helper_control`](../../scripts/game_data/il2cpp/descriptor_cache_helper_control.py)
-and [`buff_camera_descriptor_cache_helpers`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_helpers.py)
-proof, under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_descriptor_cache_helpers_native.json).
-The comparator lacks a declared exception entry, so
-[`closed_leaf_entry`](../../scripts/game_data/il2cpp/closed_leaf_entry.py)
-decodes every reachable branch from bounded selected bytes. Every reached
-instruction belongs to a closed call-free graph; no branch escapes or enters
-an instruction interior. Unused following bytes and physical function extent
-remain outside that proof.
-
-The comparator first checks two DWORD wrapper markers. Unequal markers return
-zero AL; equal nonzero markers return one AL without reading the triples.
-Equal zero markers require equality of all three QWORDs. Only AL is the boolean
-result; upper RAX bits are not generally cleared. Its complete reachable
-program writes no memory and changes only RAX, RCX and R8 among general
-registers. In particular R9, R10 and R11 remain unchanged. Actual caller bytes
-join this effect proof to the probe and iterator constructor, closing the
-previously opaque preservation of their index, step, mask and output pointers.
-
-The complete iterator constructor stores table, current and end at their
-separate QWORD offsets and returns the original output address. Equal initial
-current/end skips scanning. Its optional scan advances current by the entry
-stride and calls the same now-proved comparator; no scan-termination claim is
-made. The constructor also preserves R11 throughout its complete graph.
-
-The complete empty-output helper passes the output address, two separately
-computed end values and a fifth stack argument to that constructor. Both ends
-use the same capacity sample but separate begin-global reads. When those reads
-agree and storage is valid, current equals end and the constructor skips its
-scan; preserved R11 supplies the original output address on return. Together
-with the existing zero-flag explicit probe and caller frame join, coherent
-key/current/end globals conditionally exclude an empty-output false hit.
-
-This closes the selected helper effects, not concurrent cache history or an
-observed runtime selection. Key contents across earlier opaque calls, changing
-globals after lookup, insertion and later descriptor contents remain separate
-obligations. A physical comparator function extent is still not inferred, and
-no positive camera list, parent or whole root is admitted by this scope.
-
-The actual insertion call now has a complete exception-owned control and
-selected write proof in
-[`descriptor_cache_insertion_control`](../../scripts/game_data/il2cpp/descriptor_cache_insertion_control.py)
-and [`buff_camera_descriptor_cache_insertion`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_insertion.py),
-under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_descriptor_cache_insertion_native.json).
-The new-entry path writes a fresh wrapper DWORD marker at entry offset zero and
-a fresh wrapper value pointer at offset eight in a sixteen-byte entry stride.
-Its counter choice either increments the stored count or decrements an auxiliary
-count before the selected entry write. The matched-existing path does not make
-those local entry stores. Opaque rebuild and growth calls may have other
-effects, so this local distinction does not declare a side-effect-free function.
-
-Both paths return the supplied output address and store table, current and end
-pointers followed by a distinct inserted byte. The new path sets that byte to
-one, while the existing path sets it to zero. The selected current pointer is
-computed from the corresponding new or matched slot. A scalar memory QWORD
-round trip preserves the stored end, and a packed pair plus an eight-byte vector
-shift supplies table and current to separate QWORD stores. Their physical widths
-are checked by the existing memory-move reader and
-[`scalar_double_memory`](../../scripts/game_data/il2cpp/scalar_double_memory.py);
-unused upper vector lanes do not acquire a claim from the scalar reader.
-
-The complete graph includes a rebuild-request candidate, capacity candidates, replacement,
-publication, conditional release and error calls followed by traps. After a
-growth path it reloads capacity/count before hashing again. Its floating-point
-capacity routing is checked structurally, without asserting a load-factor or
-rounding policy. The previously proved comparator preserves the live probe
-registers, and this caller explicitly reloads the query value pointer after a
-probe call. Input/output pointers saved in nonvolatile registers remain subject
-to normal callee and disjoint-storage conditions.
-
-The composition retains its separately saved allocation pointer across the
-insertion call under its established ABI conditions. The insertion result
-record is not proved to replace that saved return with an existing entry value.
-Fresh wrapper reads and opaque calls also leave a pointer/content stability
-obligation; emitted writes do not prove that every insertion stores the original
-allocation or that the caller returns the entry ultimately retained in the map.
-
-Allocation/migration/release effects, numeric growth policy, termination,
-concurrency and later descriptor contents remain unresolved. This complete
-insertion program proof does not establish runtime selection or admit a positive
-camera list, parent or whole root.
-
-The recorded initialization-candidate name is now refined by
-[`descriptor_cache_rebuild_request_control`](../../scripts/game_data/il2cpp/descriptor_cache_rebuild_request_control.py)
-and [`buff_camera_descriptor_cache_rebuild`](../../scripts/game_data/memorypack/buff_camera_descriptor_cache_rebuild.py),
-under the [request contract](../../scripts/game_data/contracts/buff_camera_descriptor_cache_rebuild_request_native.json).
-It is a guarded capacity-halving request program, not a proved bootstrap
-initializer. A nonzero threshold, an unsigned stored-count-minus-auxiliary-count
-difference below that threshold, and an initial capacity greater than the cutoff
-are required before it halves the candidate. Subsequent FP comparisons may halve
-it again; the candidate cutoff stops further iteration, without establishing an
-unconditional minimum candidate for arbitrary initial capacities.
-
-Guard exits return zero AL. The selected temporary passes through replacement,
-publication and cleanup calls; if they normally return under the saved-register
-conditions, the program returns one AL. Every normal return clears the request
-byte. One AL proves that path selection, not successful allocation, migration
-or cleanup. Numeric FP policy, helper success and live scheduling remain open.
-
-The joined call-free publication body is checked by
-[`descriptor_cache_publication_control`](../../scripts/game_data/il2cpp/descriptor_cache_publication_control.py)
-under its [publication contract](../../scripts/game_data/contracts/buff_camera_descriptor_cache_publication_native.json).
-Selected byte, DWORD and QWORD fields move in both directions between the
-temporary and global object, including capacity, marker/triple and entry-array
-storage already consumed by the lookup/insertion proofs. Two initial packed
-blocks exchange, but subsequent threshold calculations overwrite their leading
-QWORDs and both request bytes are cleared. That is not a whole-object exact swap.
-
-The returned record's packed control block has only two old-global byte ranges
-proved through its scratch vector: one byte and one DWORD. Its remaining bytes
-come from unmodelled entry-stack contents; they are not classified as padding
-or assigned a field meaning. The separate scalar QWORD transfer remains exact.
-This partial representation must not be promoted to a complete known object.
-
-Publication consists of separate reads and writes. Coherent disjoint storage
-conditions do not make it atomic, and the structural FP routing does not prove
-a numeric threshold policy. Allocation/migration and cleanup bodies, pointer
-history, concurrent visibility, runtime descriptor selection and positive camera
-list/root admission remain separate obligations.
-
-The old-array cleanup field now joins the complete release routing through
-[`descriptor_temporary_cleanup_control`](../../scripts/game_data/il2cpp/descriptor_temporary_cleanup_control.py),
-[`descriptor_release_control`](../../scripts/game_data/il2cpp/descriptor_release_control.py)
-and [`buff_camera_descriptor_temporary_cleanup`](../../scripts/game_data/memorypack/buff_camera_descriptor_temporary_cleanup.py),
-under the [reviewed contract](../../scripts/game_data/contracts/buff_camera_descriptor_temporary_cleanup_native.json).
-The selected temporary field is the same QWORD offset that publication receives
-from the old global entry-array pointer. Cleanup tests the field and reloads it
-separately before passing the fresh value in RCX. A changing field can therefore
-alter the actual argument even after a nonzero test.
-
-The entry thunk is an exact tail jump preserving arguments, stack and flags;
-its physical function extent remains unclaimed. The complete destination skips
-heap/error calls for null input. Otherwise it passes the entry pointer in R8,
-zero flags in RDX and a fresh heap-handle global in RCX to the declared HeapFree
-IAT cell. The existing
-[`PE import reader`](../../scripts/game_data/il2cpp/pe_imports.py)
-proves terminated lookup-table ownership, unbound on-disk IAT equality and
-KERNEL32.dll symbol declarations for HeapFree and GetLastError. It establishes
-neither a live IAT binding nor a loaded callee identity.
-
-Nonzero low EAX from the heap call skips the error path. Zero EAX calls the
-declared GetLastError cell, forwards that DWORD to a local conversion helper,
-saves its EAX and writes that DWORD through a second helper's full returned
-pointer. The helper algorithms and writable-slot identity remain separate
-obligations; ordinary return is not a whole-function success Boolean.
-
-The documented [HeapFree contract](https://learn.microsoft.com/en-us/windows/win32/api/heapapi/nf-heapapi-heapfree)
-permits interpreting nonzero as success only under genuine binding and valid
-heap/block ownership. [GetLastError](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror)
-supplies the calling thread's last-error value. Those API contracts do not prove
-this program's handle, block ownership, binding or actual successful release.
-The evidence remains conditional native argument/error flow, not a runtime
-cleanup observation or positive camera list/root admission.
+Old-array cleanup conditionally joins the temporary field, tail thunk, declared
+HeapFree import and error-conversion flow. Import ownership is not live binding,
+and these checks do not prove a successful release:
+[`buff_camera_descriptor_temporary_cleanup.py`](../../scripts/game_data/memorypack/buff_camera_descriptor_temporary_cleanup.py).
+All owners retain their detailed control, storage and helper conditions.
+Allocation/migration policy, runtime descriptor selection and positive camera
+list/parent/root admission remain separate obligations.
 
 ## Remaining gaps
 
@@ -11368,93 +10958,41 @@ membership. Null and empty lists still require the exact nominal source gates.
 
 ### BodyTypeDef managed value and wire boundary
 
-`body_type_value_sources` rechecks the reviewed char-perform contract against
-selected native inputs and independently proves the current BodyTypeDef hidden
-return, adapter, interface conversion and getter. The managed value has two
-reference lanes and padding. Its runtime-only display-name reference is copied
-with the complete managed value but is absent from serialization. Both the
-canonical and matched dispatcher default branches explicitly zero the complete
-managed result; their actual ReadIsNull path consumes one object-header byte.
-Neither a value size nor a canonical registration supplies the parent call:
-the actual parent MethodInfo and E8 target are joined separately.
+[`body_type_value_sources.py`](../../scripts/game_data/memorypack/body_type_value_sources.py)
+owns exact managed32, two reference lanes, padding and complete defaults.
+The runtime display name is copied but absent from the separate MC3 wire:
+body enum, Int32 custom id, pooled-string index; FF is a one-byte default.
+[`body_type_value_components.py`](../../scripts/game_data/memorypack/body_type_value_components.py)
+owns that grammar, and
+[`body_type_value_bindings.py`](../../scripts/game_data/memorypack/body_type_value_bindings.py)
+joins complete setter/source copies, nominal call, hidden local and four frames.
+The common managed8/16 domain is not widened; synthetic fixtures grant no parent.
 
-`body_type_value_components` and `body_type_value_codec` own the distinct MC3
-wire: byte-backed body enum, Int32 custom id, and signed pooled-string index, in
-that order. FF is a one-byte default-value path. Managed padding and the display
-name consume no wire bytes. The typed source and named setter retain both native
-reference lanes even though the setter exposes only one explicit barrier call;
-its complete two-slice copy and disabled-collector condition are preserved.
-Parent local lifetimes, all enclosing frames, whole-owner and physical EOF
-acceptance remain separate requirements. The readers do not establish live
-provider selection or runtime helper effects.
+Closed BodyTypeDef/AlphaBlend helpers supply their own nested MethodInfo and
+need independent pointer/call proofs. Complete hidden-to-argument copies and
+live stack ranges through the named setter remain required:
+[`body_type_closed_value_sources.py`](../../scripts/game_data/memorypack/body_type_closed_value_sources.py)
+and [`alpha_blend_value_bindings.py`](../../scripts/game_data/memorypack/alpha_blend_value_bindings.py).
 
-Some CharInteract callers reach an owned closed BodyTypeDef helper instead of
-loading the MethodInfo at the parent call site. That helper preserves the same
-hidden output and Reader pointers and supplies its own actual nested ReadValue
-context. It requires an independent complete helper proof; a missing outer
-context cannot be treated as an ordinary generic call. The caller can copy the
-complete value into a separate argument local before invoking its named setter.
-Both SIMD slices, nominal source identity, disjoint live stack homes, complete
-setter call and restored frame remain checked; these managed copies supply no
-additional wire bytes.
+An abstract CharInteract union's OnDeserialized cache hook can use a compatible
+cast helper distinct from the nullable-cast helper. Its actual null/non-null
+programs and typed cache class are independently proved; no pointer equivalence,
+live cache coherence or child grammar follows.
 
-AlphaBlend likewise has independently owned ordinary and closed native helper
-paths. A closed helper supplies its own internal ReadValue MethodInfo; its
-outer call target cannot borrow an absent parent context. The exact RBP-based
-montage caller copies the complete managed result through distinct hidden and
-argument locals. Their live ranges end at the proved named setter, so later
-reuse of those stack homes is checked against that lifetime rather than
-treated as concurrent overlap. Both complete copy certificates and all caller
-frames remain required; neither stack placement nor shared byte width grants
-another managed value's grammar.
-
-An abstract CharInteract union's OnDeserialized cache hook can call a compatible
-cast helper whose pointer differs from the union reader's nullable-cast helper.
-The hook's actual callee, both of its null/non-null programs and the actual
-typed cache class are proved independently. This retains the inherited base
-reference and gives no pointer equivalence, live cache coherence or child wire
-grammar claim.
-
-
-The finite BodyTypeDef compiler branch uses `body_type_value_bindings`, while
-common managed8/16 transfer checks retain their existing size domain. The Body
-join requires its own complete source, named setter bytes/family/hash replay,
-both native reference lanes, exact padding, an actual ReadValue MethodSpec and
-E8 target, once-only coverage of the managed result, a hidden source local and
-all four restored parent frames. An independently composed MC3/default32 child
-supplies wire grammar. Synthetic transfer fixtures test refusal rules but grant
-no actual parent admission; that still requires the freshly completed caller.
-
-The CharAnim caller's `startTransform` uses the distinct reference type
-`Beyond.Gameplay.TransformDesc`. Its MC4 is position Vector3, rotation Vector3,
-use-position Boolean and use-rotation Boolean; a Quaternion or similarly named
-Core type cannot substitute. `animation_transform_desc_components` joins the
-complete concrete wrapper to its own ordinary adapter and direct holder getter.
-Its parent binding separately checks the actual nominal ReadValue context and
-call, whole reference transfer through the named setter, constructed cache and
-all enclosing frames. The operation-scoped codec preserves the stored vector
-and Boolean bytes. Coordinate spaces, rotation convention, animation effects,
-the CharInteract union/list and enclosing owner acceptance remain separate.
-
+CharAnim's `startTransform` is Beyond.Gameplay.TransformDesc: MC4 position/
+rotation Vector3 and two Boolean fields, distinct from Quaternion/Core types.
+[`animation_transform_desc_components.py`](../../scripts/game_data/memorypack/animation_transform_desc_components.py)
+owns raw-byte preservation and separate reference adapter/parent joins.
+Coordinate conventions, effects, union/list and whole-owner/EOF acceptance,
+runtime provider selection and helper effects remain separate.
 
 ### AnimationClipAsyncInfo packed raw value
 
-`skill_animation_clip_raw_sources` distinguishes the ordinary seven-member
-wrapper, the packed unboxed payload, and the native marshal ABI. The selected
-ReadUnmanaged call copies and advances the packed payload in two full vector
-slices and one DWORD. Its nominal MethodSpec, formal method parameter, actual
-R8 context and reached helper body are checked independently; a canonical
-registration pointer is not an alias for the reached helper. The native marshal
-size is larger than the packed value and cannot supply wire width. Adjacent
-montage fields independently confirm the packed field extent.
-
-The inline source separately captures the same payload across the actual
-Advance call and cached getter using preserved vector and integer registers.
-Its named field/cache transfer and parent frame are additional joins.
-`skill_animation_clip_components` binds the called or inline source to the
-whole owned field and all enclosing frames before the record compiler emits
-`animation-clip-raw36`. That finite atomic operation consumes every packed
-byte, including raw boolean bytes and padding; a first FF byte is data. It
-borrows neither the ordinary wrapper's member header/default path nor the
-marshal ABI. Montage activation, runtime provider/helper effects and playback
-remain separate evidence requirements.
+[`skill_animation_clip_raw_sources.py`](../../scripts/game_data/memorypack/skill_animation_clip_raw_sources.py)
+proves raw36 separately from MC7 and marshal40: actual nominal call and reached
+helper, 16+16+4 reads/advance, or independently captured inline source.
+[`skill_animation_clip_components.py`](../../scripts/game_data/memorypack/skill_animation_clip_components.py)
+joins the whole owned field and frames before emitting `animation-clip-raw36`.
+It preserves Boolean/padding bytes; initial FF is data. Adjacent fields confirm
+the packed extent, but neither marshal alignment nor wrapper framing supplies it.
+Montage activation, playback and runtime provider/helper effects remain open.

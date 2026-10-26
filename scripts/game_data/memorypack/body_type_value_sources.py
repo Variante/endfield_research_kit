@@ -7,6 +7,10 @@ and binds a supplied actual ReadValue request without pointer aliases. Runtime
 provider selection, helper effects, parent fields/frames and wire grammar stay
 separate. In particular m_displayName is runtime-only, and both reference
 lanes and all padding belong to the managed value rather than its wire.
+
+Canonical and matched dispatcher defaults zero the complete managed32 result;
+actual ReadIsNull consumes one header byte. Actual parent MethodInfo/E8 target
+remain separate from registration and managed size.
 """
 import json
 from scripts.game_data.il2cpp.formatter_value_paths import BytesPath

@@ -1,4 +1,14 @@
-"""Camera list static registration and complete shared constructor control."""
+"""Camera list static registration and complete shared constructor control.
+
+Both concrete camera list registrations join the independently registered
+shared Object constructor, including its exception-owned primary/cold ranges.
+A nonzero anonymous-context guard returns without calls; otherwise the code
+re-reads the context, calls its slot-zero pointer and restores the return.
+There are no explicit data stores or dereferences of the entry receiver.
+Cold helper effects, slot names, actual inflation and provider selection are
+unresolved; normal indirect return and Win64 stack preservation are conditions.
+This grants neither positive element/list grammar nor parent/root admission.
+"""
 from __future__ import annotations
 import hashlib
 import json

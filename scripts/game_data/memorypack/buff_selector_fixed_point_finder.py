@@ -2,6 +2,23 @@
 
 Position and rotation retain twelve and sixteen original bytes. The radius
 uses its independent BlackboardDouble reader. No selected point is evaluated.
+
+Evidence and admission boundary:
+
+FixedPointFinder has a maintained reader under
+`buff_selector_fixed_point_finder_native.json`, whose selected source windows
+are owned by `buff_119_native.json`. The current finder route and SelectorData
+union plan join the concrete wrapper independently of the action source that
+first exposed it. Position is an inline twelve-byte read and eight-plus-four
+copy; rotation is an inline sixteen-byte read and complete SIMD copy. Both
+programs update the same buffered-reader cursor slots and forward the entire
+temporary through the typed wrapper getter to the named field. Explicit
+temporary-stack and destination-displacement declarations must match every
+read/store instruction; a native value size alone does not prove either wire
+width or transfer. `sampleRadius` composes its independent BlackboardDouble
+receipt, and `snapToNavmesh` retains its original byte. Null union, null wrapper
+and null radius are distinct. These stored geometry/radius operands do not
+establish sampling, snapping, selected coordinates or a target entity.
 """
 from __future__ import annotations
 import hashlib

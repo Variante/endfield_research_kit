@@ -1,4 +1,35 @@
-"""ContinuousFindTarget named operands with checked direct and recursive joins."""
+"""ContinuousFindTarget named operands with checked direct and recursive joins.
+
+Evidence and admission boundary:
+
+ContinuousFindTargetAction has a maintained recursive reader under
+`buff_continuous_find_target.py`
+and its reviewed
+`buff_continuous_find_target_native.json`.
+The source framing contract authenticates nineteen members and the required
+terminal four-byte float read. Both Data and wrapper inheritance pass
+through the FindTarget layer before the common AbilityAction base; every
+parent edge and the declared instance-field owner are checked explicitly.
+The common direct-store proof covers only the four common fields, while
+the generated identities and source/setter joins cover the remaining
+target-selection fields. The
+`direct_float_sources.py`
+profile checks the complete buffered Single helper, the source result in
+XMM0, preservation in XMM6, the typed cached-instance getter and the final
+owned `findInterval` store. These transfers are `conditional` on coherent
+references and ordinary Win64 returns; initialization, cast, refill and
+failure branches remain outside that proof.
+
+Original action ranges compose direction, selector and independent source
+strings and retain the final float as raw bits. Existing child native
+returns retain the authenticated frozen family scope in which they were
+proved; the new parent is separately checked against current native bytes.
+The maintained recursive dispatcher reproduces each complete component
+receipt. This does not replace a new complete family gate or original-root
+replay for the live batch. Evaluated targeting, timing and gameplay effects
+remain `unresolved`; the narrow Skill first-timeline reader keeps its own
+separate evidence scope.
+"""
 from __future__ import annotations
 import hashlib, json
 from pathlib import Path

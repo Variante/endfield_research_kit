@@ -3,6 +3,12 @@
 The actual helper supplies its own typed MethodInfo. Its neutral pointer
 preservation lemma supplies no nominal layout or callback identity; those are
 reproved by the existing BodyTypeDef source against the nested actual call.
+
+The helper preserves hidden output/Reader pointers and supplies the actual
+nested ReadValue context; absent outer context cannot become a generic call.
+Parent copies into distinct argument locals require both full SIMD slices,
+nominal identity, disjoint live homes, named setter and restored frame.
+Managed copies add no wire bytes.
 """
 
 TYPE='Beyond.Gameplay.BodyTypeDef'

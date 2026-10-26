@@ -1,4 +1,23 @@
-"""Comparator effects and conditional empty-iterator stores on selected bytes."""
+"""Comparator effects and conditional empty-iterator stores on selected bytes.
+
+The comparator has no exception entry: closed_leaf_entry checks its complete
+reachable bounded call-free CFG, refusing escaping/interior branches, without
+claiming unused bytes or physical extent. Unequal DWORD wrapper markers return
+zero AL; equal nonzero markers return one without triple reads; equal zeros
+require all three QWORDs equal. Upper RAX is not the Boolean result. No memory
+is written; only RAX/RCX/R8 change among general registers, preserving R9/R10/R11.
+Actual caller bytes join those effects to probe/iterator state.
+
+The iterator stores table/current/end at distinct QWORD offsets and returns
+original output; equal initial current/end skips scanning. Otherwise scanning
+uses entry stride and the comparator, without termination proof; R11 is preserved.
+The empty helper supplies output, two separately computed ends and fifth stack
+argument. Ends sample one capacity but separate begin-global reads. Equal reads
+and valid storage give current=end, no scan, and original output via R11.
+Together with zero-flag probe/caller proof, coherent key/current/end globals
+exclude an empty-output false hit conditionally. Concurrent history, opaque-call
+key changes, later globals/contents and runtime selection remain open; no root.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

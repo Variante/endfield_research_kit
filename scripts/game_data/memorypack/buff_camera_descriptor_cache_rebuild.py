@@ -1,4 +1,23 @@
-"""Conditional halving request and selected call-free publication effects."""
+"""Conditional halving request and selected call-free publication effects.
+
+The request is guarded capacity halving, not a bootstrap initializer.
+Nonzero threshold, unsigned stored-count-minus-auxiliary-count below threshold,
+and initial capacity above cutoff precede halving. Later FP comparisons may halve
+again; cutoff ends iteration without proving a minimum for arbitrary inputs.
+Guard exits yield zero AL. Selected replacement/publication/cleanup with normal
+saved-register-preserving returns yields one AL. Every normal return clears
+request byte. AL records path, not allocation/migration/cleanup success.
+
+descriptor_cache_publication_control checks a call-free bidirectional byte/
+DWORD/QWORD transfer of selected temporary/global fields, including capacity,
+marker/triple and entries. Two packed blocks initially exchange, then threshold
+calculations overwrite leading QWORDs and both request bytes clear: no whole-
+object swap. Returned packed control has only one byte and one DWORD traced to
+old global through scratch vector; remaining bytes are unmodelled entry stack,
+not padding/known fields. Separate scalar QWORD transfer is exact. Separate
+reads/writes are not atomic. FP numeric policy, effects, pointer history,
+concurrent visibility and live descriptor/list/root admission remain open.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

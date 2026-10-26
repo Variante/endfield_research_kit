@@ -1,4 +1,18 @@
-"""Current native descriptor triple stores, conditional on normal callees."""
+"""Current native descriptor triple stores, conditional on normal callees.
+
+The new path requests twenty-four bytes and stores definition-helper return,
+class pointer and method pointer at QWORD offsets zero/eight/sixteen. CFG/backedge
+origin joins check saved nonvolatile arguments, refusing partial overwrites and
+bypasses. A hit reads the cache entry's value; a new path saves allocation return.
+Both return the saved pointer through the complete suffix under valid disjoint
+allocation/storage and normal Win64 callees.
+
+Lookup key equality, allocation success and pointee stability across insertion/
+synchronization are separate. Insertion's result does not replace the caller's
+separately saved allocation return with a matched entry. Definition identity,
+transformed instantiations, final pointer lookup, termination, concurrency,
+runtime cold selection and positive camera list/root admission remain open.
+"""
 from __future__ import annotations
 import hashlib
 import json

@@ -3,6 +3,13 @@
 This finite child has no containing-route or runtime transform interpretation.
 Each supplied parent must independently join its actual MethodSpec, reached
 Reader, whole reference field and complete enclosing source/frame paths.
+
+Beyond.Gameplay.TransformDesc is distinct from Core types or Quaternion.
+MC4 stores position Vector3, rotation Vector3, use-position Boolean and
+use-rotation Boolean, preserving raw vector/Boolean bytes. Parent proof owns
+actual nominal call, whole reference through setter, constructed cache and all
+frames. Coordinate/rotation conventions, effects, CharInteract union/list and
+owner acceptance remain separate.
 """
 import json
 from scripts.game_data.memorypack import animation_transform_desc_codec as codec

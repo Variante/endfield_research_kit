@@ -3,6 +3,26 @@
 This is a native consumer audit, independent of MemoryPack coverage. A group
 whose named claims no longer hold becomes pendingReview and supplies no rows.
 Compiled call presence never proves live branch selection or value ownership.
+
+Evidence and admission boundary:
+
+The independent names-only consumer groups in
+`buff_action_consumers_native.json` prove the incoming owned CastSkill Data
+reads, `caster` flowing to `GetFirstTarget.targetSettings`, and `skillId`
+flowing to `ActionBlackboardExtensions.GetValue.param`. They also prove the
+three flag reads and the named target-view/cast calls. The target-view operand
+forwarding remains a separate obligation: the current reference-flow checker
+excludes that callee's aggregate return ABI. Its false-IFix property path
+returns the typed `CustomReturnType` enum through a complete return epilogue.
+
+The separate names-only animator consumer groups prove `OnEnd` reading the
+incoming owned Data's `actionOnEnd` byte, and owner-getter calls in `OnEnd`
+and `ExecuteInternal`. The false-IFix return-policy getter reaches the typed
+`AlwaysReturnTrue` enum through a complete epilogue. These claims do not
+establish the flag branch outcome or selected animator. The two nested
+configuration operands, their helper/receiver ownership and actual parameter
+writes still require independent flow proofs; a return-policy enum is not an
+observed animation result.
 """
 from __future__ import annotations
 
