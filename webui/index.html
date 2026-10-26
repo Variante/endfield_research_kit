@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="logo.svg">
-<link rel="stylesheet" href="style.css?v=20261011-accessory-copy">
+<link rel="stylesheet" href="style.css?v=20261013-sfx-skillorder">
   <link rel="stylesheet" href="src/features/characters/style.css?v=20261010-continuous1">
   <link rel="stylesheet" href="src/features/gameplay/items.css?v=20261010-record-audio-materials">
   <link rel="stylesheet" href="src/features/story/branches.css?v=20261002-expansion1">
   <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20261010-continuous1">
-  <link rel="stylesheet" href="src/features/audio/style.css?v=20261010-continuous1">
+  <link rel="stylesheet" href="src/features/audio/style.css?v=20261011-audio-perf">
   <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20261010-continuous1">
   <link rel="stylesheet" href="src/features/recovery/style.css?v=20261010-continuous1">
   <link rel="stylesheet" href="src/features/gameplay/skill_refs.css?v=20261002-expansion1">
-  <link rel="stylesheet" href="src/features/gameplay/style.css?v=20261010-filter-headings-enemy-layout">
+  <link rel="stylesheet" href="src/features/gameplay/style.css?v=20261012-ability-highlight">
   <link rel="stylesheet" href="src/features/gameplay/battle_stages.css?v=20261011-hints1">
   <link rel="stylesheet" href="src/features/gameplay/activities/style.css?v=20261010-activity-best-image">
   <link rel="stylesheet" href="themes.css?v=20261010-two-themes">
@@ -38,7 +38,7 @@
       <span id="view-tabs-hint" class="sr-only">Use the left and right arrow keys to move between views.</span>
       <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story" data-i18n="storyTab">剧情</button>
       <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
-      <button id="map-recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="map-recovery-view" tabindex="-1" data-view="map-recovery" data-i18n="mapRecoveryTab">地图</button>
+      <button id="map-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="map-view" tabindex="-1" data-view="map" data-i18n="mapRecoveryTab">地图</button>
       <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-i18n="charactersTab">人物</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
       <button id="audio-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="audio-view" tabindex="-1" data-view="audio" data-i18n="audioTab">&#38899;&#39057;</button>
@@ -542,8 +542,8 @@
       <div id="audio-app"></div>
     </section>
 
-    <section id="map-recovery-view" class="page-view" data-view="map-recovery" role="tabpanel" aria-labelledby="map-recovery-tab" tabindex="0" hidden>
-      <div id="map-recovery-app"></div>
+    <section id="map-view" class="page-view" data-view="map" role="tabpanel" aria-labelledby="map-tab" tabindex="0" hidden>
+      <div id="map-app"></div>
     </section>
 
     <section id="recovery-view" class="page-view" data-view="recovery" role="tabpanel" aria-labelledby="recovery-tab" tabindex="0" hidden>
@@ -823,12 +823,12 @@
 <script src="src/core/sprites.js?v=20260928-sprite-crop1"></script>
 <script src="src/core/namespace.js?v=20260701-gp5"></script>
 <script src="src/core/dom.js?v=20261009-review1"></script>
-<script src="src/core/loader.js?v=20261009-activities"></script>
+<script src="src/core/loader.js?v=20261011-audio-perf"></script>
 <script src="src/core/storage.js?v=20261011-loadout-columns"></script>
-<script src="src/core/text.js?v=20260701-gp5"></script>
+<script src="src/core/text.js?v=20261011-perf2"></script>
 <script src="src/core/locale.js?v=20260701-gp5"></script>
 <script src="src/core/paths.js?v=20261010-current-formats"></script>
-<script src="src/ui/media_player.js?v=20260812-multimedia5"></script>
+<script src="src/ui/media_player.js?v=20261013-media-name"></script>
 <script src="src/ui/splitter.js?v=20261010-catalogs"></script>
 <script src="src/ui/filters.js?v=20261010-refactor1"></script>
 <script src="src/ui/facets.js?v=20261011-loadout-columns"></script>
@@ -837,32 +837,32 @@
 <script src="src/ui/pagination.js?v=20261009-text-limits1"></script>
 <script src="src/ui/list_groups.js?v=20261010-continuous1"></script>
 <script src="src/ui/locate.js?v=20261011-locate1"></script>
-<script src="src/ui/update_badges.js?v=20261010-refactor1"></script>
+<script src="src/ui/update_badges.js?v=20261011-filekey"></script>
 <script src="app_labels.js?v=20261010-current-formats"></script>
 <script src="app_tree.js?v=20261009-review1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="src/features/story/branches.js?v=20261009-review1"></script>
-<script src="app.js?v=20261010-current-formats"></script>
-<script src="assets.js?v=20261011-obj-materials"></script>
+<script src="app.js?v=20261011-story-triggers"></script>
+<script src="assets.js?v=20261012-root-entry"></script>
 <script src="src/features/characters/appearances.js?v=20261009-activities"></script>
   <script src="src/features/characters/index.js?v=20261010-refactor1"></script>
   <script src="src/ui/story_links.js?v=20261010-activity-missions"></script>
   <script src="src/features/gameplay/detail.js?v=20261010-item-equipment-links"></script>
 <script src="src/features/gameplay/items.js?v=20261010-all-gameplay-metadata"></script>
-<script src="src/features/gameplay/labels.js?v=20261011-accessory-copy"></script>
-<script src="src/features/gameplay/loadout.js?v=20261011-accessory-copy"></script>
+<script src="src/features/gameplay/labels.js?v=20261014-sfx-event-label"></script>
+<script src="src/features/gameplay/loadout.js?v=20261012-ability-highlight"></script>
 <script src="src/features/gameplay/skill_refs.js?v=20261002-mechanics2"></script>
 <script src="src/features/gameplay/mechanics.js?v=20261011-tags1"></script>
-<script src="src/features/gameplay/index.js?v=20261011-loadout-columns"></script>
-<script src="src/features/audio/index.js?v=20261010-refactor1"></script>
+<script src="src/features/gameplay/index.js?v=20261014-skill-inferred-sfx"></script>
+<script src="src/features/audio/index.js?v=20261011-audio-perf"></script>
 <script src="src/features/map_recovery/encounters.js?v=20261002-expansion1"></script>
   <script src="src/features/map_recovery/index.js?v=20261010-current-formats"></script>
 <script src="src/features/next_views.js?v=20261010-refactor1"></script>
 <script src="src/features/reference/files.js?v=20261009-review1"></script>
 <script src="src/features/reference/index.js?v=20261010-current-formats"></script>
 <script src="src/features/gameplay/battle_stages.js?v=20261010-all-gameplay-metadata"></script>
-<script src="src/features/gameplay/activities/index.js?v=20261010-all-gameplay-metadata"></script>
-<script src="src/features/gameplay/tabs.js?v=20261010-all-catalog-counts"></script>
+<script src="src/features/gameplay/activities/index.js?v=20261012-hidden-route-guard"></script>
+<script src="src/features/gameplay/tabs.js?v=20261012-root-entry"></script>
 <script src="src/features/updates/index.js?v=20261010-continuous1"></script>
 <script src="src/features/recovery/index.js?v=20261010-refactor1"></script>
 <script src="src/features/data_inspector/index.js?v=20261009-activities"></script>

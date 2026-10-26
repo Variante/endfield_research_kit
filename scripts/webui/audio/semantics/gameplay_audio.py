@@ -2278,7 +2278,7 @@ def compact_gameplay_audio_link(entry: dict[str, Any]) -> dict[str, Any]:
                 key: row[key]
                 for key in (
                     "rootActionIds", "soundObjectCount", "relationTypes",
-                    "selectionPaths", "bankId", "bankPackage",
+                    "selectionPaths", "selectionNodePaths", "bankId", "bankPackage",
                 )
                 if row.get(key) not in (None, "", [])
             }
@@ -2286,6 +2286,82 @@ def compact_gameplay_audio_link(entry: dict[str, Any]) -> dict[str, Any]:
             if isinstance(row, dict)
         ]
     return compact
+
+GAMEPLAY_AUDIO_SELECTOR_KINDS = {
+    6: "switch",
+    7: "group",
+    9: "layer",
+}
+
+
+def gameplay_audio_selection_tree(
+    media: list[dict[str, Any]],
+    evidence_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Rebuild one Event's play-root -> container -> leaf tree for display.
+
+    Each media leaf carries exact ``selectionNodePaths`` from the typed HIRC
+    traversal: ``[rootActionId, container..., leafObjectId]``.  Container
+    kinds come from the same traversal's ``containerEvidence``: ``layer``
+    children sound together, ``random`` children are alternatives (one per
+    trigger), ``sequence`` children play in order across triggers, ``switch``
+    children depend on a runtime switch/state.  The tree states the authored
+    structure only; which branch a runtime trigger takes stays unresolved.
+    Returns ``[]`` when no leaf has a node path (an older Audio index).
+    """
+    kinds: dict[int, str] = {}
+    for row in evidence_rows:
+        for container in row.get("containerEvidence") or ():
+            if not isinstance(container, dict):
+                continue
+            try:
+                object_id = int(container.get("objectId"))
+                object_type = int(container.get("objectType"))
+            except (TypeError, ValueError):
+                continue
+            if object_type == 5:
+                kind = "sequence" if int(container.get("mode") or 0) == 1 else "random"
+            else:
+                kind = GAMEPLAY_AUDIO_SELECTOR_KINDS.get(object_type, "group")
+            kinds.setdefault(object_id, kind)
+    roots: dict[int, dict[str, Any]] = {}
+    for item in media:
+        try:
+            media_id = int(item.get("mediaId"))
+        except (TypeError, ValueError):
+            continue
+        for evidence in item.get("wwiseMediaEvidence") or ():
+            for raw_path in (evidence or {}).get("selectionNodePaths") or ():
+                try:
+                    path = [int(value) for value in raw_path]
+                except (TypeError, ValueError):
+                    continue
+                if len(path) < 2:
+                    continue
+                node = roots.setdefault(path[0], {"kind": "play", "id": path[0], "children": {}})
+                for container_id in path[1:-1]:
+                    node = node["children"].setdefault(container_id, {
+                        "kind": kinds.get(container_id, "group"),
+                        "id": container_id,
+                        "children": {},
+                    })
+                leaf = node["children"].setdefault(-path[-1], {
+                    "kind": "sound", "id": path[-1], "mediaIds": [],
+                })
+                if media_id not in leaf["mediaIds"]:
+                    leaf["mediaIds"].append(media_id)
+
+    def finish(node: dict[str, Any]) -> dict[str, Any]:
+        if node["kind"] == "sound":
+            return node
+        return {
+            "kind": node["kind"],
+            "id": node["id"],
+            "children": [finish(child) for _, child in sorted(node["children"].items(), key=lambda kv: abs(kv[0]))],
+        }
+
+    return [finish(root) for _, root in sorted(roots.items())]
+
 
 def link_gameplay_audio(
     webui_root: Path,
@@ -2491,6 +2567,7 @@ def link_gameplay_audio(
             for relation in row.get("relationTypes") or []
             if str(relation)
         })
+        selection_tree = gameplay_audio_selection_tree(media, evidence_rows)
         traversal_status = (
             "partial" if any(row.get("traversalStatus") == "partial" for row in evidence_rows)
             else "complete" if evidence_rows else "unresolved"
@@ -2521,6 +2598,8 @@ def link_gameplay_audio(
             ),
             "audio": media,
         }
+        if selection_tree:
+            value["selectionTree"] = selection_tree
         event_cache[event_key] = value
         return value
 
@@ -2730,6 +2809,7 @@ def link_gameplay_audio(
                 "mediaRelationTypes": linked.get("mediaRelationTypes") or [],
                 "selectorEvidence": linked.get("selectorEvidence") or {},
                 "actionDispatchEvidence": linked.get("actionDispatchEvidence") or [],
+                "selectionTree": linked.get("selectionTree") or [],
                 "traversalStatus": linked.get("traversalStatus"),
                 "runtimeSelection": linked.get("runtimeSelection"),
                 "evidence": evidence,

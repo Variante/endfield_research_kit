@@ -5548,6 +5548,8 @@ def traverse_hirc_event(
         root_action_id: int,
         relations: tuple[str, ...],
         source: dict[str, Any] | None = None,
+        path_ids: tuple[int, ...] = (),
+        path_types: tuple[int, ...] = (),
     ) -> None:
         if media_id not in source_media_ids:
             source_media_ids.append(media_id)
@@ -5561,6 +5563,7 @@ def traverse_hirc_event(
             "rootActionIds": set(),
             "relationTypes": set(),
             "selectionPaths": set(),
+            "selectionNodePaths": set(),
             "sourceKinds": set(),
             "pluginIds": set(),
             "streamTypes": set(),
@@ -5573,6 +5576,21 @@ def traverse_hirc_event(
         media_row["rootActionIds"].add(root_action_id)
         media_row["relationTypes"].update(relations)
         media_row["selectionPaths"].add(relations)
+        # Exact container ids along this leaf's typed edge path, aligned 1:1
+        # with ``relations`` (relations are appended only at typed child
+        # containers).  Prefixed by the root action and suffixed by the leaf
+        # object so consumers can rebuild layer/random/switch siblings.
+        container_ids = tuple(
+            int(path_id)
+            for path_id, path_type in zip(path_ids, path_types)
+            if path_type in HIRC_TYPED_CHILD_CONTAINER_TYPES
+        )
+        container_relations = tuple(
+            relation for relation in relations
+            if relation not in ("directSound", "musicTrackSource")
+        )
+        if len(container_ids) == len(container_relations):
+            media_row["selectionNodePaths"].add((root_action_id, *container_ids, object_id))
         if source:
             media_row["sourceKinds"].add(str(source.get("sourceKind") or "unknown"))
             media_row["pluginIds"].add(int(source.get("pluginId") or 0))
@@ -5752,6 +5770,7 @@ def traverse_hirc_event(
                 record_media(
                     int(source["sourceId"]), object_id, object_type,
                     root_action_id, relations, source,
+                    current_path_ids, current_path_types,
                 )
             continue
 
@@ -5791,6 +5810,7 @@ def traverse_hirc_event(
                     record_media(
                         media_id, object_id, object_type, root_action_id,
                         relations, source,
+                        current_path_ids, current_path_types,
                     )
             continue
 
@@ -5989,6 +6009,7 @@ def traverse_hirc_event(
             "rootActionIds": sorted(row["rootActionIds"]),
             "relationTypes": sorted(row["relationTypes"]),
             "selectionPaths": [list(path) for path in sorted(row["selectionPaths"])],
+            "selectionNodePaths": [list(path) for path in sorted(row["selectionNodePaths"])],
             "sourceKinds": sorted(row["sourceKinds"]),
             "pluginIds": sorted(row["pluginIds"]),
             "pluginNames": [

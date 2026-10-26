@@ -347,7 +347,7 @@
     if (!maps.length && !missions.length) return '';
     const role = { scene: text('Stage map', '关卡地图'), level: text('Linked area', '关联区域'), entrance: text('Entrance', '入口') };
     const relation = { unlock: text('Unlocked by mission', '任务解锁'), unlockQuest: text('Unlocked by quest', '任务步骤解锁'), missionShell: text('Mission stage', '任务关卡') };
-    const mapChips = maps.map((map) => `<a class="gameplay-value-chip" href="${esc(pageLink('map-recovery', 'map', map.variant || map.id))}"><b>${esc(map.name || map.id)}</b> <span class="gameplay-caption">${role[map.role] || ''}</span></a>`);
+    const mapChips = maps.map((map) => `<a class="gameplay-value-chip" href="${esc(pageLink('map', 'map', map.variant || map.id))}"><b>${esc(map.name || map.id)}</b> <span class="gameplay-caption">${role[map.role] || ''}</span></a>`);
     const missionChips = missions.map((mission) => {
       const label = `<b>${esc(mission.name || mission.id)}</b> <span class="gameplay-caption">${relation[mission.relation] || ''}</span>`;
       return mission.story ? `<a class="gameplay-value-chip" href="${esc(pageLink('story', 'story', mission.story))}">${label}</a>` : `<span class="gameplay-value-chip">${label}</span>`;

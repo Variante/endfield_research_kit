@@ -166,9 +166,103 @@ Selected original Opus code now computes samples from a physical WEM and the
 whole media wrapper returns them with correct pre-skip, trim and playback
 geometry; the external reference differs by at most one signed-16-bit
 quantization step. This is conditional offline PCM evidence with explicit
-platform models that compute no samples. Native Vorbis buffers reach the
-expected geometry but differ materially from the reference; sample parity
-and live provider/mixer/device output remain open. Details stay in
+platform models that compute no samples. Independent isolated host execution
+returns exactly the same Opus floats. Selected numeric Event sources now also
+execute original resident-row admission, exact-key lookup, whole preparation
+and sample publication on the host CPU. The resident fields join the existing
+checked LockDataPtr output layout; available table capacity, input lifetime and
+provider interfaces remain conditions. Eligible duplicate buffers select the
+greatest positive byte count, with latest admitted rows winning equal-size ties
+in the checked cohort. Original host Vorbis produces complete playable outputs, with
+reference differences reported separately from the larger emulator/host gap.
+Original node/source preparation now requests numeric file bytes and executes
+allocation/read/publication before the same resident lookup and context PCM.
+Immediate and deferred preparation preserve the checked output; open/read/EOF
+failures publish no resident bytes. The supplied stream interface selects the
+authenticated physical package occurrence. A stronger cohort now executes
+original encrypted-header loading, table assignment and list admission before
+native numeric row selection and original media XOR; its complete context PCM
+is identical. Successful package load prepends, explicit package reprioritization
+moves an ID to the head, and lookup selects the first matching key/language row.
+The game's load/reorder call sequence and standard-stream/device scheduling
+remain conditional. Original synchronous standard-stream reads, Windows
+completion/decryption and resident publication now also feed original
+memory-provider methods before identical context PCM. Worker dispatch,
+read-only handle/metadata association and device/pool state remain supplied.
+A successful short OS read is distinct from EOF/error:
+native completion can account for requested bytes despite fewer delivered
+bytes, so output admission retains actual counts and full-byte hashes.
+Original parameter refresh and policy/frame admission now execute with authored
+parameter collection excluded. Success can attach an unprepared suppressed
+source, so it is not PCM readiness. Original primary/embedded owner construction
+also retains the source/node, initializes defaults and acquires references under
+supplied object/parameter storage and exclusion input. Original context construction, unity-rate
+frame assembly/release, frame preparation and filter bypass reach master-bus
+output and sink submission through supplied scheduling and render-client interfaces.
+Native frame preparation supplies descriptor fields and corrects the initial
+counter; the emitted PCM is exactly the prior complete decoded PCM. Omitting
+that step in a separate cohort adds initial silence. A native bus sum checks two
+decoded inputs and their gains.
+The stronger route cohort executes original attachment into source and bus
+lists, nonempty preparation, context gain refresh, bus row admission and matrix
+mixing into a separate native PCM allocation, then original bus frame reset.
+No helper copies the source descriptor into a bus row. All logical sample
+values agree; native accumulation can normalize signed-zero bits. Missing
+channel-cache state rolls attachment back, excluded routes/rows produce no bus
+input, omitted gain refresh leaves bus PCM silent, and omitted bus reset retains
+the previous accumulation. Authored bus/output selection and available arena
+state remain supplied conditions.
+Original sink service negotiation also executes with finite endpoint interfaces:
+requested channels can fall back to mix/closest channels, rate mismatch first
+tries Windows conversion and then native resampler setup, and failed event,
+buffer or initial silence release prevents successful setup. The complete
+matched-format route cohort uses that native sink allocation and per-frame
+capacity query, with no helper capacity/valid-count assignment. A full endpoint
+can return query success with zero available quanta. Real endpoint selection,
+COM/device execution and continuous resampled sink PCM remain open.
+Original whole Sound loading and own-property collection now compose with
+that negotiated output path. The native property-slot map joins volume and
+makeup gain to their distinct owner/context/source gain paths, while authored
+low-pass controls activate original source filters. Complete submitted sample
+values match independent selected AVX/FMA gain arithmetic from the captured
+native filtered PCM, including terminal fades and padded filter history.
+Preserve constructor filter flags; forced bypass flags invalidate this cohort.
+Empty parent/bus/controller state remains an explicit condition. Stored
+ActorMixer ancestry and its output-bus override identify the next native
+registry/recursive-collection join; Sound own properties do not establish
+effective game loudness.
+The separate inherited cohort now authenticates whole parent/bus loaders,
+registry/link fixups and settings/default consumers, with a reusable STMG reader
+and authenticated available-bank census. An initialized empty parameter manager
+differs from physical bank defaults. Original default/transition setters and
+recursive collection now compose through source filters, native mixing and
+finite render buffers; every submitted sample value passes the independent
+gain check. The original null-component fallback constructs default listener
+state, whose empty vectors remain unchanged. A supplied single mixer bus still
+differs from the loaded authored bus ancestry. A corrected phase capture now
+observes component/listener returns, completed Action-to-selector transport,
+constructed-owner continuity into nonzero PCM and sampled context/bus routes.
+Complete native voice paths match external package entries, and a finite
+nonzero live prefix exactly matches original native decoding of one matching
+physical WEM. These sparse joins retain explicit allocation/lifetime and
+package-selection conditions. The device phase capture now observes successful
+same-invocation buffer requests, byte-exact sink/render prefix copies and
+successful Windows release results. This closes sampled API submission, while
+complete source-to-mixed-frame attribution and allocation generations still need
+the targeted evidence described in
+[`runtime_capture_requirements.md`](../runtime_capture_requirements.md#audio-event-owner-listener-and-output-selection).
+Caller review now excludes an incorrectly declared historical mixer-row array:
+those recipes read task-state bytes, while independent route source/bus fields
+remain valid. Mixer capture now supplies the actual row array and completed
+output conversion; recorded constant gain reproduces the saved first-channel
+output prefix. The initial current-serial read used a neighboring word and is
+excluded. A corrected repeat is prepared, with its serial load now bound to the
+owned selector-blob field. Other current owner/source reads remain usable with
+partial identity. Another voice prefix independently matches original native
+decoding from its matching physical WEM.
+Live package/provider choice, pointer generations, inherited owner/route/effect
+state, varying pitch/rate, complete device negotiation/processing history and
+audibility remain open. Details stay in
 [`audio_native_hooks.md`](audio_native_hooks.md).
 
 Representative complete external rows now have fresh physical-package,
@@ -187,8 +281,10 @@ and numeric sound-package row witnesses with exact offline WEM/FLAC PCM
 agreement. Their memory-labelled sources occur in banks without embedded
 media sections; the sound bytes live in a separate package. Buffering policy
 therefore cannot choose physical storage. These are selected bank/package
-occurrences and playable source content, with live bank/media selection,
-source data-pointer acquisition, effects and output still outside the proof.
+occurrences and playable source content. Conditional native resident-pointer
+acquisition and whole media preparation are now checked offline; live
+bank/media selection, actual game package/provider choice, effects and device output remain
+outside the proof.
 
 ## The structural lanes
 

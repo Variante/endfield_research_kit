@@ -24,13 +24,8 @@
 //   * Identity-only collapsed groups exist for chr_*, au_chr_*,
 //     au_actor_<token>_*, au_monster_<token>_* and au_ namespaces and are
 //     never merged with skill or animation SFX.
-//   * The overview loads audio/scene_backgrounds.json as a compact scene
-//     catalog (validated and missing object-index sources, partial coverage
-//     visible, filters by scene id, mission id or Event); Event chips
-//     navigate to the Event detail, and no Wwise branch or media is copied.
-//   * staticProviderPreparation v1 is a separate static Runtime detail. Only
-//     selected-build validated, allowlisted direct/conditional claims render;
-//     no captured invocation, concrete provider, codec or media link follows.
+//   * With no selection the detail pane stays empty; the index-level
+//     runtime/catalog overview is not rendered.
 //
 // Detail sections (all authored serialized joins)
 //   * Event details list exact SkillData/BuffData PlaySound contexts when the
@@ -111,7 +106,6 @@
   const ROW_HEIGHT = 66;
   const OVERSCAN_PX = 260;
   const INDEX_PATH = (language) => `data/lang/${encodeURIComponent(language)}/audio/index.json`;
-  const SCENE_CATALOG_PATH = (language) => `data/lang/${encodeURIComponent(language)}/audio/scene_backgrounds.json`;
   const PANE_STORAGE_KEY = "webui_audio_splitter_width";
   const FILTER_HEIGHT_STORAGE_KEY = "webui_filter_splitter_height_audio";
   const FILTER_PANEL_STORAGE_KEY = "audio_browser_filters_collapsed";
@@ -197,155 +191,20 @@
       retry: "Retry",
       noMatches: "No audio records match these filters.",
       noData: "No records were emitted for this audio dataset.",
-      runtimeSystem: "Runtime system",
       runtimeBoundary: "Evidence boundary",
       runtimeObservedRequest: "Verified runtime request",
-      runtimeExternalRequests: "Captured external-source requests",
-      runtimeExternalRequestBoundary: "These full paths and cookies were observed at the managed request boundary. A verified receipt linking the request path, package entry, and decoded file is unavailable, so no media binding is published. Native source selection, file opening, codec use, and audibility remain unresolved.",
-      runtimeExternalRequestCount: "request(s)",
-      runtimeExternalPathCount: "distinct path(s)",
-      runtimeExternalRequestCookie: "Cookie",
-      runtimeExternalRequestUnavailable: "External-source request evidence unavailable",
-      runtimeNativeSourceCaptures: "Captured native source relations",
-      runtimeNativeSourceBoundary: "These anonymous source fields and same-thread native consumer calls passed the strict capture audit. Event/media identity, managed path ownership, pointer lifetime, successful lookup, decoded content and audibility remain unresolved.",
-      runtimeNativeSourceUnavailable: "Native source capture evidence unavailable",
-      runtimeNativeSourcePairs: "source pairs",
-      runtimeNativeSourceNestedPairs: "nested consumer pairs",
-      runtimeNativeSourceFlagStates: "Entry flag bit 8: clear / set / unavailable",
-      runtimeNativeSourceSamplesLimited: "Representative samples are bounded; totals cover the complete audited capture.",
-      runtimeNativeSourceSessions: "capture sessions",
-      runtimeNativeSourceBridge: "Native source selection",
-      runtimeNativeSourceBridgeBoundary: "Selected native text, a cloned source, and a constructed anonymous owner are joined only within the audited same-thread call interval. Managed request ownership, Event/media identity, backing file, decoding, pointer lifetime and audibility remain unresolved.",
-      staticProviderPreparation: "Static provider preparation",
-      staticProviderUnavailable: "Provider preparation evidence unavailable for the selected build",
-      staticProviderDecoderOwnerSource: "The preparation helper reads the decoder’s primary owner, then that owner’s stored source.",
-      staticProviderConditionalPointerOrWord: "In the ordinary branch, a source flag selects the stored data pointer or numeric source word for the provider descriptor.",
-      staticProviderArgumentHalfword: "The upper half of the source argument word is copied into a separate descriptor field. Its codec meaning remains unresolved.",
-      staticProviderAlternateOwnerInput: "The alternate source-kind branch passes a separate owner-held pointer and word to another provider slot.",
-      staticProviderConditionalProviderInterface: "With the reviewed singleton initialization, the ordinary branch returns a secondary provider interface on its success branch; the alternate branch returns the allocation base.",
-      staticProviderConditionalOwnedText: "When allocation succeeds in that ordinary route, non-null UTF-16 descriptor text is copied into owned, NUL-terminated storage. The alternate route retains its incoming pointer and word.",
-      staticProviderStorageUnavailable: "Provider construction and storage evidence unavailable for the selected build",
-      staticProviderBoundary: "These are authenticated static reads and conditional routes. Singleton replacement, live provider invocation, opened file, codec identity, decoder lifetime and audible output remain unresolved.",
-      runtimeNativeSourceBridgeRelations: "verified relations",
-      runtimeNativeSourceBridgeUnresolved: "Unresolved joins",
-      runtimeNativeSourceBridgeText: "Native text",
-      runtimeNativeCaptureWorkflow: "Saved native source/owner observations appear after a complete session passes the selected-build audit. Entry observations leave native returns, pointer lifetimes and earlier-source continuity unresolved.",
-      runtimeNativeEntries: "Native source/owner entry observations",
-      runtimeNativeEntryCount: "entries",
-      runtimeNativeEntryBoundary: "Each count and text belongs to a captured function entry. Texts at different hooks are counted separately; no chain is inferred between calls. Returns, pointer lifetime, managed ownership, provider/file identity and audibility remain unresolved. Zero carrier entries mean this window contains no carrier snapshot.",
-      runtimeNativeEntryStorage: "Source fields at entry: bit 8 clear / set; set with nonzero data pointer / zero stored word 8",
-      runtimeNativeEntryUnavailable: "Entry observations unavailable",
-      runtimeManagedPosts: "Managed request and result pairs",
-      runtimeManagedPostBoundary: "Event ID, audio object and external path were submitted together in one managed call. Its returned playing ID is shown separately. Original external cookie and raw Beyond codec arguments appear only when the declared recipe records them; they do not identify a game codec, asynchronous native reads or audible output.",
-      runtimeManagedPostCounts: "Post pairs / external-source pairs / nonzero returned playing IDs",
-      runtimeManagedPostFields: "Event ID / audio object ID / returned playing ID / callback-type argument",
-      runtimeManagedPostPath: "External path projection",
-      runtimeManagedPostOriginalArguments: "Original external cookie / raw Beyond codec argument",
-      runtimeProviderEntries: "Provider inputs and caller sites",
-      runtimeIoEntries: "Retained providers and package lookup inputs",
-      runtimeIoBoundary: "Retained text and the selected I/O address point are local entry reads. Computed path keys are compared with a separate lookup-input cohort; calls are not paired. A key match does not establish the returned package row, file reading, decoding or audibility.",
-      runtimeIoDescriptor: "Retained descriptor: nonzero / zero / unreadable or guarded out",
-      runtimeIoDevice: "Selected device: nonzero / zero / unreadable or guarded out",
-      runtimeIoAddressPoint: "Selected I/O: matched default package dispatcher / different / unreadable or guarded out",
-      runtimeIoKey: "Computed full-path key",
-      runtimeIoKeyInputs: "Hash inputs / same-key lookup inputs",
-      runtimeIoLookupKey: "Observed lookup key",
-      runtimeIoLookupFacts: "Lookup inputs / reviewed caller / required flags kind / distinct table pointers",
-      runtimeIoTables: "Table row counts at lookup entry",
-      runtimePackageCompletions: "Package descriptor completion entries",
-      runtimePackageCompletionBoundary: "The reviewed completion entry compares its local provider/request/result pointers and incoming status. Descriptor values are observed before request release. No selected lookup row, backing-file identity, media read, decoding or audibility is established.",
-      runtimePackageGeometry: "Descriptor length / block offset / block bytes / byte offset",
-      runtimePackagePathKeys: "Computed full-path key / descriptor low-word match / byte-offset match",
-      runtimePackageReads: "Package read and completion entries",
-      runtimeObservedCoverage: "Coverage of this recording",
-      packageCatalog: "Installed package inventory (offline)",
-      packageCatalogBoundary: "The complete available VFS roster and package bytes were checked offline. Keys retain sector, full width, language value and package identity. Repeated bank keys and matching low words do not select a package, decoded file or live playback.",
-      packageCatalogCounts: "Available packages / indexed entries / distinct typed keys / excluded packages",
-      packageCatalogRepeated: "Repeated typed keys / distinct full-key collisions after truncation to 32 bits",
-      packageCatalogSectors: "Entry sectors",
-      packageCatalogBlocks: "Packages by VFS block",
-      packageCatalogBankIdentities: "Bank headers matched to full bank keys",
-      packageCatalogBankVersions: "Stored bank versions",
-      packageCatalogLanguageLabels: "Stored package language labels / entry counts",
-      packageCatalogLanguageTable: "Stored language IDs and labels",
-      packageCatalogLanguageBoundary: "Labels come from each package's own Windows language table. They do not establish a clip's spoken language or the runtime language selection.",
-      packageCatalogLanguageUnresolved: "Entries without a declared language label",
-      packageCatalogLanguageTruncated: "Language-label preview is limited; complete values remain in the offline report.",
-      packageCatalogRows: "Package identities and entry counts",
-      packageCatalogCollisions: "Key ambiguity examples",
-      packageCatalogLowWords: "Low word / full external keys",
-      runtimeObservedCoverageBoundary: "Counts include all checked entries before display limits. They describe branches observed in this window, not coverage of installed files. Repeated samples do not prove unobserved paths, complete payload contents or allocation lifetimes.",
-      runtimeCoverageChecked: "Checked transform entries",
-      runtimeCoverageEncryption: "Encryption flag values",
-      runtimeCoverageAlignment: "Relative offset modulo 4",
-      runtimeCoverageOrigin: "Relative offset classes",
-      runtimeCoverageRanges: "Descriptor-range cohorts",
-      runtimeSampleStrata: "Displayed / observed sample strata",
-      runtimeSampleCohorts: "Displayed / observed descriptor cohorts",
-      runtimeSampleSelectionBoundary: "Representatives are distributed across observed strata. Aggregate counts include entries omitted from display; unrepresented strata remain listed in the generated data.",
-      runtimePackageReadRanges: "Key low word / transform entries / range bytes / descriptor length / ranges span descriptor / sampled words",
-      runtimePackageReadRangeBoundary: "Ranges group matching descriptor geometry across entries. They describe requested buffer processing; only sampled words were retained. Allocation lifetimes and complete buffer contents remain unresolved.",
-      runtimePackageWordWitness: "Indexed encoded-word comparison",
-      runtimePackageWordBoundary: "Candidate package rows match local descriptor geometry and sampled words. This bounded index comparison does not identify the live backing file or prove decoded output.",
-      runtimePackageWordCounts: "Matched words / sampled words / distinct sampled bytes",
-      runtimePackageOfflineDecode: "Offline selected-entry PCM comparisons",
-      runtimePackageOfflineDecodeBoundary: "Prior offline decodes matched the explicitly selected FLAC PCM. Current candidate bytes and decoded-file identities still match those receipts; decoding is not repeated during this refresh. This does not identify the game's codec instance, live Event selection or audible output.",
-      runtimePackageOfflineDecodeFields: "Encoding / channels / sample rate / duration (s) / PCM bytes equal",
-      runtimePackageBufferSamples: "Representative buffer-word snapshots",
-      runtimePackageStaticProof: "Static transfer and transform proof",
-      runtimeTransferReceivers: "Transfer and completion receiver entries",
-      runtimeTransferReceiverMissing: "This recording does not retain completion receiver fields. A prepared profile could observe them, but further capture is deferred until a shared recovery benefit is established.",
-      runtimeTransferReceiverBoundary: "User-data/block and receiver/node equality are local non-atomic snapshots. Address points select reviewed interfaces, not codec classes. The dispatcher recycles its block before receiver calls; later carrier block values do not establish the original transfer or allocation generation.",
-      runtimePackageStaticBoundary: "The reviewed initializer stores an embedded transfer and its block back-pointer. The reviewed primary-provider and separate queued-receiver interfaces dispatch completion to request-state handlers. These conditional static facts do not identify the live completion receiver or game codec instance.",
-      runtimePackageReadBoundary: "Local read inputs and platform completion arguments are shown separately. The pre-transform entry checks its own cookie descriptor and reviewed caller. Entries are not paired; a buffer word is not decoded PCM or proof of audibility.",
-      runtimePackageReadGeometry: "Descriptor key low word / length / transfer position / requested bytes / transform bytes / pre-transform buffer word",
-      runtimeProviderEntryCallers: "Observed caller roles",
-      runtimeProviderEntryBoundary: "Caller roles match reviewed instruction return sites. Address-point matches and descriptor inputs belong to individual entries. An open-dispatch entry does not prove a file opened; no chain between entries, completed storage, decoding or audibility is inferred.",
-      runtimeProviderEntryText: "Input text pointer: nonzero / null; terminated text",
-      runtimeProviderEntryAddressPoint: "Local address point: matched / different / unreadable",
-      runtimeProviderSourceCaller: "Source-based preparation caller",
-      runtimeProviderDecoderCaller: "Decoder preparation caller",
-      runtimeNativeOwnerCarrier: "Decoder owner snapshots",
-      runtimeNativeOwnerCarrierMatches: "matching owner snapshots",
-      runtimeNativeOwnerCarrierBoundary: "Fixed fields are captured only at the reviewed control-handler entry. Decoder-owner equality is a local snapshot; it does not join earlier source generations or prove decoder creation, a file, codec, playback or an internal branch. Source pointers are not interpreted as text or media.",
-      runtimeNativeSourceBridgeTexts: "distinct native texts",
-      runtimeNativeSourceBridgeDescriptors: "single-descriptor selectors",
       runtimeObservedRequestNote: "This Event was observed at a managed audio request boundary in a hash-verified capture. It proves the request executed in that capture, not Wwise branch selection, decoded-media selection, or audibility.",
-      runtimeComponents: "Runtime components",
-      hircInventory: "Wwise HIRC inventory",
-      effectParameterGate: "Effect parameter evidence",
-      effectParameterGateValidated: "Selected native gate validated {count} reviewed plug-in classes. Named settings are authored bank values; live effect activation and DSP output remain unobserved.",
-      effectParameterGateStructural: "It also verified the native read spans of {count} plug-in classes whose setting meanings remain unresolved.",
-      effectParameterGateUnavailable: "Selected native gate: {status}. Native-backed setting names are unavailable or unverified; raw parameter evidence remains.",
-      effectParameterGateAbsent: "This Audio index has no selected native effect-parameter gate. Refresh its generated data before relying on named settings.",
       controlCatalog: "Audio controls / cue catalog",
-      physicsAudioCatalog: "Physics / environment audio definitions",
-      modelViewStateAudioCatalog: "ModelView state audio behaviors",
-      cueOperands: "Cue expression operands",
-      globalMusicCues: "Global music cue references",
       rtpcParameters: "RTPC parameters",
       physicsAudioRtpcParameters: "Physics / environment RTPC parameters",
       modelViewStateRtpcParameters: "ModelView state RTPC parameters",
-      modelViewStateSpatialControls: "ModelView state spatial controls",
-      modelViewStateCustomAudioControls: "ModelView custom-audio controls (unresolved)",
       audioCueRequests: "AudioCue authored Event requests",
       audioCueStringLiteralControl: "AudioCue string literals (typed control)",
       audioCueRuntimeUnobserved: "AudioCue runtime activation is unobserved; serialized expressions do not prove execution, branch selection, media, or audibility.",
       audioCueExpressionAst: "AudioCue expression AST / validation detail",
-      levelScriptCueInvocations: "LevelScript cue invocations",
-      levelScriptDynamicBindings: "LevelScript dynamic Event bindings",
-      levelScriptControls: "LevelScript audio controls",
-      levelScriptDynamicControls: "LevelScript dynamic control bindings",
       levelScriptAudioLifecycle: "LevelScript audio lifecycle",
-      levelEventConditions: "LevelEvent audio conditions",
       wwiseSelectorGroups: "Wwise selector runtime joins",
-      wwiseInitialRtpcParameters: "Named Initial RTPC curve parameters",
-      wwiseActionControls: "Wwise Action control joins",
       staticRtpcAlignment: "Static GameParameter / RTPC alignment",
-      levelScriptRadioCatalog: "LevelScript radio triggers",
-      unresolvedRadioIds: "Unresolved radio IDs",
-      unresolvedRadioLines: "Unresolved radio lines",
-      dynamicRadioBindings: "Dynamic radio ID bindings",
       radioTableLines: "RadioTable dialog lines",
       radioTriggerContexts: "Exact LevelScript radio contexts",
       radioTriggerContextCoverage: "Radio trigger context coverage",
@@ -423,7 +282,6 @@
       purposeKnown: "Purpose known",
       purposeStoryTerminal: "Story-line bound — terminal",
       scannedBankSet: "Scanned bank set",
-      recoveryBoundary: "Recovery coverage",
       unresolvedEventBoundary: "This authored Event reference has a recovered trigger context, but no matching Wwise Event object was found in the current audio-library index. No media or playback branch is inferred.",
       unknownLocationBoundary: "This decoded file is browser-playable, but no authored Event relation or direct dialog placement was recovered. Its presence in an audio package does not identify where the game plays it.",
       eventOnlyLocationBoundary: "This decoded file is reachable from a Wwise Event, but that Event has no recovered authored trigger context. The Event relation does not identify a gameplay, story, animation, or level placement.",
@@ -437,7 +295,6 @@
       eventIds: "Event IDs",
       actions: "Actions / objects",
       recordType: "Record type",
-      playbackEvent: "Playback event",
       wwiseEvent: "Wwise Event",
       unnamedWwiseEvent: "Wwise Event (authored trigger unknown)",
       authoredEventReference: "Event unresolved to an audio-library object",
@@ -448,29 +305,6 @@
       contextGameplay: "Gameplay",
       contextCutscene: "Cutscene / story",
       contextTimeline: "Timeline / LevelSequence",
-      levelSequenceAudioCatalog: "LevelSequence audio ownership",
-      dialogLifecycleAudioCatalog: "Dialog lifecycle audio hooks",
-      levelSequenceTimelineContexts: "Timeline contexts",
-      levelSequenceExactContexts: "Exact Timeline + LevelScript joins",
-      levelSequenceInferredContexts: "Inferred trigger contexts",
-      levelSequenceGapContexts: "Ownership gaps",
-      levelSequenceRuntimeBoundary: "Timeline runtime boundary",
-      audioTriggerContextCatalog: "Authored trigger-context coverage",
-      sceneCatalog: "Scene audio catalog",
-      sceneCatalogSearch: "Filter scenes, missions, or Events",
-      sceneCatalogPartial: "Partial source coverage",
-      sceneCatalogComplete: "Validated source coverage",
-      sceneCatalogUnavailable: "Scene audio catalog unavailable",
-      sceneCatalogBoundary: "Scene evidence boundary",
-      sceneCatalogSources: "Object-index sources",
-      sceneCatalogScenes: "Catalog scenes",
-      sceneCatalogEvents: "Scene-global Event occurrences",
-      sceneCatalogEmitters: "Authored emitters",
-      sceneCatalogMissionRefs: "Mission references",
-      sceneCatalogNoMatches: "No catalog scenes match this filter.",
-      sceneCatalogMore: "additional matching scenes",
-      sceneCatalogEmitterGap: "Emitter placement remains prefab-local; no level ownership is claimed.",
-      enemyTriggerVoiceActionCatalog: "Enemy trigger-voice action mapping",
       contextAnimation: "Animation",
       contextSceneAudio: "Scene audio",
       contextSceneGlobalExact: "Exact authored scene-global context",
@@ -546,9 +380,6 @@
       relationMusicSource: "Music track sources",
       relationExternalSource: "Runtime external source",
       relationSynthesizedSource: "Synthesized / plugin source",
-      musicSwitchContainer: "Music Switch container",
-      musicRandomSequenceContainer: "Music Random / Sequence container",
-      musicSegment: "Music segment",
       musicTrack: "Music track",
       possibleMedia: "Possible media",
       playRoots: "Play roots",
@@ -654,155 +485,20 @@
       retry: "\u91cd\u8bd5",
       noMatches: "\u6ca1\u6709\u97f3\u9891\u8bb0\u5f55\u7b26\u5408\u5f53\u524d\u7b5b\u9009\u3002",
       noData: "\u8be5\u97f3\u9891\u6570\u636e\u96c6\u6ca1\u6709\u751f\u6210\u8bb0\u5f55\u3002",
-      runtimeSystem: "\u8fd0\u884c\u65f6\u7cfb\u7edf",
       runtimeBoundary: "\u8bc1\u636e\u8fb9\u754c",
       runtimeObservedRequest: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u8bf7\u6c42",
-      runtimeExternalRequests: "已捕获的外部音源请求",
-      runtimeExternalRequestBoundary: "这些完整路径与 Cookie 在托管请求边界被观测到。缺少将请求路径、资源包条目与解码文件相连的已验证凭据，因此未发布媒体绑定。原生音源选择、文件打开、编解码器使用与可听性仍未确定。",
-      runtimeExternalRequestCount: "次请求",
-      runtimeExternalPathCount: "个不同路径",
-      runtimeExternalRequestCookie: "Cookie",
-      runtimeExternalRequestUnavailable: "外部音源请求证据不可用",
-      runtimeNativeSourceCaptures: "已捕获的原生音源关系",
-      runtimeNativeSourceBoundary: "这些匿名音源字段和同线程原生消费者调用通过了严格捕获审计。Event/媒体身份、托管路径归属、指针生命周期、查找成功、解码内容与可听性仍未确定。",
-      runtimeNativeSourceUnavailable: "原生音源捕获证据不可用",
-      runtimeNativeSourcePairs: "组音源调用",
-      runtimeNativeSourceNestedPairs: "组嵌套消费者调用",
-      runtimeNativeSourceFlagStates: "入口标志位 8：未设置 / 已设置 / 不可用",
-      runtimeNativeSourceSamplesLimited: "代表样本数量有限；计数覆盖完整的已审计捕获。",
-      runtimeNativeSourceSessions: "个捕获会话",
-      runtimeNativeSourceBridge: "原生音源选择",
-      runtimeNativeSourceBridgeBoundary: "所选原生文本、克隆音源和构造出的匿名所有者，仅在已审计的同线程调用区间内关联。托管请求归属、Event/媒体身份、实际文件、解码、指针生命周期与可听性仍未确定。",
-      staticProviderPreparation: "静态供给器准备流程",
-      staticProviderUnavailable: "所选版本的供给器准备证据不可用",
-      staticProviderDecoderOwnerSource: "准备函数先读取解码器的主所有者，再读取该所有者保存的音源。",
-      staticProviderConditionalPointerOrWord: "普通分支通过音源标志，在数据指针与数值音源字段之间选择供给器描述符输入。",
-      staticProviderArgumentHalfword: "音源参数字段的高半字被复制到独立的描述符字段；其编码格式含义仍未确定。",
-      staticProviderAlternateOwnerInput: "另一音源类型分支将所有者保存的独立指针和数值字段传给供给器的另一接口。",
-      staticProviderConditionalProviderInterface: "在已核验的单例初始化下，普通分支成功时返回供给器的次级接口；另一分支返回分配基址。",
-      staticProviderConditionalOwnedText: "该普通路径分配成功时，将非空 UTF-16 描述符文本复制到自有、以零结尾的存储中；另一条路径保留传入的指针和数值字段。",
-      staticProviderStorageUnavailable: "所选版本的供给器构造与存储证据不可用",
-      staticProviderBoundary: "这些是已验证的静态读取和条件路径。单例替换、实时供给器调用、打开的文件、编码格式、解码器生命周期与可听输出仍未确定。",
-      runtimeNativeSourceBridgeRelations: "组已验证关系",
-      runtimeNativeSourceBridgeUnresolved: "未验证关联",
-      runtimeNativeSourceBridgeText: "原生文本",
-      runtimeNativeOwnerCarrier: "解码器所有者快照",
-      runtimeNativeCaptureWorkflow: "保存的原生音源／所有者观测需具备完整会话并通过当前版本审计后才会显示。入口观测无法确定原生返回值、指针生命周期及先前音源的连续性。",
-      runtimeNativeEntries: "原生音源／所有者入口观测",
-      runtimeNativeEntryCount: "次入口",
-      runtimeNativeEntryBoundary: "每个计数与文本均属于一次函数入口观测。不同函数的文本分别计数，不推断调用之间的关联。返回值、指针生命周期、托管归属、提供者／文件身份及可听性仍未确定。载体入口为零仅表示本窗口没有载体快照。",
-      runtimeNativeEntryStorage: "入口音源字段：位 8 未设置／已设置；已设置且数据指针非零／存储字 8 为零",
-      runtimeNativeEntryUnavailable: "入口观测不可用",
-      runtimeManagedPosts: "托管请求与返回配对",
-      runtimeManagedPostBoundary: "Event ID、音频对象和外部路径属于同一次托管调用，返回的播放 ID 单独显示。仅在声明的方案确实记录时显示原始外部 cookie 与 Beyond 编解码器参数；这些值不确定游戏编解码器、异步原生读取的归属或可听输出。",
-      runtimeManagedPostCounts: "请求配对／外部音源配对／非零返回播放 ID",
-      runtimeManagedPostFields: "Event ID／音频对象 ID／返回播放 ID／回调类型参数",
-      runtimeManagedPostPath: "外部路径投影",
-      runtimeManagedPostOriginalArguments: "原始外部 cookie／原始 Beyond 编解码器参数",
-      runtimeProviderEntries: "提供者输入与调用点",
-      runtimeIoEntries: "保留的提供者与包查找输入",
-      runtimeIoBoundary: "保留文本与所选 I/O 地址点均为局部入口读取。计算的路径键与另一组查找输入比较，不配对调用。键匹配不证明返回的包记录、文件读取、解码或可听性。",
-      runtimeIoDescriptor: "保留描述符：非零／零／不可读或未满足读取条件",
-      runtimeIoDevice: "所选设备：非零／零／不可读或未满足读取条件",
-      runtimeIoAddressPoint: "所选 I/O：匹配默认包派发器／不同／不可读或未满足读取条件",
-      runtimeIoKey: "完整路径计算键",
-      runtimeIoKeyInputs: "哈希输入／相同键的查找输入",
-      runtimeIoLookupKey: "已观测查找键",
-      runtimeIoLookupFacts: "查找输入／已验证调用点／所需标志类型／不同表指针",
-      runtimeIoTables: "查找入口处的表记录数",
-      runtimePackageCompletions: "包描述符完成入口",
-      runtimePackageCompletionBoundary: "已验证的完成入口比较局部提供者／请求／结果指针与传入状态。描述符字段在请求释放前观测，不证明所选查找记录、底层文件身份、媒体读取、解码或可听性。",
-      runtimePackageGeometry: "描述符长度／块偏移／块字节数／字节偏移",
-      runtimePackagePathKeys: "完整路径计算键／描述符低位匹配／字节偏移匹配",
-      runtimePackageReads: "包读取与完成入口",
-      runtimeObservedCoverage: "本次记录的覆盖范围",
-      packageCatalog: "已安装音频包清单（离线）",
-      packageCatalogBoundary: "已离线检查全部可用 VFS 音频包及其完整字节。键保留索引区类型、完整位宽、语言值和包身份。重复的音频库键或相同的低位不确定所选音频包、解码文件或运行时播放。",
-      packageCatalogCounts: "可用包／索引记录／不同类型化键／缺失而排除的包",
-      packageCatalogRepeated: "重复类型化键／截断为 32 位后冲突的不同完整键组",
-      packageCatalogSectors: "索引区记录数",
-      packageCatalogBlocks: "各 VFS 类型的音频包数",
-      packageCatalogBankIdentities: "与完整音频库键匹配的库头数",
-      packageCatalogBankVersions: "存储的音频库版本",
-      packageCatalogLanguageLabels: "包内存储的语言标签／索引记录数",
-      packageCatalogLanguageTable: "存储的语言 ID 与标签",
-      packageCatalogLanguageBoundary: "标签来自各音频包自身的 Windows 语言表；不能据此确定音频实际使用的语言或运行时语言选择。",
-      packageCatalogLanguageUnresolved: "语言标签未声明的索引记录",
-      packageCatalogLanguageTruncated: "语言标签预览已限量；完整内容保留在离线报告中。",
-      packageCatalogRows: "音频包身份与索引记录数",
-      packageCatalogCollisions: "键歧义示例",
-      packageCatalogLowWords: "低位／完整外部源键",
-      runtimeObservedCoverageBoundary: "计数包含显示限制前的所有已检查入口，只描述本次窗口观测到的分支，不代表已安装文件的覆盖率。重复采样不证明未观测路径、完整载荷内容或分配生命周期。",
-      runtimeCoverageChecked: "已检查的变换入口",
-      runtimeCoverageEncryption: "加密标志取值",
-      runtimeCoverageAlignment: "相对偏移除以 4 的余数",
-      runtimeCoverageOrigin: "相对偏移类别",
-      runtimeCoverageRanges: "描述符范围分组",
-      runtimeSampleStrata: "已显示／已观测采样分层",
-      runtimeSampleCohorts: "已显示／已观测描述符分组",
-      runtimeSampleSelectionBoundary: "代表样本分散到已观测的各层。汇总计数包含未显示的入口；生成数据仍列出未获显示的分层。",
-      runtimePackageReadRanges: "键低位 / 变换入口数 / 范围字节 / 描述符长度 / 范围覆盖描述符 / 采样字数",
-      runtimePackageReadRangeBoundary: "范围按入口中相同的描述符几何分组，表示请求的缓冲处理；只保留了采样字。分配生命周期和完整缓冲内容仍未确定。",
-      runtimePackageWordWitness: "索引包编码字比较",
-      runtimePackageWordBoundary: "候选包记录匹配入口中的描述符几何和采样字。索引范围有限；比较不确定运行中的后备文件，也不证明解码输出。",
-      runtimePackageWordCounts: "匹配字数 / 采样字数 / 不同采样字节数",
-      runtimePackageOfflineDecode: "离线所选记录 PCM 比较",
-      runtimePackageOfflineDecodeBoundary: "先前离线解码与明确选择的 FLAC PCM 相同。当前候选字节与解码文件身份仍符合这些回执，本次刷新不重复解码。这不确定游戏编解码器实例、运行时 Event 选择或可听输出。",
-      runtimePackageOfflineDecodeFields: "编码／声道／采样率／时长（秒）／PCM 字节相同",
-      runtimePackageBufferSamples: "代表性缓冲字快照",
-      runtimePackageStaticProof: "静态传输与变换证明",
-      runtimeTransferReceivers: "传输与完成接收者入口",
-      runtimeTransferReceiverMissing: "此记录未保留完成接收者字段。现有方案可用于观测，但在明确可推广的恢复收益前，暂缓新增捕获。",
-      runtimeTransferReceiverBoundary: "用户数据／传输块以及接收者／节点相等仅是局部非原子快照。地址点选择已审阅接口，不确定编解码器类。派发器在调用接收者前回收传输块，后续载体中的传输块值不证明原始传输或分配生命周期。",
-      runtimePackageStaticBoundary: "已审阅的初始化器保存内嵌传输记录及其所在块的反向指针。已审阅的主提供者和独立排队接收者接口将完成状态派发给请求状态处理函数。这些条件性静态事实不确定运行中的完成接收者或游戏解码器实例。",
-      runtimePackageReadBoundary: "读取输入和系统完成参数分别显示。缓冲变换前入口检查自身 cookie 描述符和已审阅调用点。入口不配对；一个缓冲字不代表解码 PCM 或可听输出。",
-      runtimePackageReadGeometry: "描述符键低位／长度／传输位置／请求字节数／变换字节数／变换前缓冲字",
-      runtimeProviderEntryCallers: "已观测调用方角色",
-      runtimeProviderEntryBoundary: "调用方角色由已验证的指令返回位置确定。地址点匹配与描述符输入均属于单次入口。打开派发入口不证明文件打开成功；不推断入口之间的链路、存储完成、解码或可听性。",
-      runtimeProviderEntryText: "输入文本指针：非零／空；已终止文本",
-      runtimeProviderEntryAddressPoint: "本次入口地址点：匹配／不同／不可读",
-      runtimeProviderSourceCaller: "音源请求准备调用点",
-      runtimeProviderDecoderCaller: "解码器准备调用点",
-      runtimeNativeOwnerCarrierMatches: "所有者匹配快照",
-      runtimeNativeOwnerCarrierBoundary: "固定字段仅在已验证的控制处理函数入口采样。解码器所有者相等只表示局部快照，不关联先前音源的生命周期，也不证明解码器创建、文件、编解码器、播放或内部执行分支。音源指针不作为文本或媒体解释。",
-      runtimeNativeSourceBridgeTexts: "种原生文本",
-      runtimeNativeSourceBridgeDescriptors: "个单描述符选择器",
       runtimeObservedRequestNote: "\u6b64 Event \u5728\u5df2\u9a8c\u8bc1\u54c8\u5e0c\u7684\u6355\u83b7\u4e2d\u4e8e\u97f3\u9891\u8bf7\u6c42\u8fb9\u754c\u88ab\u89c2\u5bdf\u5230\u3002\u8fd9\u4ec5\u8bc1\u660e\u8be5\u6355\u83b7\u4e2d\u7684\u8bf7\u6c42\u6267\u884c\uff0c\u4e0d\u8bc1\u660e Wwise \u5206\u652f\u3001\u5df2\u89e3\u7801\u5a92\u4f53\u6216\u53ef\u542c\u6027\u3002",
-      runtimeComponents: "\u8fd0\u884c\u65f6\u7ec4\u4ef6",
-      hircInventory: "Wwise HIRC \u5e93\u5b58",
-      effectParameterGate: "\u6548\u679c\u53c2\u6570\u8bc1\u636e",
-      effectParameterGateValidated: "\u5f53\u524d\u7248\u672c\u539f\u751f\u6821\u9a8c\u901a\u8fc7\uff0c\u8986\u76d6 {count} \u4e2a\u5df2\u5ba1\u67e5\u7684\u63d2\u4ef6\u7c7b\u522b\u3002\u5177\u540d\u8bbe\u7f6e\u662f\u97f3\u9891\u5e93\u4e2d\u7684\u521b\u4f5c\u503c\uff1b\u6548\u679c\u7684\u8fd0\u884c\u65f6\u6fc0\u6d3b\u4e0e DSP \u8f93\u51fa\u672a\u89c2\u6d4b\u3002",
-      effectParameterGateStructural: "\u53e6\u6709 {count} \u4e2a\u63d2\u4ef6\u7c7b\u522b\u7684\u539f\u751f\u8bfb\u53d6\u8303\u56f4\u5df2\u9a8c\u8bc1\uff0c\u4f46\u8bbe\u7f6e\u542b\u4e49\u4ecd\u672a\u89e3\u660e\u3002",
-      effectParameterGateUnavailable: "\u5f53\u524d\u7248\u672c\u539f\u751f\u6821\u9a8c\uff1a{status}\u3002\u539f\u751f\u652f\u6301\u7684\u8bbe\u7f6e\u540d\u79f0\u4e0d\u53ef\u7528\u6216\u672a\u9a8c\u8bc1\uff1b\u4ecd\u4fdd\u7559\u539f\u59cb\u53c2\u6570\u8bc1\u636e\u3002",
-      effectParameterGateAbsent: "\u6b64\u97f3\u9891\u7d22\u5f15\u6ca1\u6709\u5f53\u524d\u7248\u672c\u7684\u6548\u679c\u53c2\u6570\u6821\u9a8c\u4fe1\u606f\u3002\u8bf7\u5237\u65b0\u751f\u6210\u6570\u636e\u540e\u518d\u4f9d\u636e\u5177\u540d\u8bbe\u7f6e\u3002",
       controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
-      physicsAudioCatalog: "\u7269\u7406 / \u73af\u5883\u97f3\u9891\u5b9a\u4e49",
-      modelViewStateAudioCatalog: "ModelView \u72b6\u6001\u97f3\u9891\u884c\u4e3a",
-      cueOperands: "Cue \u8868\u8fbe\u5f0f\u64cd\u4f5c\u6570",
-      globalMusicCues: "\u5168\u5c40\u97f3\u4e50 Cue \u5f15\u7528",
       rtpcParameters: "RTPC \u53c2\u6570",
       physicsAudioRtpcParameters: "\u7269\u7406 / \u73af\u5883 RTPC \u53c2\u6570",
       modelViewStateRtpcParameters: "ModelView \u72b6\u6001 RTPC \u53c2\u6570",
-      modelViewStateSpatialControls: "ModelView \u72b6\u6001\u7a7a\u95f4\u97f3\u9891\u63a7\u5236",
-      modelViewStateCustomAudioControls: "ModelView \u81ea\u5b9a\u4e49\u97f3\u9891\u63a7\u5236\uff08\u672a\u89e3\u6790\uff09",
       audioCueRequests: "AudioCue 已创作 Event 请求",
       audioCueStringLiteralControl: "AudioCue 字符串字面量（类型化控制）",
       audioCueRuntimeUnobserved: "AudioCue 运行时激活未观测；序列化表达式不证明执行、分支选择、媒体或可听性。",
       audioCueExpressionAst: "AudioCue 表达式 AST / 验证详情",
-      levelScriptCueInvocations: "LevelScript Cue \u8c03\u7528",
-      levelScriptDynamicBindings: "LevelScript \u52a8\u6001 Event \u7ed1\u5b9a",
-      levelScriptControls: "LevelScript \u97f3\u9891\u63a7\u5236",
-      levelScriptDynamicControls: "LevelScript \u52a8\u6001\u63a7\u5236\u7ed1\u5b9a",
       levelScriptAudioLifecycle: "LevelScript \u97f3\u9891\u751f\u547d\u5468\u671f",
-      levelEventConditions: "LevelEvent \u97f3\u9891\u6761\u4ef6",
       wwiseSelectorGroups: "Wwise \u9009\u62e9\u5668\u8fd0\u884c\u65f6\u8fde\u63a5",
-      wwiseInitialRtpcParameters: "\u5df2\u547d\u540d\u7684 Initial RTPC \u66f2\u7ebf\u53c2\u6570",
-      wwiseActionControls: "Wwise Action \u63a7\u5236\u8bed\u4e49\u8fde\u63a5",
       staticRtpcAlignment: "\u9759\u6001 GameParameter / RTPC \u5bf9\u9f50",
-      levelScriptRadioCatalog: "LevelScript \u65e0\u7ebf\u7535\u89e6\u53d1",
-      unresolvedRadioIds: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535 ID",
-      unresolvedRadioLines: "\u672a\u89e3\u6790\u7684\u65e0\u7ebf\u7535\u53f0\u8bcd",
-      dynamicRadioBindings: "\u52a8\u6001\u65e0\u7ebf\u7535 ID \u7ed1\u5b9a",
       radioTableLines: "RadioTable \u5bf9\u8bdd\u884c",
       radioTriggerContexts: "\u7cbe\u786e LevelScript \u65e0\u7ebf\u7535\u4e0a\u4e0b\u6587",
       radioTriggerContextCoverage: "\u65e0\u7ebf\u7535\u89e6\u53d1\u4e0a\u4e0b\u6587\u8986\u76d6",
@@ -880,8 +576,6 @@
       purposeKnown: "\u7528\u9014\u5df2\u77e5",
       purposeStoryTerminal: "\u5df2\u7ed1\u5b9a\u5267\u60c5\u53f0\u8bcd\uff0c\u7ec8\u6001",
       scannedBankSet: "\u5df2\u626b\u63cf bank \u96c6\u5408",
-      recoveryBoundary: "\u6062\u590d\u8986\u76d6",
-      enemyTriggerVoiceActionCatalog: "\u654c\u4eba\u8bed\u97f3\u89e6\u53d1\u52a8\u4f5c\u6620\u5c04",
       unresolvedEventBoundary: "\u8be5\u521b\u4f5c Event \u5f15\u7528\u6709\u5df2\u6062\u590d\u7684\u89e6\u53d1\u4e0a\u4e0b\u6587\uff0c\u4f46\u5f53\u524d\u97f3\u9891\u5e93\u7d22\u5f15\u4e2d\u6ca1\u6709\u627e\u5230\u5bf9\u5e94\u7684 Wwise Event \u5bf9\u8c61\u3002\u4e0d\u4f1a\u56e0\u6b64\u63a8\u65ad\u5a92\u4f53\u6216\u64ad\u653e\u5206\u652f\u3002",
       unknownLocationBoundary: "\u8be5\u6587\u4ef6\u5df2\u89e3\u7801\u4e14\u53ef\u5728\u6d4f\u89c8\u5668\u4e2d\u64ad\u653e\uff0c\u4f46\u6ca1\u6709\u6062\u590d\u51fa\u521b\u4f5c Event \u5173\u7cfb\u6216\u76f4\u63a5\u5bf9\u8bdd\u4f4d\u7f6e\u3002\u6587\u4ef6\u5b58\u5728\u4e8e\u97f3\u9891\u5305\u4e2d\u4e0d\u80fd\u8bf4\u660e\u6e38\u620f\u5728\u54ea\u91cc\u64ad\u653e\u5b83\u3002",
       eventOnlyLocationBoundary: "\u8be5\u6587\u4ef6\u53ef\u4ece Wwise Event \u5230\u8fbe\uff0c\u4f46\u8be5 Event \u6ca1\u6709\u5df2\u6062\u590d\u7684\u521b\u4f5c\u89e6\u53d1\u4e0a\u4e0b\u6587\u3002Event \u5173\u7cfb\u4e0d\u80fd\u786e\u5b9a\u5176\u73a9\u6cd5\u3001\u5267\u60c5\u3001\u52a8\u753b\u6216\u5173\u5361\u4f4d\u7f6e\u3002",
@@ -895,7 +589,6 @@
       eventIds: "\u4e8b\u4ef6 ID",
       actions: "\u52a8\u4f5c / \u5bf9\u8c61",
       recordType: "\u8bb0\u5f55\u7c7b\u578b",
-      playbackEvent: "\u64ad\u653e\u4e8b\u4ef6",
       wwiseEvent: "Wwise Event",
       unnamedWwiseEvent: "Wwise Event\uff08\u521b\u4f5c\u89e6\u53d1\u672a\u77e5\uff09",
       authoredEventReference: "\u672a\u89e3\u6790\u5230\u97f3\u9891\u5e93\u5bf9\u8c61\u7684\u4e8b\u4ef6",
@@ -906,28 +599,6 @@
       contextGameplay: "\u73a9\u6cd5",
       contextCutscene: "\u8fc7\u573a / \u5267\u60c5",
       contextTimeline: "Timeline / LevelSequence",
-      levelSequenceAudioCatalog: "LevelSequence \u97f3\u9891\u5f52\u5c5e",
-      dialogLifecycleAudioCatalog: "\u5bf9\u8bdd\u751f\u547d\u5468\u671f\u97f3\u9891\u94a9\u5b50",
-      levelSequenceTimelineContexts: "Timeline \u4e0a\u4e0b\u6587",
-      levelSequenceExactContexts: "\u7cbe\u786e Timeline + LevelScript \u8fde接",
-      levelSequenceInferredContexts: "\u63a8断触发\u4e0a\u4e0b\u6587",
-      levelSequenceGapContexts: "\u5f52属缺口",
-      levelSequenceRuntimeBoundary: "Timeline \u8fd0行时证据边界",
-      audioTriggerContextCatalog: "音频触发情境覆盖",
-      sceneCatalog: "场景音频目录",
-      sceneCatalogSearch: "筛选场景、任务或事件",
-      sceneCatalogPartial: "来源覆盖不完整",
-      sceneCatalogComplete: "来源覆盖已验证",
-      sceneCatalogUnavailable: "场景音频目录不可用",
-      sceneCatalogBoundary: "场景证据边界",
-      sceneCatalogSources: "对象索引来源",
-      sceneCatalogScenes: "目录场景",
-      sceneCatalogEvents: "场景全局事件记录",
-      sceneCatalogEmitters: "已创作发声器",
-      sceneCatalogMissionRefs: "任务引用",
-      sceneCatalogNoMatches: "没有场景符合此筛选条件。",
-      sceneCatalogMore: "个其他匹配场景",
-      sceneCatalogEmitterGap: "发声器位置仍仅归属于预制体；不声明关卡归属。",
      contextAnimation: "\u52a8\u753b",
      contextSceneAudio: "\u573a\u666f\u97f3\u9891",
       contextSceneGlobalExact: "\u7cbe\u786e\u521b\u5efa\u7684\u573a\u666f\u5168\u5c40\u4e0a\u4e0b\u6587",
@@ -1003,9 +674,6 @@
       relationMusicSource: "\u97f3\u4e50\u8f68\u9053\u97f3\u6e90",
       relationExternalSource: "\u8fd0\u884c\u65f6\u5916\u90e8\u97f3\u6e90",
       relationSynthesizedSource: "\u5408\u6210 / \u63d2\u4ef6\u97f3\u6e90",
-      musicSwitchContainer: "\u97f3\u4e50 Switch \u5bb9\u5668",
-      musicRandomSequenceContainer: "\u97f3\u4e50\u968f\u673a / \u5e8f\u5217\u5bb9\u5668",
-      musicSegment: "\u97f3\u4e50\u7247\u6bb5",
       musicTrack: "\u97f3\u4e50\u8f68\u9053",
       possibleMedia: "\u53ef\u80fd\u5a92\u4f53",
       playRoots: "Play \u6839",
@@ -1065,10 +733,8 @@
     language: "CN",
     uiLocale: "zh",
     index: null,
-    sceneCatalog: null,
     indexPromise: null,
     indexController: null,
-    sceneCatalogController: null,
     loadToken: 0,
     datasets: { events: null, media: null },
     datasetPromises: { events: null, media: null },
@@ -1608,11 +1274,27 @@
     ].filter(Boolean).join(" / ");
   }
 
+  // The lowercased haystack a record's query is matched against; recovery
+  // tags and their labels are searchable alongside the row's own text.
+  function recordSearch(raw, kind, taxonomy, recoveryTags) {
+    return [
+      searchText(raw, kind, taxonomy),
+      ...asArray(recoveryTags).flatMap((value) => [value, recoveryLabel(value)]),
+    ].join("\n").toLowerCase();
+  }
+
+  // Update-feed status over the row's own fields, computed once per row
+  // version; facet counts and every list render reuse it.
+  function recordFileStatus(record) {
+    if (record.fileStatus === undefined) record.fileStatus = window.WebUI.updateBadges.fileStatus(record.raw);
+    return record.fileStatus;
+  }
+
   function searchText(record, kind, taxonomy = {}) {
     const numericHashes = [record?.hash, record?.eventHash].filter((value) => Number.isInteger(Number(value)));
     const values = [
-      window.WebUI.linkedFileSearchText(record),
-      record?.linkedFileSearch,
+      typeof record?.linkedFileSearch === "string"
+        ? record.linkedFileSearch : window.WebUI.linkedFileSearchText(record),
       recordTitle(record, kind), recordId(record, kind), recordCategory(record), recordScope(record), recordSource(record),
       record?.name, record?.title,
       ...asArray(record?.relatedEventCategories).flatMap((value) => [value, categoryLabel(value)]),
@@ -1778,10 +1460,7 @@
       meta: recordMeta(raw, kind, taxonomy),
       listMeta: recordMeta(raw, kind, taxonomy, { includeFileStats: false }),
       fileStats: recordFileStats(raw, kind),
-      search: [
-        searchText(raw, kind, taxonomy),
-        ...recoveryTags.flatMap((value) => [value, recoveryLabel(value)]),
-      ].join("\n").toLowerCase(),
+      search: recordSearch(raw, kind, taxonomy, recoveryTags),
     };
   }
 
@@ -1794,7 +1473,8 @@
     }
   }
 
-  function dedupeRecords(records, kind) {
+  async function dedupeRecords(records, kind, token = state.loadToken) {
+    let deadline = performance.now() + 12;
     const seen = new Set();
     const output = [];
     for (const [index, record] of records.entries()) {
@@ -1804,8 +1484,14 @@
       seen.add(key);
       normalized.key = key;
       output.push(normalized);
+      // Large media publications must leave time for input and loader paint.
+      if (performance.now() >= deadline) {
+        await window.WebUI.yieldToMain();
+        if (token !== state.loadToken) return null;
+        deadline = performance.now() + 12;
+      }
     }
-    return output;
+    return token === state.loadToken ? output : null;
   }
 
   function recordsFromPayload(payload, kind) {
@@ -1865,13 +1551,27 @@
     }
     const detail = records?.get(normalizeLower(recordId(record.raw, kind)));
     if (!detail) return record.raw;
+    const priority = record.raw?.purposeInvestigationPriority;
+    const duration = recordDuration(record.raw);
     record.raw = { ...record.raw, ...detail, _detailLoaded: true };
-    record.contextTags = recordContextTags(record.raw, record.kind);
-    record.relationTags = recordRelationTags(record.raw, record.kind);
+    // Keep the sorted order unless this merge changed a sort key.
+    if (priority !== record.raw.purposeInvestigationPriority || duration !== recordDuration(record.raw)) sortedDataset = null;
+    const contextTags = recordContextTags(record.raw, record.kind);
+    const relationTags = recordRelationTags(record.raw, record.kind);
+    const fileStatus = record.fileStatus;
+    record.fileStatus = undefined;
+    // Facet values are cached per dataset; drop that cache only when this
+    // merge changed one of them, not on every detail load.
+    const facetsChanged = contextTags.join("\n") !== asArray(record.contextTags).join("\n")
+      || relationTags.join("\n") !== asArray(record.relationTags).join("\n")
+      || (fileStatus !== undefined && recordFileStatus(record) !== fileStatus);
+    record.contextTags = contextTags;
+    record.relationTags = relationTags;
     record.meta = recordMeta(record.raw, record.kind, record);
     record.listMeta = recordMeta(record.raw, record.kind, record, { includeFileStats: false });
     record.fileStats = recordFileStats(record.raw, record.kind);
-    record.search = searchText(record.raw, record.kind, record);
+    record.search = recordSearch(record.raw, record.kind, record, record.recoveryTags);
+    if (facetsChanged) state.facets?.invalidate();
     if (state.selected === record) renderDetail();
     return record.raw;
   }
@@ -1884,32 +1584,8 @@
 
   function abortAll() {
     state.indexController?.abort();
-    state.sceneCatalogController?.abort();
     abortDataset("events");
     abortDataset("media");
-  }
-
-  async function loadSceneCatalog(language, token) {
-    state.sceneCatalogController = new AbortController();
-    const path = SCENE_CATALOG_PATH(language);
-    try {
-      const response = await fetch(path, {
-        signal: state.sceneCatalogController.signal,
-        cache: "no-store",
-      });
-      if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-      const payload = await response.json();
-      if (token !== state.loadToken) return null;
-      return payload && typeof payload === "object" ? payload : null;
-    } catch (error) {
-      if (error?.name === "AbortError" || token !== state.loadToken) return null;
-      return {
-        status: "unavailable",
-        sourceDiagnostics: [{ status: "loadFailed", diagnostic: normalize(error?.message || error) }],
-      };
-    } finally {
-      if (token === state.loadToken) state.sceneCatalogController = null;
-    }
   }
 
   async function ensureDataset(kind, { token = state.loadToken, force = false } = {}) {
@@ -1923,7 +1599,8 @@
       window.WebUI.updateLoaderPhase("audio", "preparing");
       await window.WebUI.nextPaint();
       if (token !== state.loadToken) return null;
-      const records = dedupeRecords(inline, kind);
+      const records = await dedupeRecords(inline, kind, token);
+      if (!records || token !== state.loadToken) return null;
       if (kind === "events") rebuildEventTaxonomy(records);
       state.datasets[kind] = records;
       return records;
@@ -1956,7 +1633,7 @@
       }
       const response = await window.WebUI.fetchWithProgress(url, {
         signal: controllers[index].signal,
-        cache: "no-store",
+        cache: force ? "no-store" : "no-cache",
         onProgress: (_ratio, loaded, total, phase) => {
           Object.assign(progress[index], { loaded, total, phase });
           updateProgress();
@@ -1973,7 +1650,8 @@
       updateProgress();
       await window.WebUI.nextPaint();
       if (token !== state.loadToken) return null;
-      const records = dedupeRecords([...inline, ...parts.flat()], kind);
+      const records = await dedupeRecords([...inline, ...parts.flat()], kind, token);
+      if (!records || token !== state.loadToken) return null;
       if (kind === "events") rebuildEventTaxonomy(records);
       state.datasets[kind] = records;
       return records;
@@ -1998,8 +1676,10 @@
     state.language = nextLanguage;
     state.mode = "events";
     state.index = null;
-    state.sceneCatalog = null;
     state.datasets = { events: null, media: null };
+    sortedDataset = null;
+    sortedRecords = [];
+    state.facets?.invalidate();
     state.datasetPromises = { events: null, media: null };
     state.eventTaxonomyById = new Map();
     state.gameParameterNameById = new Map();
@@ -2017,20 +1697,23 @@
 
     const promise = (async () => {
       try {
-        await loadNotes(force);
-        await window.WebUI.updateBadges.loadFiles();
         const path = INDEX_PATH(nextLanguage);
-        const response = await window.WebUI.fetchWithProgress(path, {
-          signal: state.indexController.signal,
-          cache: "no-store",
-          onProgress: window.WebUI.loaderProgress("audio", () => token === state.loadToken),
-        });
-        if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
-        const payload = await response.json();
+        const readIndex = async () => {
+          const response = await window.WebUI.fetchWithProgress(path, {
+            signal: state.indexController.signal,
+            cache: force ? "no-store" : "no-cache",
+            onProgress: window.WebUI.loaderProgress("audio", () => token === state.loadToken),
+          });
+          if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+          return response.json();
+        };
+        const [payload] = await Promise.all([
+          readIndex(), loadNotes(force), window.WebUI.updateBadges.loadFiles(),
+        ]);
         if (token !== state.loadToken) return null;
         state.index = payload && typeof payload === "object" ? payload : {};
         window.WebUI.updateLoaderPhase("audio", "preparing");
-        state.sceneCatalog = await loadSceneCatalog(nextLanguage, token);
+        await ensureDataset("events", { token, force });
         if (token !== state.loadToken) return null;
         state.gameParameterNameById = new Map(asArray(
           state.index?.hircSummary?.postProcessSummary?.gameParameterNameEvidence?.entries,
@@ -2039,9 +1722,6 @@
           String(row.metadataField || "").split(".").pop() || "GameParameter",
         ]).filter(([id]) => Number.isFinite(id)));
         applyIndexHeader();
-        renderDetail();
-        await ensureDataset("events", { token, force });
-        if (token !== state.loadToken) return null;
         const requestedKind = requestedSelectionKind();
         if (requestedKind === "media") {
           state.mode = "media";
@@ -2055,7 +1735,7 @@
         if (token !== state.loadToken) return null;
         buildFilterChips();
         applyFilters({ resetScroll: true });
-        applyRequestedSelection();
+        if (!applyRequestedSelection()) renderDetail();
         await window.WebUI.nextPaint();
         if (token !== state.loadToken) return null;
         return state.index;
@@ -2187,7 +1867,8 @@
   function bindShellEvents() {
     $("#audio-q", state.container)?.addEventListener("input", (event) => {
       state.query = event.target.value;
-      applyFilters({ resetScroll: true });
+      clearTimeout(queryTimer);
+      queryTimer = setTimeout(() => applyFilters({ resetScroll: true }), 120);
     });
     $("#audio-sort", state.container)?.addEventListener("change", (event) => {
       state.sort = event.target.value;
@@ -2289,7 +1970,7 @@
         record.meta = recordMeta(record.raw, record.kind, record);
         record.listMeta = recordMeta(record.raw, record.kind, record, { includeFileStats: false });
         record.fileStats = recordFileStats(record.raw, record.kind);
-        record.search = searchText(record.raw, record.kind, record);
+        record.search = recordSearch(record.raw, record.kind, record, record.recoveryTags);
       }
     }
     applyIndexHeader();
@@ -2373,7 +2054,7 @@
         group("recovery", "recoveryTags", recoveryLabel),
         group("scope", "scope"),
         group("source", "source"),
-        window.WebUI.updateBadges.filterGroup("audio", (record) => window.WebUI.updateBadges.fileStatus(record.raw)),
+        window.WebUI.updateBadges.filterGroup("audio", recordFileStatus),
       ],
       chipClassName: "audio-filter-chip",
       onChange: () => applyFilters({ resetScroll: true }),
@@ -2386,32 +2067,50 @@
     audioFacets().render(state.datasets[state.mode] || []);
   }
 
+  const titleCollator = new Intl.Collator(undefined, { numeric: true });
+  let sortedDataset = null;
+  let sortedSignature = "";
+  let sortedRecords = [];
+  let queryTimer = 0;
+
+  function orderedRecords(records) {
+    const signature = `${state.mode}:${state.sort}:${window.WebUI.sorting.direction("audio-sort")}`;
+    if (sortedDataset === records && sortedSignature === signature) return sortedRecords;
+    sortedDataset = records;
+    sortedSignature = signature;
+    const priority = { highest: 0, secondary: 1, resolved: 2, resolvedTerminal: 3 };
+    sortedRecords = records.slice().sort(window.WebUI.sorting.comparator("audio-sort", (a, b) => {
+      if (state.sort === "purpose-priority") {
+        const delta = (priority[a.raw?.purposeInvestigationPriority] ?? 2) - (priority[b.raw?.purposeInvestigationPriority] ?? 2);
+        if (delta) return delta;
+      }
+      if (state.mode === "media" && state.sort.startsWith("duration-")) {
+        const left = recordDuration(a.raw), right = recordDuration(b.raw);
+        if (left === null && right !== null) return 1;
+        if (right === null && left !== null) return -1;
+        if (left !== right) return state.sort === "duration-desc" ? right - left : left - right;
+      }
+      return titleCollator.compare(a.title, b.title) || titleCollator.compare(a.key, b.key);
+    }));
+    return sortedRecords;
+  }
+
   function applyFilters({ resetScroll = false } = {}) {
+    clearTimeout(queryTimer);
     const records = state.datasets[state.mode] || [];
     const tokens = window.WebUI.parseQuery(state.query);
     const facets = audioFacets();
-    state.filtered = records.filter((record) => {
-      const searchable = `${record.search}\n${normalizeLower(recordNote(record))}`;
-      if (tokens.length && !window.WebUI.queryMatches(searchable, tokens)) return false;
-      return facets.matches(record);
-    }).sort(window.WebUI.sorting.comparator("audio-sort", (a, b) => {
-      if (state.sort === "purpose-priority") {
-        const priority = { highest: 0, secondary: 1, resolved: 2, resolvedTerminal: 3 };
-        const left = priority[a.raw?.purposeInvestigationPriority] ?? 2;
-        const right = priority[b.raw?.purposeInvestigationPriority] ?? 2;
-        if (left !== right) return left - right;
-      }
-      if (state.mode === "media" && state.sort.startsWith("duration-")) {
-        const left = recordDuration(a.raw);
-        const right = recordDuration(b.raw);
-        if (left !== null || right !== null) {
-          if (left === null) return 1;
-          if (right === null) return -1;
-          if (left !== right) return state.sort === "duration-desc" ? right - left : left - right;
-        }
-      }
-      return a.title.localeCompare(b.title, undefined, { numeric: true }) || a.key.localeCompare(b.key, undefined, { numeric: true });
-    }));
+    // Facets reject rows only when a chip is on; queries use OR semantics, so
+    // the row text and its manual note are matched separately, not joined.
+    const matching = facets.isFiltered() ? new Set(facets.filter(records)) : null;
+    const queryMatches = window.WebUI.queryMatches;
+    state.filtered = orderedRecords(records).filter((record) => {
+      if (matching && !matching.has(record)) return false;
+      if (!tokens.length || queryMatches(record.search, tokens)) return true;
+      const note = recordNote(record);
+      return !!note && queryMatches(note, tokens);
+    });
+    state.filteredKeys = new Set(state.filtered.map((record) => record.key));
     state.rows = state.filtered.map((record, index) => ({ record, index, top: index * ROW_HEIGHT }));
     const spacer = $("#audio-list-spacer", state.container);
     if (spacer) spacer.style.height = `${state.rows.length * ROW_HEIGHT}px`;
@@ -2442,7 +2141,7 @@
     if (!wrap || !list) return;
     if (!state.datasets[state.mode]) return;
     window.WebUI.locateCurrent?.sync($("#audio-locate-current", state.container),
-      state.selected?.kind === state.mode && state.filtered.some((record) => record.key === state.selected.key));
+      state.selected?.kind === state.mode && !!state.filteredKeys?.has(state.selected.key));
     if (!state.rows.length) {
       list.innerHTML = `<div class="audio-empty-list">${esc((state.datasets[state.mode] || []).length ? t("noMatches") : t("noData"))}</div>`;
       return;
@@ -2464,7 +2163,7 @@
       const noteMarker = noteLine ? `<span class="audio-row-note-marker" title="${esc(t("hasManualNote"))}" aria-label="${esc(t("hasManualNote"))}">\u270e</span>` : "";
       const noteTitle = noteLine ? `<span class="audio-row-note-title">\u2014 ${esc(noteLine)}</span>` : "";
       button.innerHTML = `<span class="audio-row-title-line"><span class="audio-row-kind">${esc(state.mode === "events" ? t("event") : t("mediaItem"))}</span><span class="audio-row-title">${esc(row.record.title)}</span>${noteTitle}${noteMarker}${fileStats}</span><span class="audio-row-meta">${esc(row.record.listMeta)}</span>`;
-      button.querySelector(".audio-row-title")?.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(row.record.raw));
+      button.querySelector(".audio-row-title")?.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.badge(recordFileStatus(row.record)));
       fragment.appendChild(button);
       index += 1;
     }
@@ -2510,7 +2209,9 @@
     const kind = requestedSelectionKind();
     if (!requested || state.mode !== kind) return;
     const record = (state.datasets[kind] || []).find((candidate) => candidate.key === requested || recordId(candidate.raw, kind) === requested);
-    if (record) selectRecord(record, { updateUrl: false });
+    if (!record) return false;
+    selectRecord(record, { updateUrl: false });
+    return true;
   }
 
   function updateSelectionUrl(record) {
@@ -2537,7 +2238,7 @@
     if (!eyebrow || !title || !subtitle || !body) return;
     const selected = state.selected;
     eyebrow.textContent = selected ? (selected.kind === "events" ? t("event") : t("mediaItem")) : t("overview");
-    title.textContent = selected ? selected.title : t("runtimeSystem");
+    title.textContent = selected ? selected.title : t("selectRecord");
     subtitle.textContent = selected ? selected.meta : indexSubtitle();
     body.replaceChildren();
     if (selected) {
@@ -2545,1347 +2246,12 @@
       title.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(selected.raw));
       body.insertAdjacentHTML("afterbegin", window.WebUI.updateBadges.fileDetails(selected.raw));
       window.WebUI.updateBadges.decorateFiles(body);
-    } else {
-      body.appendChild(runtimePanel());
-      const empty = document.createElement("p");
-      empty.className = "audio-detail-note";
-      empty.textContent = t("selectRecord");
-      body.appendChild(empty);
     }
   }
 
   function indexSubtitle() {
     const parts = [state.index?.language || state.language, state.index?.generated].filter(Boolean);
     return parts.join(" · ");
-  }
-
-  function runtimeExternalRequestsSection(projection) {
-    if (!projection || projection.status === "notRequested") return null;
-    const ready = projection.status === "ready" && projection.externalSourceRequestsStatus === "ready";
-    const requests = ready ? asArray(projection.externalSourceRequests).filter((row) => row && typeof row.externalSourceKey === "string").slice(0, 32) : [];
-    const unavailable = projection.status === "degraded" || projection.externalSourceRequestsStatus === "degraded";
-    if (!requests.length && !unavailable) return null;
-    const section = document.createElement("details");
-    section.className = "audio-runtime-system audio-runtime-external-requests";
-    const summary = document.createElement("summary");
-    summary.textContent = t("runtimeExternalRequests")
-      + (ready ? ` (${formatNumber(projection.externalSourceRequestCount || 0)} ${t("runtimeExternalRequestCount")} / ${formatNumber(projection.externalSourcePathCount || 0)} ${t("runtimeExternalPathCount")})` : "");
-    section.appendChild(summary);
-    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeExternalRequestBoundary")));
-    if (unavailable) {
-      section.appendChild(noteSection(t("runtimeExternalRequestUnavailable"), humanize(projection.externalSourceRequestsReason || projection.reason || projection.status)));
-      return section;
-    }
-    for (const request of requests) {
-      const item = document.createElement("div");
-      item.className = "audio-runtime-external-request";
-      const path = document.createElement("code");
-      path.textContent = request.externalSourceKey;
-      const facts = document.createElement("p");
-      facts.textContent = `${formatNumber(request.observationCount || 0)} ${t("runtimeExternalRequestCount")}`
-        + ` / ${t("runtimeExternalRequestCookie")}: ${asArray(request.externalCookies).slice(0, 32).join(" / ")}`;
-      item.append(path, facts);
-      section.appendChild(item);
-    }
-    return section;
-  }
-
-  function runtimeNativeEntrySection(projection) {
-    if (!projection || projection.status === "notRequested") return null;
-    const ready = projection.status === "validated" && projection.claimsAvailable === true;
-    const section = document.createElement("details");
-    section.className = "audio-runtime-system audio-runtime-native-entries";
-    const summary = document.createElement("summary");
-    summary.textContent = t("runtimeNativeEntries") + (ready
-      ? ` (${formatNumber(projection.entryCount || 0)} ${t("runtimeNativeEntryCount")})` : "");
-    section.appendChild(summary);
-    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeEntryBoundary")));
-    if (!ready) {
-      section.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), projection.detail || projection.nativeGate?.detail || humanize(projection.status)));
-      return section;
-    }
-    section.appendChild(noteSection(t("runtimeNativeSourceSessions"), normalize(projection.session)));
-    const counts = projection.hookCounts && typeof projection.hookCounts === "object" ? projection.hookCounts : {};
-    section.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(counts).slice(0, 32)
-      .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ")));
-    const posts = projection.managedPostObservations;
-    if (posts) {
-      const detail = document.createElement("details");
-      detail.className = "audio-runtime-managed-posts";
-      const title = document.createElement("summary");
-      title.textContent = t("runtimeManagedPosts");
-      detail.appendChild(title);
-      detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeManagedPostBoundary")));
-      if (posts.status !== "validated") {
-        detail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), posts.detail || humanize(posts.status)));
-      } else {
-        detail.appendChild(noteSection(t("runtimeManagedPostCounts"),
-          [posts.counts?.postPairs, posts.counts?.externalSourcePairs, posts.counts?.nonzeroPlayingIdPairs]
-            .map(value => formatNumber(value || 0)).join(" / ")));
-        for (const row of (posts.samples || []).slice(0, 32)) {
-          const item = document.createElement("div");
-          item.appendChild(noteSection(row.hookName || t("unknown"),
-            `${t("runtimeManagedPostFields")}: ${normalize(row.eventId)} / ${normalize(row.audioObjectId)} / ${normalize(row.returnedPlayingId)} / ${normalize(row.callbackType)}`));
-          if (row.externalPathProjection) item.appendChild(noteSection(t("runtimeManagedPostPath"),
-            `${row.externalPathProjection} / ${humanize(row.externalPathState)}`));
-          if (row.externalCookie != null && row.rawBeyondCodecArgument != null) {
-            item.appendChild(noteSection(t("runtimeManagedPostOriginalArguments"),
-              `${normalize(row.externalCookie)} / ${normalize(row.rawBeyondCodecArgument)}`));
-          }
-          detail.appendChild(item);
-        }
-        if (posts.samplesTruncated) detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
-      }
-      section.appendChild(detail);
-    }
-    const providers = projection.providerEntryObservations;
-    if (providers) {
-      const detail = document.createElement("details");
-      detail.className = "audio-runtime-provider-entries";
-      const title = document.createElement("summary");
-      title.textContent = t("runtimeProviderEntries");
-      detail.appendChild(title);
-      detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeProviderEntryBoundary")));
-      if (providers.status !== "validated") {
-        detail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), providers.detail || humanize(providers.status)));
-      } else {
-        for (const [kind, row] of Object.entries(providers.hooks || {}).slice(0, 4)) {
-          const item = document.createElement("div");
-          item.appendChild(noteSection(humanize(kind), `${formatNumber(row.entryCount || 0)} ${t("runtimeNativeEntryCount")}`));
-          const callerLabels = {sourceBasedPreparation: t("runtimeProviderSourceCaller"), decoderPreparation: t("runtimeProviderDecoderCaller")};
-          item.appendChild(noteSection(t("runtimeProviderEntryCallers"), Object.entries(row.callerRoles || {}).slice(0, 8)
-            .map(([role, count]) => `${callerLabels[role] || humanize(role)}: ${formatNumber(count)}`).join(" / ")));
-          if (row.inputText) item.appendChild(noteSection(t("runtimeProviderEntryText"),
-            [row.inputText.nonzeroPointer, row.inputText.nullPointer, row.inputText.terminatedText].map((value) => formatNumber(value || 0)).join(" / ")));
-          if (row.addressPoint) item.appendChild(noteSection(t("runtimeProviderEntryAddressPoint"),
-            [row.addressPoint.matched, row.addressPoint.different, row.addressPoint.unreadable].map((value) => formatNumber(value || 0)).join(" / ")));
-          detail.appendChild(item);
-        }
-      }
-      section.appendChild(detail);
-    }
-    const io = projection.ioEntryObservations;
-    if (io) {
-      const detail = document.createElement("details");
-      detail.className = "audio-runtime-io-entries";
-      const title = document.createElement("summary");
-      title.textContent = t("runtimeIoEntries");
-      detail.appendChild(title);
-      detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeIoBoundary")));
-      if (io.status !== "validated") {
-        detail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), io.detail || humanize(io.status)));
-      } else {
-        for (const [kind, row] of Object.entries(io.hooks || {}).slice(0, 4)) {
-          detail.appendChild(noteSection(humanize(kind), `${formatNumber(row.entryCount || 0)} ${t("runtimeNativeEntryCount")}`));
-          for (const [field, label] of [["retainedDescriptor", "runtimeIoDescriptor"], ["selectedDevice", "runtimeIoDevice"]]) {
-            if (row[field]) detail.appendChild(noteSection(t(label),
-              [row[field].nonzero, row[field].zero, row[field].unreadableOrGuardedOut].map((value) => formatNumber(value || 0)).join(" / ")));
-          }
-          if (row.ioAddressPoint) detail.appendChild(noteSection(t("runtimeIoAddressPoint"),
-            [row.ioAddressPoint.matchedDefaultPackageIo, row.ioAddressPoint.different, row.ioAddressPoint.unreadableOrGuardedOut].map((value) => formatNumber(value || 0)).join(" / ")));
-        }
-        for (const row of asArray(io.pathKeyCandidates).slice(0, 32)) {
-          const item = document.createElement("div");
-          const path = document.createElement("code");
-          path.textContent = normalize(row.path).slice(0, 160);
-          item.appendChild(path);
-          item.appendChild(noteSection(t("runtimeIoKey"), typeof row.computedKey === "string" ? row.computedKey : ""));
-          item.appendChild(noteSection(t("runtimeIoKeyInputs"),
-            [row.hashInputEntryCount, row.sameKeyLookupInputEntryCount].map((value) => formatNumber(value || 0)).join(" / ")));
-          detail.appendChild(item);
-        }
-        for (const row of asArray(io.lookupKeys).slice(0, 32)) {
-          detail.appendChild(noteSection(t("runtimeIoLookupKey"), typeof row.key === "string" ? row.key : ""));
-          detail.appendChild(noteSection(t("runtimeIoLookupFacts"),
-            [row.entryCount, row.reviewedCallerEntryCount, row.requiredKindEntryCount, row.distinctTablePointerCount].map((value) => formatNumber(value || 0)).join(" / ")));
-          detail.appendChild(noteSection(t("runtimeIoTables"), Object.entries(row.tableCounts || {}).slice(0, 16)
-            .map(([rows, count]) => `${rows}: ${formatNumber(count)}`).join(" / ")));
-        }
-        if (io.pathKeyCandidatesTruncated || io.lookupKeysTruncated) detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
-        const completions = io.packageCompletionObservations;
-        if (completions) {
-          const completed = document.createElement("details");
-          completed.className = "audio-runtime-package-completions";
-          const title = document.createElement("summary");
-          title.textContent = t("runtimePackageCompletions");
-          completed.appendChild(title);
-          completed.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageCompletionBoundary")));
-          if (completions.status !== "validated") {
-            completed.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), completions.detail || humanize(completions.status)));
-          } else {
-            completed.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(completions.counts || {}).slice(0, 12)
-              .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ")));
-            for (const row of asArray(completions.samples).slice(0, 12)) {
-              const path = document.createElement("code");
-              path.textContent = normalize(row.path).slice(0, 160) || `#${row.keyLow ?? "?"}`;
-              completed.appendChild(path);
-              completed.appendChild(noteSection(t("runtimePackageGeometry"), [row.byteLength, row.blockOffset, row.blockBytes, row.byteOffset]
-                .map((value) => value == null ? "?" : String(value)).join(" / ")));
-              if (row.computedPathKey) {
-                completed.appendChild(noteSection(t("runtimePackagePathKeys"), `${String(row.computedPathKey)} / ${humanize(row.pathKeyLowComparison)} / ${humanize(row.byteOffsetComparison)}`));
-              }
-              if (row.entryCount > 1) completed.appendChild(noteSection(t("runtimeNativeEntryCount"), formatNumber(row.entryCount)));
-            }
-          }
-          detail.appendChild(completed);
-        }
-        const reads = io.packageReadObservations;
-        if (reads) {
-          const appendSampleSelection = (parent, selection) => {
-            if (!selection) return;
-            parent.appendChild(noteSection(t("runtimeSampleStrata"),
-              [selection.representedStratumCount, selection.stratumCount].map(value => formatNumber(value || 0)).join(" / ")));
-            parent.appendChild(noteSection(t("runtimeBoundary"), t("runtimeSampleSelectionBoundary")));
-          };
-          const readDetail = document.createElement("details");
-          readDetail.className = "audio-runtime-package-reads";
-          const title = document.createElement("summary");
-          title.textContent = t("runtimePackageReads");
-          readDetail.appendChild(title);
-          readDetail.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageReadBoundary")));
-          if (reads.status !== "validated") {
-            readDetail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), reads.detail || humanize(reads.status)));
-          } else {
-            if (reads.alignedTransformGate) {
-              readDetail.appendChild(noteSection(t("runtimePackageStaticProof"), humanize(reads.alignedTransformGate.status)));
-              if (reads.alignedTransformGate.status === "validated") readDetail.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageStaticBoundary")));
-            }
-            for (const counters of [reads.counts, reads.platformErrorCounts, reads.transferComparisons]) {
-              readDetail.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(counters || {}).slice(0, 16)
-                .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ")));
-            }
-            const coverage = reads.observedCoverage;
-            if (coverage) {
-              const observed = document.createElement("details");
-              observed.className = "audio-runtime-observed-coverage";
-              const title = document.createElement("summary");
-              title.textContent = t("runtimeObservedCoverage");
-              observed.appendChild(title);
-              observed.appendChild(noteSection(t("runtimeBoundary"), t("runtimeObservedCoverageBoundary")));
-              observed.appendChild(noteSection(t("runtimeCoverageChecked"), formatNumber(coverage.checkedTransformEntryCount || 0)));
-              for (const [label, key] of [["runtimeCoverageEncryption", "encryptionFlagCounts"],
-                ["runtimeCoverageAlignment", "relativeOffsetModulo4Counts"], ["runtimeCoverageOrigin", "relativeOffsetCounts"],
-                ["runtimeCoverageRanges", "descriptorRangeCohortCounts"]]) {
-                observed.appendChild(noteSection(t(label), Object.entries(coverage[key] || {})
-                  .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ") || t("unknown")));
-              }
-              if (reads.descriptorCohortSelection) observed.appendChild(noteSection(t("runtimeSampleCohorts"),
-                [reads.descriptorCohortSelection.representedCohortCount, reads.distinctDescriptorCohortCount]
-                  .map(value => formatNumber(value || 0)).join(" / ")));
-              appendSampleSelection(observed, reads.sampleSelection);
-              readDetail.appendChild(observed);
-            }
-            const bufferSamples = document.createElement("details");
-            const bufferTitle = document.createElement("summary");
-            bufferTitle.textContent = t("runtimePackageBufferSamples");
-            bufferSamples.appendChild(bufferTitle);
-            for (const row of asArray(reads.samples).slice(0, 16)) {
-              bufferSamples.appendChild(noteSection(t("runtimePackageReadGeometry"), [row.descriptorKeyLow, row.descriptorByteLength,
-                row.transferFilePosition, row.transferRequestedBytes, row.transferTransformBytes, row.preTransformBufferWord]
-                .map((value) => value == null ? "?" : String(value)).join(" / ")));
-            }
-            if (asArray(reads.descriptorCohorts).length) {
-              readDetail.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageReadRangeBoundary")));
-              for (const row of asArray(reads.descriptorCohorts).slice(0, 16)) {
-                readDetail.appendChild(noteSection(t("runtimePackageReadRanges"), [row.descriptorKeyLow, row.entryCount,
-                  row.transformRangeBytes, row.descriptorByteLength, row.transformRangesSpanDescriptor, row.distinctSampledWordCount]
-                  .map((value) => value == null ? "?" : String(value)).join(" / ")));
-              }
-            }
-            const witness = reads.encodedWordWitness;
-            if (witness) {
-              const comparison = document.createElement("details");
-              comparison.className = "audio-runtime-package-word-witness";
-              const comparisonTitle = document.createElement("summary");
-              comparisonTitle.textContent = t("runtimePackageWordWitness");
-              comparison.appendChild(comparisonTitle);
-              comparison.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageWordBoundary")));
-              if (witness.status === "conditionalIndexedComparison") {
-                const matches = asArray(witness.matches).slice().sort((a, b) => (a.sector !== "externals") - (b.sector !== "externals"));
-                for (const row of matches.slice(0, 16)) {
-                  const file = document.createElement("code");
-                  file.textContent = `${normalize(row.fileName).slice(0, 160)} / #${String(row.key)}`;
-                  comparison.appendChild(file);
-                  comparison.appendChild(noteSection(t("runtimePackageWordCounts"),
-                    [row.matchedWordCount, row.sampleCount, row.distinctSampledByteCount].map((value) => formatNumber(value)).join(" / ")));
-                }
-              } else comparison.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), witness.detail || humanize(witness.status)));
-              readDetail.appendChild(comparison);
-            }
-            const offline = reads.offlineDecodeObservations;
-            if (offline) {
-              const comparison = document.createElement("details");
-              comparison.className = "audio-runtime-offline-decode";
-              const title = document.createElement("summary");
-              title.textContent = t("runtimePackageOfflineDecode");
-              comparison.appendChild(title);
-              comparison.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageOfflineDecodeBoundary")));
-              if (offline.status === "historicalOfflineSelectedEntryComparison" && offline.currentInputsMatch === true) {
-                for (const row of asArray(offline.rows).slice(0, 32)) {
-                  comparison.appendChild(noteSection(`${normalize(row.fileName)} / #${normalize(row.key)}`,
-                    `${t("runtimePackageOfflineDecodeFields")}: ` + [row.encoding, row.channels, row.sampleRate,
-                      Number.isFinite(row.duration) ? row.duration.toFixed(3) : "?", row.pcmBytesEqual]
-                      .map(value => value == null ? "?" : String(value)).join(" / ")));
-                }
-              } else comparison.appendChild(noteSection(t("runtimeNativeEntryUnavailable"),
-                offline.diagnostic?.detail || humanize(offline.status)));
-              readDetail.appendChild(comparison);
-            }
-            const receivers = reads.transferReceiverObservations;
-            if (receivers) {
-              const entries = document.createElement("details");
-              entries.className = "audio-runtime-transfer-receivers";
-              const title = document.createElement("summary");
-              title.textContent = t("runtimeTransferReceivers");
-              entries.appendChild(title);
-              entries.appendChild(noteSection(t("runtimeBoundary"), t("runtimeTransferReceiverBoundary")));
-              if (receivers.status === "validated") {
-                appendSampleSelection(entries, receivers.sampleSelection);
-                entries.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(receivers.counts || {})
-                  .slice(0, 16).map(([key,value]) => `${humanize(key)}: ${formatNumber(value)}`).join(" / ")));
-                entries.appendChild(noteSection(t("runtimeProviderEntryAddressPoint"), Object.entries(receivers.interfaceFamilyCounts || {})
-                  .slice(0, 12).map(([key,value]) => `${humanize(key)}: ${formatNumber(value)}`).join(" / ")));
-                for (const row of asArray(receivers.samples).slice(0, 24)) {
-                  entries.appendChild(noteSection(row.sourceKind || t("unknown"), Object.entries(row)
-                    .filter(([key]) => key !== "sourceKind").map(([key,value]) => `${humanize(key)}: ${value == null ? "?" : String(value)}`).join(" / ")));
-                }
-              } else entries.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), receivers.detail || humanize(receivers.status)));
-              readDetail.appendChild(entries);
-            } else readDetail.appendChild(noteSection(t("runtimeTransferReceivers"), t("runtimeTransferReceiverMissing")));
-            readDetail.appendChild(bufferSamples);
-          }
-          detail.appendChild(readDetail);
-        }
-      }
-      section.appendChild(detail);
-    }
-    const storage = projection.sourceStorageByHook && typeof projection.sourceStorageByHook === "object" ? projection.sourceStorageByHook : {};
-    for (const [kind, row] of Object.entries(storage).slice(0, 18)) {
-      section.appendChild(noteSection(humanize(kind), `${t("runtimeNativeEntryStorage")}: `
-        + [row.bit8Clear, row.bit8Set, row.bit8SetNonzeroDataPointer, row.bit8SetZeroWord8].map((value) => formatNumber(value || 0)).join(" / ")));
-    }
-    for (const group of asArray(projection.nativeTextsByHook).slice(0, 9)) {
-      const detail = document.createElement("details");
-      const title = document.createElement("summary");
-      title.textContent = `${humanize(group.sourceKind)} / ${formatNumber(group.observationCount || 0)} ${t("runtimeNativeEntryCount")} / ${formatNumber(group.distinctTextCount || 0)} ${t("runtimeNativeSourceBridgeTexts")}`;
-      detail.appendChild(title);
-      for (const row of asArray(group.texts).slice(0, 32)) {
-        const item = document.createElement("p");
-        const text = document.createElement("code");
-        text.textContent = normalize(row.text).slice(0, 160);
-        item.append(text, document.createTextNode(` / ${formatNumber(row.entryCount || 0)} ${t("runtimeNativeEntryCount")}`));
-        detail.appendChild(item);
-      }
-      if (group.textsTruncated) detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
-      section.appendChild(detail);
-    }
-    const carrier = projection.ownerCarrierSnapshots || {};
-    section.appendChild(noteSection(t("runtimeNativeOwnerCarrier"), `${formatNumber(carrier.entries || 0)} ${t("runtimeNativeEntryCount")} / ${formatNumber(carrier.matchingOwnerEntries || 0)} ${t("runtimeNativeOwnerCarrierMatches")}`));
-    return section;
-  }
-
-  function runtimeNativeSourceSection(projection) {
-    if (!projection || !projection.nativeSourceObservationsStatus || projection.nativeSourceObservationsStatus === "notRequested") return null;
-    const ready = projection.status === "ready" && projection.nativeSourceObservationsStatus === "ready";
-    const unavailable = projection.status === "degraded" || projection.nativeSourceObservationsStatus === "degraded";
-    const captures = ready ? asArray(projection.nativeSourceCaptures).filter((row) => row && typeof row === "object").slice(0, 32) : [];
-    if (!captures.length && !unavailable) return null;
-    const section = document.createElement("details");
-    section.className = "audio-runtime-system audio-runtime-native-source";
-    const summary = document.createElement("summary");
-    summary.textContent = t("runtimeNativeSourceCaptures") + (ready
-      ? ` (${formatNumber(projection.nativeSourceCaptureCount || 0)} / ${formatNumber(projection.nativeSourcePairCount || 0)} ${t("runtimeNativeSourcePairs")} / ${formatNumber(projection.nativeSourceNestedPairCount || 0)} ${t("runtimeNativeSourceNestedPairs")})` : "");
-    section.appendChild(summary);
-    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceBoundary")));
-    if (unavailable) {
-      section.appendChild(noteSection(t("runtimeNativeSourceUnavailable"), humanize(projection.nativeSourceObservationsReason || projection.reason || projection.status)));
-      return section;
-    }
-    let sampleBudget = 48;
-    for (const capture of captures) {
-      const item = document.createElement("details");
-      const title = document.createElement("summary");
-      title.textContent = asArray(capture.sessionIds).slice(0, 32).join(" / ") + ` / ${capture.observerProfile || ""}`;
-      if (capture.sessionIdsTruncated) title.textContent += ` / ${formatNumber(capture.sessionCount || 0)} ${t("runtimeNativeSourceSessions")}`;
-      item.appendChild(title);
-      const source = capture.sourceSummary && typeof capture.sourceSummary === "object" ? capture.sourceSummary : {};
-      const counts = source.sourceKindCounts && typeof source.sourceKindCounts === "object" ? source.sourceKindCounts : {};
-      item.appendChild(noteSection(t("runtimeNativeSourcePairs"), Object.entries(counts).slice(0, 32).map(([kind, count]) => `${kind}: ${formatNumber(count)}`).join(" / ")));
-      const bridge = source.sourceBridgeRelations;
-      if (bridge?.schema === "endfield.audio-source-bridge-relations.v1") {
-        const selections = document.createElement("details");
-        const selectionTitle = document.createElement("summary");
-        selectionTitle.textContent = `${t("runtimeNativeSourceBridge")} / ${formatNumber(bridge.pathChainCount || 0)} ${t("runtimeNativeSourceBridgeRelations")} / ${formatNumber(bridge.distinctPathCount || 0)} ${t("runtimeNativeSourceBridgeTexts")} / ${formatNumber(bridge.singleDescriptorSelectorCount || 0)} ${t("runtimeNativeSourceBridgeDescriptors")}`;
-        selections.appendChild(selectionTitle);
-        selections.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceBridgeBoundary")));
-        const unresolved = bridge.unresolvedCounts;
-        if (unresolved && typeof unresolved === "object") {
-          const joined = Object.entries(unresolved).slice(0, 32).map(([kind, count]) => `${kind}: ${formatNumber(count)}`).join(" / ");
-          if (joined) selections.appendChild(noteSection(t("runtimeNativeSourceBridgeUnresolved"), joined));
-        }
-        for (const row of asArray(bridge.rows).slice(0, 32)) {
-          if (!row || typeof row.path !== "string") continue;
-          const path = document.createElement("details");
-          const pathTitle = document.createElement("summary");
-          pathTitle.textContent = `${t("runtimeNativeSourceBridgeText")}: ${row.path.slice(0, 4095)} / ${formatNumber(row.chainCount || 0)} ${t("runtimeNativeSourceBridgeRelations")}`;
-          path.appendChild(pathTitle);
-          for (const sample of asArray(row.samples).slice(0, 4)) {
-            if (!sample || typeof sample !== "object") continue;
-            if (sampleBudget <= 0) break;
-            sampleBudget--;
-            const representative = document.createElement("details");
-            const heading = document.createElement("summary");
-            heading.textContent = `${sample.selectorCaptureId || ""} → ${sample.cloneCaptureId || ""} → ${sample.constructorCaptureId || ""} → ${sample.consumerCaptureId || ""} → ${sample.lockCaptureId || ""}`;
-            const sequence = {}, monotonicMs = {};
-            for (const role of ["selector", "clone", "setter", "factory", "constructor", "consumer", "lock"]) {
-              sequence[role] = asArray(sample.sequence?.[role]).slice(0, 2);
-              monotonicMs[role] = asArray(sample.monotonicMs?.[role]).slice(0, 2);
-            }
-            const fields = document.createElement("pre");
-            fields.textContent = JSON.stringify({
-              threadId: sample.threadId, sequence, monotonicMs,
-              setterCaptureId: sample.setterCaptureId, factoryCaptureId: sample.factoryCaptureId,
-              originalSourcePointer: sample.originalSourcePointer, selectedSourcePointer: sample.selectedSourcePointer,
-              primaryOwnerPointer: sample.primaryOwnerPointer, consumerOwnerPointer: sample.consumerOwnerPointer,
-              outputPointer: sample.outputPointer, descriptorWideTextPointer: sample.descriptorWideTextPointer,
-              retainedTextPointer: sample.retainedTextPointer, playbackSerialWord: sample.playbackSerialWord,
-              configAddressPointRva: sample.configAddressPointRva, configDispatchKind: sample.configDispatchKind,
-              sourceAfter: sample.sourceAfter, lockOutputAfter: sample.lockOutputAfter,
-            }, null, 2);
-            representative.append(heading, fields);
-            path.appendChild(representative);
-          }
-          selections.appendChild(path);
-        }
-        item.appendChild(selections);
-      }
-      const ownerCarrier = source.ownerCarrierRelations;
-      if (ownerCarrier?.schema === "endfield.audio-owner-carrier-relations.v1") {
-        const owners = document.createElement("details");
-        const ownerTitle = document.createElement("summary");
-        ownerTitle.textContent = `${t("runtimeNativeOwnerCarrier")} / ${formatNumber(ownerCarrier.ownerDecoderSnapshotMatchCount || 0)} ${t("runtimeNativeOwnerCarrierMatches")}`;
-        owners.appendChild(ownerTitle);
-        owners.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeOwnerCarrierBoundary")));
-        if (ownerCarrier.unresolvedCounts && typeof ownerCarrier.unresolvedCounts === "object") {
-          const joined = Object.entries(ownerCarrier.unresolvedCounts).slice(0, 32).map(([kind, count]) => `${kind}: ${formatNumber(count)}`).join(" / ");
-          if (joined) owners.appendChild(noteSection(t("runtimeNativeSourceBridgeUnresolved"), joined));
-        }
-        for (const sample of asArray(ownerCarrier.samples).slice(0, 48)) {
-          if (!sample || typeof sample !== "object") continue;
-          if (sampleBudget <= 0) break;
-          sampleBudget--;
-          const representative = document.createElement("details");
-          const heading = document.createElement("summary");
-          heading.textContent = `${sample.controlCaptureId || ""} / ${sample.selectedSnapshotSide || ""}`;
-          const decoderSnapshots = {}, sourceSnapshot = {};
-          for (const side of ["current", "pending"]) {
-            const value = sample.decoderSnapshots?.[side];
-            if (value && typeof value === "object") decoderSnapshots[side] = {
-              decoderPointer: value.decoderPointer, decoderOwnerPointer: value.decoderOwnerPointer,
-            };
-          }
-          for (const name of ["sourceLookupWord", "sourceStoredWord4", "sourceStoredWord8", "sourceFlagsWord", "sourceDataPointer", "sourceArgumentWord24"]) {
-            if (sample.sourceSnapshot && typeof sample.sourceSnapshot === "object" && name in sample.sourceSnapshot) sourceSnapshot[name] = sample.sourceSnapshot[name];
-          }
-          const fields = document.createElement("pre");
-          fields.textContent = JSON.stringify({
-            threadId: sample.threadId, sequence: asArray(sample.sequence).slice(0, 2),
-            monotonicMs: asArray(sample.monotonicMs).slice(0, 2), callerRva: sample.callerRva,
-            primaryOwnerAddressPointRva: sample.primaryOwnerAddressPointRva,
-            primaryOwnerPointer: sample.primaryOwnerPointer, carrierPointer: sample.carrierPointer,
-            storedSourcePointer: sample.storedSourcePointer,
-            selectedSnapshotSide: sample.selectedSnapshotSide,
-            matchingSnapshotSides: asArray(sample.matchingSnapshotSides).filter((side) => ["current", "pending"].includes(side)).slice(0, 2),
-            decoderSnapshots, sourceSnapshot,
-          }, null, 2);
-          representative.append(heading, fields);
-          owners.appendChild(representative);
-        }
-        item.appendChild(owners);
-      }
-      const relations = source.sourceConsumerRelations && typeof source.sourceConsumerRelations === "object" ? source.sourceConsumerRelations : {};
-      for (const row of asArray(relations.rows).slice(0, 32)) {
-        const states = row?.stateCounts || {};
-        item.appendChild(noteSection(row?.sourceKind || t("unknown"), `${formatNumber(row?.pairCount || 0)} ${t("runtimeNativeSourceNestedPairs")} / ${t("runtimeNativeSourceFlagStates")}: ${formatNumber(states.clear || 0)} / ${formatNumber(states.set || 0)} / ${formatNumber(states.unavailable || 0)}`));
-        for (const state of ["clear", "set", "unavailable"]) {
-          for (const sample of asArray(row?.samples?.[state]).slice(0, 4)) {
-            if (sampleBudget <= 0) break;
-            sampleBudget--;
-            const representative = document.createElement("details");
-            const heading = document.createElement("summary");
-            heading.textContent = `${state} / ${sample?.consumerCaptureId || ""} → ${sample?.lockCaptureId || ""}`;
-            const fields = document.createElement("pre");
-            fields.textContent = JSON.stringify({
-              threadId: sample?.threadId, sequence: asArray(sample?.sequence).slice(0, 4),
-              anonymousOwnerPointer: sample?.anonymousOwnerPointer, sourcePointer: sample?.sourcePointer,
-              outputPointer: sample?.outputPointer, sourceOwnerOffset: sample?.sourceOwnerOffset,
-              outputOwnerOffset: sample?.outputOwnerOffset, outputBefore: sample?.outputBefore, outputAfter: sample?.outputAfter,
-            }, null, 2);
-            representative.append(heading, fields);
-            item.appendChild(representative);
-          }
-        }
-      }
-      section.appendChild(item);
-    }
-    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
-    return section;
-  }
-
-  function staticProviderPreparationSection(projection) {
-    if (!projection || projection.schema !== "endfield.audio-static-provider-preparation.v1" || projection.evidenceKind !== "static") return null;
-    const section = document.createElement("details");
-    section.className = "audio-runtime-system audio-static-provider";
-    const heading = document.createElement("summary");
-    heading.textContent = t("staticProviderPreparation");
-    section.appendChild(heading);
-    if (projection.status !== "validated") {
-      section.appendChild(noteSection(t("staticProviderUnavailable"), String(projection.reason || projection.status || "unavailable").slice(0, 320)));
-      return section;
-    }
-    const labels = {
-      decoderOwnerSource: ["direct", "staticProviderDecoderOwnerSource"],
-      conditionalPointerOrWord: ["conditional", "staticProviderConditionalPointerOrWord"],
-      argumentHalfword: ["direct", "staticProviderArgumentHalfword"],
-      alternateOwnerInput: ["conditional", "staticProviderAlternateOwnerInput"],
-      conditionalProviderInterface: ["conditional", "staticProviderConditionalProviderInterface", "storage"],
-      conditionalOwnedText: ["conditional", "staticProviderConditionalOwnedText", "storage"],
-    };
-    const seen = new Set();
-    for (const claim of asArray(projection.claims).slice(0, 8)) {
-      if (!Object.prototype.hasOwnProperty.call(labels, claim?.id)) continue;
-      const entry = labels[claim?.id];
-      if (!entry || entry[0] !== claim.evidenceBoundary || seen.has(claim.id)) continue;
-      if (entry[2] === "storage" && projection.providerStorageStatus !== "validated") continue;
-      seen.add(claim.id);
-      section.appendChild(noteSection(humanize(entry[0]), t(entry[1])));
-    }
-    if (projection.providerStorageStatus && projection.providerStorageStatus !== "validated") {
-      section.appendChild(noteSection(t("staticProviderStorageUnavailable"), String(projection.providerStorageReason || projection.providerStorageStatus).slice(0, 320)));
-    }
-    section.appendChild(noteSection(t("runtimeBoundary"), t("staticProviderBoundary")));
-    return section;
-  }
-
-  function packageCatalogSection(projection) {
-    if (!projection || projection.schema !== "endfield.audio-package-catalog.v1") return null;
-    if (projection.status === "notRequested") return null;
-    const section = document.createElement("details");
-    section.className = "audio-runtime-system audio-static-package-catalog";
-    const title = document.createElement("summary");
-    title.textContent = t("packageCatalog");
-    section.appendChild(title);
-    if (projection.status !== "validated") {
-      section.appendChild(noteSection(t("staticProviderUnavailable"),
-        String(projection.diagnostic?.detail || projection.diagnostic?.code || projection.status)));
-      return section;
-    }
-    section.appendChild(noteSection(t("runtimeBoundary"), t("packageCatalogBoundary")));
-    const counts = projection.summary || {};
-    section.appendChild(noteSection(t("packageCatalogCounts"),
-      [counts.packageCount, counts.entryCount, counts.distinctTypedKeyCount, counts.excludedPackageCount]
-        .map(value => formatNumber(value || 0)).join(" / ")));
-    section.appendChild(noteSection(t("packageCatalogRepeated"),
-      [counts.repeatedTypedKeyCount, counts.lowWordCollisionCount].map(value => formatNumber(value || 0)).join(" / ")));
-    if (Number.isInteger(counts.bankHeaderIdentityCount)) {
-      section.appendChild(noteSection(t("packageCatalogBankIdentities"), counts.bankHeaderIdentityCount.toLocaleString()));
-    }
-    for (const [label, values] of [["packageCatalogSectors", counts.sectorCounts], ["packageCatalogBlocks", counts.packageBlockCounts], ["packageCatalogBankVersions", counts.bankVersionCounts]]) {
-      section.appendChild(noteSection(t(label), Object.entries(values || {})
-        .map(([key, value]) => `${key}: ${formatNumber(value)}`).join(" / ")));
-    }
-    if (counts.languageLabelCounts) {
-      section.appendChild(noteSection(t("packageCatalogLanguageLabels"), Object.entries(counts.languageLabelCounts)
-        .map(([key, value]) => `${key}: ${formatNumber(value)}`).join(" / ")));
-      section.appendChild(noteSection(t("runtimeBoundary"), t("packageCatalogLanguageBoundary")));
-      if (counts.unresolvedLanguageLabelCount) {
-        section.appendChild(noteSection(t("packageCatalogLanguageUnresolved"), formatNumber(counts.unresolvedLanguageLabelCount)));
-      }
-      if (counts.languageLabelsOmitted || counts.languageLabelCountsTruncated) {
-        section.appendChild(noteSection(t("packageCatalogLanguageLabels"), t("packageCatalogLanguageTruncated")));
-      }
-    }
-    const packages = document.createElement("details");
-    const heading = document.createElement("summary");
-    heading.textContent = t("packageCatalogRows");
-    packages.appendChild(heading);
-    for (const row of asArray(projection.packages).slice(0, 64)) {
-      const labels = asArray(row.languageTable?.rows)
-        .map(value => `${value.id} = ${value.label ?? `${String(value.labelPreview || "")}…`}`).join(" / ");
-      const limited = row.languageTable?.rowsTruncated || asArray(row.languageTable?.rows).some(value => value.labelTruncated);
-      packages.appendChild(noteSection(`${normalize(row.block)} / ${normalize(row.path)}`,
-        [Object.entries(row.counts || {}).map(([key, value]) => `${key}: ${formatNumber(value)}`).join(" / "),
-          labels ? `${t("packageCatalogLanguageTable")}: ${labels}` : "",
-          limited ? t("packageCatalogLanguageTruncated") : ""].filter(Boolean).join("\n")));
-    }
-    section.appendChild(packages);
-    const ambiguity = document.createElement("details");
-    const ambiguityTitle = document.createElement("summary");
-    ambiguityTitle.textContent = t("packageCatalogCollisions");
-    ambiguity.appendChild(ambiguityTitle);
-    for (const row of asArray(projection.lowWordCollisions).slice(0, 32)) {
-      ambiguity.appendChild(noteSection(t("packageCatalogLowWords"),
-        `${row.keyLow} / ${asArray(row.fullKeys).map(String).join(" / ")}`));
-    }
-    for (const row of asArray(projection.repeatedTypedKeys).slice(0, 32)) {
-      ambiguity.appendChild(noteSection(`${normalize(row.sector)} / ${normalize(row.key)} / ${row.language}`,
-        asArray(row.entries).map(entry => `${normalize(entry.block)}: ${normalize(entry.path)}`).join(" / ")));
-    }
-    section.appendChild(ambiguity);
-    return section;
-  }
-
-  function runtimePanel() {
-    const runtimeCandidate = state.index?.runtimeSystem || state.index?.runtimeModel;
-    const runtime = runtimeCandidate && typeof runtimeCandidate === "object" ? runtimeCandidate : {};
-    const panel = document.createElement("section");
-    panel.className = "audio-panel audio-boundary";
-    const heading = document.createElement("h2");
-    heading.textContent = t("runtimeSystem");
-    panel.appendChild(heading);
-    const packageCatalog = packageCatalogSection(state.index?.packageCatalog);
-    if (packageCatalog) panel.appendChild(packageCatalog);
-    panel.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeCaptureWorkflow")));
-    const capturedEntries = runtimeNativeEntrySection(state.index?.nativeEntryObservations);
-    if (capturedEntries) panel.appendChild(capturedEntries);
-    const capturedRequests = runtimeExternalRequestsSection(state.index?.runtimeObservations);
-    if (capturedRequests) panel.appendChild(capturedRequests);
-    const capturedSources = runtimeNativeSourceSection(state.index?.runtimeObservations);
-    if (capturedSources) panel.appendChild(capturedSources);
-    const staticProvider = staticProviderPreparationSection(state.index?.staticProviderPreparation);
-    if (staticProvider) panel.appendChild(staticProvider);
-    const descriptionCandidate = runtime.overview ?? runtime.description ?? runtime.summary ?? runtime.evidenceBoundary;
-    const description = ["string", "number", "boolean"].includes(typeof descriptionCandidate) ? normalize(descriptionCandidate) : "";
-    if (description) {
-      const note = document.createElement("p");
-      note.className = "audio-runtime-note";
-      note.textContent = description;
-      panel.appendChild(note);
-    }
-
-    const stats = runtime.counts && typeof runtime.counts === "object"
-      ? runtime.counts
-      : (runtime.stats && typeof runtime.stats === "object" ? runtime.stats : (state.index?.counts || {}));
-    const statEntries = Object.entries(stats).filter(([, value]) => ["string", "number", "boolean"].includes(typeof value)).slice(0, 18);
-    if (statEntries.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      if (description) grid.style.marginTop = "12px";
-      for (const [label, value] of statEntries) grid.appendChild(statNode(humanize(label), typeof value === "number" ? formatNumber(value) : value));
-      panel.appendChild(grid);
-    }
-    const recoveryCounts = state.index?.counts || {};
-    const recoveryStats = [
-      [`${t("purposeUnknown")} / ${t("event")}`, recoveryCounts.purposeUnknownEvents],
-      [`${t("purposeUnknown")} / ${t("mediaItem")}`, recoveryCounts.purposeUnknownMedia],
-      [`${t("purposePartial")} / ${t("event")}`, recoveryCounts.purposePartialEvents],
-      [`${t("purposePartial")} / ${t("mediaItem")}`, recoveryCounts.purposePartialMedia],
-      [`${t("purposeKnown")} / ${t("event")}`, recoveryCounts.purposeKnownEvents],
-      [`${t("purposeKnown")} / ${t("mediaItem")}`, recoveryCounts.purposeKnownMedia],
-      [t("purposeStoryTerminal"), recoveryCounts.purposeStoryTerminalMedia],
-      [t("recoveryLibraryUnresolved"), recoveryCounts.authoredEventsUnresolvedToWwise],
-      [t("recoveryTriggerNameUnknown"), recoveryCounts.wwiseEventObjectsWithoutRecoveredAuthoredTrigger],
-      [t("locationUnknown"), recoveryCounts.mediaPlaybackLocationUnknown],
-      [t("locationEventRelationOnly"), recoveryCounts.mediaWithEventRelationOnly],
-      [t("locationAuthoredEventContext"), recoveryCounts.mediaWithAuthoredEventContext],
-      [t("locationDirectDialogMedia"), recoveryCounts.directDialogMedia],
-    ].filter(([, value]) => Number.isFinite(Number(value)));
-    if (recoveryStats.length) {
-      const heading = document.createElement("h3");
-      heading.textContent = t("recoveryBoundary");
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of recoveryStats) grid.appendChild(statNode(label, formatNumber(value)));
-      panel.append(heading, grid);
-    }
-    if (state.sceneCatalog) panel.appendChild(sceneCatalogSection(state.sceneCatalog));
-
-    const components = asArray(runtime.components ?? runtime.layers).map((value) => typeof value === "object" ? (value.name ?? value.id ?? value.type) : value).filter(Boolean);
-    if (components.length) panel.appendChild(chipSection(t("runtimeComponents"), components));
-    const hirc = state.index?.hircSummary;
-    if (hirc && typeof hirc === "object" && Object.keys(hirc).length) panel.appendChild(hircInventorySection(hirc));
-    const metadataEventSymbols = state.index?.metadataEventSymbolAliases;
-    if (metadataEventSymbols && typeof metadataEventSymbols === "object") {
-      const entries = asArray(metadataEventSymbols.entries).map((row) => [
-        row.eventHashHex || "?",
-        row.name || row.metadataField || "Event",
-        row.metadataDeclaringType || "",
-      ].filter(Boolean).join(" / "));
-      if (entries.length) {
-        panel.appendChild(chipSection("Named Event symbols (IL2CPP field evidence)", entries));
-        if (metadataEventSymbols.evidenceBoundary) {
-          panel.appendChild(noteSection("Event symbol evidence boundary", metadataEventSymbols.evidenceBoundary));
-        }
-      }
-    }
-    const controlCatalog = state.index?.controlCatalog;
-    if (controlCatalog && typeof controlCatalog === "object") panel.appendChild(controlCatalogSection(controlCatalog));
-    const physicsAudioCatalog = state.index?.triggerCatalog?.physicsAudio;
-    if (physicsAudioCatalog && typeof physicsAudioCatalog === "object") panel.appendChild(physicsAudioCatalogSection(physicsAudioCatalog));
-    const modelViewStateCatalog = state.index?.triggerCatalog?.modelViewStateAudio;
-    if (modelViewStateCatalog && typeof modelViewStateCatalog === "object") panel.appendChild(modelViewStateAudioCatalogSection(modelViewStateCatalog));
-    const levelScriptRadioCatalog = state.index?.triggerCatalog?.levelScriptRadio;
-    if (levelScriptRadioCatalog && typeof levelScriptRadioCatalog === "object") panel.appendChild(levelScriptRadioCatalogSection(levelScriptRadioCatalog));
-    const levelSequenceAudioCatalog = state.index?.triggerCatalog?.levelSequenceAudio;
-    if (levelSequenceAudioCatalog && typeof levelSequenceAudioCatalog === "object") panel.appendChild(levelSequenceAudioCatalogSection(levelSequenceAudioCatalog));
-    const dialogLifecycleCoverage = state.index?.triggerContexts?.coverage?.dialogLifecycle;
-    if (dialogLifecycleCoverage && typeof dialogLifecycleCoverage === "object") panel.appendChild(dialogLifecycleCatalogSection(dialogLifecycleCoverage));
-    const triggerContextCatalog = state.index?.triggerContexts;
-    if (triggerContextCatalog && typeof triggerContextCatalog === "object") panel.appendChild(triggerContextCatalogSection(triggerContextCatalog));
-    const enemyTriggerVoiceActionCatalog = state.index?.triggerCatalog?.enemyTriggerVoiceAction;
-    if (enemyTriggerVoiceActionCatalog && typeof enemyTriggerVoiceActionCatalog === "object") {
-      panel.appendChild(enemyTriggerVoiceActionCatalogSection(enemyTriggerVoiceActionCatalog));
-    }
-    const systems = asArray(runtime.systems).filter((value) => value && typeof value === "object");
-    if (systems.length) panel.appendChild(runtimeSystemsSection(systems));
-    const boundaryCandidate = runtime.boundary ?? state.index?.evidenceBoundary;
-    const boundary = ["string", "number", "boolean"].includes(typeof boundaryCandidate) ? normalize(boundaryCandidate) : "";
-    if (boundary && boundary !== description) panel.appendChild(noteSection(t("runtimeBoundary"), boundary));
-    if (boundaryCandidate && typeof boundaryCandidate === "object" && !Array.isArray(boundaryCandidate)) {
-      const boundaryEntries = Object.entries(boundaryCandidate).filter(([, value]) => ["string", "number", "boolean"].includes(typeof value));
-      if (boundaryEntries.length) panel.appendChild(boundaryGrid(boundaryEntries));
-    }
-    if (!description && !statEntries.length && !components.length && !boundary) {
-      const note = document.createElement("p");
-      note.className = "audio-runtime-note";
-      note.textContent = t("noData");
-      panel.appendChild(note);
-    }
-    return panel;
-  }
-
-  function buildSceneCatalogViewModel(catalog, query = "", limit = 30) {
-    const sourceDiagnostics = asArray(catalog?.sourceDiagnostics).filter((row) => row && typeof row === "object");
-    const unavailableSources = sourceDiagnostics.filter((row) => normalize(row.status) !== "validated");
-    const scenes = asArray(catalog?.scenes).filter((row) => row && typeof row === "object").map((scene) => {
-      const events = asArray(scene?.audioLevel?.events).filter((row) => row && typeof row === "object");
-      const missions = asArray(scene?.missionRefs).filter((row) => row && typeof row === "object");
-      const search = [
-        scene.sceneId,
-        ...events.flatMap((row) => [row.eventId, row.eventHashHex, row.role]),
-        ...missions.map((row) => row.missionId),
-      ].map(normalizeLower).join("\n");
-      return { scene, events, missions, search };
-    });
-    const tokens = normalizeLower(query).split(/\s+/).filter(Boolean);
-    const matches = scenes.filter((row) => tokens.every((token) => row.search.includes(token))).sort((left, right) => (
-      Number(Boolean(right.events.length || right.missions.length)) - Number(Boolean(left.events.length || left.missions.length))
-      || right.events.length - left.events.length
-      || right.missions.length - left.missions.length
-      || normalize(left.scene?.sceneId).localeCompare(normalize(right.scene?.sceneId))
-    ));
-    const emitters = asArray(catalog?.sceneEmitters).filter((row) => row && typeof row === "object");
-    const status = normalize(catalog?.status);
-    return {
-      unavailable: status === "unavailable",
-      partial: status === "validatedPartialPublishedObjectIndex" || unavailableSources.length > 0,
-      sourceDiagnostics,
-      unavailableSources,
-      scenes: matches.slice(0, Math.max(1, limit)),
-      totalMatches: matches.length,
-      emitters,
-      counts: catalog?.counts && typeof catalog.counts === "object" ? catalog.counts : {},
-    };
-  }
-
-  function sceneEventButton(event) {
-    const eventId = normalize(event?.eventId || event?.eventHashHex || event?.eventHash);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "audio-scene-event-link";
-    button.textContent = eventId || t("unknown");
-    button.title = [event?.role, event?.eventHashHex].map(normalize).filter(Boolean).join(" / ");
-    button.addEventListener("click", () => {
-      const record = (state.datasets.events || []).find((candidate) => {
-        const ids = [candidate.key, recordId(candidate.raw, "events"), candidate.raw?.eventHashHex]
-          .map(normalizeLower);
-        return ids.includes(normalizeLower(eventId));
-      });
-      if (record) selectRecord(record);
-      else {
-        const url = new URL(window.location.href);
-        url.searchParams.set("audio", eventId);
-        url.searchParams.set("audioKind", "events");
-        url.hash = "#audio";
-        window.location.assign(url.toString());
-      }
-    });
-    return button;
-  }
-
-  function renderSceneCatalogRows(host, catalog, query = "") {
-    const view = buildSceneCatalogViewModel(catalog, query);
-    host.replaceChildren();
-    if (!view.scenes.length) {
-      const empty = document.createElement("p");
-      empty.className = "audio-runtime-note";
-      empty.textContent = t("sceneCatalogNoMatches");
-      host.appendChild(empty);
-      return;
-    }
-    for (const { scene, events, missions } of view.scenes) {
-      const card = document.createElement("details");
-      card.className = "audio-scene-card";
-      if (events.length || missions.length) card.open = view.scenes.length <= 8;
-      const summary = document.createElement("summary");
-      summary.innerHTML = `<strong>${esc(scene.sceneId || t("unknown"))}</strong><span>${formatNumber(events.length)} ${esc(t("events"))} · ${formatNumber(missions.length)} ${esc(t("sceneCatalogMissionRefs"))}</span>`;
-      card.appendChild(summary);
-      if (events.length) {
-        const eventList = document.createElement("div");
-        eventList.className = "audio-scene-link-list";
-        for (const event of events) eventList.appendChild(sceneEventButton(event));
-        card.appendChild(eventList);
-      }
-      if (missions.length) card.appendChild(chipSection(t("sceneCatalogMissionRefs"), missions.map((row) => row.missionId).filter(Boolean)));
-      host.appendChild(card);
-    }
-    if (view.totalMatches > view.scenes.length) {
-      const more = document.createElement("p");
-      more.className = "audio-runtime-note";
-      more.textContent = `${formatNumber(view.totalMatches - view.scenes.length)} ${t("sceneCatalogMore")}`;
-      host.appendChild(more);
-    }
-  }
-
-  function sceneCatalogSection(catalog) {
-    const view = buildSceneCatalogViewModel(catalog);
-    const section = document.createElement("section");
-    section.className = `audio-scene-catalog${view.partial ? " is-partial" : ""}`;
-    const heading = document.createElement("div");
-    heading.className = "audio-scene-catalog-heading";
-    const statusLabel = view.unavailable ? "sceneCatalogUnavailable" : (view.partial ? "sceneCatalogPartial" : "sceneCatalogComplete");
-    heading.innerHTML = `<strong>${esc(t("sceneCatalog"))}</strong><span>${esc(t(statusLabel))}</span>`;
-    section.appendChild(heading);
-    const stats = document.createElement("div");
-    stats.className = "audio-stat-grid";
-    const facts = [
-      [t("sceneCatalogSources"), `${view.counts.validatedObjectIndexSources ?? 0} / ${view.counts.requestedObjectIndexSources ?? view.sourceDiagnostics.length}`],
-      [t("sceneCatalogScenes"), view.counts.catalogScenes ?? view.totalMatches],
-      [t("sceneCatalogEvents"), view.counts.sceneGlobalEventOccurrences ?? 0],
-      [t("sceneCatalogEmitters"), view.counts.sceneEmitterComponents ?? view.emitters.length],
-    ];
-    for (const [label, value] of facts) stats.appendChild(statNode(label, formatNumber(value)));
-    section.appendChild(stats);
-    if (view.unavailableSources.length) {
-      section.appendChild(noteSection(t("sceneCatalogPartial"), view.unavailableSources.map((row) => row.diagnostic || `${row.source}: ${row.status}`).join(" ")));
-    }
-    if (catalog?.evidenceBoundary) section.appendChild(noteSection(t("sceneCatalogBoundary"), catalog.evidenceBoundary));
-    if (view.emitters.length) {
-      const emitterWrap = document.createElement("div");
-      emitterWrap.className = "audio-scene-emitter-list";
-      const emitterTitle = document.createElement("div");
-      emitterTitle.className = "audio-fact-label";
-      emitterTitle.textContent = t("sceneCatalogEmitters");
-      emitterWrap.appendChild(emitterTitle);
-      for (const row of view.emitters) {
-        const placement = row.placement || {};
-        const card = document.createElement("div");
-        card.className = "audio-scene-emitter";
-        const label = document.createElement("span");
-        label.textContent = `${placement.gameObjectName || row.name || "emitter"} · ${row.sceneOwnershipStatus || "unresolved"}`;
-        card.appendChild(label);
-        const links = document.createElement("div");
-        links.className = "audio-scene-link-list";
-        for (const event of asArray(row.eventRequests)) links.appendChild(sceneEventButton(event));
-        card.appendChild(links);
-        emitterWrap.appendChild(card);
-      }
-      section.appendChild(emitterWrap);
-      const gap = document.createElement("p");
-      gap.className = "audio-runtime-note";
-      gap.textContent = t("sceneCatalogEmitterGap");
-      section.appendChild(gap);
-    }
-    const input = document.createElement("input");
-    input.type = "search";
-    input.className = "audio-scene-search";
-    input.placeholder = t("sceneCatalogSearch");
-    input.setAttribute("aria-label", t("sceneCatalogSearch"));
-    const rows = document.createElement("div");
-    rows.className = "audio-scene-list";
-    input.addEventListener("input", () => renderSceneCatalogRows(rows, catalog, input.value));
-    section.append(input, rows);
-    renderSceneCatalogRows(rows, catalog);
-    return section;
-  }
-
-  function hircInventorySection(hirc) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("hircInventory");
-    const grid = document.createElement("div");
-    grid.className = "audio-stat-grid";
-    const versions = Object.entries(hirc.bankVersions || {}).map(([version, count]) => `${version}: ${formatNumber(count)}`).join(", ");
-    const facts = [
-      ["PCK packages", hirc.packageCount],
-      ["Embedded banks", hirc.embeddedBankCount],
-      ["HIRC objects", hirc.hircObjectCount],
-      ["Bank versions", versions],
-      [t("scannedBankSet"), hirc.packageFingerprint ? `${hirc.packageCount || 0} PCK / ${String(hirc.packageFingerprint).slice(0, 16)}…` : ""],
-    ];
-    for (const [label, value] of facts) if (value !== undefined && value !== null && value !== "") grid.appendChild(statNode(label, typeof value === "number" ? formatNumber(value) : value));
-    section.append(heading, grid);
-    const labels = hirc.objectTypeLabels || {};
-    const typeCounts = Object.entries(hirc.objectTypeCounts || {}).map(([type, count]) => `${labels[type] || `type${type}`} (${type}): ${formatNumber(count)}`);
-    if (typeCounts.length) section.appendChild(chipSection("Object families", typeCounts));
-    const processing = hirc.postProcessSummary && typeof hirc.postProcessSummary === "object" ? hirc.postProcessSummary : {};
-    if (processing.parserStatus) {
-      const processingFacts = [
-        ["Direct-processing nodes", processing.parsedNodeCount],
-        ["Nodes with effects", processing.effectNodeCount],
-        ["Effect slots", processing.effectSlotCount],
-        ["Plug-in references", processing.effectReferenceCount],
-        ["Authored effect bypass bits", processing.effectBypassSlotCount],
-        ["Authored effect ShareSet bits", processing.effectShareSetSlotCount],
-        ["Authored effect rendered bits", processing.effectRenderedSlotCount],
-        ["Effect slots with unknown flag bits", processing.effectUnknownFlagBitsCount],
-        ["Decoded effect parameters", processing.decodedEffectParameterDefinitionCount],
-        ["Exact authored semantics", processing.exactEffectParameterDefinitionCount],
-        ["Partial authored semantics", processing.partialEffectParameterDefinitionCount],
-        ["Opaque effect parameters", processing.opaqueEffectParameterDefinitionCount],
-        ["Effect definitions with plug-in media", processing.pluginMediaDependencyDefinitionCount],
-        ["Plug-in media definition occurrences", processing.pluginMediaDependencyDefinitionOccurrenceCount],
-        ["Plug-in media dependency occurrences", processing.pluginMediaDependencyReferenceOccurrenceCount],
-        ["Unique plug-in media IDs", processing.uniquePluginMediaIdCount],
-        ["Decoded parameter references", processing.decodedEffectParameterReferenceCount],
-        ["Exact semantic references", processing.exactEffectParameterReferenceCount],
-        ["Partial semantic references", processing.partialEffectParameterReferenceCount],
-        ["Empty effect slots", processing.emptyEffectSlotCount],
-        ["Explicit output-bus routes", processing.outputBusNodeCount],
-        ["Unique output buses", processing.uniqueOutputBusIds],
-        ["Typed Aux Send nodes", processing.auxSendParserStatusCounts?.typedExactV150NodeAuxParams],
-        ["Game-Defined send use bits", processing.gameDefinedAuxSendUseBitNodeCount],
-        ["Game-Defined send override bits", processing.gameDefinedAuxSendOverrideBitNodeCount],
-        ["User-Defined Aux slot nodes", processing.userDefinedAuxSlotNodeCount],
-        ["User-Defined Aux Bus references", processing.userDefinedAuxBusReferenceCount],
-        ["Unique User-Defined Aux Buses", processing.uniqueUserDefinedAuxBusIds],
-        ["Early Reflections Aux Bus references", processing.reflectionsAuxBusReferenceCount],
-        ["Authored base property values", processing.authoredPropertyValueCount],
-        ["Authored base property ranges", processing.authoredRangedPropertyValueCount],
-        ["Nodes with authored base properties", processing.authoredPropertyNodeCount],
-        ["Typed State/RTPC nodes", processing.stateRtpcParserStatusCounts?.typedExactV150NodeStateAndRtpc],
-        ["State Group references", processing.stateGroupReferenceCount],
-        ["Unique State Group IDs", processing.uniqueStateGroupIds],
-        ["Authored State values", processing.stateValueCount],
-        ["Initial RTPC curves", processing.rtpcCurveCount],
-        ["Initial RTPC curve points", processing.rtpcPointCount],
-        ["Unique RTPC IDs", processing.uniqueRtpcIds],
-        ["Audio/Aux Bus definitions", processing.busDefinitionCount],
-        ["Recovered bus effect slots", processing.busEffectSlotCount],
-        ["Bus effect bypass bits", processing.busEffectBypassSlotCount],
-        ["Bus effect ShareSet bits", processing.busEffectShareSetSlotCount],
-        ["Bus effect rendered bits", processing.busEffectRenderedSlotCount],
-        ["Bus effect slots with unknown flag bits", processing.busEffectUnknownFlagBitsCount],
-        ["Decoded bus effect settings", processing.decodedBusEffectParameterCount],
-        ["Typed Bus State/RTPC definitions", processing.busStateRtpcParserStatusCounts?.typedExactV150BusInitialRtpcAndState],
-        ["Bus Initial RTPC curves", processing.busRtpcCurveCount],
-        ["Bus Initial RTPC curve points", processing.busRtpcPointCount],
-        ["Bus State groups", processing.busStateGroupCount],
-        ["Bus authored State values", processing.busStateValueCount],
-      ];
-      for (const [label, value] of processingFacts) if (value !== undefined && value !== null) grid.appendChild(statNode(label, formatNumber(value)));
-      const effectGate = processing.effectParameterNativeGate;
-      if (effectGate && typeof effectGate === "object") {
-        const validatedClasses = Array.isArray(effectGate.validatedClassIds) ? effectGate.validatedClassIds : null;
-        const structuralClasses = Array.isArray(effectGate.validatedStructuralClassIds) ? effectGate.validatedStructuralClassIds : [];
-        const status = normalize(effectGate.status) || "unavailable";
-        const gateNote = status === "validated" && validatedClasses
-          ? t("effectParameterGateValidated").replace("{count}", formatNumber(validatedClasses.length))
-            + (structuralClasses.length ? ` ${t("effectParameterGateStructural").replace("{count}", formatNumber(structuralClasses.length))}` : "")
-          : t("effectParameterGateUnavailable").replace("{status}", status);
-        section.appendChild(noteSection(t("effectParameterGate"), gateNote));
-      } else {
-        section.appendChild(noteSection(t("effectParameterGate"), t("effectParameterGateAbsent")));
-      }
-      const plugins = Object.entries(processing.effectPluginReferenceCounts || {}).map(([name, count]) => `${name}: ${formatNumber(count)}`);
-      if (plugins.length) section.appendChild(chipSection("Recovered DSP plug-ins", plugins));
-      const parameterSchemas = Object.entries(processing.effectParameterSchemaCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
-      if (parameterSchemas.length) section.appendChild(chipSection("Decoded authored DSP settings", parameterSchemas));
-      const pluginMedia = asArray(processing.pluginMediaDependencies).map((row) => [
-        row.pluginName || row.pluginClassIdHex || "plug-in",
-        `data ${row.pluginDataIndex ?? "?"}`,
-        row.mediaIdHex || row.mediaId,
-        humanize(row.semanticRole || "plugin media"),
-      ].filter((value) => value !== undefined && value !== null && value !== "").join(" / "));
-      if (pluginMedia.length) section.appendChild(chipSection("Plug-in media dependencies (not playable WEM)", pluginMedia));
-      const resolutions = Object.entries(processing.effectResolutionCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
-      if (resolutions.length) section.appendChild(chipSection("Effect definition resolution", resolutions));
-      const busParents = Object.entries(processing.busParentResolutionCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
-      if (busParents.length) section.appendChild(chipSection("Bus hierarchy resolution", busParents));
-      const auxResolutions = Object.entries(processing.auxiliaryBusResolutionCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
-      if (auxResolutions.length) section.appendChild(chipSection("Auxiliary Send bus resolution", auxResolutions));
-      const stateParameters = Object.entries(processing.stateParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
-      if (stateParameters.length) section.appendChild(chipSection("Authored State-controlled properties", stateParameters));
-      const rtpcTypes = Object.entries(processing.rtpcTypeCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
-      if (rtpcTypes.length) section.appendChild(chipSection("Initial RTPC control types", rtpcTypes));
-      const rtpcParameters = Object.entries(processing.rtpcParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
-      if (rtpcParameters.length) section.appendChild(chipSection("RTPC-controlled properties", rtpcParameters));
-      const namedGameParameters = asArray(processing.gameParameterNameEvidence?.entries).map((row) => {
-        const field = String(row.metadataField || "").split(".").pop() || "GameParameter";
-        const nodeCurves = formatNumber(row.nodeRtpcCurveCount || 0);
-        const busCurves = formatNumber(row.busRtpcCurveCount || 0);
-        return `${row.parameterIdHex || "?"} / ${field} / node curves ${nodeCurves} / bus curves ${busCurves}`;
-      });
-      if (namedGameParameters.length) {
-        section.appendChild(chipSection("Named GameParameter IDs (IL2CPP field evidence)", namedGameParameters));
-        if (processing.gameParameterNameEvidence?.evidenceBoundary) {
-          section.appendChild(noteSection("GameParameter evidence boundary", processing.gameParameterNameEvidence.evidenceBoundary));
-        }
-      }
-      const authoredProperties = Object.entries(processing.authoredPropertyCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
-      if (authoredProperties.length) section.appendChild(chipSection("Authored base properties", authoredProperties));
-      const authoredPropertyRanges = Object.entries(processing.authoredRangedPropertyCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
-      if (authoredPropertyRanges.length) section.appendChild(chipSection("Authored base property ranges", authoredPropertyRanges));
-      const busEffectParsers = Object.entries(processing.busEffectParserCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
-      if (busEffectParsers.length) section.appendChild(chipSection("Bus effect recovery", busEffectParsers));
-      const busStateRtpcParsers = Object.entries(processing.busStateRtpcParserStatusCounts || {}).map(([status, count]) => `${humanize(status)}: ${formatNumber(count)}`);
-      if (busStateRtpcParsers.length) section.appendChild(chipSection("Bus State/RTPC recovery", busStateRtpcParsers));
-      const busStateParameters = Object.entries(processing.busStateParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
-      if (busStateParameters.length) section.appendChild(chipSection("Bus State-controlled properties", busStateParameters));
-      const busRtpcParameters = Object.entries(processing.busRtpcParameterCounts || {}).map(([name, count]) => `${parameterLabelText(name)}: ${formatNumber(count)}`);
-      if (busRtpcParameters.length) section.appendChild(chipSection("Bus RTPC-controlled properties", busRtpcParameters));
-      const busPlugins = Object.entries(processing.busEffectPluginCounts || {}).map(([name, count]) => `${name}: ${formatNumber(count)}`);
-      if (busPlugins.length) section.appendChild(chipSection("Recovered bus DSP plug-ins", busPlugins));
-      if (processing.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), processing.evidenceBoundary));
-    }
-    const packages = asArray(hirc.packageInventory).map((row) => [
-      row.blockType || row.vfsSource || "export",
-      row.fileName || row.source,
-      `${formatNumber(row.embeddedBankCount || 0)} banks`,
-      `${formatNumber(row.eventObjectCount || 0)} Events`,
-      row.sha256 ? String(row.sha256).slice(0, 16) : "",
-    ].filter(Boolean).join(" / "));
-    if (packages.length) section.appendChild(chipSection(t("scannedBankSet"), packages));
-    if (hirc.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), hirc.evidenceBoundary));
-    return section;
-  }
-
-  function controlCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("controlCatalog");
-    section.appendChild(heading);
-    const counts = catalog.counts && typeof catalog.counts === "object" ? catalog.counts : {};
-    if (Object.keys(counts).length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [key, value] of Object.entries(counts)) grid.appendChild(statNode(humanize(key), typeof value === "number" ? formatNumber(value) : value));
-      section.appendChild(grid);
-    }
-    const formatControlFields = (row) => Object.entries(row.fields || {}).map(([name, field]) => {
-      let value = field?.value;
-      if (field?.bindingKind === "dynamic" || field?.bindingKind === "output") {
-        value = field.path || `${humanize(field.bindingKind)} source ${field.paramSource ?? "?"}`;
-      } else if (field?.present === false) {
-        value = "null";
-      } else if (value && typeof value === "object") {
-        value = JSON.stringify(value);
-      }
-      return `${name}=${value ?? "?"}`;
-    }).join(", ");
-    const groups = [
-      ["rtpcParameters", asArray(catalog.rtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.field || humanize(row.evidence || "")}`],
-      ["physicsAudioRtpcParameters", asArray(catalog.physicsAudioRtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${humanize(row.controlRole || "")} / ${row.definitionOwnerId || row.ownerId || "?"} / ${row.authoredProperty || "?"} -> ${row.runtimeField || "?"}`],
-      ["modelViewStateRtpcParameters", asArray(catalog.modelViewStateRtpcParameters), (row) => `${row.parameterName || t("unknown")} / ${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / mode ${row.rtpcBehaviourType ?? "?"} / ${row.dependFloatKey || "no blackboard key"}`],
-      ["modelViewStateSpatialControls", asArray(catalog.modelViewStateSpatialControls), (row) => `${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / direct ${String(Boolean(row.directSet))} / target ${row.targetClosePercentage ?? "?"} / ${row.dependFloatKey || "no blackboard key"}`],
-      ["modelViewStateCustomAudioControls", asArray(catalog.modelViewStateCustomAudioControls), (row) => `${row.controlValue || '""'} / ${row.behaviorTagHex || "tag ?"} / ${row.controllerId || "?"} / ${row.modelAnimatorName || "?"} / ${row.layerName || "?"} / ${row.stateName || "?"} / ${humanize(row.wwiseEventStatus || "unresolved")}`],
-      ["globalMusicCues", asArray(catalog.audioGlobalMusicCueRefs), (row) => `${row.field || t("unknown")} / ${row.cueHex || row.cueId || "?"} / ${humanize(row.definitionStatus || "unknown")}`],
-      ["levelScriptCueInvocations", asArray(catalog.levelScriptAudioCueInvocations), (row) => `${row.cueName || t("unknown")} / ${row.cueHex || "?"} / ${humanize(row.definitionStatus || "unknown")} / ${row.levelScriptId || "?"} / ${humanize(row.action || "")}`],
-      ["levelScriptDynamicBindings", asArray(catalog.levelScriptDynamicAudioBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
-      ["levelScriptControls", asArray(catalog.levelScriptAudioControls), (row) => `${humanize(row.action || "")} / ${humanize(row.controlRole || "")} / ${row.levelScriptId || "?"} / ${formatControlFields(row)}`],
-      ["levelScriptDynamicControls", asArray(catalog.levelScriptDynamicControlBindings), (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
-      ["levelEventConditions", asArray(catalog.levelEventAudioConditions), (row) => `${row.type || row.id || t("unknown")} / union ${row.unionTagHex || "?"} / event key ${row.eventKey ?? "?"} / ${humanize(row.relationType || "")} / ${row.predicate || "?"} / authored occurrences ${formatNumber(row.authoredOccurrenceCount || 0)} / ${humanize(row.playbackRequestStatus || "")}`],
-      ["wwiseSelectorGroups", asArray(catalog.wwiseSelectorGroups), (row) => {
-        const values = asArray(row.values).map((value) => {
-          const input = `${value.valueIdHex || value.valueId || "?"}=${value.semanticName || humanize(value.semanticNameStatus || "unresolved")}`;
-          const resolved = value.resolvedValueIdHex
-            ? ` -> ${value.resolvedValueIdHex}${value.resolvedValueName ? `=${value.resolvedValueName}` : ""}`
-            : "";
-          return `${input}${resolved}`;
-        });
-        return `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.semanticEvidence || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeScope || "scope unresolved")}${values.length ? ` / values ${values.join(", ")}` : ""} / ${humanize(row.runtimeObservationStatus || "")}`;
-      }],
-      ["wwiseInitialRtpcParameters", asArray(catalog.wwiseInitialRtpcParameters), (row) => [
-        row.rtpcIdHex || "?",
-        row.parameterName || humanize(row.semanticNameStatus || "unresolved"),
-        `${formatNumber(row.curveCount || 0)} curves / ${formatNumber(row.pointCount || 0)} points`,
-        asArray(row.eventIds).slice(0, 4).join(", "),
-        Object.entries(row.controlledProperties || {}).map(([key, value]) => `${key} ${formatNumber(value)}`).join(" / "),
-        asArray(row.triggerRoles).join(" / "),
-      ].filter(Boolean).join(" / ")],
-      ["staticRtpcAlignment", asArray(catalog.staticRtpcAlignment?.entries), (row) => [
-        row.parameterIdHex || "?",
-        row.parameterName || row.metadataField || t("unknown"),
-        `${formatNumber(row.serializedCurveCount || 0)} HIRC curves`,
-        `node ${formatNumber(row.nodeRtpcCurveCount || 0)} / bus ${formatNumber(row.busRtpcCurveCount || 0)}`,
-        `set ${formatNumber(row.setGameParameterCount || 0)} / reset ${formatNumber(row.resetGameParameterCount || 0)}`,
-        `same-event joins ${formatNumber(asArray(row.controlRows).filter((control) => control?.initialRtpcJoin).length)}`,
-        Object.keys(row.controlledProperties || {}).join(", "),
-        humanize(row.alignmentStatus || "authoredStatic"),
-      ].filter(Boolean).join(" / ")],
-      ["wwiseActionControls", asArray(catalog.wwiseActionControls?.referencedGroups), (row) => `${row.groupIdHex || "?"} / ${row.semanticLabel || humanize(row.semanticRole || "unknown")} / ${humanize(row.groupType || "unknown")} / ${humanize(row.runtimeObservationStatus || "")}`],
-    ];
-    for (const [labelKey, rows, formatRow] of groups) {
-      if (!rows.length) continue;
-      const details = document.createElement("details");
-      details.className = "audio-runtime-system";
-      const summary = document.createElement("summary");
-      summary.textContent = `${t(labelKey)} (${formatNumber(rows.length)})`;
-      const values = document.createElement("div");
-      values.className = "audio-chip-list";
-      for (const row of rows) {
-        const chip = document.createElement("span");
-        chip.textContent = formatRow(row);
-        values.appendChild(chip);
-      }
-      details.append(summary, values);
-      section.appendChild(details);
-    }
-    const staticRtpcAlignment = catalog.staticRtpcAlignment;
-    if (staticRtpcAlignment && typeof staticRtpcAlignment === "object") {
-      const boundary = staticRtpcAlignment.evidenceBoundary || "";
-      const gate = staticRtpcAlignment.nativeGate || {};
-      const gateStatus = staticRtpcAlignment.status || gate.status || "unavailable";
-      if (boundary) section.appendChild(noteSection(
-        "Static RTPC evidence boundary",
-        `${humanize(gateStatus)}: ${boundary}`,
-      ));
-    }
-    const literalCount = Number(counts.audioCueExpressionStringLiterals || 0);
-    const variableCount = Number(counts.audioCueVariableNameCandidates || 0);
-    if (literalCount || variableCount) {
-      section.appendChild(noteSection(
-        t("audioCueStringLiteralControl"),
-        `${literalCount} ${t("audioCueStringLiteralControl")}; ${variableCount} authored variable-name candidate(s). ${t("audioCueRuntimeUnobserved")}`,
-      ));
-    }
-    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
-    return section;
-  }
-
-  function physicsAudioCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("physicsAudioCatalog");
-    section.appendChild(heading);
-    const facts = [
-      ["Definitions", catalog.physicsAudioDefinitions],
-      ["Event requests", catalog.physicsAudioEventContexts],
-      ["RTPC controls", catalog.physicsAudioRtpcControls],
-      ["Configured consumers", catalog.physicsAudioConsumerIdentities],
-      ["Aliases", catalog.physicsAudioAliasIdentities],
-    ].filter(([, value]) => value !== undefined && value !== null);
-    if (facts.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
-      section.appendChild(grid);
-    }
-    for (const definition of asArray(catalog.definitions)) {
-      if (!definition || typeof definition !== "object") continue;
-      const details = document.createElement("details");
-      details.className = "audio-runtime-system";
-      const summary = document.createElement("summary");
-      const consumers = asArray(definition.consumerIds).filter(Boolean);
-      summary.textContent = `${definition.definitionOwnerId || t("unknown")} / ${definition.componentTagHex || definition.componentTag || "?"} / ${formatNumber(definition.propertyCount || 0)} properties / ${formatNumber(consumers.length)} consumers`;
-      const values = document.createElement("div");
-      values.className = "audio-chip-list";
-      for (const property of asArray(definition.properties)) {
-        if (!property || typeof property !== "object") continue;
-        const chip = document.createElement("span");
-        const rawValue = property.value === "" ? '""' : property.value;
-        chip.textContent = `${property.authoredKey || "?"} -> ${property.runtimeField || "?"} = ${rawValue ?? "null"}`;
-        values.appendChild(chip);
-      }
-      const evidence = document.createElement("p");
-      evidence.className = "audio-detail-note";
-      evidence.textContent = [
-        consumers.length ? `consumers ${consumers.join(", ")}` : "",
-        definition.sourceSha256 ? `SHA-256 ${definition.sourceSha256}` : "",
-        definition.sourceOffset !== undefined ? `component 0x${Number(definition.sourceOffset).toString(16)}-0x${Number(definition.endOffset).toString(16)}` : "",
-        ...asArray(definition.sourcePaths),
-      ].filter(Boolean).join(" / ");
-      details.append(summary, values, evidence);
-      section.appendChild(details);
-    }
-    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
-    return section;
-  }
-
-  function modelViewStateAudioCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("modelViewStateAudioCatalog");
-    section.appendChild(heading);
-    const facts = [
-      ["Controllers decoded", catalog.controllersDecoded],
-      ["Controllers with audio", catalog.controllersWithAudio],
-      ["Event behaviors (tag 0x0001)", catalog.eventBehaviorCount],
-      ["Position Event behaviors (tag 0x0002)", catalog.positionEventBehaviorCount],
-      ["RTPC behaviors (tag 0x0003)", catalog.rtpcBehaviorCount],
-      ["Spatial behaviors (tag 0x0004)", catalog.spatialBehaviorCount],
-      ["Custom-audio controls", catalog.customAudioControlCount],
-      ["Exact InteractiveData associations", catalog.controllersWithTemplateAssociations],
-    ].filter(([, value]) => value !== undefined && value !== null);
-    if (facts.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of facts) grid.appendChild(statNode(label, typeof value === "number" ? formatNumber(value) : value));
-      section.appendChild(grid);
-    }
-    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
-    return section;
-  }
-
-  function levelSequenceAudioCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("levelSequenceAudioCatalog");
-    section.appendChild(heading);
-    const facts = [
-      [t("levelSequenceTimelineContexts"), catalog.timelineContexts],
-      [t("levelSequenceExactContexts"), catalog.eventsWithExactLevelSequenceAction],
-      [t("levelSequenceInferredContexts"), catalog.eventsWithInferredTimelineTrigger],
-      [t("levelSequenceGapContexts"), catalog.eventsWithoutTimelineCarrier],
-      ["Timeline parents", catalog.timelineParents],
-      ["PlayableDirector links", catalog.exactPlayableDirectorLinks],
-      ["LevelScript ids", catalog.uniquePlayLevelSequenceIds],
-    ].filter(([, value]) => value !== undefined && value !== null);
-    if (facts.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
-      section.appendChild(grid);
-    }
-    const boundary = [
-      catalog.evidenceBoundary,
-      catalog.playActionEvidenceBoundary,
-      catalog.timelineOwnershipEvidenceBoundary,
-    ].filter(Boolean).join(" ");
-    if (boundary) section.appendChild(noteSection(t("levelSequenceRuntimeBoundary"), boundary));
-    return section;
-  }
-
-  function dialogLifecycleCatalogSection(coverage) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("dialogLifecycleAudioCatalog");
-    section.appendChild(heading);
-    const facts = [
-      ["Stored hooks", coverage.storedTriggerContextRows],
-      ["Current Wwise events", coverage.rowsWithCurrentWwiseEvent],
-      ["No decoded media leaf", coverage.rowsWithNoDecodedMediaLeaf],
-    ].filter(([, value]) => value !== undefined && value !== null);
-    if (facts.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
-      section.appendChild(grid);
-    }
-    const phaseCounts = coverage.phaseCounts && typeof coverage.phaseCounts === "object"
-      ? Object.entries(coverage.phaseCounts).map(([phase, count]) => `${phase}: ${formatNumber(count)}`)
-      : [];
-    if (phaseCounts.length) section.appendChild(chipSection("Lifecycle phases", phaseCounts));
-    const consumer = coverage.runtimeConsumer && typeof coverage.runtimeConsumer === "object" ? coverage.runtimeConsumer : {};
-    const methods = consumer.methods && typeof consumer.methods === "object"
-      ? Object.values(consumer.methods).map((method) => {
-        if (!method || typeof method !== "object") return "";
-        return [method.name, method.token].filter(Boolean).join(" ");
-      }).filter(Boolean)
-      : [];
-    if (consumer.type || methods.length) {
-      const details = document.createElement("details");
-      details.className = "audio-runtime-system";
-      const summary = document.createElement("summary");
-      summary.textContent = consumer.type || "AudioGameplayStatusSystem";
-      const values = document.createElement("div");
-      values.className = "audio-chip-list";
-      for (const method of methods) {
-        const chip = document.createElement("span");
-        chip.textContent = method;
-        values.appendChild(chip);
-      }
-      details.append(summary, values);
-      section.appendChild(details);
-    }
-    section.appendChild(noteSection(t("runtimeBoundary"), "Dialog lifecycle dispatch and Wwise PostEvent execution were not observed; these rows are authored hooks only."));
-    return section;
-  }
-
-  function triggerContextCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("audioTriggerContextCatalog");
-    section.appendChild(heading);
-    const counts = catalog.counts && typeof catalog.counts === "object" ? catalog.counts : {};
-    const facts = [
-      ["Total contexts", counts.total],
-      ["Playable media", counts.withPlayableMedia],
-      ["Runtime observed", counts.runtimeExecutionObserved],
-      ["Runtime unobserved", counts.runtimeExecutionUnobserved],
-    ].filter(([, value]) => value !== undefined && value !== null);
-    if (facts.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of facts) grid.appendChild(statNode(label, formatNumber(value)));
-      section.appendChild(grid);
-    }
-    const coverage = catalog.coverage && typeof catalog.coverage === "object" ? catalog.coverage : {};
-    for (const [kind, row] of Object.entries(coverage)) {
-      if (!row || typeof row !== "object") continue;
-      const details = document.createElement("details");
-      details.className = "audio-runtime-system";
-      const summary = document.createElement("summary");
-      const stored = row.storedTriggerContextRows;
-      summary.textContent = `${humanize(kind)}${stored !== undefined ? ` (${formatNumber(stored)})` : ""}`;
-      const values = document.createElement("div");
-      values.className = "audio-chip-list";
-      for (const [key, value] of Object.entries(row)) {
-        if (key === "source" || value === null || value === undefined) continue;
-        if (value && typeof value === "object" && !Array.isArray(value)) {
-          const scalarEntries = Object.entries(value).filter(([, nested]) => (
-            nested !== null
-            && nested !== undefined
-            && ["string", "number", "boolean"].includes(typeof nested)
-          ));
-          for (const [nestedKey, nestedValue] of scalarEntries) {
-            const chip = document.createElement("span");
-            chip.textContent = `${humanize(key)} / ${humanize(nestedKey)}: ${typeof nestedValue === "number" ? formatNumber(nestedValue) : String(nestedValue)}`;
-            values.appendChild(chip);
-          }
-          continue;
-        }
-        if (typeof value === "object") continue;
-        const chip = document.createElement("span");
-        chip.textContent = `${humanize(key)}: ${typeof value === "number" ? formatNumber(value) : String(value)}`;
-        values.appendChild(chip);
-      }
-      if (row.source) {
-        const source = document.createElement("p");
-        source.className = "audio-detail-note";
-        source.textContent = String(row.source);
-        details.append(summary, values, source);
-      } else {
-        details.append(summary, values);
-      }
-      section.appendChild(details);
-    }
-    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
-    return section;
   }
 
   function audioCueExpressionSection(raw) {
@@ -3936,297 +2302,6 @@
     boundary.className = "audio-detail-note";
     boundary.textContent = t("audioCueRuntimeUnobserved");
     section.appendChild(boundary);
-    return section;
-  }
-
-  function enemyTriggerVoiceActionCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("enemyTriggerVoiceActionCatalog");
-    section.appendChild(heading);
-    const facts = [
-      ["Consumer", [catalog.consumerType, catalog.consumerMethod].filter(Boolean).join(".")],
-      ["Method", [catalog.methodVa, catalog.methodIndex !== undefined ? `index ${catalog.methodIndex}` : ""].filter(Boolean).join(" / ")],
-      ["Playback", [catalog.playbackCall, catalog.playbackInvocationVa].filter(Boolean).join(" / ")],
-      ["Mappings", asArray(catalog.voiceTypes).length],
-    ].filter(([, value]) => value !== undefined && value !== null && value !== "");
-    if (facts.length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [label, value] of facts) grid.appendChild(statNode(label, typeof value === "number" ? formatNumber(value) : value));
-      section.appendChild(grid);
-    }
-    const mappings = asArray(catalog.voiceTypes).filter((row) => row && typeof row === "object");
-    if (mappings.length) {
-      const values = document.createElement("div");
-      values.className = "audio-chip-list";
-      for (const row of mappings) {
-        const chip = document.createElement("span");
-        chip.textContent = [
-          `voiceType ${row.voiceType ?? "?"} -> ${row.triggerKey || "?"}`,
-          row.literalLoadVa ? `literal ${row.literalLoadVa}` : "",
-          row.mappingAddInvocationVa ? `dictionary add ${row.mappingAddInvocationVa}` : "",
-        ].filter(Boolean).join(" / ");
-        values.appendChild(chip);
-      }
-      section.appendChild(values);
-    }
-    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
-    return section;
-  }
-
-  function levelScriptRadioCatalogSection(catalog) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("levelScriptRadioCatalog");
-    section.appendChild(heading);
-    const counts = catalog.counts && typeof catalog.counts === "object" ? catalog.counts : {};
-    if (Object.keys(counts).length) {
-      const grid = document.createElement("div");
-      grid.className = "audio-stat-grid";
-      for (const [key, value] of Object.entries(counts)) {
-        grid.appendChild(statNode(humanize(key), typeof value === "number" ? formatNumber(value) : value));
-      }
-      section.appendChild(grid);
-    }
-    const boundedGroups = [
-      ["unresolvedRadioIds", catalog.unresolvedRadioIds, (row) => `${row.radioId || t("unknown")} / ${formatNumber(row.invocationCount || 0)} invocations / ${asArray(row.triggerRoles).map(humanize).join(", ") || "role unknown"}`],
-      ["unresolvedRadioLines", catalog.unresolvedRadioLines, (row) => `${row.radioId || t("unknown")} / line ${Number(row.lineOrdinal ?? 0) + 1} / ${row.audioOverride || "audioOverride missing"} / ${humanize(row.resolutionStatus || "")}`],
-      ["dynamicRadioBindings", catalog.dynamicRadioBindings, (row) => `${row.levelScriptId || "?"} / ${humanize(row.action || "")} / ${humanize(row.triggerRole || "")} / ${row.sourceField || "?"} / ${row.binding?.path || humanize(row.resolutionStatus || "")}`],
-    ];
-    for (const [labelKey, bounded, formatRow] of boundedGroups) {
-      if (!bounded || typeof bounded !== "object") continue;
-      const rows = asArray(bounded.items).filter((row) => row && typeof row === "object");
-      const total = Number(bounded.totalCount || 0);
-      if (!rows.length && !total) continue;
-      const details = document.createElement("details");
-      details.className = "audio-runtime-system";
-      const summary = document.createElement("summary");
-      summary.textContent = `${t(labelKey)} (${formatNumber(rows.length)} / ${formatNumber(total)}${bounded.truncated ? ", truncated" : ""})`;
-      const values = document.createElement("div");
-      values.className = "audio-chip-list";
-      for (const row of rows) {
-        const chip = document.createElement("span");
-        chip.textContent = formatRow(row);
-        values.appendChild(chip);
-      }
-      details.append(summary, values);
-      section.appendChild(details);
-    }
-    if (catalog.evidenceBoundary) section.appendChild(noteSection(t("runtimeBoundary"), catalog.evidenceBoundary));
-    return section;
-  }
-
-  function boundaryGrid(entries) {
-    const section = document.createElement("div");
-    section.style.marginTop = "12px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("runtimeBoundary");
-    const grid = document.createElement("div");
-    grid.className = "audio-runtime-boundaries";
-    for (const [key, value] of entries.slice(0, 12)) {
-      const item = document.createElement("div");
-      item.className = "audio-runtime-boundary";
-      item.innerHTML = `<strong>${esc(humanize(key))}</strong><span>${esc(value)}</span>`;
-      grid.appendChild(item);
-    }
-    section.append(heading, grid);
-    return section;
-  }
-
-  function runtimeSystemsSection(systems) {
-    const section = document.createElement("div");
-    section.style.marginTop = "14px";
-    const heading = document.createElement("div");
-    heading.className = "audio-fact-label";
-    heading.textContent = t("runtimeComponents");
-    const list = document.createElement("div");
-    list.className = "audio-runtime-systems";
-    for (const system of systems) {
-      const card = document.createElement("article");
-      card.className = "audio-runtime-system";
-      const type = normalize(system.type ?? system.name ?? system.id) || t("unknown");
-      const layer = normalize(system.layer);
-      const meaning = normalize(system.meaning ?? system.description);
-      const counts = [];
-      if (asArray(system.fields).length) counts.push(`${asArray(system.fields).length} fields`);
-      if (asArray(system.methods).length) counts.push(`${asArray(system.methods).length} methods`);
-      if (system.enumValues && typeof system.enumValues === "object") counts.push(`${Object.keys(system.enumValues).length} enum values`);
-      if (asArray(system.nativeAnchors).length) counts.push(`${asArray(system.nativeAnchors).length} native anchors`);
-      if (asArray(system.nativeCallChains).length) counts.push(`${asArray(system.nativeCallChains).length} native call chains`);
-      if (asArray(system.nativeStateGroups).length) counts.push(`${asArray(system.nativeStateGroups).length} Wwise state groups`);
-      if (asArray(system.nativeStateTransitions).length) counts.push(`${asArray(system.nativeStateTransitions).length} audio-state masks`);
-      card.innerHTML = `<div class="audio-runtime-system-head"><code>${esc(type)}</code>${layer ? `<span>${esc(layer)}</span>` : ""}</div>${meaning ? `<p>${esc(meaning)}</p>` : ""}${counts.length ? `<small>${esc(counts.join(" · "))}</small>` : ""}`;
-      const layout = system.serializedLayout && typeof system.serializedLayout === "object" ? system.serializedLayout : null;
-      const anchors = asArray(system.nativeAnchors).filter((row) => row && typeof row === "object");
-      const callChains = asArray(system.nativeCallChains).filter((row) => row && typeof row === "object");
-      const stateGroups = asArray(system.nativeStateGroups).filter((row) => row && typeof row === "object");
-      const stateTransitions = asArray(system.nativeStateTransitions).filter((row) => row && typeof row === "object");
-      const enumEntries = system.enumValues && typeof system.enumValues === "object"
-        ? Object.entries(system.enumValues)
-        : [];
-      if (layout || anchors.length || callChains.length || stateGroups.length || stateTransitions.length || enumEntries.length) {
-        const values = document.createElement("div");
-        values.className = "audio-chip-list";
-        if (layout) {
-          const chip = document.createElement("span");
-          chip.textContent = `${layout.unionTagHex || `tag ${layout.unionTag ?? "?"}`} / mc${layout.memberCount ?? "?"} / behavior type ${layout.behaviorType ?? "?"} / ${layout.dataType || "serialized data"}`;
-          values.appendChild(chip);
-        }
-        for (const [name, value] of enumEntries) {
-          const chip = document.createElement("span");
-          const numeric = Number(value);
-          const hex = Number.isFinite(numeric) ? ` / 0x${(numeric >>> 0).toString(16).padStart(8, "0")}` : "";
-          chip.textContent = `${name} = ${value}${hex}`;
-          values.appendChild(chip);
-        }
-        for (const anchor of anchors) {
-          const chip = document.createElement("span");
-          chip.textContent = `${anchor.role || "native"} / method ${anchor.methodIndex ?? "?"} / ${anchor.token || "token ?"} / VA ${anchor.virtualAddress || "?"}${anchor.type ? ` / ${anchor.type}` : ""}`;
-          values.appendChild(chip);
-        }
-        if (system.runtimeExecutionStatus) {
-          const chip = document.createElement("span");
-          chip.textContent = `runtime execution ${humanize(system.runtimeExecutionStatus)}`;
-          values.appendChild(chip);
-        }
-        if (system.nativeAnchorStatus) {
-          const chip = document.createElement("span");
-          chip.textContent = `native anchors ${humanize(system.nativeAnchorStatus)}`;
-          values.appendChild(chip);
-        }
-        if (system.nativeCallChainStatus) {
-          const chip = document.createElement("span");
-          chip.textContent = `native call chains ${humanize(system.nativeCallChainStatus)}`;
-          values.appendChild(chip);
-        }
-        if (system.nativeStateGroupStatus) {
-          const chip = document.createElement("span");
-          chip.textContent = `native state groups ${humanize(system.nativeStateGroupStatus)}`;
-          values.appendChild(chip);
-        }
-        if (system.nativeStateTransitionStatus) {
-          const chip = document.createElement("span");
-          chip.textContent = `native state transitions ${humanize(system.nativeStateTransitionStatus)}`;
-          values.appendChild(chip);
-        }
-        card.appendChild(values);
-        for (const group of stateGroups) {
-          const groupCard = document.createElement("div");
-          groupCard.className = "audio-runtime-state-group";
-          const recoveredName = normalize(group.recoveredName);
-          const identity = recoveredName || normalize(group.field) || humanize(group.role || "state group");
-          const title = document.createElement("strong");
-          title.textContent = `${humanize(group.role || "state group")} · ${identity} · ${group.groupIdHex || group.groupId || "unknown id"}`;
-          const detail = document.createElement("small");
-          detail.textContent = [
-            normalize(group.enumType),
-            normalize(group.setterMethod),
-            group.methodIndex !== undefined ? `method ${group.methodIndex}` : "",
-            normalize(group.virtualAddress) ? `VA ${group.virtualAddress}` : "",
-            humanize(group.nameEvidence || ""),
-          ].filter(Boolean).join(" · ");
-          groupCard.append(title, detail);
-          card.appendChild(groupCard);
-        }
-        for (const transition of stateTransitions) {
-          const transitionCard = document.createElement("div");
-          transitionCard.className = "audio-runtime-state-group";
-          const names = asArray(transition.stateNames).map(normalize).filter(Boolean);
-          const title = document.createElement("strong");
-          title.textContent = `${names.length ? names.join(" + ") : "audio state mask"} / ${transition.stateMaskHex || transition.stateMask || "unknown mask"}`;
-          const detail = document.createElement("small");
-          detail.textContent = [
-            `${transition.registrationCount || 0} registrations`,
-            asArray(transition.actionOrders).length ? `orders ${asArray(transition.actionOrders).join(" / ")}` : "",
-            transition.isOneShot === false ? "persistent" : "",
-            asArray(transition.registrationCallOffsets).length ? `call offsets ${asArray(transition.registrationCallOffsets).join(" / ")}` : "",
-            humanize(transition.callbackTargetStatus || ""),
-            humanize(transition.conditionInterpretationStatus || ""),
-          ].filter(Boolean).join(" / ");
-          transitionCard.append(title, detail);
-          const registrations = asArray(transition.registrations).filter((row) => row && typeof row === "object");
-          if (registrations.length) {
-            const callbackList = document.createElement("div");
-            callbackList.className = "audio-chip-list";
-            for (const registration of registrations) {
-              const chip = document.createElement("span");
-              chip.textContent = [
-                humanize(registration.conditionType || `condition ${registration.conditionTypeRaw ?? "?"}`),
-                `order ${registration.actionOrder ?? "?"}`,
-                normalize(registration.callbackMethod),
-                registration.callbackMethodIndex !== undefined ? `method ${registration.callbackMethodIndex}` : "",
-                normalize(registration.callbackVirtualAddress) ? `VA ${registration.callbackVirtualAddress}` : "",
-                asArray(registration.directStateSetters).length
-                  ? `direct setters ${asArray(registration.directStateSetters).join(" / ")}`
-                  : "",
-              ].filter(Boolean).join(" / ");
-              callbackList.appendChild(chip);
-            }
-            transitionCard.appendChild(callbackList);
-          }
-          card.appendChild(transitionCard);
-        }
-        for (const chain of callChains) {
-          const chainCard = document.createElement("div");
-          chainCard.className = "audio-runtime-call-chain";
-          const label = normalize(chain.label ?? chain.id) || "Native call chain";
-          const stages = asArray(chain.stages).filter((row) => row && typeof row === "object");
-          const alternateEntryPoints = asArray(chain.alternateEntryPoints)
-            .filter((row) => row && typeof row === "object");
-          const branches = asArray(chain.branches).filter((row) => row && typeof row === "object");
-          const title = document.createElement("strong");
-          title.textContent = `${label}${stages.length ? ` · ${stages.length} stages` : ""}`;
-          chainCard.appendChild(title);
-          const stageList = document.createElement("div");
-          stageList.className = "audio-chip-list";
-          for (const stage of stages) {
-            const chip = document.createElement("span");
-            const identity = [normalize(stage.type), normalize(stage.method)].filter(Boolean).join(".");
-            const anchor = [
-              stage.methodIndex !== undefined ? `method ${stage.methodIndex}` : "",
-              normalize(stage.virtualAddress) ? `VA ${stage.virtualAddress}` : "",
-            ].filter(Boolean).join(" / ");
-            chip.textContent = [
-              humanize(stage.role || "stage"), identity, anchor, normalize(stage.relation),
-            ].filter(Boolean).join(" · ");
-            stageList.appendChild(chip);
-          }
-          for (const entry of alternateEntryPoints) {
-            const chip = document.createElement("span");
-            chip.textContent = [
-              `alternate ${humanize(entry.role || "entry point")}`,
-              [normalize(entry.type), normalize(entry.method)].filter(Boolean).join("."),
-              normalize(entry.virtualAddress) ? `VA ${entry.virtualAddress}` : "",
-              normalize(entry.relation),
-            ].filter(Boolean).join(" 路 ");
-            stageList.appendChild(chip);
-          }
-          for (const branch of branches) {
-            const chip = document.createElement("span");
-            chip.textContent = [
-              `branch ${normalize(branch.label ?? branch.id) || "unknown"}`,
-              normalize(branch.relation),
-            ].filter(Boolean).join(" / ");
-            stageList.appendChild(chip);
-          }
-          chainCard.appendChild(stageList);
-          if (chain.boundary) {
-            const boundary = document.createElement("small");
-            boundary.textContent = normalize(chain.boundary);
-            chainCard.appendChild(boundary);
-          }
-          card.appendChild(chainCard);
-        }
-      }
-      list.appendChild(card);
-    }
-    section.append(heading, list);
     return section;
   }
 
@@ -6936,13 +5011,6 @@
     parent.appendChild(list);
   }
 
-  function statNode(label, value) {
-    const node = document.createElement("div");
-    node.className = "audio-stat";
-    node.innerHTML = `<span class="audio-stat-label">${esc(label)}</span><span class="audio-stat-value">${esc(value)}</span>`;
-    return node;
-  }
-
   function factNode(label, value) {
     const node = document.createElement("div");
     node.className = "audio-fact";
@@ -7070,17 +5138,6 @@
     // values as an explicit custom/internal boundary instead of inventing a
     // DSP property name from a coincidental numeric ID.
     return `${label || `parameter ${Math.trunc(parameterId)}`} [custom/internal ${hex}]${gameParameterSuffix}`;
-  }
-
-  function parameterLabelText(label) {
-    const value = normalize(label);
-    const match = /^parameter(\d+)$/i.exec(value);
-    if (!match) return humanize(value);
-    const parameterId = Number(match[1]);
-    const hex = Number.isFinite(parameterId)
-      ? `0x${Math.trunc(parameterId).toString(16).padStart(4, "0")}`
-      : "?";
-    return `${value} [custom/internal ${hex}]`;
   }
 
   function fileName(value) {

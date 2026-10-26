@@ -19,8 +19,8 @@ inference into one confidence class.
    conversations and references.
 5. Manual inputs in `webui/overrides/story_order.json`, `options.json`, and
    `narrative_videos.json` are applied without being overwritten.
-6. The page also reads `webui/data/mission_pipeline/index.json` for
-   `storyCoverage.storyTriggerManifest`, published by the standalone Mission
+6. The page also reads `webui/data/mission_pipeline/story_triggers.json`, the
+   merged trigger lookup published beside the index by the standalone Mission
    Pipeline workflow rather than a Story builder. Its absence is a degraded
    trigger state, not a failed build.
 

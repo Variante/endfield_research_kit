@@ -2217,6 +2217,21 @@ a.opt-target-chip { cursor: pointer; }
   gap: 2px 4px;
   min-width: 0;
 }
+.media-player-name {
+  overflow: hidden;
+  padding: 0 4px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gameplay-audio-lazy-name {
+  overflow: hidden;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .media-player-spacer {
   flex: 1 1 auto;
   min-width: 0;
@@ -6239,27 +6254,56 @@ body.is-resizing-filter * {
   font-size: 10px;
 }
 
-.gameplay-sfx-action-summary span,
-.gameplay-sfx-event-summary span {
+.gameplay-sfx-action-summary span {
   margin-left: auto;
   color: var(--muted);
   font-size: 9px;
 }
 
+/* Event header: name, then the top container kind as a quiet tag. */
+.gameplay-sfx-event-summary strong {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.gameplay-sfx-event-summary > span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(var(--fg-rgb), 0.06);
+  font-size: 10px;
+}
+
 .gameplay-sfx-event {
-  margin-top: 6px;
-  padding: 6px 7px;
-  border: 1px solid rgba(var(--fg-rgb), 0.1);
-  border-radius: 5px;
-  background: rgba(var(--fg-rgb), 0.018);
+  break-inside: avoid;
+  margin: 0 0 8px;
+  padding: 8px 10px 9px;
+  border: 1px solid rgba(var(--fg-rgb), 0.09);
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), 0.02);
+}
+
+.gameplay-sfx-event:hover {
+  border-color: rgba(var(--fg-rgb), 0.16);
 }
 
 .gameplay-sfx-event-summary {
   min-width: 0;
 }
 
+.gameplay-sfx-event-summary {
+  flex-wrap: wrap;
+}
+
+.gameplay-sfx-event-aliases {
+  flex-basis: 100%;
+  color: var(--muted, #777);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
 .gameplay-sfx-event-summary strong,
-.gameplay-sfx-event-summary span {
+.gameplay-sfx-event-summary > span {
   overflow-wrap: anywhere;
 }
 
@@ -6287,15 +6331,96 @@ body.is-resizing-filter * {
 .gameplay-sfx-possible-files {
   display: grid;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 7px;
+}
+
+/* Yellow banner = one container. Nested containers get a tinted box so
+   depth reads without a stack of parallel bars. */
+.gameplay-sfx-tree,
+.gameplay-sfx-pool,
+.gameplay-sfx-layer {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding-left: 9px;
+  border-left: 3px solid var(--accent);
+}
+
+.gameplay-sfx-tree .gameplay-sfx-pool,
+.gameplay-sfx-tree .gameplay-sfx-layer {
+  padding: 5px 8px 6px;
+  border-radius: 0 6px 6px 0;
+  background: rgba(var(--fg-rgb), 0.035);
+}
+
+.gameplay-sfx-tree > .gameplay-sfx-ungrouped {
+  border-left-color: var(--border, rgba(127, 127, 127, 0.3));
+  background: none;
+}
+
+.gameplay-sfx-row {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.gameplay-sfx-row + .gameplay-sfx-row {
+  padding-top: 2px;
+}
+
+.gameplay-sfx-pool-head,
+.gameplay-sfx-layer-head {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.gameplay-sfx-pool[data-kind="random"] > .gameplay-sfx-pool-head::before { content: "\2928  "; }
+.gameplay-sfx-pool[data-kind="sequence"] > .gameplay-sfx-pool-head::before { content: "\2192  "; }
+.gameplay-sfx-pool[data-kind="switch"] > .gameplay-sfx-pool-head::before { content: "\21C4  "; }
+.gameplay-sfx-layer > .gameplay-sfx-layer-head::before { content: "\2261  "; }
+
+/* Same row = alternatives (one plays); columns wrap instead of stretching. */
+/* Alternatives never wrap: a wrapped column would read as a stacked track
+   that sounds together. Wide pools scroll instead. */
+.gameplay-sfx-pool-columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  align-items: start;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.gameplay-sfx-pool-column {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  padding-right: 10px;
+}
+
+.gameplay-sfx-pool-column + .gameplay-sfx-pool-column {
+  padding-left: 10px;
+  border-left: 1px solid rgba(var(--fg-rgb), 0.14);
 }
 
 .gameplay-sfx-possible-file {
   min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 6px;
 }
 
-.gameplay-sfx-candidate-toggle,
-.gameplay-sfx-list-toggle {
+.gameplay-sfx-possible-file > small,
+.gameplay-sfx-possible-file > code,
+.gameplay-sfx-possible-file > audio {
+  grid-column: 1 / -1;
+}
+
+.gameplay-sfx-candidate-toggle {
   width: 100%;
   padding: 5px 6px;
   border: 1px solid rgba(var(--fg-rgb), 0.12);
@@ -6306,8 +6431,7 @@ body.is-resizing-filter * {
   cursor: pointer;
 }
 
-.gameplay-sfx-candidate-toggle:hover,
-.gameplay-sfx-list-toggle:hover {
+.gameplay-sfx-candidate-toggle:hover {
   border-color: rgba(var(--accent-2-rgb), 0.44);
   background: rgba(var(--accent-2-rgb), 0.08);
 }
@@ -6317,31 +6441,37 @@ body.is-resizing-filter * {
   opacity: 0.7;
 }
 
-.gameplay-sfx-list-toggle {
-  margin-top: 7px;
+/* Each sound event is a <details> folded by default; the header is its
+   summary, so the fold arrow and the simulate button share one line. */
+summary.gameplay-sfx-event-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+summary.gameplay-sfx-event-summary::-webkit-details-marker {
+  display: none;
+}
+
+summary.gameplay-sfx-event-summary::before {
+  content: "\25B8";
+  flex: none;
+  width: 10px;
   color: var(--muted);
-  font-size: 9px;
+  transition: transform 0.12s;
 }
 
-.gameplay-sfx-overflow > .gameplay-sfx-list-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary::before {
+  transform: rotate(90deg);
 }
 
-.gameplay-sfx-overflow > .gameplay-sfx-list-toggle strong {
-  color: var(--fg);
-  font-size: 10px;
-}
-
-.gameplay-sfx-overflow > .gameplay-sfx-list-toggle span {
-  margin-left: auto;
-  text-align: right;
+details.gameplay-sfx-event[open] > summary.gameplay-sfx-event-summary {
+  margin-bottom: 6px;
 }
 
 .gameplay-sfx-event-list {
-  margin-top: 6px;
+  margin-top: 8px;
 }
+
 
 .gameplay-sfx-possible-file small,
 .gameplay-sfx-possible-file code {
@@ -8999,9 +9129,93 @@ table {
 /* Continuous sidebar lists keep only viewport rows mounted. */
 .continuous-list { overflow-anchor: none; }
 .continuous-list-spacer, .continuous-list-body, .continuous-list-item { flex: none; }
-.continuous-list-item { overflow: hidden; }
+/* Clip virtual rows without creating nested scroll containers under the pointer. */
+.continuous-list-item { overflow: clip; }
 .continuous-list-content { display: flow-root; }
 .continuous-list-content > button { width: 100%; box-sizing: border-box; }
 .continuous-list-group { width: 100%; border: 0; border-bottom: 1px solid var(--border); background: var(--bg); cursor: pointer; text-align: left; padding: 10px 16px; }
 .continuous-list-group::before { content: "▾"; }
 .continuous-list-group[aria-expanded="false"]::before { content: "▸"; }
+
+.gameplay-audio-lazy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  max-width: 100%;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 10px 0 3px;
+  border: 1px solid rgba(var(--fg-rgb), 0.14);
+  border-radius: 999px;
+  background: rgba(var(--fg-rgb), 0.03);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, background-color 0.12s;
+}
+
+.gameplay-audio-lazy > span[aria-hidden] {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #111;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.gameplay-audio-lazy:hover,
+.gameplay-audio-lazy:focus-visible {
+  border-color: var(--accent);
+  background: rgba(var(--fg-rgb), 0.06);
+}
+
+.gameplay-audio-lazy .gameplay-audio-lazy-name {
+  font-size: 11px;
+}
+
+/* Per-event simulate button and the files its last roll picked. */
+.gameplay-sfx-simulate {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  height: 22px;
+  padding: 0 9px 0 3px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: rgba(var(--fg-rgb), 0.03);
+  color: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.gameplay-sfx-simulate > span[aria-hidden] {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #111;
+  font-size: 7px;
+}
+
+.gameplay-sfx-simulate.is-playing {
+  background: var(--accent);
+  color: #111;
+}
+
+.gameplay-sfx-simulate.is-playing > span[aria-hidden] {
+  background: #111;
+  color: var(--accent);
+}
+
+.gameplay-sfx-possible-file.is-simulated .gameplay-audio-lazy,
+.gameplay-sfx-possible-file.is-simulated audio {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 225, 0, 0.45);
+}

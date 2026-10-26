@@ -7387,6 +7387,26 @@ def env_talk_contexts_by_mission(report: dict[str, Any]) -> dict[str, list[dict[
     return grouped
 
 
+def publish_story_trigger_lookup(index: dict[str, Any], output_root: Path) -> None:
+    """Write the Story page's trigger lookup beside the published index.
+
+    Story debug mode reads only these three manifests, so it fetches this
+    sidecar instead of the full index. The offline overlay and env_* manifest
+    stay out of the coverage denominator in the index and are merged here only
+    for lookup; neither contributes a route.
+    """
+    coverage = index.get("storyCoverage") or {}
+    lookup: dict[str, Any] = {}
+    for manifest in (
+        coverage.get("storyTriggerManifest"),
+        (coverage.get("offlineRecoveryEvidence") or {}).get("storyTriggerManifestOverlay"),
+        (index.get("envTalkAttachment") or {}).get("envTalkTriggerManifest"),
+    ):
+        if isinstance(manifest, dict):
+            lookup.update(manifest)
+    write_json(output_root / "story_triggers.json", lookup)
+
+
 def env_talk_trigger_manifest(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """Story-page trigger manifest for ambient ``env_*`` files.
 
@@ -8272,6 +8292,7 @@ def main() -> int:
             output_root,
             runtime_trace_path.resolve(),
         )
+    publish_story_trigger_lookup(index, output_root)
     print(
         f"Mission pipeline: {index['counts']['missions']} missions, "
         f"{index['counts']['quests']} quests -> {args.output_root}"

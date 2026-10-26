@@ -111,9 +111,23 @@
   // timeout when frames are not firing (e.g. a backgrounded tab) so callers that
   // await this never stall.
   function nextPaint() {
+    if (document.visibilityState === "hidden") return yieldToMain();
     return new Promise((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(resolve));
       setTimeout(resolve, 60);
+    });
+  }
+
+  // Yield to pending input/rendering between chunks of a long loop. Unlike
+  // setTimeout(0), neither path is clamped to ~1s in a backgrounded tab.
+  const yieldChannel = new MessageChannel();
+  const yieldQueue = [];
+  yieldChannel.port1.onmessage = () => yieldQueue.shift()?.();
+  function yieldToMain() {
+    if (globalThis.scheduler?.yield) return globalThis.scheduler.yield();
+    return new Promise((resolve) => {
+      yieldQueue.push(resolve);
+      yieldChannel.port2.postMessage(0);
     });
   }
 
@@ -227,5 +241,5 @@
     });
   }
 
-  Object.assign(WebUI, { showLoader, updateLoader, updateLoaderPhase, loaderProgress, hideLoader, nextPaint, fetchWithProgress });
+  Object.assign(WebUI, { showLoader, updateLoader, updateLoaderPhase, loaderProgress, hideLoader, nextPaint, yieldToMain, fetchWithProgress });
 })();

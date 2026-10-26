@@ -754,9 +754,71 @@ runtime question may improve understanding without decoding another file.
    Sound-source route. Selected codec registration, RIFF-prefix parsing and
    sample-buffer consumers are authenticated, and original Opus code computes
    samples that its media wrapper returns with independently corroborated
-   geometry and bounded quantization error. Native Vorbis output differs from
-   the external reference despite matching frame geometry; close that
-   context/setup or reconstruction gap next. Existing combined recordings
+   geometry and bounded quantization error, with identical floats from
+   independent isolated host execution. Selected numeric Event sources also
+   execute exact-key resident lookup, whole preparation and sample-wrapper
+   output under explicit table/input/provider conditions, with original
+   resident-row admission. Original node/source preparation now requests numeric
+   file bytes and allocates/reads/publishes them before identical context PCM;
+   immediate/deferred and open/read/EOF branches are distinct. Original package
+   header/load/list admission, numeric row selection and aligned media XOR now
+   preserve the same PCM under supplied load-call and stream-interface conditions.
+   Original synchronous stream reads and OS completion/decryption now feed
+   resident publication and original memory-provider methods before identical
+   PCM, with actual byte counts independently authenticated. Close the game's
+   load/reorder sequence, actual device/worker scheduling
+   and authored owner/route/effect state next. Original parameter refresh,
+   primary/embedded owner construction, policy/frame admission, context/frame
+   construction, unity-rate conversion and
+   release, frame preparation, filter bypass, master-bus output
+   and render-buffer submission now compose under supplied scheduling, topology
+   and COM interfaces. Native preparation populates descriptor fields and
+   corrects the initial frame counter. Keep
+   attachment success distinct from a prepared source; the native frame adapter
+   adds initial silence when that preparation step is omitted. Prioritize
+   authored owner/bus selection and effect values, varying pitch/rate
+   and actual endpoint selection/real COM execution. Original conditional
+   sink negotiation now selects/falls back channel formats, tries Windows rate
+   conversion before native resampler setup, checks event/device capacity and
+   initial silence release, and allocates the sink buffer. The matched-format
+   route cohort uses that native buffer and capacity query without helper sink
+   capacity/valid-count assignment. Continuous resampled sink PCM remains open. Keep
+   the stronger conditional route join: original attachment links source and
+   bus lists, nonempty preparation builds route matrices, native collection and
+   mixing create bus PCM, and bus reset advances frame reuse. Sample values
+   agree completely, with signed-zero normalization recorded separately.
+   No helper source-to-bus descriptor copy remains; authored topology, remaining
+   route branches and the engine scheduler/arena lifetime remain open. Keep
+   the separate non-excluded Sound cohort: original whole loading and fixed
+   property collection join native volume/makeup-gain paths, active source
+   filters and negotiated render buffers. Every submitted sample value agrees
+   with independent AVX/FMA gain arithmetic from original filtered PCM,
+   including terminal fades and padded filter history. Preserve constructor
+   filter flags; inherited forced-bypass helper writes are rejected. Native
+   parent/bus construction, exact registry admission, child-link fixups and
+   recursive collection now have a separately reviewed inherited cohort.
+   A reusable STMG reader and current available-bank corpus authenticate its
+   physical default/transition inputs. Original collection, filters and native
+   gain/mix reach finite render buffers with independent submitted-sample checks.
+   The null-component/default empty listener branch and supplied single mixer
+   bus remain conditions; stored bus ancestry is not actual mixer topology.
+   Corrected phase capture now supplies readable component/listener returns,
+   same-Action serial/allocation and source/constructor inputs, conditional
+   owner continuity into PCM, and sampled context/bus links. Complete selected
+   voice paths match current external headers; one finite nonzero live prefix
+   exactly matches original codec output from its matching physical WEM.
+   Device phase capture now retains successful same-client buffer requests,
+   byte-exact copied sink prefixes and actual successful Windows release results.
+   Mixer capture adds real row/descriptor inputs and completed output conversion
+   with exact first-channel constant-gain prefix checks. The initial owner serial
+   read used a neighboring word; it is excluded and a corrected repeat is prepared.
+   Whole source-to-mixed-frame attribution and continuous allocation generations
+   still need the targeted evidence specified in
+   [`runtime_capture_requirements.md`](runtime_capture_requirements.md#audio-event-owner-listener-and-output-selection).
+   Keep
+   Vorbis emulator/host differences separate from original host/reference
+   differences; whole preparation and direct host initialization agree for
+   the shared file. Existing combined recordings
    already supply managed paths, local provider/descriptor entries, successful
    read completions and sparse pre-transform words; selected offline entries
    also have equal decoded PCM. These do not identify every live backing file,

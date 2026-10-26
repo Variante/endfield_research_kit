@@ -281,9 +281,11 @@ are scheduled separately by the export graph
 
 `webui/data/lang/<LANG>/gameplay/**`, `webui/data/gameplay/projectiles.json`,
 `combat_relationships.json`, and `webui/data/assets/gameplay_refs.json`, whose
-sole writer is the `asset-refs` stage. Audio recovery may still publish
-`projectile_audio.json` and `sound_effects.json`, but this page does not load
-them. Frontend rendering rules are in the header comment of
+sole writer is the `asset-refs` stage. The page also reads Audio's
+`projectile_audio.json` and (in the background) `sound_effects.json` as
+playback links; Audio owns their binding evidence, including each event's
+authored Wwise `selectionTree` (layers play together; random/sequence/switch
+pools are alternatives, and which branch a trigger takes stays unresolved). Frontend rendering rules are in the header comment of
 `webui/src/features/gameplay/index.js`.
 
 List thumbnails reuse the optional asset sidecar. Characters use its horizontal
@@ -444,8 +446,8 @@ or attach audio. Its source links reuse the Data page's file navigation.
 ## Highest-value remaining gaps
 
 - Improve exact skill-to-projectile and asset ownership.
-- Revisit Gameplay audio attachment only after its ownership and runtime
-  evidence boundaries are better understood.
+- Tighten Gameplay audio links to exact runtime owners; they show Audio's
+  current candidate bindings, not proven playback.
 - Recover additional action/selector schemas with exact-consumption fixtures.
 - Keep runtime formula and tag semantics gated and reproducible.
 - Measure Buff coverage against the provenance-matched BuffData census, not

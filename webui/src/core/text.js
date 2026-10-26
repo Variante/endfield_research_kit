@@ -17,25 +17,57 @@
 
   // Index nested file references without stringifying unrelated record fields.
   // Keep both the path and basename, including decoded URL spellings.
+  function stringFilePaths(text) {
+    const normalized = text.includes("\\") ? text.replace(/\\/g, "/") : text;
+    // Without a delimiter a match can only end at the string's end, so the
+    // whole string is the one path; skip the per-position regex retries.
+    if (!/[\s<>"'?#=&]/.test(normalized)) {
+      return /\.[a-z][a-z0-9]{0,11}$/i.test(normalized) ? [normalized] : [];
+    }
+    const paths =normalized.match(/[^\s<>"'?#=]+\.[a-z][a-z0-9]{0,11}(?=$|[\s<>"'?#&])/gi) || [];
+    // A scalar path may contain spaces (unlike paths embedded in markup).
+    if (!/[\n<>"']/.test(normalized) && /^[^?#]+\.[a-z][a-z0-9]{0,11}(?:[?#].*)?$/i.test(normalized)) {
+      paths.push(normalized.split(/[?#]/)[0]);
+    }
+    return paths;
+  }
+
+  // Page indexes repeat the same strings (directories, kinds, shared paths)
+  // across tens of thousands of rows; cache each string's file names.
+  const FILE_NAME_CACHE = new Map();
+  const FILE_NAME_CACHE_LIMIT = 200000;
+  const NO_FILE_NAMES = [];
+
+  function stringFileNames(value) {
+    // Both patterns need ".ext", so a string without a dot names no file.
+    if (!value.includes(".")) return NO_FILE_NAMES;
+    let names = FILE_NAME_CACHE.get(value);
+    if (names) return names;
+    const found = new Set();
+    const add = (paths) => {
+      for (const path of paths) {
+        found.add(path);
+        found.add(path.split("/").pop());
+      }
+    };
+    add(stringFilePaths(value));
+    if (value.includes("%")) {
+      let decoded = value;
+      try { decoded = decodeURIComponent(value); } catch (_error) { /* Keep malformed URLs searchable. */ }
+      if (decoded !== value) add(stringFilePaths(decoded));
+    }
+    names = found.size ? [...found] : NO_FILE_NAMES;
+    if (FILE_NAME_CACHE.size >= FILE_NAME_CACHE_LIMIT) FILE_NAME_CACHE.clear();
+    FILE_NAME_CACHE.set(value, names);
+    return names;
+  }
+
   function linkedFileSearchText(...values) {
     const files = new Set();
     const seen = new Set();
     function visit(value) {
       if (typeof value === "string") {
-        let decoded = value;
-        try { decoded = decodeURIComponent(value); } catch (_error) { /* Keep malformed URLs searchable. */ }
-        for (const text of new Set([value, decoded])) {
-          const normalized = text.replace(/\\/g, "/");
-          const paths = normalized.match(/[^\s<>"'?#=]+\.[a-z][a-z0-9]{0,11}(?=$|[\s<>"'?#&])/gi) || [];
-          // A scalar path may contain spaces (unlike paths embedded in markup).
-          if (!/[\n<>"']/.test(normalized) && /^[^?#]+\.[a-z][a-z0-9]{0,11}(?:[?#].*)?$/i.test(normalized)) {
-            paths.push(normalized.split(/[?#]/)[0]);
-          }
-          for (const path of paths) {
-            files.add(path);
-            files.add(path.split("/").pop());
-          }
-        }
+        for (const name of stringFileNames(value)) files.add(name);
       } else if (value && typeof value === "object" && !seen.has(value)) {
         seen.add(value);
         for (const child of Object.values(value)) visit(child);

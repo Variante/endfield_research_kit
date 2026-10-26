@@ -293,6 +293,25 @@ implements these reviewed ASCII rules:
   state types; a generic shared reference or enum body alone cannot do so.
   Generated named wrapper setters establish concrete Param cells without
   importing open generic field offsets.
+- Source-selector leaves now have complete equality-only Int32 programs checked
+  against their selected registered representations and a concrete source-cell
+  witness. The checked memberships distinguish getter references, bound
+  blackboard/temp variables, action/self/config/save/server sources and current
+  context IDs. Membership does not prove that every named source is implemented
+  by every resolver. In particular, a current-mission selector is not an
+  offline mission-ID value or an ownership join.
+  The reviewed reference resolver calls the bound-variable getter for its
+  blackboard/temp lane, and its getter-reference lane uses ActionContext plus
+  the reference ID, with raw-getter/conversion fallback after a failed typed
+  lookup. Its path lane calls the nullable cached runtime-path resolver,
+  PropertyPath lookup/concatenation and selected blackboard consumers. A stored
+  path is therefore insufficient to select the live blackboard or its value.
+  Null Params, sentinel getter references and failed TryGetValue resolution
+  select the supplied GetValue default; keep those outcomes distinct from
+  successful queries. Actual bindings, getter registry, context owner, rewritten
+  path, provider values and returning delegate effects remain live joins.
+  Static RGCTX MethodSpec-index candidates are withheld; static definition
+  records are not runtime MethodInfo slots.
 - Selected ordinary value constructors explicitly store source zero, a null
   path, the sentinel ID and the supplied constant. The reference barrier is a
   returning helper assumption. Typed MemoryPack wrappers allocate and install
@@ -338,6 +357,45 @@ layout, actual objects and live IFix choices remain separate obligations.
   condition classes retain their non-`ClientOnly`
   selectors, so this does not establish execution in the default Mission
   objective leaf lane.
+- Default objective setup and direct combined activation are different routes.
+  The complete ordinary GameCondition objective initializer returns without
+  effects after its false patch guard; CombineCondition and its intervening
+  base declare no override. The checked initialized/non-null combined client
+  activation loop dispatches on children only: exact combined children recurse,
+  and other children require ClientOnly. It does not activate its own receiver,
+  parse its AST or write parent pointers. This is a caller-flow claim under
+  returning collection/virtual helpers and default recursive selection, not a
+  global claim about callee effects, patches or live receivers. It explains why
+  a Mission composite can receive copied objective progress without activating
+  local quest-state predicates or entering the guide-style result AST lane.
+- There is also a lazy progress AST route. The checked non-null default
+  CombineCondition.GetResultByProgress caller parses conditionEvalString when
+  its AST is invalid, then evaluates rootNode with useProgress=true. It has no
+  outer all-child-result waiting loop or own result-setter call. The separately
+  checked valid-node progress evaluator keeps NOT/AND/OR recursion and short
+  circuits but dispatches visited leaves to virtual GetResultByProgress,
+  instead of testing cached result == True. Returning getters, valid helper
+  contexts and parser/evaluator success remain conditions; exception/patch
+  paths and live ownership remain separate. Thus an AST may be used for a
+  progress check without predicate activation, subscription, parent callback
+  publication or a quest-state transition. Absence of activation hooks alone
+  cannot exclude this route. The retained daily contains no owned invocation
+  of it; future recipes now retain its own paired observer.
+  The complete ordinary base GetResultByProgress caller separately passes
+  virtual comparator/progress/target returns into the typed Int32 comparison.
+  It does not read the cached result or query a quest/mission identifier.
+  Overrides, getter effects and the provenance of those progress values remain
+  separate; a Boolean progress check cannot identify a state-event callback.
+- Exported source context supplies explicit current-mission selectors in
+  mission-property checks, including stored failure branches. The reviewed
+  Int/Bool property classes derive from GameConditionServer, declare no local
+  OnActivate/GetResult/client-activation overrides and select CheckMissionProperty,
+  distinct from ClientOnly. These stored nonconstant operands therefore do not
+  supply a default client state-Param capture case. The new source inventory
+  found no explicit nonconstant operands in its quest/mission-state predicates;
+  omitted JSON selectors stay omitted, rather than becoming proved live zero
+  values. Neither a dormant server-family operand nor a nonempty path beside a
+  stored constant is evidence of a nonconstant live read.
 - A new useful capture must distinguish the activation-time query/result from
   a subsequent matching event, and bind receiver, owning quest/mission, live
   operands and nested callbacks to one invocation. Entry timestamps alone
@@ -353,11 +411,67 @@ layout, actual objects and live IFix choices remain separate obligations.
   proves sequential string/Int32-enum layout and checks the complete indirect
   callback consumer. Unique GP-only void/Boolean observers retain explicit
   same-thread invocation/parent identity through recursive AST calls, result
-  setters and selected callbacks. Native collection and decoded replay reject
-  incomplete/crossing pairs, exceptions, loss and stopping within an invocation.
+  setters and selected callbacks. Offline inspection/decoded replay retain
+  incomplete/crossing-pair constraints. The refactored runtime keeps observation
+  bounds and callback cleanup, while collection now inventories raw files
+  without certifying their contents.
   These are prepared observations, not live evidence. They do not sample each
   resolver instruction, enumerate unused children, establish JSON initialization,
   authenticate a subscription handle or make nested cache updates atomic.
+- The additional
+  [daily capture recipe](../../scripts/game_data/contracts/mission_daily_trace_capture.json)
+  retains those AST/state hooks alongside selected interactive/photo, SNS,
+  script and action entries. Its current preset targets the distinct stored
+  `m1m42` interactive variant and `m1m39` photo group; reused labels do not
+  select a runtime variant. Their definitions contain no quest/mission-state
+  predicates, so recording these tasks cannot by itself close the live state
+  Param gap. Selected pre-run exports are copied as source context, with source
+  freshness, omitted dependencies and live instance ownership left separate.
+- Current paired observations close a constant-activation example for
+  `CheckQuestState` in an AST with source label `_InitGuideGroupCondition` and
+  no owning quest ID. Distinct live Param objects retain source zero, `idRef`
+  minus one and empty paths; the resolved ID/comparator/target cache changes
+  from its entry defaults to the configured constants at return. The observed
+  `e1m6_q#5d2 / NotEqual / Completed` case yields a False result. This does not
+  expose the queried quest-state value, the individual resolver instructions,
+  nonconstant selection, subscription handles or JSON construction.
+  No matching state-change callback is recorded: an activation-time result
+  must not be treated as the time of a quest handoff.
+  The state's stored parent pointer matches the enclosing CombineCondition
+  receiver in that invocation. Parse fills its previously null root; nested
+  result setters trigger parent evaluations, and one AND traversal returns
+  after index zero yields false without entering the remaining leaf indices.
+  This is consistent with the reviewed waiting/short-circuit rules. A node's
+  `completed=true` coexists with a false Boolean return; that flag cannot stand
+  for condition truth, objective completion or mission success. Guide-labelled
+  AST evidence must not be attached to a Mission objective without an owner join.
+- The current daily trace contains `m1m46`, whose current definition reuses
+  `m1m42_name`, rather than a lifecycle for the distinct `m1m42` variant.
+  Its observed local handoff starts the combined quest and sibling quests
+  after the predecessor succeeds; sibling success order differs from start
+  order. The composite's incoming objective-handler intervals enclose copies
+  receiving false, false, then true, with the final normal return retaining
+  a changed completed cache. Later quest-state handlers separately enclose
+  composite success and successor start. This binds individual copies and
+  lifecycle calls to explicit incoming handlers; it does not turn earlier
+  quest success into the enclosing cause of a later handler or reveal the
+  server's dependency decision. No mission-owned AST/state-leaf invocation was
+  recorded for that composite. Its definition was absent from the selected
+  pre-run sources; current-export context cannot repair that omission.
+  The maintained preset now snapshots all mission variants to avoid repeating
+  this display-name/source-selection gap.
+- A current `m1m39` photo notification encloses a matching GetResult entry,
+  the result setter and its nested Mission progress callback. The setter's
+  normal return retains True. Base deactivation later enters with True, while
+  the subclass deactivation and base normal return retain Undecided with
+  progress one: teardown resets the result before the subclass callback.
+  Thus a deactivation-time Undecided value is not evidence of failed photo
+  identification. The GetResult entry remains unpaired; notification and
+  setter enclosures do not add an observed GetResult return.
+  These are local-file analyses of the refactored collector, distinct from
+  admission of older hash-bound captures. The reusable inspector's explicit
+  `--local-files` mode checks row accounting, field programs and call pairs
+  but writes an analysis schema and refuses to imply legacy replay admission.
 - `GetQuestState` first returns a nonnull current quest record's state. When
   that record is absent, its normal caller uses `GetMissionIdByQuestId` and a
   mission dictionary lookup: a completed owning mission yields quest

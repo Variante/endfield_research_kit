@@ -261,6 +261,13 @@
     time.textContent = "0:00";
     const spacer = document.createElement("div");
     spacer.className = "media-player-spacer";
+    // Callers that list many clips label each player in place of the spacer.
+    const label = options.label || media.dataset.mediaLabel || "";
+    if (label) {
+      spacer.classList.add("media-player-name");
+      spacer.textContent = label;
+      spacer.title = media.currentSrc || media.getAttribute("src") || label;
+    }
     const downloadButton = makeMediaButton("download", "Download");
     const waveformButton = type === "audio" ? makeMediaButton("waveform", "Show waveform") : null;
     const popupButton = type === "video" ? makeMediaButton("popup", "Open in popup window") : null;

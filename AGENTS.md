@@ -499,9 +499,9 @@ Browser behavior:
   API). Mission Pipeline
   recovery is standalone and is no longer a WebUI page or export stage. The
   standalone Combat & Projectiles page is retired. Keep useful projectile
-  behavior in Gameplay character skills. Do not attach audio or sound players
-  to Gameplay until its ownership model is better understood; keep that
-  investigation on the Audio page.
+  behavior in Gameplay character skills. Gameplay shows the Audio-published
+  projectile and character/enemy sound sidecars as playback links; the binding
+  evidence and its investigation stay owned by the Audio page.
 - Mission Pipeline Story cards show evidence-typed trigger chains. Preserve an
   explicit ownership gap for unlinked native playback, keep definition-only
   rows distinct, and never infer mission order from native registration or code

@@ -2824,8 +2824,579 @@ ranges. These candidates guide the remaining DamageType composition; they do
 not select its live formatter. The fully shared class/struct request names have
 no exact matching metadata TypeDef in this build, so their producer results
 require another proof rather than a name-based join. Class lookup returns,
-underlying-enum projection, cache/provider selection, positive stored elements
+concrete underlying-enum composition, cache/provider selection, positive stored elements
 and parent-reader integration remain open.
+
+The independent enum candidates now have a
+[`reviewed selected-control contract`](../../scripts/game_data/contracts/buff_enum_list_control_native.json),
+[`explicit native owner`](../../scripts/game_data/memorypack/buff_enum_list_control.py)
+and [`header/list/bridge checker`](../../scripts/game_data/memorypack/enum_list_sources.py).
+The compiled arguments and the placeholder's Int32 underlying field are checked
+against selected metadata. Complete exception-family windows authenticate the
+physical entries, while the interpreted claims cover selected complete
+entry-to-return traces rather than every owned path.
+
+This enum list calls a separate collection-header program and a bridge for
+each element. It cannot inherit the integer list's virtual-call proof. The
+buffered header copies one DWORD, advances the pointer and both counters by
+four, then compares total length minus sign-extended consumed with the
+sign-extended count using signed ordering. The count is not multiplied by
+element width. Header success alone does not establish element-byte availability:
+a positive count can pass with fewer than one buffered element. Under stable
+normal buffered conditions, the returned AL tests count against minus one;
+other negative counts are not universally rejected. The selected existing-list
+path resets the count and skips the loop for zero or other negative counts.
+
+The element bridge prepares the class, then freshly reloads its method pointer
+and companion. A raw pointer comparison with the independently registered
+Int32Enum scalar entry selects an inline four-byte read and full DWORD output,
+with the same pointer/counter updates as that scalar formatter. This is a
+conditional pointer-selected path; it does not prove that the provider returned
+such a receiver. Other pointer results use the retained virtual dispatch path,
+whose effects are outside this composition.
+
+The list preserves the header count in a nonvolatile register, initializes a
+separate loop index, zeroes a separate element output on each iteration and
+passes the original reader to that bridge. The actual add target's selected
+spare-capacity path preserves the output DWORD into a four-byte-stride array
+element and increments list count and version. An identical repeated loop and
+its signed back edge prove count iterations for a positive count when every
+helper returns normally and the selected ready-context, fresh pointer,
+buffer/capacity and stable disjoint storage conditions continue to hold.
+Conditional serialized extent is the four-byte header plus four bytes per
+element. Allocation, growth, refill and concurrent or aliased changes remain
+open. The null branch stores a null pointer before calling a barrier helper;
+its unproved effects prevent an unconditional null-at-return claim.
+
+No integer or enum-placeholder witness establishes concrete DamageType sharing.
+Named class/cache identity, concrete underlying-enum normalization, provider selection,
+authenticated positive parent spans and complete root integration remain open.
+
+The underlying-enum projection now has a
+[`reviewed entry-program contract`](../../scripts/game_data/contracts/buff_enum_underlying_native.json),
+[`selected native owner`](../../scripts/game_data/memorypack/buff_enum_underlying.py),
+[`complete control checker`](../../scripts/game_data/il2cpp/enum_underlying_control.py)
+and [`memory-immediate TEST decoder`](../../scripts/game_data/il2cpp/enum_underlying_instructions.py).
+The decoder treats the memory TEST as a flag operation with no operand write;
+the whole projection's exception-owned range and every ordinary entry's local
+branch, call frame, return and tail transfer are checked. Small entries without
+an exception-table row are bounded by their complete reachable entry programs;
+they do not borrow the next function's extent.
+
+Fresh PE name/ordinal/function-table joins bind `il2cpp_class_is_enum`,
+`il2cpp_class_get_element_class`, `il2cpp_class_get_type` and
+`il2cpp_class_enum_basetype` to the observed fields and entries. The enum-base
+entry compares the element-class pointer with the original class. A self
+element returns null; otherwise it freshly reads the element class and returns
+the embedded type's address. These reads require valid coherent class storage;
+the pointer read after the comparison is not assumed unchanged by concurrent
+mutation.
+
+For an enum-record input whose selected type flag is clear, the projection
+resolves the class, tests that result's enum flag, then resolves the class again.
+Only this second fresh result supplies the self-element test and element-class
+pointer. There is no second enum-flag test: the first class being an enum does
+not prove that the second class is the same or an enum. For a generic-instance
+input, one descriptor-class result passes the null, enum and type-flag guards
+before an actual tail transfer to the named enum-base entry. Fallback paths
+return the original type, while the enum-record self-element path returns null.
+Opaque child effects and changing inputs remain outside this projection proof.
+
+The type wrapper reads `type.data` and passes it to a record-pointer conversion
+entry. That entry subtracts the selected live metadata base and the
+TypeDefinition section offset before applying the already reviewed record
+geometry and tailing to the class resolver. The aligned valid-record index
+domain is checked independently. In contrast, the selected on-disk DamageType
+type record contains a TypeDefinition **index** in `type.data`; selected
+metadata identifies its `value__` field as Int32. This establishes the stored
+enum representation, not a live record pointer. The initializer's index-to-
+record-pointer programs are joined conditionally below; substituting the
+selected loaded source and stable runtime globals remains a separate obligation.
+Runtime class/element identity, concrete DamageType normalization
+and shared formatter/provider selection remain unresolved. This projection
+does not admit positive parent spans or new complete roots.
+
+The initialization join now has a
+[`reviewed registration and fixup contract`](../../scripts/game_data/contracts/buff_type_data_initialization_native.json),
+[`selected native owner`](../../scripts/game_data/memorypack/buff_type_data_initialization.py),
+[`complete initialization control checker`](../../scripts/game_data/il2cpp/type_data_initialization_control.py)
+and [`optional memory-update instruction reader`](../../scripts/game_data/il2cpp/type_data_initialization_instructions.py).
+The complete exception-family partitions distinguish code, indexed tables and
+explicit padding. The metadata entry's terminal call reaches a separately
+owned helper with no ordinary return path: if its children return, it reaches
+an `INT3` trap. Its no-return rule comes from that program, not an assumed import
+name. The following unreachable padding bytes stay in the owned-byte partition.
+
+An actual runtime-initialization block takes the selected static code and
+metadata registration addresses and writes their global cells before calling
+the metadata entry. The metadata-registration store dominates that actual call
+in the complete normal-control graph. The child entry calls the previously
+proved metadata initializer, whose success path calls the type-data loop.
+This is a direct static call and publication chain. Other paths, opaque child
+aliases, later writers and actual invocation are not inferred from it. In
+particular, the registration global lies in the disk image's unbacked data
+region: its live value is never fabricated from zeros or from the static table.
+
+The type-data loop starts its signed DWORD counter and pointer-table offset at
+zero. Each iteration reads the current type-table pointer, obtains the type
+pointer, sign-extends its kind byte, subtracts one and applies an unsigned bound
+before the selector and relative-target tables. It increments the table offset
+by one Win64 pointer and reloads the registration after either fixup helper.
+The selected DamageType kind dispatches to the TypeDefinition-record fixup;
+the alternate helper uses the generic-parameter record section. Stable positive
+count, valid disjoint table/source/target/frame storage and ordinary helper
+behavior are conditions for a finite complete traversal.
+
+Both closed fixups read a **signed DWORD** index from the original type's data
+slot. Minus one writes a null **QWORD** and returns. Otherwise, the selected
+record stride, fresh signed section offset and metadata base form the pointer
+written back as a QWORD to that same slot. Other negative indices are not
+universally rejected, and applying the fixup again to an already initialized
+pointer is not proved idempotent. The selected static type slot has no other
+table writeback target overlapping its data or kind bytes; this is a static
+destination separation proof, not observation of live aliases.
+
+Independent raw replay composes this writeback with the enum consumer's actual
+record-pointer inverse for the entire valid aligned record domain. Under the
+selected loaded metadata/header/base and stable globals, the written pointer
+returns the original record index. Runtime source identity, initialization
+execution and later global stability remain open. This conditional join does
+not identify the live class/element, equate repeated class resolutions, select
+concrete DamageType sharing/provider, or admit positive parent spans or roots.
+
+The actual class-request lookup and its cache/constructor children now have a
+further [`enum-field contract`](../../scripts/game_data/contracts/buff_class_enum_fields_native.json),
+[`selected field owner`](../../scripts/game_data/memorypack/buff_class_enum_fields.py)
+and [`field/primitive-flow checker`](../../scripts/game_data/il2cpp/class_enum_fields_control.py).
+The constructor's record pointer and saved allocation result remain distinct
+nonvolatile origins under ordinary ABI returns. The metadata bitfield's enum bit
+replaces the class enum-flag bit independently of the previous allocated byte;
+the generic-presence update changes another bit. No zero-initialized allocation
+is assumed. This proves the flag at the actual stores; opaque child aliases and
+later mutation remain conditions when using a later flag read.
+
+The constructor first writes its own class pointer to the element and cast-class
+fields. On the enum branch, it reads a signed element type-table index, passes
+the selected type pointer to the actual class-from-type helper and writes that
+helper's unchanged result to both fields. It then returns the saved allocated
+class before restoring the caller's registers. An element index of minus one
+uses the saved zero pointer argument; the helper reads the kind byte without a
+null-input guard, so this is not a null-class-return proof. The selected current
+DamageType element index is in bounds and its stored type kind is Int32.
+
+The complete class-from-type helper now distinguishes code, two indexed target
+tables, selectors and padding. Its named API wrapper supplies the true byte
+argument and tails to that actual helper. With a stable valid input kind of
+Int32, the selected path performs one fresh primitive class-cell read. It
+returns that value when nonzero and returns zero through the guarded fallback
+when the cell is zero. Other recursive paths and external tail effects are not
+silently made read-only. The cell's actual producer passes the literal
+`System.Int32`, a fresh image argument and the name-lookup return to this same
+cell; a named request does not prove the returned class's identity.
+
+A zero primitive cell is an explicit static boundary: the constructor can store
+a null element class, and the named enum-base program can then return the type
+field offset as an address rather than null. Its self-element test does not
+exclude a null element. This is a hypothetical coherent-memory trace through
+authenticated programs, not observed gameplay. A valid nonnull Int32 class and
+its actual embedded type identity must be proved before concrete normalization,
+shared formatter/provider selection or positive stored parent/root admission.
+
+The cache construction now has a
+[`key/record contract`](../../scripts/game_data/contracts/buff_name_cache_key_record_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_key_record.py)
+and [`construction checker`](../../scripts/game_data/il2cpp/name_cache_key_record_control.py).
+The caller preserves the incoming image and metadata-record pointers under
+ordinary ABI returns. Signed name and namespace indices, fresh metadata-header
+string offsets and metadata-base reads construct one zero-header key containing
+both string pointers and the original record pointer. The selected insertion
+block copies its header, adjacent strings and record into the same node. The
+node's unused gap bytes are not copied; field preservation does not mean a
+whole-node byte copy. Stable valid disjoint strings, metadata, key, output,
+cache and node storage remain conditions.
+
+Complete insertion, capacity-growth and rehash-builder controls now distinguish
+physical writes and unreachable owned trap padding. Actual calls join growth
+to rehash and rehash to a separate migration program; growth also calls a
+separate swap program. Those child bodies now have a
+[`migration/swap contract`](../../scripts/game_data/contracts/buff_name_cache_migration_swap_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_migration_swap.py)
+and [`field-preservation checker`](../../scripts/game_data/il2cpp/name_cache_migration_swap_control.py).
+The actual configuration child is a closed no-call program despite having no
+exception-table range. Complete byte coverage, local control and the selected
+field grammar establish its boundary; no neighbouring method supplies an end.
+It exchanges a byte, a DWORD and two QWORDs, retaining the original QWORD pair
+through a vector load, low-fragment store and byte shift. Its complete program
+preserves R11 and RBX. Thus the parent's second cache pointer saved in volatile
+R11 survives this particular child because of its actual effects, rather than
+an ordinary ABI promise.
+
+The parent passes the two configuration subobjects to that child, exchanges the
+cache metadata and node-array pointers, then recomputes thresholds. All later
+ordinary stores stay outside the exchanged metadata/node-pointer fields. This
+does not establish publication visibility or live pointer lifetime. Independent
+symbolic byte replay proves the selected exchanges for arbitrary field bits
+under stable valid disjoint object/frame storage. Unselected gap bytes remain
+unchanged; the first header block's intermediate exchange is distinct from its
+later threshold recomputation.
+
+The selected migration copy transfers the source node's header, string pair and
+record pointer to one destination slot and advances the source cursor by one
+node. Its final record store uses the QWORD loaded before that advance. Iterator
+creation stores the incoming cache, cursor and end, and both scan programs use
+the node stride. Complete allocation, iterator, capacity and hash controls are
+authenticated separately from their full numeric and storage effects. The
+capacity's post-return backedge block is part of its closed reachable program;
+stopping at its first RET would lose a real branch.
+
+The next [`marker/iterator contract`](../../scripts/game_data/contracts/buff_name_cache_marker_iterator_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_marker_iterator.py)
+and [`complete filter checker`](../../scripts/game_data/il2cpp/name_cache_marker_iterator_control.py)
+close the actual initialization and comparison children. The initializer copies
+the free descriptor's header, string pair and auxiliary QWORD to each node,
+leaving its unused gap bytes unwritten. It increments the destination by one
+node until it equals the passed end. For a valid nonwrapping aligned range,
+the empty guard and decreasing remaining-slot invariant prove finite completion.
+This is a conditional domain theorem: the native code does not validate or
+reject other ranges. The allocation caller's actual argument block uses the
+fresh node pointer and capacity, then assigns capacity and clears both count
+fields; allocator success and allocation bounds still require separate evidence.
+
+The comparison child is a fixed no-call program. It compares DWORD headers;
+different headers produce zero AL, equal nonzero headers produce one AL without
+reading strings. Equal zero headers compare the two zero-terminated byte strings
+in order; a namespace mismatch bypasses the name read. Bytes following the
+first zero are irrelevant, and record pointers and node gap bytes are not read.
+Both return paths write only AL, so the rest of RAX may retain a header or
+pointer value. A false result need not be a zero RAX. The complete child leaves
+R11, the nonvolatile registers and memory unchanged under normal completion.
+Its two iterator callsites test AL and therefore use the proved result width.
+
+Both iterator programs now have complete marker-filter grammars, including their
+separate cold ranges at original addresses. Under stable finite compatible
+strings, node storage and iterator/cache views, each marker advances the cursor
+by one node, while a non-marker or the passed end stops filtering. The auxiliary
+gate is an unsigned greater-than-zero check; the second descriptor comparison
+is selected exactly when that gate is nonzero. This does not establish the live
+count's meaning from its name. Iterator creation can bypass filtering through
+its scan byte. The function used as next does not advance an already occupied
+cursor itself: migration increments its cursor before calling this filter.
+The actual begin/end argument blocks and scan-byte frame geometry are joined.
+End and cache fields remain stable under the stated disjoint-storage conditions.
+
+The [`destination/migration contract`](../../scripts/game_data/contracts/buff_name_cache_destination_migration_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_destination_migration.py)
+and [`complete migration checker`](../../scripts/game_data/il2cpp/name_cache_destination_migration_control.py)
+now join the entire migration program with its hash, initializer and iterator
+children. The hash processes alternating signed bytes of the name and namespace,
+mixing both parts modulo the native word width; headers and record pointers are
+not inputs. The destination probe masks the hash by capacity minus one, then
+increments a counter and adds it before masking again. Thus its slot residues
+are a translated triangular sequence.
+
+For capacity C equal to a nonzero power of two, the first C triangular residues
+form a permutation. If distinct positions had equal residues, twice C would
+divide the product of their difference and their sum plus one. Those factors
+have opposite parity, and their nonzero even factor is less than twice C,
+which contradicts the required power-of-two divisibility. Native-word wrap
+does not change the low mask bits. This theorem needs the stated capacity
+condition: a non-power-of-two mask can permanently miss free slots.
+
+With stable disjoint compatible source/destination/cache/frame storage, finite
+selected strings, normal noninterfering child completion and an all-free
+post-allocation destination having enough such slots, complete migration
+preserves the ordinary-node header/string/record multiset. Each successful copy
+consumes one source node and one destination free slot, then advances before
+filtering. Copied ordinary keys do not become free markers, so the remaining
+free-slot invariant supports every later probe. Source nodes are not written,
+the destination used count reaches the ordinary-node count, and the generation
+field increments on ordinary completion. Unused node padding is not equalized.
+Equal names with distinct record values remain distinct migrated entries; this
+is not a proof of insertion duplicate handling or unique class identity.
+
+Independent complete-instruction models explicitly supply the capacity result
+and valid allocation postconditions. They execute the real hash and migration
+children over hypothetical memories, rather than treating allocator success as
+observed. The capacity program starts its candidate at four and only doubles
+it; its returned candidate copy dominates the return. Its finite returned value
+is therefore a power of two or zero after wrap. Actual nonzero capacity,
+sufficient size, allocation/storage and population/history invariants still
+need proof or an explicit selected-state gate before this conditional theorem
+can establish the live cache or the named primitive class.
+
+The constructor-capacity follow-up uses the optional
+[`WORD immediate-store decoder`](../../scripts/game_data/il2cpp/word_immediate_stores.py)
+recognizes operand-size-prefixed memory MOV with a two-byte immediate, preserving
+the following instruction and computing RIP-relative addresses from the complete
+instruction end. Unsupported selected operands fail closed. Register-to-WORD
+stores already have typed widths in the existing memory-move reader; their
+presence does not justify changing the older admitted instruction inventories.
+
+The [`constructor contract`](../../scripts/game_data/contracts/buff_name_cache_constructor_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_constructor.py)
+and [`complete default-state checker`](../../scripts/game_data/il2cpp/name_cache_constructor_control.py)
+now follow the reviewed lookup's actual constructor call and its actual base-child
+call. The base child has branches into blocks after its first return, so
+truncating at that return would omit part of the program. Its reviewed closed
+no-call extent includes those blocks before padding, without claiming
+exception-directory ownership. The constructor's separately recorded trailing
+trap is excluded from its reachable graph, and code plus padding tile its
+entire exception family.
+
+Under valid stable disjoint cache/frame/input-byte storage and normal instruction
+completion, the base child establishes a nonzero power-of-two default capacity,
+zero used/removed counts and exact default thresholds. Its positive normal
+binary32 factors are multiplied by an exactly representable power of two:
+only their exponents change, with no rounding error in any MXCSR rounding mode.
+The authenticated comparison constant is positive binary32 two-to-63. Both
+selected products stay below it, so signed truncation and the zero correction
+register determine the integer thresholds. Normal completion remains a condition
+because inexact truncation can raise an SSE precision exception. The copied
+input stack byte remains arbitrary; the proof never assumes a zeroed cache.
+
+The base child preserves the receiver and nonvolatile registers and does not
+rewrite the zero counts later. Therefore the constructor's immediate count
+check does not select its cold rehash branch under those postconditions.
+It establishes distinct nonzero free/removed marker headers, zero marker
+strings and free auxiliary data, requests capacity times node stride from its
+actual allocator, and passes the returned base and computed endpoint to the
+complete node initializer. Valid disjoint nonwrapping allocation and preservation
+of cache/frame fields are explicit allocator postconditions, not proved effects.
+Under them every default slot receives the free descriptor's selected fields;
+node padding and untouched cache bytes remain unconstrained. Independent
+fresh-instruction replay varies the input byte and prior cache/node bytes and
+clobbers volatile registers/vectors at the assumed allocator return, preserving
+these boundaries. Future capacity sufficiency, insertion history, allocator
+success and live execution remain open; this adds no root admission.
+
+The [`allocator wrapper contract`](../../scripts/game_data/contracts/buff_name_cache_allocator_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_allocator.py)
+and [`complete wrapper/helper checker`](../../scripts/game_data/il2cpp/name_cache_allocator_control.py)
+now join the constructor's actual allocator call through its direct tail proxy
+to the whole wrapper, retry gate, handler and error-cell helper programs. The
+selected import is uniquely joined to the actual terminated on-disk lookup/IAT
+tables and the KERNEL32 HeapAlloc declaration. Its arguments come from a fresh
+heap-handle cell read, zero flags and the preserved byte count. This names no
+live IAT target or valid heap state. Under a standard live binding and valid
+heap, [HeapAlloc's specification](https://learn.microsoft.com/en-us/windows/win32/api/heapapi/nf-heapapi-heapalloc)
+supplies the conditional normal-success storage guarantee. Zero flags do not
+request zero initialization; inherited heap exception settings also affect
+whether a failure returns normally.
+
+The wrapper rejects oversized requests through an unsigned guard and changes
+a zero byte request to one before its first allocation attempt. The first
+nonzero imported return word reaches its return unchanged. A zero word selects
+the fresh DWORD retry gate; a zero gate or zero handler result selects the
+error path. Otherwise the same saved byte count is retried. This proves control
+and argument origins, not eventual success or finite retry termination.
+
+The handler obtains a fresh word from its getter. Zero skips the dispatcher
+and returns zero; nonzero remains in RAX while the saved byte count is passed
+in RCX to the actual dispatcher helper. That helper's low DWORD return is
+normalized to a boolean. The getter/dispatcher bodies and selected callback
+effects remain separate open joins; the caller proof alone does not prove that
+the word is a valid callback or that the dispatcher invoked it. The error-cell
+helper returns its child result plus a field offset, or selects a static
+fallback when the original child result is zero. Valid nonwrapping writable
+storage is still required. The wrapper writes a DWORD error word through that
+address and then returns zero under normal compatible completion.
+
+Independent fresh-instruction traces include success, null returns, retry-gate
+changes between attempts and arbitrary prior memory bytes. External heap,
+getter, dispatcher and context returns are supplied normal-return conditions;
+their missing bodies are not executed or replaced with claimed proofs. Allowed
+hypothetical context aliases can direct the error write into cache storage,
+which demonstrates why cache isolation needs a separate condition; no such
+alias or allocation failure is observed in the client. The complete constructor
+grammar has no returned-pointer test before forming the node endpoint and
+calling initialization. Thus a null wrapper result is outside its valid-allocation
+theorem, and normal allocator-wrapper completion alone does not establish a
+successfully initialized cache. Future population/history, named primitive
+identity and positive stored parent/root integration remain open.
+
+The [`handler getter contract`](../../scripts/game_data/contracts/buff_name_cache_handler_getter_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_handler_getter.py)
+and [`complete getter/dispatch checker`](../../scripts/game_data/il2cpp/name_cache_handler_getter_control.py)
+now prove the returned word formula under normal guard-helper ABI completion:
+rotate right the encoded-word read XOR the cookie read, using the low six cookie
+bits as the count. Both actual guard calls receive zero ECX. The decoded word
+is saved in nonvolatile RBX across the second guard call and copied to RAX
+before restoring the caller's RBX/frame. Changes to global words after those
+reads do not change that saved result. The proof uses the two values actually
+read, without establishing a common publication epoch or guard locking effects.
+
+The optional [`PE load-config reader`](../../scripts/game_data/il2cpp/pe_load_config.py)
+joins the cookie storage to SecurityCookie and the dispatcher storage to
+GuardCFDispatchFunctionPointer through the selected PE declaration. These
+fields hold preferred-image VAs of pointer storage, as defined by the
+[Microsoft PE format](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format),
+not loaded function identities. This closes the earlier zero-owner named-import
+lookup without inventing an import symbol. The selected on-disk dispatcher
+word identifies a whole JMP RAX entry. If the loaded/rebased slot still selects
+that file-default entry and RAX is a valid callable target, the two tails
+preserve register arguments and the caller's return stack. Loader replacement,
+actual selection, callback validity and effects remain unproved.
+
+Fresh-instruction models vary all rotate counts and independent cookie/encoded
+words, including zero decoded results and changes after reads. The dispatcher
+model explicitly supplies file-default selection and normal callback completion;
+an alternative slot remains unresolved rather than being coerced into that
+model. No missing guard/callback body is executed, and the decoded word is not
+promoted to a live callback identity. The error-context joins, cache isolation,
+insertion/population history and named class/positive parent/root joins remain
+separate open work.
+
+The [`guard contract`](../../scripts/game_data/contracts/buff_name_cache_handler_guard_native.json)
+and [`guard owner`](../../scripts/game_data/memorypack/buff_name_cache_handler_guard.py)
+close both actual getter helper bodies. Each sign-extends ECX and computes
+the shared array base plus forty times that signed index with native-word
+wrapping arithmetic, then tail-calls a static EnterCriticalSection or
+LeaveCriticalSection import. Both zero-index calls select the same storage.
+Static imports and a closed tail do not establish initialized objects, live
+bindings, acquisition/release or protection of every writer.
+
+The [`lifecycle`](../../scripts/game_data/contracts/buff_name_cache_handler_lifecycle_native.json)
+and [`setter`](../../scripts/game_data/contracts/buff_name_cache_handler_setter_native.json)
+definitions are independently authenticated by the
+[`state owner`](../../scripts/game_data/memorypack/buff_name_cache_handler_state.py).
+Initialization calls the actual InitializeCriticalSectionEx proxy with spin
+count 4000 and flags zero for successive array objects; nonzero EAX increments
+the global counter. The initializer does not zero that counter. With a zero
+entry counter, stable disjoint storage and valid normal API completion, success
+initializes the declared array, while failure cleans the successful prefix in
+reverse order and returns the counter to zero. Cleanup assumes its count
+describes a valid initialized prefix; it does not clamp invalid counts.
+Lifecycle results write only AL, leaving the rest of RAX outside the Boolean
+claim. Invocation, initial object state, ordering, repeat safety and concurrent
+use remain unobserved.
+
+The setter saves its incoming word across the first zero-index guard call,
+uses one cookie read to decode the previous word and encode the replacement,
+stores the encoded replacement, then returns the saved previous decoded word.
+For cookie C, count C AND 63 and new word W, the emitted store is
+ROR64(W, 64 minus count) XOR C; getter decoding with that same C inverts it.
+Rotate counts are masked to six bits, including the count-zero case.
+Unknown leave-helper memory effects may change the global word after the
+store, so the emitted write is separate from surviving final state.
+
+The [`direct-store contract`](../../scripts/game_data/contracts/buff_name_cache_handler_direct_init_native.json)
+and [`direct-store owner`](../../scripts/game_data/memorypack/buff_name_cache_handler_direct_init.py)
+also prove a whole owned caller and its actual closed store child. The caller
+saves one cookie read in nonvolatile RBX and passes that saved word to each
+direct sibling. One selected child writes incoming RCX directly to the encoded
+handler cell. With that same saved cookie, decoding at the emitted store state
+would yield zero. That narrower direct-store proof left other siblings' effects
+open; the complete child proof below closes their emitted stores. The saved
+argument alone does not establish a common global epoch under concurrent use.
+The store has no own guard call,
+which does not establish absence of an enclosing lock. The caller writes AL
+true only; its invocation and startup ordering remain open.
+
+Independent fresh-byte replays cover lifecycle success/failure and reverse
+prefix rollback, setter encoding/previous-word returns and direct caller/store
+flow. API/object effects, guard returns and hypothetical sibling writes are
+explicit supplied conditions, not execution of missing bodies. Direct-call
+candidates from
+[`native_call_references.py`](../../scripts/game_data/il2cpp/native_call_references.py)
+remain raw overlapping instruction candidates until whole caller ownership
+and instruction boundaries establish an actual edge. No matching direct call
+does not prove a definition unused; indirect registration remains open.
+The [`complete sibling-store contract`](../../scripts/game_data/contracts/buff_name_cache_handler_sibling_stores_native.json),
+[`native owner`](../../scripts/game_data/memorypack/buff_name_cache_handler_sibling_stores.py)
+and [`closed-program checker`](../../scripts/game_data/il2cpp/name_cache_handler_sibling_stores_control.py)
+now close every actual child of that selected caller. Each child consists only
+of RIP-relative QWORD stores of incoming RCX followed by RET. The eight global
+destinations are pairwise disjoint, none overlaps cookie storage, and exactly
+one is the encoded handler cell. These child instructions do not explicitly
+write registers or call another body; RET performs its normal return-stack pop.
+The other destination cells remain anonymous words with no inferred purpose.
+
+For valid normal frame/global storage without faults, stack/global aliasing or
+concurrent/intervening writes, all children receive the saved entry cookie and
+write it to their declared cells. The cookie remains unchanged, and encoded
+handler equals it at caller return. Decoding that return-state pair gives zero.
+This is a conditional state theorem, not an actual getter invocation or evidence
+that its later guard calls leave those values unchanged. The complete caller
+also preserves incoming RAX upper bits while setting AL true, so it does not
+establish a full-register Boolean result. Fresh-byte models execute every child
+and every store without supplying hypothetical sibling effects or returns.
+
+The closed selected child inventory does not cover other caller chains,
+indirect registration or concurrent writers. All-writer coverage, actual startup
+and lifecycle order, enclosing-lock state, live import/callback identity, actual
+cache isolation and complete positive Buff roots remain separate obligations.
+
+Complete migration, duplicate-key record
+history, probe/capacity termination, lookup success and loaded image identity
+remain open. This construction proof does not establish a nonnull named Int32
+class, concrete DamageType sharing/provider, or positive parent/root admission.
+
+The earlier name/key/index/type-copy scope retains its
+[`reviewed lookup contract`](../../scripts/game_data/contracts/buff_class_name_lookup_native.json),
+[`selected native owner`](../../scripts/game_data/memorypack/buff_class_name_lookup.py)
+and [`control and projection checker`](../../scripts/game_data/il2cpp/class_name_lookup_control.py).
+Complete exception-owned instruction inventories establish normal local control,
+call frames and explicit stores. The typed conclusions cover selected projections;
+the other insertion, hashing, resolver and constructor effects remain structural.
+
+The request constructs a zero-headed key containing adjacent namespace/name
+pointers. The cache's ordinary lookup compares zero-terminated bytes separately
+for namespace and name; its default-marker comparisons are distinct. With a
+stable zero query header, both query comparisons dominate the non-sentinel hit
+write. This is a conditional local path proof, not an observed match, search
+termination or empty-cache helper result. Strings, node storage and cache views
+still require compatible stable storage and normal noninterfering helper returns.
+
+After comparing the iterator node with a newly computed end pointer, the caller
+loads the node's metadata-record pointer. The signed high-multiply/add/shift
+sequence yields the corresponding index for every valid aligned record in the
+selected metadata table. Live header/base identity, actual node bounds and
+coherence between the separately read cache views remain conditions. The selected
+end-node branch returns zero; this does not establish all possible miss results.
+
+The constructor copies one raw 16-byte registered type record into its value
+and reference type slots. It changes a flag DWORD only in the reference copy,
+then stores the original vector into the value copy. A later actual call receives
+the value copy's address without an intervening RCX overwrite. That child's
+captured complete owned bytes include fixed-stride table addressing and calls
+that forward the address to another helper. The selected later call's read-only
+behavior is established below; preservation through other constructor calls and
+aliases remains unproved. A stored request name therefore
+still cannot bind the returned live class or select DamageType's shared formatter.
+
+The selected type-copy search/comparison family now has a
+[`reviewed closed-family contract`](../../scripts/game_data/contracts/buff_copied_type_readonly_native.json),
+[`explicit selected native owner`](../../scripts/game_data/memorypack/buff_copied_type_readonly.py)
+and [`control and memory-effect checker`](../../scripts/game_data/il2cpp/type_comparer_control.py).
+Every ordinary call stays inside the checked search, type comparer and count
+leaf. Complete owned code is partitioned separately from the embedded target
+table and padding. The count leaf has no exception-table entry at its actual
+call target; its complete ordinary entry program includes both return paths.
+That entry proof does not claim an exception-owned extent or borrow a neighbor's
+boundary.
+
+All explicit writes are bounded stack/frame-home stores; implicit push and
+normal-call return-address writes are also accounted for. There are no other
+memory updates or calls outside the checked family. Induction over a finite
+normal call tree therefore preserves non-stack input bytes when the complete
+recursive stack is valid and disjoint from the type copy. This closes preservation
+across this selected later call, not across other constructor calls, aliases or
+concurrent writers. Recursive termination and observed execution remain open.
+
+The comparer first reads a kind byte and one selected flag bit. Its kind-mismatch
+ordering is signed-byte ordering; flag and selected data-QWORD ordering use
+unsigned comparisons. The count leaf compares initial DWORD reads for equality,
+then uses fresh DWORD reads for its difference ordering while preserving the
+caller scan registers. Separate reads are not assumed identical. The guarded
+target table retains its image base along every local path to the load, including
+pointer-recursion backedges; all table targets are checked code boundaries.
+
+A checked counterexample reaches a zero QWORD-comparison return with two distinct
+raw type records: kind, selected flag and data QWORD match, while another flag
+bit differs. Zero consequently does not establish complete record equality or
+runtime class identity. Other recursive result semantics and the table search's
+full result meaning remain open, as do named class/cache identity, concrete enum
+sharing, provider selection and stored-parent integration.
 
 For the maintained SpellBurst and target/mask actions, fresh source/read-order,
 generated setter and current route checks distinguish these parents:
@@ -6505,6 +7076,173 @@ docstring keeps the refuting test.
   drift); a depth limit of 24 or an empty (falsy) `PlanRegistry` as a
   schema signal; the reference census counting more than nested `skillId`;
   `MissionRuntimeAsset` payloads as MemoryPack (they are JSON).
+
+The USP parent is independently composed by
+[`buff_refrain_obtain_usp.py`](../../scripts/game_data/memorypack/buff_refrain_obtain_usp.py)
+and its [reviewed contract](../../scripts/game_data/contracts/buff_refrain_obtain_usp_native.json).
+Its inherited fields, `clearUspOnEnd`, `refrainObtainUspTags` and `targetSettings`
+retain source order, declared types and their own byte intervals. GameplayTagList
+reuses the independent tag object/element reader; TargetSettings requires its
+independent recursive receipt. Their closed source contexts join independent
+child runtime definitions and source-bound wrapper plans. Every field reencodes
+its exact original bytes, and non-scalar child receipts bind their named trees.
+
+Null parent, null union, null tag object, null/empty tag list and null tag element
+remain distinct. Positive targets cannot close without their independent reader.
+The maintained recursive dispatcher uses the selected contract's current tag;
+an old-version tag is refused. The native aggregator first resolves and gates
+the selected binaries, then passes those explicit paths to the parent owner.
+Missing or mismatched inputs cannot produce a validated parent.
+
+The frozen maintained-reader epoch has its own full Buff corpus gate and original
+gained-root replay. Each admitted root closes all thirty fields from byte zero,
+checks its source ID and ends at physical EOF with complete receipt equality.
+Earlier complete roots and consumer claims retain their original scopes.
+Changing coverage counts and per-source inventories remain in generated reports.
+Stored clear flags, tags and targets do not establish actual formatter/provider
+selection, selected entities, USP suppression or clearing. Remaining structures
+and the missing original Skill receipt remain separate acceptance obligations.
+
+The camera group's `and` source has a separately reviewed correction in
+[`buff_camera_condition_group_source_return_native.json`](../../scripts/game_data/contracts/buff_camera_condition_group_source_return_native.json)
+and [its validator](../../scripts/game_data/camera_condition_group_source_return_native.py).
+The earlier camera source catalog selected the error-path call preceding an
+INT3 as the value origin. The normal path instead preserves the preceding
+source helper's full reference return into the setter argument when the receiver
+is nonzero. A zero receiver reaches the error call and trap, with no ordinary
+setter continuation. The legacy catalog remains a historical scope and is not
+accepted as the normal source-return proof for this field.
+
+Both outer camera condition lists and the group's inner list pass their own
+closed `ReadPackable` contexts to the actual shared helper whose selected
+Reader/local-output/return transfer is reviewed by
+[`buff_timeline_root_list_native.json`](../../scripts/game_data/contracts/buff_timeline_root_list_native.json).
+This physical join does not replace either concrete list or element type with
+the shared Object type. Their direct closed compiled entries remain absent;
+static registrations and actual provider selection are distinct obligations.
+
+[`buff_camera_list_constructor`](../../scripts/game_data/memorypack/buff_camera_list_constructor.py)
+and its [reviewed contract](../../scripts/game_data/contracts/buff_camera_list_constructor_native.json)
+join both concrete list registrations to the independently registered shared
+Object constructor and check its complete exception-owned primary and cold
+ranges. The complete control reads an anonymous context chain, returns without
+calls when its guard is nonzero, and otherwise re-reads the context and calls
+through its slot-zero pointer before rejoining the restored return. It has no
+explicit data stores or dereference of the entry receiver. The cold callee's
+effects, context-slot semantic names, actual generic inflation and provider
+selection remain unresolved. A normally returning indirect call and ordinary
+Win64 stack preservation are conditions of the cold return proof.
+
+These source and constructor joins grant no positive condition-list grammar,
+camera parent or complete root admission. Concrete element conversion, list
+cursor composition and actual camera evaluation remain separate work.
+
+The inherited list constructor context is independently joined by
+[`list_formatter_base_context`](../../scripts/game_data/memorypack/list_formatter_base_context.py)
+and [`buff_camera_base_constructor`](../../scripts/game_data/memorypack/buff_camera_base_constructor.py),
+under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_base_constructor_native.json).
+The complete declared ListFormatter class context names its inherited constructor
+at slot seven and declared parent at slot eight. The actual parent type is
+`MemoryPackFormatter<List<T>>`; its argument pointer and the inherited constructor's
+argument pointer both equal the List type tied to the reciprocal ListFormatter
+parameter. This is a static generic identity, not a populated runtime slot receipt.
+
+An independently selected Object base-constructor registration points to code
+shared by other method definitions. The
+[`registration observer`](../../scripts/game_data/il2cpp/generic_entries.py)
+retains those aliases, null pointers and duplicate rows; the strict resolver
+continues to reject folded method identity. The registered entry begins with
+`RET 0`. Its closed entry program preserves flags/general registers, performs
+no explicit data stores and pops only the ordinary return address when entered
+with a readable valid return stack. This establishes neither a unique named
+body nor the full physical function extent beyond that return.
+
+The camera constructor's cold indirect target has not been observed to equal
+that registered pointer. Runtime slot geometry/population, original context
+inflation and other selected call effects remain separate obligations. The
+declared slot, argument equality and folded entry program grant no positive
+camera list, parent or complete-root admission.
+
+The constructor context's publication geometry now joins the complete
+exception-owned initializer instruction graph through
+[`context_slot_initializer_control`](../../scripts/game_data/il2cpp/context_slot_initializer_control.py)
+and [`buff_camera_context_slot_publication`](../../scripts/game_data/memorypack/buff_camera_context_slot_publication.py),
+under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_context_slot_publication_native.json).
+Every local branch/normal call continuation reaches an instruction boundary;
+normal calls have aligned home space and normal returns restore the entry stack.
+Trap exits and indirect call locations remain explicit. This syntactic graph
+does not prove loop termination, helper effects or actual initialization.
+
+The selected range result supplies the same start and count used by the loop.
+The start indexes sixteen-byte definitions; each normal iteration advances the
+definition pointer by sixteen and the output pointer by eight, then decrements
+the remaining count. At loop completion the original compatible array return
+is reloaded and published into the class context field. Lookup selection,
+allocation/fill semantics and stable disjoint frame/definition/output storage
+remain conditions, rather than observations of a live array.
+
+The method-kind branch reads the declaration payload index, passes two distinct
+descriptor operands to the same helper with one saved generic context, and
+constructs a three-QWORD local key. Its final pointer-producing helper's complete
+return is stored into the current output slot. Descriptor substitution, cache
+contents/selection and the intervening helper effects remain unresolved.
+
+Under those stated compatible-class/module and normal-helper conditions, the
+inherited constructor declaration at slot seven occupies byte offset fifty-six
+in the published slot array, matching the constructor's checked physical read.
+This closes the conditional geometry connection; it does not observe slot seven,
+select its actual cold target or grant positive camera list/root admission.
+
+The method-slot descriptor getter is independently joined by
+[`method_spec_descriptor_control`](../../scripts/game_data/il2cpp/method_spec_descriptor_control.py)
+and [`buff_camera_method_spec_descriptor`](../../scripts/game_data/memorypack/buff_camera_method_spec_descriptor.py),
+under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_method_spec_descriptor_native.json).
+Its complete exception-owned control sign-extends the input index, addresses a
+twelve-byte MethodSpec record and forwards its definition index to the plain
+definition helper. Class and method instantiation indices remain separate:
+each uses an eight-byte pointer-table slot, while the signed sentinel produces
+a zero argument. The selected inherited-constructor row independently joins
+the previously proved List<T> class instantiation and null method instantiation.
+
+The cold composition receives the definition helper's return and both selected
+instantiation pointers. Its full return is written to the indexed descriptor
+cache cell, but the ordinary return re-reads that cell. The hit branch likewise
+tests and reads the cache separately. Concurrent cache/global changes can
+therefore change the later return; neither a nonzero test nor a stored pointer
+proves the eventual returned value without a stability condition.
+
+The helper performs no input-index bounds check. Nonnegative in-range signed
+indices, compatible registration/tables, valid cache storage and normally
+returning ABI-preserving helpers remain explicit conditions. Descriptor
+identity, definition helper and cache effects, actual cache history, parameter
+substitution and the runtime cold target remain unresolved. This descriptor
+join does not admit a positive camera list, parent or whole root.
+
+The actual composition callee now has a complete exception-owned graph and
+CFG-joined argument origins in
+[`descriptor_composition_control`](../../scripts/game_data/il2cpp/descriptor_composition_control.py)
+and [`buff_camera_descriptor_composition`](../../scripts/game_data/memorypack/buff_camera_descriptor_composition.py),
+under its [reviewed contract](../../scripts/game_data/contracts/buff_camera_descriptor_composition_native.json).
+The new branch requests twenty-four bytes and emits three QWORD stores at
+offsets zero, eight and sixteen. Their sources are respectively the plain
+definition helper return, class instantiation pointer and method instantiation
+pointer already proved at the caller. Entry arguments are saved in nonvolatile
+registers; all local branches and backedges join their origins before each store.
+The proof refuses partial-register overwrites and bypass paths rather than
+assuming that address order establishes preservation.
+
+The hit branch reads the selected cache entry's value pointer, while the new
+branch saves the allocation return. Both pass the saved pointer to the normal
+return through the complete suffix. This establishes the emitted triple layout
+under valid disjoint allocation/storage and normal Win64 nonvolatile/stack-
+preserving callees. It does not prove allocation success, that the lookup key
+equals the supplied triple, or that insertion and later synchronization calls
+leave its pointee contents intact. Those calls and the retry loop remain visible
+in the complete graph; termination, concurrency and actual effects are open.
+
+Definition identity, instantiation transformation, final method-pointer lookup,
+runtime cold-target selection and positive camera list grammar still need their
+own evidence. No positive list, parent or whole root is admitted by this scope.
 
 ## Remaining gaps
 

@@ -7,12 +7,13 @@
   const catalogs = { item: "items" };
   let selected = "character";
   let token = 0;
+  let loadedLanguage = "";
   const active = () => document.body.dataset.activeView === "gameplay";
 
   function readKind() {
     const params = new URLSearchParams(location.search);
     const explicit = params.get("gameplayKind");
-    return kinds.includes(explicit) ? explicit : "character";
+    return kinds.includes(explicit) ? explicit : selected;
   }
 
   function label(kind) {
@@ -37,6 +38,7 @@
   async function route({ force = false } = {}) {
     if (!active()) return;
     const generation = ++token;
+    loadedLanguage = String(document.querySelector("#language")?.value || "CN").toUpperCase();
     selected = readKind();
     const catalog = catalogs[selected];
     if (force) W.gameplay.invalidateItems();
@@ -46,7 +48,7 @@
     document.querySelector("#activities-app").hidden = selected !== "activity";
     render();
     const [data, catalogData, stageData] = await Promise.all([
-      W.gameplay.load(force),
+      W.gameplay.load(force, { render: false }),
       W.gameplayItems.load(undefined, force, { render: false }),
       W.battleStages.load(force, { render: false }),
       W.gameplayActivities.loadCount(),
@@ -63,10 +65,11 @@
     window.dispatchEvent(new Event("resize"));
   }
 
-  function pageUrl(kind, id = "") {
+  function pageUrl(kind, id = "", { fresh = false } = {}) {
     const url = new URL(location.href);
     for (const key of [...url.searchParams.keys()]) {
-      if (key.startsWith("item") || ["gameplay", "gameplayKind"].includes(key)) url.searchParams.delete(key);
+      if (fresh && !["ui", "uiLang", "lang"].includes(key)) url.searchParams.delete(key);
+      if (key.startsWith("item") || ["gameplay", "gameplayKind", "activity", "activityTable", "battleStage"].includes(key)) url.searchParams.delete(key);
     }
     url.searchParams.set("gameplayKind", kind);
     if (kind === "activity") {
@@ -81,9 +84,10 @@
     return url.href;
   }
 
-  function open(kind, id = "") {
+  function open(kind, id = "", options = {}) {
     if (!kinds.includes(kind)) return;
-    history.pushState(history.state, "", pageUrl(kind, id));
+    selected = kind;
+    history.pushState(history.state, "", pageUrl(kind, id, options));
     if (!active()) W.setActiveView("gameplay");
     else void route();
   }
@@ -94,7 +98,10 @@
       if (button) open(button.dataset.gameplayKind);
     });
     window.addEventListener("webui:view-changed", (event) => { if (event.detail?.view === "gameplay") void route(); });
-    window.addEventListener("webui:language-changed", () => { if (active()) void route({ force: true }); });
+    window.addEventListener("webui:language-changed", () => {
+      const language = String(document.querySelector("#language")?.value || "CN").toUpperCase();
+      if (active() && language !== loadedLanguage) void route({ force: true });
+    });
     window.addEventListener("webui:ui-locale-changed", render);
     window.addEventListener("webui:retry-view", (event) => { if (event.detail?.view === "gameplay") void route({ force: true }); });
     window.addEventListener("popstate", () => {

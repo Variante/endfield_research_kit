@@ -51,7 +51,7 @@ Data navigation is 解码 / Decoded, with the English heading Data Decoding.
 | --- | --- | --- | --- |
 | Story | `story` | Reconstructed dialog, SNS, radio, cutscenes, media, and evidence-typed order | `app.js` |
 | Gameplay | `gameplay` | Characters, equipment, enemies, combat stages, activities, items and their effects, recipes, machines, progression, skills, projectiles, and assets | `src/features/gameplay/{tabs,index,battle_stages,items}.js`, `src/features/gameplay/activities/index.js` |
-| Map | `map-recovery` | Authored world-space evidence, encounters, patrols, NPCs and scene conditions with minimap, model, point, and water layers | `src/features/map_recovery/index.js` |
+| Map | `map` | Authored world-space evidence, encounters, patrols, NPCs and scene conditions with minimap, model, point, and water layers | `src/features/map_recovery/index.js` |
 | Characters | `characters` | Identity groups, complete source appearances, verified Story links, related assets, and live overrides | `src/features/characters/index.js` |
 | Text | `reference` | Searchable localized table/reference rows and configured achievement/activity targets and rewards | `src/features/reference/index.js` |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state | `src/features/audio/index.js` |
@@ -152,11 +152,19 @@ and an earlier fade cannot hide a restarted loader.
 
 Gameplay orders its dataset tabs as characters, weapons, essences, equipment,
 items, enemies, combat stages and activities; only the selected dataset's filters are shown.
+The main Gameplay navigation tab opens Characters; explicit dataset links retain their target.
+Opening the root URL leaves its address unchanged. Switching pages or Gameplay
+datasets updates the route. Explicit links still select their target; local selections,
+language choices, filters and loadout settings remain in their existing owners.
+Restoring hidden Activities controls cannot rewrite the active page's URL.
 Entering any Gameplay subpage loads the entity, item/building and combat-stage
 indexes plus the activity count together, so every dataset tab shows its count
 without first opening it, including direct entry into Activities.
-Switching datasets reuses those indexes; language changes and page retries
-refresh them together. Unselected catalogs do not render or fetch details.
+Switching datasets reuses those indexes; actual language changes and page retries
+refresh them together. A delayed Story language announcement for the already
+requested language does not restart Gameplay. Concurrent Characters and
+Activities activations share the current language request; Activities reuses
+its initial ActivityTable payload when preparing the catalog. Unselected catalogs do not render or fetch details.
 Items combines published items and buildings through exact building/item links.
 Linked buildings render inside their item details; buildings without a published
 item remain selectable Items entries. Building categories and power/recipe
@@ -401,7 +409,7 @@ webui/data/map_recovery/index.json
 webui/data/map_recovery/maps/<levelId>.json
 webui/data/map_recovery/encounters/{index,<levelId>,unplaced}.json
 webui/data/map_recovery/render/*.{json,png}
-webui/data/assets/{index,gameplay_refs,story_media,table_owners,activity_media,videos}.json
+webui/data/assets/{index,relations,gameplay_refs,story_media,table_owners,activity_media,videos}.json
 webui/data/data_inspector/index.json
 webui/data/data_inspector/datasets/<datasetId>/{index,records.*}.json
 webui/data/updates/latest.json
@@ -409,6 +417,7 @@ webui/data/updates/{characters,story,map,gameplay}.json
 webui/data/recovery/index.json
 webui/data/story_order_ocr.json
 webui/data/mission_pipeline/index.json
+webui/data/mission_pipeline/story_triggers.json
 ```
 
 Builders may add compact sidecars, but each page must tolerate an absent
@@ -425,10 +434,41 @@ configuration, not current availability or player progress.
 ### Ownership rules that are easy to get wrong
 
 - `data/gameplay/projectiles.json` owns immutable projectile behavior. The
-  language-specific `projectile_audio.json` and `sound_effects.json` remain
-  generated recovery sidecars, but Gameplay does not load or render them;
-  audio presentation stays on the Audio page until the ownership model is
-  better understood.
+  language-specific `projectile_audio.json` and `sound_effects.json` are
+  Audio-published sidecars that Gameplay reads: projectile audio loads with
+  the base integration, and the large `sound_effects.json` loads in the
+  background, filling projectile, skill and character/enemy sound sections
+  when it arrives. A missing sound sidecar shows a warning, not an empty
+  section. An event's optional `selectionTree` (authored Wwise structure:
+  `play` roots, `layer`/`group`/`random`/`sequence`/`switch` containers,
+  `sound` leaves with `mediaIds`) groups its candidates, and each audio player
+  shows its file name: a Wwise layer container renders as one "played
+  together" block, several Play actions of one Event render as an
+  event-actions block (Wwise proves membership, not simultaneous onset), and
+  each random/sequence/switch pool renders as one row with one column per
+  alternative (same row: one is chosen; same column: played together; stacked
+  groups sort larger first, single files last). Containers carry a yellow left banner, and the
+  top container's kind sits in the event header. Branches with identical files
+  render once, and events with the same file set collapse into one row naming
+  the other events. An event reached only through a skill's BuffData chain
+  names the buff holding its PlaySound action ("via buff"). Candidates
+  outside the tree are listed separately; events without a tree keep the flat
+  candidate list. Each event header has a Simulate button that resolves one
+  trigger from the tree and plays it: layers and event actions all sound,
+  random pools and multi-media sounds pick one, sequences advance per click,
+  and switches take a random state (the runtime state is not published); the
+  picked files are highlighted and a second click stops. Without a tree it
+  plays one candidate at random and its tooltip says the structure is unknown.
+  Every event is folded by default; its header (name, kind, Simulate) is the
+  fold toggle, and its body is built on first unfold. On a skill card the
+  exact-trigger sounds sit after the in-game description and before the
+  upgrade cost, followed by the group's inferred skill-family sounds (owned
+  only through the playable-skill ID prefix, badged inferred, minus files the
+  exact group lists); they are rendered once and move with the level slider. A
+  character's trailing
+  related-sounds section omits files already shown on its skill cards (exact
+  and inferred skill events and projectile audio) and files shown by an earlier group in
+  that section, dropping events left with nothing new.
 - `data/assets/gameplay_refs.json` is Gameplay-owned: the `asset-refs` stage
   joins the current Gameplay index to the Assets-owned broad index. The Assets
   builder never writes this consumer-specific sidecar.
@@ -436,11 +476,16 @@ configuration, not current availability or player progress.
   at load; Story's own `conv/*.json` never carries voice.
 - `data/assets/videos.json` and `data/assets/table_owners.json` are optional;
   the Assets page works without them.
+- `data/assets/relations.json` holds the material/texture/model relations that
+  only the detail panel and model viewer read; the page fetches it on first
+  use, and a missing file leaves assets unrelated.
 - `data/story_order_ocr.json` holds OCR order proposals only. It is generated
   evidence and never the active order.
-- `data/mission_pipeline/index.json` is read by the Story page for
-  `storyCoverage.storyTriggerManifest` even though Mission Pipeline is not a
-  page. Its absence is a degraded Story trigger state, not an error.
+- `data/mission_pipeline/story_triggers.json` is the Mission Pipeline's merged
+  Story trigger lookup (coverage manifest, offline overlay, env_* manifest),
+  read by Story in debug mode instead of the full index even though Mission
+  Pipeline is not a page. Its absence is a degraded Story trigger state, not
+  an error.
 - `data/data_inspector/**` is local recovery output, excluded from the
   published archives; its envelope is owned by
   [`contract.py`](../scripts/webui/data_inspector/contract.py).
@@ -499,7 +544,8 @@ precedence over feature-local heading defaults.
   continuous left list and a detail pane on the right. Sidebars have no page
   controls or item-count cap: all matches share one scroll range, while only
   the viewport and nearby rows are mounted. Shared `src/ui/continuous_list.js`
-  measures variable row heights; Gameplay group headings retain collapse state
+  measures variable row heights; row wrappers clip overflow without becoming
+  scroll containers. Gameplay group headings retain collapse state
   and appear once per group. Assets, Audio and Story retain their existing
   virtual tree/row renderers; Map retains its hierarchical navigation.
   Filtering and sorting return to the start. Data Files discovers all source
@@ -558,7 +604,7 @@ pages depend on.
   the authored `ItemTable.iconId` and the optional Story media lookup.
   Mission Maps appear as small gray links in the metadata line below the right-pane title,
   from Map's published `data/map_recovery/index.json`
-  (`maps[].missions`) and open `?map=<id>&mission=<mission>#map-recovery`.
+  (`maps[].missions`) and open `?map=<id>&mission=<mission>#map`.
   Story search includes completion reward names and item IDs for each mission's
   entries, without opening mission details first.
 - Reset returns to Story sort and default filters while preserving expanded
@@ -741,6 +787,7 @@ selected breakthrough, shows each node's affinity requirement, and accumulates
 its authored attribute modifiers with separate source labels. Evidence limits:
 [`memory/webui/gameplay.md`](../memory/webui/gameplay.md) and
 [`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md).
+Equipment main/secondary ability terms have distinct solid/tinted and dashed highlight styles. Character Loadout also highlights concrete equipment attributes matching the selected character's main or secondary ability, with textual labels; combined matches show both indicators. The matching changes with character selection and leaves calculation unchanged.
 
 Item recipe cards select the exact source method from grouped `recipeVariants`,
 including its machine, ingredients, outputs, time and environment. Shop cards
@@ -1094,8 +1141,8 @@ Optional top-level `packageCatalog` uses `endfield.audio-package-catalog.v1`.
 Its optional language-table projection retains package-local stored IDs and
 UTF-16LE labels. Bounded row/label previews mark truncation, and unknown IDs stay
 unresolved; labels do not establish a clip's spoken language or live selection.
-The Audio overview keeps this static installed-package inventory separate from
-capture observations. A complete current VFS/AKPK gate supplies package and
+The published catalog keeps this static installed-package inventory separate
+from capture observations; the page no longer renders it. A complete current VFS/AKPK gate supplies package and
 typed-entry counts, bounded package rows, repeated typed keys and full-key
 collisions after low-word truncation. Bank-header identity counts cover only
 the stored BKHD prefix joined to each full bank key; version counts retain the
@@ -1131,7 +1178,10 @@ build-locked callsites, mappings, and addresses, with the unavailable state
 shown. The effect gate distinguishes named authored settings from anonymous
 native input reads. An expandable `structuralOnly` table shows read offset,
 width, kind and raw bytes; float32 views are representations with unresolved
-control meaning. Direct-effect rows stay in lazy media details; Bus parameters
+control meaning. Direct-effect rows stay in lazy media details, with every
+other panel-only media field (Event/trigger context, Wwise media graph,
+post-process, content hash); list shards keep only what list, search, sort and
+facets read. Bus parameters
 remain in the unique shared catalog. What each state refuses to claim is in
 [`memory/webui/audio.md`](../memory/webui/audio.md); the Wwise chain is in
 [`memory/game_data/audio_overview.md`](../memory/game_data/audio_overview.md).
@@ -1323,3 +1373,21 @@ filter disclosures, page size and SQL-draft storage remain in their own owners.
 Storage is optional and scoped to the browser origin; malformed or unavailable
 storage falls back to defaults. Pinyin search supports initials such as qsjs,
 not full pinyin spellings.
+
+Audio caches the current dataset order by sort category and direction, using
+one numeric collator. Search and facet changes filter that order and reuse
+the facet model's cached values; search input waits 120 ms after typing.
+Large audio record normalization yields between bounded work intervals and
+discards superseded results before publication.
+
+Audio reuses each summary row's published `linkedFileSearch` rather than
+rescanning nested evidence; rows without that field retain direct file search.
+The index, manual notes and version comparison load in parallel, followed by
+the Event read; the list renders with the completed publication once. With no
+selection the detail pane stays empty: the page renders no index-level runtime
+or catalog overview, and does not read `scene_backgrounds.json`. Long loops
+yield through `WebUI.yieldToMain`, which background tabs do not throttle. A
+filter pass skips facet filtering when no chip is active and matches the search
+text and manual note separately; detail merges drop the facet and sort caches
+only when a facet value or sort key changed. Normal index/shard requests revalidate HTTP cache entries;
+explicit retries bypass the cache.

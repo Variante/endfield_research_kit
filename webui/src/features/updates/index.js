@@ -1732,12 +1732,6 @@
         applyUpdateFilters();
       });
     }
-    document.querySelectorAll(".view-tab").forEach((button) => {
-      button.addEventListener("click", () => {
-        if (button.dataset.view === "updates") setTimeout(maybeLoadUpdates, 0);
-      });
-    });
-    window.addEventListener("hashchange", () => setTimeout(maybeLoadUpdates, 0));
     window.addEventListener("webui:view-changed", (event) => {
       if (event.detail && event.detail.view === "updates") maybeLoadUpdates();
     });

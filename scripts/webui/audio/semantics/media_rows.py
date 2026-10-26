@@ -57,25 +57,44 @@ from scripts.webui.search import linked_file_search_text
 from collections import defaultdict
 from typing import Any, Iterable
 
-MEDIA_DETAIL_FIELDS = (
+# Fields only the record panel reads. The page's list, search, sort and facets
+# never touch them, so they ship in `media_details/` shards fetched on select.
+MEDIA_DETAIL_PREFIXES = ("eventContext", "postProcess", "wwiseMedia")
+MEDIA_DETAIL_FIELDS = frozenset((
     "animationCallbackClipResolutions",
-    "postProcessProperties",
-    "postProcessEffectChain",
-    "postProcessDirectEffects",
-    "postProcessBusControls",
-    "postProcessAuxSends",
-    "postProcessRanges",
-    "postProcessBusPaths",
-    "postProcessRtpcControls",
-)
+    "animationCallbackControllerMembershipStatuses",
+    "animationCallbackEntityIds",
+    "animationCallbackOwnershipClasses",
+    "coarseOwnershipDomainCount",
+    "coarseOwnershipStatus",
+    "coarseOwnershipTruncated",
+    "contentSha256",
+    "format",
+    "purposeKnowledgeStatus",
+    "semanticCategoryEvidence",
+    "semanticCategoryFieldRoles",
+    "semanticCategoryOwnershipRoles",
+    "sourceLanguage",
+    "triggerContextCount",
+    "triggerContextSummaryEvidence",
+    "triggerContextSummaryTruncated",
+    "triggerOwnerValues",
+    "triggerRoles",
+    "triggerSelectionStatuses",
+    "triggerSemanticKinds",
+    "triggerSituationValues",
+))
+
+def is_media_detail_field(field: str) -> bool:
+    return field in MEDIA_DETAIL_FIELDS or field.startswith(MEDIA_DETAIL_PREFIXES)
 
 def split_media_row(row: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """Split one media row into its list projection and its detail projection.
 
-    The detail row is empty when the media carries none of the heavy fields, so
+    The detail row is empty when the media carries none of the detail fields, so
     those rows stay complete in the list shard and never trigger a fetch.
     """
-    detail_row = {field: row[field] for field in MEDIA_DETAIL_FIELDS if row.get(field)}
+    detail_row = {field: value for field, value in row.items() if is_media_detail_field(field)}
     if not detail_row:
         return dict(row), {}
     summary_row = {key: value for key, value in row.items() if key not in detail_row}

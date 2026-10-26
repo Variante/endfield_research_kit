@@ -54,6 +54,9 @@
   });
 
   function writeUrl() {
+    // Shared storage restores hidden controls too; those changes must not navigate.
+    if (document.body.dataset.activeView !== 'gameplay' || W.gameplayTabs?.kind !== 'activity' || $('app').hidden) return;
+    if (!location.search && !location.hash) return;
     const url = new URL(location.href);
     url.hash = 'gameplay';
     url.searchParams.set('gameplayKind', 'activity');
@@ -406,7 +409,7 @@
         const mapLink = (map) => {
           const url = new URL(location.href);
           const id = map.variant || map.id;
-          url.search = ''; url.hash = 'map-recovery'; url.searchParams.set('map', id);
+          url.search = ''; url.hash = 'map'; url.searchParams.set('map', id);
           return W.gameplayDetail.relatedLink(map.name || id, { href: url.href });
         };
         const rows = entries.map((stage) => `<tr><th scope="row">${W.gameplayDetail.relatedLink(stage.name, { kind: 'stage', id: stage.id })}</th>${roles.map((role) => {
@@ -523,15 +526,9 @@
     }, { estimateHeight: 140 });
   }
 
-  async function loadTable() {
-    const generation = ++state.generation;
-    state.controller?.abort();
-    state.controller = new AbortController();
-    const signal = state.controller.signal;
+  function prepareTable(payload) {
     resetView();
     try {
-      const payload = await W.referenceRows.load(state.table.file, signal);
-      if (generation !== state.generation) return;
       state.rows = (payload.rows || []).map((row) => enrich(row, payload.rawRows?.[row.id] || {}));
       state.rows.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0) || String(a.id).localeCompare(String(b.id)));
       facets.render(state.rows);
@@ -539,13 +536,25 @@
       state.selected = state.rows.some((row) => String(row.id) === wanted) ? wanted : '';
       W.continuousList.reset($('list')); renderList(); renderDetail();
     } catch (error) {
-      if (generation !== state.generation || error.name === 'AbortError') return;
       $('count').textContent = text('Unable to load activities: ', '无法加载活动：') + error.message;
     }
   }
 
-  async function activate(force = false) {
-    if (document.body.dataset.activeView !== 'gameplay' || new URL(location.href).searchParams.get('gameplayKind') !== 'activity') return;
+  let activation = null;
+  let activationLanguage = "";
+  function activate(force = false) {
+    const requested = language();
+    if (!force && activation && activationLanguage === requested) return activation;
+    activationLanguage = requested;
+    const pending = activateData(force).finally(() => {
+      if (activation === pending) activation = null;
+    });
+    activation = pending;
+    return pending;
+  }
+
+  async function activateData(force = false) {
+    if (document.body.dataset.activeView !== 'gameplay' || W.gameplayTabs?.kind !== 'activity') return;
     const params = new URL(location.href).searchParams;
     $('q').value = params.get('activityQ') || '';
     $('sort').value = ['time-desc', 'time-asc', 'title', 'default'].includes(params.get('activitySort')) ? params.get('activitySort') : 'time-desc';
@@ -583,7 +592,7 @@
       state.mediaError = media.error ? text('Activity images unavailable. Rebuild Assets: ', '活动图片不可用，请重建资源：') + media.error : '';
       state.table = find('ActivityTable');
       if (!state.table) { $('count').textContent = text('No published activity table. Rebuild Story/Text data.', '没有已发布的活动表，请重建剧情/文本数据。'); return; }
-      await loadTable();
+      prepareTable(activities);
     } catch (error) {
       if (generation !== state.generation || error.name === 'AbortError') return;
       state.table = null;

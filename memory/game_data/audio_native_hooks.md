@@ -490,19 +490,659 @@ and advances its cursor through pre-skip and final trim to the stored frame
 count. The independently decoded reference agrees in frame geometry, and every
 sample is within one signed-16-bit quantization step. This is an offline native
 PCM witness, with explicit resident input, owner/descriptor state, allocations,
-byte copies and emulated CPU/thread storage. Platform models calculate no
-sample values. WAV packaging performs a separately declared float-to-integer
+byte copies and emulated CPU/thread storage. Independent execution in an
+isolated helper, using the selected DLL's normal Windows loader/CRT
+initialization, returns exactly the same float samples and wrapper buffers.
+Only helper-process allocation/free entry points are replaced and an available
+setup-cache lock is initialized. Platform models calculate no sample values.
+WAV packaging performs a separately declared float-to-integer
 conversion; it is not device output or byte-identical decoder equality.
 
-Original Vorbis setup, packet and sample code also produces native buffers.
-The selected complete stereo file reaches the expected frame count, and a
-mono voice supplies another bounded prefix, but both differ materially from
-the external decoder reference. Original byte copies, native CPU feature
-initialization and the real RIFF format views do not explain that difference.
-Keep native context/setup and reference reconstruction under investigation;
-do not label this comparison successful or infer a game defect. Native Vorbis
-sample parity, provider buffer identity/lifetime, mixer/device output and
-audibility still need distinct proofs.
+The same contract joins media preparation's embedded-owner adjustment and
+resident pointer/count reads to the existing source LockDataPtr consumer and
+media-reference layout. This is an authenticated storage join, rather than
+an offset inferred from proximity. For selected direct numeric Events,
+original source read/set and exact-key registry lookup now feed whole native
+preparation, RIFF parsing, codec construction/setup and sample-wrapper output
+on the host CPU. The registry rows hold independently authenticated physical
+package entries. Original readable-row admission now constructs those entries
+and their buffer records through native exact-key hash insertion, retaining
+the supplied media pointer/count without copying or decoding its bytes.
+Available table capacity, typed input lifetime, owner readiness and provider
+interfaces remain conditions: the readiness replacement invokes the original
+lookup with the checked consumer arguments, without executing complete owner
+preparation. Starting with an empty reference, a wrong-key registry collision
+leaves no resident pointer and preparation stops before creating a codec.
+This does not generalize to early-return paths retaining an existing reference.
+
+The same admission code rejects null/empty payloads and unwinds a successful
+prefix after a later invalid row or allocation failure in bounded native
+cohorts. Duplicate IDs prepend buffer records to the shared entry. Among the
+eligible positive-length rows tested, source lookup chooses the greatest byte
+count; equal-size ties select the first list occurrence, which is the latest
+admitted row in that cohort. Preserve row identity and actual selected bytes:
+this is neither package/language precedence nor a unique filename from an ID.
+
+The selected memory-labelled sources take the resident-memory provider branch.
+It passes the acquired pointer/count to the provider; it does not request a
+numeric filename at that slot. Their WEMs nevertheless come from a separate
+sound package. Successful preparation advances the input view past RIFF and
+Vorbis setup before sample processing. The whole wrapper returns finite
+samples through the stored end frame and produces playable offline WAVs.
+Physical bank/source identity joins these witnesses to the earlier Event and
+Action execution cohorts; separate cohorts do not establish one live pointer
+generation or actual package callback/API selection.
+
+The node preparation slot now closes a stronger conditional population path.
+It addresses the same embedded source as the checked bank loader and node-play
+wrapper, then forwards that source to original resident preparation. The
+manager either prepares immediately or collects complete source records for a
+later drain. Deferred records are ordered and reused by their file-ID word;
+equal-key records are overwritten, so this collection is not a distinct list
+of every source registration. The native source record carries the registry
+ID, numeric file ID, requested byte count, language flag and plugin codec into
+the file-open request. Keep registry identity and file identity distinct even
+when a selected physical source repeats the same value in both words.
+
+Original numeric stream open/setup/read/close, resident allocation and buffer
+publication now execute before native source lookup, whole preparation and
+context PCM. The supplied stream-manager interface observes that original
+request and selects an independently authenticated physical package occurrence;
+it copies the clear WEM into the original allocation. The later memory-provider
+branch consumes those allocated/read bytes. Immediate and deferred preparation
+return exactly the earlier native floats for the checked source, and selected
+numeric Events preserve their complete PCM through the context consumer. Open
+failure, a partial read followed by EOF, and read error leave no resident bytes
+for the source lookup. The original reader attempts the remaining bytes before
+rejecting incomplete input. Existing prepared buffers, alternate buffer kinds,
+source counter lifetime, wider rollback and allocation reuse remain distinct
+branches. Readable node storage, manager capacity/collection state, package
+selection, provider interfaces and pointer generations remain conditions. This
+narrows the missing join to the game's actual package/provider choice and live
+ownership; it does not establish a continuously observed Event generation.
+
+The reviewed [package contract](../../scripts/game_data/contracts/wwise_external_package_native.json)
+now owns the numeric branch and package lifecycle alongside external hashing.
+Numeric lookup retains the descriptor's DWORD file ID and compares ordered
+key/language pairs in stored rows. It uses the package's selected language only
+when requested, otherwise zero. Bank codec classes select a present nonempty
+bank table; a key miss in that table does not fall through to the sound table.
+Other classes, or an absent/empty bank table, use the sound table. Loaded packages
+are searched in linked-list order, with the first successful row winning;
+descriptor allocation failure terminates the search. The returned descriptor
+retains the package and stores the row's byte count and block geometry.
+
+Original package load now reads the admitted encrypted physical headers,
+executes the existing aligned XOR helper and assigns the original table
+pointers. Those tables agree byte-for-byte with the maintained reader. This
+cohort covers the selected four-sector header shape, available allocations,
+supplied standard-stream reads and existing notification-registration state;
+it does not generalize malformed-header safety. Successful load prepends its
+package. A separate exact package-ID routine moves the first matching package
+to the head, so newest load alone does not determine all later precedence.
+Removal unlinks the entry and releases the list reference; selected descriptors
+retain their own reference. Package-ID collision, destruction after the final
+release, language callback updates and concurrent list mutation remain separate.
+
+The stronger numeric-output cohort loads the physical headers through those
+original routines before forwarding the original source request unchanged to
+native package lookup. Its returned package pointer and geometry select the
+encoded bytes on disk. Original aligned media XOR produces exactly the
+independently authenticated clear WEM, which reaches original resident
+publication, preparation and context PCM with identical complete floats to the
+earlier cohort. Package-load call sequence, stream/device interfaces, available
+allocation and pointer lifetime remain supplied. Thus offline row selection,
+header admission and byte transformation are now original native computations;
+the game's actual load/reorder sequence and standard-stream scheduling still
+need closure. Event/queue execution remains a separately authenticated cohort.
+
+The [standard-stream contract](../../scripts/game_data/contracts/wwise_standard_stream_native.json)
+separately authenticates the numeric factory and open-completion route, reusing
+the existing constructor, descriptor-storage/open and completion owners. The
+factory requires exactly one filename or non-sentinel numeric ID, copies the
+request into owned storage and returns the receiver's secondary interface.
+Its synchronous branch waits before checking a separate open-result word.
+Original asynchronous factory execution now admits a stream to a supplied
+device. Original package lookup supplies its descriptor before manual delivery
+of the original completion callback, which retains that descriptor and clears
+the owned request. The status reader changes from pending to no pending work;
+this status is distinct from the successful open-result word. Invalid descriptor
+forms and supplied allocation failure clear the output and return their own
+failure statuses. Device/resolver state, backend block size, available OS
+locks/events and completion delivery remain supplied. This separate cohort
+does not execute original standard-stream reads or synchronous worker
+scheduling, and must not be merged into the package-to-PCM cohort as if the
+same stream generation had produced its samples.
+
+A stronger cohort now executes original standard-stream read acceptance,
+transfer construction and queued receiver completion. The asynchronous read
+reports an accepted count while its destination is still unchanged. Original
+default I/O dispatch invokes Windows `ReadFileEx`; its original completion
+transforms the media bytes and forwards the retained receiver. Successful
+receiver accounting advances the byte cursor and clears the pending transfer.
+Logical EOF accepts no bytes and queues no transfer. A supplied invalid handle
+propagates through original OS failure and receiver completion without advancing
+the cursor or changing the destination.
+
+The complete numeric-output cohort also executes the synchronous factory/read
+branches: a supplied worker drives original open/read batches and alertable
+Windows completion handling while the original stream waits. These reads fill
+the allocation produced by original resident preparation. The actual OS byte
+count agrees with the requested span and the complete clear WEM hash. Original
+resident publication and source lookup then feed the original memory-provider
+factory, metadata/settings and buffer-view methods. That provider retains the
+same resident pointer/count. Removing all supplied memory-provider methods
+preserves complete native codec/context floats for the selected sources. This
+closes original stream-to-resident-to-provider-to-PCM computation under explicit
+read-only handle/metadata association, package-load calls, device/pool state,
+worker dispatch, allocation and owner-readiness conditions. It does not prove
+the game's scheduling, continuous Event generation, final teardown or device
+output. Package header reads retain their separate supplied stream interface.
+
+A bounded truncated-file cohort establishes a separate completeness boundary.
+The OS successfully returns fewer bytes, but the original completion chain
+does not reconcile that count: it transforms the requested span and accounts
+for that count, leaving a clear tail that differs from the authenticated WEM.
+This is distinct from an OS error or logical EOF. Native acceptance, success
+status or cursor alone cannot authenticate a complete read. Retain actual OS
+counts and independent full encoded/clear-byte hashes when admitting output;
+no PCM is admitted for the short-file cohort, and it does not establish a game
+defect or general malformed-input safety.
+
+The original source-attachment routine now stores the same wrapper in an
+active playback context and that context on its primary owner. Original
+resident readiness and virtual preparation set the wrapper's prepared flag.
+The whole active-context sample consumer uses the native initialized frame
+quantum and returns exactly the direct prepared-wrapper float bytes through
+the final frame. This closes a conditional downstream PCM transfer: voice
+admission is disabled for the offline cohort, prior transition state is empty,
+and no pending source or optional sample processor is present. Original failure,
+transition, cleanup and processing branches retain separate boundaries. The
+context sample buffer alone still does not establish mixer routing or device output.
+
+The stronger owner/frame/output lane is reviewed in
+[`wwise_voice_pipeline_native.json`](../../scripts/game_data/contracts/wwise_voice_pipeline_native.json)
+and authenticated by the codec gate's optional voice-pipeline check on the same
+opened image. It reuses the existing source owner and codec groups. The earlier
+helper called an embedded parameter-refresh interface "owner readiness"; that
+method refreshes playback parameters and its caller ignores the return value.
+Resident-reference readiness, codec preparation, policy admission and frame
+readiness are separate checks. Original parameter refresh now executes with
+authored parameter collection excluded by a supplied stored flag. This removes
+the owner callback from the admitted cohort without proving the game's authored
+owner setup.
+
+The complete cohort also executes the original primary and embedded owner
+constructors. They retain the same physical bank source and supplied node,
+initialize gain/rate/control defaults, and acquire the supplied object's and
+node's references. The primary constructor remains owned by the source transport
+contract; the voice-pipeline validator checks its direct call into the embedded
+constructor without copying that catalog. Opaque object/play-parameter storage
+and the constructor input that excludes authored collection remain supplied.
+Constructor execution removes hand-written owner defaults from the output
+witness; it does not identify a live posted object's generation or prove
+authored parameter/effect values.
+
+Original attachment with admission enabled reads inherited or cached policy,
+evaluates effective gain when required, and applies a strict frame-counter
+comparison against the native look-ahead limit. The boundary immediately below
+the limit admits; equality keeps a prepared wrapper attached but returns not
+ready. Under supplied silent parameter state, one policy rejects and cleans up
+the wrapper, while another returns success with an attached **unprepared**
+wrapper. Attachment success therefore does not imply media preparation or PCM.
+Policy-node inputs and the initial frame counter are explicit conditions;
+authored policy, stealing/virtualization and route ownership remain separate.
+
+Original context construction/start initializes an optional frame processor,
+retains the codec's packed format, and allocates native filter history. The
+original worker consumes the context descriptor, then frame publication stores
+that exact descriptor in routing records. A codec block is not yet a device
+frame: raw blocks can have variable capacities, and the channel configuration
+and requested output capacity must be populated. Whole native frame preparation
+first executed with an empty route list: it publishes those descriptor fields
+from the retained format and native quantum and returns an admitted result.
+The stronger route cohort below also executes nonempty preparation. Worker
+scheduling and the authored bus selection remain supplied. Clearing beyond the descriptor can erase retained
+context fields; requesting a larger capacity than the native output allocation
+is not an admitted ABI. Neither invalid helper state establishes a game defect.
+
+At matching source/engine rates and zero pitch, the original initialized frame
+converter assembles those blocks into the native output quantum. Frame
+preparation corrects a nonnegative initial frame counter by the native frame
+amount before the first sample. The complete prepared cohort emits exactly the
+prior native decoded PCM, with final zero padding. A separate cohort that omits
+frame preparation emits a quantum of leading silence from the converter's
+initial-offset calculation; it is not an unavoidable playback delay. The original
+frame release must run after consumption: omitting it replays the cached output
+instead of advancing the decoder. The current cohort executes that release,
+native planar tail padding and initialized filter-bypass/history methods.
+This proves frame assembly and buffer lifetime within the isolated loop, not
+the game's concurrent lifetime or varying pitch/rate/effect paths.
+
+In the earlier output cohort, the same processed allocation reaches original master-bus/output-consumer
+methods through a supplied single-input bus topology. Original sink input and
+channel dispatch interleave the planar float channels, and original frame-end
+submission obtains a render buffer, copies the prepared float span and releases
+it. Complete emitted frames, the decoded suffix and final zero padding are
+checked independently. A separate native bus-row traversal/constant-gain kernel
+sums two actual decoded frames with supplied routing records and gains. The
+render interface is identified by the binary service IID and the local Windows
+SDK's `IAudioRenderClient` declaration, not by function proximity. Its
+`GetBuffer`/`ReleaseBuffer` interfaces, audio-client padding and context status
+are supplied finite surfaces; no endpoint is initialized or heard.
+
+The sink's no-input branch releases a buffer with the SDK silence flag. Generic
+error or null render buffer sets the sink's invalid flag without releasing or
+admitting PCM. `AUDCLNT_E_BUFFER_TOO_LARGE` instead consults a context interface
+before deciding that flag; it is not the device-invalidated HRESULT. These
+branches and the real submission copy are native computations under supplied
+COM results. Authored bus topology, untested route admission branches, endpoint/format
+negotiation, original real COM execution and hardware audibility remain open.
+The normal submission method does not compare the release HRESULT locally, and
+its non-resampling frame-end caller clears input-present without inspecting
+that result. A supplied release failure still completes the byte copy and leaves
+the sink-invalid flag clear. Positive copy/submission receipts therefore require
+the supplied successful release result; buffer contents or input-flag clearing
+alone do not prove that the OS accepted a frame. This is a conditional error
+handling observation, not an observed endpoint failure or a game defect.
+The current generated voice-output receipt composes this stream-to-render-buffer
+cohort with the earlier separately authenticated Event/Action/Sound identity;
+it does not claim a continuously observed live Event generation.
+
+The next join is reviewed in
+[`wwise_voice_routing_native.json`](../../scripts/game_data/contracts/wwise_voice_routing_native.json).
+The codec gate's optional routing check authenticates it on the same opened
+image and reuses the existing frame-preparation, descriptor-publication and
+master-bus groups. Original attachment allocates a route and its first row,
+retains the source context and target bus, and links that same route into both
+lists using distinct link fields. The output-node selection and channel-cache
+admission execute natively. With a missing stereo cache and no cache-construction
+inputs, attachment fails and removes both links; it does not leave an admitted
+route behind. The successful cohort supplies a typed bus/output identity and
+matching cached channel state; the game's authored selection remains open.
+
+Original context gain refresh must precede route preparation. Context
+construction leaves that gain at zero; the refresh reads the original owner's
+level and effective gain and derives the linear value. Omitting it preserves
+decoded source PCM but produces a silent native bus buffer. Nonempty frame
+preparation now constructs route matrices and filter state and updates gains;
+original descriptor publication then stores the exact source descriptor. The native bus collector excludes routes
+whose two low status bits are both set or whose next status bit is set. Its row
+admission additionally requires a published sample/end descriptor and matrix
+storage. Each excluded condition produces no bus input in the bounded probes.
+
+The original collector, output-descriptor constructor and filter/matrix/gain
+mixer now create the bus PCM allocation directly from those native route rows.
+The helper no longer copies a source descriptor into a supplied bus row. The
+bus allocation differs from the source allocation, and the original master bus
+and sink consume it. Every logical sample value agrees with the prior native
+decoder output; byte equality is recorded separately because native addition
+can turn negative zero into positive zero. Final frame padding remains zero.
+Matching stereo layout, unit gain/rate, empty optional effects/auxiliary chains,
+an available transient arena block and finite COM surfaces are explicit
+conditions; no sample arithmetic is modeled.
+
+Original bus frame reset clears retained input buffer pointers and valid counts,
+resets descriptor status and removes ended input records. Omitting it makes the
+next native accumulation retain the previous frame; the isolated negative probe
+checks that sum before submitting the second frame. This closes the conditional
+source-route-to-bus transfer and frame reuse protocol, while authored topology,
+full engine scheduling/arena startup, concurrency and teardown remain open.
+
+Sink negotiation is reviewed in
+[`wwise_sink_negotiation_native.json`](../../scripts/game_data/contracts/wwise_sink_negotiation_native.json)
+and checked by the codec gate on the same image. It reuses the existing sink
+constructor/service body and render IID rather than copying their catalogs.
+Original service setup activates the supplied audio-client interface, obtains
+and normalizes its mix format, and checks a requested channel layout when the
+channel count differs. An accepted request retains that layout; a closest-format
+response or rejection falls back to normalized endpoint/closest channels.
+The conventional channel table also handles anonymous counts explicitly.
+Non-extensible float formats receive native extensible fields and the
+IEEE-float subtype. These paths execute with finite COM responses and real
+COM-task format allocations that the original code frees.
+
+When available, the session-control interface receives automatic-ducking
+opt-out. The optional newer client interface receives offload capability and
+client-property calls; the stored sink type selects the SDK game-effects,
+game-media or game-chat category. These are conditional interface calls, not a
+mapping from a game voice family to an actual endpoint category. Negotiation
+uses shared mode and an event callback. If endpoint and engine rates differ,
+it first requests Windows automatic conversion at the engine rate with the
+default-quality flag. A failed initialization restores the endpoint format and
+retries without those conversion flags, then initializes a native resampler.
+The matched/auto-conversion path has no native sink resampler buffer. The
+fallback initializes one, but its continuous sample output remains unproved.
+
+Original setup attaches the event, checks device capacity, obtains the render
+service, gets a buffer and releases initial silence before allocating the sink's
+native output buffer. Event, period, format, initialization, service, buffer and
+release failure branches have bounded witnesses. Setup checks the silence
+release result, unlike the steady-state frame-end path described above. The
+available-frame query separately checks sink validity and current padding;
+success can return zero quanta when the endpoint is full. Failed padding or
+invalid state returns failure without publishing a count.
+
+The successful matched-format setup also composes with the complete source,
+native route/mix and render-buffer cohort. The sink output allocation now comes
+from original negotiation, and original capacity queries run before each frame.
+The helper assigns neither sink capacity nor valid-frame count. Complete sample
+values and the previously described signed-zero behavior are preserved. The
+endpoint, plugin context, driver padding and render-client responses remain
+finite supplied interfaces; no real endpoint is activated or started. Actual
+device selection, real format acceptance, scheduler/event behavior, concurrency,
+resampled sink PCM and hardware audibility remain distinct open joins.
+
+The authored-parameter frontier must keep the bank loader ABI explicit. The
+existing source-queue contract now witnesses its fifth Win64 argument: a
+stack byte forwarded into the node-base remainder loader. A four-argument
+host invocation leaves that byte undefined and is rejected as evidence. The
+source-reader/setter receipts remain source-only; a positive loader result
+does not establish that the stored parameter remainder was collected.
+The separate
+[`wwise_authored_parameters_native.json`](../../scripts/game_data/contracts/wwise_authored_parameters_native.json)
+contract and its validator now authenticate inherited Sound construction,
+bank remainder loading, fixed/ranged property storage, the Sound/base
+collectors, the native property-to-output slot map and the selected filter and
+matrix/gain consumers. Existing source-queue, voice and routing bodies and the
+Sound address point remain owned by their original contracts. The optional
+codec gate checks these dependencies on the same opened selected image and
+withholds claims when any child or native input fails.
+
+Fixed properties retain key bytes followed by aligned parallel float values.
+The collector requires an in-range key and its output-mask bit before adding
+the float into the mapped native slot. Volume feeds the context level path;
+makeup gain feeds a distinct secondary source level before route-gain
+preparation. Authored low/high-pass controls reach source filter state through
+the original owner refresh and frame preparation. These are consumer reads,
+not meanings inferred from a property-name match.
+
+Physical Sound records now run through the original constructor and whole
+loader with the explicit remainder argument enabled, then through original
+own-property collection, source preparation/decoding, frame filters, route
+creation/mix/reset and the negotiated finite sink. The decoded unfiltered
+samples still match the prior native source cohort; authored gain and active
+low-pass filtering change the submitted PCM. Every submitted sample value,
+including padded frames and terminal gain transitions, agrees with an
+independent reconstruction of the selected AVX/FMA matrix/gain arithmetic
+from captured native filtered PCM and native route gains. Signed-zero bit
+differences are recorded separately. The filter samples are original native
+kernel output; an independent filter implementation is not claimed.
+
+Padding precedes native filter processing. A filter can therefore emit its
+retained history into a final padded block, and the original ending path can
+fade the route target to zero across that block. Preserve the complete submitted
+block separately from logical source-frame PCM. Neither a zero input tail nor
+decoder end establishes a silent rendered tail.
+
+Preserve constructor-established filter flags when enabling authored
+collection. A helper write that forces the earlier bypass state discards
+initialization/transition flags and is invalid for the authored filter cohort;
+exploratory output produced under that write is rejected. The admitted helper
+supplies only bounded allocator/free surfaces, including null reallocation,
+and opaque object/play state, registry/topology/cache/arena availability,
+ordered worker dispatch and finite endpoint/COM responses. It performs no
+sample arithmetic and writes neither node policy nor filter-bypass flags.
+
+The own-Sound cohort's registry deliberately has no parent or override bus. Successful
+whole Sound loading can retain its own properties while leaving its direct
+parent unlinked. The bank framing reader finds ActorMixer ancestry and an
+explicit output-bus override in the root ancestor, so an empty-parent result
+does not establish effective game gain or complete routing. Native parent/bus
+construction, exact registry admission and recursive collection now have a
+separate inherited cohort below. Effective output topology and runtime object/RTPC/state/MIDI/random-range
+and effects selection, general filter widths/transitions, resampling,
+concurrent lifetime and real endpoint acceptance remain open. Earlier unit-gain
+receipts and the historical constructor/skip-remainder frontier retain their
+own conditions; they do not inherit these authored values.
+
+The separate inherited-parameter cohort now authenticates and executes original
+native loaders. Original bus factories and whole bank
+loaders can populate the selected Initial-bank bus ancestry through original
+exact-key insertion. Sound loading initially leaves its absent parent unlinked;
+subsequent child-first ActorMixer loading resolves its stored child list and
+attaches the same Sound and ancestor instances. Preconstructing the whole
+hierarchy can instead trigger duplicate-link failures. Registry membership and
+load order are therefore part of the consumer preconditions, not merely a list
+of objects whose identifiers appear in the bank.
+
+Recursive property collection reaches the parameter manager through the
+ancestor's stored RTPC bindings. An absent manager faults in this isolated
+configuration. Original manager initialization removes that missing-storage
+condition, but an empty manager is still different from bank-authored defaults
+and produces a substantially different provisional level. The original STMG
+loader's read sequence independently frames the physical section end to end:
+global scalars, counted state records, counted parameter-driven switch records,
+fixed-width parameter/default/transition records and the trailing record count.
+Original default and transition setters consume those reconstructed parameter
+records before the hierarchy loads; recursive collection then returns, retaining
+an inherited low-pass control even for a Sound whose own record has only makeup
+gain.
+
+The reviewed
+[`wwise_inheritance_native.json`](../../scripts/game_data/contracts/wwise_inheritance_native.json)
+and [`wwise_inheritance_native.py`](../../scripts/game_data/wwise_inheritance_native.py)
+now gate complete hierarchy, registry/link, settings, manager/default/transition,
+curve and component-routing bodies. Constructor/base-reader ownership stays
+with the existing Sound and source-queue contracts. The codec gate validates
+all dependencies on the same explicitly selected native image and withholds
+the child claims on missing or mismatched inputs. The reusable raw settings
+reader and authenticated available-bank corpus are documented in
+[`audio_bank_format.md`](audio_bank_format.md).
+
+Original inherited collection now composes with stream preparation, decoding,
+owner readiness/admission, source filters, route/matrix mixing and negotiated
+finite render-buffer submission for the selected physical UI sources. The
+unfiltered decoder floats remain unchanged. Every complete submitted sample
+value agrees with the independent gain reconstruction from original filtered
+input and native route gains; padded tails and signed-zero differences remain
+separate. This closes conditional inherited PCM, without promoting the earlier
+frontier-only receipt or changing the own-Sound receipt's empty-parent condition.
+
+An additional dependency appears when the ancestor enables listener-relative
+routing. The embedded owner supplies its retained object to a component getter;
+a nonnull component selects its own listener state when its override flag is
+set, otherwise the original lazy default component supplies that state. A null
+object component also selects the original default. The offline cohort supplies
+that null branch, executes original lazy default construction and retains its
+empty listener vectors. Default routing storage follows the original inline
+construction and leaf initialization. The earlier opaque object placeholder
+contained a scalar where this path reads a pointer; its access fault is a helper
+input error, not evidence of game behavior. A fabricated component or forced
+listener flag would not establish the game's actual association.
+
+The loaded authored bus ancestry remains a parameter/control graph. The mixer
+still uses a supplied single bus, identity channel matrix, ordered worker
+dispatch and finite endpoint interfaces. Special parameter bindings and
+State/Switch selection are excluded. Those offline conditions do not establish
+current object-specific parameters, game-created emitter/listener association,
+actual bus/effect topology or real device acceptance. The phase captures below
+partially address live selection. Existing saved source-entry
+profiles lack component/listener selection, later frame/mixer reads and output
+completion; replaying them cannot recover those phases. The concrete next
+capture and representative actions live in
+[`runtime_capture_requirements.md`](../runtime_capture_requirements.md#audio-event-owner-listener-and-output-selection).
+The prepared `audio-playback` preset now uses the reviewed
+[`wwise_playback_capture_native.json`](../../scripts/game_data/contracts/wwise_playback_capture_native.json)
+declarations. It adds paired component/listener returns and bounded owner,
+parameter, route and source/sink buffer phases to the existing source-entry
+surface. Transparent consumers preserve their incoming integer/vector arguments;
+paired consumers use only reviewed pointer/integer prototypes, including the
+parameter lookup's fifth stack argument. Original calls execute once and
+exception unwinds remain separate from normal returns. Periodic pointer-bucket
+sampling and byte prefixes are explicit partial coverage; same-call results do
+not establish a complete cross-thread generation or an uncaptured device result.
+The preset opens a window automatically, closes it through normal stop, and
+uses existing loss accounting, stable drain and retained cleanup on nonquiescent
+callbacks. Saved phase captures now supply completed default and
+held-component getter calls, a nonempty listener selection, finite nonzero
+source PCM prefixes and normal sink-submit returns. A completed sink call does
+not expose each internal COM result or prove device acceptance. Audio queue
+loss and orphan phases kept the first session incomplete. The corrected
+session has a clean drain, closed native pairs and readable declared fields.
+Its periodic coverage remains conditional rather than a whole playback witness.
+
+Selector playback serials also match managed Event return IDs under the
+reviewed queue transport in
+[`wwise_source_queue_native.json`](../../scripts/game_data/contracts/wwise_source_queue_native.json).
+The corrected Action fields now match selector serial/allocation reads under
+completed same-thread Action nesting. Selector playback-blob identity and
+source input also match constructor inputs; the independently reviewed factory
+retains the parameter blob and forwards it into the constructor. The borrowed
+argument instructions and their register roles are authenticated by the playback
+declaration, without duplicating the complete source-owner body catalog.
+This narrows live Event/source ownership without observing the intervening
+queue allocation generation. One Event can retain several selected source words;
+keep those choices instead of replacing them with the last source. Matching
+sound-sector package key low words are supplied-corpus candidates with checked
+current headers, not proof of live package/language precedence or backing file
+selection. The generated phase review and package comparison are owned by
+Audio's `playback_capture` and `playback_package_candidates` domains.
+
+Later source-output pairs retain constructed primary addresses and their checked
+embedded-owner adjustment. This is conditional continuity: constructor entries
+are retained, but unobserved destruction, other constructor families and reuse
+remain lifetime gaps. Native single-descriptor selection also retains complete
+voice paths beyond the shorter managed text field. Truncated managed path text
+does not invalidate an intact Event/playing-ID pair; its text identity stays
+incomplete. Complete native paths match full external-sector keys through the
+selected-build hashing gate, while ordinary source words remain sound-sector
+low-word candidates. Sampled route records link PCM contexts with bus inputs,
+without proving a simultaneous complete mixer graph.
+
+A finite nonzero live voice PCM prefix now exactly matches float bytes produced
+by original native codec execution from the matching physical package WEM.
+This establishes sampled content agreement under the named ownership and package
+conditions. It does not establish the whole live buffer, allocation generation
+or chosen backing occurrence. The isolated run supplies allocation and a setup
+lock and covers a bounded decoded extent; it is not a live device run. Audio's
+`playback_pcm_witness` domain performs byte-exact channel-plane comparisons and
+rejects silence/nonfinite prefixes as identity witnesses. Device acceptance
+still requires direct output-buffer and COM result observation: the original
+sink ignores the release result, and a tolerated GetBuffer error can leave its
+invalid flag unchanged.
+
+The prepared `audio-device` preset extends these playback phases with actual
+render-client calls. Its reviewed
+[`wwise_device_capture_native.json`](../../scripts/game_data/contracts/wwise_device_capture_native.json)
+borrows the complete sink caller, interface identity and virtual slots from
+the voice-pipeline owner. Preparation checks the virtual-call instructions
+against the explicitly selected native image. Caller return sites identify
+eligible observations; they are not static hook targets. The runtime discovers
+the retained client's implementation addresses, installs bounded SDK-typed
+hooks on the worker, and preserves each original call and result.
+GetBuffer captures HRESULT and reads the returned pointer only on success.
+ReleaseBuffer carries that same-client, same-sink GetBuffer identity, samples
+the copied bytes before forwarding and retains the actual release result.
+Late children remain in their sampled parent's window during normal stop.
+Bootstrap skips and target-capacity limits remain visible. Disabled trampolines
+and bounded target-module references remain resident until process exit.
+The device capture now supplies completed same-sink, same-client GetBuffer and
+ReleaseBuffer calls. Successful GetBuffer results return readable nonnull
+buffers, and the bytes sampled there before release exactly equal the sampled
+sink-input bytes. The observed releases succeed, while the sink retains its
+non-invalid state. This establishes the sampled interleaved PCM copy and Windows
+API submission result, beyond a normal native sink return. These invocations
+exercise the matched stereo format; other formats and failures remain uncovered.
+Audio's `device_capture` domain checks selected caller sites, ready implementation
+targets, parent/thread/window identity, the successful buffer link, frame bounds,
+declared reads, prefix equality and HRESULT bits in the existing streaming review.
+It preserves API errors without promoting them to accepted copies, and rejects
+missing or changed links. Prefixes and successful release results cannot prove
+whole buffers, endpoint processing, complete asynchronous lifetime or audibility.
+Individual Event contribution to a mixed device frame remains unresolved; an
+earlier source prefix or matching context address does not supply a frame join.
+
+Further caller review corrects the mixer-array boundary. `busRouteMix` receives
+task state in the second integer register and its selected row-pointer array in
+the fourth. The array contains mixer rows, not top-level route objects. Older
+playback/device recipes sampled task-state bytes under an incorrect route-array
+label. Their raw bytes remain historical, but the current review excludes that
+array interpretation. Independently read route source/bus fields and the
+same-invocation sink/device copy witnesses remain valid. The corrected playback
+contract authenticates argument retention and the subsequent indexed row read
+inside the existing complete routing body.
+
+The primary owner constructor also copies the queued playback serial and retained
+external allocation from its parameter blob into owner storage, alongside the
+selected source pointer. These are direct native stores, not lifetime inferred
+from matching constructor addresses. The prepared `audio-mixer` preset, owned by
+[`wwise_mixer_capture_native.json`](../../scripts/game_data/contracts/wwise_mixer_capture_native.json),
+reads that current identity alongside source PCM and retains the actual mixer-row
+prefix plus its first descriptor, format, gain and matrix fields. Read addresses
+must agree with the recorded owner/row/descriptor to reject changed pointer
+chains. A stored serial remains a managed Event candidate without observed queue
+generation and atomic ownership; the preset cannot retrospectively add these
+fields to saved captures.
+
+The preset pairs master output, output-consumer and sink-input conversion calls.
+The latter consumers take a raw stack gain pair in addition to their register
+arguments; their reviewed native loads establish that calling surface. Original
+calls execute once. Only completed same-thread master/consumer/sink nesting with
+matching node, sink and descriptor contributes a conversion witness. Output
+children keep their parent's recorder and window through normal stop. Native
+worker-task callers confirm that source publication, bus output and bus reset are
+separate work stages; a task-state pointer alone does not identify a whole frame
+generation. A later device submission still needs a proved buffer/frame join.
+The mixer capture now supplies actual row arrays/first descriptors and completed
+master/consumer/sink conversion chains with successful device submissions. The
+source sample descriptor agrees with the authenticated context PCM field. Some
+first-row descriptors share recorded source sample storage, format and frame
+extent; some converted prefixes also share exact nonzero content and storage
+with submitted prefixes. These remain candidates without observed reset/write
+generations, rather than same-frame Event contribution.
+
+The initial owner-ID declaration read a neighboring parameter word. Its native
+load/store were real, but the load did not use the selector's declared serial
+field. The corrected mixer contract binds each copied serial/allocation load
+back to the owned selector-blob field as well as checking the owner store.
+The streaming review excludes the old ID label and preserves other current
+owner/source reads with an explicit partial identity and unavailable serial.
+Zero values from that old field are not zero playing IDs. A short repeat with
+the corrected prepared recipe is required to observe the actual serial; no
+change to the generic recorder or reinterpretation of saved bytes can supply it.
+
+The completed conversions also retain a direct numerical witness: captured
+first-planar-channel input multiplied by the captured constant gain, rounded to
+float32, exactly reproduces the saved interleaved first-channel prefix. Audio's
+`sink_pcm_witness` domain checks this limited equation, rejects unsupported
+ramps/layouts/nonfinite inputs, and keeps silence distinct from content identity.
+The second input channel and whole buffers are not captured by this comparison,
+and equivalent sample values do not identify a particular native branch. Another
+finite nonzero live voice prefix exactly matches original native decoding from
+its matching physical WEM. That isolated run covers a bounded decoded extent
+under the retained allocation/setup-lock conditions, not whole-stream parity.
+The expanded receipt tree also exposes drift in the supplied package census's
+VFS audit/cache inputs. Preserve their historical digests and withhold current
+whole-corpus/overlay completeness. Fresh positive typed-header and selected-entry
+comparisons retain their limited scopes, and selected native gates still pass;
+those local checks do not refresh the complete census.
+
+The initial Action capture mislabeled two reads: the actual serial and retained
+allocation follow different checked operands in the source-queue owner. The
+corrected playback declaration uses those operands and retains the old storage
+only under anonymous names. Do not reinterpret historical fields by label or
+join their values as playing IDs. Pre-binding context object reads likewise
+require an existing embedded owner. Non-evicting receiver buckets, a per-hook
+sampling budget and narrowly retained getter children now replace the capture's
+collision-prone, broadly nested frame sampling. The corrected session confirms
+loss-free transport for its sampled workload; this is not a guarantee for every
+future workload.
+Do not use recursive refresh, a zero-default manager, stored bus ancestry or
+the supplied null-component branch as effective game loudness.
+
+Vorbis has two distinct comparison gaps. Emulator output differs from isolated
+host output; normal initialized-data and supported CPU-subset probes do not
+close that gap. Original host output also differs from the external decoder
+reference, but by a much smaller amount. Whole native preparation returns
+exactly the same float bytes as separate direct host codec initialization for
+the shared file, narrowing the preparation-state question. The saved WAVs are
+original host codec output, with reference differences explicitly recorded;
+do not label equality successful or infer a game defect. Native Vorbis parity,
+live registry/provider buffer identity and lifetime, inherited authored routing,
+remaining processing branches, real device execution and audibility still need distinct
+proofs. The conditional owner/frame/mixer/submission cohort above is not blocked
+on decoder-reference equality and does not close those independent gaps.
 
 An opt-in `--include-source-bridge` recipe uses that companion to capture the
 selector, clone, wide-text setter, owner factory and constructor alongside the
@@ -1022,8 +1662,36 @@ dictionary selection, argument transport or live action execution.
    offline package-to-PCM comparisons are checked. Authored registration/list
    creation, conditional codec construction and selected format metadata now
    have original-byte proofs. Selected Opus sample computation and its media
-   wrapper consumer now execute offline. Prioritize native Vorbis sample parity
-   and the PCM transfer into voice/mixer processing, then close live allocation generations
+   wrapper consumer now execute offline and agree with independent host
+   execution. Selected numeric Event sources also execute exact-key resident
+   lookup, whole preparation and sample-wrapper output on the host CPU under
+   explicit table/input/provider conditions, with original readable-row
+   admission. Original node/source preparation also requests numeric file
+   bytes, allocates/reads/publishes the resident buffer and preserves PCM through
+   immediate or deferred preparation. Original package header/load/list routines,
+   numeric lookup and aligned media transformation now preserve that PCM under
+   supplied load-call and stream-interface conditions. Prioritize the game's
+   load/reorder sequence and actual device/worker scheduling; original standard
+   stream reads, OS completion/decryption, resident publication and memory
+   provider now preserve PCM under supplied dispatch and owner conditions.
+   Original parameter refresh, policy/frame admission, context construction,
+   unity-rate frame conversion/release, filter bypass, master-bus output and sink
+   submission now compose into one conditional stream-to-render-buffer cohort.
+   Whole frame preparation now publishes descriptor fields and applies the
+   initial counter correction under an empty route list, preserving exact PCM
+   without the omitted-preparation cohort's leading silence.
+   Original route attachment, nonempty preparation, context gain refresh,
+   descriptor publication, bus admission/matrix mixing and frame reset now
+   compose into that cohort without a helper-supplied source-to-bus descriptor.
+   Sample values agree completely; signed-zero bit changes are recorded
+   separately. Prioritize authored owner/effect parameters and bus selection,
+   remaining route branches, varying pitch/rate/transition paths and
+   actual endpoint selection/real COM execution. Original conditional service
+   negotiation, channel/rate fallback, event/capacity checks, silence release
+   and output allocation now compose with the matched-format native route
+   cohort; full capacity can return success with zero requested quanta. Keep descriptor readiness, attachment success,
+   frame lifetime and audible hardware output separate. Keep the separate
+   Vorbis emulator/host and host/reference comparisons open. Close live allocation generations
    and provider buffers without bypassing voice/mixer admission. Reuse the
    audited source-bridge route when tracing the selected owner. The separate live join from the
    managed external path through its queued allocation into that native source remains open;

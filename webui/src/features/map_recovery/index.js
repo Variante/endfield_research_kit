@@ -195,7 +195,7 @@
   let pointFilterTimer = 0;
   let pointFilterToken = 0;
 
-  const root = () => document.querySelector("#map-recovery-app");
+  const root = () => document.querySelector("#map-app");
   const mapEl = () => root()?.querySelector(".mr-map");
   const svgEl = () => root()?.querySelector(".mr-canvas");
   const esc = window.WebUI.escapeHtml;
@@ -2798,7 +2798,7 @@
     host.querySelector(".mr-display-menu")?.addEventListener("toggle", (event) => {
       state.displayMenuOpen = event.currentTarget.open;
     });
-    host.querySelector("#map-recovery-select")?.addEventListener("change", (event) => {
+    host.querySelector("#map-select")?.addEventListener("change", (event) => {
       void switchMap(event.target.value);
     });
     host.querySelectorAll("[data-map-id]").forEach((button) => button.addEventListener("click", () => {
@@ -3377,7 +3377,7 @@
     const updatePayloadPhase = () => {
       if (request !== state.mapLoadRequest) return;
       const phase = phases.includes("downloading") ? "downloading" : phases.includes("parsing") ? "parsing" : "preparing";
-      window.WebUI.updateLoaderPhase("map-recovery", phase);
+      window.WebUI.updateLoaderPhase("map", phase);
     };
     updatePayloadPhase();
     await Promise.all(members.map(async (member, index) => {
@@ -3390,7 +3390,7 @@
       updatePayloadPhase();
     }));
     if (request !== state.mapLoadRequest) return false;
-    window.WebUI.updateLoaderPhase("map-recovery", "preparing");
+    window.WebUI.updateLoaderPhase("map", "preparing");
     await window.WebUI.nextPaint();
     if (request !== state.mapLoadRequest) return false;
     await window.WebUI?.mapEncounters?.load(members.map((member) => member.id));
@@ -3455,7 +3455,7 @@
     state.previewId = "";
     state.filePath = "";
     state.inspectorKey = "";
-    window.WebUI.updateLoaderPhase("map-recovery", "rendering");
+    window.WebUI.updateLoaderPhase("map", "rendering");
     await window.WebUI.nextPaint();
     if (request !== state.mapLoadRequest) return false;
     render();
@@ -3464,8 +3464,8 @@
   }
 
   async function switchMap(id, variantId = "") {
-    window.WebUI.setViewBusy("map-recovery", true);
-    window.WebUI.showLoader("map-recovery", t("loading"));
+    window.WebUI.setViewBusy("map", true);
+    window.WebUI.showLoader("map", t("loading"));
     const pending = loadMap(id, { variantId });
     const request = state.mapLoadRequest;
     try {
@@ -3475,8 +3475,8 @@
       return false;
     } finally {
       if (request === state.mapLoadRequest) {
-        window.WebUI.setViewBusy("map-recovery", false);
-        window.WebUI.hideLoader("map-recovery");
+        window.WebUI.setViewBusy("map", false);
+        window.WebUI.hideLoader("map");
       }
     }
   }
@@ -3501,20 +3501,20 @@
     state.loadController?.abort();
     state.loadController = new AbortController();
     host.innerHTML = `<div class="mr-load-state" role="status" aria-live="polite"><span>${esc(t("loading"))}</span></div>`;
-    window.WebUI.clearShellStatus("map-recovery");
-    window.WebUI.setViewBusy("map-recovery", true);
-    window.WebUI.showLoader("map-recovery", t("loading"));
+    window.WebUI.clearShellStatus("map");
+    window.WebUI.setViewBusy("map", true);
+    window.WebUI.showLoader("map", t("loading"));
     try {
       state.index = force || !state.index
         ? await fetchJson("data/map_recovery/index.json", {
           cache: force ? "reload" : "no-store",
           signal: state.loadController.signal,
-          onProgress: window.WebUI.loaderProgress("map-recovery", () => request === state.loadRequest),
+          onProgress: window.WebUI.loaderProgress("map", () => request === state.loadRequest),
         })
         : state.index;
       await Promise.all([window.WebUI.updateBadges.load("map"), window.WebUI.updateBadges.loadFiles()]);
       if (request !== state.loadRequest) return null;
-      window.WebUI.updateLoaderPhase("map-recovery", "preparing");
+      window.WebUI.updateLoaderPhase("map", "preparing");
       await window.WebUI.nextPaint();
       if (request !== state.loadRequest) return null;
       // Payloads are fetched in parallel by loadMap. Keep the shared loader
@@ -3533,8 +3533,8 @@
     } finally {
       if (request === state.loadRequest) {
         state.loadController = null;
-        window.WebUI.setViewBusy("map-recovery", false);
-        window.WebUI.hideLoader("map-recovery");
+        window.WebUI.setViewBusy("map", false);
+        window.WebUI.hideLoader("map");
       }
     }
   }

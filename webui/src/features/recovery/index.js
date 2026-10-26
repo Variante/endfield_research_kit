@@ -671,12 +671,6 @@
 
   function init() {
     STATE.locale = normalizeLocale(window.WEBUI_UI_LOCALE || document.documentElement.lang);
-    document.querySelectorAll(".view-tab").forEach((button) => {
-      button.addEventListener("click", () => {
-        if (button.dataset.view === "recovery") setTimeout(maybeLoad, 0);
-      });
-    });
-    window.addEventListener("hashchange", () => setTimeout(maybeLoad, 0));
     window.addEventListener("webui:view-changed", (event) => {
       if (event.detail?.view === "recovery") maybeLoad();
       else hideTip();

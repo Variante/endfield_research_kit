@@ -3732,7 +3732,7 @@ class SourceGraphBuilder:
                 preview = asset_node_for_rel(entry["p"])
                 self.add_edge(node, preview, "previewed_by", source="webui/assets")
 
-        relations = payload.get("relations") or {}
+        relations = read_json(WEBUI_DATA / "assets" / "relations.json", {}).get("relations") or {}
         if isinstance(relations, dict):
             for rel, relation in sorted(relations.items()):
                 if not isinstance(relation, dict):

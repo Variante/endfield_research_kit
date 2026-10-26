@@ -44,9 +44,9 @@
 //     conversation before option overrides. A line row applies to the line at
 //     its `index` while the `id` matches, else to the first line with that
 //     `id`. Without an Audio build the page shows no voice.
-//   * data/mission_pipeline/index.json supplies
-//     storyCoverage.storyTriggerManifest; its absence is a degraded trigger
-//     state, not an error.
+//   * data/mission_pipeline/story_triggers.json (the Mission Pipeline's merged
+//     Story trigger lookup, fetched in debug mode) is optional; its absence is
+//     a degraded trigger state, not an error.
 
 const ROW_GROUP_H = 28;
 const ROW_ITEM_H = 50;
@@ -1587,29 +1587,15 @@ function loadStoryTriggerManifest() {
   }
   if (STATE.storyTriggerPromise) return STATE.storyTriggerPromise;
   STATE.storyTriggerLoadState = "loading";
-  STATE.storyTriggerPromise = fetchJson("data/mission_pipeline/index.json", { fresh: true })
+  // The Mission Pipeline builder publishes the merged Story lookup (coverage
+  // manifest + offline overlay + env_* manifest) beside its full index.
+  STATE.storyTriggerPromise = fetchJson("data/mission_pipeline/story_triggers.json", { fresh: true })
     .then((res) => {
-      if (!res.ok) throw new Error(`mission_pipeline/index.json HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`mission_pipeline/story_triggers.json HTTP ${res.status}`);
       return res.json();
     })
     .then((payload) => {
-      const coverage = payload && payload.storyCoverage;
-      const manifest = coverage && coverage.storyTriggerManifest;
-      const base = manifest && typeof manifest === "object" ? manifest : {};
-      const offlineOverlay = coverage
-        && coverage.offlineRecoveryEvidence
-        && coverage.offlineRecoveryEvidence.storyTriggerManifestOverlay;
-      // Ambient env_* files are tracked in their own manifest so they stay out
-      // of the mission-pipeline coverage denominator. ReadingPopup offline
-      // boundaries use a similarly explicit denominator-neutral overlay.
-      // Merge both for Story-page lookup; neither overlay contributes a route.
-      const envTalk = payload && payload.envTalkAttachment && payload.envTalkAttachment.envTalkTriggerManifest;
-      STATE.storyTriggerManifest = Object.assign(
-        {},
-        base,
-        offlineOverlay && typeof offlineOverlay === "object" ? offlineOverlay : {},
-        envTalk && typeof envTalk === "object" ? envTalk : {},
-      );
+      STATE.storyTriggerManifest = payload && typeof payload === "object" ? payload : {};
       STATE.storyTriggerLoadState = "loaded";
       STATE.storyTriggerPromise = null;
       return STATE.storyTriggerManifest;
@@ -8315,7 +8301,7 @@ function renderMissionMaps(mission, hasMeta) {
       url.searchParams.delete("story");
       url.searchParams.set("map", map.id);
       url.searchParams.set("mission", mission);
-      url.hash = "map-recovery";
+      url.hash = "map";
       const link = document.createElement("a");
       link.className = "mission-map-link";
       link.href = url.pathname + url.search + url.hash;

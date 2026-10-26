@@ -11,11 +11,11 @@
   function errorText(view) {
     const english = {
       audio: "Audio-system data could not be loaded. Check the inline error and try opening the view again.",
-      "map-recovery": "Map data could not be loaded. Check the inline error and try opening the view again.",
+      "map": "Map data could not be loaded. Check the inline error and try opening the view again.",
     };
     const chinese = {
       audio: "\u65e0\u6cd5\u52a0\u8f7d\u97f3\u9891\u7cfb\u7edf\u6570\u636e\u3002\u8bf7\u67e5\u770b\u9875\u9762\u5185\u9519\u8bef\u5e76\u91cd\u65b0\u6253\u5f00\u6b64\u89c6\u56fe\u3002",
-      "map-recovery": "\u65e0\u6cd5\u52a0\u8f7d\u5730\u56fe\u6570\u636e\u3002\u8bf7\u67e5\u770b\u9875\u9762\u5185\u9519\u8bef\u3002",
+      "map": "\u65e0\u6cd5\u52a0\u8f7d\u5730\u56fe\u6570\u636e\u3002\u8bf7\u67e5\u770b\u9875\u9762\u5185\u9519\u8bef\u3002",
     };
     const locale = String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").toLowerCase();
     return (locale.startsWith("zh") ? chinese : english)[view] || english[view] || "Unable to load this view.";
@@ -63,7 +63,7 @@
       audioLanguage = "";
       return initAudio(nextLanguage, { force: true });
     }
-    if (target === "map-recovery") {
+    if (target === "map") {
       mapRecoveryLoaded = false;
       return initMapRecovery();
     }
@@ -72,14 +72,14 @@
 
   function activate(view) {
     if (view === "audio") initAudio();
-    if (view === "map-recovery") initMapRecovery();
+    if (view === "map") initMapRecovery();
   }
 
   function initMapRecovery() {
-    if (mapRecoveryLoaded) return trackedLoads.get("map-recovery");
+    if (mapRecoveryLoaded) return trackedLoads.get("map");
     mapRecoveryLoaded = true;
     WebUI.mapRecovery.init();
-    return trackLoad("map-recovery", WebUI.mapRecovery.load(),
+    return trackLoad("map", WebUI.mapRecovery.load(),
       () => { mapRecoveryLoaded = false; });
   }
 

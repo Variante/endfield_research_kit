@@ -166,6 +166,9 @@ def main(argv: list[str] | None = None) -> None:
         )
         add_collision_publication(asset_payload, collision)
         print("Collision previews:", collision["status"], collision.get("counts", collision.get("diagnostic", "")))
+    # Material/texture/model relations feed only the detail panel and model
+    # viewer; the page fetches them on first use so the list loads without them.
+    write_json(ASSET_DIR / "relations.json", {"relations": asset_payload.pop("relations", {})})
     write_json(asset_index_path, asset_payload)
     # Exact table-row ownership for the indexed assets. The scan is the full
     # index, not the focused Story/Wiki projection, so the sidecar describes

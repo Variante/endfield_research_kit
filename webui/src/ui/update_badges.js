@@ -22,12 +22,26 @@
     await promise;
     pending.delete(page);
   }
+  // Feeds are revalidated on every page entry (serve.py answers 304), but an
+  // unchanged Last-Modified skips re-parsing: reference.json alone is ~90 MB.
+  const versions = new Map();
+  async function fetchFeed(key, url) {
+    const response = await fetch(url);
+    if (!response.ok) { versions.delete(key); return null; }
+    const version = response.headers.get("Last-Modified") || "";
+    if (version && versions.get(key) === version) {
+      response.body?.cancel();
+      return undefined;
+    }
+    const payload = await response.json();
+    versions.set(key, version);
+    return payload;
+  }
   async function fetchPage(page) {
     try {
-      const response = await fetch(`data/updates/${encodeURIComponent(page)}.json`, { cache: "no-store" });
-      const payload = response.ok ? await response.json() : null;
-      register(page, payload);
-    } catch (_) { register(page, null); }
+      const payload = await fetchFeed(page, `data/updates/${encodeURIComponent(page)}.json`);
+      if (payload !== undefined) register(page, payload);
+    } catch (_) { versions.delete(page); register(page, null); }
   }
   function register(page, payload) {
     const versions = page === "characters" ? [3, 4] : [1, 2, 3];
@@ -247,11 +261,11 @@
     pending.delete("files");
   }
   async function fetchFiles() {
-    files.clear();
-    available.delete("files");
     try {
-      const response = await fetch("data/updates/latest.json", { cache: "no-store" });
-      const payload = response.ok ? await response.json() : null;
+      const payload = await fetchFeed("files", "data/updates/latest.json");
+      if (payload === undefined) return;
+      files.clear();
+      available.delete("files");
       if (!payload || !Array.isArray(payload.entries) || ![1, 2, 3, 4].includes(payload.schemaVersion)) return;
       available.add("files");
       for (const entry of payload.entries) {
@@ -261,16 +275,38 @@
           if (key) files.set(key, entry);
         }
       }
-    } catch (_) { /* The comparison is optional. */ }
+    } catch (_) {
+      // The comparison is optional.
+      versions.delete("files");
+      files.clear();
+      available.delete("files");
+    }
+  }
+  // fileKey depends only on the string (and page origin). Facet rendering
+  // walks every field of every row, so memoize it; the bound keeps memory flat.
+  const fileKeyCache = new Map();
+  function cachedFileKey(value) {
+    let key = fileKeyCache.get(value);
+    if (key === undefined) {
+      key = fileKey(value);
+      if (fileKeyCache.size >= 200000) fileKeyCache.clear();
+      fileKeyCache.set(value, key);
+    }
+    return key;
   }
   function fileEntries(values) {
+    if (!files.size) return [];
     const found = new Set();
+    const seen = new Set();
     const visit = (value) => {
       if (typeof value === "string") {
-        const entry = files.get(fileKey(value));
+        const key = cachedFileKey(value);
+        const entry = key && files.get(key);
         if (entry) found.add(entry);
-      } else if (Array.isArray(value)) value.forEach(visit);
-      else if (value && typeof value === "object") Object.values(value).forEach(visit);
+      } else if (value && typeof value === "object" && !seen.has(value)) {
+        seen.add(value);
+        (Array.isArray(value) ? value : Object.values(value)).forEach(visit);
+      }
     };
     visit(values);
     return [...found];
@@ -336,5 +372,5 @@
   }
   window.WebUI.updateBadges = { load, register, status, html, changes, sourceChanges, sourceHtml,
     sourceTableStatuses, filterGroup, filterSection, syncFilter, bindFilter, fileStatus,
-    panel, detailsHtml, decorate, mount, mountFiles, loadFiles, fileKey, fileEntries, fileHtml, fileDetails, decorateFiles };
+    panel, detailsHtml, decorate, mount, mountFiles, loadFiles, fileKey, fileEntries, fileHtml, fileDetails, decorateFiles, badge };
 })();

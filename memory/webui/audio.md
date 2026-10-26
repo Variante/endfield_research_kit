@@ -274,8 +274,48 @@ Inspect `--help` for non-CN or targeted maintenance options. Focused audits
   have native proofs, with existing-ID reuse and shared-link mutation explicit.
   Selected codec factories, native RIFF/format reads and sample-buffer
   interfaces are also checked. Original Opus code produces corroborated PCM
-  offline; native Vorbis parity and live provider/mixer/device output remain
-  open.
+  offline, independently confirmed by isolated host execution. Selected
+  numeric sources also produce original host WAVs through original resident-row
+  admission, lookup and whole preparation under explicit table/input/provider
+  conditions. Original node/source preparation also requests numeric file bytes
+  and executes allocation/read/publication before the same context PCM;
+  immediate/deferred and open/read/EOF behavior now have conditional proofs.
+  Original package header/load/list admission, numeric lookup and media XOR now
+  produce the same PCM under supplied load-call and stream-interface conditions;
+  actual game load/reorder order and standard-stream/device scheduling remain
+  separate. Original stream reads and Windows completion/decryption now feed
+  resident publication and original memory-provider methods before identical
+  context PCM, under supplied worker/device/handle/owner conditions. Actual
+  byte counts and full-byte hashes remain necessary: native success alone does
+  not exclude a short successful OS read. Native Vorbis
+  reference differences remain separate from emulator/host differences;
+  Original owner construction/parameter refresh, policy/frame admission, context frame
+  assembly/release, frame preparation, filter bypass, master-bus
+  output and render-buffer submission now have a conditional offline witness. It
+  supplies authored parameter exclusions, scheduling, bus topology and COM
+  interfaces. Native frame preparation populates descriptor fields and corrects
+  the initial counter, preserving exact PCM; omitted preparation adds leading
+  silence in a separate cohort. Final padding is distinguished from decoded PCM.
+  Attachment success can also retain an unprepared suppressed source.
+  The stronger offline cohort also executes original route creation into both
+  source and bus lists, nonempty preparation, context gain refresh, row admission,
+  native matrix mixing into separate bus PCM and bus frame reset. Logical sample
+  values agree, with signed-zero bit changes recorded separately. Its output
+  identity/cache, arena availability and scheduler/COM surfaces remain supplied.
+  These facts close a conditional native transfer, without identifying the game's
+  authored bus selection. Native matched-format sink negotiation and allocation
+  now compose with that transfer; finite endpoint responses also prove format
+  fallback, setup failure and available-frame query boundaries. No sink
+  capacity/valid-frame count is assigned by the helper. Real endpoint selection,
+  resampled sink output and live
+  registry population, inherited owner/route/effect state, real device execution
+  and audibility remain open.
+  A separate offline cohort also enables original Sound own-property collection:
+  native volume/makeup gain and source filters change its rendered PCM, and
+  complete submitted values match independently reconstructed native gain
+  arithmetic. Filter history and the ending fade can affect padded frames.
+  Parent/bus registry state remains absent, so this does not establish effective
+  game loudness or add runtime bindings to Audio rows.
   These static/offline facts do not add runtime bindings to the
   rendered Event/media rows. External files still need an observed posted
   descriptor/source chain; a shared cookie or file key alone cannot supply
@@ -295,3 +335,17 @@ See [`../game_data_recovery.md`](../game_data_recovery.md) for durable
 serialized-data and native-consumer conclusions, and
 [`../game_data/audio_overview.md`](../game_data/audio_overview.md) plus the HIRC
 files beside it for the Wwise chain.
+
+### Browser initialization cost
+
+Audio summary rows already publish `linkedFileSearch` covering lazy detail
+file references. The browser consumes that string directly; repeating a
+recursive file scan over every summary adds avoidable work without adding
+evidence. Rows lacking the field retain the direct scan. Initial index, note
+and update reads run concurrently, followed by the Event read. Event taxonomy
+still precedes media normalization so media context filters retain their
+Event-derived tags. The page renders no index-level overview, so the published
+`scene_backgrounds.json` and catalog sections have no frontend consumer.
+Index and list shards use HTTP revalidation during ordinary loads and bypass
+caches on explicit retries; generated publications and evidence boundaries
+remain unchanged.

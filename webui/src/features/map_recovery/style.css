@@ -5,7 +5,7 @@
 /* The map is the page: the surface fills the whole view and every piece of
    chrome is a floating panel on top of it, so the plotted area is as large as
    the window and panels get out of the way when collapsed or dragged. */
-#map-recovery-view {
+#map-view {
   position: absolute;
   inset: 0;
   height: auto;
@@ -15,7 +15,7 @@
   color: var(--text);
 }
 
-#map-recovery-app {
+#map-app {
   /* Marker hues, ordered around the wheel so no two adjacent layers land on the
      same ink. Kept in sync with KIND_COLORS in index.js. */
   --mr-enemy: #b0342c;
@@ -147,7 +147,7 @@
   font-size: 12px;
 }
 
-#map-recovery-select {
+#map-select {
   display: block;
   width: 100%;
   margin-bottom: 12px;

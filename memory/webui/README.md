@@ -12,7 +12,7 @@ before changing a builder, generated contract, or frontend consumer.
 - [`text.md`](text.md): localized table discovery and row rendering.
 - [`audio.md`](audio.md): Wwise identity, decoded media, semantics, and annotations.
 - [`assets.md`](assets.md): visual assets, exported media, and semantic references.
-- [`data_inspector.md`](data_inspector.md): Decoded (数据解码), with Files and SQL
+- [`data_inspector.md`](data_inspector.md): Decoded, with Files and SQL
   modes over export stores and a published decoded-dataset source.
 - [`updates.md`](updates.md): previous/current export comparison.
 

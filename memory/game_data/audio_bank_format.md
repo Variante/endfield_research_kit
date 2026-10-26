@@ -52,7 +52,31 @@ which pools the AnimeStudio reader's census and gates each section; the reader's
 framers carry the same layouts in `EndfieldAkpkPackage.cs`. Per-build sizes and
 record counts belong to the `hirc_named_reach` report.
 
-## `STMG`: three blocks, each located by different evidence
+## `STMG`: framing and native settings consumers
+
+[`wwise_bank_settings.py`](../../scripts/game_data/wwise_bank_settings.py) now
+owns the exact raw v150 reader. The complete native settings loader and its
+default/transition consumers are reviewed in
+[`wwise_inheritance_native.json`](../../scripts/game_data/contracts/wwise_inheritance_native.json).
+The read order is global scalars, counted state groups with transition rows,
+counted parameter-driven switch mappings with points, parameter default/mode/
+transition/binding records, then counted auxiliary records. Every count and read
+is bounded and the section must close exactly. Float bit patterns remain intact;
+nonfinite values have no JSON numeric interpretation. Unproved scalar and
+record semantics remain anonymous.
+
+[`wwise_bank_settings_corpus.py`](../../scripts/game_data/wwise_bank_settings_corpus.py)
+authenticates the package receipt against the VFS audit fingerprint, source/build
+pins and available bank roster. It checks bank identity and section extents,
+reads settings through entry-relative crypto offsets, and skips media bodies.
+Its generated report records physical occurrences and exact section framing.
+Native default and transition consumers can populate the initialized parameter
+manager before recursive node collection; this does not establish current
+object-specific values, actual bank-load precedence, State/Switch processing,
+special bindings or mixer topology. Command/output ownership stays in
+[`scripts/README.md`](../../scripts/README.md).
+
+The earlier independent shape evidence remains useful as a cross-check:
 
 A section that occurs once offers no closure evidence across instances, so each block
 needed its own discriminator, and each had a different one available.

@@ -38,6 +38,8 @@ play.
 | [`dynamic_model_native`](../../scripts/game_data/dynamic_model_native.py) | complete inline Model fields, current main-file bytes and manifest prefab-path joins; optional declared prefab-root/collider joins |
 | [`collision_runtime_mesh`](../../scripts/game_data/collision_runtime_mesh.py), [`collision_runtime_mesh_native`](../../scripts/game_data/collision_runtime_mesh_native.py) | admitted saved-window decoder and native Unity Mesh held-cache/type/count/index-width proof; one source-bound runtime geometry comparison per sample |
 | [`collision_runtime_shape`](../../scripts/game_data/collision_runtime_shape.py) | admitted Collider current-shape member, concrete PxShape and same-call source-bound triangle-cache attachment; independent actor/flag fields and missing-window diagnostics |
+| [`collision_runtime_actor`](../../scripts/game_data/collision_runtime_actor.py) | typed actor registration and public scene from the same-call windows; raw completed-core scene join and explicit contact-storage coverage, without inferring contact absence from empty report arrays |
+| [`collision_movement_native`](../../scripts/game_data/collision_movement_native.py) | replayable named character movement, query, layer-mask and gameplay-filter claims on explicit native inputs; available routes only, without live branch or hit claims |
 | [`dynamic_sludge_surf_tile_native`](../../scripts/game_data/dynamic_sludge_surf_tile_native.py) | `SludgeComp.SurfTileIDs`; `PrimitiveIntList` closure; conditional navmesh consumer |
 | [`dynamic_visibility_area_join`](../../scripts/game_data/dynamic_visibility_area_join.py), [`dynamic_visibility_state_join`](../../scripts/game_data/dynamic_visibility_state_join.py) | visible-group values to area IDs and MapConfig states |
 | [`dynamic_visibility_runtime_native`](../../scripts/game_data/dynamic_visibility_runtime_native.py) | body claims: scene state, conditions, MapConfig and streaming-config load, loader file selection, area dealer and centers, portal assignment, spawn and AOI |
@@ -425,6 +427,675 @@ to establish this selected case's attachment. Fresh final shape fields, distinct
 source cases and contact participation remain separate questions. Generated
 per-call/epoch coverage belongs under `reports/runtime_capture/collision/` or
 the session's `collected/` directory.
+
+### Actor scene membership and contact evidence
+
+[`collision_runtime_actor_native.json`](../../scripts/game_data/contracts/collision_runtime_actor_native.json)
+authenticates the rigid-static vtable/type name, the specialized static actor's
+buffering subobject and registration-state consumer, and the conversion from
+the buffering scene to the public PhysX scene. The generic actor scene getter
+checks the same registration policy, but its actor-offset table lives in
+unbacked BSS. The reader uses the specialized native offset operand; it does
+not substitute PE zero-fill or an assumed runtime value for that generic table.
+
+[`collision_runtime_actor.py`](../../scripts/game_data/collision_runtime_actor.py)
+recomputes the source-bound shape/cache comparison and admits each actor only
+from its own invocation's Collider windows. `in_scene` establishes sampled
+registration; `insert_pending` establishes API membership with pending insertion
+and cannot establish completed registration. `not_in_scene` and `remove_pending`
+withhold API membership even when a stored scene pointer remains non-null.
+These state meanings follow the [PhysX buffering control-state contract](https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/physx/src/buffering/ScbBase.h),
+with offsets and state extraction separately authenticated on the selected
+native build.
+
+For the selected light Mesh, the available typed actor headers establish fully
+registered rigid-static actors in a common public scene. The scene also equals
+the one reached through each Collider's Unity physics-scene wrapper. At covered
+completed-step checkpoints, the reader joins that wrapper to raw simulation
+parent/completion records, authenticates the completion caller and ordering,
+and uses the native core's bound scene `fetchResults` dispatch. Missing later
+actor headers stay unavailable; neither an earlier actor observation nor a held
+shape address fills them. The reverse scene actor array is outside the saved
+windows, so its contents remain unobserved. Membership is conditional on these
+separately timed reads, not an atomic snapshot or continuous registration proof.
+
+Contact participation remains unresolved after this offline audit. The saved
+scene contains an empty split-results contact-header array, but that array is
+constructed lazily by `fetchResultsStart`; normal `fetchResults` instead
+dispatches the raw report actor pairs directly. The reviewed native normal path
+then resets the report stream and report actor-pair count before the completed
+step snapshot. The [PhysX scene implementation](https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/simulationcontroller/src/ScScene.cpp)
+and [report-pair cleanup](https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/simulationcontroller/src/ScNPhaseCore.cpp)
+explain why empty report storage cannot prove that no contact occurred.
+
+The raw report-core pointer field and reverse actor-array fields have no complete
+window anywhere in the admitted archive. No recorded contact callback, decoded
+pair with these actors/shapes, or authenticated current touching interaction
+supplies the missing result. Additional reinterpretation of the same archive
+cannot recover those uncaptured bytes or earlier report phases. If actual
+participation is required, the useful future evidence is an actor/shape-bound
+report or touching-interaction observation before report cleanup, including event
+state and contact data; another identical post-completion opaque-window capture
+would not settle it. A contact report is also distinct from solver response or
+a current physical touch, which need their own result semantics.
+
+The maintained observer now hooks the native contact-header finalizer used by
+both normal direct dispatch and split-result header construction. Its five
+Windows x64 arguments, closed native body, header writes, pair stride and both
+callers are authenticated in the capture contract. It copies the finalized
+header and bounded raw pairs after the writer returns, before the caller can
+dispatch or clear them. Callback notification/filter settings are left as the
+game configured them, so a quiet report hook still cannot establish no contact.
+
+Each report retains both native actor and shape pointer values, removal flags,
+and raw event/count/stream fields. A selected side additionally requires rooted
+managed Collider/root identities, unchanged native pointers and instance IDs,
+the typed current Collider shape, and that typed shape's actor matching the
+header side. A per-step candidate index reduces observer work; the binding is
+checked again at report time. A shape newly attached inside the step may lack a
+selected-side binding and remains an unbound report, rather than receiving an
+inferred asset identity. Fresh serialized Mesh identity joins the frozen source
+independently; an unmapped cloned Collider or unknown peer CAB remains explicit.
+
+Raw pair field names beyond the natively anchored stride/removal field follow
+the matching public PhysX declaration and remain conditional pending selected
+native consumer validation. Stream windows are preserved as bounded opaque
+bytes for later decoding. Removed sides are never followed.
+Contact byte streams can be unaligned even when their pointer fields and shape
+objects are aligned. The newer window archive permits those report-buffer
+addresses while retaining the original alignment rules for object traversal
+and older archives.
+Captures prioritize
+transient streams and live shape/actor headers, limit unrelated pair samples,
+and report bounds, skipped samples and missing windows. Selected Collider
+attachment windows use a narrow traversal instead of repeating a broad graph.
+The objects stay retained after the final requested physics checkpoint and are
+released at a lifetime gap or quiescent stop, allowing later movement to produce
+contact evidence. A clean stop accounts for every handle separately from
+checkpoint coverage. Offline ABI/trampoline and synthetic forwarding tests do
+not establish retail activation, notification delivery, solver response, or
+decoded contact-point semantics. The admitted retail session using this observer
+has a clean enable/disable receipt, retained checkpoint coverage through stop,
+and normal native core/completion records, but no contact-finalizer hook entries.
+The entry census increments before thread, selected-object and caller admission;
+zero entries therefore cannot be explained by a failed selected-side asset join
+or those admission filters. The receipt is still not a positive execution witness
+for the contact hook itself.
+
+The pinned `dispatch_contact_callbacks` window tests its native callback consumer
+before processing reports, bypasses an empty raw actor-pair set, and skips a null
+or excluded-state stream before calling the finalizer. The split-header builder
+also checks stream state before that call. Neither the callback-consumer pointer
+nor the raw report-core pointer has a complete saved window in this session.
+Thus the archive cannot distinguish these bypasses, prove contact absence, or
+settle character query-based movement. An identical observer/scenario supplies
+no targeted discriminator.
+
+The actor contract also authenticates the complete native scene constructor and
+callback setter, including their split instruction windows. The constructor
+passes its descriptor's callback slot to that setter and copies the descriptor's
+filter slots into the scene. The setter writes the same callback-consumer field
+tested by normal report dispatch. This closes the configuration route, but the
+actual callback value and selected filter function remain unobserved. It does
+not identify the game's notification policy. The
+[PhysX pair flags](https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/include/PxFiltering.h)
+separate solve/detect flags from notification flags, and
+[shape interaction reporting](https://github.com/NVIDIAGameWorks/PhysX/blob/4.1/physx/source/simulationcontroller/src/ScShapeInteraction.cpp)
+requires a report-enabled pair. A shape's simulation/query configuration alone
+cannot establish notification delivery. The selected game's pair-flag producer
+and its live pair configuration remain unresolved.
+
+This session separately preserves typed Collider/shape/held-cache pointer joins
+and simulation/query configuration in covered epochs. Full geometry equality
+cannot be repeated because the same-call vertex buffers are missing, and fresh
+actor membership is unavailable because its headers are missing. Those gaps do
+not revoke the earlier session's accepted geometry/attachment/membership proofs.
+The maintained comparators classify an upstream missing-cache window as
+unavailable, retain independently readable scene evidence, and surface bounded
+sample failures when an upstream comparison is rejected. Missing bytes are not
+a mismatch and must never be repaired from another invocation's windows.
+
+Changing actor/epoch counts, native validation receipts and per-read coverage
+belong in `reports/runtime_capture/collision/`. The shared
+[capture backlog](../runtime_capture_requirements.md#cooked-collision-and-live-mesh-state)
+preserves the accepted membership phase separately from the contact requirement.
+
+### Character movement query boundary
+
+[`collision_movement_queries.json`](../../scripts/game_data/contracts/collision_movement_queries.json)
+records named body claims, re-proved by `collision_movement_native` instead of
+carrying addresses forward across builds. Its complete method set is required:
+missing or mismatched selected native inputs or a failed claim withhold all
+admitted methods and preserve the failed check. The current selected bodies
+validate the following **direct conditional** routes:
+
+- `TryMoveCapsule` reaches `CharacterCollisionSweep` and a logic-position update;
+  the sweep calls `MovePhysQuery.CapsuleCastAll`, reads its hit buffer and applies
+  `_CheckIfColliderValidForCollisions`.
+- Ground movement reaches `MoveAlongFloor` and capsule movement. Air movement
+  reaches capsule movement and impact handling. Floor handling reaches sphere
+  sweeps, walkability checks and floor-result postprocessing.
+- Penetration handling obtains collider-proxy position/rotation and reaches
+  `PhysHelper.ComputeCapsulePenetration`. Ray and overlap routes also expose
+  returned buffers and character filtering.
+- Collidable and overlap mask getters read the configured base and ignored
+  masks. The candidate filter reads collider layers and gameplay options.
+  These checks establish reads and calls, not their live values or exact option
+  semantics.
+
+These routes can affect character movement through query results independently
+of solver contact notifications. Their existence supplies a concrete alternative
+to interpreting walking or jumping as evidence that the report finalizer must
+execute. The admitted query capture now observes original movement invocations,
+returned native hits, accepted/rejected gameplay filters and floor results.
+Some nonzero requested moves return a hit while leaving the logic position
+unchanged. Same-owner full-proxy value joins connect covered returned hits,
+accepted filters and movement output; an exact pointer-copy chain remains a
+separate stronger witness. This proves sampled query-driven blocking, while
+selected-Mesh provenance and unobserved IFix dispatch branches remain unresolved.
+
+The native query review identifies both ordinary Collider identity and ECS
+identity routes in `RaycastHit.get_colliderProxy` and
+`ECSColliderResultProxy.get_layer`; resolving only a managed Collider is
+insufficient. The capsule-overlap lookup names an ECS proxy result array, while
+capsule/sphere cast lookups name hit arrays. Internal-call lookup literals name
+the requested API, not the live cached function pointer. A paired native query
+table candidate has complete array framing, but its registration route is not
+proved and no binding is admitted from adjacency alone.
+
+[`collision_query_native.json`](../../scripts/game_data/contracts/collision_query_native.json)
+now authenticates the selected argument/result ABI, native result writers and
+requested-name/resolver/cache/caller routes. Metadata value widths agree with
+the native array-copy loops; the array-length export supplies the checked header
+field. The observer admits native result interpretation only at a reviewed
+original caller whose live cache contains the exact reviewed target. Other
+callers/cache values remain diagnostics. This conditional gate supplies the
+missing live binding witness without inferring registration from table adjacency.
+
+The observer records actual query arguments, masks, trigger mode, returned counts
+and bounded cast/ray/ECS-overlap buffers. Buffer getters and the hidden-return
+hit-to-proxy conversion preserve consumption witnesses. Character filters retain
+their Boolean return, input/output proxy, movement receiver and base/ignored
+masks, plus the layer and option reads made inside the original filter. The
+option helper takes its proxy by reference, so mutations remain visible. Exact
+pointer/byte joins and value-only or ambiguous matches remain distinct.
+
+Native hit conversion retains the original PhysX actor and shape. Selected
+bindings recheck rooted Collider/root lifetime, typed current shape and actor,
+obtain fresh shared-Mesh identity and CAB/PathID provenance, and retain narrow
+Collider/shape/actor windows. Query-result joins require unique byte agreement,
+excluding UV fields that a later native stage may fill. The reported Collider
+identity and retained physical-shape owner remain separate observations. Recent
+completed-core references and retained source-step ordinals are recorded without
+claiming atomic scene state or continuous membership. An actor or instance ID
+alone never supplies a query-shape join. Overlap proxies have no shape field;
+missing native shape conversions remain unresolved.
+
+Dispatch/header-builder entry diagnostics copy the callback consumer, raw pair
+pointer/count and bounded stream null/excluded-state checks before the original
+can clear them. Dispatch's second byte argument is forwarded unchanged. The
+finalizer retains its native simulation ancestry through these new scopes.
+Original arguments, return values, output carriers, exceptions and last-error
+state are preserved; game notification settings remain unchanged. Entry censuses,
+sampling intervals, bounds and unbound calls are explicit.
+
+[`collision_query_native.py`](../../scripts/game_data/collision_query_native.py)
+and [`collision_capture_queries.py`](../../scripts/game_data/collision_capture_queries.py)
+validate the native declarations and saved observations. Offline checks cover
+disabled client trampolines, synthetic forwarding/stop/exception/bound cases and
+saved-session admission. Retail execution now supplies live caller/cache
+matches, both ordinary Collider and ECS hit identities, actual filter returns
+and sampled blocking. Covered queries retain a preceding completed native-core
+reference, not an atomic scene-membership observation. Executed original call
+sites provide route witnesses; an owner without admitted descendant queries
+does not establish IFix selection or query absence. Earlier accepted geometry,
+attachment and membership proofs do not require recapture.
+
+The pre-original dispatch samples resolve the reporting guard: the callback
+consumer and raw report core are present, but the raw pair count is zero and
+the pair pointer null. Neither builder nor finalizer executes in the saved
+entry census. This identifies empty reports at the sampled dispatch boundary;
+it does not prove absent physical touch or identify the upstream notification
+policy. There are no saved streams whose exclusion state could explain these
+samples. Query-driven movement blocking is observed independently of reports.
+
+No query conversion joins to the retained light colliders. Hit actor/shape
+headers are absent from the saved windows, and ephemeral ECS IDs/component
+indices do not supply installed CAB/PathID identity. Floor and blocking results
+therefore retain their distinct runtime identities. Fresh source-bound final
+checkpoint cache/attachment/membership reads also remain unavailable where the
+same-call cache header was clipped; earlier geometry proofs are not substituted.
+The geometry reader accepts the newer query inspection while preserving all
+frozen-source, journal, runtime, receipt-loss and archive checks.
+
+Additional indirect native caller sites execute beyond the reviewed binding
+set. Their diagnostic returns and cache values are saved, but rejected binding
+sites have no captured input/result buffers. Offline caller review cannot
+recreate those bytes. Converter/array/consumer field changes and incomplete
+getter/proxy pointer chains remain explicit; do not replace exact byte joins
+with actor-only source attribution. The reusable ABI/writer declarations stay
+in the reviewed query contract; per-session counts, caller inventories and
+blocking witnesses belong in `reports/runtime_capture/collision/`. The next
+offline target is ECS collider creation/ownership and additional caller routes,
+before considering a capture that measures their missing source joins.
+
+### ECS collision definitions and ownership
+
+[`ecs_collision.py`](../../scripts/game_data/ecs_collision.py) reads the packed
+collider byte-array family, separately from the cooked PhysX mesh codec. Its
+[`native contract`](../../scripts/game_data/contracts/ecs_collision_native.json)
+authenticates the selected common header, primitive/mesh/multi/terrain cases,
+descriptor-group strides, native hit userdata consumers and direct native
+decoder callers. The reader requires bounded counts, an ordered mesh-list count
+consistent with mesh-bearing groups and exact EOF. Those are defensive stored
+projection checks; the native consumer's own bounds checks are weaker. Anonymous
+flag/mesh words and capsule dimension lanes retain their raw values. A disabled
+ordinary attachment gate still consumes its stored record and mesh slot. The
+optional complex-mesh record has a different packed flag profile and no such
+bit-zero gate; it must not be classified as disabled from that bit.
+
+The exported `FactoryUnitConfigAsset` source family has `colliderData` and
+`colliderMeshes` fields. The named
+[`ownership claims`](../../scripts/game_data/contracts/ecs_collision_ownership.json)
+re-prove a `CreateBusRender` route that reads both fields, supplies ordered Mesh
+instance IDs to decoding, obtains a returned actor's physics ID/version and
+records an owning entity. MonoScript CAB/PathID, exported PPtr declarations and
+per-output freshness can authenticate these authored inputs. The current stored
+factory definitions tile through EOF and preserve their declared mesh targets;
+they do not establish this route's retail execution or Dijiang hit ownership.
+
+The hit's ECS ID/version and owning Entity are **different identity lanes**.
+The native hit writer reads physics ID/version from masked actor userdata. A
+distinct resolver uses a versioned physics registry and reads the packed Entity
+stored elsewhere in that userdata. Metadata authenticates the Entity's packed
+global-index/version pair separately from the collider proxy and collider
+component. Native getter candidate labels remain conditional on registration;
+paired name/function table framing alone is not a live binding proof. In the
+covered indexed hit-conversion path, the component index follows the actor's
+shape enumeration, not a
+Streaming component mask or an Entity type index. Inactive records, invalid mesh
+resolution and later shape changes prevent equating stored record order with
+live shape order.
+
+Direct native producer bodies also call the decoder and write the packed Entity
+inline **after** its return. Hooking only the managed `RecordEntity` API would
+miss these writes. Covered byte-length-prefixed producers pass the payload after
+the prefix and shift its byte length into a word count. A future decoder hook
+must respect that unit; a decoder-return snapshot is too early to assert the
+subsequent owner binding. Keep creation/source observations separate from later
+query-time actor/shape/userdata validation.
+
+The admitted query session lacks hit-actor userdata and the relevant registry
+snapshot. Offline definitions, returned physics IDs, world positions and names
+cannot restore that mutable join. Per-session and per-export inventories stay
+under `reports/runtime_capture/collision/`. The remaining useful capture must
+measure query-time userdata/Entity identity and native creation/source records,
+including native producers, rather than repeat the unchanged light-only observer.
+
+#### Streaming source definitions and parameter interpretation
+
+[`streaming/collision_native.py`](../../scripts/game_data/streaming/collision_native.py)
+joins independently authenticated marker-17 and ECS decoder roles by the same
+entry, extent and code bytes. This gives the anonymous marker-17 bodies a
+collision-definition interpretation without guessing from their lengths.
+[`streaming/collision_corpus.py`](../../scripts/game_data/streaming/collision_corpus.py)
+replays the current root directory, VFS file hashes, full table-local keys,
+counted body framing and native-selected descriptor layouts. Default callback
+compatibility is conditional: it is not a receipt of runtime root pairing,
+callback registration, resource load or scene activation.
+
+The reviewed
+[`Streaming collision contract`](../../scripts/game_data/contracts/streaming_collision_native.json)
+records the native mesh-count keys, ordered resource keys and fixed terrain
+resource key. Their helpers consume a sixteen-byte resource span. The first
+qword is the full lookup key; the following words remain explicit. Consumed
+width does not prove whole target extent. Terrain has a separate resource input
+passed to the decoder's heightmap argument, not an ordered Mesh slot. Runtime
+cache contents and actual texture/height samples are separate from that stored
+declaration.
+
+The descriptor's first parameter word is forwarded as gameplay options and its
+second as tag configuration. The surface value is packed in the flag word.
+The ordinary records shift by two; the optional complex record shifts by one
+and its entry does not test a packed attachment bit. Covered native userdata
+construction and getter operands, plus selected metadata enum defaults, are
+authenticated by the ECS contract. Keep the words and unknown bits, and retain
+every enum alias: `AirWall` and `IgnoreFromBakeNavmesh` share a value, so a bit
+alone cannot choose their consumer context. The earlier provisional
+`surfaceWord`/`optionWord` labels are superseded; the current projection exposes
+`gameplayOptionsWord`, `tagConfigWord` and `surfaceTypeByte`. Capsule dimensions,
+high flag bits, tag lookup and native dimension normalization remain separate
+from raw stored framing.
+
+[`streaming/collision_assets.py`](../../scripts/game_data/streaming/collision_assets.py)
+authenticates an existing plaintext manifest against the current VFS row and
+native manifest layout before joining full-width keys. This is an exact numeric
+join to authored path/Bundle candidates, not proof of the resource namespace or
+selected runtime object. Preserve ambiguous candidates. The selected Bundle
+gate can then authenticate raw container main-asset PPtrs and supported cooked
+Mesh buffers; [`collision_mesh_candidates.py`](../../scripts/game_data/streaming/collision_mesh_candidates.py)
+keeps this stored relation distinct from `##subasset` selection. Neither names
+nor preload membership choose a Mesh. A fresh selected witness includes
+collision-only Meshes with no render vertices but complete cooked geometry,
+and no ordinary MeshCollider component in those Bundles. Streaming ECS sources
+therefore explain another legitimate empty-OBJ case.
+
+The maintained collision observer now samples the generic native decoder on
+every route, independently of the retained light-collider selection. Its length
+argument counts words, so the bounded source archive multiplies it by four and
+stores exact terminal chunks rather than inferred allocation windows. Ordered
+mesh IDs are archived separately. Covered Streaming callbacks provide one
+same-thread parent for resource resolution and decoder calls, then sample the
+created actor after the callback returns, when the inline Entity write has
+finished. The managed/native `RecordEntity` route is observed separately.
+
+Query conversion samples both actor and shape tagged userdata and the actor's
+versioned registry row. Repeat userdata, registry-header and row reads expose
+drift; they do not make the observation atomic. A runtime source join requires
+matching actor, userdata address, physics ID/version, registry validation and
+causal order. A covered callback additionally supplies the declared Entity for
+comparison with the later userdata. An uncaptured callback may supply a decoder
+identity candidate with the owning Entity measured later at query time; keep
+that weaker boundary explicit. Resource-object lookup observations preserve the
+handle, returned native object, decoder mesh ID and serialized instance-ID map
+result; resource-key, ordered-mesh and CAB/PathID joins remain separate.
+
+The reviewed query target and its live cached binding establish the native
+callee ABI for copying its results. The current observer preserves caller
+addresses as diagnostics without restricting that typed callee to one reviewed
+managed call site. Physics/query sampling no longer depends on an unrelated
+light collider being retained. Bounds, absent or drifting userdata, unresolved
+resource candidates and missing report callbacks remain visible gaps. These
+observations are designed to close source/owner joins; they do not promise
+solver contacts when reporting is disabled or follows an unobserved route.
+
+The selected declarations and offline reader are owned by
+[`collision_ecs_capture_native.json`](../../scripts/game_data/contracts/collision_ecs_capture_native.json),
+[`collision_ecs_capture_native.py`](../../scripts/game_data/collision_ecs_capture_native.py)
+and [`collision_capture_ecs.py`](../../scripts/game_data/collision_capture_ecs.py).
+Capture-project implementation follows its refactored `AGENTS.md`: one build
+graph and output directory, guarded observations, unchanged original calls,
+worker initialization and callback quiescence. Live execution remains a
+separate user-run capture after offline native review and compilation.
+
+Scene-loading source callbacks can overflow the event transport even while
+native reads and hook forwarding succeed. The first source-capable session
+reached that boundary before movement-query coverage; its failed completion
+cannot be admitted as a complete collision session. Zero initial console
+coverage is not the final receipt census. Keep transport drops, unreadable
+memory, abandoned originals and identity gaps distinct when diagnosing it.
+
+The current observer uses a larger bounded event queue, worker-time queue
+allocation, direct JSON appends and batched writes. Default-value omission is
+lossless under the declared event format; the recovery reader restores only
+documented defaults and never fills missing required identity/argument fields.
+Queue capacity, peak occupancy, full-queue drops and bounded-retry contention
+are separate diagnostics. Health failure preserves admitted records during
+quiescence and final drain, rather than labeling the writer failed and
+discarding the tail. A failed session remains failed even if its retained
+records contain successful source/owner observations. Size projections over
+saved records establish format equivalence, not live writer throughput.
+
+The subsequent compact-record session completes without transport or native-read
+loss and closes the versioned runtime ownership route for its admitted ECS hit
+conversions. Same-callback decoder inputs, actor userdata after the source
+callback's inline Entity write, and query-time repeated userdata/registry rows
+agree on the actor, physics ID/version and owning packed Entity. The returned
+hit's physics ID/version agrees as well. Ordinary Collider results have no ECS
+identity to resolve; their missing ECS-registry checks are not transport loss or
+an unreadable-memory failure. Keep the Collider and ECS result lanes distinct.
+
+The source audit strictly decodes complete captured definition spans and their
+ordered mesh IDs on the reviewed Streaming producer routes. An unbound decoder
+caller does not inherit the Streaming length argument's word units: a managed
+wrapper forwards that argument unchanged, and the shared decoder only checks a
+minimum before replacing it. Such calls retain raw argument and span evidence
+as `unbound_decoder_input`; they do not supply a framing projection. Owned
+definitions still require exact EOF, and failures identify the decoder,
+producer, expected span and captured source hash. Resource resolution and object lookup records in the same
+original callback can join a successful resource handle to the actual decoder
+input ID and the serialized instance-ID map's CAB/PathID. Repeated observations
+must agree; no name, position, manifest suffix or cross-frame ID lookup chooses
+an input. Map-lock contention and source routes without observed lookup records
+remain explicit gaps. The reusable audit is
+[`collision_runtime_ecs.py`](../../scripts/game_data/collision_runtime_ecs.py).
+Cached capture consumers expand the current compact format before validating
+native-memory framing; omission never repairs missing required record identity.
+
+This establishes the owning Entity and source definition of sampled ECS hits,
+and observed physical identities for the actor's mesh-input set. It does not
+automatically establish which input supplies the geometry of the returned
+PxShape. Native constructor and parameter-lookup bodies establish two index
+domains: the optional complex mesh is stored separately in masked actor userdata
+and read at parameter index zero; positive indices enumerate the actor's
+ordinary shapes starting at one. The hit writer compares the returned shape
+against that same actor enumeration. Positive descriptor candidates therefore
+exclude the complex record, as well as records whose ordinary attachment gate
+is false. The reviewed declarations and exact unwind-family membership live in
+[`collision_shape_index_native.json`](../../scripts/game_data/contracts/collision_shape_index_native.json),
+authenticated by
+[`collision_shape_index_native.py`](../../scripts/game_data/collision_shape_index_native.py).
+
+The earlier apparent `Stairs` augmentation compared a positive shape index with
+the separate complex descriptor. The following ordinary triangle descriptor
+already carries `Stairs`, and the corrected candidates agree with every sampled
+ECS hit's option, tag and surface tuple in this session. This removes that
+claimed mutation gap; it does not prove constructor success, skipped records,
+later attachment/removal, shape reordering or exact hit geometry. Preserve both
+raw source records and observed userdata rather than treating equal parameters
+as an exact geometry join.
+
+Observed input identities can also join current exported AssetBundle containers
+through exact CAB and unsigned PathID equality with a local PPtr. The optional
+`--export-root` path in the runtime source audit uses the maintained export
+freshness guard and verifies each selected document's stored hash. The reusable
+join lives in
+[`collision_runtime_asset_inputs.py`](../../scripts/game_data/collision_runtime_asset_inputs.py).
+Container aliases remain explicit; external-file PPtrs do not join by PathID
+alone. This gives physical inputs asset paths without choosing by an FBX name or
+manifest subasset suffix. A container pointer by itself neither proves the
+target Unity class nor decodes its raw/cooked geometry.
+
+A targeted current Bundle extraction for the sampled `Stairs` actor identifies
+both ordered inputs as collision-only Unity Mesh objects with no render
+vertices and complete cooked CPU BV4 triangle payloads. The ordinary input's
+stored face-remap, transformed triangles and normals explain the sampled hit
+positions; the auxiliary complex input's corresponding faces do not. This is
+conditional on the source pose and stored triangle mesh still describing the
+queried shape. The reusable numerical comparison is
+[`collision_geometry_evidence.py`](../../scripts/game_data/collision_geometry_evidence.py),
+which retains remap aliases, plane distance, normal agreement and barycentric
+coordinates without turning tolerances into an attachment claim. Selected
+Bundle authentication stays owned by
+[`unity_scene_corpus.py`](../../scripts/game_data/unity_scene_corpus.py), and
+complete payload decoding by
+[`cooked_collision.py`](../../scripts/game_data/cooked_collision.py).
+This gives positive stored geometry evidence for render-empty assets and
+discriminates these two inputs, while a live geometry-pointer join and later
+attachment history remain unresolved.
+
+The earlier archive's exact address-range audit distinguishes absent geometry
+fields from failed decoding. None of the returned query shapes has an archived
+vtable, geometry selection or triangle-cache pointer at its native address,
+including separately timed windows.
+The observer's hit-conversion geometry graph is restricted to matching retained
+light colliders, and no saved hit matches that selection. Its broader ECS
+userdata snapshots therefore close ownership while leaving geometry fields
+uncopied. Repeated ECS userdata does preserve the
+auxiliary complex-shape pointer for applicable actors; it differs from the
+sampled ordinary query shape. This reinforces the index-domain distinction but
+does not expose either shape's geometry pointer. The hit writer's nonsentinel
+face result additionally witnesses its successful virtual geometry-getter and
+face-remap consumer path. It proves that the original took that path, without
+recovering the returned pointer value or admitting a concrete getter vtable
+from an unobserved header. A sentinel result leaves that path ambiguous.
+
+Typed scene reads after a completed core can join the Unity wrapper, public
+PxScene and internal scene to a preceding report guard under the same original
+core. Guards from another core, another scene or after the reads never supply
+that join. Missing scene windows remain gaps instead of borrowing another
+checkpoint. This establishes that some empty-report guards belong to the
+observed scene, but no report pair or contact stream is saved. Entry censuses
+also distinguish unentered builders/finalizers from sampled dispatch guards.
+Neither that route census nor an empty notification report proves absent
+touching pairs or solver participation. These conclusions are reproduced by
+[`collision_runtime_evidence_boundary.py`](../../scripts/game_data/collision_runtime_evidence_boundary.py),
+which rechecks admitted bytes, native field gates and cached query/ECS values.
+
+That earlier capture reaches a missing-observation boundary for these exact
+runtime claims. The smallest geometry observation is the output of the game's own
+triangle-geometry getter inside hit conversion, joined to the current source
+Mesh cache and repeated physical identity. The selected getter's native body
+already establishes a shape/output-pointer Boolean ABI and its inline/buffered
+copy paths in
+[`collision_runtime_shape_native.json`](../../scripts/game_data/contracts/collision_runtime_shape_native.json).
+Observing that existing call avoids issuing a game query. Solver participation
+needs a native contact-constraint preparation/solve witness with body/shape and
+scene/step provenance, independently of notification configuration. A longer
+recording with the earlier outputs cannot supply either missing value.
+
+The expanded observer now copies the original triangle-getter's consumed
+output fields, excluding unwritten padding, inside its observed hit conversion.
+Source resource lookups enroll native Mesh objects with their decoder actor and
+version. Query-time joins repeat the native Mesh vtable, instance ID, held-cache
+pointer and serialized CAB/PathID, then compare that pointer to the getter's
+actual output. Busy maps, expired objects, changed identity and unmatched inputs
+remain explicit gaps. This is sampled identity evidence, without a claim of
+continuous lifetime or an atomic snapshot.
+
+Solver capture independently observes contact preparation and original contact
+solve entry/return for regular and temporal solver paths, including batched and
+temporal extended contacts. It preserves descriptors, contact-manager bytes,
+body state and bounded native context/constraint windows. Preparation replaces
+the descriptor's contact-manager pointer with a constraint pointer; the solve
+observer freezes a matching descriptor/body/writeback route before forwarding
+the original, then rechecks CM provenance and versioned actor identity afterward.
+The CM shape-core/API conversion remains a typed candidate: no untyped
+subtraction is promoted to a PxShape. Owning scene/step on worker threads,
+continuous descriptor lifetime and positive impulse remain separate joins.
+An observed contact solver call can establish sampled solver participation even
+when notification reports are empty; a prepared manifold alone cannot.
+
+These adapters are recorded in
+[`collision_physics_stage_native.json`](../../scripts/game_data/contracts/collision_physics_stage_native.json),
+validated by [`collision_physics_stage_native.py`](../../scripts/game_data/collision_physics_stage_native.py),
+and decoded by [`collision_capture_stages.py`](../../scripts/game_data/collision_capture_stages.py).
+Preparation gates the selected native inputs, complete unwind families, concrete
+getter vtable slot, solver dispatch tables and native call operands. Passing
+validation and compilation establish the selected adapters; their live route
+coverage is evaluated independently below.
+
+The expanded capture closes sampled runtime geometry-pointer identity for an
+ECS query shape. The original getter's triangle pointer equals a live, typed
+Unity Mesh object's held triangle-cache pointer, with repeated native instance
+identity and serialized CAB/PathID before and after observation. Repeated
+source slots alias the same Mesh; the getter's exact scale bits and the reviewed
+positive shape-index domain select the same ordinary triangle descriptor. This
+descriptor selection is conditional on constructor/attachment history; actual
+current collider pose and continuous lifetime are not recovered by the join.
+The reusable audit is
+[`collision_runtime_geometry.py`](../../scripts/game_data/collision_runtime_geometry.py).
+
+A targeted authenticated extraction of that exact CAB/PathID yields a
+collision-only Unity Mesh with zero render vertices and a complete cooked CPU
+BV4 triangle payload. Its vertex and triangle counts agree with the live typed
+cache header. This directly associates a render-empty asset with geometry used
+by the original query and explains why its OBJ is empty. Runtime vertex/index
+arrays lie outside the archived cache window, so their bytewise equality with
+the cooked payload remains unavailable. Count agreement and pointer identity
+must not silently replace that missing comparison.
+
+All selected regular and temporal contact-preparation/solve entry censuses are
+zero in the expanded capture. These are original hook-entry counters, not just
+bounded sample counts, so exhausted getter/source budgets do not explain the
+unentered solver routes. Empty notification guards still establish neither
+absent contacts nor solver participation. Saved scene windows contain candidate
+context pointers but no pointee headers, even across other captured ranges;
+the active backend, awake-body eligibility and worker dispatch remain unresolved.
+
+Offline native tracing now separates the named rigid-body solver task from the
+actual CPU dynamics update. The selected CPU simulation-controller factory
+installs an empty return in that task's delegated vtable slot. The independently
+stored dynamics context receives the scene's update call through its own virtual
+slot; the reviewed constructor selects regular PGS or temporal TGS context
+factories from the solver-type descriptor. A task name alone therefore must not
+choose a solver hook or prove that the dynamics update ran.
+
+Both reviewed CPU update bodies copy the accurate island simulation's active
+island count and return before solver-task allocation when that count is zero.
+Their ordinary body, kinematic, articulation, contact-manager and constraint
+counts are separate fields. The complete update/factory unwind families,
+constructor selection operands, concrete vtable slots and branch windows are
+recorded in
+[`collision_solver_dispatch_native.json`](../../scripts/game_data/contracts/collision_solver_dispatch_native.json),
+loaded by
+[`collision_solver_dispatch_native.py`](../../scripts/game_data/collision_solver_dispatch_native.py).
+This proves the selected native dispatch and eligibility conditions; it does not
+identify which backend or branch the saved game executed.
+
+The reusable observation-boundary audit now reads these context members and
+population fields only through the same checkpoint's typed scene graph. It also
+censuses other archived address ranges without borrowing their bytes. All
+required context vtables and population fields for the sampled scene are absent
+from this capture.
+Even an observed zero population at a later checkpoint would remain distinct
+from the original update's copied branch operand. Successful character queries
+and query blocking do not imply awake dynamic islands or solver constraints.
+
+For the idle-solver question, this archive now reaches an observation boundary:
+another capture must distinguish an unentered dynamics update, its actual
+backend, the original zero-island decision and later contact preparation/solve.
+Scene, original update and worker/step provenance must accompany those samples.
+Merely enlarging generic pointer traversal or taking later checkpoints cannot
+establish the original branch. The existing Unity store and object index cover
+selected exported types; their lack of Rigidbody documents does not establish
+absence from the installed game or identify a guaranteed awake-body scene.
+
+The expanded observer now captures original scene dynamics entry, both CPU
+update implementations and the selected list-flush thunk used to reset their
+thread contexts. At the reviewed original update return site it copies the
+already-saved active-island count from the caller's stack, then repeats the
+value after forwarding the flush unchanged. This is the original comparison
+operand, rather than an island count read later from the manager. Normal update
+return and unchanged operand select the proved zero/nonzero gate path; passing
+the island gate still does not prove a contact constraint or solve.
+
+The update adapters forward every positional argument, including the stack
+float, and preserve original returns and LastError. Bounded before/after scalar
+snapshots retain native scene, held context, backend vtable, island manager,
+thread-pool pointer and population read masks. The original scene/update nesting
+supplies scene provenance. A same-thread physics core is joined only through
+its typed completed public-scene projection; prior completions and worker
+timestamps do not repair an absent step join. Sampling, unreadable fields,
+unbound updates and exhausted budgets have independent counters. The reusable
+decoder is
+[`collision_capture_dispatch.py`](../../scripts/game_data/collision_capture_dispatch.py),
+integrated with immutable session admission and the observation-boundary audit.
+Native ABI, operand, branch, import and complete-function validation plus a
+Release build establish readiness for another capture; they do not certify live
+route coverage before that run.
+
+The captured pre-dispatch reporting guards still contain empty reports. Native
+query participation and filter decisions are positive collision evidence;
+solver-contact participation and notification policy remain separate. This
+successful session supplies substantial offline source and ownership work, so
+an identical follow-up capture is not required to repeat those joins.
+
+Current inventories and receipts live in `reports/animestudio/` and
+`reports/runtime_capture/collision/`; changing counts are not durable format
+facts. The root gate now authenticates the VFS audit's catalog/build fingerprints
+before scanning and again afterward. Referenced bytes passing their MD5 does
+not make a stale catalog audit current, and an exporter fingerprint is not the
+game build. Re-audit instead of changing an input-set token.
+
+This recovery closes stored definition framing and source-key declarations;
+the corrected capture also supplies the previously missing sampled hit-actor
+userdata, registry state and native source/creation observations. It closes
+versioned ECS ownership and observed input selection, including current
+AssetBundle container paths. Returned-shape geometry and solver-contact
+participation still need independent observations. Widening the stored Mesh
+catalog improves geometry coverage without supplying the absent shape geometry
+pointer or later attachment history.
 
 ## Main grids
 

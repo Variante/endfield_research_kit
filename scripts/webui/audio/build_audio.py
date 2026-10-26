@@ -2339,7 +2339,7 @@ def collect_event_audio_index(
                             for key in (
                                 "mediaId", "soundObjectCount", "soundObjectIds",
                                 "musicTrackObjectCount", "musicTrackObjectIds",
-                                "rootActionIds", "relationTypes", "selectionPaths",
+                                "rootActionIds", "relationTypes", "selectionPaths", "selectionNodePaths",
                                 "sourceKinds", "pluginIds", "pluginNames",
                                 "streamTypes", "sourceBits",
                             )

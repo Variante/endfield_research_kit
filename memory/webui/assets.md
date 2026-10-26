@@ -31,7 +31,7 @@ evidence source for other pages, not proof that an asset was used at runtime.
 
 ## Primary generated outputs
 
-`webui/data/assets/{index,table_owners,activity_media,videos}.json`
+`webui/data/assets/{index,relations,table_owners,activity_media,videos}.json`
 (`build_assets --publish index`); Story media owns `story_media.json`
 (`--publish story-media`, the `story_media` task) and Gameplay owns
 `gameplay_refs.json`. Frontend behavior is in the header comment of

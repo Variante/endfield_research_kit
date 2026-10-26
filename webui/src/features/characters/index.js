@@ -1257,7 +1257,20 @@
     });
   }
 
-  async function load(language = currentLanguage(), force = false) {
+  let pendingLoad = null;
+  let pendingLanguage = "";
+  function load(language = currentLanguage(), force = false) {
+    const requested = String(language || "CN").toUpperCase();
+    if (!force && pendingLoad && pendingLanguage === requested) return pendingLoad;
+    pendingLanguage = requested;
+    const pending = loadData(requested, force).finally(() => {
+      if (pendingLoad === pending) pendingLoad = null;
+    });
+    pendingLoad = pending;
+    return pending;
+  }
+
+  async function loadData(language = currentLanguage(), force = false) {
     const nextLanguage = String(language || "CN").toUpperCase();
     if (!force && state.data && state.language === nextLanguage) {
       renderShell();

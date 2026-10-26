@@ -230,7 +230,7 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
                 key: row[key]
                 for key in (
                     "rootActionIds", "soundObjectCount", "soundObjectIds", "relationTypes",
-                    "musicTrackObjectCount", "selectionPaths", "bankId", "bank", "bankPackage",
+                    "musicTrackObjectCount", "selectionPaths", "selectionNodePaths", "bankId", "bank", "bankPackage",
                     "sourceKinds", "pluginIds", "pluginNames", "streamTypes", "sourceBits",
                 )
                 if row.get(key) not in (None, "", [])

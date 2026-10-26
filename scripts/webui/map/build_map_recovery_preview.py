@@ -123,6 +123,7 @@ RENDER_CACHE_ROOT = ROOT / "reports/assets/map_recovery/render_cache"
 STREAMING_SCENE_COST_CACHE = ROOT / "reports/assets/map_recovery/streaming_scene_costs.json"
 STREAMING_SCENE_COST_SCHEMA = 1
 ASSET_INDEX = ROOT / "webui/data/assets/index.json"
+ASSET_RELATIONS = ROOT / "webui/data/assets/relations.json"
 
 CLUSTER_RE = re.compile(r"^S_HLOD(\d+)_(-?\d+)_(-?\d+)_Cluster_")
 # `.../<levelId>_art/hlod_v2/pc/hlod<n>/mesh` - the container names the level
@@ -1509,14 +1510,15 @@ def texture_bindings() -> dict[str, dict]:
         return _TEXTURE_BINDINGS
     _TEXTURE_BINDINGS = {}
     _HLOD_TEXTURE_BINDINGS = {}
-    if not ASSET_INDEX.is_file():
+    if not ASSET_INDEX.is_file() or not ASSET_RELATIONS.is_file():
         return _TEXTURE_BINDINGS
     try:
         payload = json.loads(ASSET_INDEX.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
+        relations = json.loads(ASSET_RELATIONS.read_text(encoding="utf-8")).get("relations") or {}
+    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
         return _TEXTURE_BINDINGS
     source_roots = payload.get("sourceRoots") or {}
-    for asset_rel, relation in (payload.get("relations") or {}).items():
+    for asset_rel, relation in relations.items():
         material_match = HLOD_MATERIAL_REL_RE.search(str(asset_rel).replace("\\", "/"))
         if material_match and isinstance(relation, dict):
             selected = None
@@ -1735,6 +1737,7 @@ def _texture_binding_table_signature(
     payload = {
         "schema": TEXTURE_BINDING_TABLE_SCHEMA,
         "assetIndex": file_content_evidence(ASSET_INDEX),
+        "assetRelations": file_content_evidence(ASSET_RELATIONS),
         "assetMapSha256": asset_map_sha256(asset_map),
         "assetMap": repo_rel(asset_map),
         "baseTextureSlots": list(BASE_TEXTURE_SLOTS),
@@ -1797,7 +1800,7 @@ def prepare_render_bindings(
     ) else {}
     signature = (
         _texture_binding_table_signature(asset_map, texture_files, material_root)
-        if asset_map.is_file() and ASSET_INDEX.is_file() else None
+        if asset_map.is_file() and ASSET_INDEX.is_file() and ASSET_RELATIONS.is_file() else None
     )
     if signature is not None:
         cached = _read_texture_binding_tables(signature)

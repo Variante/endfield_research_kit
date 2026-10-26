@@ -143,8 +143,10 @@
       return group.spec.values ? asList(group.spec.values(item)) : null;
     }
 
-    function groupMatches(group, item, values = itemValues(group, item)) {
-      if (!group.active.size || values === null) return true;
+    function groupMatches(group, item, values) {
+      if (!group.active.size) return true;
+      if (values === undefined) values = itemValues(group, item);
+      if (values === null) return true;
       if (group.spec.match) return !!group.spec.match(item, group.active);
       if (group.spec.mode === "all") {
         for (const value of group.active) if (!values.includes(value)) return false;

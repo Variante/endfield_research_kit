@@ -35,7 +35,7 @@
     "characters",
     "gameplay",
     "audio",
-    "map-recovery",
+    "map",
     "assets",
     "reference",
     "updates",
@@ -465,6 +465,14 @@
     return { q: "", sort: "path", showEmptyModels: false, showCollision: false };
   }
 
+  // The exported files an asset row stands for. Update badges match these
+  // against the comparison feed; walking the whole row (search text, labels)
+  // finds nothing more and dominated the facet render.
+  function assetFilePaths(entry) {
+    const own = (row) => [row.rel, row.rawRels, row.previewRel, row.cropOf];
+    return [own(entry), (entry.variants || []).map(own)];
+  }
+
   // Type/category/source chips. Counts are totals over every asset (not
   // narrowed by search); the score-ranked search stays in applyAssetFilters.
   function createAssetFacets() {
@@ -472,7 +480,7 @@
       countMode: "total",
       chipClassName: "asset-filter-chip",
       groups: [
-        window.WebUI.updateBadges.filterGroup("asset", (entry) => window.WebUI.updateBadges.fileStatus(entry)),
+        window.WebUI.updateBadges.filterGroup("asset", (entry) => window.WebUI.updateBadges.fileStatus(assetFilePaths(entry))),
         { id: "type", container: "#asset-type-filter", section: "asset-type", order: "count",
           values: (entry) => entry.ext || entry.kind, label: assetTypeLabel,
           title: (value) => `${assetTypeLabel(value)}\n${assetUiText("filterCountHint")}` },
@@ -730,7 +738,7 @@
       characters: "charactersPageTitle",
       gameplay: "gameplayPageTitle",
       audio: "audioPageTitle",
-      "map-recovery": "mapRecoveryPageTitle",
+      "map": "mapRecoveryPageTitle",
       assets: "assetsPageTitle",
       reference: "referencePageTitle",
       updates: "updatesPageTitle",
@@ -794,8 +802,19 @@
 
   function bindViewTabs() {
     const tabs = $$(".view-tab");
+    const openTab = (view) => {
+      if (view === "gameplay" && window.WebUI.gameplayTabs) {
+        window.WebUI.gameplayTabs.open("character", "", { fresh: true });
+      } else {
+        const url = new URL(location.href);
+        url.search = "";
+        url.hash = "";
+        history.replaceState(history.state, "", url);
+        setActiveView(view);
+      }
+    };
     tabs.forEach((button) => {
-      button.addEventListener("click", () => setActiveView(button.dataset.view));
+      button.addEventListener("click", () => openTab(button.dataset.view));
     });
     $("#view-tabs")?.addEventListener("keydown", (event) => {
       if (!event.target.matches(".view-tab")) return;
@@ -811,11 +830,11 @@
       event.preventDefault();
       const nextTab = visibleTabs[nextIndex];
       nextTab.focus();
-      setActiveView(nextTab.dataset.view);
+      openTab(nextTab.dataset.view);
     });
     window.addEventListener("hashchange", () => {
       // Normalize retired/unknown hashes as well as selecting valid views.
-      setActiveView(resolveViewFromHash());
+      setActiveView(resolveViewFromHash(), { updateHash: false });
     });
   }
 
@@ -907,7 +926,8 @@
         ASSET_STATE.entries = hydrated.entries;
         ASSET_STATE.entryByRel = hydrated.entryByRel;
         ASSET_STATE.rawEntryByRel = hydrated.rawEntryByRel;
-        ASSET_STATE.relations = payload.relations || {};
+        ASSET_STATE.relations = {};
+        ASSET_STATE.relationsPromise = null;
         // Optional sidecar: a missing or stale file leaves every asset
         // unowned instead of failing the page.
         fetch("data/assets/table_owners.json")
@@ -953,6 +973,22 @@
       });
 
     return ASSET_STATE.loadPromise;
+  }
+
+  // Material/texture/model relations ship as a sidecar the list, filters and
+  // search never read; fetch it on first detail or model-viewer use. A
+  // package without it (media only) leaves every asset unrelated.
+  function ensureAssetRelations() {
+    if (!ASSET_STATE.relationsPromise) {
+      ASSET_STATE.relationsPromise = fetch("data/assets/relations.json")
+        .then((res) => (res.ok ? res.json() : null))
+        .catch(() => null)
+        .then((payload) => {
+          ASSET_STATE.relations = (payload && payload.relations) || {};
+          ASSET_STATE.relationsLoaded = true;
+        });
+    }
+    return ASSET_STATE.relationsPromise;
   }
 
   function normalizeImageCategory(value) {
@@ -1278,8 +1314,12 @@
       entry.groupLabel = familyGroupInfo.label;
       entry.groupRaw = familyGroupInfo.raw;
       entry.familyKey = `${entry.source}::${familyGroupInfo.key}`.toLowerCase();
+      // The path fields below already carry every file name except these;
+      // walking the whole entry for file names cost seconds on 200k rows.
       entry.searchText = [
-        window.WebUI.linkedFileSearchText(entry),
+        window.WebUI.linkedFileSearchText(entry.cropOf, entry.previewRel, entry.collision),
+        entry.variantScope,
+        entry.familyKey,
         entry.rel,
         entry.name,
         entry.dir,
@@ -1860,7 +1900,7 @@
     const name = document.createElement("div");
     name.className = "asset-row-name";
     name.textContent = entry.name;
-    name.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(entry));
+    name.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(assetFilePaths(entry)));
     line1.appendChild(name);
 
     const size = document.createElement("div");
@@ -2043,7 +2083,7 @@
     $("#asset-detail").hidden = false;
     const activeVariant = getActiveAssetFile(entry);
     $("#asset-detail-title").textContent = entry.name;
-    $("#asset-detail-title").insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(activeVariant || entry));
+    $("#asset-detail-title").insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(assetFilePaths(activeVariant || entry)));
     $("#asset-detail-meta").textContent = activeVariant ? activeVariant.rel : entry.rel;
     $("#asset-open-raw").href = assetHref(activeVariant ? activeVariant.rel : entry.rel);
     renderCurrentFileDownload(entry);
@@ -2269,6 +2309,12 @@
   }
 
   function renderRelations(entry) {
+    ASSET_STATE.relationsEntry = entry;
+    if (!ASSET_STATE.relationsLoaded) {
+      ensureAssetRelations().then(() => {
+        if (ASSET_STATE.relationsEntry === entry) renderRelations(entry);
+      });
+    }
     const relation = collectEntryRelations(entry);
 
     renderRelationList(
@@ -2624,6 +2670,7 @@
     const res = await fetch(assetHref(rel));
     if (!res.ok) throw new Error(`OBJ HTTP ${res.status}`);
     const model = parseObj(await res.text());
+    await ensureAssetRelations();
     bindObjMaterials(model, ASSET_STATE.relations[rel] || {});
     return rememberCached(ASSET_STATE.modelCache, rel, model);
   }
@@ -3724,6 +3771,7 @@
   }
 
   async function loadFbxAsset(rel) {
+    await ensureAssetRelations();
     const cached = ASSET_STATE.fbxSummaryCache.get(rel);
     if (cached) return rememberCached(ASSET_STATE.fbxSummaryCache, rel, cached);
 
@@ -4340,7 +4388,7 @@
     window.addEventListener("webui:debug-changed", syncDebugViewVisibility);
     ensureAssetPanelToggle();
     window.WebUI.locateCurrent?.bind($("#asset-locate-current"), locateSelectedAsset);
-    setActiveView(resolveViewFromHash());
+    setActiveView(resolveViewFromHash(), { updateHash: false });
     Object.assign(window.WebUI, { setViewBusy, setShellStatus, clearShellStatus, setActiveView });
   }
 

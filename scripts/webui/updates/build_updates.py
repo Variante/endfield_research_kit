@@ -1955,11 +1955,13 @@ def main(argv: list[str] | None = None) -> int:
         )
         webui_payload["previousExportPrune"] = prune_result
 
-    write_json(out_path, webui_payload, indent=2, compact=False)
-    write_json(characters_out_path, character_updates, indent=2, compact=False)
+    # Browser feeds are parsed on page entry; indentation alone nearly tripled
+    # reference.json, so they are written compact.
+    write_json(out_path, webui_payload)
+    write_json(characters_out_path, character_updates)
     for page, payload in page_updates.items():
         sidecar_path = out_path.parent / f"{page}.json"
-        write_json(sidecar_path, payload, indent=2, compact=False)
+        write_json(sidecar_path, payload)
         summary = payload["totals"] if payload["available"] else payload.get("diagnostics")
         print(f"[build_updates] {page.title()} changes: {summary}; sidecar: {sidecar_path}")
     write_update_feed_history(webui_payload, state_dir)

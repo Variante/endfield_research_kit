@@ -22,7 +22,8 @@ the common style when feature stylesheets load later.
 Primary sidebars expose every filtered match in one continuous scroll range.
 `src/ui/continuous_list.js` mounts only viewport rows and overscan for ordinary
 catalogs, measures variable heights, and supports keyboard navigation and direct
-location. Gameplay groups retain one collapsible heading; Story, Assets and Audio
+location. Virtual row wrappers use `overflow: clip` so only the list host owns
+scrolling. Gameplay groups retain one collapsible heading; Story, Assets and Audio
 keep their existing virtual renderers. Data Files discovers source counts and
 fetches only viewport blocks through the existing read-only API, with a bounded
 metadata cache and request-generation gates. Right-pane detail pagination stays
@@ -101,8 +102,16 @@ Assets' optional collision source maps to its own `webui/data/assets/collision/`
 publication, with the source root retained in the index and resources package.
 It does not replace canonical render exports or establish cross-page ownership.
 
+Map navigation uses `#map`, including Story and Gameplay links and the packaged
+WebUI route allowlist.
+
 Gameplay has one dataset bar for Characters, Weapons, Essences, Equipment,
-Items, Enemies, Combat stages and Activities. The shared routing controller
+Items, Enemies, Combat stages and Activities. Main Gameplay navigation opens
+Characters while explicit dataset links retain their target. The shared routing controller
+leaves the root URL unchanged on initial entry and updates routes when the user
+switches pages/datasets, retaining existing local selections/settings. Explicit links still work. It
+guards Activities URL writes by the active dataset and visible panel, so shared
+control restoration cannot redirect a Characters refresh. It
 loads all three indexes together on entry and refreshes them together for
 language changes/retries; counts no longer depend on visiting each catalog.
 Details remain selection-driven and publication ownership stays with each
@@ -415,6 +424,7 @@ Gameplay character metadata and facets distinguish elemental type from main
 and secondary abilities (`mainAttrType` / `subAttrType`). Loadout equipment
 terms keep the authored main/secondary target label beside its resolved ability;
 changing character changes the resolved label, never the original target scope.
+Equipment main-ability terms use an accent tint and solid underline; secondary-ability terms use the secondary accent and dashed underline. Character Loadout applies the same treatment to equipment attributes resolved against the selected character, with explicit main/secondary labels; combined targets keep both indicators. These are display cues and do not change calculation or target scope.
 
 Assets publishes Story Wiki's authored item-to-icon bindings as `wikiItemIcons`
 in `story_media.json`, read from the current exported ItemTable. Gameplay's
@@ -442,3 +452,11 @@ publications keep their partial-value labels until rebuilt.
 Accessory 1/2 offer reciprocal copy buttons for equipment and enhancement
 choices. Copying creates independent enhancement state, refreshes calculations
 and saves the destination; an empty source disables its copy button.
+
+Page activation uses the shared `webui:view-changed` event; Text, Updates and
+Recovery do not also bootstrap from tab clicks and hash events. Gameplay
+ignores delayed same-language Story announcements, while actual language
+changes and explicit retries refresh the catalogs. Characters and Activities
+share pending requests for the requested language. Audio search and facet
+changes reuse dataset sorting and cached facet values; large record
+normalization yields to browser input and rejects superseded generations.

@@ -1295,12 +1295,9 @@
       renderReferenceList();
       renderReferenceRows();
     });
-    document.querySelectorAll(".view-tab").forEach((button) => {
-      button.addEventListener("click", () => {
-        if (button.dataset.view === "reference") setTimeout(maybeLoadReference, 0);
-      });
+    window.addEventListener("webui:view-changed", (event) => {
+      if (event.detail?.view === "reference") maybeLoadReference();
     });
-    window.addEventListener("hashchange", () => setTimeout(maybeLoadReference, 0));
     window.addEventListener("webui:ui-locale-changed", refreshReference);
     window.addEventListener("webui:language-changed", (event) => {
       const language = String(event.detail?.language || currentLanguage()).toUpperCase();

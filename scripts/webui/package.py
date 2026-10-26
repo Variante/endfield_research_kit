@@ -106,7 +106,7 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "reference", "updates", "recovery", "data-inspector"]);
+  const AVAILABLE_VIEWS = new Set(["story", "map", "characters", "gameplay", "audio", "reference", "updates", "recovery", "data-inspector"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
   const DEBUG_ONLY_VIEWS = new Set(["recovery"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", recovery: "story" });
@@ -938,7 +938,7 @@ def create_package(args: argparse.Namespace) -> int:
     if "story" in selected:
         copied_text_files = [
             path for path in iter_webui_text_files(webui_root)
-            if path.relative_to(webui_root).as_posix() != "data/assets/index.json"
+            if path.relative_to(webui_root).as_posix() not in ("data/assets/index.json", "data/assets/relations.json")
         ]
     page_local_media_files = list(iter_page_local_media_files(webui_root)) if "media" in selected else []
     resource_data_files = list(iter_resource_data_files(webui_root)) if "resource" in selected else []
@@ -1137,6 +1137,9 @@ def _write_resources_package(
         zip_writestr(zipf, written, "README-webui-resources-package.txt", RESOURCES_PACKAGE_README)
         asset_index_json = json.dumps(plan.complete_asset_payload, ensure_ascii=False, separators=(",", ":"))
         zip_writestr(zipf, written, "webui/data/assets/index.json", asset_index_json)
+        asset_relations = webui_root / "data" / "assets" / "relations.json"
+        if asset_relations.is_file():
+            zip_write_file(zipf, written, asset_relations, webui_arcname(webui_root, asset_relations))
         for path in resource_data_files:
             zip_write_file(zipf, written, path, webui_arcname(webui_root, path))
         for item in resource_assets + resource_audio:

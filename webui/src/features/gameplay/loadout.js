@@ -451,12 +451,17 @@
         const shown = Number.isFinite(value) ? formatAttr(calc, targets[0] ?? line.attrType, value, h) : "-";
         // Multiplier lines are fractions of the attribute; show them as percent.
         const percent = [MODIFIER.BaseMultiplier, MODIFIER.Multiplier].includes(Number(line.modifierType)) && Number.isFinite(value);
-        return `${name} +${percent ? h.formatDescriptionValue(value, "0.0%") : shown}`;
+        const matchesMain = targets.includes(Number(entry.mainAttrType));
+        const matchesSub = targets.includes(Number(entry.subAttrType));
+        const roles = [matchesMain ? "main" : "", matchesSub ? "sub" : ""].filter(Boolean);
+        const roleLabel = roles.map((role) => h.text(role === "main" ? "stat_main_attr" : "stat_sub_attr")).join(" / ");
+        const content = h.escapeHtml(`${name} +${percent ? h.formatDescriptionValue(value, "0.0%") : shown}`);
+        return roles.length ? `<span class="${roles.map((role) => `gameplay-ability-${role}`).join(" ")}" title="${h.escapeHtml(roleLabel)}">${content}<small class="gameplay-ability-label">${h.escapeHtml(roleLabel)}</small></span>` : content;
       }).join(" · ");
       // A line whose value is the same at every step has nothing to enhance.
       const varies = lines.some((line) => new Set((line.values || []).map(Number)).size > 1);
-      if (steps <= 1 || !varies) return `<div class="gameplay-loadout-fixed">${h.escapeHtml(label)}</div>`;
-      return `<label class="gameplay-loadout-slider"><span>${h.escapeHtml(label)} <b>${step}/${steps}</b></span><input type="range" min="1" max="${steps}" step="1" value="${step}" data-loadout="enhance" data-slot="${slotKey}" data-line="${h.escapeHtml(attrIndex)}"></label>`;
+      if (steps <= 1 || !varies) return `<div class="gameplay-loadout-fixed">${label}</div>`;
+      return `<label class="gameplay-loadout-slider"><span>${label} <b>${step}/${steps}</b></span><input type="range" min="1" max="${steps}" step="1" value="${step}" data-loadout="enhance" data-slot="${slotKey}" data-line="${h.escapeHtml(attrIndex)}"></label>`;
     }).join("");
   }
 
