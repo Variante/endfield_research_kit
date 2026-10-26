@@ -142,15 +142,22 @@ in `skippedKinds`; this does not suppress changes in the other kinds. Entries ar
 independent of media flags. Deleted IDs are retained as comparison data,
 without inserting old content into current page datasets.
 Story/Map/Gameplay sidecar schema 3 adds field-level `changes` and a bounded
-`file` comparison for changed linked export files; Characters schema 4 includes
-catalog field changes. One-sided records retain field paths so the frontend
+`file` comparison for changed linked export files; Characters schema 5 includes
+catalog field changes keyed by owned name/evidence identities and asset paths,
+excluding generated appearance-sidecar locations. Raw character snapshots are
+preserved. The Characters frontend joins exact constituent record IDs, never
+shared model/search aliases, and labels merged owners separately. Map registry
+records use entity/script-slot identities instead of list positions. Navigation
+can summarize a map group, but detail comparisons select only its active
+physical variant; sibling source files stay in their own comparisons.
+One-sided records retain field paths so the frontend
 can select a common data language. Comparison values serialize integers beyond
 JavaScript's safe range as exact decimal strings, including nested values,
 so text-handle IDs retain their precision. Linked file comparisons reuse the feed's
 maintained readers and preview limits, including coverage and truncation notes.
 The normal detail panels expose old/current values without enabling debug;
-grouped Map variants retain their source owners instead of overwriting a
-sibling variant's change. Enemy detail comparisons are separated by exact
+Map variants retain their source owners instead of overwriting a sibling
+variant's change. Enemy detail comparisons are separated by exact
 configuration owner, matching the IDs and badges on the variant selectors; a
 shared-source change can appear under each affected owner. Status-only legacy sidecars retain their badges with
 an explicit missing-detail explanation.

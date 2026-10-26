@@ -47,6 +47,11 @@ row and category/direction row share label widths and spacing across pages,
 including all Gameplay datasets, Characters and Data's file browser. Dynamic
 sidebars preserve their source controls and visibility; reset synchronization
 runs after page-owned reset handlers.
+Explicit Story/Assets sorting uses flat filtered results so mission/source
+headings cannot reorder them. Story, Assets and Updates reserve multi-word
+relevance ranking for their default sort. Assets variant groups sum published
+file bytes even when their primary alias is a Sprite crop with no file of its
+own; crop-led groups display dimensions and the group's bytes together.
 
 Gameplay owns one Items frontend catalog including buildings, alongside entity
 views. Item facet headings use the common label/count markup. Enemy filters and
@@ -71,6 +76,8 @@ section binding and facets, including selection counts and collapse persistence.
 | Updates | [`webui/updates.md`](webui/updates.md) | `scripts.webui.updates.build_updates` |
 
 The debug-only Recovery tab is documented in [`webui/recovery.md`](webui/recovery.md).
+Its optional JsonData receipt also binds the complete reader package and selected
+StringPool pages; a changed reader, contract or pool invalidates the saved L2 check.
 Gameplay owns eight dataset tabs: Characters, Weapons, Essences, Equipment,
 Items, Enemies, Combat stages, and Activities. Items includes buildings and
 inline recipes; Activities is a Gameplay subpage with its own recovery guide.
@@ -465,3 +472,8 @@ changes and explicit retries refresh the catalogs. Characters and Activities
 share pending requests for the requested language. Audio search and facet
 changes reuse dataset sorting and cached facet values; large record
 normalization yields to browser input and rejects superseded generations.
+
+Assets PNG previews offer an opt-in `Ignore alpha / RGB` control. It sets alpha
+to opaque on decoded pixels before browser bitmap conversion, preserving RGB
+hidden by zero alpha. Original downloads and exported files stay unchanged;
+this inspection mode does not reconstruct material shader appearance.

@@ -188,7 +188,7 @@ def _map(layout, tables, localization, *, families=()):
                                  {key: int(row["idNum"]) for key, row in basic.items()})
     for key, row in basic.items():
         _add(records, key, f"LevelBasicInfoTable/{key}", row, localization)
-        records[key]["WorldEntityRegistry"] = registry.get(key, {})
+        records[key]["WorldEntityRegistry"] = _registry_records(registry.get(key, {}))
         for family in families:
             folder = layout.json_dir / family / key
             paths = sorted(folder.rglob("*")) if folder.is_dir() else [folder.with_suffix(".json")]
@@ -196,6 +196,20 @@ def _map(layout, tables, localization, *, families=()):
                 if path.is_file():
                     records[key][path.relative_to(layout.root).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
     return records
+
+
+def _registry_records(bucket):
+    """Entity identities, including script slots, survive insertions/reordering."""
+    result = {}
+    for family, rows in bucket.items():
+        entities = {}
+        for identity, info in rows:
+            key = (json.dumps(identity, sort_keys=True, separators=(',', ':'))
+                   if isinstance(identity, dict) else str(identity))
+            entities.setdefault(key, []).append(info)
+        result[family] = {key: sorted(values, key=lambda value: json.dumps(value, sort_keys=True))
+                          for key, values in entities.items()}
+    return result
 
 
 def _file_comparison(source: str, status: str, roots: list[Path]) -> dict[str, Any]:

@@ -866,3 +866,12 @@ unlocked nodes through the chosen stage, bounded by the selected breakthrough;
 the default selects every available stage. Affinity requirements and modifier
 sources remain visible. Concrete authored targets are retained rather than
 replaced with an assumed main-ability target or parsed from localized prose.
+
+Affinity requirements retain raw `attributeNodeInfo.favorability` in generated
+data. Loadout displays `floor(raw / 3)` with a percent sign, following the
+user-confirmed game display: raw 60 / 150 / 300 / 300 becomes
+20% / 50% / 100% / 100%. Zero requirements remain 0%. Exported
+`CharInfoTalentUpgradeCtrl.lua` compares raw values for unlocking but formats
+requirements through `CharInfoUtils.getCharRelationShowValue`, which floors
+`GetFriendshipPercent(raw) * 100`. The /3 display conversion is the accepted
+interim rule; the native conversion body has not yet been authenticated.

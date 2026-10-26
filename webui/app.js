@@ -4039,10 +4039,24 @@ function cutsceneTrackInventoryChips(detail) {
 
 
 // ---------- conversation pane ----------
+function syncStorySelectionUrl(key, languageCode) {
+  const url = new URL(window.location.href);
+  const previous = url.searchParams.get("story") || url.searchParams.get("conv") || "";
+  if (conversationAliasBaseKey(previous) !== conversationAliasBaseKey(key)) {
+    url.searchParams.delete("line");
+    url.searchParams.delete("cid");
+  }
+  url.searchParams.set("story", key);
+  url.searchParams.delete("conv");
+  url.searchParams.set("lang", languageCode);
+  history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 async function loadConv(key, { force = false } = {}) {
   const languageCode = STATE.language;
   const wasSelected = STATE.selectedKey === key;
   STATE.selectedKey = key;
+  syncStorySelectionUrl(key, languageCode);
   $$(".item").forEach((n) => n.classList.toggle("selected", n.dataset.key === key));
   syncRevealCurrentButton();
   if (!force && !wasSelected && STATE.convCache.has(key)) {
@@ -4400,6 +4414,25 @@ function optionRiskLineInfos(option) {
     out.push({ lineId, source });
   }
   return out;
+}
+
+function loopingMenuContinuationOption(group, conv, outcomesByOptionId) {
+  const options = Array.isArray(group && group.options) ? group.options : [];
+  if (options.length < 2) return null;
+  let continuation = null;
+  for (const option of options) {
+    const outcomes = outcomesByOptionId.get(option.id) || [];
+    if (!outcomes.length || sameSceneOptionOutcomes(option, conv, outcomesByOptionId).length !== outcomes.length) {
+      return null;
+    }
+    if (outcomes.every((outcome) => outcome.loop && outcome.loop.kind === "sameOptionMenuReturn")) continue;
+    if (continuation || !outcomes.every((outcome) => (
+      !outcome.loop && outcome.outcomeKind === "nextOptionPrompt"
+      && outcome._debug && outcome._debug.advancesToNextOptionNode === true
+    ))) return null;
+    continuation = option;
+  }
+  return continuation;
 }
 
 function optionGroupHasTimelineRouteBranches(group) {
@@ -7469,6 +7502,18 @@ function renderConv(conv) {
     const risk = grp && grp.optionBranchRisk && typeof grp.optionBranchRisk === "object"
       ? grp.optionBranchRisk
       : null;
+    const menuContinuation = loopingMenuContinuationOption(grp, conv, outcomesByOptionId);
+    if (menuContinuation) {
+      // Repeated questions stay in columns; the sole advancing choice remains
+      // in the menu, with its response and later prompts below the whole menu.
+      const optionLineIds = new WeakMap();
+      for (const opt of opts) {
+        optionLineIds.set(opt, opt === menuContinuation ? [] : optionCandidateLineIds(opt, grp));
+      }
+      const model = { optionLineIds, commonLineIds: optionCandidateLineIds(menuContinuation, grp) };
+      branchDisplayModelByGroup.set(grp, model);
+      return model;
+    }
     if (risk && risk.code === "sharedTimelineContinuation") {
       const optionLineIds = new WeakMap();
       for (const opt of opts) optionLineIds.set(opt, []);
@@ -7545,15 +7590,9 @@ function renderConv(conv) {
       }
       optionLineIds.set(opt, direct);
     }
-    if (
-      commonLineIds.length
-      && !optionGroupHasBranchContent(grp)
-      && !opts.some((opt) => (optionLineIds.get(opt) || []).length)
-    ) {
-      const model = { optionLineIds, commonLineIds: [] };
-      branchDisplayModelByGroup.set(grp, model);
-      return model;
-    }
+    // Shared-only paths still need an explicit continuation here: an ancestor
+    // branch can claim these lines and remove them from the outer trunk. Keep
+    // their next prompt anchored after the shared lines, even without columns.
     const model = { optionLineIds, commonLineIds };
     branchDisplayModelByGroup.set(grp, model);
     return model;
@@ -7948,9 +7987,13 @@ function renderConv(conv) {
     for (const group of absorbedFollowupGroups) renderedOptGroups.add(group);
     if (commonLinesAfterGroup) frag.appendChild(commonLinesAfterGroup);
     for (const group of followupGroupsToRender) {
-      const followupCtx = branchAnchoredFollowupSet.has(group)
-        ? { ...renderCtx, branchColumn: true, stopBeforeLineIds: branchFollowupStopLineIds }
-        : {};
+      // Prompts on the continuation share its layout level. Marking them as
+      // branch columns indents every later response even outside the menu.
+      const followupCtx = commonLineIdSet.has(String(group.after || ""))
+        ? renderCtx
+        : branchAnchoredFollowupSet.has(group)
+          ? { ...renderCtx, branchColumn: true, stopBeforeLineIds: branchFollowupStopLineIds }
+          : {};
       frag.appendChild(renderOptGroup(group, followupCtx));
     }
     if (branchFollowupMergeLineIds.length) {

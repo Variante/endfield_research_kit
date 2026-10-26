@@ -187,6 +187,7 @@ from scripts.game_data.navmesh_binary import (
     decode_navmesh_state_container,
 )
 from scripts.game_data.string_pool import StringPool, export_string_pool
+from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs
 from scripts.game_data.teleport_validation_binary import (
     TeleportValidationDecodeError,
     decode_teleport_validation_json_table,
@@ -473,7 +474,7 @@ def _level_data_record(path: Path, export_root: Path) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
     tags = ["level", "leveldata", "memorypack"]
     try:
-        decoded = frame_leveldata_named_prefix(path.read_bytes())
+        decoded = frame_leveldata_named_prefix(path.read_bytes(), strings=export_string_pool(export_root / 'game' / 'Json'))
     except (OSError, LevelDataTopLevelFramingError, ValueError) as exc:
         return _error_record(path, export_root, "application/octet-stream", tags, exc)
 
@@ -1395,7 +1396,15 @@ def _descriptor_from_manifest(dataset_id: str, manifest: dict[str, Any]) -> dict
 
 
 def _levelscript_native_after_read(input_signature: dict[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    pool = input_signature.get("stringPool")
+    if pool is not None and snapshot_string_pool_inputs(Path(pool["root"]).parent) != pool:
+        return {"status": "mismatched"}, "StringPool inputs changed during publication"
     selected = input_signature.get("selectedNative") or {}
+    if "spawnerSourceGate" in selected or "rootSourceGate" in selected:
+        family = selected.get("family") or ("SpawnerConfig" if "spawnerSourceGate" in selected else "LevelScript")
+        after, detail = levelscript_native_signature(family=family)
+        if after != selected or after.get("nativeStatus") != "validated":
+            return after, family + " native/source inputs changed during publication: " + detail
     before = selected.get("childNativeGate")
     if not isinstance(before, dict):
         return None, ""
@@ -1576,8 +1585,8 @@ def main(argv: list[str] | None = None) -> int:
         dynamic_records = None
         levelscript_receipt_records = None
         native_after_read = None
-        if dataset_id in {"levelscript-data", "levelscript-template-data", "spawner-config", "atmospheric-npc"} and available:
-            family = {"levelscript-data": "LevelScript", "spawner-config": "SpawnerConfig",
+        if dataset_id in {"level-data", "levelscript-data", "levelscript-template-data", "spawner-config", "atmospheric-npc"} and available:
+            family = {"level-data": "LevelData", "levelscript-data": "LevelScript", "spawner-config": "SpawnerConfig",
                       "levelscript-template-data": "LevelScriptTemplateData",
                       "atmospheric-npc": "AtmosphericNpcData"}[dataset_id]
             native_signature, native_diagnostic = levelscript_native_signature(family=family)
@@ -1585,6 +1594,8 @@ def main(argv: list[str] | None = None) -> int:
             if native_signature.get("nativeStatus") != "validated":
                 available = False
                 diagnostic = native_diagnostic
+        if dataset_id in {"level-data", "levelscript-data", "spawner-config", "atmospheric-npc"} and available:
+            input_signature['stringPool'] = snapshot_string_pool_inputs(layout.json_dir)
         if dataset_id == "levelscript-data" and available:
             levelscript_receipt_records, receipt_signature = try_current_levelscript_records(args.export_root)
             input_signature["canonicalLevelScriptReader"] = receipt_signature
@@ -1633,7 +1644,7 @@ def main(argv: list[str] | None = None) -> int:
         descriptor = None if args.force or not available or force_direct_levelscript or force_direct_skill else _reusable_descriptor(
             args.out_dir, dataset_id, input_signature, args.shard_size
         )
-        if descriptor is not None and dataset_id in {"levelscript-data", "levelscript-template-data"}:
+        if descriptor is not None and dataset_id in {"level-data", "levelscript-data", "levelscript-template-data", "spawner-config", "atmospheric-npc"}:
             native_after_read, native_drift = _levelscript_native_after_read(input_signature)
             if native_drift:
                 descriptor = None
@@ -1670,7 +1681,7 @@ def main(argv: list[str] | None = None) -> int:
                 if available and unity_type is not None else
                 _build_records(root, args.export_root, reader, selector) if available else []
             )
-        if available and dataset_id in {"levelscript-data", "levelscript-template-data"}:
+        if available and dataset_id in {"level-data", "levelscript-data", "levelscript-template-data", "spawner-config", "atmospheric-npc"}:
             native_after_read, native_drift = _levelscript_native_after_read(input_signature)
             if native_drift:
                 available = False

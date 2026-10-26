@@ -1,42 +1,23 @@
 """Selected-build witnesses for state Param cells and two-lane event values.
 
-No open generic offset is used. Param cells come from authenticated concrete
-setter programs; EventData layout is independently derived from its selected
-sequential declaration and checked against the complete native callback.
+No open generic offset is used. Param cells come from current concrete setter
+programs. EventData transport follows its selected sequential declaration and
+the Windows x64 aggregate ABI; callback evaluation is a separate proof.
 """
 from __future__ import annotations
-import json
-import hashlib
 import re
 import struct
-from .contracts import CONTRACTS_DIR
-
-
-def state_index(selected):
-    if not hasattr(selected, '_state_index'):
-        from .mission_shared_native import OwnedBodyIndex
-        selected._state_index = OwnedBodyIndex(selected.image)
-        for key in ('types', 'names_by_pointer', 'extents', 'chained_fragments'):
-            if key in selected.index.__dict__:
-                selected._state_index.__dict__[key] = selected.index.__dict__[key]
-    return selected._state_index
-
-
 def param_layout(selected, wrapper: str) -> dict:
     if not hasattr(selected, '_state_param_layouts'):
-        from .mission_expression_native import evaluate
-        proof = evaluate(image=selected.image, index=state_index(selected))
-        if proof['status'] != 'validated':
-            raise ValueError(f"state Param witness: {proof['status']}: {proof.get('diagnostics', [])[:1]}")
-        raw = (CONTRACTS_DIR / 'mission_expression_native.json').read_bytes()
-        # This joins a generated evaluation to the bytes it evaluated. There is
-        # no recorded/pinned digest of a tracked contract in this consumer.
-        if hashlib.sha256(raw).hexdigest().upper() != proof['contract']['sha256']:
-            raise ValueError('state Param witness: reviewed declaration changed during validation')
-        contract = json.loads(raw)
-        selected._state_param_layouts = {row['wrapper']: row for row in contract['wrapperFields']}
-        selected._state_param_proof = {'status': proof['status'], 'nativeGate': proof['nativeGate'],
-                                      'nativeGateAfter': proof['nativeGateAfter']}
+        selected._state_param_layouts = {}
+    if wrapper not in selected._state_param_layouts:
+        from .mission_trace_closed_cells import layout
+        proof=layout(selected,wrapper)
+        fields=proof['fields']
+        selected._state_param_layouts[wrapper]={
+            'wrapper':wrapper,'instanceField':proof['instanceField'],
+            'argument':fields['constValue']['type'],'boundary':proof['boundary'],'cellProofs':fields,
+            **{name+'Offset':cell['offset'] for name,cell in fields.items()}}
     row = selected._state_param_layouts.get(wrapper)
     if row is None:
         raise ValueError('state Param witness: unsupported concrete wrapper')
@@ -53,7 +34,8 @@ def param_field(selected, qualified: str, wrapper: str, current_type: str):
         raise ValueError('state Param witness: unsupported cell')
     return (owner, field_types[name], row[name+'Offset'],
             {'wrapper': wrapper, 'closedType': owner, 'field': name, 'fieldType': field_types[name],
-             'offset': row[name+'Offset'], 'evidence': row['boundary'], 'runtimeTypeObserved': False})
+             'offset': row[name+'Offset'], 'evidence': row['boundary'], 'runtimeTypeObserved': False,
+             'setterProof':row.get('cellProofs',{}).get(name,{}),'sourceTransferProved':False})
 
 
 def event_layout(selected, name: str) -> dict:
@@ -82,9 +64,11 @@ def event_layout(selected, name: str) -> dict:
 def event_argument_proof(selected, hook, arg):
     if arg != 1:
         raise ValueError('state EventData witness: expected instance callback argument RDX')
-    from .il2cpp.mission_condition_flow import prove_state_callback
-    index = state_index(selected)
-    body = index.body(hook['type'], hook['method'])
-    proof = prove_state_callback(index, body)
-    return {'status': 'validated', 'mode': 'indirectValue', 'completeCallback': proof,
-            'evidence': 'complete callback proof retains incoming RDX pointer and reads raw lanes zero/eight'}
+    if (hook['static'] or hook['returnType']!='void' or len(hook['parameters'])!=1):
+        raise ValueError('state EventData witness: ordinary instance void callback required')
+    proof=event_layout(selected,hook['parameters'][0]['type'])
+    if proof['unboxedBytes']!=16:
+        raise ValueError('state EventData witness: closed aggregate extent differs')
+    return {'status':'validated','mode':'indirectValue','closedLayout':proof,
+            'evidence':'selected two-lane 16-byte value parameter; Windows x64 passes aggregates larger than eight bytes by pointer in RDX',
+            'callbackEvaluationProved':False,'runtimeTypeObserved':False}

@@ -958,9 +958,9 @@ function applyFilters() {
 }
 
 function rebuildTree({ resetScroll = true } = {}) {
-  // A multi-word query switches to a flat list ranked by how many keywords each
-  // entry matched, so the best hits float to the top regardless of story order.
-  if ((STATE.searchTokens || []).length > 1) {
+  // Explicit sorts must span missions and data types. Default Story browsing
+  // retains its tree; a multi-word query uses relevance in a flat list.
+  if ((STATE.sortMode || "story") !== "story" || (STATE.searchTokens || []).length > 1) {
     rebuildFlatSearchList({ resetScroll });
     return;
   }
@@ -1061,13 +1061,14 @@ function rebuildTree({ resetScroll = true } = {}) {
   renderList();
 }
 
-// Flat, ranked result list used when a multi-word query is active: order by
-// keyword-match count (desc), breaking ties with the active sort mode.
+// Flat results preserve explicit sorting; only default Story search ranks by
+// keyword-match count before its story-order tie breaker.
 function rebuildFlatSearchList({ resetScroll = true } = {}) {
   const scores = STATE.searchScores || new Map();
-  const tieBreak = makeItemSorter(STATE.sortMode || "story");
+  const mode = STATE.sortMode || "story";
+  const tieBreak = makeItemSorter(mode);
   const items = [...STATE.filtered].sort((a, b) => {
-    const delta = (scores.get(b.k) || 0) - (scores.get(a.k) || 0);
+    const delta = mode === "story" ? (scores.get(b.k) || 0) - (scores.get(a.k) || 0) : 0;
     return delta || tieBreak(a, b);
   });
 

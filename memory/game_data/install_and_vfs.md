@@ -137,11 +137,12 @@ family to its reader, fixtures and corpus report. How far each reader is
 proven is [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md);
 the bullets below are the routing facts and the boundaries this file owns.
 
-- **JsonData** routes through the `jsondata_corpus` family registry. LipSync
-  has an exact 15-member MemoryPack layout whose six-float rows the native
-  `LipSyncTrack._ConvertToAnimationCurve` consumer reads as Unity `Keyframe`
-  values (`memorypack.lipsync`); lip-sync animation is distinct from
-  language voice-audio availability, and playback selection is unproven. NPC
+- **JsonData**, including the separately cataloged `JsonLip` language blocks,
+  routes through the `jsondata_corpus` family registry. LipSync has an exact
+  15-member MemoryPack frame with six-float rows. `lipsync_native` authenticates
+  the selected channel reader; current Keyframe consumer semantics, live formatter
+  selection and playback remain unresolved. Lip-sync payload availability and
+  language voice-audio availability are separate. NPC
   MontageNew closes a complete named schema through EOF
   (`memorypack.npc_montage`); NPC PrefabInfo and the two NPC catalogs have
   exact JSON schema readers (`schemas.npc_prefab_info`, `schemas.npc_catalog`).

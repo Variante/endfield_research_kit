@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import copy
+import struct
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 
-SCHEMA = 'endfield.wwise-playback-observer.v3'
+SCHEMA = 'endfield.wwise-playback-observer.v4'
 CONTRACT_PATH = CONTRACTS_DIR / 'wwise_playback_capture_native.json'
 KINDS = {'pointer':1, 'u64':1, 'u32':2, 'utf16Direct':3, 'u8':4,
          'u16':5, 'bytes':6, 'argument':7, 'argumentU32':8, 'pointerFromField':9,
@@ -165,3 +166,37 @@ def validate_field_arguments(contract, owners, image):
             offset=binding[offset_key];raw=bytes.fromhex(binding[hex_key])
             if type(offset) is not int or not 0<=offset<=window['bodyLength']-len(raw):raise ValueError('field argument witness exceeds borrowed body')
             if image.bytes_at_va(image.image_base+int(window['rva'],16)+offset,len(raw))!=raw:raise ValueError('field argument selected bytes differ')
+
+
+def validate_global_arguments(contract, owners, image):
+    """Tie each module-relative read to a current dependency-owned RIP load."""
+    bindings = contract['globalArguments']
+    expected = {(h['ownerGroup'], f['name']) for h in contract['hooks']
+                for f in h['memory'] if f['argIndex'] == 5}
+    seen = set()
+    for row in bindings:
+        identity = row['hookKind'], row['fieldName']
+        if identity not in expected or identity in seen:
+            raise ValueError('global argument coverage differs')
+        seen.add(identity)
+        owner = owners[row['ownerContract']]
+        if owner['nativeInputs'] != contract['nativeInputs']:
+            raise ValueError('global argument owner inputs differ')
+        group = next(g for g in owner['nativeGroups'] if g['key'] == row['ownerGroup'])
+        hook = next(h for h in contract['hooks'] if h['ownerGroup'] == row['hookKind'])
+        field = next(f for f in hook['memory'] if f['name'] == row['fieldName'])
+        raw, at = bytes.fromhex(row['instructionHex']), int(row['rva'], 16)
+        prefix = raw[:-4]
+        valid = (len(prefix) == 3 and prefix[0] in (0x48, 0x4c) and prefix[1] == 0x8b
+                 and field['kind'] == 'pointer') or (len(prefix) == 2 and prefix[0] == 0x8b
+                 and field['kind'] == 'u32')
+        if not valid or prefix[-1] & 0xc7 != 5 or field.get('pointerOffsets'):
+            raise ValueError('global argument is not a direct typed RIP load')
+        if not any(int(w['rva'], 16) <= at and at + len(raw) <= int(w['rva'], 16) + w['bodyLength']
+                   for w in group['windows']):
+            raise ValueError('global argument witness exceeds borrowed body')
+        target = at + len(raw) + struct.unpack_from('<i', raw, len(prefix))[0]
+        if target != field['offset'] or image.bytes_at_va(image.image_base + at, len(raw)) != raw:
+            raise ValueError('global argument selected target or bytes differ')
+    if seen != expected:
+        raise ValueError('global argument coverage differs')

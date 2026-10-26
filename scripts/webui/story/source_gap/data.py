@@ -1,4 +1,3 @@
-from functools import lru_cache
 
 from scripts.game_data.codecs.levelscript.record_hints import LEVELSCRIPT_ACTIONBASE_FORMATTER_TABLE_MAPPING_ID
 from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs, rel_path as export_rel_path
@@ -42,7 +41,6 @@ NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES = frozenset({
 NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP = "npcProxyDialogSelection"
 
 
-@lru_cache(maxsize=1)
 def npc_proxy_dialog_selection_sha256() -> str | None:
     """The build that proves the proxy selector claims, or None."""
     group = validated_group(NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP)
@@ -96,7 +94,6 @@ OFFLINE_EXHAUSTION_MAPPING_ID = (
 )
 
 
-@lru_cache(maxsize=1)
 def _installed_native_sha256() -> tuple[str | None, str | None]:
     native = check_installed_native_inputs()
     if not native.validated:

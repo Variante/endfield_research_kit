@@ -12,6 +12,9 @@
 //     prefix never produces one, and an absent sidecar only removes the fact.
 //   * Filter chip counts are totals over grouped entries. Their tooltips and
 //     the empty-list message explain why combined filters can return no rows.
+//     Size/name sorts span all matches in a flat list; path browsing retains
+//     source folders. Explicit sorts take precedence over search relevance.
+//     Variant groups sum their file bytes, including when led by a Sprite crop.
 //   * FBX matching with instance labels, placement, pose and bind matrices
 //     excluded (`fc`),
 //     or byte-identical files (`h`), shares one preview and all resource paths.
@@ -195,6 +198,7 @@
       relationTextureUnresolved: "{slots} / {name} / \u672a\u89e3\u6790",
       relationMaterial: "\u6750\u8d28 / {slots}",
       relationModel: "\u6a21\u578b",
+      imageRgb: "\u5ffd\u7565\u900f\u660e\u5ea6 / RGB",
       loadingImagePreview: "\u6b63\u5728\u52a0\u8f7d\u56fe\u7247\u9884\u89c8...",
       imagePreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u8fd9\u5f20\u56fe\u7247\u3002",
       rawLinkAvailable: "\u4e0a\u65b9\u4ecd\u53ef\u6253\u5f00\u539f\u59cb\u6587\u4ef6\u3002",
@@ -421,6 +425,7 @@
       relationTextureUnresolved: "{slots} / {name} / unresolved",
       relationMaterial: "Material / {slots}",
       relationModel: "Model",
+      imageRgb: "Ignore alpha / RGB",
       loadingImagePreview: "Loading image preview...",
       imagePreviewUnavailable: "Unable to preview this image.",
       rawLinkAvailable: "The raw file link is still available above.",
@@ -591,6 +596,8 @@
     qTimer: null,
     detailToken: 0,
     imageObjectUrl: "",
+    imageIgnoreAlpha: false,
+    imagePreviewRequest: 0,
     filters: createDefaultFilters(),
     facets: createAssetFacets(),
     modelCache: new Map(),
@@ -783,6 +790,9 @@
     const color = normalizePreviewBackground(ASSET_STATE.previewBackground);
     const enabled = selectedAssetSupportsPreviewBackground(entry);
     controls.hidden = !enabled;
+    $("#asset-image-rgb-label").hidden = entry?.kind !== "image";
+    $("#asset-image-rgb-text").textContent = assetUiText("imageRgb");
+    $("#asset-image-rgb").checked = ASSET_STATE.imageIgnoreAlpha;
     const modelInput = $("#asset-model-color");
     const modelLabel = $("#asset-model-color-label");
     const isModel = entry?.kind === "model";
@@ -1092,6 +1102,11 @@
     $("#asset-model-emission").addEventListener("change", (ev) => {
       ASSET_STATE.modelEmission = ev.target.checked;
       queueModelRender();
+    });
+    $("#asset-image-rgb").addEventListener("change", (ev) => {
+      ASSET_STATE.imageIgnoreAlpha = ev.target.checked;
+      const entry = ASSET_STATE.selectedEntry;
+      if (entry?.kind === "image") renderImagePreview(getActiveAssetFile(entry) || entry);
     });
     $("#asset-preview-bg-color").addEventListener("input", (ev) => {
       setPreviewBackground(ev.target.value);
@@ -1876,6 +1891,9 @@
         }
         primary.variantCount = primary.variants.length;
         primary.variantSummary = summarizeVariantLabels(primary.variants);
+        // A Sprite crop can be the primary alias but has no file bytes itself.
+        // Sort the displayed group by all of its published variant files.
+        primary.size = primary.variants.reduce((sum, variant) => sum + variant.size, 0);
         primary.searchText = [
           primary.searchText,
           ...bucket.slice(1).flatMap((entry) => [entry.rel, entry.dir, entry.pathId, entry.name]),
@@ -2113,8 +2131,8 @@
     ASSET_STATE.searchTokens = tokens;
     ASSET_STATE.searchScores = tokens.length ? scores : null;
     const byOrder = window.WebUI.sorting.comparator("asset-sort", (a, b) => compareAssets(a, b, filters.sort));
-    // A multi-word query ranks every match before virtual rendering.
-    ASSET_STATE.filtered.sort(tokens.length > 1
+    // Explicit sorts take precedence over multi-word search relevance.
+    ASSET_STATE.filtered.sort(filters.sort === "path" && tokens.length > 1
       ? (a, b) => ((scores.get(b) || 0) - (scores.get(a) || 0)) || byOrder(a, b)
       : byOrder);
     $("#asset-shown").textContent = ASSET_STATE.filtered.length.toLocaleString();
@@ -2163,9 +2181,9 @@
   }
 
   function rebuildAssetTree({ resetScroll = true } = {}) {
-    // Multi-word query: skip the source tree and show a flat list ranked by how
-    // many keywords each asset matched.
-    if ((ASSET_STATE.searchTokens || []).length > 1) {
+    // Source/group headings would override a global size or name order.
+    // Keep the tree for path browsing and flatten explicitly sorted results.
+    if (ASSET_STATE.filters.sort !== "path" || (ASSET_STATE.searchTokens || []).length > 1) {
       rebuildFlatAssetSearch({ resetScroll });
       return;
     }
@@ -3193,7 +3211,14 @@
     return link;
   }
 
+  function clearImagePreviewRequest() {
+    ASSET_STATE.imagePreviewRequest += 1;
+    if (ASSET_STATE.imageObjectUrl) URL.revokeObjectURL(ASSET_STATE.imageObjectUrl);
+    ASSET_STATE.imageObjectUrl = "";
+  }
+
   function resetAssetPreviewSurface() {
+    clearImagePreviewRequest();
     const img = $("#asset-preview-image");
     const video = $("#asset-preview-video");
     const canvas = $("#asset-model-canvas");
@@ -3233,7 +3258,9 @@
     $("#asset-model-stats").replaceChildren();
   }
 
-  function renderImagePreview(entry) {
+  async function renderImagePreview(entry) {
+    clearImagePreviewRequest();
+    const request = ASSET_STATE.imagePreviewRequest;
     const img = $("#asset-preview-image");
     const canvas = $("#asset-model-canvas");
     const placeholder = $("#asset-preview-placeholder");
@@ -3262,8 +3289,28 @@
       placeholder.textContent = assetUiText("imagePreviewUnavailable");
       note.textContent = assetUiText("rawLinkAvailable");
     };
-    img.src = assetHref(entry.rel);
     img.alt = entry.name;
+    if (!ASSET_STATE.imageIgnoreAlpha || entry.ext !== "png") {
+      img.src = assetHref(entry.rel);
+      return;
+    }
+    img.hidden = true;
+    try {
+      const response = await fetch(assetHref(entry.rel));
+      if (!response.ok) throw new Error(`Image HTTP ${response.status}`);
+      const png = await decodePng(new Uint8Array(await response.arrayBuffer()));
+      // Change alpha before any browser bitmap conversion can discard hidden RGB.
+      for (let i = 3; i < png.data.length; i += 4) png.data[i] = 255;
+      const blob = await encodePng(png.width, png.height, png.data);
+      if (request !== ASSET_STATE.imagePreviewRequest) return;
+      ASSET_STATE.imageObjectUrl = URL.createObjectURL(blob);
+      img.src = ASSET_STATE.imageObjectUrl;
+      img.hidden = false;
+    } catch (error) {
+      if (request !== ASSET_STATE.imagePreviewRequest) return;
+      img.onerror();
+      console.warn("RGB image preview failed", error);
+    }
   }
 
   function renderVideoPreview(entry) {
@@ -5358,7 +5405,9 @@
 
   // A Sprite crop has pixels but no file of its own.
   function formatAssetSize(entry) {
-    return entry && entry.cropOf ? entry.pixelSize : formatBytes(entry ? entry.size : 0);
+    if (entry?.cropOf) return entry.size > 0
+      ? `${entry.pixelSize} / ${formatBytes(entry.size)}` : entry.pixelSize;
+    return formatBytes(entry ? entry.size : 0);
   }
 
   function formatBytes(bytes) {

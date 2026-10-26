@@ -40,6 +40,10 @@ fingerprints; it does not replay payload readers or restream game data.
    path set is rechecked; mutation during the scan is stale evidence. The audit
    exposes the CLI pin and successful receipt recheck. Optional Buff selected-root
    replay input pins are included in both checks when the registry carries them.
+   The complete reader-package snapshot and selected StringPool page set are
+   also compared with current inputs before and after the scan. Missing,
+   malformed or changed snapshots refuse publication even when the registry
+   producer file itself is unchanged.
    The registry remains the owner of reader/source validation.
 
 The measurement and fail-closed rules are in the

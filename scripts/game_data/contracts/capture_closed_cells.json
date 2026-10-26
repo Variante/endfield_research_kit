@@ -1,0 +1,120 @@
+{
+  "schema": "endfield.capture-closed-cell-claims.v1",
+  "status": "reviewed",
+  "wrappers": {
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_string_ForMemoryPack": {
+      "instanceField": "__instance",
+      "closedType": "Beyond.Gameplay.Actions.Param`1<string>",
+      "genericDefinition": "Beyond.Gameplay.Actions.Param`1",
+      "arguments": [
+        "string"
+      ],
+      "fields": {
+        "constValue": {
+          "argument": 0
+        },
+        "paramSource": {
+          "type": "int"
+        },
+        "idRef": {
+          "type": "int"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_GEnums_CompareOperator_ForMemoryPack": {
+      "instanceField": "__instance",
+      "closedType": "Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>",
+      "genericDefinition": "Beyond.Gameplay.Actions.Param`1",
+      "arguments": [
+        "Beyond.GEnums.CompareOperator"
+      ],
+      "fields": {
+        "constValue": {
+          "argument": 0
+        },
+        "paramSource": {
+          "type": "int"
+        },
+        "idRef": {
+          "type": "int"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_QuestState_ForMemoryPack": {
+      "instanceField": "__instance",
+      "closedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+QuestState>",
+      "genericDefinition": "Beyond.Gameplay.Actions.Param`1",
+      "arguments": [
+        "Beyond.Gameplay.MissionSystem+QuestState"
+      ],
+      "fields": {
+        "constValue": {
+          "argument": 0
+        },
+        "paramSource": {
+          "type": "int"
+        },
+        "idRef": {
+          "type": "int"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_MissionSystem_MissionState_ForMemoryPack": {
+      "instanceField": "__instance",
+      "closedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MissionSystem+MissionState>",
+      "genericDefinition": "Beyond.Gameplay.Actions.Param`1",
+      "arguments": [
+        "Beyond.Gameplay.MissionSystem+MissionState"
+      ],
+      "fields": {
+        "constValue": {
+          "argument": 0
+        },
+        "paramSource": {
+          "type": "int"
+        },
+        "idRef": {
+          "type": "int"
+        },
+        "path": {
+          "type": "string"
+        }
+      }
+    },
+    "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_float_double_ForMemoryPack": {
+      "instanceField": "___instance",
+      "closedType": "Beyond.Blackboard+BlackboardParamBase`2<float,double>",
+      "genericDefinition": "Beyond.Blackboard+BlackboardParamBase`2",
+      "arguments": [
+        "float",
+        "double"
+      ],
+      "concreteReceiver": "Beyond.Blackboard+BlackboardDouble",
+      "fields": {
+        "blackboardKey": {
+          "type": "string"
+        },
+        "useBlackboardKey": {
+          "type": "bool"
+        },
+        "value": {
+          "argument": 0
+        }
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Named generated setter prefix loads the typed closed instance and stores its unchanged typed parameter into the derived cell; no open generic instance offset is used.",
+    "conditional": "Passive storage reads require the declared receiver and readable lifetime. Shared native setter aliases are permitted as metadata names map directly to the same implementation; these methods are never hooked by this witness.",
+    "unresolved": "No serialized reader/source transfer, Boolean normalization, runtime setter execution, provider lookup or coherent live object snapshot is established."
+  }
+}

@@ -512,3 +512,8 @@ same-content file details. Converted-file equality does not establish original
 Unity object equality or ownership; OBJ omits skin weights and blend shapes.
 Sprite crops retain their separate texture/crop content evidence. Export files
 remain in place.
+
+Assets PNG previews offer an opt-in `Ignore alpha / RGB` control. It sets alpha
+to opaque on decoded pixels before browser bitmap conversion, preserving RGB
+hidden by zero alpha. Original downloads and exported files stay unchanged;
+this inspection mode does not reconstruct material shader appearance.

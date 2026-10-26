@@ -57,6 +57,16 @@ and leaving only report/CLI orchestration in `story_recovery`.
 
 - DialogTree and Timeline recover local line order and explicit option routes.
   A local branch does not imply a cross-Story continuation.
+- A shared-only option response remains an explicit frontend continuation even
+  when no option has exclusive lines. An ancestor branch may already remove
+  that response from the outer trunk; discarding its local shared lines then
+  hides both the dialogue and the next anchored prompt. The nested choices in
+  `dlg_sm2l10m1_17` exercise this case.
+- A repeated-question menu with exactly one advancing choice presents that
+  choice's response below the menu. The choice itself stays beside the looping
+  questions. Admit this layout only when every other option explicitly returns
+  to the same menu and all outcomes of the advancing option reach a later
+  prompt in the same scene; unknown or multiple exits retain branch columns.
 - DialogTree and Timeline source hashes read the authoritative Unity store.
   When a disposable filtered Timeline extract is absent, attachment and director
   recovery use the original stored objects. Root selection must remain unique;

@@ -9,6 +9,9 @@ import struct
 from collections import Counter, defaultdict
 from functools import lru_cache, partial
 from pathlib import Path
+from scripts.game_data.string_pool import export_string_pool
+from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs
+from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
 from scripts.common import (
     EXPORT_ROOT,
@@ -106,7 +109,6 @@ from scripts.game_data.codecs.leveldata.memorypack import (
     read_u32 as _read_leveldata_u32,
     read_u64 as _read_leveldata_u64,
     skip_bytes as _skip_leveldata_bytes,
-    skip_string as _skip_leveldata_memorypack_string,
 )
 from scripts.game_data.codecs.leveldata.radio_contexts import (
     parse_airwall_groups,
@@ -3866,10 +3868,17 @@ def build_levelscript_fmv_playback_scan_failures() -> list[dict]:
     """Return bounded failures that make an unused-cutscene claim unsafe."""
     if _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE is None:
         build_levelscript_action_story_occurrences()
-    return [
+    failures = [
         dict(row)
         for row in (_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE or [])
     ]
+    from scripts.game_data.codecs.levelscript import fmv
+    gate = fmv.check_fmv_source_native_inputs()
+    if gate.status != 'validated':
+        failures.append({'validator': 'fmvSource', 'gate': 'current_levelscript_fmv_source_native_inputs',
+                         'source': str(fmv.CONTRACTS_DIR / 'levelscript_fmv_video_native.json'),
+                         'expected': 'validated', 'actual': gate.status, 'detail': gate.detail[:240]})
+    return failures
 
 
 def build_active_levelscript_action_story_occurrences(
@@ -7664,12 +7673,17 @@ def build_leveldata_airwall_mission_radio_contexts(
     rows: list[dict] = []
     if not leveldata_root.exists():
         return rows
+    native = check_airwall_native_inputs()
+    if native.status != "validated":
+        return rows
+    pool_inputs = snapshot_string_pool_inputs(leveldata_root.parent)
+    strings = export_string_pool(leveldata_root.parent)
     for path in sorted(leveldata_root.rglob("*.json")):
         try:
             data = read_bytes_cached(path)
         except OSError:
             continue
-        for group in parse_airwall_groups(data):
+        for group in parse_airwall_groups(data, strings=strings):
             radio_id = str(group.get("pushBackRadioId") or "")
             check_data = group.get("checkData") or {}
             mission_data = check_data.get("missionData") or {}
@@ -7727,17 +7741,19 @@ def build_leveldata_airwall_mission_radio_contexts(
                     "LevelData/43.member0:airWalls[] -> "
                     "AirWallGroup/8.checkData+pushBackRadioId"
                 ),
+                "nativeConsumerStatus": "pending_current_build_review",
                 "nativeConsumer": (
                     "AirWallManager._OnMissionStateChanged/_OnQuestStateChanged "
                     "-> AirWallGroupAgent._ChangeStateByMission; "
                     "TriggerMainCharGoBack callback -> GameAction.PlayRadio"
                 ),
             })
+    if (pool_inputs != snapshot_string_pool_inputs(leveldata_root.parent)
+            or check_airwall_native_inputs() != native):
+        return []
     rows.sort(key=lambda row: (
-        str(row.get("radioId") or ""),
-        str(row.get("levelId") or ""),
-        str(row.get("sourceFile") or ""),
-        int(row.get("recordOffset") or 0),
+        str(row.get("radioId") or ""), str(row.get("levelId") or ""),
+        str(row.get("sourceFile") or ""), int(row.get("recordOffset") or 0),
     ))
     return rows
 
@@ -13756,4 +13772,3 @@ def build_mission_scene_file_order(
             for loop in sorted(loops)
         ],
     }
-

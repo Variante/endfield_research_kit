@@ -80,6 +80,9 @@ L2 states by exact per-file path partition. Its missing state stays visible;
 a present stale receipt or declaration mismatch stops publication.
 
 Deep links are query parameters kept current with `history.replaceState`.
+Selecting a Story conversation writes `story` and `lang` to the URL so refresh
+restores it. Switching conversations clears the previous line/content focus;
+reloading the same conversation preserves an explicit `line` or `cid` link.
 `#<view>` also selects a tab. Unknown or retired hashes fall back to Story.
 Gameplay accepts only current dataset routes; retired production/building/recipe
 routes and selection parameter aliases are not supported.
@@ -609,6 +612,13 @@ pages depend on.
   entries, without opening mission details first.
 - Reset returns to Story sort and default filters while preserving expanded
   mission groups.
+- Options sharing one response path render that dialogue once before the next
+  prompt, including when the choice is inside another option branch.
+- When every choice except one returns to the same menu, keep the advancing
+  choice in that menu and show its response and later prompts below the menu.
+  This layout requires explicit same-menu loops and one authored forward path.
+  Subsequent shared dialogue and prompts keep the menu's layout level rather
+  than inheriting the styling of an option column.
 - Source/debug blocks, Timeline evidence, cutscene diagnostics, and order-edit
   controls are debug-only; issue and recovery-method filters are not.
 - `sns_emoji_*` renders as ordinary inline emoji without hover or modal
@@ -790,7 +800,7 @@ ability types alongside the element facet. Loadout equipment terms retain
 主能力/副能力 when resolving to the selected character's concrete ability
 (for example 副能力（敏捷）), without changing their calculation. The affinity-talent selector chooses the
 unlocked attribute-node stage (or none), defaults to all nodes available at the
-selected breakthrough, shows each node's affinity requirement, and accumulates
+selected breakthrough, shows each node's affinity requirement as `floor(raw / 3)%`, and accumulates
 its authored attribute modifiers with separate source labels. Evidence limits:
 [`memory/webui/gameplay.md`](../memory/webui/gameplay.md) and
 [`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md).
@@ -913,6 +923,9 @@ preserve selections and filters. Missing data and load failures remain visible;
 UI locale and data language follow the shared controls.
 
 ### Map
+
+The floating control panel keeps its dragged position, resized dimensions,
+collapsed state and scroll position when switching maps or changing filters.
 
 Map plots authored Unity X/Z and draws a background only when the image and its
 world bounds share an explicit transform. Generated contract:
@@ -1478,8 +1491,13 @@ remains eligible; unopened equipment choices are not character resource updates.
 Tagged details show an initially expanded, collapsible **What changed** panel
 with field paths and previous/current values, filtered to the selected data
 language. Added/deleted fields distinguish an absent member from `null`.
-Map groups include changes from every physical variant, labeled by source
-and owner; their comparison stays visible outside debug mode. Linked file
+Map navigation summarizes every physical variant; detail comparisons show only
+the selected variant's source files. Registry entities keep stable ID/slot
+boundaries across insertions and reordering. Characters schema 5 joins updates
+by exact constituent record ID, with separately labeled merged owners; model
+and search aliases do not acquire other identities' changes. Name/evidence and
+asset-path comparisons use stable identities, excluding generated sidecar paths.
+Comparisons stay visible outside debug mode. Linked file
 changes include bounded plain/decoded diffs, file sizes, and previous/current
 export links. Reader coverage gaps and truncated previews are stated explicitly.
 Missing legacy detail data is explained instead of leaving a tag unexplained.
@@ -1546,6 +1564,14 @@ Storage is optional and scoped to the browser origin; malformed or unavailable
 storage falls back to defaults. Pinyin search supports initials such as qsjs,
 not full pinyin spellings.
 
+Assets size/name sorts span the complete filtered result list, without source
+folder headings overriding their order. Variant groups sum their published file
+sizes; a Sprite-led group shows those bytes alongside its crop dimensions.
+Story's explicit sorts likewise span missions and data types. Multi-word search
+relevance applies only to default Story/path browsing in Story, Assets and
+Updates; explicit sort categories take priority. Gameplay retains its documented
+sort-within-groups behavior.
+
 Audio caches the current dataset order by sort category and direction, using
 one numeric collator. Search and facet changes filter that order and reuse
 the facet model's cached values; search input waits 120 ms after typing.
@@ -1563,3 +1589,8 @@ filter pass skips facet filtering when no chip is active and matches the search
 text and manual note separately; detail merges drop the facet and sort caches
 only when a facet value or sort key changed. Normal index/shard requests revalidate HTTP cache entries;
 explicit retries bypass the cache.
+
+Assets PNG previews offer an opt-in `Ignore alpha / RGB` control. It sets alpha
+to opaque on decoded pixels before browser bitmap conversion, preserving RGB
+hidden by zero alpha. Original downloads and exported files stay unchanged;
+this inspection mode does not reconstruct material shader appearance.

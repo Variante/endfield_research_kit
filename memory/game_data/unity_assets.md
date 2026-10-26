@@ -797,26 +797,208 @@ is not identity.
   candidate selections until a caller or payload join proves them. Managed
   context and initial CPU actor-pose reads do not establish the native ACL,
   application, binding-selection or whole-actor native source layouts.
-  The partial native ACL port is recorded separately in EndfieldCapture's
-  `config/animator-native-acl-native.json` with `pendingReview`. Current native
+  The native ACL port is recorded separately in EndfieldCapture's reviewed
+  `config/animator-native-acl-native.json`. Current native
   sampler bodies show a larger decoder context, so matching entry shapes
   cannot justify reusing the old context windows or cache/flag offsets. Named
-  descriptor serializers prove their own object-relative fields; that evidence
-  does not establish the descriptor's embedding in native AnimationClip. The
-  current outer-serializer containment chain is recorded separately, and its
-  input still needs a type/caller join to the sampler-enrolled native pointer.
-  Current application argument lanes and conversion input-plane caller
-  distinctions are recorded separately from the still-open carrier layouts.
+  descriptor serializers prove their own object-relative fields; establishing
+  their embedding requires a separate type/consumer join. The contract
+  records that join through the named native clip consumer, virtual table,
+  serialization entry and ACL setup's descriptor/map input addresses. The
+  reviewed sampler scope now also records the allocator's decoder size,
+  initializer-to-cache joins, named muscle windows, packed-map fields and
+  legacy-relative framing, and independently renders the current ACL header.
+  The trailing decoder cache receives float-curve data, not a second transform
+  stream. A targeted installed clip extraction supplies the candidate filter;
+  equal ACL blobs do not imply equal serialized clip bytes. Its bundle's
+  logical metadata agrees across roots and its physical bytes match the
+  declared digest, but the scoped catalog audit still rejects a block-wide
+  primary/fallback metadata conflict. That narrower selected-bundle evidence
+  does not establish a passing current-corpus audit.
+  Current application argument lanes, conversion input-plane caller
+  distinctions, helper graph, dense/sparse consumers and initializer leaves
+  now render the application header independently. The pose reader takes its
+  header/element shape from these declarations. Carrier initializer write
+  extents bound the retained bytes; rounded context prefixes do not establish
+  complete C++ object sizes. Three sparse vector counts are UInt16, while float
+  and integer counts occupy separate adjacent bytes. The generic enum consumer
+  receives stride through a binding argument, so its old unused fixed-stride
+  declaration must not be carried forward as a native fact.
   Whole-actor Transform storage has its own reviewed declarations in
   `config/animator-actor-source-native.json` inside EndfieldCapture. The current
   getter's copy path proves the handle, index, hierarchy and rotation reads,
-  but its parallel name/function table pairing alone is only a candidate name
-  join. The observer requires the selected managed wrapper, populated cache,
-  named icall resolution and native entry window to agree before every raw
+  and the current registration loop proves the getter's name/function pairing
+  by feeding both indexed table rows to the same registration helper. Parallel
+  table order alone would not prove that join. The observer also requires the
+  selected managed wrapper, populated cache, named icall resolution and native
+  entry window to agree before every raw
   read; failure preserves the managed census with a native-read error. The
   getter's dependency completion does not make the later observations atomic.
-  These facts do not close carrier, binding-selection or target-asset joins. Keep
-  that preset on its old manifest until those groups are re-proved.
+  Native binding selection is separately proved through the current named
+  Animator registrations, binding definition consumers, factory copy/publication,
+  and clip constant merge. Its generated header also owns the scalar/transform
+  element strides. The reader checks named native entries and field-consumer
+  instructions before raw snapshots, including in managed-context recipes that
+  do not install the ACL hooks. The animation-set header's base clip census
+  excludes the auxiliary records added by the native total-count helper; the
+  observer retains only that bounded base census. Span equality does not prove
+  atomicity or executed constant-compiler decisions. These facts also do not
+  identify a live own clip before managed name/ID/native-pointer enrollment.
+  The native ACL preset now uses the installed manifest; compile/link and help
+  checks do not establish a live native ABI.
+  BeyondDynamicBone secondary dynamics has a separate reviewed contract in
+  EndfieldCapture's `config/secondary-dynamics-native.json`, shared by registration
+  timing and the full observer. Current manager fields, value sizes, named
+  methods, instantiated array consumers and getter cache slots are derived
+  together. Open generic ExNativeArray field rows are zero; instantiated
+  consumers prove its payload and use-count reads. That count is not the
+  embedded NativeArray capacity. The manager now embeds TransformAccessArray
+  as a value containing an engine handle; treating it as an ExTransformAccessArray
+  object would apply the wrong native length and item access paths.
+  The current ClothUpdate inlines its double-buffer scheduler, so a wrapper
+  entry match cannot preserve the old observation boundary. The replacement
+  observes only the exact native completion call reached by its nonzero returned
+  handle, forwards that call unchanged, then requires a cleared handle and
+  unchanged current Bone manager before reading last buffers. This proves a
+  selected completion boundary, not an atomic pose. Bulk registration remains
+  bounded call/result receipts only: per-entry Transform/hierarchy materialization
+  is still unavailable, no callback scan is reintroduced, and dynamics evidence
+  readiness stays false. Updating the pose manifest and passing a build do not
+  close that identity gap or establish a live native ABI.
+  The Burst wrapper observer has its own reviewed declaration set in
+  EndfieldCapture's `config/burst-wrappers-native.json`. Its current export
+  forwarding bodies prove stack-slot copies and their scalar widths, not
+  managed kernel identities. Scalar floating-point values and changed stack
+  extents rule out a generic pointer-only C++ forwarding signature. The
+  assembly observer restores incoming argument registers and tail-forwards the
+  original caller stack. Its output retains raw GP/XMM bits and bounded stack
+  slots; unused register slots are not declared parameters and equal bits do
+  not prove pointer or array identity. The retained selection explicitly
+  records absent exports without widening to the current catalog. Old managed
+  constructor addresses cannot supply a current job join: resolver lookup and
+  backtrace evidence must establish it separately. The installed registration
+  recipe records those raw observations and cloth registration; it keeps the
+  old solver payload reader disabled until its layouts and export-to-job joins
+  are ported. Offline body/stack review and linking do not establish live ABI
+  success or restore dynamics per-entry identity readiness.
+  Environment shadow has a separately reviewed camera/identity foundation in
+  its provider's `camera_contract.json`, `class_layout_contract.json` and
+  `instance_id_contract.json`. Current metadata supplies camera fields and
+  nested value offsets; ordinary native publisher instructions prove raw
+  view/inverse-view copies and a named xyz-preserving conversion. An IFix route
+  may bypass those copies, and raw matrix equality requires a separate unique
+  draw/event join. Named IL2CPP export leaves prove raw class pointer offsets.
+  Cached instance-ID observation must use an already initialized class and
+  resolved static native offset, skip unresolved values, and reread the cached
+  native pointer without invoking the game's resolver. That reread cannot
+  exclude pointer reuse or prove object lifetime. The full environment observer
+  remains disabled before hook creation while its native
+  texture/terrain groups are pending in
+  `config/environment-shadow-native.json`; its reviewed foundation does not
+  validate those older declarations or establish current GPU consumption.
+  Its `managed_selection_native.json` and `managed_cloud_native.json` now own
+  current managed phase selection, inline shadow values and cloud publication.
+  Non-blittable marshalling size does not give an inline CLR value's extent;
+  use its boxed instance size minus the object header, with named field and
+  consumer evidence. Read the singleton only after class initialization and
+  Lazy publication, without invoking initialization or a factory. Instantiated
+  container accessors prove storage that zero open-generic offsets cannot;
+  the selected array API and bounds consumers read a UInt32 count, so adjacent
+  header bytes must not be included in that observation. Stable rereads remain
+  conditional evidence of selection and lifetime. The cloud pipeline now copies
+  one selected value and reads the feature default inline; a detached getter
+  hook cannot observe that decision. Current output consolidates the phase route
+  and retains named constants publication while marking the feature decision
+  unobserved. Near-cloud capture does not cover added far-cloud fields, and the
+  separately retained VFX bytes are not writes by this cloud publisher. These
+  managed conclusions do not validate the pending native render/copy joins or
+  establish GPU consumption.
+  `managed_consumers_native.json` owns the current direct managed consumer
+  routes. A deferred-pass call feeds height-fog publication and the late render
+  request call reads color grading; retaining their environment snapshots does
+  not make them shadow ownership evidence. BeforeCulling selects the phase
+  inline and copies its shadow value into the converter source. Its reviewed
+  caller stack relation cannot provide the getter identity required by the old
+  pairing. The replacement entry instead retains the nonvolatile selected-phase
+  and camera registers, checks the exact caller/stack-source relation, and
+  compares raw source bytes with the phase before and after conversion. Its
+  schema distinguishes implemented observation from actual samples and retains
+  failed/aborted calls. Distinguish the converter's unboxed managed CPP result
+  from its bool-expanded native marshalling size: this observation proves no
+  native marshalling or render publication. The current native bridge now has
+  reviewed callback construction/transport, a seven-value void ABI and runtime
+  named internal-call identity guards. Static name/function array adjacency is
+  not a proved registration pairing. Working/packed shadow fields, paged chunk
+  lookup, conditional secondary descriptors and the global allocator-to-copy
+  descriptor transport have current consumer witnesses. Pool rotation/reset,
+  staging copy dispatch tables and pooled/standalone Map routes are owned by
+  current reviewed provider contracts. The backend contract also owns the local
+  reference policy: wrapping reference words are not unique mapping generations,
+  and retained references can prevent backend unmapping. The offset observer
+  checks the actual metadata slot against exact current getter semantics; it
+  does not identify a metadata class or execute a getter. Unknown slots fail
+  closed. Offline private-buffer and forwarding checks establish bounded reader
+  behavior, argument/results/errors and unwind cleanup only. Live Map selection,
+  lifetime and GPU publication remain unproved.
+  Terrain now has independent current primary depth-prepass and renderer input
+  producers/consumers, layer publication and native phase packet transport.
+  Preserve both input identities: the native terrain pack consumes the primary
+  input's layer, while the renderer snapshot retains its own input and six raw
+  flags. The layer payload is larger than its packed constant-buffer result.
+  The profile manager is published through a bridge global carrier and copied
+  into the phase packet; it is not a render-request field. Before/after carrier
+  rereads and original argument equality remain conditional observations, not
+  manager lifetime, actual property execution or GPU consumption.
+  Post preparation now has current named volume fields and raw input sizes,
+  native packet/caller transport, complete optional activity leaves and quality
+  gates, and output/readonly-constant witnesses. Preserve its machine return
+  only as an uninterpreted RAX word: the selected caller consumes the output
+  memory and supplies no returned-pointer identity. Private original activity
+  leaf execution corroborates local enable/intensity/optional-gate behavior;
+  it does not establish live keyword/projection paths or GPU consumption.
+  The texture dependency lane now has current reviewed declarations for the
+  named cloud property constructor, selected/fallback command caller stack
+  joins, imported logical entry/generation and initialized descriptor ranges.
+  Null-source imports do not initialize a complete descriptor. Fallback source
+  identity is the observed retained global texture pointer; no color or content
+  is inferred. The named Texture internal-call registration is proved through
+  its actual indexed loop. TLS and getter transport are current; the passive
+  reader matches observed slot function identities without executing a getter,
+  flushing the renderer or assigning a device class from a table address.
+  Property submission/callback/setter transport now uses the current renderer
+  table and retained five-range batch descriptor. The selected graph owner
+  inlines batch construction but still calls the submission helper. Another
+  batch implementation dispatches directly; those are separate native paths.
+  PS descriptor range/index fields have moved. Distinguish the PS consumer by
+  its actual API and pipeline pixel-shader slots, since similar stage bodies
+  read different metadata ranges. Preparation tail-dispatches through four
+  labelled current caller routes. Property callbacks and PS binders mask outer
+  scopes even when excluded and preserve raw uninterpreted RAX words, errors
+  and exceptions. Original forwarding and bounded reader checks pass offline.
+  All environment dependency groups now select reviewed declarations; the
+  combined and screen-shadow manifests select the installed client. This does
+  not establish actual queued delivery, originating graph ownership, resource
+  lifetime, context state after hazard handling or draw/GPU consumption.
+  Solver-stage snapshots now use named synchronous value-instance `UnsafeDo`
+  entries and current metadata-defined job/element/TeamData layouts. Their
+  direct callers and RangeKernel dispatches supply the named method boundary;
+  no opaque Burst export is promoted to a managed job identity. Async scheduled
+  jobs remain outside that scope. Open generic NativeArray field-offset rows
+  contain zero placeholders. Current registered get_Length/get_IsCreated bodies
+  prove buffer/length framing; generic row zeros are not valid field offsets.
+  The stage declaration lives in EndfieldCapture's `solver-stage-native.json`.
+  Snapshot records retain call and parent identities, including unmatched pre
+  observations when an original throws. The TeamData flag word is explicitly
+  its low 32 bits. Guarded endpoints and paired normal returns do not establish
+  an atomic history, execution of every selected team, or async stage coverage.
+  The standalone bulk Transform observer shares its reviewed outer overload
+  with secondary dynamics and records its current exact container-getter call
+  join. This retains bounded call/results only and does not resolve per-entry
+  hierarchy identity. The current ECS renderer-list scope includes all six
+  consumers selected by the user. Its contract proves native stack/record
+  framing, boolean returns and worker paths through the current sorter.
+  Consumer and caller identities remain explicit and opaque; matching sorted
+  keys or a retained byte filter does not establish actor/draw ownership.
 - Animation/effect activation and controller execution; broader exact
   audio/video trigger ownership, runtime-selected Wwise switch/random media,
   and stronger inferred skill/enemy sound ownership.
@@ -875,3 +1057,123 @@ explicit inventory image binding and may cross-bind differently named weapon
 assets; `WeaponBasicTable.modelPath` can likewise reference another basename.
 Gameplay weapon pictures and Story Wiki pictures must follow the authored
 inventory icon binding, matching Items, rather than assume ID/basename identity.
+
+The current water observer distinguishes numeric setup volume identity from its
+stored decimal-string identity, and joins Setup through mesh initialization to
+the mesh update before publication. Position observation uses the Vector3
+hidden return buffer and a stable surface token; it does not infer an atomic
+transform history. Reviewed declarations live in EndfieldCapture's water
+manifests, while saved-session validators retain their own source contracts.
+
+The current graphics-post contract owns the selected Bloom/Uber and shadow
+programs, mask input slots, primary lighting declarations and rectangular atlas
+descriptor. The graphics observer and post sidecars consume one generated
+selection. Supplied current-frame bindings join the two screen-mask writers to
+the lighting consumers and the unchanged ContactShadow compute output to both
+selected input sites. Those pointer bindings do not establish allocation lifetime
+or complete pipeline ownership. The upsample blend and shadow coordinate/sample
+programs changed, so old arithmetic replay results cannot be promoted to the
+current shader bytes. The owning contract records current declarations and
+instruction witnesses; historical saved-session readers keep their own scope.
+
+
+The Dijiang world recovery keeps three identities separate: the original
+multi-part Base01 Mesh resources, their name-family candidate join to stored
+InitChunkData placements, and Map02 Lv010's generated HLOD clusters. The
+selected Base01 resources include large distant hull parts as well as smaller
+building pieces; treating their shared family name as one complete model is
+incorrect. A complete Map02 Init name census without that family does not
+prove absence or establish a different original model. Generated HLOD
+level/grid/signed-key ownership identifies the merged resource, not its
+pre-merge ship renderer. The original-model comparison remains unresolved
+until that renderer/resource join is established.
+
+Direct inspection of the Map02 Lv010 minimap locates the target at its
+rightmost dark circular structure, connected by a narrow approach to Feibai
+Peak. The authored Feibai map label locates this landmark independently of
+the highest world-Y clusters, which had been the wrong search focus. The
+Lab now includes a nearby `zmdmachine+1_004` assembly candidate using original
+source Mesh buffers and binary32 matrices. It is a tall cylinder with braces,
+rings and a surrounding base; its generic placement/resource join remains a
+name-family candidate. The admitted Base01 hull and Map02 context have no
+shared selected source Mesh objects or equal complete prepared Mesh buffers.
+This distinguishes those recovered resource sets, not retail active-renderer
+ownership or fictional ship identity. Higher eastern rock geometry still
+has LOD2-only candidates; LOD0 alone is not a complete mountain overview.
+Literal resource-key discovery must keep Unity PathID, AssetMap hash and
+BundleManifest asset-path hash separate. Ship asset-path candidates occur in
+Base01 **InitChunkData**, so searching paired StreamingChunkData alone cannot
+support a resource-absence claim. A complete selected Map02 Init census finds
+no Base01 Dijiang Mesh/material candidate keys; fresh MD5-verified CLI streams
+from installed Persistent with StreamingAssets fallback byte-match the
+selected payloads. This authenticates that byte census only, not every catalog,
+the entire stale Persistent export or key-namespace completeness. The named
+Map02 Dijiang material-path hit is in a SimpleFogCard column group and its
+textures are clouds. It does not establish a ship renderer, and the negative
+Dijiang-key census never ruled out a differently named assembly. Original
+renderer/material-slot ownership and game world rendering remain unresolved.
+
+The lab's separate `docs/world-recovery.md` owns its scene and appearance
+boundary. Its Base01 Mesh buffers use the independently checked selected
+directories and `unity_mesh.read_surface`, while its matrix bridge restores
+original binary32 words after joining the exact entity to authenticated
+InitChunkData bytes. Full matrix baking preserves shear and reflection;
+Transform decomposition would not. Missing material-slot ownership stays
+neutral. The separate HLOD atlas inspection and stored environment-phase
+candidates do not establish HGRP deferred rendering, fog or final game parity.
+Freshness is also per selected layer: passing StreamingAssets cannot renew a
+stale Persistent overlay or prove the live client's active resource choice.
+
+For the selected world assemblies, literal Init resource-pair keys also occur
+in independently decoded AssetBundle `m_HashContainer` rows. Their local PPtrs
+identify the physical source Mesh and Material objects. This is an exact
+stored key/object join; anonymous descriptor meaning, renderer activation and
+runtime LOD/slot selection remain separate. The parallel packed record's high
+word supplies a conditional submesh-slot interpretation only. A candidate must
+cover every source submesh uniquely; conflicting repeats fail. Identical
+resource pairs with identical packed records may retain multiple witnesses
+for one mapping. Base01's source rows also reference generic lights, walls
+and hub materials, so family-name-only Material discovery is incomplete.
+The lab keeps neutral surfaces switchable beside these conditional candidates,
+checks original Material hashes/PPtrs and colour/scalar float words, and checks
+unchanged geometry/entity/original-matrix identity before merging them.
+
+The selected current HGRP/Lit Shader bodies from both installed layers are
+equal and pass independent stored framing/program checks plus CLI parity.
+One explicit conditional HGBuffer keyword set contains both executable vertex
+and fragment programs inside its serialized vertex carrier. Checked parameter
+register joins identify its base-colour/normal samples and tint/brightness/
+tint-cover operations. The lab's base-colour preview includes that isolated
+colour arithmetic only. It does not reconstruct source tangents, normal/PBR/
+emission stages or HGRP world lighting, fog and post; matching stored bodies
+does not establish active overlay, pass, keyword, sampler or uploaded values.
+
+Unequal selected source Mesh identities and unequal full buffers do not rule
+out transformed copies. The primary `farmod_tundra_dijianghao` and
+`prop_base01_zmdmachine` parts have equal ordered triangle topology and paired
+vertex census. Their UVs are nearly equal, and an axis-affine fit of paired
+positions has a tiny residual relative to the target extent. These measured
+relations strongly support a transformed shared geometry part; they do not
+prove identical complete assemblies, original authoring history or retail
+active-model identity. Preserve this qualification beside the resource-set
+comparison instead of promoting a negative hash match into different-model
+evidence. The lab's reusable geometry comparison keeps exact topology, UV
+deltas and fitted position residuals distinct.
+
+World model comparison must distinguish stored shape from placement stretch.
+For the shared central Dijiang/zmdmachine part, Base01's placement stretches
+the longitudinal axis more than the cross section, while the selected Map02
+placement is effectively uniformly scaled. Together with the differing stored
+axis scales this makes Map02 shorter at equal width; the admitted source
+vertex/index projection does not truncate it. Width-normalized comparison
+views must be labelled and must not change original scene geometry/matrices.
+The shared-core transform does not align the other selected assembly samples,
+so it is not a general copy transform or a basis for filling Base01 from Map02.
+
+The selected Base01 Init name audit covers every Dijiang-named placement in the
+prepared assembly. This is a complete named subset, not complete Base01/ship
+recovery: generic walls/floors/doors, machinery and dynamic objects remain
+outside the selection, and additional LOD/collision Meshes are not extra
+visible components to stack together. The lab's current user-requested scene
+keeps both ship subsets and removes Map02 terrain/environment objects; raw
+source assets and original placement matrices remain unchanged.

@@ -254,6 +254,42 @@
           }
         ]
       }
+    ],
+    "lipSync": [
+      {
+        "id": "json-lipsync",
+        "label": "LipSync",
+        "labelZh": "口型同步 LipSync",
+        "description": "Per-voice-line lip-sync payloads, by language.",
+        "descriptionZh": "按语言划分的每句语音口型同步载荷。",
+        "pathRegex": "Data/Json/LipSync/.+",
+        "stages": [
+          {
+            "template": "l1VfsLocated"
+          },
+          {
+            "level": 2,
+            "state": "closed",
+            "text": "The selected channel reader and strict 15-member decoder close every available authenticated language file through EOF; absent languages remain explicit exclusions.",
+            "textZh": "当前通道读取器与严格的 15 成员解码器将每个已安装语言文件读取至 EOF；未安装语言保留明确排除记录。",
+            "source": "memory/game_data/serialization_memorypack.md"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "The reader names the members; what the values drive at playback is not proven.",
+            "textZh": "读取器为成员命名；数值在播放时驱动什么尚未证明。",
+            "source": "memory/game_data/extraction_payload_boundaries.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Selected native channel names and typed array reads are proved; Keyframe consumer semantics and playback selection remain unresolved.",
+            "textZh": "已证明通道名称与数组读取；Keyframe 消费语义和播放选择仍未解决。",
+            "source": "memory/game_data/serialization_memorypack.md"
+          }
+        ]
+      }
     ]
   },
   "unityObjectTypes": {
@@ -1323,9 +1359,9 @@
               {
                 "level": 2,
                 "state": "closed",
-                "text": "A strict 15-member reader runs through EOF on every current file, joined to the ledger by logical MD5.",
-                "textZh": "严格的 15 成员读取器在当前每个文件上读到 EOF，并按逻辑 MD5 与台账连接。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "text": "The selected channel reader and strict 15-member decoder close every available authenticated language file through EOF; absent languages remain explicit exclusions.",
+                "textZh": "当前通道读取器与严格的 15 成员解码器将每个已安装语言文件读取至 EOF；未安装语言保留明确排除记录。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,
@@ -1337,9 +1373,9 @@
               {
                 "level": 4,
                 "state": "partial",
-                "text": "The native LipSyncTrack._ConvertToAnimationCurve consumer reads each six-float row as a Unity Keyframe; playback selection is not proven.",
-                "textZh": "原生 LipSyncTrack._ConvertToAnimationCurve 消费者把每个六浮点行读取为 Unity Keyframe；播放选择未经证明。",
-                "source": "memory/game_data/install_and_vfs.md"
+                "text": "Selected native channel names and typed array reads are proved; Keyframe consumer semantics and playback selection remain unresolved.",
+                "textZh": "已证明通道名称与数组读取；Keyframe 消费语义和播放选择仍未解决。",
+                "source": "memory/game_data/serialization_memorypack.md"
               }
             ]
           },
@@ -1425,22 +1461,22 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Most current files close a complete named schema at EOF, populated action maps included. Reviewed radio, mission-property and narrative routes use selected native gates. Positive alternative-camera-pose lists and squad-USP headers retain named provider-join diagnostics: their isolated child grammars are proved, but parent formatter/cache selection remains unresolved. The combined registry owns current family publication.",
-                "textZh": "多数当前文件在 EOF 处闭合完整命名模式，包括已支持的非空动作表。已审查的广播、任务属性和叙事路径使用选定原生门禁。非空备选相机位姿列表及小队 USP 事件头保留具名的提供者接合诊断：其独立子级语法已证明，但父级格式化器/缓存选择尚未解决。综合注册表负责当前家族的发布结论。",
+                "text": "The sequential owner admits only routes and children whose selected native and source gates pass. Unsupported routes stop at an explicit cursor diagnostic; the combined registry owns current family publication.",
+                "textZh": "顺序读取器只准入当前原生与来源校验通过的路径和子项。不支持的路径以明确的游标诊断停止；完整注册表负责当前语料发布。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated wrapper order names every owner member and each reviewed action, header, getter and condition route; unreviewed routes stay unnamed.",
-                "textZh": "生成的包装顺序为每个所有者成员以及每条已审查的动作、事件头、取值器与条件路由命名；未审查的路由仍未命名。",
+                "text": "Generated declarations supply candidate names; named stored reads require selected route and component proofs. Unsupported portions remain unnamed.",
+                "textZh": "生成的声明提供候选名称；命名存储读取须有当前路径与组件证明。不支持的部分保持未命名。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 4,
                 "state": "partial",
-                "text": "Selected LevelScript actions prove Story links under explicit gates. That covers the carriers Story reads, not the whole family.",
-                "textZh": "部分 LevelScript 动作在明确的校验下证明了剧情连接。这只覆盖剧情读取的载体，而非整个家族。",
+                "text": "Story links require their own source and native gates. Stored definitions alone do not establish playback, event firing or runtime order.",
+                "textZh": "Story 链接须通过对应的来源与原生校验。仅凭存储定义不能证明播放、事件触发或运行时顺序。",
                 "source": "memory/game_data/story_carriers.md"
               }
             ]
@@ -1527,22 +1563,22 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Most current files close the whole stored schema through native-gated readers and replayed live cursor receipts. CheckSkillHasHit, SetIgnoreGlobalTimeScale and DispelAction now enter the shared reader through independently authenticated domain contracts. A closed ActionGroup still needs source-bound terminal evidence and the complete family gate before whole-file publication. Existing source-scoped captures are reused only after current provenance revalidation; unsupported nested routes remain partial.",
-                "textZh": "多数当前文件通过原生校验的读取器与回放的实时游标回执闭合完整存储模式。CheckSkillHasHit、SetIgnoreGlobalTimeScale 和 DispelAction 已通过独立认证的领域契约进入共享读取器。动作组闭合后，仍需按源文件绑定的终止游标证据和完整家族门禁才能发布完整文件结论。已有按源文件捕获仅在重新验证当前来源后复用；不支持的嵌套路由仍为部分恢复。",
+                "text": "Current native input gates do not admit the reviewed Skill readers or saved cursor receipts. Each current source remains identified, with unsupported named framing until its native contracts and complete family receipt pass.",
+                "textZh": "当前原生输入校验未准入已审阅的 Skill 读取器或已保存的游标记录。每个当前源文件仍有明确身份；原生契约与完整语料记录通过前，命名帧保持不支持。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Wrapper order names the outer fields and reviewed nested action routes; the residue stops at distinct unsupported nested action tags.",
-                "textZh": "包装顺序为外层字段与已审查的嵌套动作路由命名；其余文件停在各不相同的不支持嵌套动作标签处。",
+                "text": "Reviewed outer-field and nested-action declarations remain leads; current byte ownership is not inferred from unchanged names.",
+                "textZh": "已审阅的外层字段和嵌套动作声明仅作为线索；名称未变不代表当前字节归属已证明。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 4,
                 "state": "partial",
-                "text": "Gameplay joins selected action tags to native reader contracts. Provider selection and action semantics remain unresolved.",
-                "textZh": "玩法把部分动作标签连接到原生读取器契约。提供者选择与动作语义仍未解决。",
+                "text": "Current consumer and provider bindings require their own selected native evidence; historical observations are not current execution.",
+                "textZh": "当前消费者和提供器绑定须有对应的原生证据；历史观测不代表当前执行。",
                 "source": "memory/game_data/gameplay_semantics.md"
               }
             ]
@@ -1561,22 +1597,22 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Every current file has a named 30-field outer frame through EOF; a native-gated subset closes the whole schema, including selected heal, event, attribute/damage and recursive sword damage roots. The sword composition joins independently proved operands, target children, sequence envelopes, processor and enum reads to all thirty root fields, source ID and EOF. Complete-family admission and original-byte replay are required; unresolved interiors stay partial and runtime results remain unobserved.",
-                "textZh": "每个当前文件都有贯穿 EOF 的已命名 30 字段外层帧；原生校验的子集闭合完整模式，包括选定的治疗、事件、属性/伤害和递归剑伤害根。剑增益组合把独立证明的操作数、目标子级、序列外层、处理器及枚举读取连接到全部三十个根字段、来源 ID 与 EOF。准入需要完整家族门禁及原始字节重放；未解决的内部结构仍为部分恢复，运行时结果尚未观测。",
+                "text": "Current native input gates do not admit the reviewed Buff readers. The registry retains authenticated source identities and withholds named framing and historical root receipts until those contracts are re-proved.",
+                "textZh": "当前原生输入校验未准入已审阅的 Buff 读取器。注册表保留已认证的源文件身份；相关契约重新证明前，不发布命名帧或历史根记录。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated wrapper order names the outer fields; per-tag action layouts live in reviewed native contracts.",
-                "textZh": "生成的包装顺序为外层字段命名；各标签的动作布局在已审查的原生契约中。",
+                "text": "Reviewed member and action declarations remain leads; current stored-field bindings require selected native proofs.",
+                "textZh": "已审阅的成员与动作声明仅作为线索；当前存储字段绑定仍须通过原生证明。",
                 "source": "memory/game_data/gameplay_semantics.md"
               },
               {
                 "level": 4,
                 "state": "partial",
-                "text": "Selected action tags carry native-contract meaning; provider selection and action semantics remain unresolved.",
-                "textZh": "部分动作标签带有原生契约含义；提供者选择与动作语义仍未解决。",
+                "text": "Historical consumer claims remain withheld for the selected build. Provider selection, execution and gameplay results are unresolved.",
+                "textZh": "历史消费者结论暂不适用于当前构建；提供器选择、执行和游戏结果仍未解决。",
                 "source": "memory/game_data/gameplay_semantics.md"
               }
             ]
@@ -2185,6 +2221,58 @@
         "holds": "Korean voice packages.",
         "holdsZh": "韩文语音包。",
         "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "JsonLipChinese",
+        "rawId": 105,
+        "profileName": "JsonLipChinese",
+        "lane": "story",
+        "alsoLanes": [
+          "audio",
+          "text"
+        ],
+        "holds": "Chinese voice lip-sync payloads.",
+        "holdsZh": "中文语音口型同步数据。",
+        "familySet": "lipSync"
+      },
+      {
+        "enumName": "JsonLipEnglish",
+        "rawId": 106,
+        "profileName": "JsonLipEnglish",
+        "lane": "story",
+        "alsoLanes": [
+          "audio",
+          "text"
+        ],
+        "holds": "English voice lip-sync payloads.",
+        "holdsZh": "英语语音口型同步数据。",
+        "familySet": "lipSync"
+      },
+      {
+        "enumName": "JsonLipJapanese",
+        "rawId": 107,
+        "profileName": "JsonLipJapanese",
+        "lane": "story",
+        "alsoLanes": [
+          "audio",
+          "text"
+        ],
+        "holds": "Japanese voice lip-sync payloads.",
+        "holdsZh": "日语语音口型同步数据。",
+        "familySet": "lipSync"
+      },
+      {
+        "enumName": "JsonLipKorean",
+        "rawId": 108,
+        "profileName": "JsonLipKorean",
+        "lane": "story",
+        "alsoLanes": [
+          "audio",
+          "text"
+        ],
+        "holds": "Korean voice lip-sync payloads.",
+        "holdsZh": "韩语语音口型同步数据。",
+        "familySet": "lipSync"
       }
     ]
   },

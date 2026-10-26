@@ -354,7 +354,7 @@
       <div class="gameplay-loadout-block-title">${h.escapeHtml(entry.title)}</div>
       ${renderSlider("pos", Math.max(0, rows.length - 1), state.pos, `${h.escapeHtml(h.text("loadoutLevel"))} <b>${h.escapeHtml(String(row.level))}</b> · ${h.escapeHtml(h.text("loadoutBreakStage"))} ${h.escapeHtml(String(row.breakStage ?? 0))}`)}
       ${potentials ? renderSlider("potential", potentials, state.potential, `${h.escapeHtml(h.text("loadoutPotential"))} <b>${state.potential}</b>`) : ""}
-      ${favor.levels.length ? renderSlider("favorTalent", favor.levels.length, favor.count, `${h.escapeHtml(h.text("loadoutFavorTalent"))} <b>${favor.count}/${favor.levels.length}</b> · ${h.escapeHtml(favor.count ? h.text("loadoutFavorRequirement", { value: favor.levels[favor.count - 1].favorability || 0 }) : h.text("loadoutFavorNone"))}`) : ""}
+      ${favor.levels.length ? renderSlider("favorTalent", favor.levels.length, favor.count, `${h.escapeHtml(h.text("loadoutFavorTalent"))} <b>${favor.count}/${favor.levels.length}</b> · ${h.escapeHtml(favor.count ? h.text("loadoutFavorRequirement", { value: `${Math.floor(Number(favor.levels[favor.count - 1].favorability || 0) / 3)}%` }) : h.text("loadoutFavorNone"))}`) : ""}
       <div class="gameplay-subheading">${h.escapeHtml(h.text("loadoutLevelCost"))}</div>
       ${h.renderMaterialChips(sumCost([...cost, ...breakItems])) || `<span class="muted">-</span>`}
     </div>`;

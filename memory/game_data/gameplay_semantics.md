@@ -342,6 +342,13 @@ not a reason to request a provider capture.
 
 ## Buff runtime invocation observations
 
+Current passive capture layouts use the named generated setter claims in
+`capture_closed_cells.json`. A typed closed wrapper load and unchanged parameter
+store establish the physical BlackboardDouble cells without open generic
+instance offsets. This establishes no serialized-source transfer, Boolean
+normalization, runtime type selection or provider lookup; the installed-format
+validators keep those separate obligations.
+
 The reviewed
 [`Buff paired recipe`](../../scripts/game_data/contracts/buff_runtime_paired_capture.json)
 selects uniquely resolved lifecycle and action entries, their argument layouts,
@@ -1737,3 +1744,10 @@ Combat/source-graph consumers reject stale inputs and publish a degraded reason
 rather than accepting old edges.
 
 Page publication belongs in [`webui/gameplay.md`](../webui/gameplay.md).
+
+Gameplay semantics observes seven named typed action consumers. The data
+reference belongs to the instantiated generic base; its open generic field row
+cannot supply a runtime offset. TargetHandleView is a small value carrier.
+Bounded raw Data words can contain padding and do not prove evaluated action
+semantics or target ownership. Original-call exceptions invalidate completeness
+and must propagate while callback and thread-local observation scopes drain.

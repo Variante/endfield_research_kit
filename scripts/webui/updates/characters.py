@@ -30,7 +30,7 @@ from scripts.webui.characters.build_character_data import CONVERTED_MEDIA_TYPES
 from scripts.webui.updates.details import source_changes
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 CHARACTER_BUILDER_MODULE = "scripts.webui.characters.build_character_data"
 CHARACTER_BUILDER_SOURCE = ROOT / "scripts" / "webui" / "characters" / "build_character_data.py"
 
@@ -139,6 +139,42 @@ def _record_names(snapshot: dict[str, Any] | None) -> dict[str, str]:
     return result
 
 
+def _comparison_snapshot(snapshot: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Compare owned evidence by source identity, not catalog list positions.
+
+    Raw snapshots remain available for previous-version display. Published
+    sidecar paths are generated navigation, not an authored character change.
+    """
+    if snapshot is None:
+        return None
+
+    def string_set(values):
+        return {str(value): value for value in values}
+
+    def indexed(rows, fields, *, assets=False):
+        result = {}
+        for raw in rows:
+            row = dict(raw)
+            key = ' / '.join(str(row.get(field) or '') for field in fields)
+            if assets:
+                for field in ('paths', 'pathIds'):
+                    if isinstance(row.get(field), list):
+                        row[field] = string_set(row[field])
+            result.setdefault(key, []).append(row)
+        return {key: sorted(values, key=_canonical) for key, values in result.items()}
+
+    languages = {}
+    for language, raw in snapshot.get('languages', {}).items():
+        row = {key: value for key, value in raw.items() if key != 'appearancesPath'}
+        for field in ('aliases', 'appearanceSources', 'sourceTypes'):
+            if isinstance(row.get(field), list):
+                row[field] = string_set(row[field])
+        row['names'] = indexed(row.get('names', []), ('source', 'key', 'language'))
+        row['evidence'] = indexed(row.get('evidence', []), ('source', 'type', 'key', 'assetKind'), assets=True)
+        languages[language] = row
+    return {'id': snapshot['id'], 'languages': languages}
+
+
 def build_character_updates(
     previous_catalog_dir: Path,
     catalog_dir: Path,
@@ -202,11 +238,13 @@ def build_character_updates(
     for key in sorted(set(old) | set(new), key=str.casefold):
         old_row = old.get(key)
         new_row = new.get(key)
+        old_comparison = _comparison_snapshot(old_row)
+        new_comparison = _comparison_snapshot(new_row)
         if old_row is None:
             status = "added"
         elif new_row is None:
             status = "deleted"
-        elif _canonical(old_row) != _canonical(new_row):
+        elif _canonical(old_comparison) != _canonical(new_comparison):
             status = "modified"
         else:
             continue
@@ -215,8 +253,8 @@ def build_character_updates(
             "characterKey": key,
             "characterId": key,
             "changes": source_changes(
-                {f"Characters/{key}": old_row} if old_row is not None else None,
-                {f"Characters/{key}": new_row} if new_row is not None else None,
+                {f"Characters/{key}": old_comparison} if old_row is not None else None,
+                {f"Characters/{key}": new_comparison} if new_row is not None else None,
             ),
         }
         old_names = _record_names(old_row)

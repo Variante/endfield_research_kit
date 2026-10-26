@@ -761,6 +761,7 @@
                     <button class="asset-preview-bg-swatch" type="button" data-color="#808080" style="--swatch-color: #808080;"></button>
                     <button class="asset-preview-bg-swatch" type="button" data-color="#2a2f36" style="--swatch-color: #2a2f36;"></button>
                   </div>
+                  <label id="asset-image-rgb-label" hidden><input id="asset-image-rgb" type="checkbox"> <span id="asset-image-rgb-text">Ignore alpha / RGB</span></label>
                   <label id="asset-model-color-label" for="asset-model-color" hidden>Model color</label>
                   <input id="asset-model-color" type="color" value="#5c99db" aria-label="Model color" hidden>
                   <label id="asset-model-only-label" hidden><input id="asset-model-only" type="checkbox"> <span id="asset-model-only-text">Model only</span></label>
@@ -845,7 +846,8 @@
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="src/features/story/branches.js?v=20261009-review1"></script>
 <script src="app.js?v=20261011-story-triggers"></script>
-<script src="assets.js?v=20261014-model-parts-fit"></script>
+<script src="src/core/png.js?v=20261017-rgb-preview"></script>
+<script src="assets.js?v=20261017-rgb-preview"></script>
 <script src="src/features/characters/appearances.js?v=20261009-activities"></script>
   <script src="src/features/characters/index.js?v=20261010-refactor1"></script>
   <script src="src/ui/story_links.js?v=20261010-activity-missions"></script>

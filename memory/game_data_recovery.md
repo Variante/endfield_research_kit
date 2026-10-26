@@ -131,6 +131,31 @@ Run `--from-game` only when the user asks for an installed refresh.
 
 ## Re-resolving a native identity after a client update
 
+`scripts/game_data/audit_build_impact.py` inventories maintained script dependencies,
+explicit native pins and pinless MemoryPack formatter windows without running builders.
+Its generated report is a migration queue: optional dependency exposure is not a
+builder failure, and matching pins or bytes still require the owning semantic proof.
+
+`il2cpp/native_image.py` caches resolved file pairs by their content digests,
+not paths alone. Newly opened PE/metadata buffers must match that cache key;
+an opening-time change refuses the image. Named body indexes belong to that
+immutable image. Callers still authenticate selected inputs before and after
+their proof, including UnityPlayer where required.
+Public native results and source-receipt validations must not be cached by
+paths or arguments alone: every call checks the selected build and sources.
+Parsed union tables cache by their actual bytes; body and immutable wrapper
+indexes cache per authenticated image. Wrapper callers receive independent
+mappings. The impact audit follows top-level calls and explicit import aliases
+to flag native gates inside result caches; dynamic calls and object methods
+still need review. ActionMap gates its collected tag tables before reusing
+layout resolution and binds its required-gate index to those tag rows and the
+current contract-file signatures. Imported validator proxies do not cache
+their final status.
+Export StringPool selection likewise returns a fresh pool per operation, so
+missing pages, replacements and page-set drift cannot reuse an earlier result.
+An unavailable pool does not establish inline encoding; each reader owns that
+wire decision and its matching source snapshot.
+
 A contract pinned to a superseded build is not evidence that its subject is
 gone. Only the managed name survives an update, so a stale contract is
 migrated by resolving names against the selected build, never by carrying an
@@ -1320,7 +1345,8 @@ runtime question may improve understanding without decoding another file.
    `scripts/webui/audio/semantics/native_callsite_rederivation.py`.
 7. **Catalog and code.** BundleManifest cross-store identity and live lookup,
    mmap, and IFix patch execution.
-8. Improve exact prefab, renderer, material, animation and world-instance
+8. Migrations target the current installed build; replace obsolete contract
+   shapes without adding old-build fallback paths. Improve exact prefab, renderer, material, animation and world-instance
    ownership, and keep native gates and graph provenance deterministic across
    client updates. LevelScript, LevelData, Spawner, Story and the Buff action
    dispatcher resolve union tags by name; literal AbilityActionData tags remain

@@ -6,7 +6,16 @@ Map publishes level/task navigation, exact and bounded spatial evidence, Story
 links, and independently selectable render layers. It does not turn proximity,
 shared script context, or available assets into ownership.
 
+Update badges in the navigation summarize a map group, while the detail
+comparison uses only the selected physical variant/file. Sibling variants keep
+their own badges and comparisons. Registry changes are keyed by entity ID and
+full script identity (including slotId), rather than enumeration position;
+inserting or reordering an entity cannot create changes in its neighbors.
+
 ## Inputs and recovery flow
+
+The floating control panel retains its position, resized dimensions, collapse
+state and body scroll across map switches and filter renders within the page.
 
 1. Tables and registries establish level ids, regions, quests, missions, map
    art, and exact authored points. Every level is recovered the same way

@@ -44,7 +44,7 @@
     } catch (_) { versions.delete(page); register(page, null); }
   }
   function register(page, payload) {
-    const versions = page === "characters" ? [3, 4] : [1, 2, 3];
+    const versions = page === "characters" ? [3, 4, 5] : [1, 2, 3];
     const valid = payload?.available === true && versions.includes(payload.schemaVersion)
       && (page === "characters" || payload.page === page) && Array.isArray(payload.entries);
     if (valid) available.add(page);

@@ -25,6 +25,7 @@ from typing import Any, Iterable
 
 from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.string_pool import export_string_pool
 
 ROOT = REPO_ROOT
 from scripts.common import (
@@ -59,8 +60,8 @@ from scripts.webui.story.anime_assets import (
 )
 from scripts.game_data.spawner_binary import (
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
-    SpawnerWaveDecodeError,
-    decode_spawner_wave_map,
+    SpawnerEnemyLibraryDecodeError,
+    frame_spawner_named,
 )
 from scripts.webui.story.story_keys import string_list as _string_list
 from scripts.webui.story.dialog_tree_control_flow import (
@@ -4729,8 +4730,10 @@ def _spawner_wave_part_killed_story_edges(
         if config_path is None:
             continue
         try:
-            decoded = decode_spawner_wave_map(config_path.read_bytes())
-        except (OSError, SpawnerWaveDecodeError):
+            decoded = frame_spawner_named(config_path.read_bytes(), strings=export_string_pool(config_path.parents[2]))
+            if decoded.get("schemaStatus") != "named_exact":
+                continue
+        except (OSError, SpawnerEnemyLibraryDecodeError):
             continue
         if safe_key(decoded.get("configId")) != config_path.stem:
             continue
@@ -4738,6 +4741,7 @@ def _spawner_wave_part_killed_story_edges(
         for wave in decoded.get("waves") or []:
             if (
                 not isinstance(wave, dict)
+                or wave.get("defaultDisable") is not False
                 or wave.get("waveMode") != 2
                 or not safe_key(wave.get("waveModeTargetKey"))
             ):
@@ -4833,10 +4837,12 @@ def _wave_kill_dominating_group_key(wave: dict[str, Any]) -> str:
     """
     groups = [
         group
-        for group in wave.get("groups") or []
+        for group in wave.get("groupMap") or []
         if isinstance(group, dict)
     ]
     if not groups:
+        return ""
+    if any(group.get("defaultDisable") is not False for group in groups):
         return ""
     root_key = safe_key(groups[0].get("groupKey"))
     if not root_key or groups[0].get("groupMode") not in (0, 1):
@@ -4935,8 +4941,10 @@ def _spawner_wave_group_part_killed_story_edges(
         if config_path is None:
             continue
         try:
-            decoded = decode_spawner_wave_map(config_path.read_bytes())
-        except (OSError, SpawnerWaveDecodeError):
+            decoded = frame_spawner_named(config_path.read_bytes(), strings=export_string_pool(config_path.parents[2]))
+            if decoded.get("schemaStatus") != "named_exact":
+                continue
+        except (OSError, SpawnerEnemyLibraryDecodeError):
             continue
         if safe_key(decoded.get("configId")) != config_path.stem:
             continue
@@ -4944,12 +4952,12 @@ def _spawner_wave_group_part_killed_story_edges(
         wave_by_key = {
             safe_key(wave.get("waveKey")): wave
             for wave in decoded.get("waves") or []
-            if isinstance(wave, dict) and safe_key(wave.get("waveKey"))
+            if isinstance(wave, dict) and wave.get("defaultDisable") is False and safe_key(wave.get("waveKey"))
         }
         group_to_wave: dict[str, str] = {}
         duplicate_group_keys: set[str] = set()
         for wave_key, wave in wave_by_key.items():
-            for group in wave.get("groups") or []:
+            for group in wave.get("groupMap") or []:
                 group_key = (
                     safe_key(group.get("groupKey"))
                     if isinstance(group, dict)

@@ -19,7 +19,7 @@ from typing import Any
 from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.mission_trace_abi import prove_string_argument_mode
-from scripts.game_data.il2cpp.body_claims import BodyIndex
+from scripts.game_data.il2cpp.body_claims import Body, BodyIndex
 from scripts.game_data.il2cpp.generic_entries import GenericEntries
 from scripts.game_data.il2cpp.reference_layouts import single_reference_generic_field
 from scripts.game_data.il2cpp.native_image import NativeImage
@@ -777,6 +777,60 @@ def owned_entry_extent(index, pointer: int) -> int | None:
     return end
 
 
+def leaf_entry_extent(body) -> int:
+    """Prove a bounded no-frame dispatch leaf when unwind metadata is absent.
+
+    A method-pointer gap alone supplies no ownership. Every byte must decode,
+    register writes stay volatile, branch targets stay on instruction boundaries,
+    and each exit is a return or volatile-register tail jump. Every admitted
+    instruction must be reachable from entry; adjacent code is not ownership.
+    """
+    rows=list(body.rows)
+    padding=0
+    while rows and bytes.fromhex(rows[-1]['bytes'])==b'\xcc':
+        padding+=1;rows.pop()
+    if not 16<=body.size<=4096 or not rows:
+        raise PreparationError('mission_trace.leaf: decoded size outside 16..4096')
+    volatile=r'(?:rax|rcx|rdx|r8|r9|r10|r11)'
+    scalar=r'(?:rax|rcx|rdx|r8|r9|r10|r11|eax|ecx|edx|r8d|r9d|r10d|r11d)'
+    store=re.compile(rf'mov \[{volatile}(?:\+0x[0-9a-f]+)?\], {scalar}$')
+    move=re.compile(rf'mov {volatile}, (?:{volatile}|\[(?:rip[^\]]*|{volatile}(?:\+0x[0-9a-f]+)?)\])$')
+    test=re.compile(rf'test {volatile}, {volatile}$')
+    jump=re.compile(r'(?:jcc|j[a-z]{1,3}) 0x([0-9a-f]+)$')
+    cursor=0;starts={body.pointer+int(r['offset']) for r in rows};successors={}
+    for row in rows:
+        raw=bytes.fromhex(row['bytes']);text=row['text']
+        if not raw or row['offset']!=cursor:
+            raise PreparationError('mission_trace.leaf: instruction coverage differs')
+        cursor+=len(raw)
+        address=body.pointer+row['offset']
+        following=body.pointer+cursor
+        branch=jump.fullmatch(text)
+        if branch:
+            target=int(branch[1],16)
+            if target not in starts:
+                raise PreparationError('mission_trace.leaf: direct branch leaves the decoded method')
+            successors[address]=[target] if text.startswith('jmp ') else [target,following]
+        elif not (move.fullmatch(text) or store.fullmatch(text) or re.fullmatch(rf'mov {scalar}, {scalar}',text) or test.fullmatch(text) or text=='ret' or re.fullmatch(rf'jmp {volatile}',text)):
+            raise PreparationError(f'mission_trace.leaf: unsupported instruction at +0x{row["offset"]:x}: {text[:160]}')
+        else:
+            successors[address]=[] if text=='ret' or text.startswith('jmp ') else [following]
+    if cursor+padding!=body.size or not (rows[-1]['text']=='ret' or re.fullmatch(rf'jmp {volatile}',rows[-1]['text'])):
+        raise PreparationError('mission_trace.leaf: incomplete bytes or unterminated fallthrough')
+    reached=set();pending=[body.pointer]
+    while pending:
+        address=pending.pop()
+        if address in reached:
+            continue
+        if address not in successors:
+            raise PreparationError('mission_trace.leaf: reachable path leaves the decoded method')
+        reached.add(address)
+        pending.extend(successors[address])
+    if reached!=starts:
+        raise PreparationError('mission_trace.leaf: unreachable bytes cannot establish method ownership')
+    return body.pointer+cursor
+
+
 def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dict[str, Any]]:
     if not 1 <= len(recipe["hooks"]) <= MAX_HOOKS:
         raise PreparationError(f"mission_trace.recipe: expected 1..{MAX_HOOKS} hooks")
@@ -891,8 +945,22 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                 raise PreparationError(f"{spec['name']}: {exc}") from exc
             pointer, field_abi = entry["pointer"], entry["abi"]
         end = owned_entry_extent(selected.index, pointer)
+        framing='owned-unwind-fragments'
+        if end is None and not spec.get('genericEntry') and entry is None:
+            try:
+                if any(start<pointer<stop for start,stop in selected.index.extents.items()):
+                    raise PreparationError('mission_trace.leaf: entry is inside another unwind function')
+                size=selected.index._extent(pointer)
+                leaf=Body(spec['type']+'.'+spec['method'],pointer,size,'',selected.index._decode(pointer,size))
+                if leaf.pointer!=pointer:
+                    raise PreparationError('mission_trace.leaf: named pointer differs')
+                end=leaf_entry_extent(leaf)
+                framing='decoded-no-frame-leaf'
+            except (ValueError,RuntimeError) as exc:
+                raise PreparationError(f"{spec['name']}: {exc}; source={selected.image.gameassembly}; rva=0x{pointer-selected.image.pe.image_base:x}") from exc
         if end is None or not 16 <= end - pointer <= MAX_BODY_BYTES:
-            raise PreparationError(f"{spec['name']}: missing bounded .pdata entry or body outside 16..{MAX_BODY_BYTES} bytes")
+            actual=None if end is None else end-pointer
+            raise PreparationError(f"{spec['name']}: bounded native entry required; expectedBytes=16..{MAX_BODY_BYTES}; actualBytes={actual}; source={selected.image.gameassembly}; rva=0x{pointer-selected.image.pe.image_base:x}")
         body_size = end - pointer
         window_size = min(body_size, 64)
         body = selected.image.pe.bytes_at_va(pointer, body_size)
@@ -910,7 +978,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                       "readProgram": "".join(f"{f['arg']},{f['kind']},{f['offset']},{f['chain0']},{f['chain1']};" for f in fields),
                       "fields": fields, "symbol": f"{spec['type']}.{spec['method']}",
                       "methodIndex": method.index, "returnType": spec["returnType"], "parameters": spec["parameters"],
-                      "bodyBytes": body_size, "bodySha256": hashlib.sha256(body).hexdigest(),
+                      "bodyFraming": framing, "bodyBytes": body_size, "bodySha256": hashlib.sha256(body).hexdigest(),
                       "receiverIdentity": None if spec["static"] else {"arg": 0, "type": spec["type"], "source": "raw entry argument"},
                       "semanticRole": spec.get("semanticRole", "named entry observation"),
                       "evidenceBoundary": spec["evidenceBoundary"]})
@@ -1007,7 +1075,7 @@ def compile_caller_scopes(selected, hooks, recipe):
                 or not isinstance(callers,list) or not 1<=len(callers)<=16
                 or any(not isinstance(n,str) for n in callers) or len(set(callers))!=len(callers)):
             raise PreparationError('mission_trace.caller_scope: v14 requires bounded unique scoped caller hooks')
-        target=by_name[spec['name']];target_rva=int(target['rva'],16);proofs=[]
+        target=by_name[spec['name']];target_rva=int(target['rva'],16);proofs=[];checked=[]
         for name in callers:
             caller=by_name.get(name)
             if not caller or caller is target or caller.get('observationMode')!='paired':
@@ -1016,17 +1084,26 @@ def compile_caller_scopes(selected, hooks, recipe):
             raw=selected.image.pe.bytes_at_va(pointer,caller['bodyBytes'])
             if hashlib.sha256(raw).hexdigest()!=caller['bodySha256']:
                 raise PreparationError('mission_trace.caller_scope: caller body changed: '+name)
+            direct=[]
             for row in selected.index._decode(pointer,len(raw)):
                 encoded=bytes.fromhex(row['bytes']);va=int(row['va'],16)
+                if len(encoded)==5 and encoded[0]==0xe8:
+                    direct.append(va+5+int.from_bytes(encoded[1:],'little',signed=True)-selected.image.pe.image_base)
                 if (len(encoded)==5 and encoded[0]==0xe8 and
                         va+5+int.from_bytes(encoded[1:],'little',signed=True)==selected.image.pe.image_base+target_rva):
                     proofs.append({'callerHook':name,'callerMethodIndex':caller['methodIndex'],
                         'callerBodySha256':caller['bodySha256'],'callRva':va-selected.image.pe.image_base,
                         'returnRva':va+5-selected.image.pe.image_base,'callBytes':encoded.hex(),'targetRva':target_rva})
+            checked.append({'hook':name,'rva':caller['rva'],'bodySha256':caller['bodySha256'],
+                            'directCalls':len(direct),'firstTargets':[hex(r) for r in direct[:8]]})
         proofs.sort(key=lambda r:r['returnRva'])
         returns=[r['returnRva'] for r in proofs]
         if not 1<=len(proofs)<=32 or len(set(returns))!=len(returns):
-            raise PreparationError('mission_trace.caller_scope: no bounded unique direct calls: '+spec['name'])
+            raise PreparationError(json.dumps({'validator':'mission_trace_capture_prepare',
+                'failedCheck':'bounded_unique_direct_caller_sites','hook':spec['name'],
+                'sourcePath':str(getattr(selected.image,'gameassembly','<selected image>')),
+                'expected':{'targetRva':hex(target_rva),'uniqueCallCount':'1..32'},
+                'actual':{'matchingCalls':len(proofs),'uniqueReturns':len(set(returns)),'checkedCallers':checked}},sort_keys=True))
         target['captureCallerReturnRvas']=','.join(f'{r:x}' for r in returns)
         target['captureCallerProofs']=proofs
 
@@ -1062,7 +1139,12 @@ def main(argv: list[str] | None = None) -> int:
         manifest = prepare(args.game_dir, args.mission, recipe=recipe, profile=args.profile)
     except (PreparationError, OSError, RuntimeError, KeyError, ValueError) as exc:
         report_path.parent.mkdir(parents=True, exist_ok=True)
-        report_path.write_text(json.dumps({"schema": "endfield.mission-trace-preparation.v1", "status": "failed", "focusMission": args.mission, "detail": str(exc)}, indent=2), encoding="utf-8")
+        report={"schema":"endfield.mission-trace-preparation.v1","status":"failed","focusMission":args.mission,"detail":str(exc)}
+        try:
+            diagnostic=json.loads(str(exc))
+            if isinstance(diagnostic,dict) and diagnostic.get('validator'):report['diagnostics']=[diagnostic]
+        except (ValueError,TypeError):pass
+        report_path.write_text(json.dumps(report,indent=2),encoding='utf-8')
         print(f"[mission_trace_capture_prepare] failed: {exc}")
         return 1
     output.parent.mkdir(parents=True, exist_ok=True)

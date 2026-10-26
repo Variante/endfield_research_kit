@@ -1,180 +1,179 @@
 {
-  "schema": "endfield.skill-cursor-capture-target-set.v1",
-  "status": "selected-current-logical-source-set",
-  "sourceIdentitySetSha256": "6C9B0242C5C27C3DC3781E37442E7FCF78745B659BF3F5C3F95F2FC7B9A81912",
+  "schema": "endfield.skill-cursor-capture-target-set.v2",
+  "status": "reviewed-observation-filters",
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
   },
-  "selectedStatusBasis": {
-    "path": "reports/animestudio/skilldata_target_set_selected_basis_D66B147AC9559E81.json",
-    "length": 1538303534,
-    "sha256": "D66B147AC9559E81C8C96496686527D6858DEDFCA489201C60CC34DA632B705B"
-  },
+  "observerDeclaration": "tools/EndfieldCapture/config/skilldata-cursor-native.json",
   "captureMaxSourceBytes": 131072,
   "targets": [
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_attack1.json",
-      "length": 9317,
-      "logicalSha256": "5EA1B0DCA2D2BAEB928779C025A55455E239300749263B7BDAD8CB40B1093F67",
-      "role": "unresolved"
+      "length": 8697,
+      "logicalSha256": "F56585E4A81E800D38525E99ACDCED3345602A0BB51A2747D02AE9A147E27921",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_attack2.json",
-      "length": 13757,
-      "logicalSha256": "D161A3C664446D7A1AD04E7BDC7EB25DD413179581D946B516B3BFC07EBF7EF9",
-      "role": "unresolved"
+      "length": 12936,
+      "logicalSha256": "B5A9CE3253FDE9EA5B7EDB18DB3F42568A562313ECC5F506369B19848ED32BAC",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_attack3.json",
-      "length": 14459,
-      "logicalSha256": "FD6860BFDEF6A8D7D13E5A6C5385EA268239743B4F6F88D071BE1746809990F5",
-      "role": "unresolved"
+      "length": 13532,
+      "logicalSha256": "34274C86DE7216E949AE40A1C43DF3CF36E4E7144A22795CEA76BADAD8881A40",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill.json",
-      "length": 73681,
-      "logicalSha256": "66455CB23F498C207FEF4A67DE9AF582099B54D573D0713DCD1BA94F52FB430A",
-      "role": "unresolved"
+      "length": 62684,
+      "logicalSha256": "B6234D82C0EA8A943FFC7900C25B237AAF9B65B500E77E8DC03C023480C3DC80",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_abilityrange_1_1.json",
-      "length": 5475,
-      "logicalSha256": "2773001A04DCBEF4E6DECF203AF6170039F50889F791D41E6D09DBB1009EB576",
-      "role": "unresolved"
+      "length": 5115,
+      "logicalSha256": "E2B14E56AB1CA4F8C8EC2491ED81C780601C5011913D4147E4B1A6DE9F6E151F",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3.json",
-      "length": 5444,
-      "logicalSha256": "DDA24922D89B87F533F03BC805E5E043DC5FD6A1E198C44CAEAEBCC6EDB9E165",
-      "role": "unresolved"
+      "length": 5115,
+      "logicalSha256": "6C5FB48C7B76644D8EC658BD61F30486DCA9F53D945701B3CEBC8FBC6CB9EA95",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_gene.json",
-      "length": 1138,
-      "logicalSha256": "BED255A60A71BC202C792B9EC72721E22365BE00793678B6CFD63FB24483FDE0",
-      "role": "unresolved"
+      "length": 940,
+      "logicalSha256": "3FE2501B102B83DF49E8DA0463404C286101BB34ECDCC4971500DEF06CBEBF27",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_giftbox_abilityrange.json",
-      "length": 16875,
-      "logicalSha256": "72013EF079E43DDA9FF9D64DD17ABBF615A051078DDCB02B0E1A97DFD2B9A2BE",
-      "role": "unresolved"
+      "length": 14634,
+      "logicalSha256": "85E17EB0EFDCB9C86E7D63BF04C2A71C5CA7E925127E9C03C8CA7E45C3703563",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_projhit_1.json",
-      "length": 2691,
-      "logicalSha256": "9E9F7C0B1370094EA1E78D3B3E8AA01B6707228F2BB219DEC19FFC273D89463E",
-      "role": "unresolved"
+      "length": 2413,
+      "logicalSha256": "AD4E50458D5A26D5F5A7F6516DE75AD8751A4BB00DA0DC3A86B7AA9D9CBC4E3B",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_projhit_3.json",
-      "length": 3905,
-      "logicalSha256": "A9BDC603E9D9D17E89A13A97A02971B4F3705FB27D68231ACF10F20D4F4A1F3A",
-      "role": "unresolved"
+      "length": 3720,
+      "logicalSha256": "6E45B933C6CC3E20DED01B10309F704C1E9724473D855DC88C70238674E76028",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_combo_skill_projhit_4.json",
-      "length": 1954,
-      "logicalSha256": "61D9FA1240D95B229B2323F6E6E4B4BD9214572A80B0D246541BBB43CCEE8A6D",
-      "role": "unresolved"
+      "length": 1775,
+      "logicalSha256": "C9609327B14691662873A9B57F2FE1DD9A994AD4E6573343986B18AD23CC7917",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_normal_skill.json",
-      "length": 15630,
-      "logicalSha256": "2E99C3BAD2850EC69AD610A34B42F31A67F3C627FC9370BD2D2224C052ED867E",
-      "role": "unresolved"
+      "length": 13634,
+      "logicalSha256": "A98B9F3CB6AF6C0B487BF485852080D13B041BD49F41348F25ADD2E4825CC665",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_normal_skill_block_1.json",
-      "length": 12883,
-      "logicalSha256": "15131C5D83727F13369D73FFB981CA16E2BBC9C4E9B533FCDB7DB2E468444E3B",
-      "role": "unresolved"
+      "length": 11388,
+      "logicalSha256": "8D752E81FE30A51F6E86A76E1B9C4A01E00ABCF04F860E72918050E7358FF0DE",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_normal_skill_block_2.json",
-      "length": 14098,
-      "logicalSha256": "ED3E18A7FDF3BA143B1424657E34ECDCB383B867FE786F50430CC0104867953B",
-      "role": "unresolved"
+      "length": 12351,
+      "logicalSha256": "945462332E390D332FF5CCFF9E9F923628889FB98CB71A324462B3FC0128A4D6",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_normal_skill_counter.json",
-      "length": 21123,
-      "logicalSha256": "B44D893F5B9F7410D8F23FFBAFE4EFC4268C8151E1498DC7CEF3A41A72E25962",
-      "role": "unresolved"
+      "length": 19480,
+      "logicalSha256": "97BFDE705089A5B08D78C2D088B83B44F3149B862BF9DE72928AFAD584C11505",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_normal_skill_loop_1.json",
-      "length": 9790,
-      "logicalSha256": "D60CCDBE1317470265DCD50E5670E13081D76CA5AD02FF1E0F193C0AA01AC354",
-      "role": "unresolved"
+      "length": 8412,
+      "logicalSha256": "3E84893D7F5703634DA884E0329A2AE86895D874FB303D4B9135945E85B85167",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_normal_skill_loop_2.json",
-      "length": 9142,
-      "logicalSha256": "3E7865025D753C12AA645B4994F6FEE6BB849BD24F1CE287706B5809FFFCAD26",
-      "role": "unresolved"
+      "length": 7818,
+      "logicalSha256": "82549BE178AECAF20EDA6BE1711A6E0DD9161C7CB5805C1BA357EC96D1B0ED76",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_plunging_attack_end.json",
-      "length": 4832,
-      "logicalSha256": "D8BF50C1E508F228D6DC874119FD85DC7ADFFBAB63BFA879C1803C47F94238A6",
-      "role": "unresolved"
+      "length": 4539,
+      "logicalSha256": "639C11E7FD46B755E08B4C78FDE61EBD7E8BE198D3640C2C23FB9CCA295ECBE2",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_plunging_attack_start.json",
-      "length": 2383,
-      "logicalSha256": "5F61127CF831EC93B68D08DFEBC540D280C19E148B9A4F5259479E1AC087E65B",
-      "role": "unresolved"
+      "length": 2179,
+      "logicalSha256": "0876A33469E7DF34C7345517D445D2D28DBD739D0ED041989E7808EF94D90AF8",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_power_attack.json",
-      "length": 14843,
-      "logicalSha256": "E07759AB14D4565DE685FD1DA502C5A8BC6728DAF8946DBD20BE7D70F28E7E2F",
-      "role": "unresolved"
+      "length": 13838,
+      "logicalSha256": "45B008393A458222871DD1CE93F4F4F125D68E8B1A31879AA6F4202C0ADCA8D2",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_talent_2.json",
-      "length": 561,
-      "logicalSha256": "AA2B7E7FD59A0BDA051F1F233609EB2E47C52B714B32BE399636239DB0586359",
-      "role": "positiveControl"
+      "length": 480,
+      "logicalSha256": "5EAC0222EB2A98E6AD2685CC0507E11FAAD7C27C721E9DD9DCD67791715004E8",
+      "role": "comparisonFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_ult_skill_normal_blackhole_projhit.json",
-      "length": 1983,
-      "logicalSha256": "326732F9DD0C5BE4225AD880C9754CBFD8B899E6C079446D41D1E20B8F4BFD14",
-      "role": "unresolved"
+      "length": 1774,
+      "logicalSha256": "B98E8478E15913EF87ACCAEC42B730BB71B6A01B4B7A02083AA0CDE6A0A2BDEA",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_ult_skill_normal_bomb_projhit.json",
-      "length": 3926,
-      "logicalSha256": "538156C132E0A80E9CD4F71A4482B158602BFA82F76ED7AB37A77A03D771BF1E",
-      "role": "unresolved"
+      "length": 3738,
+      "logicalSha256": "0EC6AE5D16AB78A5EC6DEA2789AC42BE32153F64FCF991C6B21D4E1085158D67",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_ult_skill_projhit.json",
-      "length": 6432,
-      "logicalSha256": "1C979F322122055C1671BA01ED38E96C0D8354CAEA3669765528F092D7429867",
-      "role": "unresolved"
+      "length": 5985,
+      "logicalSha256": "9ABB0ABCC5E71D3DC5CAA67DA3F3080817CF3522BB9D8B1A06257936F5AC635F",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_ultimate_skill.json",
-      "length": 107095,
-      "logicalSha256": "242BD2CE637CCD6BDCC898E7BDA4997230EE2AF3EC84EF2F7106D86566349112",
-      "role": "unresolved"
+      "length": 88880,
+      "logicalSha256": "B8653211520A28E1C82DE100ACA22FE7A38DDE81521D275BB2C4BE00B6CC0089",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/chr_0038_purrche_ultimate_skill_abilityrange_blackhole.json",
-      "length": 5441,
-      "logicalSha256": "46B19303505841F02D7B2E50F6B95F35F3D001C196942BEC2DAAE19E1615EC9A",
-      "role": "unresolved"
+      "length": 5115,
+      "logicalSha256": "539C6261B1F936ED79B9508650870ACC5F50246479C579D127A54478267CD1D5",
+      "role": "captureFilter"
     },
     {
       "virtualPath": "Data/Json/SkillData/sk_wpn_sword_0023.json",
-      "length": 968,
-      "logicalSha256": "3B3771B808E10005D34B02A99C35A3AC4EE5B27830C26B52AD3A2550F1890000",
-      "role": "unresolved"
+      "length": 772,
+      "logicalSha256": "DF6FBD12D209106F9D3B886D30446BC7DE021F5C0FC8BAFBAA7858C393DBC34D",
+      "role": "captureFilter"
     }
   ],
-  "evidenceBoundary": "The exact current logical path, byte length, and SHA-256 identify 26 remaining ambiguous SkillData sources plus one previously verified optional positive control. Listing a source does not assert runtime loading, cursor closure, terminal selection, or nested field meaning. Every observed source must be independently verified against its copied bytes and current corpus identity."
+  "evidenceBoundary": {
+    "exact": "Current selected copied-byte identities of the same reviewed logical paths.",
+    "conditional": "Capture filters only; comparisonFilter denotes the former control path, not a verified current positive control.",
+    "unresolved": "Current complete ambiguous corpus, terminal schema, unobserved members and actual runtime loads are not established; historical receipt classifications remain tied to their original native build."
+  }
 }

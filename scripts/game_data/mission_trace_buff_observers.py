@@ -1,11 +1,13 @@
 """Selected closed BlackboardDouble cells for bounded passive observers.
 
-Reuse the installed-format setter/source validator. Open generic offsets never
-substitute for the concrete cells written by the generated named setters.
+Observe cells from current typed generated setters. Installed-format source
+transfer remains a separate proof; no open generic instance offset is used.
 """
 from __future__ import annotations
 import re
 import struct
+
+from .il2cpp.body_claims import _writes_register
 
 
 def double_field(selected, qualified: str, witness: str, current_type: str):
@@ -14,20 +16,11 @@ def double_field(selected, qualified: str, witness: str, current_type: str):
     if not separator or owner != concrete or witness != concrete or current_type != concrete:
         raise ValueError('Buff scalar witness: concrete BlackboardDouble receiver required')
     if not hasattr(selected, '_buff_double_cells'):
-        from .memorypack.buff_blackboard_double_data import validate_current_native_contract
-        result = validate_current_native_contract(gameassembly=selected.image.gameassembly,
-                                                 metadata=selected.image.metadata_path)
-        transfer = result.get('sourceTransfer', {})
-        if (result.get('status') != 'validated'
-                or transfer.get('closedArguments') != ['float', 'double']
-                or transfer.get('runtimeGenericTemplateOffsetsUsed') is not False
-                or transfer.get('sourceMatchesActualNamedSetterCells') is not True):
-            raise ValueError('Buff scalar witness: ' + result.get('status', 'unresolved'))
-        selected._buff_double_cells = {r['fieldName']: r for r in transfer['fields']}
-        selected._buff_double_proof = {'nativeInputs': result['nativeInputs'],
-            'closedArguments': transfer['closedArguments'],
-            'evidence': 'selected named setter/source programs; open generic offsets unused',
-            'runtimeTypeObserved': False}
+        from .mission_trace_closed_cells import layout
+        proof=layout(selected,'Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_float_double_ForMemoryPack')
+        selected._buff_double_cells={name:{'destinationOffset':cell['offset']} for name,cell in proof['fields'].items()}
+        selected._buff_double_proof={'closedArguments':['float','double'],
+            'evidence':proof['boundary'],'sourceTransferProved':False,'runtimeTypeObserved':False,'setters':proof['fields']}
     types = {'blackboardKey': 'string', 'useBlackboardKey': 'bool', 'value': 'float'}
     if name not in types or set(selected._buff_double_cells) != set(types):
         raise ValueError('Buff scalar witness: unsupported or incomplete fields')
@@ -72,13 +65,18 @@ def client_hp_field(selected, qualified, witness, current_type):
         raise ValueError('HP cell witness: concrete storage instantiation differs')
     body = selected.index.body(ability, 'get_hp')
     rows=body.rows
-    if [r['text'] for r in rows[:3]] != ['push rbx','sub rsp, 0x20','mov rbx, rcx']:
-        raise ValueError('HP cell witness: incoming receiver alias differs')
+    frame=re.fullmatch(r'sub rsp, (0x[0-9a-f]+)',rows[0]['text']) if rows else None
+    if not frame or not 0<int(frame[1],16)<=4096:
+        raise ValueError('HP cell witness: bounded stack frame required')
     reads=[]
-    for i,r in enumerate(rows[:-3]):
-        m=re.fullmatch(r'movsd xmm0, \[rbx\+0x([0-9a-f]+)\]',r['text'])
-        if m and [x['text'] for x in rows[i+1:i+4]] == ['add rsp, 0x20','pop rbx','ret']:
-            reads.append((r,int(m[1],16)))
+    for i,row in enumerate(rows[:-2]):
+        match=re.fullmatch(r'movsd xmm0, \[rcx\+0x([0-9a-f]+)\]',row['text'])
+        if not match:continue
+        prefix=rows[1:i]
+        if any(r['text'].startswith('call ') or _writes_register(r, 'rcx') for r in prefix):
+            raise ValueError('HP cell witness: incoming receiver changed before cell read')
+        if [r['text'] for r in rows[i+1:i+3]]==[f'add rsp, {frame[1]}','ret']:
+            reads.append((row,int(match[1],16)))
     if len(reads) != 1 or reads[0][1] != storage_offset:
         raise ValueError('HP cell witness: sole getter return cell is not the first stored Double')
     return owner,'double',16, {'concreteWitness':ability,'closedType':closed,

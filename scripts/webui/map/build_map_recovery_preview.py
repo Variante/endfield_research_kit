@@ -2519,7 +2519,6 @@ def _reviewed_water_source_level() -> str:
     return str(contract["selectedSource"]["levelId"])
 
 
-@functools.lru_cache(maxsize=1)
 def _reviewed_water_surface_receipt() -> dict:
     return validate_map_water_surface_join(EXPORT_LAYOUT.root)
 

@@ -51,6 +51,7 @@ def prepare(game_root, output, *, device=False, mixer=False, mixer_frame=False, 
     image=load_native_mapper(NATIVE_MAPPER_PATH).PeImage(root/'Endfield_Data/Plugins/x86_64/AkSoundEngine.dll')
     profile.validate_lineage_arguments(contract,owners,image)
     profile.validate_field_arguments(contract,owners,image)
+    profile.validate_global_arguments(contract,owners,image)
     manifest=profile.project(base,contract,owners)
     if device or mixer or mixer_frame or sink_handoff or mixer_consumer:
         observer=device_profile.load_contract()

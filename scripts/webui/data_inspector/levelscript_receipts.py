@@ -15,7 +15,7 @@ from typing import Any
 
 from scripts.common import resolve_installed_native_inputs, sha256_file
 from scripts.game_data.jsondata_source_provenance import authenticate_current_jsondata_receipt
-from scripts.game_data.levelscript_reader_inputs import SCHEMA as READER_INPUT_SCHEMA, require_current_reader_inputs
+from scripts.game_data.levelscript_reader_inputs import SCHEMA as READER_INPUT_SCHEMA, require_current_reader_inputs, snapshot_string_pool_inputs
 from scripts.source_paths import ExportLayout
 from scripts.webui.data_inspector.current_receipts import DEFAULT_LEDGER, DEFAULT_SUMMARY
 from scripts.webui.data_inspector.levelscript_records import levelscript_record_from_detail
@@ -74,6 +74,8 @@ def load_current_levelscript_records(export_root: Path, *, summary_path: Path = 
              "complete-reader-receipt-unavailable")
     reader_before = require_current_reader_inputs(recorded)
     layout = ExportLayout(export_root)
+    pool_before = snapshot_string_pool_inputs(layout.json_dir)
+    _require(provenance.get('levelscriptStringPoolInputs') == pool_before, 'string-pool-inputs', str(layout.json_dir))
     _require(Path(summary.get("exportRoot", "")).resolve() == layout.json_dir.resolve(), "selected-export-root")
     gameassembly, metadata = resolve_installed_native_inputs()
     native_sources = {"GameAssembly.dll": str(gameassembly), "global-metadata.dat": str(metadata)}
@@ -105,12 +107,13 @@ def load_current_levelscript_records(export_root: Path, *, summary_path: Path = 
             _require(detail.get("bytesConsumed") == source["length"], "physical-eof", source["path"])
         records.append(levelscript_record_from_detail(layout.json_dir / source["path"], export_root, detail))
     _require(_source_pins(export_root) == sources, "exported-source-drift")
+    _require(snapshot_string_pool_inputs(layout.json_dir) == pool_before, 'string-pool-input-drift')
     _require(authenticate_current_jsondata_receipt(**args) == before, "source-receipt-drift")
     _require(require_current_reader_inputs(reader_before) == reader_before, "reader-input-drift")
     _require(selected_child_native_signature(None) == child_native_before,
              "child-native-input-drift")
     return records, {"status": "current-canonical-reader-reuse", "currentSourceReceipt": before,
-                     "readerInputs": reader_before, "childNativeGate": child_native_before, "sourceCount": len(records),
+                     "readerInputs": reader_before, "stringPoolInputs": pool_before, "childNativeGate": child_native_before, "sourceCount": len(records),
                      "detailPolicy": "unchanged canonical reader detail; source locators inside refusals remain Json-relative"}
 
 

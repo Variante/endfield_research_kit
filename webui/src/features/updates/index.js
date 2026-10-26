@@ -587,9 +587,8 @@
       if (tokens.length) scores.set(entry, window.WebUI.queryScore(entrySearchText(entry), tokens));
       return true;
     });
-    // A multi-word query ranks by keyword-match count first; single-word or no
-    // query keeps the user's chosen sort mode.
-    filtered.sort(tokens.length > 1
+    // Default path search ranks multi-word matches; explicit sorts take priority.
+    filtered.sort(sortMode() === "path" && tokens.length > 1
       ? (a, b) => ((scores.get(b) || 0) - (scores.get(a) || 0)) || compareEntries(a, b)
       : compareEntries);
     UPDATE_STATE.filtered = filtered;

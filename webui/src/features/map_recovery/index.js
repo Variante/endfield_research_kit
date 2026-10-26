@@ -558,8 +558,8 @@
   };
 
   const mapUpdateIds = () => {
-    const entry = (state.index?.maps || []).find((row) => row.id === state.selected);
-    return [state.selected, state.selectedVariant, ...(entry?.variants || []).map((variant) => variant.id)];
+    // The tree summarizes a group; this panel describes the selected file.
+    return [state.selectedVariant || state.selected].filter(Boolean);
   };
 
   // A pinned dialog file is the same payload the Story view renders, so its
@@ -2104,6 +2104,15 @@
     const host = root();
     const data = state.map;
     if (!host || !data) return;
+    host.querySelectorAll(".mr-float").forEach((panel) => {
+      const key = panel.dataset.panel;
+      const flags = panelUi.get(key) || {};
+      flags.width = panel.style.width;
+      flags.height = panel.style.height;
+      const body = panel.querySelector(".mr-float-body");
+      if (body && !flags.collapsed) flags.scrollTop = body.scrollTop;
+      panelUi.set(key, flags);
+    });
     host.querySelectorAll(".mr-bg-point-cloud[data-point-filter-url]").forEach(revokePointFilter);
     const { questRows, markerRows, floorHidden, hiddenFloorIds } = selectMapRows(data);
 
@@ -3013,6 +3022,10 @@
         toggle.setAttribute("title", t(collapsed ? "expand" : "collapse"));
       };
       paintToggle(!!saved.collapsed);
+      if (saved.width) panel.style.width = saved.width;
+      if (saved.height) panel.style.height = saved.height;
+      const body = panel.querySelector(".mr-float-body");
+      if (body && Number.isFinite(saved.scrollTop)) body.scrollTop = saved.scrollTop;
       if (key !== "inspector" && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
         panel.style.left = `${saved.x}px`;
         panel.style.top = `${saved.y}px`;
@@ -3021,9 +3034,11 @@
       }
       toggle?.addEventListener("click", () => {
         const flags = panelUi.get(key) || {};
+        if (!flags.collapsed && body) flags.scrollTop = body.scrollTop;
         flags.collapsed = !flags.collapsed;
         panelUi.set(key, flags);
         paintToggle(flags.collapsed);
+        if (!flags.collapsed && body && Number.isFinite(flags.scrollTop)) body.scrollTop = flags.scrollTop;
       });
       const head = key === "inspector" ? null : panel.querySelector("[data-panel-drag]");
       if (!head) return;

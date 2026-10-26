@@ -43,7 +43,9 @@ def _record(
 
 def spawner_record(path: Path, export_root: Path) -> dict[str, Any]:
     return _record(
-        path, export_root, reader=frame_spawner_named, family="spawner",
+        path, export_root, reader=lambda raw: frame_spawner_named(
+            raw, strings=export_string_pool(export_root / "game" / "Json")
+        ), family="spawner",
         fact_keys=("configId", "enemyLibraryCount", "routeMapCount", "waveCount", "bytesConsumed"),
     )
 

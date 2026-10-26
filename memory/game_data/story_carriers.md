@@ -90,6 +90,11 @@ both a `questDic` key and that row's stored `questId` in the named target
 MissionRuntimeAsset. A matching name prefix supplies no membership evidence.
 Valid predicates describe wall configuration and its later pushback radio
 callback; they do not establish a mission transition or relative Story order.
+The current stored air-wall reader uses the selected export pool and checks it
+and the source-native gate again after collection. Its pooled field/setter
+proof does not re-prove the callback consumer chain; those Story context rows
+keep `nativeConsumerStatus=pending_current_build_review` until current body
+claims establish that chain.
 
 Reviewed quest attachment diagnostic declarations live in
 `scripts/game_data/contracts/quest_attachment_diagnostics.json`. Their source
@@ -408,8 +413,12 @@ layout, actual objects and live IFix choices remain separate obligations.
   [state/AST capture recipe](../../scripts/game_data/contracts/mission_state_trace_capture.json)
   now prepares live typed Param cell snapshots at state activation entry/return
   and cached resolved operands separately. Its EventData argument witness
-  proves sequential string/Int32-enum layout and checks the complete indirect
-  callback consumer. Unique GP-only void/Boolean observers retain explicit
+  proves sequential string/Int32-enum layout and the Windows x64 indirect
+  aggregate transport. It does not claim complete callback evaluation. Passive
+  Param cells come from the current named generated setters through
+  `capture_closed_cells.json`, separately from serialized-source transfer and
+  the expression evaluator's stronger native contract. Unique GP-only
+  void/Boolean observers retain explicit
   same-thread invocation/parent identity through recursive AST calls, result
   setters and selected callbacks. Offline inspection/decoded replay retain
   incomplete/crossing-pair constraints. The refactored runtime keeps observation
@@ -941,6 +950,14 @@ and inventories stay under `reports/runtime_capture/`.
 
 ## LevelScript FMV path to installed Video
 
+The diagnostic FMV hint reader also gates its inline-string assumption on the
+reviewed native inputs. A current pooled-string build cannot inherit those
+hints from printable bytes; field-to-video binding remains withheld until its
+own source cursor and consumer composition are proved.
+An unavailable source proof also degrades the playback census independently
+of UID-scanner hits. Other positive carriers cannot make an unobserved FMV
+safe to classify as unused; the native gate is rechecked outside cached scans.
+
 `PlayFmvAction._moviePath` is a stored constant `Param<string>`. Each
 authenticated `cs_video_*` value resolves to exact Video logical paths under
 `Data/Video/PC/Narrative/Cutscene/` -- a base `<id>.usm` or a complete `f_`/`m_`
@@ -951,6 +968,13 @@ and the reviewed `levelscript_fmv_video_native.json` consumer route
 VFS lookup). This is **conditional** name resolution: gender, iFix state,
 activation, playback, mission ownership and order are not proved. The
 per-source join is `reports/story/recovery/current_levelscript_fmv_video_join.json`.
+
+Check that contract's selected native inputs before using the route. The
+current candidate direct-call and gender-prefix literal checks do not establish
+the complete route; inlining or helper paths require new owned-body proofs,
+not replacement hashes. The legacy inline-string source receipt also cannot
+authenticate the pooled-string build. Current gender selection, fallback and
+source-to-video admission remain withheld until both sides are re-proved.
 
 ## Spatial carriers
 

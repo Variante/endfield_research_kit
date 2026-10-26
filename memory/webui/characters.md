@@ -31,7 +31,13 @@ merge, naming and speaker-attribution provenance.
    own tables, optional proxy Json and converted media (no generated Story outputs), so both sides
    use identical inputs ([`characters`](../../scripts/webui/updates/characters.py)).
    The frontend joins changed ids after recovery and manual merging, only for
-   badges and filters.
+   badges and filters. Only exact constituent record IDs qualify; shared model
+   aliases, display names and search aliases cannot acquire another identity's
+   updates. Merged details label each changed constituent separately.
+   Schema 5 compares names/evidence by their source identities and asset paths
+   as sets, so insertions or enumeration changes do not pair unrelated evidence
+   rows. Generated appearance-sidecar paths are excluded from game updates;
+   raw old/current snapshots remain available for previous-version display.
 
 ## Primary generated outputs
 

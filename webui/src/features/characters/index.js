@@ -9,7 +9,7 @@
 //     even when their names match; only explicit overrides can merge them.
 //   * The optional data/updates/characters.json supplies version-change
 //     badges and filters. Added or modified ids join the constituent ids and
-//     aliases of an already-recovered identity group; deleted ids are
+//     exact constituent ids of an already-recovered identity group; deleted ids are
 //     read-only previous-version snapshots. The sidecar never changes
 //     automatic or manual grouping, naming, evidence or overrides, and its
 //     absence leaves the page fully usable without badges.
@@ -154,14 +154,11 @@
   }
 
   function updatesForGroup(row, entries) {
-    const ids = new Set([
-      row.id,
-      ...(row.mergedIds || []),
-      ...(row.aliases || []),
-      ...(row.records || []).flatMap((record) => [record.id, ...(record.aliases || [])]),
-    ].map(normalizedName).filter(Boolean));
+    // Aliases include shared model names and user-facing search labels. They
+    // are not identity ownership: only records actually in this group qualify.
+    const ids = new Set((row.records || []).map((record) => String(record.id || '').trim()).filter(Boolean));
     return entries.filter((entry) => entry.status !== "deleted" &&
-      (entry.ids || [entry.id]).some((id) => ids.has(normalizedName(id))));
+      ids.has(String(entry.id || '').trim()));
   }
 
   function updateStatusesForGroup(row, entries) {
@@ -1005,7 +1002,10 @@
         </div>
       </section>`;
     bindLocate(detail);
-    window.WebUI.updateBadges.mount(detail, "characters", updateIds);
+    window.WebUI.updateBadges.mount(detail, "characters", updateIds, { owners: updateIds.map((id) => {
+      const identity = row.records.find((record) => record.id === id);
+      return { id, code: id, label: identity?.primaryName || id };
+    }) });
     window.WebUI.characterAppearances?.mount(detail.querySelector("[data-character-appearances]"), row.records, currentLanguage());
     detail.querySelectorAll("[data-unmerge-id]").forEach((button) => {
       button.addEventListener("click", () => unmergeCharacter(button.dataset.unmergeId || ""));

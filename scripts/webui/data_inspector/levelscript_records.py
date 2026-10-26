@@ -16,9 +16,14 @@ from scripts.game_data.levelscript_binary import (
     frame_levelscript_named,
 )
 from scripts.game_data.levelscript_union_tags import contract_native_inputs
+from scripts.game_data.string_pool import export_string_pool
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
 from scripts.game_data.memorypack.corpus_gate import _fingerprint
+from scripts.game_data.spawner_records_native import check_spawner_records_native_inputs
+from scripts.game_data.serialization_roots_native import check_root_native_inputs
+from scripts.game_data.leveldata_function_area_native import check_function_area_native_inputs
+from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 from scripts.repo_paths import REPO_ROOT
 from scripts.webui.data_inspector.contract import source_descriptor
 from scripts.webui.data_inspector.levelscript_native_inputs import selected_child_native_signature
@@ -55,7 +60,7 @@ def reader_dependency_signature(
 def selected_native_signature(*, family: str = "LevelScript") -> tuple[dict[str, Any], str]:
     """Gate the selected build against the reader's reviewed union-tag inputs."""
     expected = contract_native_inputs()
-    signature: dict[str, Any] = {"unionTagNativeInputs": expected}
+    signature: dict[str, Any] = {"unionTagNativeInputs": expected, "family": family}
     if any(_HASH.fullmatch(str(expected.get(key) or "")) is None
            for key in ("gameAssemblySha256", "metadataSha256")):
         signature["nativeStatus"] = "unavailable"
@@ -72,12 +77,31 @@ def selected_native_signature(*, family: str = "LevelScript") -> tuple[dict[str,
         "metadataSha256": gate.metadata_sha256,
         "nativeStatus": gate.status,
     })
+    source_gates = []
+    if family in {"LevelScript", "LevelData"}:
+        source_gates.append(("rootSourceGate", "root source", check_root_native_inputs))
+    if family == "LevelData":
+        source_gates.extend((("airWallGate", "air-wall source", check_airwall_native_inputs),
+                             ("functionAreaGate", "FunctionArea source", check_function_area_native_inputs)))
+    if family == "SpawnerConfig":
+        source_gates.append(("spawnerSourceGate", "native", check_spawner_records_native_inputs))
+    if gate.validated:
+        for key, label, select in source_gates:
+            try:
+                source = select()
+                signature[key] = {"status":source.status, "detail":source.detail}
+            except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+                signature[key] = {"status":"unavailable", "detail":str(exc)[:500]}
+            if signature[key]["status"] != "validated":
+                signature["nativeStatus"] = signature[key]["status"]
+                return signature, f"{family} {label} {signature[key]['status']}: {signature[key]['detail']}"
+        if family in {"LevelScript", "LevelScriptTemplateData", "LevelData", "SpawnerConfig"}:
+            try:
+                signature["readerDependencies"] = reader_dependency_signature()
+            except (OSError, ValueError) as exc:
+                signature["nativeStatus"] = "unavailable"
+                return signature, f"{family} reader dependencies: {str(exc)[:500]}"
     if gate.validated and family in {"LevelScript", "LevelScriptTemplateData"}:
-        try:
-            signature["readerDependencies"] = reader_dependency_signature()
-        except (OSError, ValueError) as exc:
-            signature["nativeStatus"] = "unavailable"
-            return signature, f"{family} reader dependencies: {str(exc)[:500]}"
         child_gate = selected_child_native_signature({
             "GameAssembly.dll": gate.gameassembly_sha256,
             "global-metadata.dat": gate.metadata_sha256,
@@ -98,7 +122,7 @@ def levelscript_record(path: Path, export_root: Path) -> dict[str, Any]:
         "tags": ["level", "levelscript", "memorypack"],
     }
     try:
-        decoded = frame_levelscript_named(path.read_bytes(), source=relative)
+        decoded = frame_levelscript_named(path.read_bytes(), source=relative, strings=export_string_pool(export_root/'game'/'Json'))
     except (OSError, LevelScriptTopLevelFramingError, ValueError) as exc:
         record = {
             **base, "status": "decode_error", "summary": str(exc)[:1200],

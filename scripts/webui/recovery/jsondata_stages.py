@@ -27,6 +27,7 @@ if __package__ in {None, ""}:
 from scripts.common import REPORTS_DIR, write_canonical_json
 from scripts.game_data.game_file_store import locate_game_folder
 from scripts.source_paths import ExportLayout
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs,snapshot_string_pool_inputs,reader_input_changes
 from scripts.game_data.memorypack.corpus_gate import (
     CensusGateError, _discover_blc_paths, _fingerprint, _snapshot_pinned_files,
 )
@@ -56,7 +57,7 @@ def describe_failure(result: dict[str, Any]) -> str:
 
 
 def _receipt_snapshot(provenance: dict[str, Any], *, summary_pin: dict[str, Any],
-                      ledger_path: Path) -> dict[str, Any]:
+                      ledger_path: Path,json_root: Path) -> dict[str, Any]:
     """Authenticate the same saved receipt pins before and after the row scan."""
     checked: dict[str, Any] = {
         "summary": _snapshot_pinned_files([summary_pin], label="current registry summary"),
@@ -87,6 +88,18 @@ def _receipt_snapshot(provenance: dict[str, Any], *, summary_pin: dict[str, Any]
             raise CensusGateError("buff-selected-root-replay-pins-invalid", source="provenance.buffSelectedRootReplayInputs",
                                   expected="current replay input fingerprint list", actual=type(selected_replay).__name__)
         checked["buffSelectedRootReplayInputs"] = _snapshot_pinned_files(selected_replay, label="Buff selected root registry replay")
+    for role,current in (('levelscriptReaderInputs',snapshot_complete_reader_inputs()),
+                         ('levelscriptStringPoolInputs',snapshot_string_pool_inputs(json_root))):
+        recorded=provenance.get(role)
+        if not isinstance(recorded,dict) or not isinstance(recorded.get('files'),list):
+            raise CensusGateError('reader-input-snapshot-missing',source='provenance.'+role,expected='complete current input snapshot',actual=type(recorded).__name__)
+        if any(not isinstance(row,dict) or set(row)!={'path','length','sha256'} or not isinstance(row['path'],str)
+                or type(row['length']) is not int or not isinstance(row['sha256'],str) or not HEX64.fullmatch(row['sha256']) for row in recorded['files']):
+            raise CensusGateError('reader-input-snapshot-malformed',source='provenance.'+role,expected='path, length and SHA256 fingerprints',actual='malformed fingerprint row')
+        if recorded!=current:
+            raise CensusGateError('reader-input-snapshot-mismatch',source='provenance.'+role,
+                expected={key:value for key,value in recorded.items() if key!='files'},actual={'metadata':{key:value for key,value in current.items() if key!='files'},**reader_input_changes(recorded,current)})
+        checked[role]=current
     return checked
 
 
@@ -181,7 +194,10 @@ def check_jsondata_stages(
     # Reuse the installed-corpus pin verifier. The optional preflight must not
     # bless an old producer, native build, metadata catalog, or family receipt.
     try:
-        receipts_start = _receipt_snapshot(provenance, summary_pin=summary_pin, ledger_path=ledger_path)
+        if not isinstance(summary.get('exportRoot'),str) or not summary['exportRoot']:
+            raise CensusGateError('summary-export-root',source=str(summary_path),expected='recorded Json export folder',actual=summary.get('exportRoot'))
+        json_root=Path(summary['exportRoot']).resolve()
+        receipts_start = _receipt_snapshot(provenance, summary_pin=summary_pin, ledger_path=ledger_path,json_root=json_root)
         result["sources"]["ledgerSha256"] = receipts_start["outputFiles"][0]["sha256"]
         outer_path = Path(provenance["outer"]["path"])
         outer = json.loads(outer_path.read_text(encoding="utf-8"))
@@ -278,7 +294,7 @@ def check_jsondata_stages(
     # rows or a malformed row already produced a declaration diagnostic. Hash
     # saved inputs again; do not load the corpus or decode payloads a second time.
     try:
-        receipts_end = _receipt_snapshot(provenance, summary_pin=summary_pin, ledger_path=ledger_path)
+        receipts_end = _receipt_snapshot(provenance, summary_pin=summary_pin, ledger_path=ledger_path,json_root=json_root)
         if receipts_end != receipts_start:
             raise CensusGateError("receipt-input-drift", source=summary_path.as_posix(),
                                   expected="unchanged authenticated receipts before and after ledger scan",

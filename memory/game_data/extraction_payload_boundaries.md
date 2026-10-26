@@ -109,7 +109,7 @@ gates (conclusions in the `world_chunk_*.md` files):
 
 | Family | Reader | Current boundary | Stops at |
 | --- | --- | --- | --- |
-| LipSync | `memorypack.lipsync`, `memorypack.lipsync_corpus` | strict 15-member reader through EOF on every file; rows are native-proven Unity `Keyframe` values | playback selection |
+| LipSync | `memorypack.lipsync`, `memorypack.lipsync_corpus`, `lipsync_native` | strict 15-member float-array framing through EOF on available language files; selected channel names, typed reads and setter order | current Keyframe consumer semantics, live formatter and playback selection |
 | NPC MontageNew | `memorypack.npc_montage`, `memorypack.npc_montage_corpus` | complete named schema through EOF (3-member root, 24-member body, nested records) | runtime selection, playback |
 | NPC PrefabInfo, catalogs | `schemas.npc_prefab_info`, `schemas.npc_catalog` | exact JSON schemas; extra or reordered fields refused | consumers |
 | MissionRuntimeAsset | `schemas.mission_runtime_main`, `schemas.mission_runtime_meta` | exact JSON schemas | Story semantics: [`../webui/story_recovery.md`](../webui/story_recovery.md) |
