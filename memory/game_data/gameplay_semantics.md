@@ -1707,6 +1707,14 @@ records how `Beyond.Gameplay.Core.Attributes` turns modifiers into a final
 value (exact expressions there); `attribute_formula_native` re-proves its call
 structure on the installed build.
 
+The loader also accepts an explicit GameAssembly/metadata pair and optional
+expected identities, checks the opened buffers and rechecks the selected files
+after evaluation. Missing inputs, drift or failed claims withhold both formula
+and method rows; the receipt retains native identities and the failed check.
+This mixed claims/arithmetic-window contract still authenticates body bytes and
+literals: absence of a `nativeInputs` block does not make its formula independent
+of the selected build, and native validation does not establish runtime parity.
+
 - Three stages, each clamped to `AttributeMetaTable` bounds: base = raw +
   BaseAddition; armed applies BaseMultiplier (`max(1 + Σ, 0)`),
   BaseFinalAddition and the BaseFinalMultiplier product; final applies

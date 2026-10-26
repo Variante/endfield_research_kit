@@ -326,9 +326,14 @@ python -m scripts.webui.data_inspector.build_data_inspector --dataset buff-actio
 python -m scripts.webui.data_inspector.build_data_inspector --dataset buff-data
 python -m scripts.webui.data_inspector.build_data_inspector --dataset dynamic-components
 python -m scripts.game_data.attribute_formula_native
+python -m scripts.game_data.attribute_formula_native --gameassembly DLL --metadata DAT --expected-gameassembly-sha256 SHA --expected-metadata-sha256 SHA --output reports/game_data/attribute_formula.json
 python -m scripts.webui.assets.build_assets --mode default
 python -m scripts.webui.gameplay.build_gameplay --stage base --languages CN --default-language CN --runtime-tag-capture scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
 ```
+
+The attribute validator accepts an explicit native pair, checks opened bytes and
+post-evaluation identity, and withholds formula/method rows on failure. `--json`
+prints its receipt; `--output` writes only beneath reports/, scratch/ or tmp/.
 
 Characters reads raw speaker Tables and optional NPC proxy Json independently
 of generated Story data. `characters/story_speakers.py` owns speaker discovery

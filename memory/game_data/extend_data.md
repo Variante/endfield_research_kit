@@ -90,7 +90,7 @@ contract in `scripts/game_data/contracts/`:
 | 8 | `SCENE_MONSTER.commonInfo.templateid` to enemy root to `EnemyTable.aiTemplateId` to `AIConfig` load | `extend_data_graph_ai_native.py` | conditional, static |
 | 9 | each `SpawnMonsterFromTemplateV2.libraryKey` selects one `enemyLibrary[].key` in its file | `extend_data_spawner_library_corpus.py` | authored |
 | 10 | server object ID to action to keyed library item, feeding an AI override and a born-data fallback | `extend_data_spawner_library_native.py` | conditional, static |
-| 11 | AI start -> merged `aiBB` -> mode graph data `canvasGraph` -> NodeCanvas `GraphOwner` start; mode enter/tick; `CastSkill.skillId` and `CastSeqSkill` -> `EnemyCommonCastSkill` `m_skillData.skillID` -> `AbilitySystem.TryCastSkill` | `enemy_ai_runtime_native.py` (claims) | direct, build-independent |
+| 11 | AI start -> merged `aiBB` -> mode graph data `canvasGraph` -> NodeCanvas `GraphOwner` start; mode enter/tick; `CastSkill.skillId` and `CastSeqSkill` -> `EnemyCommonCastSkill` `m_skillData.skillID` -> `AbilitySystem.TryCastSkill` | `enemy_ai_runtime_native.py` (claims) | direct when re-proved on the selected build |
 
 Conclusions that span the links:
 
@@ -126,6 +126,28 @@ Conclusions that span the links:
 None of these witnesses a live graph instance, protocol message, resource load,
 or execution, and IFix can redirect every checked method. Asset names and graph
 task strings do not fill that gap.
+
+Ordinary Rodin supplies a concrete boundary case. The selected export's exact
+`data_eny_0051_rodin` MonoBehaviour contains an `EnemyAIComponentData.aiCfgPath`
+of `aiconf_eny_0051_rodin`, despite the ordinary EnemyTable row's empty AI override.
+That config's local `aiBB` PPtr resolves to `BB_eny_0051_rodin`, whose parent and
+canvas pointers resolve to `BB_eny_normal_base` and `CanvasBB_eny_0051_rodin`.
+Use `UnityObjectStore` indexed object-name and source-file/PathID reads; these
+are stored joins, not proof that the undecoded root `EnemyTemplateData` selects
+the component at runtime. The weekly override and dummy AI remain different
+variant declarations, never substitutes for this missing ownership proof.
+
+The same EnemyData's TypeTree-decoded `AbilitySystemData.skillDataBundle` lists
+active/passive skills, and its mode configuration defines `BattlePhase1` and
+`BattlePhase2`. Catalog order, `defaultEnable` and extra-passive flags do not
+establish cast order, live initial phase or transition conditions. The canvas
+blackboard also stores typed `EnemyAISkillData.skillID` values naming
+`eny_0029_lbmob_normal_attack02` and `eny_0029_lbmob_battleact`: an enemy-name
+prefix filter misses real stored dependencies, while a stored value alone does
+not prove task use. The selected Rodin graph RIDs identify graph-data references
+whose exported `data` is empty; without `canvasGraph`, no compressed graph
+ordinal is admitted. Reuse the complete RID/PPtr requirements in
+`extend_data_graph_ai_corpus.py`; a similarly named graph cannot repair the gap.
 
 ## Open join: spawner entry to live enemy
 
