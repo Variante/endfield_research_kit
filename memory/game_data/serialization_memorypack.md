@@ -6140,7 +6140,10 @@ items this topic owns.
   non-constant patrol `EntityPtr`, unproved blackboard parent/owner joins,
   camera configurations and curve keys without reviewed parent routes;
   `SendLuaEvent2` is unobserved; partial templates stop
-  at unreviewed unions.
+  at unreviewed unions. `SetCameraTarget` (ActionBase, 11 members, two
+  `base01_lv003` sources) has only a reflection-derived conditional projection:
+  it has no native header contract or `action_map_layouts.json` row, and both
+  sources first stop earlier on an `ActionBase.uid` StringPool requirement.
 - **SkillData.** The maintained current v4 graph has complete finite root,
   action, selector and typed-child source composition. It still requires a
   fresh active operation and physical EOF for each admitted stored record;
