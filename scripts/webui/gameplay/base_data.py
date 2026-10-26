@@ -1167,8 +1167,13 @@ def build_weapon_entries(
     talents = tables.get("WeaponTalentTemplateTable.json") or {}
     upgrades = tables.get("WeaponUpgradeTemplateTable.json") or {}
     upgrade_sums = tables.get("WeaponUpgradeTemplateSumTable.json") or {}
+    # Reviewed variants remain in the source tables, but are not independent
+    # weapons in Gameplay (including loadouts and Essence compatibility).
+    variants = json.loads((REPO_ROOT / "webui" / "overrides" / "weapon_variants.json").read_text(encoding="utf-8"))
     entries = []
     for weapon_id, row in sorted(weapons.items(), key=lambda item: (item[1].get("rarity", 0), item[0])):
+        if weapon_id in variants:
+            continue
         if not isinstance(row, dict):
             continue
         item_row = items.get(weapon_id) or {}

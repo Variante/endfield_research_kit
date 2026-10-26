@@ -15,6 +15,13 @@ is deliberately not attached while its ownership model is under review.
 Weapon and equipment sidebar entries share two lines: name, then metadata
 and effect/attribute labels, with overflow truncated on the second line.
 
+`webui/overrides/weapon_variants.json` records reviewed variant-to-base weapon
+identities. The Gameplay base builder excludes those variant IDs before
+publishing weapons, counts, loadouts and Essence compatibility links.
+`wpn_sword_0021_ink` is a variant of `wpn_sword_0021`, not an independent
+catalog weapon. This correction does not alter exported source tables or infer
+other variants from ID suffixes.
+
 The page also hosts the Gameplay-owned item, building and recipe catalogs
 through one shared dataset bar: Characters, Weapons, Essences, Equipment,
 Items, Enemies, Combat stages and Activities. Activities reads the last

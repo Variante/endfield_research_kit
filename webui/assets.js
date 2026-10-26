@@ -3455,7 +3455,8 @@
   }
 
   function showViewerModel(model) {
-    Object.assign(ASSET_STATE.viewer, VIEWER_DEFAULTS, { model });
+    // Keep the current view across assets and variants; double-click resets it.
+    ASSET_STATE.viewer.model = model;
     renderModelObjectToggles(model);
     queueModelRender();
   }

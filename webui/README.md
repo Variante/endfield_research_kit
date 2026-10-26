@@ -1212,6 +1212,10 @@ remain in the unique shared catalog. What each state refuses to claim is in
 
 ### Assets
 
+Model previews retain rotation, zoom and pan when switching assets or variants,
+including after viewing an image or video. Double-click the model preview to
+restore the default view. This view state lasts until the page is reloaded.
+
 - Recovered collision OBJs have a separate `Collision` source and `cl`
   metadata (triangle/convex kind, full serialized identity, cooked-buffer hash
   and geometry counts). The `Collision` tag starts off and reset turns it off.
