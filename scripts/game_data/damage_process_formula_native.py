@@ -17,7 +17,7 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 
 CONTRACT = CONTRACTS_DIR / "damage_process_formula_native.json"
-SCHEMA = "endfield.damage-process-formula-native-contract.v1"
+SCHEMA = "endfield.damage-process-formula-native-contract.v2"
 
 
 def validate_windows(image, contract):
@@ -46,7 +46,7 @@ def load_damage_process_formula(*, gameassembly=None, metadata=None,
     contract, digest = read_reviewed_contract(CONTRACT, schema=SCHEMA,
                                              label="damage_process_formula", status="reviewed")
     pins = contract["nativeInputs"]
-    base = dict(schema=SCHEMA, contractSha256=digest, expression=None, methods=[],
+    base = dict(schema=SCHEMA, contractSha256=digest, expression=None, branchEvidence=None, methods=[],
                 evidenceBoundary=contract["evidenceBoundary"], conditions=contract["conditions"],
                 unresolved=contract["unresolved"], nativeInputs={}, nativePaths={})
 
@@ -75,12 +75,14 @@ def load_damage_process_formula(*, gameassembly=None, metadata=None,
         failures = validate_windows(image, contract)
         rows = []
         for spec in contract["methods"]:
-            body = image.body_index.body(spec["type"], spec["method"])
+            body = image.body_index.body(spec["type"], spec["method"],
+                                         parameters=spec.get("parameters"))
             actual = body.pointer - image.pe.image_base
             if actual != int(spec["rva"], 16):
                 failures.append(dict(check="named_entry", symbol=body.symbol,
                                      expected=spec["rva"], actual=hex(actual)))
             rows.append(dict(symbol=body.symbol, rva=hex(actual)))
+        failures.extend(validate_declarations(image, contract))
     except (OSError, ValueError, RuntimeError, KeyError, IndexError, struct.error) as exc:
         return reject("pendingReview", "damage_process_formula_evaluation", exc)
     after = check_installed_native_inputs(pins["gameAssemblySha256"], pins["metadataSha256"],
@@ -89,7 +91,46 @@ def load_damage_process_formula(*, gameassembly=None, metadata=None,
         return reject(after.status, "installed_native_inputs_after", after.detail)
     if failures:
         return reject("pendingReview", "damage_process_formula_evaluation", f"{len(failures)} check(s) failed", failures)
-    return dict(base, status="validated", detail="", expression=contract["expression"], methods=rows, failures=[])
+    return dict(base, status="validated", detail="", expression=contract["expression"],
+                branchEvidence=contract.get("branchEvidence"), methods=rows, failures=[])
+
+
+def validate_declarations(image, contract):
+    """Keep named metadata declarations distinct from conditional raw views."""
+    from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
+    from scripts.game_data.il2cpp.protocol import native_enum_members, field_defaults
+    index = image.body_index
+    selected = NativeReferenceContext(image, index=index)
+    failures = []
+    for spec in contract.get("fieldDeclarations", []):
+        _, field_type, offset = selected.field(spec["field"])
+        actual = dict(type=field_type, offset=offset)
+        expected = dict(type=spec["type"], offset=spec["metadataOffset"])
+        if actual != expected:
+            failures.append(dict(check="field_declaration", symbol=spec["field"], expected=expected, actual=actual))
+    for spec in contract.get("parameterDeclarations", []):
+        body = index.body(spec["type"], spec["method"])
+        actual = list(index.parameter_location(body.pointer, body.symbol, spec["parameter"]))
+        if actual != spec["location"]:
+            failures.append(dict(check="parameter_location", symbol=spec["parameter"], expected=spec["location"], actual=actual))
+    for spec in contract.get("enumDeclarations", []):
+        members = native_enum_members(image.metadata, field_defaults(image.metadata), image.pe,
+                                      image.registration, spec["type"])
+        actual = {row["name"]: row["id"] for row in members}
+        if actual != spec["members"]:
+            failures.append(dict(check="enum_declaration", symbol=spec["type"], expected=spec["members"], actual=actual))
+    from scripts.game_data.il2cpp.context import unresolved_usage_index
+    for spec in contract.get("classInfoDeclarations", []):
+        address = image.pe.image_base + int(spec["rva"], 16)
+        raw = image.pe.bytes_at_va(address, 8)
+        type_index = unresolved_usage_index(raw, image.registration["typesCount"], tag=1,
+                                           source="damageProcessClassInfo", offset=address)
+        actual = selected.type_name(type_index)
+        if raw.hex() != spec["bits"] or actual != spec["type"]:
+            failures.append(dict(check="classinfo_declaration", symbol=spec["type"],
+                                 expected=dict(bits=spec["bits"], type=spec["type"]),
+                                 actual=dict(bits=raw.hex(), type=actual)))
+    return failures
 
 
 def main(argv=None):

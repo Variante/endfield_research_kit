@@ -1,0 +1,39 @@
+{
+  "schema": "endfield.damage-runtime-branch-abi-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "evidenceBoundary": "conditional",
+  "windows": [
+    {
+      "name": "processEntryAndIndirectCopy",
+      "rva": "0x55f4f70",
+      "byteCount": 256,
+      "sha256": "43d9a2724a938c6d5f7415ea0ac538f7e0826d5193672c273b6699ef316fbcd8"
+    },
+    {
+      "name": "stackProbe",
+      "rva": "0x1a0a60",
+      "byteCount": 78,
+      "sha256": "24ba2f8e6f97e3f8dec9771f775f11294b7da43ba09efabbb1bd3c079ac25b6e"
+    }
+  ],
+  "literals": [],
+  "captureAbi": {
+    "parameter": "transferredSource",
+    "entryRva": "0x55f4f70",
+    "incomingSlot": 5,
+    "stackDelta": 5848,
+    "copyRva": "0x55f5024",
+    "copyBytes": "488b8424081700000f1000",
+    "unboxedBytes": 16,
+    "requiredWindows": [
+      "processEntryAndIndirectCopy",
+      "stackProbe"
+    ],
+    "condition": "Normal completion of the reviewed stack probe preserves RAX and restores RSP; selected sequential reference/UInt32 carrier and current entry program.",
+    "interpretation": "The reviewed probe reserves16 bytes, saves/restores R10/R11, computes and probes stack pages through R10/R11 and GS stack limit, never writes RAX, restores its16-byte reserve and RETs. The Process prefix saves seven registers and subtracts allocation0x16a0; slot5 at entryRSP+48 therefore resides at bodyRSP+0x1708. The reviewed instruction boundary loads that pointer and copies16 bytes from it. No live callback execution or patch selection is established."
+  }
+}

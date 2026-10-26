@@ -1,0 +1,144 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v14",
+  "status": "reviewed",
+  "inheritsRecipe": "damage_runtime_kernel_capture.json",
+  "hooks": [
+    {
+      "name": "damage.Action.ProcessDamage",
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_ProcessDamage",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "effectSource",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        },
+        {
+          "name": "targetWrapper",
+          "type": "Beyond.Gameplay.Core.BattleTargetWrapper"
+        },
+        {
+          "name": "isExtraTarget",
+          "type": "bool"
+        },
+        {
+          "name": "transferredSource",
+          "type": "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>"
+        },
+        {
+          "name": "hitEnvCalcResult",
+          "type": "Beyond.Gameplay.Core.CalcResult"
+        }
+      ],
+      "fields": [
+        {
+          "label": "effectSourceServerId",
+          "argument": "effectSource",
+          "type": "ulong",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "effectSourceEntityName",
+          "argument": "effectSource",
+          "type": "string",
+          "role": "value-source-observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<name>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "effectSourceAttributesIdentity",
+          "argument": "effectSource",
+          "type": "Beyond.Gameplay.Core.Attributes",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            }
+          ]
+        },
+        {
+          "label": "effectSourceAttributesInstanceUid",
+          "argument": "effectSource",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilitySystem::m_attributes",
+              "type": "Beyond.Gameplay.Core.Attributes"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Attributes::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "isExtraTarget",
+          "argument": "isExtraTarget",
+          "type": "bool",
+          "role": "branch-selection"
+        },
+        {
+          "label": "targetWrapperType",
+          "argument": "targetWrapper",
+          "type": "Beyond.Gameplay.Core.BattleTargetType",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 224
+          },
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BattleTargetWrapper::type",
+              "type": "Beyond.Gameplay.Core.BattleTargetType"
+            }
+          ],
+          "role": "branch-selection"
+        }
+      ],
+      "observationMode": "paired",
+      "semanticRole": "Damage root extra-target selection and effect-source identity",
+      "evidenceBoundary": {
+        "direct": "Actual incoming isExtraTarget and stored target-wrapper type; paired root nests existing pack/modifier observations.",
+        "conditional": "Selected physical ABI and complete synchronous pairs; no callback invocation or object getter.",
+        "unresolved": "Anonymous IFix callback result/selection and extra-target EnemyPart damageRatio Single scale remain unobserved."
+      }
+    }
+  ],
+  "coverageGaps": [
+    "ProcessDamage observes the incoming extra-target bool; no anonymous callback root observer or EnemyPart damageRatio observer is implemented.",
+    "Critical status may be interpreted conditionally from the existing modifier flag word and selected native contract; this recipe does not observe Dice directly."
+  ],
+  "evidenceBoundary": {
+    "conditional": "Named damage branches only; selected native ABI and healthy complete synchronous pairs.",
+    "unresolved": "Anonymous callback selection/result, extra-target EnemyPart damageRatio, runtime patch selection and server authority remain separate."
+  }
+}

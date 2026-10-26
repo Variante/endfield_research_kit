@@ -16,6 +16,8 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT_HOOK = "damage.Action.ExecuteInternal"
 SCHEMA = "endfield.damage-runtime-inspection.v1"
+RECIPES = {"kernel": "damage_runtime_kernel_capture.json",
+           "branches": "damage_runtime_branch_capture.json"}
 BOUNDARY = ("Observed same-thread synchronous DamageAction enclosure only. No actor/skill ownership, "
             "RNG seed, server authority, omitted callbacks or complete combat claim.")
 
@@ -138,12 +140,14 @@ def project_damage_rows(rows: Iterable[dict[str, Any]], hooks: list[dict[str, An
 
 
 def inspect_damage_session(session: Path, output_dir: Path, *, local_files: bool = False,
+                           recipe_name: str = "kernel",
                            limits: trace.Limits = trace.Limits()) -> dict[str, Any]:
     """Decode a retained package with the maintained reader, then project pairs.
 
     Writes only below reports/. Admission failures produce an empty blocked report.
     Retained native/source declarations remain observations, never re-proved facts.
     """
+    trace.require(recipe_name in RECIPES, "unknown reviewed damage recipe selection")
     output_dir = output_dir.resolve()
     trace.require(output_dir.is_relative_to((REPO_ROOT / "reports").resolve()),
                   "damage inspection output must be under reports/")
@@ -151,10 +155,11 @@ def inspect_damage_session(session: Path, output_dir: Path, *, local_files: bool
     destination = output_dir / "damage.inspection.json"
     trace.require(not destination.exists(), "damage inspection output already exists")
     report = dict(schema=SCHEMA, status="blocked", combatComplete=False, boundary=BOUNDARY,
-                  sourceContext={"sessionPath": str(session.resolve())}, actions=[], unownedObservations=[], diagnostics=[])
+                  sourceContext={"sessionPath": str(session.resolve()), "recipeSelection": recipe_name}, actions=[], unownedObservations=[], diagnostics=[])
     try:
         inspected = trace.inspect_session(session, output_dir / "trace", local_files=local_files, limits=limits)
-        report["sourceContext"] = {"sessionPath": str(session.resolve()), "inspection": inspected, "operatorDeclaredScenario": None,
+        report["sourceContext"] = {"sessionPath": str(session.resolve()), "recipeSelection": recipe_name,
+                                   "inspection": inspected, "operatorDeclaredScenario": None,
                                    "nativeValidationReproved": False, "sourceValidationReproved": False}
         facts = inspected.get("receiptFacts", {})
         trace.require(inspected.get("status") == ("analyzed" if local_files else "inspected"),
@@ -169,10 +174,10 @@ def inspect_damage_session(session: Path, output_dir: Path, *, local_files: bool
         trace.require(inventory.get("inventorySha256") == inspected["inventory"].get("inventorySha256"),
                       "damage admission inventory changed after inspection")
         profile, summary, hooks = trace.bindings(artifacts, limits)
-        recipe = trace.read_object(CONTRACTS_DIR / "damage_runtime_kernel_capture.json", limits.json_bytes)
+        recipe = trace.read_object(CONTRACTS_DIR / RECIPES[recipe_name], limits.json_bytes)
         expected = {h["name"] for h in recipe["hooks"]}
         trace.require(len(hooks) == len(expected) and {h["name"] for h in hooks} == expected,
-                      "damage admission requires exactly the reviewed kernel hook selection")
+                      "damage admission requires exactly the reviewed " + recipe_name + " hook selection")
         for hook in hooks:
             spec = next(item for item in recipe["hooks"] if item["name"] == hook["name"])
             abi = PAIRED_ABI.fullmatch(hook.get("abiId", ""))
@@ -231,8 +236,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--session", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--local-files", action="store_true")
+    parser.add_argument("--recipe", choices=tuple(RECIPES), default="kernel")
     args = parser.parse_args(argv)
-    result = inspect_damage_session(args.session, args.output_dir, local_files=args.local_files)
+    result = inspect_damage_session(args.session, args.output_dir, local_files=args.local_files,
+                                    recipe_name=args.recipe)
     print(f"[damage_runtime_inspect] {result['status']}; actions={len(result['actions'])}; combatComplete=False")
     for diagnostic in result["diagnostics"]:
         print(diagnostic["detail"])

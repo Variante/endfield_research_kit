@@ -1777,6 +1777,41 @@ input-validation failure. Candidate identity equality still does not establish
 object lifetime or attack ownership. Critical/block/RNG/skill fields remain
 unknown; these diagnostic candidates are not Gym transitions or reward labels.
 
+The retained EnemyTable selects the same attribute template, with no per-row
+attribute modifiers, for ordinary and weekly Rodin. That retained template's
+level row agrees with observed Level, MaxHp, Atk and Def in the admitted battle.
+This is a stored-data/observed-value comparison, not a proof of initialization
+order or of an unchanged export. These numbers cannot distinguish the two
+variants; the weekly row separately names an AI override. Re-recording base
+stats alone therefore cannot resolve weekly AI selection.
+
+The current fragment contract also authenticates the Modifier flag enum and
+construction windows, the normal Dice threshold branch, and the extra-target
+consumer. Critical and blocked bits can be interpreted in the retained later
+Modifier field under the explicit normal-construction/no-intervening-writer
+conditions. This is separate from directly observing the Dice return. In the
+reviewed normal Dice path, a finite probability at or below the authenticated
+epsilon returns false; applying that fact to a dump still requires the correct
+source-array and invocation join. A later flag or final HP must not select the
+source array or the random outcome used for a formula prediction.
+
+The later Single multiplier is the enemy-part `damageRatio` field. It is used
+only on the selected extra-target path with the stated damage-type exclusion.
+The two ExecuteInternal call sites pass different literal extra-target values,
+but a recorded damage-unit index of zero alone does not identify either call.
+An ordinary entity name also cannot exclude a part-compatible receiver.
+Consequently the existing record narrows this gap without proving the branch
+was skipped. The anonymous runtime callback table's live selection remains
+unknown; a static null/default branch is not evidence that it was taken.
+
+The [coverage reader](../../scripts/game_data/damage_runtime_coverage.py) uses
+the dump's explicit GetFinalAttackValue parent before matching target attribute
+pointer/UID and modifier candidates. This avoids conflating successive packs
+that reuse one stack address within a DamageAction. A unique candidate remains
+conditional ownership. Optional native interpretation additionally binds the
+current contract digest, selected native identities and the retained flag field
+layout, preserving raw observations and interpretation as separate fields.
+
 ## Character attribute formula
 
 [`attribute_formula_native.json`](../../scripts/game_data/contracts/attribute_formula_native.json)

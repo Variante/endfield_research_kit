@@ -59,6 +59,32 @@ class PreparationError(ValueError):
     """A selected method or field no longer matches the reviewed observer."""
 
 
+def check_indirect_stack_copy_coordinates(body: bytes, slot: int, entry: int, image_base: int) -> dict[str, Any]:
+    """Cross-check reviewed entry coordinates; not a standalone CFG/ABI proof."""
+    if len(body) != 256:
+        raise PreparationError('mission_trace.paired: complete bounded entry window required')
+    at = 0
+    # Only ordinary register home stores before the pushes are admitted.
+    while body[at:at+4] in (b'\x4c\x89\x4c\x24', b'\x48\x89\x54\x24', b'\x48\x89\x4c\x24'):
+        at += 5
+    pushed = 0
+    while body[at:at+1] in (b'\x53', b'\x56', b'\x57') or body[at:at+2] in (b'\x41\x54', b'\x41\x55', b'\x41\x56', b'\x41\x57'):
+        at += 2 if body[at] == 0x41 else 1
+        pushed += 8
+    if at + 13 > len(body) or body[at] != 0xb8 or body[at+5] != 0xe8 or body[at+10:at+13] != b'\x48\x2b\xe0':
+        raise PreparationError('mission_trace.paired: selected stack-allocation prologue required')
+    allocation = int.from_bytes(body[at+1:at+5], 'little')
+    if not 4 <= slot <= 7:
+        raise PreparationError('mission_trace.paired: selected indirect stack carrier required')
+    displacement = allocation + pushed + 8 + slot * 8
+    load = b'\x48\x8b\x84\x24' + displacement.to_bytes(4, 'little') + b'\x0f\x10\x00'
+    positions = [n for n in range(at+13, len(body)-len(load)+1) if body[n:n+len(load)] == load]
+    if len(positions) != 1:
+        raise PreparationError('mission_trace.paired: selected incoming slot sixteen-byte indirect copy required')
+    return dict(entryRva=hex(entry-image_base), stackDelta=allocation+pushed, incomingSlot=slot,
+                copyRva=hex(entry+positions[0]-image_base), copyBytes=load.hex())
+
+
 def read_words(field):
     row=[field[k]for k in ('arg','kind','offset','chain0','chain1')]
     if field['kind']==6:return row+[field['byteCount']]
@@ -228,6 +254,63 @@ class SelectedMethods:
                 'nativeTypeRecordHex': raw.hex(), 'nativeTypeIndex': index,
                 'byref': bool(raw[11] & 0x20),
                 'evidence': 'selected concrete value size/type; Win64 indirect aggregate or declared byref pointer'}
+
+    def paired_reference_uid_argument(self, hook, parameter):
+        """Prove a closed sequential reference/UInt32 carrier, without reading it."""
+        from scripts.game_data.damage_runtime_branch_abi import validate_damage_branch_abi
+        native_witness = validate_damage_branch_abi(self, hook, parameter)
+        if native_witness.get('unboxedBytes') != 16:
+            raise PreparationError('mission_trace.paired: reviewed reference/UInt32 extent differs')
+        method, _, _ = self.resolve(hook)
+        hits = [p for p in self.image.metadata.parameters_for(method)
+                if self.image.metadata.string(p.name_index) == parameter['name']]
+        if len(hits) != 1:
+            raise PreparationError('mission_trace.paired: closed carrier parameter ambiguous')
+        p = hits[0]; pe = self.image.pe; metadata = self.image.metadata
+        pointer = pe.u64_at_va(int(self.image.registration['types'], 16) + p.type_index * 8)
+        raw = pe.bytes_at_va(pointer, 16)
+        if len(raw) != 16 or raw[10] != 0x15 or raw[11] & 0x7f:
+            raise PreparationError('mission_trace.paired: ordinary closed generic carrier required')
+        definition_pointer, inst_pointer = struct.unpack('<QQ', pe.bytes_at_va(int.from_bytes(raw[:8], 'little'), 16))
+        definition_raw = pe.bytes_at_va(definition_pointer, 16)
+        if definition_raw[10] != 0x11 or definition_raw[11] & 0x7f:
+            raise PreparationError('mission_trace.paired: closed value definition required')
+        td = metadata.types[int.from_bytes(definition_raw[:8], 'little')]
+        definition = metadata.type_full_name(td)
+        if (td.generic_container_index < 0 or self.parent(definition) != 'System.ValueType'
+                or td.flags & 0x18 != 8 or not td.bitfield & 0x800
+                or not td.bitfield & 0x400):
+            raise PreparationError('mission_trace.paired: sequential default packing/class size required')
+        section = metadata.sections['genericContainers']
+        at = section.offset + td.generic_container_index * 16
+        owner, count, is_method, parameter_index = struct.unpack_from('<iiii', metadata.buf, at)
+        argc, argv = struct.unpack('<QQ', pe.bytes_at_va(inst_pointer, 16))
+        if owner != td.index or count != 1 or is_method != 0 or parameter_index < 0 or argc != 1:
+            raise PreparationError('mission_trace.paired: closed carrier owner/arity differs')
+        argument_pointer = pe.u64_at_va(argv)
+        argument_raw = pe.bytes_at_va(argument_pointer, 16)
+        argument_name = runtime_type_name(pe, metadata, argument_pointer)
+        if argument_raw[10] != 0x12 or argument_raw[11] & 0x7f:
+            raise PreparationError('mission_trace.paired: concrete reference generic argument required')
+        if self.type_name(p.type_index) != definition + '<' + argument_name + '>':
+            raise PreparationError('mission_trace.paired: closed carrier identity differs')
+        fields = [f for f in metadata.fields_for(td) if not self.field_attributes(f.type_index) & 0x10]
+        if [self.type_name(f.type_index) for f in fields] != [f'VAR[{parameter_index}]', 'uint']:
+            raise PreparationError('mission_trace.paired: reference/UInt32 instance fields required')
+        # A stored generic shape alone does not establish the physical argument.
+        # Admit only a selected body that copies sixteen bytes through this
+        # exact incoming stack slot, with a fully accounted Win64 prologue.
+        _, _, entry = self.resolve(hook)
+        body = pe.bytes_at_va(entry, 256)
+        slot, _ = self.argument(hook, parameter['name'])
+        consumer = check_indirect_stack_copy_coordinates(body, slot, entry, pe.image_base)
+        if any(consumer[key] != native_witness[key] for key in consumer):
+            raise PreparationError('mission_trace.paired: reviewed native consumer coordinates differ')
+        return dict(argument=parameter['name'], type=parameter['type'], mode='indirectValue',
+                    unboxedBytes=16, nativeTypeIndex=p.type_index, nativeTypeRecordHex=raw.hex(),
+                    definitionTypeIndex=td.index, argumentType=argument_name, byref=False,
+                    consumerProof=consumer, reviewedNativeWitness=native_witness,
+                    evidence='selected sequential default-packed reference then UInt32 and incoming-slot native sixteen-byte indirect copy; no observer pointee read')
 
     def normal_value_receiver(self, hook):
         """Normal nongeneric value methods receive an unboxed this pointer."""
@@ -1139,8 +1222,10 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
             if spec['returnType'] in {'float', 'double'} and recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
                 raise PreparationError(f"{spec['name']}: floating returns require recipe v9")
             count = len(spec['parameters']) + int(not spec['static']) + 1  # trailing IL2CPP MethodInfo
-            if not 1 <= count <= 5:
-                raise PreparationError(f"{spec['name']}: paired observer supports one to five GP ABI slots")
+            if not 1 <= count <= 8:
+                raise PreparationError(f"{spec['name']}: paired observer supports one to eight GP ABI slots")
+            if count > 5 and recipe.get('schema') not in {CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
+                raise PreparationError('mission_trace.recipe: sixth through eighth GP slots require recipe v14')
             if count == 5 and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
                 raise PreparationError('mission_trace.recipe: fifth GP slot requires recipe v10')
             aggregate_arguments = []
@@ -1172,6 +1257,9 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                     continue
                 if 'VAR[' in t:
                     raise PreparationError(f"{spec['name']}: paired observer refuses unresolved or XMM arguments")
+                if (spec['type'], spec['method'], p['name']) == ('Beyond.Gameplay.Core.DamageAction', '_ProcessDamage', 'transferredSource'):
+                    aggregate_arguments.append(selected.paired_reference_uid_argument(spec, p))
+                    continue
                 if selected.is_value_type(t) and not selected.is_enum(t):
                     if t in _WIDTH:
                         continue

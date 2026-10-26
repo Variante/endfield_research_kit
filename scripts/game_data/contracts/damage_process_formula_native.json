@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.damage-process-formula-native-contract.v1",
+  "schema": "endfield.damage-process-formula-native-contract.v2",
   "status": "reviewed",
   "nativeInputs": {
     "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
@@ -26,6 +26,19 @@
       "type": "Beyond.Gameplay.Core.DamagePackData",
       "method": "GetFinalAttackValue",
       "rva": "0x5354f50"
+    },
+    {
+      "type": "Beyond.RandomUtils",
+      "method": "Dice",
+      "rva": "0x5355860",
+      "parameters": [
+        "double"
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "ExecuteInternal",
+      "rva": "0x4f828d0"
     }
   ],
   "windows": [
@@ -76,6 +89,66 @@
       "rva": "0x74a9244",
       "byteCount": 13,
       "sha256": "ec67902ccd139ef1b489f639abe19b659fa35ddfd07855a531efc824598b1067"
+    },
+    {
+      "name": "processEntryAndFrame",
+      "rva": "0x55f4f70",
+      "byteCount": 320,
+      "sha256": "bc31385658185ce025b51bd20cf56eb68d3ffa04259c3494e4c3f637a2cb001f"
+    },
+    {
+      "name": "processActorScale",
+      "rva": "0x55f69b2",
+      "byteCount": 192,
+      "sha256": "f42230b4dcd1478795063ad3c4ad0769969a058ba382835acbfec935c7bcb560"
+    },
+    {
+      "name": "processModifierArguments",
+      "rva": "0x55f6d13",
+      "byteCount": 228,
+      "sha256": "aec35c06433481ed8a284ab02008553d65eb85be000da302d0a84159f550affd"
+    },
+    {
+      "name": "newDamagePackForwarder",
+      "rva": "0x5ce5520",
+      "byteCount": 1028,
+      "sha256": "8185e29b4a24da9f7d7bbfc134164ac8eeaed540216821acae44b4a9ac4e8e6f"
+    },
+    {
+      "name": "newDamageFlagConstructor",
+      "rva": "0x5ce5930",
+      "byteCount": 1292,
+      "sha256": "71bda55b0dad1acc6df03b824423894ad30e22faf027569e3f269cc8fb9b9415"
+    },
+    {
+      "name": "baseModifierFlagInitialization",
+      "rva": "0x5ce5ea0",
+      "byteCount": 140,
+      "sha256": "6c72eb835bab48a5fd39bf873642c2f9615e929cbce5b222e150b4b0eb75c843"
+    },
+    {
+      "name": "diceZeroBranch",
+      "rva": "0x5355860",
+      "byteCount": 314,
+      "sha256": "d38804b40974a9181966a64a8f733052c8181f21a8ce8c4517c0f2e8d3309ea4"
+    },
+    {
+      "name": "processCritDetailStore",
+      "rva": "0x55f66e1",
+      "byteCount": 22,
+      "sha256": "c0c5759647c5d866a5f82d066e05fc846b9085080bdef90598ff1bc270a9c18e"
+    },
+    {
+      "name": "processMainCallFalse",
+      "rva": "0x4f83ca8",
+      "byteCount": 57,
+      "sha256": "329fc902424049d453172359f9f17b96d47d8bf336c9504d6f92629694ac23b3"
+    },
+    {
+      "name": "processExtraCallTrue",
+      "rva": "0x4f840a1",
+      "byteCount": 54,
+      "sha256": "3051d60145e71a5eb64a2a5edbbc570d160578f4e1adf6e694ee522aa54ae83c"
     }
   ],
   "literals": [
@@ -92,6 +165,11 @@
     {
       "rva": "0xda956b8",
       "bits": "0000000000005940",
+      "kind": "Double"
+    },
+    {
+      "rva": "0xda95878",
+      "bits": "00000080b5f8e43e",
       "kind": "Double"
     }
   ],
@@ -146,6 +224,115 @@
     "DEF cold negative path not recovered.",
     "RawDamage and special actor shortcut paths excluded.",
     "Subsequent optional actor Single scale, block and settlement operations lie after this arithmetic fragment.",
-    "Unsupported generic decoder opcodes were read from authenticated raw bytes. This validator authenticates the reviewed expression windows; it does not independently decode or prove whole-path control flow."
+    "Unsupported generic decoder opcodes were read from authenticated raw bytes. This validator authenticates the reviewed expression windows; it does not independently decode or prove whole-path control flow.",
+    "The later Modifier flag interpretation is conditional on unpatched construction, raw-layout parity and no intervening writes; it cannot be upgraded to an observed formula output Boolean."
+  ],
+  "fieldDeclarations": [
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystem+Modifier::m_sharedFlagMask",
+      "metadataOffset": 48,
+      "type": "int"
+    },
+    {
+      "field": "Proto.BATTLE_DAMAGE_DETAIL::<IsCrit>k__BackingField",
+      "metadataOffset": 36,
+      "type": "bool"
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilitySystemForEnemyPart::<damageRatio>k__BackingField",
+      "metadataOffset": 1524,
+      "type": "float"
+    }
+  ],
+  "parameterDeclarations": [
+    {
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_ProcessDamage",
+      "parameter": "isExtraTarget",
+      "location": [
+        "stack",
+        40
+      ]
+    }
+  ],
+  "enumDeclarations": [
+    {
+      "type": "Beyond.Gameplay.Core.AbilitySystem+Modifier+SharedFlagIndex",
+      "members": {
+        "IsCritical": 0,
+        "ShowText": 1,
+        "CreateCommonBuffAfterApply": 2,
+        "IsBlocked": 3,
+        "IgnorePoiseImmune": 4,
+        "IgnoreShield": 5,
+        "UseHpChangeAsDisplayValue": 6
+      }
+    }
+  ],
+  "branchEvidence": {
+    "evidenceBoundary": "conditional",
+    "proofKind": "authenticated reviewed raw-window reading; not a complete instruction/control-flow validator",
+    "modifierSharedFlags": {
+      "criticalBit": 0,
+      "blockedBit": 3,
+      "metadataField": "Beyond.Gameplay.Core.AbilitySystem+Modifier::m_sharedFlagMask",
+      "metadataOffset": 48,
+      "rawOffset": 32,
+      "boundary": "conditional later flag decoding, not direct observation of Dice return",
+      "conditions": [
+        "The retained observation addresses the same Modifier value produced by this selected normal NewDamage chain.",
+        "The selected NewDamage/flag-setter/base-constructor runtime replacement slots take their ordinary null-table/null-function routes.",
+        "The value-type raw view uses the declared metadata offset minus the assumed sixteen-byte boxed header; live layout and class parity remain conditions.",
+        "Base constructor initializes this raw mask DWORD to zero. The selected crit/block inputs set bit zero/three respectively.",
+        "No intervening code, callback, modifier processor or concurrent writer changes either selected bit before the retained observation.",
+        "Target/pack candidate identity does not by itself prove uninterrupted object lifetime or construction-to-observation ownership.",
+        "The reviewed raw-window chain establishes a conditional construction reading, not an independently decoded whole-program dataflow proof; consumers must retain this distinction."
+      ]
+    },
+    "diceAtOrBelowEpsilon": {
+      "result": false,
+      "thresholdDouble": 9.999999747378752e-06,
+      "selection": "finite incoming Double probability <= the authenticated positive epsilon; normal anonymous runtime replacement guard and static readiness branch; unchanged frame/code and ordinary helper preservation",
+      "boundary": "conditional normal Dice path only; runtime patch selection is not observed"
+    },
+    "extraTargetActorScale": {
+      "parameter": "isExtraTarget",
+      "entryStackOffset": 40,
+      "frameDeltaBytes": 5848,
+      "frameStackOffset": 5888,
+      "noScaleSelection": "incoming isExtraTarget byte is zero, or actual unit damageType is 8",
+      "scaleSelection": "isExtraTarget byte nonzero and actual unit damageType differs from 8",
+      "rawScaleFieldOffset": 1524,
+      "operation": "MOVSS -> CVTPS2PD low lane -> MULSD on retained formula result",
+      "boundary": "named field/type declarations and physical carrier operations; complete live reference/class parity, cast/provider internals and entry-to-fragment dominance remain conditional",
+      "metadataField": "Beyond.Gameplay.Core.AbilitySystemForEnemyPart::<damageRatio>k__BackingField",
+      "fieldType": "float",
+      "receiverSource": "entry transferredSource ObjectPtr Lock request, compatible with selected tagged EnemyPart ClassInfo under ordinary runtime layout/cast parity",
+      "callerSelections": {
+        "mainCall": {
+          "isExtraTarget": false,
+          "transferredSource": "zeroed sixteen-byte local carrier"
+        },
+        "extraCall": {
+          "isExtraTarget": true,
+          "transferredSource": "copied sixteen-byte local carrier"
+        },
+        "boundary": "two authenticated ExecuteInternal direct call fragments, not an exhaustive dynamic invocation partition",
+        "unitIndexInference": "Both fragments pass retained R13 as effectSource and the same stack inputTarget carrier. There is no separate unit index ordinary argument at either call; unit index zero alone does not establish the Boolean selection. Enclosing loops and source mutation remain unresolved."
+      }
+    },
+    "callbackSelection": {
+      "boundary": "anonymous runtime-written table/slot state; no static proof of live null selection",
+      "source": "same RIP root as wrapper guards, table at root+0x50, function at table+0x15e0, receiver at table+0x15e8",
+      "defaultFactor": 1,
+      "defaultSelection": "nonnull root with null table or null function; normal matching runtime carrier"
+    }
+  },
+  "classInfoDeclarations": [
+    {
+      "rva": "0x10653048",
+      "bits": "93de022000000000",
+      "type": "Beyond.Gameplay.Core.AbilitySystemForEnemyPart"
+    }
   ]
 }
