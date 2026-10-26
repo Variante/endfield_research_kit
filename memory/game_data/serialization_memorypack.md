@@ -9378,9 +9378,10 @@ The same contract separately records conditional inlined sources for
 the actual pool/empty cells and lookup, buffered index/cursor paths, current
 reader ABI, typed holder/field and unchanged result store. The last atom field
 reuses the reader register only after consuming its index; it needs its own
-profile. These source-site facts alone do not admit the enclosing OperaSegment
-array, which has no maintained reader. Missing or mismatched selected inputs yield no field facts, and every
-call rechecks the inputs after validation.
+profile. These source-site facts alone do not admit an enclosing owner;
+see the current OperaSegment composition under the Module graph below. Missing
+or mismatched selected inputs yield no field facts, and every call rechecks
+the inputs after validation.
 Native reference discovery must scan PE sections by their executable flag,
 not by the `.text` name: generated formatter registration also lives in other
 code sections. The mapper exposes section characteristics;
@@ -10141,18 +10142,27 @@ value byte and applies the barrier at the actual reference lane. AirWallPtr's
 indexed class resolver likewise delegates to a separately owned initialized
 prefix, without an entry-pointer equivalence claim.
 
-`EncounterData.OperaSegment` is a different inline value. Its canonical MC2
-grammar and full zero default are independent from its actual VALUE array
-source, indexed managed stride and the nested CLASS ParamKeyValue array. The
-current child codec composes the pooled key/value/atom graph, preserves raw
-IEEE and enum bits, and records Boolean source normalization without replacing
-the consumed wire byte. A dedicated IntroPart/TailPart compiler branch joins
-the complete array reference, named setter and all caller frames; it does not
-reuse the CLASS array gate. IntroPart's PosRot fields consume the independently
-proved raw position/euler value through Advance and full XMM save/restore,
-not the unused canonical PosRot wrapper framing. These child proofs still
-require the complete selected Module union, enclosing root dictionary and
-public physical-EOF composition before granting a whole owner.
+`EncounterData.OperaSegment` has a maintained conditional stored-value reader
+in [`current_module_values.py`](../../scripts/game_data/codecs/levelscript/current_module_values.py).
+It composes the MC2 value and full-zero default with the pooled
+ParamKeyValue/value/atom graph, preserves raw IEEE/enum and consumed Boolean
+bytes, and records Boolean normalization separately. The actual VALUE array
+source and managed stride are proved independently in
+[`levelscript_opera_array_sources.py`](../../scripts/game_data/memorypack/levelscript_opera_array_sources.py);
+[`levelscript_opera_array_components.py`](../../scripts/game_data/memorypack/levelscript_opera_array_components.py)
+joins it to IntroPart/TailPart's named fields and complete caller frames.
+The public [`levelscript_module_public.py`](../../scripts/game_data/memorypack/levelscript_module_public.py)
+reader admits this through the complete freshly gated current Module graph,
+including its positive child domains, matching StringPool and conditional
+callback/helper identities. Whole-owner admission still requires the enclosing
+root and physical-EOF/source receipt gates; live formatter selection and
+runtime behavior remain unobserved. IntroPart's PosRot fields use the proved
+raw position/euler source through Advance and full XMM restoration, rather
+than canonical PosRot wrapper framing. The older targeted
+[`encounter_modules.py`](../../scripts/game_data/codecs/levelscript/encounter_modules.py)
+reader remains narrower: it rejects every non-null IntroPart Opera array
+(including empty arrays), altered IntroPart and non-null TailPart. That refusal
+does not describe the current Module graph's capability.
 
 Rune's primitive arrays and dictionary have different physical programs.
 The [array owner](../../scripts/game_data/memorypack/levelscript_rune_array_components.py)
