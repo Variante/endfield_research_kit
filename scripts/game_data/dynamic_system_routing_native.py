@@ -66,54 +66,98 @@ def _signed32(value: int) -> int:
 
 
 def _registered_switch(raw: bytes, data_type: int) -> int:
-    """Execute only the reviewed x64 compare/branch/immediate subset."""
-    pc, edx, ecx, al = 0, _signed32(data_type), 0, 0
+    """Execute only the reviewed x64 compare/branch/immediate subset.
+
+    The register file holds the data-type copy in eax plus edx, ecx and r8d.
+    Two codegen shapes are covered: the earlier edx-only switch, and the
+    eax-copy switch that re-derives edx/ecx/r8d with ``lea r32,[rax+imm8]``
+    and mixes signed (jg) with unsigned (ja) range checks. Any other opcode,
+    or an unsigned branch whose flags were set by an add, is rejected.
+    """
+    regs = {"eax": 0, "edx": _signed32(data_type), "ecx": 0, "r8d": 0}
+    al = 0
     zero = greater = False
-    for _step in range(128):
+    above: bool | None = None
+    sub_regs = {0xEA: "edx", 0xE9: "ecx"}
+    cmp_regs = {0xFA: "edx", 0xF9: "ecx"}
+    lea_regs = {0x50: "edx", 0x48: "ecx"}
+
+    def compare(left: int, right: int) -> tuple[bool, bool, bool]:
+        left, right = _signed32(left), _signed32(right)
+        return left == right, left > right, (left & 0xFFFFFFFF) > (right & 0xFFFFFFFF)
+
+    pc = 0
+    for _step in range(256):
         if not 0 <= pc < len(raw):
             raise DynamicSystemRoutingError(f"registered switch branch outside code window at {pc}")
         tail = raw[pc:]
-        if tail.startswith(b"\x83\xc2") or tail.startswith(b"\x83\xea"):
+        if tail.startswith(b"\x83\xc2"):
             immediate = struct.unpack_from("<b", raw, pc + 2)[0]
-            edx = _signed32(edx + immediate if raw[pc + 1] == 0xC2 else edx - immediate)
-            zero, greater = edx == 0, edx > 0
+            regs["edx"] = _signed32(regs["edx"] + immediate)
+            zero, greater, above = regs["edx"] == 0, regs["edx"] > 0, None
             pc += 3
+        elif tail[:1] == b"\x83" and len(tail) >= 3 and tail[1] in sub_regs:
+            name = sub_regs[tail[1]]
+            immediate = struct.unpack_from("<b", raw, pc + 2)[0]
+            zero, greater, above = compare(regs[name], immediate)
+            regs[name] = _signed32(regs[name] - immediate)
+            pc += 3
+        elif tail[:1] == b"\x83" and len(tail) >= 3 and tail[1] in cmp_regs:
+            immediate = struct.unpack_from("<b", raw, pc + 2)[0]
+            zero, greater, above = compare(regs[cmp_regs[tail[1]]], immediate)
+            pc += 3
+        elif tail.startswith(b"\x41\x83\xf8"):
+            immediate = struct.unpack_from("<b", raw, pc + 3)[0]
+            zero, greater, above = compare(regs["r8d"], immediate)
+            pc += 4
+        elif tail.startswith(b"\x8b\xc2"):
+            regs["eax"] = regs["edx"]
+            pc += 2
+        elif tail[:1] == b"\x8d" and len(tail) >= 3 and tail[1] in lea_regs:
+            regs[lea_regs[tail[1]]] = _signed32(regs["eax"] + struct.unpack_from("<b", raw, pc + 2)[0])
+            pc += 3
+        elif tail.startswith(b"\x44\x8d\x40"):
+            regs["r8d"] = _signed32(regs["eax"] + struct.unpack_from("<b", raw, pc + 3)[0])
+            pc += 4
         elif tail.startswith(b"\xb9"):
-            ecx = struct.unpack_from("<I", raw, pc + 1)[0]
+            regs["ecx"] = struct.unpack_from("<I", raw, pc + 1)[0]
             pc += 5
         elif tail.startswith(b"\x3b\xd1"):
-            zero, greater = edx == _signed32(ecx), edx > _signed32(ecx)
+            zero, greater, above = compare(regs["edx"], regs["ecx"])
             pc += 2
-        elif tail.startswith(b"\x83\xfa"):
-            immediate = struct.unpack_from("<b", raw, pc + 2)[0]
-            zero, greater = edx == immediate, edx > immediate
-            pc += 3
         elif tail.startswith(b"\x85\xd2"):
-            zero, greater = edx == 0, edx > 0
+            zero, greater, above = regs["edx"] == 0, regs["edx"] > 0, False
             pc += 2
         elif tail.startswith(b"\x32\xc9"):
-            ecx &= ~0xFF
-            zero, greater = True, False
+            regs["ecx"] &= ~0xFF
+            zero, greater, above = True, False, False
             pc += 2
         elif tail.startswith(b"\xb1"):
-            ecx = (ecx & ~0xFF) | raw[pc + 1]
+            regs["ecx"] = (regs["ecx"] & ~0xFF) | raw[pc + 1]
             pc += 2
         elif tail.startswith(b"\x8a\xc1"):
-            al = ecx & 0xFF
+            al = regs["ecx"] & 0xFF
             pc += 2
         elif tail.startswith(b"\xc3"):
             return al
         else:
             branch = None
+            if tail.startswith(b"\x0f\x87") or tail[:1] == b"\x77":
+                if above is None:
+                    raise DynamicSystemRoutingError(
+                        f"registered switch unsigned branch at {pc} follows unreviewed flags"
+                    )
             if tail.startswith(b"\x0f\x84"):
                 branch = (zero, 6, struct.unpack_from("<i", raw, pc + 2)[0])
             elif tail.startswith(b"\x0f\x85"):
                 branch = (not zero, 6, struct.unpack_from("<i", raw, pc + 2)[0])
             elif tail.startswith(b"\x0f\x8f"):
                 branch = (greater, 6, struct.unpack_from("<i", raw, pc + 2)[0])
-            elif tail[:1] in (b"\x74", b"\x75", b"\x7f", b"\xeb"):
+            elif tail.startswith(b"\x0f\x87"):
+                branch = (above, 6, struct.unpack_from("<i", raw, pc + 2)[0])
+            elif tail[:1] in (b"\x74", b"\x75", b"\x7f", b"\x77", b"\xeb"):
                 opcode = raw[pc]
-                take = {0x74: zero, 0x75: not zero, 0x7F: greater, 0xEB: True}[opcode]
+                take = {0x74: zero, 0x75: not zero, 0x7F: greater, 0x77: above, 0xEB: True}[opcode]
                 branch = (take, 2, struct.unpack_from("<b", raw, pc + 1)[0])
             elif tail.startswith(b"\xe9"):
                 branch = (True, 5, struct.unpack_from("<i", raw, pc + 1)[0])
@@ -123,7 +167,7 @@ def _registered_switch(raw: bytes, data_type: int) -> int:
                 )
             take, size, displacement = branch
             pc += size + (displacement if take else 0)
-    raise DynamicSystemRoutingError("registered switch did not return within 128 instructions")
+    raise DynamicSystemRoutingError("registered switch did not return within 256 instructions")
 
 
 def _rel_call_target(raw: bytes, prefix: bytes, method_rva: int, label: str) -> int:
@@ -144,17 +188,34 @@ def _called_route(
     code = image.pe.bytes_at_va(image.pe.image_base + rva, int(spec["codeExtent"]))
     if hashlib.sha256(code).hexdigest().upper() != spec["codeSha256"].upper():
         raise DynamicSystemRoutingError("called route dispatcher code window differs")
-    if not (
-        code[:2] == b"\x83\xc2" and code[3:5] == b"\x83\xfa"
+    if (
+        len(code) == 34 and code[:2] == b"\x83\xc2" and code[3:5] == b"\x83\xfa"
         and code[6:8] == b"\x0f\x87" and code[12:18] == b"\x48\x63\xc2\x48\x8d\x15"
         and code[22:25] == b"\x8b\x8c\x82" and code[29:] == b"\x48\x03\xca\xff\xe1"
     ):
+        # add edx, -first; cmp edx, count-1; ja default; movsxd rax, edx;
+        # lea rdx, [image base]; mov ecx, [rdx+rax*4+table]; add rcx, rdx; jmp rcx
+        first = -struct.unpack_from("<b", code, 2)[0]
+        count = code[5] + 1
+        default_rva = rva + 12 + struct.unpack_from("<i", code, 8)[0]
+        image_base_rva = rva + 22 + struct.unpack_from("<i", code, 18)[0]
+        table_rva = struct.unpack_from("<i", code, 25)[0] + image_base_rva
+    elif (
+        len(code) == 37 and code[:2] == b"\x8d\x42" and code[3:5] == b"\x83\xf8"
+        and code[6:8] == b"\x0f\x87" and code[12:14] == b"\x8d\x42" and code[14] == code[2]
+        and code[15:21] == b"\x48\x63\xc8\x48\x8d\x15"
+        and code[25:28] == b"\x8b\x84\x8a" and code[32:] == b"\x48\x03\xc2\xff\xe0"
+    ):
+        # lea eax, [rdx-first]; cmp eax, count-1; ja default; lea eax, [rdx-first];
+        # movsxd rcx, eax; lea rdx, [image base]; mov eax, [rdx+rcx*4+table];
+        # add rax, rdx; jmp rax
+        first = -struct.unpack_from("<b", code, 2)[0]
+        count = code[5] + 1
+        default_rva = rva + 12 + struct.unpack_from("<i", code, 8)[0]
+        image_base_rva = rva + 25 + struct.unpack_from("<i", code, 21)[0]
+        table_rva = struct.unpack_from("<i", code, 28)[0] + image_base_rva
+    else:
         raise DynamicSystemRoutingError("called route dispatcher instruction shape differs")
-    first = -struct.unpack_from("<b", code, 2)[0]
-    count = code[5] + 1
-    default_rva = rva + 12 + struct.unpack_from("<i", code, 8)[0]
-    image_base_rva = rva + 22 + struct.unpack_from("<i", code, 18)[0]
-    table_rva = struct.unpack_from("<i", code, 25)[0] + image_base_rva
     if image_base_rva != 0 or count != int(spec["tableCount"]) or table_rva != int(spec["tableRva"]):
         raise DynamicSystemRoutingError("called route table base, count, or RVA differs")
     table = image.pe.bytes_at_va(image.pe.image_base + table_rva, count * 4)

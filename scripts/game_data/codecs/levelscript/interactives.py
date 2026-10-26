@@ -32,6 +32,11 @@ import struct
 from typing import Any, Callable
 
 from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.string_pool import (
+    StringPool,
+    StringPoolDecodeError,
+    resolve_string_pool_index,
+)
 
 
 class LevelInteractiveCodecError(ValueError):
@@ -102,6 +107,18 @@ def _string(data: bytes, cursor: int, field: str) -> tuple[str | None, int]:
     except UnicodeDecodeError as error:
         raise LevelInteractiveCodecError(
             f"invalid UTF-8 {field}: offset={cursor} size={size}"
+        ) from error
+
+
+def _pooled_string(
+    data: bytes, cursor: int, field: str, strings: StringPool | None
+) -> tuple[str | None, int]:
+    index, cursor = _i32(data, cursor, f"{field}.poolIndex")
+    try:
+        return resolve_string_pool_index(index, strings, field), cursor
+    except StringPoolDecodeError as error:
+        raise LevelInteractiveCodecError(
+            f"{error}: offset={cursor - 4}"
         ) from error
 
 
@@ -256,12 +273,24 @@ def decode_progress_lock_condition(
     field: str,
     *,
     depth: int = 0,
+    pooled: bool = False,
+    strings: StringPool | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode one non-null ``ConditionRuntimeBase`` progress lock at ``cursor``.
 
     The one codec for this union in interactive records: LevelScript and
     LevelData values and the Story page's progress-lock readers all call it.
     Raises ``LevelInteractiveCodecError`` on any other condition type.
+
+    ``pooled`` selects the current StringPool encoding of the state leaves'
+    ``ownerId``: a signed ``i32`` global pool index resolved against
+    ``strings`` (``-1`` empty, ``-2`` null), never inline UTF-8. On the
+    pooled build every quest/mission-state leaf in exported LevelData
+    resolves to a MissionRuntime quest or mission id under this reading,
+    while the inline reading would claim a multi-kilobyte string (corpus
+    correspondence, not a native formatter proof). A missing pool or an
+    unresolvable index refuses the condition. The default keeps the
+    historical inline layout for the pre-pool readers.
     """
     if depth > 8:
         raise LevelInteractiveCodecError(f"{field}: condition nesting exceeds 8")
@@ -274,7 +303,10 @@ def decode_progress_lock_condition(
     if condition_type in _PROGRESS_LOCK_STATE_CONDITIONS:
         compare_operator, cursor = _i32(data, cursor, f"{field}.compareOperator")
         compare_target, cursor = _i32(data, cursor, f"{field}.compareTarget")
-        owner_id, cursor = _string(data, cursor, f"{field}.ownerId")
+        if pooled:
+            owner_id, cursor = _pooled_string(data, cursor, f"{field}.ownerId", strings)
+        else:
+            owner_id, cursor = _string(data, cursor, f"{field}.ownerId")
         if compare_operator not in (0, 1) or not 0 <= compare_target <= 5 or not owner_id:
             raise LevelInteractiveCodecError(
                 f"invalid state condition {field}: operator={compare_operator} "
@@ -307,6 +339,8 @@ def decode_progress_lock_condition(
                 cursor,
                 f"{field}.conditions[{index}]",
                 depth=depth + 1,
+                pooled=pooled,
+                strings=strings,
             )
             conditions.append(condition)
         return {

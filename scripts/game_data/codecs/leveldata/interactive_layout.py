@@ -13,14 +13,21 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from scripts.game_data.codecs.leveldata.memorypack import read_count, read_i32, read_string
+from scripts.game_data.string_pool import StringPool
 
 
 def level_interactive_data_list_frames(
     data: bytes,
     *,
+    strings: StringPool | None = None,
     final_record_end_offset: int | None = None,
 ) -> list[dict]:
-    """Locate fully counted LevelInteractiveData lists in one LevelData blob."""
+    """Locate fully counted LevelInteractiveData lists in one LevelData blob.
+
+    ``entityDataIdKey`` is a StringPool index on the current build, so a
+    record start is recognised only through the matching ``strings``; with
+    no pool no index resolves and no frame is found.
+    """
     candidates: list[tuple[int, str]] = []
     for offset, value in enumerate(data):
         if value != 25 or offset + 29 > len(data):
@@ -28,6 +35,7 @@ def level_interactive_data_list_frames(
         decoded = read_string(
             data,
             offset + 1 + (3 * 8),
+            strings=strings,
             max_length=256,
         )
         if decoded is not None and isinstance(decoded[0], str) and decoded[0].startswith("int_"):

@@ -36,7 +36,7 @@ CLASSIFICATION = "validated_initial_entityptr_value_nonfinal"
 
 
 def load_entityptr_property_initialization_contract(
-    contract_path: Path = DEFAULT_CONTRACT,
+    contract_path: Path = DEFAULT_CONTRACT, *, gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     failures: list[dict[str, Any]] = []
 
@@ -60,7 +60,7 @@ def load_entityptr_property_initialization_contract(
             reject(f"lifecycle_boundary_{key}", expected, boundary.get(key))
     inputs = contract.get("nativeInputs") or {}
     native = check_installed_native_inputs(
-        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
+        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""), gameassembly=gameassembly, metadata=metadata)
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         reject("installed_native_inputs", NATIVE_EVIDENCE_VALIDATED,
                {"status": native.status, "detail": native.detail})

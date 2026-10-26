@@ -1,15 +1,16 @@
 {
- "schema": "entityPtrOutputAliasNativeContract.v2",
+ "schema": "endfield.entityptr-output-alias-native.v3",
  "status": "validated",
- "nativeMappingId": "entityptr-producer-output-alias.v2",
+ "nativeMappingId": "entityptr-producer-output-alias.v3",
  "evidenceBoundary": {
-  "exact": "union tags, member ordinals and field offsets from the build; method bodies by managed name and hash; callee order and loaded argument keys from the bodies",
-  "direct": "which entity each producer writes to its output, and whether that is its filter",
-  "conditional": "an installed IFix patch replaces any of these bodies; the reading holds only without one"
+  "exact": "union tags, member ordinals and field offsets from the selected build; method bodies by managed name and SHA256; callee order and loaded argument keys from the bodies",
+  "direct": "which entity each producer writes to its output, and whether that is its filter; for OnSpecificEntityDie, EntityPtr.op_Inequality is Equals xor 1 and Equals requires matching useSlotId then compares logicId when useSlotId is false",
+  "conditional": "every reading holds only without an installed IFix patch replacing one of these bodies (each carries an IFix hook check); the OnSpecificEntityDie alias holds only under constantCondition useSlotId=false and names logic-id identity, never 40-byte EntityPtr equality",
+  "unresolved": "a filter with useSlotId=true compares slotId against a runtime script-slot binding that no static input supplies; such outputs are not aliased"
  },
  "nativeInputs": {
-  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+  "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
  },
  "producers": [
   {
@@ -48,30 +49,30 @@
     {
      "type": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
      "name": "Process",
-     "va": "0x185dbc758",
-     "fileOffset": 98283864,
-     "bodySize": 292,
-     "bodySha256": "FA87384B8081EED1014AFD368B7F635319BE2BC4DA7F397FE85C38E1F916B87E"
+     "va": "0x18999df48",
+     "fileOffset": 161072968,
+     "bodySize": 296,
+     "bodySha256": "88016748177786C928B88C367BC346A69E0DD636149C611C9D84BC737B8B4888"
     },
     {
      "type": "Beyond.Gameplay.Core.LevelEventManager",
      "name": "_RegisterEntityEventHeaderFromLevelScript",
-     "va": "0x18319eae0",
-     "fileOffset": 52024544,
+     "va": "0x1856e4a90",
+     "fileOffset": 91107984,
      "bodySize": 1296,
-     "bodySha256": "06488EBE82B5CCB9864875042AA8FE2AED74BA449712B117F065CD6F404D9A7C"
+     "bodySha256": "51D45958EAE56B36BB08B902F5F62278CFFAE735113AFD39A1B47DF320C2544F"
     },
     {
      "type": "Beyond.Gameplay.Core.TriggerObserverAllEntityComponent",
      "name": "OnOverlapEnter",
-     "va": "0x1862452a4",
-     "fileOffset": 103038116,
-     "bodySize": 1000,
-     "bodySha256": "3511F0D6F66D85E55423458788A60E830CA4715416AF19707A34B77A0CA2AC4D"
+     "va": "0x18910678c",
+     "fileOffset": 152063884,
+     "bodySize": 1664,
+     "bodySha256": "11605A4B332FBFD2F49F62A3D67480DED6CE7EF83BDC9D911926B7CA9B8B2657"
     }
    ],
    "review": {
-    "finding": "Process copies trigger_cast_entity into entityPtr; OnOverlapEnter raises with the trigger owner as sender and the entering entity as trigger_cast_entity; the SPECIFY_ENTITY branch registers the listener on the target's source key.",
+    "finding": "Process copies trigger_cast_entity into entityPtr; OnOverlapEnter allocates EventParams, sets the receiver, stores @event_sender and trigger_cast_entity (the entering entity) and raises LevelEventManager._RaiseEntityEvent; registration keys the listener by the header's target (get_targetList/get_target), not by the entering entity.",
     "methods": [
      {
       "type": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
@@ -87,7 +88,7 @@
       "type": "Beyond.Gameplay.Core.LevelEventManager",
       "name": "_RegisterEntityEventHeaderFromLevelScript",
       "calls": [
-       "EntityEventHeader.get_triggerTarget",
+       "EntityEventHeader.get_targetList",
        "EntityEventHeader.get_target"
       ]
      },
@@ -95,11 +96,12 @@
       "type": "Beyond.Gameplay.Core.TriggerObserverAllEntityComponent",
       "name": "OnOverlapEnter",
       "calls": [
-       "EventParams.SetSender",
+       "EventParams.Allocate",
        "EventParams.SetReceiver",
-       "LevelEventManager.RaiseEntityEvent"
+       "LevelEventManager._RaiseEntityEvent"
       ],
       "literals": [
+       "@event_sender",
        "trigger_cast_entity"
       ]
      }
@@ -112,7 +114,7 @@
    "unionName": "LevelEvent_OnSpecificEntityDie",
    "headerName": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
    "aliasStatus": "aliases_filter_when_guard_matches",
-   "aliasCondition": "Process returns unless the @event_receiver argument equals _filterEntity, so the header only fires when they are equal",
+   "aliasCondition": "Process returns while EntityPtr.op_Inequality(@event_receiver, GetValue(_filterEntity)) holds, so _entity is written only when Equals holds; with useSlotId false on both sides Equals compares logicId alone",
    "outputField": {
     "fieldName": "_entity",
     "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>",
@@ -125,20 +127,47 @@
     "memberOrdinalZeroBased": 15,
     "fieldOffset": "0x80"
    },
-   "unionTag": 161,
+   "constantCondition": {
+    "useSlotId": false
+   },
+   "aliasValueEquality": "non_slot_logic_id_identity_only",
+   "slotPath": {
+    "status": "unresolved",
+    "condition": {
+     "useSlotId": true
+    },
+    "reason": "Equals compares slotId against a runtime script-slot binding; no static input supplies it"
+   },
+   "unionTag": 166,
    "serializedMemberCount": 16,
    "methods": [
     {
      "type": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
      "name": "Process",
-     "va": "0x185dc2954",
-     "fileOffset": 98308948,
-     "bodySize": 440,
-     "bodySha256": "2FE7DC985701908E24B13D31DE8ED54400A70087F95DF944ED113939554D0C62"
+     "va": "0x1899ac1c0",
+     "fileOffset": 161130944,
+     "bodySize": 444,
+     "bodySha256": "E67D2D102392DF3DFB2AA9F58C6F0773530F0F409B87C0AA32905F711F7DC8E1"
+    },
+    {
+     "type": "Beyond.Gameplay.Core.EntityPtr",
+     "name": "op_Inequality",
+     "va": "0x189235758",
+     "fileOffset": 153304920,
+     "bodySize": 172,
+     "bodySha256": "6829BDAF534A299BDF35837F8AB00E7AA0AF390C5C1AB4B31F2E2E93BDC61AFB"
+    },
+    {
+     "type": "Beyond.Gameplay.Core.EntityPtr",
+     "name": "Equals",
+     "va": "0x1852c0760",
+     "fileOffset": 86765408,
+     "bodySize": 112,
+     "bodySha256": "B2F2C282D4C97B8C6C1C2F1394037EBAF32F94B7316CC93F8291769F6BD5D584"
     }
    ],
    "review": {
-    "finding": "Process reads @event_receiver, compares it with GetValue(_filterEntity) through EntityPtr.op_Inequality, and writes it to _entity only when equal.",
+    "finding": "Process reads @event_receiver, compares it with GetValue(_filterEntity) through EntityPtr.op_Inequality, and writes it to _entity only when equal. op_Inequality returns Equals xor 1; Equals requires both useSlotId flags to match and, with useSlotId false, compares logicId.",
     "methods": [
      {
       "type": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
@@ -150,6 +179,23 @@
       "literals": [
        "@event_receiver"
       ]
+     },
+     {
+      "type": "Beyond.Gameplay.Core.EntityPtr",
+      "name": "op_Inequality",
+      "calls": [
+       "EntityPtr.Equals"
+      ]
+     },
+     {
+      "type": "Beyond.Gameplay.Core.EntityPtr",
+      "name": "Equals",
+      "calls": [],
+      "calledFrom": {
+       "type": "Beyond.Gameplay.Core.EntityPtr",
+       "name": "op_Inequality",
+       "call": "EntityPtr.Equals"
+      }
      }
     ]
    }
@@ -171,16 +217,16 @@
     "memberOrdinalZeroBased": 17,
     "fieldOffset": "0xa0"
    },
-   "unionTag": 190,
+   "unionTag": 195,
    "serializedMemberCount": 20,
    "methods": [
     {
      "type": "Beyond.Gameplay.Actions.ScriptEvent.OnKickableInteractiveLeaveTriggerVolume",
      "name": "Process",
-     "va": "0x185d9ed94",
-     "fileOffset": 98162580,
-     "bodySize": 764,
-     "bodySha256": "2A8085BC046A450C6C9FAE2E5ECB98AA15325F9760B7F2578916CAC75538F8B9"
+     "va": "0x189987c1c",
+     "fileOffset": 160982044,
+     "bodySize": 768,
+     "bodySha256": "15F70EC02A489325DF1F05E3F2EE5D4A3C9846BC1314E7993D9C18727F02A91B"
     }
    ],
    "review": {
@@ -217,16 +263,16 @@
     "memberOrdinalZeroBased": 10,
     "fieldOffset": "0xe0"
    },
-   "unionTag": 925,
+   "unionTag": 936,
    "serializedMemberCount": 12,
    "methods": [
     {
      "type": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
      "name": "Execute",
-     "va": "0x185d5ecb8",
-     "fileOffset": 97900216,
-     "bodySize": 444,
-     "bodySha256": "E0AE2F461EB2835043C1A4EF619B59FFAAFB14E3331F46F8A49C9F0545D66EF4"
+     "va": "0x189957fc8",
+     "fileOffset": 160786376,
+     "bodySize": 412,
+     "bodySha256": "86D8842C02F2C6D1E656BB187ED322EF31DFC786038C41F3472C608D043F81C6"
     }
    ],
    "review": {
@@ -236,8 +282,7 @@
       "type": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
       "name": "Execute",
       "calls": [
-       "RepeatEntityPtrListAction._TryGetValidEntity",
-       "ActionBase.SetResultNextID"
+       "RepeatEntityPtrListAction._TryGetValidEntity"
       ]
      }
     ]

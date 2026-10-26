@@ -43,6 +43,29 @@ validator's source snapshots; this closure cannot discover dynamic loading.
 Do not repair a provenance mismatch by editing receipt pins or repeating a
 capture.
 
+The compact SubGame reader admits only the independently authenticated
+WorldChallenge variant and bounded child collections named by its current
+contract. It binds the concrete union/root/Task adapters, current pooled text,
+LangKey output and raw FunctionArea ID to the selected native build. Other
+variants refuse; runtime provider selection and helper effects remain conditional.
+
+The bounded native copy component proves source-byte preservation only in its
+reviewed finite size/mode/alignment domain. Every caller still owns its exact
+target, argument and storage joins; this component establishes no FMV name,
+playback or whole-owner relationship.
+
+The FadeIn/FadeOut parent routes independently bind their current union,
+complete read/setter bodies and typed Param sources. Their Audio black-screen
+enums use the separately gated byte representation; stored fields establish
+no effective screen/audio state or runtime execution.
+
+The standalone LevelScript family receipt binds the complete selected StringPool
+page set to the same current VFS ledger and physical chunk snapshot as its
+owners, passes that exact pool to both owning readers, and rechecks the page
+set before publication and saved-receipt verification. Historical receipt
+comparison also requires matching pool inputs; equal owner bytes alone do not
+establish equal resolved text. Receipts without this binding are refused.
+
 A rewritten outer VFS catalog invalidates its source fingerprint even when
 the selected native build and Buff logical bytes still agree. Rerun the full
 AnimeStudio VFS audit, compare the current logical identities and bytes, then
@@ -78,7 +101,8 @@ These families use maintained stored-schema readers. LevelData's sequential
 43-field reader (`leveldata_binary.py`, `codecs/leveldata/`) shares value
 codecs with LevelScript and placed NPC rows; its fallbacks are named
 frames, never full schemas. Current SpawnerConfig owners close through EOF in
-the selected corpus; CharInteractPerform still requires native migration.
+the selected corpus. CharInteractPerform admits the separately gated current
+bounded sparse root described below.
 Interactive templates (`memorypack/interactive.py`) take component
 tags from the native `BaseComponentData` dispatcher; the 38-member
 `Core_AbilitySystemForIntData` refuses positive nested domains rather than
@@ -86,21 +110,87 @@ inherit a schema from field names. AnimationConfig and NPC MontageNew resolve
 path hashes only through an authenticated `StringPathHash` catalog; the
 shader-publication proof is conditional on runtime actor and IFix selection.
 
+The serialized AnimationConfigJson mask entry is distinct from the runtime
+AnimationConfig type. Its generated wire order is pooled `layerName`, then
+signed `StringPathHash`; the managed value places the hash before its string
+reference, so managed size and wire extent must not be equated.
+`animation_masks_native.py` authenticates this component's selected buffered
+sources, owned stores, static registration, typed adapters and list paths
+against the selected native pair and Unity input. The admitted list profiles
+are null, empty and one entry; larger counts and growth remain refused.
+Initialized contexts, canonical sharing and the actual provider/virtual
+selection stay explicit conditions, even with the original key/adapter
+registration proved. No closed method pointer is invented when only a
+canonical reference-sharing entry is present.
+
+Every supported mask count exposes only the first five stored fields, after
+the current selected-native gate. Null or empty masks and an old fixed-size
+empty-looking suffix do not admit the remaining Animation fields. ExtraData,
+montages and Beyond.FAnimationCurve stay opaque until their own current source
+composition is proved. The separate Unity AnimationCurve key profile has a
+different managed element width and cannot supply this missing join. No whole
+schema, montage/curve absence or playback claim follows from the prefix.
+Raw, corpus, Data and coverage consumers pass the matching selected pool and
+native context. Data and coverage bookend their pool, native and reader
+inputs; counts omitted for an unread suffix mean unknown, never zero.
+
 Current MontageNew inserts `decoEntities` before `dynamicEntities` and reads
 clip/entity strings through the selected StringPool. Its direct async-clip
 copies use the managed stored span, not the separately aligned native ABI
-size; keep those extents distinct. CharInteractPerform inserts the Boolean
-`replayLoopActions` between `preStartActions` and `startActions`, not another
-action list. These declaration/copy facts do not admit the unfinished owners.
+size. The reviewed
+[`npc_montage_native.json`](../../scripts/game_data/contracts/npc_montage_native.json)
+and matching validator join the owning root/body/clip source order, typed
+stores, scalar/pool/raw-value reads, generated reference adapters and factories.
+The maintained `memorypack.npc_montage` sparse reader admits only null or empty
+Deco, Dynamic and transition-override lists, preserving those two states;
+positive elements refuse at their actual count offset. Reference-list sharing
+is conditional on a coherent initialized typed context and normal metadata,
+allocator, constructor, Clear and pre-loop provider helpers. The empty path
+does not consume an element or use the provider's result; this does not prove
+live provider/cache/default selection or runtime playback.
 
-CharInteractPerform actors keep temporary-object delayed destruction, its time,
-and cloth-collider registration as distinct stored fields. Their strings use
-the selected export pool; the decoration ID is unsigned, while the temporary
-path hash is signed. Selected reader, typed return-store and complete local
-control/origin proofs are separate from the owning action/default-provider
-composition. Embedded bounded jump tables must be partitioned as data before
-checking the formatter graph; a linear decoder's apparent instructions there
-do not establish a changed wire grammar.
+Each lexical Montage operation validates fresh native semantics on enter and
+exit and checks native, Unity, complete reader-source and selected StringPool
+bookends before returning a result. A closed decoder cannot be reused, and a
+late failure withholds its caller's receipt or decoded publication. The
+standalone VFS census independently joins all selected pool pages to the same
+authenticated source ledger as the streamed owners. Bounded physical-EOF
+success does not admit positive lists or change whole-family coverage; the
+canonical corpus gates own those denominators.
+
+CharInteractPerform inserts the Boolean `replayLoopActions` between
+`preStartActions` and `startActions`. Its current sparse reader binds all named
+root transfers, typed registered adapters, reference/value returns, dictionaries
+and the default entry under one selected native gate. It admits null or empty
+literal collections, stored dictionaries and default-entry lists, plus one
+GameplayTag element through its own current value dispatcher, member header,
+Int32 read, getter and typed append. The `chars` list also admits at most one
+current actor through its separately checked reference adapter and list loop.
+The `loopActions` list additionally admits one current `AddMultiTagsActData`
+through the freshly derived action union, eighteen-field reader and one-item
+reference-list callback. Its inherited base interface returns the base holder;
+the three derived setters use a separately proved coherent cached holder.
+The nested `BodyTypeDef` serializes three fields in ten bytes while its native
+value occupies thirty-two bytes; its fourth runtime field is not serialized.
+The gate proves that hidden return, value adapter, conversion and full getter
+independently. Other action tags, larger lists and positive special entries
+remain refused; physical EOF is required for complete framing. Coherent selected
+contexts, initialized
+successful cache probes and normal helper/constructor/storage returns are
+explicit conditions; live/default provider selection and gameplay execution
+remain unproved.
+
+CharInteractPerform actors have thirteen stored fields, keeping temporary-object
+delayed destruction, its time and cloth-collider registration distinct. The
+actor gate composes the current typed reader and every return store with nine
+primitive reads, four direct-return pooled-string reads, wrapper creation and
+the selected one-item reference-list callback. Strings resolve only through the
+selected export pool; null and empty sentinels need no pool lookup. The
+decoration ID is unsigned and the temporary path hash is signed. Pool-absent
+UTF8, refill/error paths, allocation/storage effects and live provider selection
+remain outside this conditional stored grammar. Embedded bounded jump tables
+must be partitioned as data before checking the formatter graph; a linear
+decoder's apparent instructions there do not establish a changed wire grammar.
 
 The reviewed positive actor facts live in
 [`char_interact_perform_actor_native.json`](../../scripts/game_data/contracts/char_interact_perform_actor_native.json).
@@ -108,7 +198,7 @@ Their matching validator authenticates the selected native inputs, field
 identities, source/store instructions and complete owned windows and tables.
 It returns no fields for missing or mismatched inputs, rechecks inputs after
 validation, and keeps enclosing-owner admission false. This actor component
-does not replace the unfinished configuration's default/provider proof.
+does not admit positive actors in the current sparse configuration reader.
 
 Special-entry union readers use distinct new-reference and existing-byref
 ReadPackable routes. Preserve the actual typed contexts and entry roles on
@@ -135,42 +225,46 @@ object storage. This supports the initialized matching-holder path without
 claiming cold cache conversion, helper termination or live formatter selection.
 
 A successful Data publication does not establish complete schemas. Changed
-placed NPC inheritance, NPC montage children, animation-mask strings,
-CharInteractPerform roots and SubGame rows remain independent migration
-boundaries. The admitted NPC PrefabInfo partition describes roster definitions;
+placed NPC inheritance, positive NPC montage collections, animation-mask strings,
+unadmitted CharInteractPerform collections and SubGame variants remain
+independent migration boundaries. The admitted NPC PrefabInfo partition describes roster definitions;
 it does not close placed proxy or montage payloads. Keep current refusals until
 their native read/cursor joins pass; setter declarations alone name fields but
 do not prove their wire representation.
 
-The placed-NPC migration separates result ABIs. `ReadValue<LangKey>` writes a
-sixteen-byte value through a hidden output pointer; the reference-return clone
-fact cannot admit that call. The reviewed clone contract now separately covers
-the complete registered read and inlined dispatch; the installed loader checks
-the explicit result ABI. Bounded caller transfers copy all sixteen bytes into
-the typed setter argument. This does not close the owning
-NPC schema. The inlined Int32-array component now has a bounded buffered
-read/cursor/copy proof. Its incoming reader, holder, zero register and frame
-origins now close across the complete ordinary local control graph, including
-bounds-checked initialization tables. They require stable metadata and ordinary
-ABI-preserving calls, without assuming initialization flags are already set.
-Metadata-helper effects, larger-copy paths and whole-owner admission remain open.
-The published codec still lacks `enableMaxPotentialOnCreate`, `restaurantRole`
-and `forceEnableMorph`. Keep these field changes separate from member-count
-and pooled-string migration. A matching pool alone does not select the string
-formatter for collection elements: the typed registration and provider path
-must also be established. Inlined reference getters, out-reference dictionary
-reads and four-byte value stores each require their own complete transfers.
-An absent concrete generic-table row is not evidence that no compiled context
-path exists. Selected constructor usage cells can feed typed context thunks
-that tail to a shared constructor entry. Prove those instructions and the
-declared argument substitution; they do not identify runtime invocation or a
-different method's sharing target.
-The placed override `AudioId` has signed Int32 storage; a four-byte transfer
-must not silently become an unsigned value in the codec.
-The inherited `belongLevelScriptId`, `dependencyGroupId` and `levelLogicId`
-instead have UInt64 wire types. The prefix reader preserves their unsigned
-bits as decimal strings, including values above the signed limit. This prefix
-correction does not admit the unfinished whole NPC schema.
+The current placed-NPC gate keeps the flattened entity, NPC and proxy fields in
+one native-derived plan. It includes `enableMaxPotentialOnCreate`,
+`restaurantRole` and `forceEnableMorph`, pooled strings and the actual typed
+setter widths. The selected initialized source proves every read-result
+transfer and the final normal return. Inherited cache refreshes and the
+compiler-inlined morph setter have their own checked paths; compatible cast,
+metadata, allocator, collector and provider effects remain explicit conditions.
+A declaration or successful candidate parse cannot replace those source joins.
+
+`ReadValue<LangKey>` writes a sixteen-byte value through a hidden output pointer;
+the reference-return clone cannot admit that call. Only the key is serialized;
+the second reference is not exposed as stored text or assumed zero on reuse.
+The placed override `AudioId` uses signed Int32 storage. The inherited
+`belongLevelScriptId`, `dependencyGroupId` and `levelLogicId` instead retain
+UInt64 bits as decimal strings. Arrays, GameplayTag lists and new UInt64 lists
+have separate bounded source profiles. Larger counts or unsupported reused
+collection paths refuse at the named field. The two unproved auxiliary lists
+remain null-only. The opaque ability, battle, hit, proxy-info and runtime
+children admit only the selected reference adapter's one-byte null path, which
+writes a full null reference before any wrapper, getter or child callback;
+positive children remain refused before consumption.
+
+The shared NPC operation requires the matching StringPool and selected native
+pair, re-proves native components at both lexical boundaries, and checks complete
+reader and pool freshness. An inactive decoder cannot be reused. LevelData's
+list and LevelScript's UInt32-key dictionary retain independent typed container
+joins. Atmospheric tables use one sequential pooled-key dictionary cursor;
+there are no marker anchors or guessed next-row boundaries. A child refusal
+retains only known earlier entries as partial evidence. Whole-owner admission
+still requires physical EOF and source, VFS, pool and native bookends. Map only
+promotes a stored placement from a complete named owner, and neither that
+placement nor a configured patrol id establishes live spawning or patrol use.
+
 Check caller register origins at each selected read site over the complete
 control-flow graph. A register reused after its last relevant read does not
 invalidate that earlier origin; global unchanged-register tests over-refuse.
@@ -192,9 +286,10 @@ Open-generic List field offsets are placeholders. Use the concrete indexed-read
 body to join serialized elements to accessible list values, without assigning
 private field identities from declaration order. The selected UInt64 formatter
 reads elements individually; a long list does not imply a large bulk-copy path.
-Its positive and empty paths need separate control-flow joins. EnvTalk's typed
-constructor sets its Boolean default true; its null-array paths do not establish
-positive-array framing. An Atmospheric corpus census cannot restrict the domains
+Its positive and empty paths have separate control-flow joins. EnvTalk's typed
+constructor sets its Boolean default true; positive pooled string and Int32
+arrays use independently checked typed callbacks, allocation, copy and cursor
+paths. An Atmospheric corpus census cannot restrict the domains
 of other NPC consumers.
 Likewise, a scalar GameplayTag transfer does not establish its collection-item
 framing: the selected list formatter can use a generated wrapper instead of
@@ -216,9 +311,15 @@ parent reference dispatch, null zeroing and complete conversion/output copies.
 These static identities and transfers do not establish a live provider result,
 wrapper registration execution, allocator effects or the dictionary owner.
 Keep those joins separate from successful candidate decoding.
-The null AI wrapper marker zeroes the original value rather than producing a
-nullable AI value. Preserve that marker as wire evidence while representing
-the zeroed scalar/vector fields and null string references separately.
+The current AI child is a complete managed forty-eight-byte value, not six
+independent reference fields. Its read order is float, key, long, string,
+enum and vector; hidden-output conversion copies the whole value. The reached
+dictionary profile supports a fresh empty dictionary or one positive entry
+with a nonnull string key and positive six-member value. Its storage call is
+`set_Item`, so normal storage may replace an existing key rather than behaving
+as `Add`. The null wrapper produces a default value rather than a nullable AI
+value; that default path remains refused by this raw profile. Matching provider,
+canonical reference sharing and normal storage effects remain conditional.
 
 A static generic context may contain an opaque entry that a selected source
 never reads. Explicitly selected relative slots may be proved independently,
@@ -258,10 +359,23 @@ binds the selected pool, complete reader dependencies and native source gates
 before and after decoding or cache reuse. Exact EOF, bounded child stops and
 refused inputs remain distinct in the current corpus report.
 The shared child string helper accepts only signed pool indices; an unavailable
-positive index refuses that child instead of selecting inline UTF-8. Enemy,
-interactive and lock collections stop before their counts until their separate
-pooled codecs are migrated. The older suffix partition cannot close those
-unknown current children.
+positive index refuses that child instead of selecting inline UTF-8. Enemy and
+lock collections retain named stops until their pooled child codecs are migrated.
+The Interactive dictionary uses its separately gated sparse pooled profile.
+The current NPC Patrol lane is separately gated by
+`leveldata_npc_patrol_native.json`. It proves the inserted patrol Boolean,
+direct scalar and pooled-string transfers, point/action field order and typed
+child unions before the sequential LevelData cursor consumes a positive list.
+Canonical reference-list sharing remains conditional on the proved current
+factory, typed contexts and normal helper returns; it does not prove live
+generic inflation or default formatter selection. Positive blackboard pairs
+remain refused. One lexical operation proves fresh semantics on entry, binds
+the selected pool and logical export receipt, and rechecks native, reader,
+pool and owner bytes on exit. A leaked decoder or failed exit cannot publish
+a result. Null and empty headers retain their existing generic owner framing.
+Stored signed AudioIds and action enum cases remain structural candidates;
+their compiled Audio consumer and Event-request meaning are separate joins.
+The older suffix partition cannot close unknown current children.
 
 The Data page now exposes SpawnerConfig's one sequential owner cursor through
 `frame_spawner_named`, with an earlier enemy-library or through-settings prefix
@@ -311,11 +425,18 @@ list. The root template path independently passes the pooled-string helper
 proof. These bounded facts do not establish positive list framing, Brief
 property/string children, default-provider selection or whole-owner admission.
 
-`top_level_prefix` now reads the new null/empty field and the explicitly pooled
-template path. Positive `enemies`, `interactiveLocks`, `interactives`, `modules`
-and `npcs` stop before their counts until their pooled child codecs are migrated;
-older inline readers cannot admit current owners. Positive `taskMap` entries
-likewise retain a named source/composition stop. A file is exact only when the
+`top_level_prefix` reads the new null/empty field and explicitly pooled template
+path. The sparse `interactives` dictionary has a separate current native gate:
+the generated element reads the inherited entity fields and its own fields in
+order, with the inherited holder and derived cache proved coherent. Pooled
+ParamGraph properties and bounded component entries use independently gated
+children; nonnull Int32 lists and positive conditions remain refused. Exact
+dictionary factory, typed K/V contexts, initialized provider/dispatcher paths,
+constructors and stores are separate from observed live provider selection.
+Reference source sharing is conditional on the stated selected paths and normal
+helper effects. The reader validates fresh for each operation and forwards the
+owner's selected native paths. Other unsupported positive children retain named
+source/composition stops; older inline readers cannot admit current owners. A file is exact only when the
 supported sequential owner and `triggerVolumes` reach physical EOF. The current
 Data cache gates this root source contract before reading and rechecks source,
 pool and native inputs after decoding or reuse.
@@ -691,11 +812,60 @@ uses that shared checker for both pooled reads and both reference barriers.
 ActionMap requires its gate for null and present values; the value and path
 each consume a signed pool index, preserving null versus empty strings.
 
-ActionMap refuses positive `Param<List<EntityPtr>>` before consuming bytes
-until its current child/default composition is proved. Its one-byte null
-reference remains bounded. The old inline-tail reader can misread the current
-empty pool sentinel as null; a null-sentinel refusal alone does not prove that
-all positive variants fail closed.
+The reviewed
+[`null/empty List Param`](../../scripts/game_data/contracts/levelscript_null_list_param_native.json)
+gates each closed kind before even its one-byte outer null. EntityPtr, UInt64 and string
+constants admit signed collection count minus one or zero, preserving null
+versus empty; Vector3 constants remain minus-one-only. All retain their two signed bindings
+and pooled path, and every positive collection count refuses without advancing
+the owning cursor. The schema declares capabilities per closed kind rather
+than treating one kind's zero path as a generic list capability.
+
+The same four closed proofs may be prepared for one explicitly selected
+root-and-pool operation. Entry and exit each derive their current native
+semantics afresh, with complete reader, native, Unity and pool bookends.
+Only the active capability for that exact root and pool reaches the maintained
+cursor; leaked or mismatched capabilities refuse. Direct per-Param calls still
+perform their own fresh gate. Owners continue to decode their actual bytes,
+and failed exits withhold the enclosing operation's output. Corpus callers
+retain their raw/VFS and logical receipt checks; the protocol's typed node scan
+also rechecks its authored file set and bytes, without gaining whole-owner or
+VFS admission. The shared image's unwind index reuses immutable exception-table
+facts, while body, context and window proofs remain fresh. A saved family
+receipt supplies source identity and freshness, not complete decoded frames.
+
+The EntityPtr zero path has independently checked new/existing source programs,
+owned typed List/constructor contexts and a count-zero constructor. Its actual
+optimized Clear and registered closed leaf Clear have matching selected memory
+and argument effects through the same array-clear helper; open generic field
+offsets are placeholders and never substitute for that proof. The pre-loop
+optimized provider still must return normally without interfering with the
+disjoint reader/output/frame, but its result is unused and no element formatter
+is consumed. This conditional wire profile proves neither effective live
+provider/default/cache selection nor the remaining owning action fields.
+
+The UInt64 list has its own closed formatter, typed Param adapter and collection
+proof. Its source inlines the signed count and reader cursor updates. Null skips
+the constructor, Clear and provider; zero separately proves the initialized
+new-list constructor or existing-list count/version stores. Those effects join
+the actual closed constructor and Clear declarations, their owned generic
+contexts and the selected field slots. The zero path still calls its actual
+optimized provider before the loop test, under an explicit normal noninterfering
+return condition; the returned formatter is unused. No EntityPtr instruction
+profile, open-generic field offset, positive element path or provider-body
+equality substitutes for this independent proof.
+
+The string-list Param independently proves its current generated parent,
+adapter, typed stored fields and pooled bindings. Its actual closed
+ReadPackable MethodSpec, usage cell and native read target match the separately
+reviewed literal string-list caller. The current reference-sharing source,
+owned generic contexts, open List factory and initialized provider conditions
+are checked through that lane; null and new-zero paths consume no elements.
+The selected existing-list zero path requires its prior count zero. Both actual
+and canonical Clear bodies independently prove the complete count/version
+stores and return for that case; positive prior-size clearing stays unproved. Only those null/empty Param paths are admitted. Literal positive
+count witnesses do not admit positive Param lists, establish an unbounded loop,
+or prove live provider selection, inflation or initializer execution.
 The [`Single Param`](../../scripts/game_data/contracts/levelscript_float_param_native.json)
 adds a complete buffered XMM read/restore and its typed XMM store. Its gated
 finite wire reader preserves Float32 precision and signed zero without rounding.
@@ -1069,13 +1239,17 @@ rechecked on every operation; duplicates and missing identities still refuse.
   Cold initialization/refill and live provider selection remain separate.
   EntityPtr arrays retain their independent child gate. Parent contracts and
   removed historical cursor spans do not establish current owner closure.
-- The current EnvTalk contract authenticates each concrete
-  `Param<List<EnvTalkStruct>>` family, its nullable list, two Int32 bindings
-  and pooled path. Positive two-member values store a pooled ID and Int32
-  odds; FF supplies the default null ID and zero odds. Managed output and
-  array stride differ from wire width. Owned factories/setters, typed list
-  contexts, capacity/Add/store paths, adapters and conversion getters are
-  authenticated together. Effective provider selection and scheduling remain
+- The current EnvTalk reader authenticates each of the three concrete
+  four-member `Param<List<EnvTalkStruct>>` families independently: a
+  nullable list, two Int32 bindings and a pooled path. Each positive
+  two-member value stores a pooled string index then Int32 odds; FF supplies
+  the managed default null ID and zero odds. The native sixteen-byte hidden
+  result and array stride are not the wire width. Generated source, owned
+  factories/setters, typed list contexts, capacity/Add/store programs,
+  adapter, wrapper forwarder and GetValue conversion are tied to the selected
+  build (`conditional`: coherent initialized generated contexts, normal
+  helpers, valid typed allocation/storage). Effective provider/default
+  selection, runtime inflation and EnvTalk execution/scheduling remain
   unresolved; outer actions and physical owner EOF retain separate gates.
 - A path/ID-sourced Param's constant slot is a placeholder: often
   `BoolCompare`'s first operand, and every reached `EventArgsAssignFloat`
@@ -1106,6 +1280,17 @@ rechecked on every operation; duplicates and missing identities still refuse.
   survive wrapper reuse. Typed factories, complete source/adapters, owned
   stores and the value-return ABI have independent current gates. This does
   not admit GlobalBuffId, text resolution, live provider selection or owner EOF.
+- `Param<List<LangKey>>` has a separate current bounded native gate for null,
+  empty and single-element lists. Its initialized typed parent, requested
+  capacity, prior-empty Clear, exact managed16 Add/store, provider, matched
+  adapter callback and conversion source are proved together with the nominal
+  child. Each positive child serializes its member header and pooled key; the
+  managed value also contains nonserialized `rawText`, which is omitted from
+  the projection. Null Param, null list, empty list and default element remain
+  distinct. Counts above one, positive old-size Clear and growth are refused.
+  The current open List factory and successful provider paths constrain the
+  conditional generated route; live cache contents, inflated contexts, default
+  selection, text resolution and enclosing owner execution remain separate.
 - `PosRot` stores Euler angles then position as two raw Float32 triples. Its
   positive wire includes a member header; FF yields the zero/default value.
   The pooled `Param<List<PosRot>>` admits bounded null, empty and positive
@@ -1147,12 +1332,8 @@ rechecked on every operation; duplicates and missing identities still refuse.
   contract does not authenticate the selected current build; positive bodies
   need current member, field, string and child proofs before reuse. Independently
   admitted null branches do not establish positive module contents.
-  The separate `levelscript_encounter_opera_segments_native.py` gate proves
-  `EncounterData.OperaSegment`: an Int32-backed enum and a `ParamKeyValue[]`
-  reference, read through typed `ReadArray<OperaSegment>`. Its managed value
-  layout is not its wire width. The graph child and StringPool remain independent
-  requirements. This component does not admit an encounter module caller,
-  thread its StringPool, or establish an executed owner cursor and EOF.
+  `EncounterData.OperaSegment` has no maintained reader: the encounter module
+  codec refuses a non-null intro opera-segment array.
 
 - The removed live LevelScript provider probe supplied no admitted observation
   and is unnecessary for the statically proved default stored grammar. Runtime
@@ -8885,12 +9066,11 @@ items this topic owns.
   `structuralOnly` until their tables are walked, and each plan-only tag needs
   a whole-corpus adoption run. `Dictionary<string, object>` has no plan.
 - **Tooling.** Dependency-scoped Skill replay needs a route registry and
-  mutation tests before it leaves prototype. CharInteractPerform's
-  `FAnimationCurve` delegates to AnimationConfig's bulk-key reader, whose
-  native contract still requires current-build migration. Empty current keys
-  do not revalidate its positive-key or provider/default paths. Unity
-  AnimationCurve has a separate formatter and key layout; keep their corpus
-  observations and proof boundaries apart.
+  mutation tests before it leaves prototype. Unadmitted CharInteractPerform
+  action tags and positive curve paths remain refused by its current reader;
+  AnimationConfig's bulk-key proof is independent and does not admit those
+  paths. Unity AnimationCurve has a separate formatter and key layout; keep
+  their corpus observations and proof boundaries apart.
 
 ## Pooled string target boundary
 
@@ -8924,9 +9104,7 @@ the actual pool/empty cells and lookup, buffered index/cursor paths, current
 reader ABI, typed holder/field and unchanged result store. The last atom field
 reuses the reader register only after consuming its index; it needs its own
 profile. These source-site facts alone do not admit the enclosing OperaSegment
-array. Its independent component gate owns the typed array, managed-value
-adapter and formatter composition; the module caller and owner EOF remain
-separate. Missing or mismatched selected inputs yield no field facts, and every
+array, which has no maintained reader. Missing or mismatched selected inputs yield no field facts, and every
 call rechecks the inputs after validation.
 Native reference discovery must scan PE sections by their executable flag,
 not by the `.text` name: generated formatter registration also lives in other
@@ -8953,6 +9131,27 @@ contract; a stale discriminator must not intercept another event. Argument-flow
 proofs reject unknown instructions and overwrites of saved reader/output pointers.
 A direct reference-store proof ends at the typed store and does not establish
 collector barrier equivalence or live reference visibility.
+The shared [`raw ID Params`](../../scripts/game_data/contracts/levelscript_pod_id_param_native.json)
+gate authenticates LsmPtr, SpawnerPtr and FunctionAreaPtr separately. Their
+constants contain the named value's raw UInt64 id, followed by two signed
+Int32 bindings and a pooled path. FunctionAreaPtr has an independently checked
+initialization-before-header caller, typed ReadUnmanaged context, QWORD setter,
+constructor and null branch. The compact WorldChallenge field joins the same
+current raw read source; its proof alone does not admit the Param wrapper.
+Stored zero is preserved as an id and establishes no default/current area,
+resolved object, effective spawner/method or live provider selection.
+
+Literal pooled string lists are a separate conditional
+component bounded to the proved three-element profile; no list Param follows
+from that proof. The module reader admits only the independently validated
+Rolling/Launcher stored profile; other positive module tags remain refused.
+The UID source contract separates actual setter calls from guarded direct
+stores to native-owned base fields. Its inline profile uses the optional
+initializer decoder and retains write-barrier/runtime effects as unresolved. Its
+separate initialized cached-holder profile proves the selected buffered UID
+prefix while leaving cold metadata/cache selection, allocation, collector
+behavior and subsequent members independent.
+
 `levelscript_node_strings_native.json` records independently proved UID prefixes:
 full current declarations/counts, the exact two-reference reader ABI, ordered
 Boolean/Int32/Boolean sources and the unchanged pooled result passed to the
@@ -9086,3 +9285,60 @@ reject its separate context schema. Those strict gates and original observer
 contracts remain unchanged for historical evidence replay. A failing full
 outer audit is reported explicitly; selected available bytes do not establish
 a complete VFS or SkillData corpus.
+
+
+### Current ModelView stored graph
+
+The [ModelView native contract](../../scripts/game_data/contracts/model_view_state_controller_native.json)
+owns the current generated field order and actual `AbstractBehaviorData` union.
+`MVSCBehaviorData` is an ordinary payload, so its name cannot identify the union
+root. The transition setting includes `doNotInheritSameAnimationTime` before
+`easeType`; historical same-width fields and tags must not retain old labels.
+
+[The operation reader](../../scripts/game_data/model_view_state_controller_binary.py)
+re-proves the selected native pair and Unity input on entry and exit. Its
+[composition gate](../../scripts/game_data/memorypack/modelview_composition.py)
+checks owned source programs, typed field/callback contexts, factories,
+reference and value adapters, collection loops, cursor/output aliases and
+normal returns. Complete raw reader sources, reviewed declarations, matching
+StringPool pages and authenticated owning source bytes remain bookended.
+A decoder capability closes with its lexical operation; successful semantic
+proofs do not survive into a later operation.
+
+Unity `AnimationCurve` uses its own formatter and key layout. It does not
+delegate to Beyond `FAnimationCurve`, whose bulk-key evidence remains an
+independent lane. Reference lists retain their current typed element context;
+positive string elements separately prove the pooled string formatter and its
+registration/backend path. The stored grammar is conditional on coherent
+initialized contexts and matching normal helpers/receivers, fresh collection
+storage, compatible callbacks and the disabled collector. Runtime default or
+provider selection, generic-instance hashing/cache population, allocation and
+constructor side effects, refill/growth and live runtime execution are not
+established by the stored-frame proof.
+
+The raw result retains `storedGraph` with native field names and physical EOF.
+Audio projections copy their rows before adding owner labels, preserving the
+underlying stored graph. Stored bank/control candidates do not establish an
+Event, media link, sink call or effective runtime activation.
+
+The current CallServer consumer claim independently re-proves the original
+Execute reference copy from its metadata-owned output UID list to inherited
+ActionBase wait-list storage. The current source gate owns pooled field
+admission; a stored list and this copy do not establish ActionExecutor UID/header
+lookup or OnCustomEvent successor dispatch. Until that distinct compiled
+continuation is proved, Story retains the stored candidates with an explicit
+pending native-consumer diagnostic and withholds callback/order edges. No
+import-time or saved-report native success admits those edges.
+
+FunctionArea radio links remain unresolved on the current build. The retired byte-pattern probe did not establish sequential owner boundaries, pooled fields or a current native consumer. Story emits an explicit nativeConsumerGaps entry and withholds these links until those joins are proved; this is no evidence of absent playback.
+
+The current `Param<CameraControllerBase>` profile authenticates its own
+reference-valued four-field parent, typed caller, eager key/adapter and pooled
+Int32/Int32/string tail. Only a present Param carrying the nested null marker
+is decoded. The selected canonical reference-adapter null branch returns a
+null reference before child wrapper, getter or factory operations; the
+abstract camera wrapper therefore supplies no positive object grammar.
+Unsupported positive constants and whole-Param null forms refuse before
+consumption in this bounded codec. Matching initialized pool and provider
+contexts, compatible reference sharing and ordinary helper effects remain
+conditions; this is stored data, not evaluated camera selection or execution.

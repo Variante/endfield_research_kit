@@ -205,7 +205,12 @@ capture is specified in
   selected export's explicit indexed string pool. It requires complete EOF and
   filename/id agreement, then joins lifecycle and stacking enum fields to their
   selected native backing widths. Byte and signed Int16 defaults are raw bytes;
-  Int32 defaults retain their compressed encoding. This is derived-plan stored
+  Int32 defaults retain their compressed encoding. The shared metadata-default
+  reader treats the F0 escape as a raw little-endian UInt32 after its prefix;
+  signed callers keep the existing zigzag and sentinel rules. The selected
+  literal/default source proof lives in `il2cpp/metadata_default_sources.py`;
+  this does not identify other compressed protocols or admit runtime execution.
+  This is derived-plan stored
   evidence, not an independent whole-schema receipt or action execution proof.
   A legacy missing-id-marker result is never a resolved Buff.
   Optional derived union spans retain actual start/end cursors for action
@@ -339,6 +344,10 @@ while `PauseComboSkillTime`, `EffectControlAction` and
 `InverseSpellInfliction` have finite native source bodies whose child calls
 can be joined independently. Missing admission of these stored layouts is
 not a reason to request a provider capture.
+
+LevelScript EntityPtr/SpawnerPtr getters and producer output aliases are owned
+by [Story carriers](story_carriers.md); their open item is the slot-addressed
+(`useSlotId` true) filter, which needs a runtime script-slot binding.
 
 ## Buff runtime invocation observations
 

@@ -8070,7 +8070,8 @@
           "Param<float>",
           "__zoomScale__"
         ]
-      ]
+      ],
+      "nativeGate": "levelscript_route_deserialize_native"
     },
     {
       "family": "ActionBase",
@@ -42485,8 +42486,8 @@
     },
     {
       "family": "ActionBase",
-      "memberCount": 16,
-      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartDialogAndTeleportActionForMemoryPack",
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_AirWallEnableForMemoryPack",
       "fields": [
         [
           "dontLogWarning",
@@ -42521,49 +42522,159 @@
           "int32"
         ],
         [
-          "afterMask",
-          "Param<CommonMaskBlendData>"
+          "airWallPtr",
+          "Param<AirWallPtr>"
         ],
         [
-          "beforeMask",
-          "Param<CommonMaskBlendData>"
-        ],
-        [
-          "levelIdStr",
-          "Param<string>"
-        ],
-        [
-          "position",
-          "Param<Vector3>"
-        ],
-        [
-          "rotationEuler",
-          "Param<Vector3>"
-        ],
-        [
-          "teleportId",
-          "Param<string>"
-        ],
-        [
-          "teleportUIType",
-          "Param<TeleportUIType>"
-        ],
-        [
-          "dialogId",
-          "Param<string>"
+          "enable",
+          "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_residual_routes_native",
+      "nativeGate": "levelscript_airwall_enable_fields_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
-        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+        "contract": "scripts/game_data/contracts/levelscript_airwall_enable_fields_native.json",
+        "boundary": "exact selected union identity, complete generated reader, member count, typed read contexts and ordered setters; source receipts are historical and separately hash-gated; default provider selection, current owner EOF and runtime effects remain unresolved"
       }
     },
     {
       "family": "ActionBase",
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetSpawnerPtrForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "key",
+          "Param<SpawnerPtr>"
+        ],
+        [
+          "value",
+          "Param<SpawnerPtr>"
+        ]
+      ],
+      "nativeGate": "levelscript_set_spawner_ptr_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_set_spawner_ptr_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; live selection, execution and owner closure remain separate."
+      }
+    },
+    {
+      "family": "ActionHeader",
       "memberCount": 17,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnEntityListTakeDamageForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "damageOutput",
+          "ParamOutput<float>"
+        ],
+        [
+          "entityListFilter",
+          "Param<List<EntityPtr>>"
+        ],
+        [
+          "entityOutput",
+          "ParamOutput<EntityPtr>"
+        ]
+      ],
+      "nativeGate": "levelscript_entity_list_take_damage_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_entity_list_take_damage_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; live selection, execution and owner closure remain separate."
+      }
+    },
+    {
+      "family": "ActionBase",
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_BlackScreenFadeInForMemoryPack",
+      "memberCount": 17,
       "fields": [
         [
           "dontLogWarning",
@@ -42632,6 +42743,338 @@
         [
           "overrideFadeOutTimeSeconds",
           "Param<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_black_screen_fades_native"
+    },
+    {
+      "family": "ActionBase",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_BlackScreenFadeOutForMemoryPack",
+      "memberCount": 11,
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "black",
+          "Param<bool>"
+        ],
+        [
+          "blockInput",
+          "Param<bool>"
+        ],
+        [
+          "duration",
+          "Param<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_black_screen_fades_native"
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 11,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayAudioForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "audioPlayingId",
+          "ParamOutput<uint>"
+        ],
+        [
+          "key",
+          "Param<string>"
+        ],
+        [
+          "stopOnRelease",
+          "Param<bool>"
+        ]
+      ],
+      "generatedDeclaration": "public class Beyond_Gameplay_Actions_PlayAudioForMemoryPack : Beyond_Gameplay_Actions_ActionBaseForMemoryPack, IMemoryPackDeSerializeWrapper, IMemoryPackDeSerializeWrapper<PlayAudio>, IMemoryPackDeSerializeType",
+      "generatedOwnFields": [
+        [
+          "ParamOutput<uint>",
+          "___audioPlayingId__"
+        ],
+        [
+          "Param<string>",
+          "___key__"
+        ],
+        [
+          "Param<bool>",
+          "___stopOnRelease__"
+        ]
+      ],
+      "nativeGate": "levelscript_route_deserialize_native"
+    },
+    {
+      "family": "GetterBase",
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityGetterForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "value",
+          "Param<EntityPtr>"
+        ]
+      ],
+      "generatedDeclaration": "public class Beyond_Gameplay_Actions_EntityGetterForMemoryPack : Beyond.MemoryPack.Beyond_Gameplay_Actions_PureGetter_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack, Beyond.MemoryPack.IMemoryPackDeSerializeWrapper, Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<Beyond.Gameplay.Actions.EntityGetter>, Beyond.MemoryPack.IMemoryPackDeSerializeType",
+      "generatedOwnFields": [
+        [
+          "Param<EntityPtr>",
+          "___value__"
+        ]
+      ],
+      "nativeGate": "levelscript_route_deserialize_native"
+    },
+    {
+      "family": "GetterBase",
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SpawnerPtrGetterForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "value",
+          "Param<SpawnerPtr>"
+        ]
+      ],
+      "generatedDeclaration": "public class Beyond_Gameplay_Actions_SpawnerPtrGetterForMemoryPack : Beyond.MemoryPack.Beyond_Gameplay_Actions_PureGetter_Beyond_Gameplay_Core_SpawnerPtr_ForMemoryPack, Beyond.MemoryPack.IMemoryPackDeSerializeWrapper, Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<Beyond.Gameplay.Actions.SpawnerPtrGetter>, Beyond.MemoryPack.IMemoryPackDeSerializeType",
+      "generatedOwnFields": [
+        [
+          "Param<SpawnerPtr>",
+          "___value__"
+        ]
+      ],
+      "nativeGate": "levelscript_route_deserialize_native"
+    },
+    {
+      "family": "GetterBase",
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetLevelScriptStageForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "scriptPtr",
+          "Param<LevelScriptPtr>"
+        ]
+      ],
+      "generatedDeclaration": "public class Beyond_Gameplay_Actions_GetLevelScriptStageForMemoryPack : Beyond.MemoryPack.Beyond_Gameplay_Actions_PureGetter_int_ForMemoryPack, Beyond.MemoryPack.IMemoryPackDeSerializeWrapper, Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<Beyond.Gameplay.Actions.GetLevelScriptStage>, Beyond.MemoryPack.IMemoryPackDeSerializeType",
+      "generatedOwnFields": [
+        [
+          "Param<LevelScriptPtr>",
+          "___scriptPtr__"
+        ]
+      ],
+      "nativeGate": "levelscript_route_deserialize_native"
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 16,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartDialogAndTeleportActionForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "afterMask",
+          "Param<CommonMaskBlendData>"
+        ],
+        [
+          "beforeMask",
+          "Param<CommonMaskBlendData>"
+        ],
+        [
+          "levelIdStr",
+          "Param<string>"
+        ],
+        [
+          "position",
+          "Param<Vector3>"
+        ],
+        [
+          "rotationEuler",
+          "Param<Vector3>"
+        ],
+        [
+          "teleportId",
+          "Param<string>"
+        ],
+        [
+          "teleportUIType",
+          "Param<TeleportUIType>"
+        ],
+        [
+          "dialogId",
+          "Param<string>"
         ]
       ],
       "nativeGate": "levelscript_residual_routes_native",
@@ -42863,63 +43306,6 @@
     },
     {
       "family": "ActionBase",
-      "memberCount": 11,
-      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_BlackScreenFadeOutForMemoryPack",
-      "fields": [
-        [
-          "dontLogWarning",
-          "bool"
-        ],
-        [
-          "ID",
-          "int32"
-        ],
-        [
-          "releaseWhenExecutionFinished",
-          "bool"
-        ],
-        [
-          "uid",
-          "string"
-        ],
-        [
-          "scopeMask",
-          "int32"
-        ],
-        [
-          "useCurrentScope",
-          "bool"
-        ],
-        [
-          "useGraphScope",
-          "bool"
-        ],
-        [
-          "nextID",
-          "int32"
-        ],
-        [
-          "black",
-          "Param<bool>"
-        ],
-        [
-          "blockInput",
-          "Param<bool>"
-        ],
-        [
-          "duration",
-          "Param<float>"
-        ]
-      ],
-      "nativeGate": "levelscript_residual_routes_native",
-      "nativeEvidence": {
-        "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
-        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
-      }
-    },
-    {
-      "family": "ActionBase",
       "memberCount": 13,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyPatrolStartForMemoryPack",
       "fields": [
@@ -42974,63 +43360,6 @@
         [
           "targetProxy",
           "Param<string>"
-        ]
-      ],
-      "nativeGate": "levelscript_residual_routes_native",
-      "nativeEvidence": {
-        "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
-        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
-      }
-    },
-    {
-      "family": "ActionBase",
-      "memberCount": 11,
-      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayAudioForMemoryPack",
-      "fields": [
-        [
-          "dontLogWarning",
-          "bool"
-        ],
-        [
-          "ID",
-          "int32"
-        ],
-        [
-          "releaseWhenExecutionFinished",
-          "bool"
-        ],
-        [
-          "uid",
-          "string"
-        ],
-        [
-          "scopeMask",
-          "int32"
-        ],
-        [
-          "useCurrentScope",
-          "bool"
-        ],
-        [
-          "useGraphScope",
-          "bool"
-        ],
-        [
-          "nextID",
-          "int32"
-        ],
-        [
-          "audioPlayingId",
-          "ParamOutput<uint>"
-        ],
-        [
-          "key",
-          "Param<string>"
-        ],
-        [
-          "stopOnRelease",
-          "Param<bool>"
         ]
       ],
       "nativeGate": "levelscript_residual_routes_native",

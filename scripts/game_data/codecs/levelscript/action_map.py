@@ -1435,8 +1435,12 @@ def _set_fac_mode_native_audit() -> dict[str, Any]:
 
 
 _NATIVE_GATE_CONTRACTS = (
+    ("levelscript_set_spawner_ptr_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_set_spawner_ptr_native"),
+    ("levelscript_airwall_enable_fields_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_airwall_enable_fields_native"),
+    ("levelscript_entity_list_take_damage_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_entity_list_take_damage_native"),
     ("levelscript_blackboard_fields_native.json", "endfield.levelscript-route-deserialize-native.v4", "levelscript_blackboard_fields_native"),
     ("levelscript_stored_routes_current_native.json", "endfield.levelscript-route-deserialize-native.v4", "levelscript_stored_routes_current_native"),
+    ("levelscript_black_screen_fades_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_black_screen_fades_native"),
     ("levelscript_preload_controls_native.json", "endfield.levelscript-route-deserialize-native.v5", "levelscript_preload_controls_native"),
     ("levelscript_on_squad_member_usp_fields_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_on_squad_member_usp_fields_native"),
     ("levelscript_blend_camera_transform_fields_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_blend_camera_transform_fields_native"),
@@ -1669,8 +1673,12 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
     if native_gate is None:
         return
     route_audits = {
+        "levelscript_set_spawner_ptr_native": (None,"actionMap.setSpawnerPtrNative"),
+        "levelscript_airwall_enable_fields_native": (None,"actionMap.airWallEnableFieldsNative"),
+        "levelscript_entity_list_take_damage_native": (None,"actionMap.entityListTakeDamageNative"),
         "levelscript_blackboard_fields_native": (None,"actionMap.blackboardFieldsNative"),
         "levelscript_stored_routes_current_native": (None,"actionMap.storedRoutesCurrentNative"),
+        "levelscript_black_screen_fades_native": (None,"actionMap.blackScreenFadesNative"),
         "levelscript_preload_controls_native": (None,"actionMap.preloadControlsNative"),
         "levelscript_on_squad_member_usp_fields_native": (None,"actionMap.squadMemberUspFieldsNative"),
         "levelscript_blend_camera_transform_fields_native": (None,"actionMap.blendCameraTransformFieldsNative"),
@@ -2992,12 +3000,14 @@ class _Cursor:
         game_root: Path | None = None,
         strings: Any = None,
         route: dict[str, Any] | None = None,
+        null_list_params: Any = None,
     ):
         self.data = data
         self.offset = offset
         self.declarations = declarations
         self.game_root = game_root
         self.strings = strings
+        self.null_list_params = null_list_params
         self.route = {**route, 'fields': [field[:2] for field in route['fields']], 'nativeGate': _required_native_gates().get((route.get('family'), route.get('tag')))} if route is not None else None
 
     def need(self, size: int, field: str) -> None:
@@ -3045,9 +3055,19 @@ class _Cursor:
             raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_{owner}_native,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
 
     def value(self, kind: str, field: str) -> Any:
-        if kind == 'Param<LangKey>':
-            from .nominal_key import decode_lang_key_param
-            try:value,self.offset=decode_lang_key_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+        if kind == 'List<string>':
+            from .pooled_string_list import decode_pooled_string_list
+            try:value,self.offset=decode_pooled_string_list(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
+            return value
+        if kind == 'Param<List<LangKey>>':
+            from .lang_key_list_param import decode_lang_key_list_param
+            try:value,self.offset=decode_lang_key_list_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
+            return value
+        if kind in('Param<LangKey>','Param<GlobalBuffId>'):
+            from .nominal_key import decode_nominal_key_param
+            try:value,self.offset=decode_nominal_key_param(self.data,self.offset,kind=kind,strings=self.strings,game_root=self.game_root)
             except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
             return value
         if kind == 'Param<List<BlackboardKVPair>>':
@@ -3070,17 +3090,32 @@ class _Cursor:
             if parsed is None:raise ActionMapCodecError(f'{field}:invalid-{kind},offset={self.offset}')
             value,self.offset=parsed
             return value
-        if kind in ('Param<List<Vector3>>','Param<List<EntityPtr>>'):
-            from scripts.game_data.levelscript_null_list_param_native import validate_null_list_param_native_contract
+        if kind in ('Param<List<Vector3>>','Param<List<EntityPtr>>','Param<List<ulong>>','Param<List<string>>'):
+            from scripts.game_data.levelscript_null_list_param_native import validate_null_list_param_native_contract,prepared_null_list_audit
             from .null_list_param import decode_null_list_param
-            audit=validate_null_list_param_native_contract(codec_kind=kind,game_root=self.game_root)
-            expected=dict(status='validated',codecKinds=[kind],memberCount=4,rawSize=8,pathEncoding='int32-pool-index',collectionCount=-1)
+            audit=(validate_null_list_param_native_contract(codec_kind=kind,game_root=self.game_root) if self.null_list_params is None else prepared_null_list_audit(self.null_list_params,codec_kind=kind,game_root=self.game_root,strings=self.strings))
+            counts=[-1] if kind=='Param<List<Vector3>>' else [-1,0]
+            expected=dict(status='validated',codecKinds=[kind],memberCount=4,rawSize=8,pathEncoding='int32-pool-index',collectionCounts={kind:counts})
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:null-list-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
-            try:decoded=decode_null_list_param(self.data,self.offset,strings=self.strings)
+            try:decoded=decode_null_list_param(self.data,self.offset,strings=self.strings,collection_counts=audit['collectionCounts'][kind])
             except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
-            if decoded is None:raise ActionMapCodecError(f'{field}:positive-or-invalid-list-unproved,offset={self.offset}')
+            if decoded is None:
+                actual=struct.unpack_from('<i',self.data,self.offset+1)[0] if self.offset+5<=len(self.data) else None
+                raise ActionMapCodecError(f'{field}:list-count-or-framing-unproved,offset={self.offset+1},expected={counts},actual={actual}')
             value,self.offset=decoded
+            return value
+        if kind == 'Param<AirWallPtr>':
+            from scripts.game_data.levelscript_airwall_ptr_param_native import validate as validate_airwall
+            from .airwall_ptr_param import decode_airwall_ptr_param
+            audit=validate_airwall(game_root=self.game_root)
+            expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=24,pathEncoding='int32-pool-index')
+            if any(audit.get(k)!=v for k,v in expected.items()):
+                raise ActionMapCodecError(f"{field}:airwall-ptr-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
+            try:parsed=decode_airwall_ptr_param(self.data,self.offset,strings=self.strings)
+            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
+            if parsed is None:raise ActionMapCodecError(f'{field}:invalid-{kind},offset={self.offset}')
+            value,self.offset=parsed
             return value
         if kind == 'Param<EntityPtr>':
             from scripts.game_data.levelscript_entity_ptr_param_native import validate_entity_ptr_param_native_contract
@@ -3171,6 +3206,16 @@ class _Cursor:
                 raise ActionMapCodecError(f"{field}:trackCameraEnumNative:status={camera.get('status')},detail={str(camera.get('detail',''))[:500]}")
             value,end=decode_move_state_param(self.data,self.offset,{value:name for name,value in camera['enumMembers']},strings=self.strings)
             self.offset=end
+            return value
+        if kind in ('Param<LsmPtr>','Param<SpawnerPtr>','Param<FunctionAreaPtr>'):
+            from scripts.game_data.levelscript_pod_id_param_native import validate
+            from .pod_id_param import decode_pod_id_param
+            audit=validate(kind,game_root=self.game_root)
+            if any(audit.get(k)!=v for k,v in dict(status='validated',codecKind=kind,memberCount=4,rawSize=8,pathEncoding='int32-pool-index').items()):
+                raise ActionMapCodecError(f"{field}:{kind}-pointer-param-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
+            parsed=decode_pod_id_param(self.data,self.offset,strings=self.strings)
+            if parsed is None:raise ActionMapCodecError(f'{field}:invalid-{kind},offset={self.offset}')
+            value,self.offset=parsed
             return value
         if kind=='Param<LevelScriptPtr>':
             from scripts.game_data.levelscript_script_ptr_param_native import validate_script_ptr_param_native_contract
@@ -3362,7 +3407,7 @@ class _Cursor:
             if not 0 <= count <= 10_000:
                 raise ActionMapCodecError(f"{field}:unsupported-count={count}")
             return [self.value("Param<bool>", f"{field}[{index}]") for index in range(count)]
-        if kind in ("List<int>", "List<ulong>", "List<string>", "List<Vector3>", "List<float>"):
+        if kind in ("List<int>", "List<ulong>", "List<Vector3>", "List<float>"):
             count = self.i32(field + ".count")
             if count == -1:
                 return None
@@ -3376,8 +3421,6 @@ class _Cursor:
                     value = struct.unpack_from("<Q", self.data, self.offset)[0]
                     self.offset += 8
                     return value
-            elif kind == "List<string>":
-                reader = self.string
             else:
                 reader = lambda name: self.value(
                     "Vector3" if kind == "List<Vector3>" else "float32", name
@@ -3413,6 +3456,17 @@ class _Cursor:
             if parsed is None:raise ActionMapCodecError(f'{field}:invalid-{kind},offset={self.offset}')
             result,self.offset=parsed
             return result
+        if kind == "Param<CameraControllerBase>":
+            if self.strings is None:
+                raise ActionMapCodecError(f"{field}:matching-StringPool-required,offset={self.offset}")
+            from scripts.game_data.levelscript_camera_controller_param_native import validate
+            audit = validate(game_root=self.game_root)
+            if audit.get("status") != "validated" or (audit.get("layout") or {}).get("codecKind") != kind:
+                raise ActionMapCodecError(f"{field}:camera-controller-param-native-unavailable,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]},offset={self.offset}")
+            if self.data[self.offset:self.offset+2] != b"\x04\xff":
+                raise ActionMapCodecError(f"{field}:only-null-camera-constant-proved,offset={self.offset}")
+            self.offset += 2
+            return self.param_tail(None, field, pooled=True)
         self.require_scalar_param(kind,field)
         self.need(1, field)
         if self.data[self.offset] == 0xFF and (_generic_argument(kind,"Param") is not None or kind in ("GetterBase","ActionBase","ActionHeader")):
@@ -3450,14 +3504,6 @@ class _Cursor:
                 return self.param_tail([], field)
             # This element layout is still unreviewed; no positive elements are read.
             raise ActionMapCodecError(f"{field}:unsupported-GameplayTag-count={count}")
-        if kind == "Param<CameraControllerBase>":
-            marker = self.byte(field + ".memberCount")
-            value_marker = self.byte(field + ".value.memberCount")
-            if marker != 4 or value_marker != 0xFF:
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-camera-constant-members={marker}/{value_marker}"
-                )
-            return self.param_tail(None, field)
         if kind == "Param<List<uint>>":
             marker = self.byte(field + ".memberCount")
             if marker != 4:
@@ -3472,34 +3518,11 @@ class _Cursor:
                 values = list(struct.unpack_from(f"<{count}I", self.data, self.offset))
                 self.offset += count * 4
             return self.param_tail(values, field)
-        if kind in (
-            "Param<List<int>>", "Param<List<ulong>>", "Param<List<string>>",
-            "Param<List<Vector3>>", "Param<List<float>>",
-        ):
+        if kind in ("Param<List<int>>", "Param<List<float>>"):
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
             value = self.value(kind[6:-1], field + ".value")
-            return self.param_tail(value, field)
-        if kind == "Param<List<LangKey>>":
-            marker = self.byte(field + ".memberCount")
-            if marker != 4:
-                raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
-            count = self.i32(field + ".value.count")
-            if count == -1:
-                value = None
-            elif not 0 <= count <= 10_000:
-                raise ActionMapCodecError(f"{field}:unsupported-count={count}")
-            else:
-                value = []
-                for index in range(count):
-                    item = f"{field}.value[{index}]"
-                    item_marker = self.byte(item + ".memberCount")
-                    if item_marker != 1:
-                        raise ActionMapCodecError(
-                            f"{item}:unsupported-member-count={item_marker}"
-                        )
-                    value.append({"key": self.string(item + ".key")})
             return self.param_tail(value, field)
         if kind == "Param<GameplayTag>":
             marker = self.byte(field + ".memberCount")
@@ -3530,7 +3553,7 @@ class _Cursor:
             value = struct.unpack_from("<i", self.data, self.offset)[0]
             self.offset += 4
             return self.param_tail({"id": value}, field, pooled=True)
-        if kind in ("Param<LsmPtr>", "Param<FunctionAreaPtr>", "Param<SpawnerPtr>", "Param<WaterVolumePtr>"):
+        if kind == "Param<WaterVolumePtr>":
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(
@@ -3548,14 +3571,6 @@ class _Cursor:
                     f"{field}:unsupported-wrapped-string-members={marker}/{value_marker}"
                 )
             return self.param_tail({"key": self.string(field + ".value.key")}, field)
-        if kind == "Param<GlobalBuffId>":
-            marker = self.byte(field + ".memberCount")
-            value_marker = self.byte(field + ".value.memberCount")
-            if marker != 4 or value_marker != 1:
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-global-buff-id-members={marker}/{value_marker}"
-                )
-            return self.param_tail({"id": self.string(field + ".value.id")}, field)
         if kind == "Param<ObjectPtr<GlobalBuff>>":
             marker = self.byte(field + ".memberCount")
             value_marker = self.byte(field + ".value.memberCount")
@@ -4285,7 +4300,7 @@ def decode_declared_root(
 
 
 def decode_reviewed_node(
-    data: bytes, offset: int, family: str, *, game_root: Path | None = None, strings: Any = None,
+    data: bytes, offset: int, family: str, *, game_root: Path | None = None, strings: Any = None, null_list_params: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode one reviewed union at a declared cursor, with a selected-build gate."""
     if game_root is not None:
@@ -4303,6 +4318,6 @@ def decode_reviewed_node(
     _require_layout_build()
     if family not in ("ActionBase", "GetterBase", "ActionHeader"):
         raise ActionMapCodecError(f"actionMap:unsupported-family={family}")
-    cursor = _Cursor(data, offset, game_root=game_root, strings=strings)
+    cursor = _Cursor(data, offset, game_root=game_root, strings=strings, null_list_params=null_list_params)
     result = cursor.node(family, f"actionMap.{family}")
     return result, cursor.offset

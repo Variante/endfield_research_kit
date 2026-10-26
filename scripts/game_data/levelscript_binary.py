@@ -47,7 +47,6 @@ from scripts.game_data.codecs.levelscript import compact_property_gate as levels
 from scripts.game_data.codecs.levelscript import control_flow_actions as levelscript_control_flow
 from scripts.game_data.codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
 from scripts.game_data.codecs.levelscript import exit_custom_performance as levelscript_exit_performance
-from scripts.game_data.codecs.levelscript import fmv as levelscript_fmv
 from scripts.game_data.codecs.levelscript import manual_control as levelscript_manual_control
 from scripts.game_data.codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
 from scripts.game_data.codecs.levelscript import params as levelscript_params
@@ -57,10 +56,6 @@ from scripts.game_data.codecs.levelscript import scalar_value_getters as levelsc
 from scripts.game_data.codecs.levelscript import switch_actions as levelscript_switch_actions
 from scripts.game_data.codecs.levelscript import top_level_tail as levelscript_top_level_tail
 from scripts.game_data.codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
-from scripts.game_data.spawnerptr_getter_native import (
-    decode_spawnerptr_getter_member,
-    spawnerptr_getter_shape,
-)
 
 from scripts.common import read_bytes_cached
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
@@ -351,7 +346,7 @@ def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any = None) -> dict[str, Any]:
+def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any = None, game_root=None, npc_decoder=None) -> dict[str, Any]:
     """Advance the current owner from an exact empty action map.
 
     The generated 28-member wrapper supplies the names and order.  Complex
@@ -370,12 +365,12 @@ def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any =
         action_map=action_map["actionMap"],
         owner_offset=int(action_map["bytesConsumed"]),
         action_map_boundary="complete empty action map",
-        strings=strings,
+        strings=strings,game_root=game_root,npc_decoder=npc_decoder,
         partial_status="exact_named_empty_action_map_owner_prefix",
     )
 
 
-def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = None) -> dict[str, Any]:
+def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = None, game_root=None, npc_decoder=None) -> dict[str, Any]:
     """Advance the current owner from an exact null ``actionMap`` union.
 
     The generated 28-member wrapper permits a null reference for its first
@@ -405,7 +400,7 @@ def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = 
         },
         owner_offset=2,
         action_map_boundary="null action map",
-        strings=strings,
+        strings=strings,game_root=game_root,npc_decoder=npc_decoder,
         partial_status="exact_named_null_action_map_owner_prefix",
     )
 
@@ -1433,19 +1428,6 @@ def decode_levelscript_record_payload(
             "exact current-build ActionHeader formatter mapping; regenerate for other game builds",
         )
         hint.setdefault("nativeHeaderMappingId", LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID)
-    if (
-        getter_role
-        and (record.get("unionTag"), record.get("serializedMemberCount"))
-        == spawnerptr_getter_shape()
-    ):
-        spawner_getter = decode_spawnerptr_getter_member(
-            data,
-            payload_start=record_payload_start,
-            record_end=payload_start + len(payload),
-        )
-        if spawner_getter:
-            hint["pureGetter"] = "SpawnerPtrGetter"
-            hint["spawnerPtrGetter"] = spawner_getter
     fields = _decode_tagged_payload_fields(payload)
     texts = _record_text_values(record, fields)
     property_outputs = _extract_property_output_refs(texts)
@@ -1575,18 +1557,6 @@ def decode_levelscript_record_payload(
     )
     if play3d_radio:
         out["play3DRadio"] = play3d_radio
-    if semantic_key in {
-        *levelscript_fmv.PLAY_FMV_ACTION_SEMANTIC_KEYS,
-        union_tags.action("StartFmvAndTeleportAction"),
-    }:
-        fmv_action = levelscript_fmv.decode_fmv_action(
-            payload,
-            payload_start,
-            semantic_key,
-            record.get("strings") or [],
-        )
-        if fmv_action:
-            out["fmvAction"] = fmv_action
     if semantic_key in levelscript_audio_actions.audio_action_semantic_keys():
         # Audio ActionBase formatter tags are reused by getter/header unions
         # in the same LevelScript stream (notably 0x0016/9).  The maintained
@@ -1892,7 +1862,7 @@ class LevelScriptNamedFramingError(LevelScriptTopLevelFramingError):
         )
 
 
-def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: Any = None) -> dict[str, Any]:
+def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: Any = None, game_root=None, null_list_params=None, npc_decoder=None) -> dict[str, Any]:
     """Return the first maintained exact or bounded LevelScript owner frame.
 
     This is the shared route order used by the JsonData registry and Data page.
@@ -1902,6 +1872,13 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: 
     including the source identity and its first unsupported stored shape.
     No cursor or authored field establishes runtime execution or ownership.
     """
+    if null_list_params is not None:
+        from scripts.game_data.levelscript_null_list_param_native import prepared_null_list_audit
+        prepared_null_list_audit(null_list_params,codec_kind=None,game_root=game_root,strings=strings)
+    if game_root is not None:
+        from scripts.game_data.serialization_roots_native import check_root_native_inputs
+        gate=check_root_native_inputs(game_root=game_root)
+        if gate.status!="validated":raise LevelScriptTopLevelFramingError(f"levelscriptRoot.selectedNative:{gate.status}:{gate.detail}")
     refusals: list[dict[str, Any]] = []
     source_hash = hashlib.sha256(data).hexdigest().upper()
     for reader in (
@@ -1914,7 +1891,10 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: 
         frame_levelscript_empty_action_map_prefix,
     ):
         try:
-            result = reader(data,strings=strings) if reader in (frame_levelscript_empty_action_map_sequential, frame_levelscript_null_action_map_sequential, frame_levelscript_current_action_sequence_leader_enter) else reader(data)
+            if reader is frame_levelscript_current_action_sequence_leader_enter:
+                result = reader(data,strings=strings,game_root=game_root,null_list_params=null_list_params,npc_decoder=npc_decoder)
+            else:
+                result = reader(data,strings=strings,game_root=game_root,npc_decoder=npc_decoder) if reader in (frame_levelscript_empty_action_map_sequential,frame_levelscript_null_action_map_sequential) else reader(data)
         except (LevelScriptTopLevelFramingError, ValueError) as exc:
             refusals.append({
                 "validator": reader.__name__, "check": "stored-profile",

@@ -569,88 +569,15 @@ def _exact_story_trigger_markers(level_id: str, language: str) -> list[dict]:
 
 
 def _gender_select_casefold_trigger_markers(level_id: str, language: str) -> list[dict]:
-    """Project only the reviewed, build-locked GenderSelect playback bridge."""
-    if level_id != "indie_dg002":
-        return []
-    audit = load_cutscene_case_resolution_contract()
-    if audit.get("status") != "validated":
-        return []
-    bridge = ((audit.get("nativeContract") or {}).get("genderSelectBridge") or {})
-    script = bridge.get("levelScript") or {}
-    if (
-        bridge.get("status") != "validated"
-        or bridge.get("storyKey") != "cutscene_e0m0_1"
-        or bridge.get("conditionalPlayback") is not True
-        or bridge.get("suppliesMissionOrQuestOwnership") is not False
-        or script.get("levelId") != level_id
-        or script.get("scriptId") != 8700020000
-        or script.get("headerLocalId") != 12
-        or script.get("triggerSlotId") != 80001
-        or script.get("switchLocalId") != 13
-        or script.get("switchCase") != 0
-        or script.get("actionLocalId") != 16
-        or script.get("actionName") != "StartGenderSelect"
-    ):
-        return []
-    source_file = str(script.get("sourceFile") or "")
-    try:
-        data = (ROOT / source_file).read_bytes()
-    except OSError:
-        return []
-    if hashlib.sha256(data).hexdigest().upper() != script.get("sourceSha256"):
-        return []
-    summary = decode_levelscript_binary_summary(data, int(script['scriptId']), source_path=ROOT / source_file)
-    details = summary.get("triggerVolumesDetails") or {}
-    volumes = [row for row in details.get("volumes") or [] if (
-        isinstance(row, dict)
-        and row.get("slotId") == script["triggerSlotId"]
-        and row.get("keySlotId") == script["triggerSlotId"]
-        and row.get("triggerVolumeType") == "Leader"
-    )]
-    if details.get("parseStatus") != "decoded" or len(volumes) != 1:
-        return []
-    shapes = ((volumes[0].get("shapeList") or {}).get("shapes") or [])
-    if len(shapes) != 1:
-        return []
-    shape = shapes[0]
-    position = _finite_position(shape.get("position"))
-    if not position or shape.get("shapeType") not in {"Box", "Sphere", "PolyLine"}:
-        return []
-    story_key = str(bridge["storyKey"])
-    return [{
-        "kind": "trigger", "subKind": "exact_story_trigger_volume",
-        "label": "剧情触发区",
-        "identity": "story_trigger:8700020000:80001:gender_select",
-        "position": position, "detailId": "8700020000#80001",
-        "interactionStatus": "automatic_trigger",
-        "evidence": "exact build-locked GenderSelect phase playback bridge",
-        "scriptId": "8700020000", "triggerSlotId": "80001",
-        "triggerIdentityDomain": "LevelScriptData.triggerVolumes local slot",
-        "registryIdentityStatus": "not_applicable",
-        "triggerShape": {
-            "type": str(shape.get("shapeType") or "").lower(),
-            "position": position, "rotation": shape.get("rotation") or {},
-            "size": shape.get("size") or {}, "radius": shape.get("radius"),
-            "polyLinePoints": ((shape.get("polyLinePoints") or {}).get("points") or []),
-        },
-        "sceneKeys": [story_key], "missionContexts": ["e0m0"],
-        "missionContextStatus": "nominal Story id context; receiver mission ownership unresolved",
-        "storyRelation": "exact_conditional_gender_select_phase_playback",
-        "storyTriggerMultiplicityStatus": "exact_local_trigger_volume",
-        "playbackControlPathEvidence": {
-            "status": "exact_build_locked_gender_select_phase_bridge",
-            "headerLocalId": 12, "switchLocalId": 13, "switchCase": 0,
-            "actionLocalId": 16, "nativeMappingId": bridge.get("nativeMappingId"),
-            "caseInsensitiveAssociation": "accepted_unique_ascii_case_insensitive",
-            "conditionalPlayback": True, "noSiblingInheritance": True,
-        },
-        "relatedFiles": _sorted_related(_merge_related([], [
-            _related(source_file, "level_script", "exact Leader trigger and StartGenderSelect control path"),
-            _related(_conv_file_for_key(language, story_key), "story_exact_trigger", "case-insensitive GenderSelect phase playback"),
-            _related(str(audit.get("sourceFile") or ""), "native_validation", "build-locked phase and cutscene lookup bridge"),
-        ])),
-        "sourceFiles": [source_file], "source": source_file,
-    }]
+    """Withhold the GenderSelect trigger marker until a typed whole owner closes.
+
+    The native/Lua bridge is a conditional source association: runtime key
+    resolution, event delivery, phase activation and playback stay unresolved,
+    and it supplies no geometry. Stored trigger geometry needs the current
+    LevelScript owner read to EOF; the replayed owner stops before its positive
+    task entries, so no spatial marker is admitted here.
+    """
+    return []
 
 
 _SPATIAL_SPAWNER_EVENT_TYPES = {

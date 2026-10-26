@@ -74,7 +74,11 @@ wave-key filters and typed output destinations; those outputs are not observed
 wave values or evidence that the event fired.
 
 DialogTree UI continuation has two independent native maps: named outgoing
-port labels and configured default indexes. The initializer can call shared
+port labels and configured default indexes. Selector enum defaults use the shared
+IL2CPP compressed signed-integer reader; the former local three-byte and
+extra-prefix grammar is not a second supported metadata format. Truncated or
+unsupported defaults refuse with the enum, field and data-section source.
+ The initializer can call shared
 `Dictionary.Add` bodies for both, so the exact MethodSpec passed at each call
 must supply the closed key/value types. The reusable integer-map and lookup
 return programs live in `scripts/game_data/il2cpp/static_dictionary.py`; the
@@ -121,8 +125,9 @@ classifications; parser, shape, and nonempty-index failures stop publication.
   is proved again, and only names carry over: addresses, tokens, offsets,
   registers and enum values are re-derived, and code registration is located
   from the metadata image names, never pinned.
-- Claims that re-prove from the binary have a regenerator (CallServer callback,
-  cutscene case resolution, iFix patch, cinematic queue, TeleportParam). Census
+- Claims that re-prove from the binary use maintained source validators
+  (GenderSelect) or regenerators (CallServer callback, iFix patch, cinematic
+  queue, TeleportParam). Census
   conclusions (identity-carrier negative boundaries, cross-system consumers)
   have none and stay `mismatched` until reviewed again.
 - Instruction-shape analyses must survive codegen churn. The current build
@@ -1035,35 +1040,55 @@ and inventories stay under `reports/runtime_capture/`.
 
 ## LevelScript FMV path to installed Video
 
-The diagnostic FMV hint reader also gates its inline-string assumption on the
-reviewed native inputs. A current pooled-string build cannot inherit those
-hints from printable bytes; field-to-video binding remains withheld until its
-own source cursor and consumer composition are proved.
-An unavailable source proof also degrades the playback census independently
-of UID-scanner hits. Other positive carriers cannot make an unobserved FMV
-safe to classify as unused; the native gate is rechecked outside cached scans.
+Current FMV source evidence comes from a complete typed LevelScript owner and
+its selected StringPool, never from printable movie bytes or an inline-string
+tail scan. `PlayFmvAction._moviePath` is a pooled `Param<string>`; the source
+consumer independently re-reads the entire typed field and requires physical
+owner EOF. Only an exact integer constant source is selected. Its reference and
+path fields are inactive in the proved constant getter path, but the maintained
+stored reader still decides which complete Param variants it admits.
+`StartFmvAndTeleportAction._fmvId` remains a structural projection: it does not
+inherit the PlayFmv consumer's native mapping.
 
-`PlayFmvAction._moviePath` is a stored constant `Param<string>`. Each
-authenticated `cs_video_*` value resolves to exact Video logical paths under
-`Data/Video/PC/Narrative/Cutscene/` -- a base `<id>.usm` or a complete `f_`/`m_`
-pair -- through
+[`levelscript_fmv_video_native.py`](../../scripts/game_data/levelscript_fmv_video_native.py)
+authenticates the reviewed current contract on every operation, including typed
+source fields, actual caller transfers, reciprocal generic contexts, registered
+canonical entries where present, complete owned native windows, metadata
+literals and the links between independently proved components. The selected
+original path carries the constant movie reference through `GameAction.PlayFmv`,
+gender-prefix selection and missing-candidate fallback, the cutscene subpath
+formatter, VideoManager's suffix branch and the VFS name probe. Actual closed
+format forwarding paths are proved directly; a canonical entry at a different
+address is not an alias proof. The bounded formatter/parser, selected default
+string delegate, cached builder, String allocation, inline copies and ordinary
+Concat compose with the separately gated bounded-copy helper. The VFS readonly
+video-root field has a selected reached fallback-initializer proof; earlier,
+cold and other initializer paths are excluded. The output recipe is derived
+from those authenticated literal cells, not accepted as an independent JSON
+name map.
+
+The admitted string domain and excluded helper branches are explicit in the
+contract. Initialized compatible generic/literal slots, mutable default
+delegate selection, same-thread unused cached scratch storage, sufficient
+capacity, the selected allocator state and normal noninterfering helpers remain
+conditions. iFix state, effective gender, candidate existence and the
+CurrentCulture suffix-comparison result are separate runtime witnesses; a VFS
+filename match does not establish any of them. Unbacked runtime globals are not
+read as zero. Larger strings, custom formatters, growth and cold paths fail
+closed rather than inheriting the selected source result.
+
 [`levelscript_fmv_video_corpus.py`](../../scripts/game_data/levelscript_fmv_video_corpus.py)
-and the reviewed `levelscript_fmv_video_native.json` consumer route
-(`GameAction.PlayFmv` -> `GetGenderedFMVId` -> `Narrative/Cutscene/{0}` ->
-VFS lookup). This is **conditional** name resolution: gender, iFix state,
-activation, playback, mission ownership and order are not proved. The
-per-source join is `reports/story/recovery/current_levelscript_fmv_video_join.json`.
-
-Check that contract's selected native inputs before using the route. Current
-component proofs recover the pooled inherited prefix and typed movie Param
-read, plus the unpatched gender-prefix selection, missing-variant fallback and
-subpath-to-VFS call routing. The subpath helper receives a
-`Beyond.StringUtils.ZFormat<string>` context; its wrapper forwards through the
-reciprocal `ZString.Format<T>` generic slot. Do not interpret the original
-context as a direct Format MethodInfo or infer an anonymous tail's behavior
-from it. Complete source ownership, formatting and remaining consumer joins
-still gate source-to-video admission; the old inline-string receipt cannot
-authenticate this build. Runtime gender and patch selection remain unobserved.
+requires the current standalone LevelScript family receipt with complete raw,
+logical export, StringPool and reader-input bookends. Each operation replays
+its selected owners and verifies matching current unencrypted Video slices
+against their declared data MD5, with physical chunk-selection and byte
+bookends. The generated source plan can select files for another operation; it
+cannot cache native or schema success. Story consumes these fresh conditional
+source/name rows separately from its generic UID scan and never marks them as
+an observed activation or playback chain. An unavailable source receipt and
+incomplete consumer coverage keep the unused-cutscene guard degraded even when
+the native name gate passes. Whole-source coverage, live playback, mission
+ownership and Story order remain independent evidence requirements.
 
 ## Spatial carriers
 
@@ -1120,6 +1145,11 @@ Numerically equal ids in unrelated domains are different identities:
   record stores both its exact `embeddedLogicId` and a NarrativeComponent
   `typeId`. e0m0's four tombs use that direct binding, **not numeric order or
   spatial proximity.**
+- every `LevelInteractiveData` string member (`entityDataIdKey`, component
+  `ParamKeyValue` strings, progress-lock `ownerId`) is a StringPool index on
+  the current build; the quest-lock route frames and decodes records only
+  through the export pool. Interactive routes still reading inline frame
+  nothing until they thread the same pool.
 
 ## Registered shells and slot action bindings
 
@@ -1140,9 +1170,29 @@ Numerically equal ids in unrelated domains are different identities:
   separate even when both address the same slot.
 - A dynamic local-output reference becomes a slot action **only when a pinned
   producer contract proves a same-header constant alias**
-  ([`entityptr_output_alias_native.py`](../../scripts/game_data/entityptr_output_alias_native.py));
-  validated non-alias outputs remain unplaced.
+  ([`entityptr_output_alias_native.py`](../../scripts/game_data/entityptr_output_alias_native.py)):
+  a non-slot (`useSlotId` false) constant filter aliases the output by logic-id
+  identity only, `conditional` on no IFix patch; slot-addressed filters stay
+  `unresolved` and validated non-alias outputs remain unplaced.
 - The exhaustive per-slot audit -- contracted EntityPtr field states,
   diagnostic-only dynamic `idRef`/output/variable references, and non-spatial
   references that must not become map markers -- belongs in
   `reports/assets/map_recovery/action_binding_index.json`.
+
+The GenderSelect consumer gate proves a conditional initialized original-body
+bridge: its action creates a callback, the GameAction sends the owned named
+event key with that callback, and the shipped Lua message handler opens the
+phase whose first activation requests its literal cutscene name. The event-key
+constructor, typed generic contexts and selected source transfers are checked
+freshly. Compatible reference sharing, coherent native/Lua event registration,
+delivery, phase activation and playback remain conditions. Exact installed Lua
+wrapper and maintained decoder/normalizer facts bind the exported source; raw
+decoded text and normalized export hashes are different representations.
+
+A unique ASCII-casefolded Story key is a reviewed source association, not a
+proved runtime lookup result. Absence of case-conversion calls does not prove
+case-sensitive lookup. The Pipeline preserves runtime key resolution as
+unresolved and checks uniqueness in its selected Story registry. Stored trigger
+geometry and header/switch/action closure require their separate whole-owner
+reader and source/pool/native guards; the native/Lua bridge supplies none by
+itself and establishes no mission ownership or order.

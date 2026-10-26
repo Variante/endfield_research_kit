@@ -1,221 +1,477 @@
 {
- "schema": "entityPtrGetterNativeContract.v2",
- "status": "validated",
- "nativeMappingId": "entityptr-getter-semantics.v2",
- "evidenceBoundary": {
-  "exact": "union tags from the PureGetter formatter switch; member order from generated wrapper setters; GetResult bodies by managed name and hash",
-  "direct": "the two resolving kinds' readings of their reviewed GetResult bodies",
-  "conditional": "an installed IFix patch replaces either body; the reading holds only when no patch is present",
-  "unresolved": "runtime kinds label values the runtime supplies and resolve nothing statically"
- },
- "nativeInputs": {
-  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
- },
- "union": {
-  "base": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PureGetterForMemoryPack",
-  "dispatcherVa": "0x182995610",
-  "tableVa": "0x1829ecab0",
-  "entryCount": 1106
- },
- "getters": [
-  {
-   "getterName": "Beyond.Gameplay.Actions.EntityGetter",
-   "resolutionKind": "constant_param_alias",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityGetterForMemoryPack",
-   "unionTag": 42,
-   "serializedMemberCount": 8,
-   "fields": [
+  "schema": "endfield.entity-ptr-getter-native.v3",
+  "status": "conditional-current-build-compiled-getter",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "getters": [
     {
-     "name": "_value",
-     "ordinal": 7,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+      "kind": "entity40",
+      "getterName": "Beyond.Gameplay.Actions.EntityGetter",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityGetterForMemoryPack",
+      "unionTag": 44,
+      "serializedMemberCount": 8,
+      "fields": [
+        [
+          "_dontLogWarning",
+          "bool"
+        ],
+        [
+          "_ID",
+          "int"
+        ],
+        [
+          "_releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "_uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "Beyond.GEnums.ScopeName"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "_value",
+          "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+        ]
+      ],
+      "method": [
+        36716,
+        "Beyond.Gameplay.Actions.EntityGetter",
+        "GetResult",
+        160212172
+      ],
+      "field": [
+        "Beyond.Gameplay.Actions.EntityGetter",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>",
+        96
+      ],
+      "usage": {
+        "instructionRva": 160212309,
+        "instructionHex": "488B05F4C1E406",
+        "usageCellRva": 275867472,
+        "usageRawHex": "CD8610C000000000",
+        "tag": 6,
+        "methodSpecIndex": 541542,
+        "methodSpec": [
+          41134,
+          -1,
+          825
+        ],
+        "typeName": "Beyond.Gameplay.Actions.ParamExtensions",
+        "methodName": "GetValue",
+        "classArguments": [],
+        "methodArguments": [
+          "Beyond.Gameplay.Core.EntityPtr"
+        ]
+      },
+      "getValueContext": {
+        "definition": 41134,
+        "isMethod": true,
+        "token": 100704431,
+        "image": "Gameplay.Beyond.dll",
+        "typeName": "Beyond.Gameplay.Actions.ParamExtensions",
+        "methodName": "GetValue",
+        "start": 1472,
+        "count": 3,
+        "entries": [
+          {
+            "relativeSlot": 0,
+            "moduleEntryIndex": 1472,
+            "entryVa": 6676684448,
+            "rawHex": "02000000000000008CE8748F01000000",
+            "kind": 2,
+            "index": 64562,
+            "type": {
+              "name": "Beyond.Gameplay.Actions.Param`1<MVAR[415]>",
+              "typePointerVa": 6704407848,
+              "rawHex": "A81F0B91010000000000150000000000",
+              "definition": {
+                "name": "Beyond.Gameplay.Actions.Param`1",
+                "typePointerVa": 6719581664,
+                "rawHex": "361B0000000000000000120000000000"
+              },
+              "classInstantiationIndex": 26162,
+              "classArguments": [
+                {
+                  "name": "MVAR[415]",
+                  "typePointerVa": 6720477744,
+                  "rawHex": "9F0100000000000000001E0000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 415,
+                    "parameterOffset": 53850344,
+                    "parameterRawHex": "5E010000C83100000000000000000000",
+                    "containerIndex": 350,
+                    "containerOffset": 54268508,
+                    "containerRawHex": "AEA0000001000000010000009F010000",
+                    "methodIndex": 41134,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.Gameplay.Actions.ParamExtensions",
+                    "methodName": "GetValue"
+                  }
+                }
+              ]
+            },
+            "typeName": "Beyond.Gameplay.Actions.Param`1<MVAR[415]>"
+          },
+          {
+            "relativeSlot": 1,
+            "moduleEntryIndex": 1473,
+            "entryVa": 6676684464,
+            "rawHex": "030000000000000088E8748F01000000",
+            "kind": 3,
+            "index": 333092,
+            "methodSpec": [
+              41106,
+              26162,
+              -1
+            ],
+            "typeName": "Beyond.Gameplay.Actions.Param`1",
+            "methodName": "get_useGetter",
+            "classArguments": [
+              {
+                "name": "MVAR[415]",
+                "typePointerVa": 6720477744,
+                "rawHex": "9F0100000000000000001E0000000000",
+                "parameterOwner": {
+                  "parameterIndex": 415,
+                  "parameterOffset": 53850344,
+                  "parameterRawHex": "5E010000C83100000000000000000000",
+                  "containerIndex": 350,
+                  "containerOffset": 54268508,
+                  "containerRawHex": "AEA0000001000000010000009F010000",
+                  "methodIndex": 41134,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.Gameplay.Actions.ParamExtensions",
+                  "methodName": "GetValue"
+                }
+              }
+            ],
+            "methodArguments": []
+          },
+          {
+            "relativeSlot": 2,
+            "moduleEntryIndex": 1474,
+            "entryVa": 6676684480,
+            "rawHex": "0300000000000000D0E6748F01000000",
+            "kind": 3,
+            "index": 541630,
+            "methodSpec": [
+              41138,
+              -1,
+              26162
+            ],
+            "typeName": "Beyond.Gameplay.Actions.ParamExtensions",
+            "methodName": "TryGetValue",
+            "classArguments": [],
+            "methodArguments": [
+              {
+                "name": "MVAR[415]",
+                "typePointerVa": 6720477744,
+                "rawHex": "9F0100000000000000001E0000000000",
+                "parameterOwner": {
+                  "parameterIndex": 415,
+                  "parameterOffset": 53850344,
+                  "parameterRawHex": "5E010000C83100000000000000000000",
+                  "containerIndex": 350,
+                  "containerOffset": 54268508,
+                  "containerRawHex": "AEA0000001000000010000009F010000",
+                  "methodIndex": 41134,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.Gameplay.Actions.ParamExtensions",
+                  "methodName": "GetValue"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "helpers": {
+        "getValue": {
+          "methodIndex": 41134,
+          "owner": "Beyond.Gameplay.Actions.ParamExtensions",
+          "name": "GetValue",
+          "classArguments": [],
+          "methodArguments": [
+            "Beyond.Gameplay.Core.EntityPtr"
+          ],
+          "registration": {
+            "pointer": 6530449200,
+            "methodSpecIndex": 541542,
+            "registration": {
+              "tableIndex": 510977,
+              "va": 6701137680,
+              "methodSpecIndex": 541542,
+              "rawHex": "6643080034CA0700B65F0100FFFFFFFF",
+              "indices": [
+                510516,
+                90038,
+                -1
+              ]
+            },
+            "classInstantiation": {
+              "index": -1,
+              "table_slot_va": null,
+              "record_va": null,
+              "argument_vector_va": null,
+              "padding_hex": "",
+              "arguments": []
+            },
+            "methodInstantiation": {
+              "index": 825,
+              "table_slot_va": 6679688456,
+              "record_va": 6678889952,
+              "argument_vector_va": 6727154104,
+              "padding_hex": "00000000",
+              "arguments": [
+                {
+                  "index": 0,
+                  "type_pointer_va": 6719194240,
+                  "raw_type_record_hex": "0F330000000000000000118000000000"
+                }
+              ]
+            },
+            "methodDefinitionIndices": [
+              41134
+            ],
+            "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+          },
+          "abi": {
+            "static": true,
+            "returns": "MVAR[415]",
+            "parameters": [
+              "Beyond.Gameplay.Actions.Param`1<MVAR[415]>",
+              "MVAR[415]",
+              "bool"
+            ]
+          }
+        },
+        "tryGetValue": {
+          "methodIndex": 41138,
+          "owner": "Beyond.Gameplay.Actions.ParamExtensions",
+          "name": "TryGetValue",
+          "classArguments": [],
+          "methodArguments": [
+            "Beyond.Gameplay.Core.EntityPtr"
+          ],
+          "registration": {
+            "pointer": 6530447920,
+            "methodSpecIndex": 541657,
+            "registration": {
+              "tableIndex": 511079,
+              "va": 6701139312,
+              "methodSpecIndex": 541657,
+              "rawHex": "D94308009ACA0700835D0100FFFFFFFF",
+              "indices": [
+                510618,
+                89475,
+                -1
+              ]
+            },
+            "classInstantiation": {
+              "index": -1,
+              "table_slot_va": null,
+              "record_va": null,
+              "argument_vector_va": null,
+              "padding_hex": "",
+              "arguments": []
+            },
+            "methodInstantiation": {
+              "index": 825,
+              "table_slot_va": 6679688456,
+              "record_va": 6678889952,
+              "argument_vector_va": 6727154104,
+              "padding_hex": "00000000",
+              "arguments": [
+                {
+                  "index": 0,
+                  "type_pointer_va": 6719194240,
+                  "raw_type_record_hex": "0F330000000000000000118000000000"
+                }
+              ]
+            },
+            "methodDefinitionIndices": [
+              41138
+            ],
+            "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+          },
+          "abi": {
+            "static": true,
+            "returns": "bool",
+            "parameters": [
+              "Beyond.Gameplay.Actions.Param`1<MVAR[418]>",
+              "MVAR[418]",
+              "bool"
+            ]
+          }
+        },
+        "useGetter": {
+          "methodIndex": 41106,
+          "owner": "Beyond.Gameplay.Actions.Param`1",
+          "name": "get_useGetter",
+          "classArguments": [
+            "Beyond.Gameplay.Core.EntityPtr"
+          ],
+          "methodArguments": [],
+          "registration": {
+            "pointer": 6546390192,
+            "methodSpecIndex": 333735,
+            "registration": {
+              "tableIndex": 313326,
+              "va": 6697975264,
+              "methodSpecIndex": 333735,
+              "rawHex": "A71705008DC6040004200100FFFFFFFF",
+              "indices": [
+                312973,
+                73732,
+                -1
+              ]
+            },
+            "classInstantiation": {
+              "index": 825,
+              "table_slot_va": 6679688456,
+              "record_va": 6678889952,
+              "argument_vector_va": 6727154104,
+              "padding_hex": "00000000",
+              "arguments": [
+                {
+                  "index": 0,
+                  "type_pointer_va": 6719194240,
+                  "raw_type_record_hex": "0F330000000000000000118000000000"
+                }
+              ]
+            },
+            "methodInstantiation": {
+              "index": -1,
+              "table_slot_va": null,
+              "record_va": null,
+              "argument_vector_va": null,
+              "padding_hex": "",
+              "arguments": []
+            },
+            "methodDefinitionIndices": [
+              41106
+            ],
+            "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+          },
+          "abi": {
+            "static": false,
+            "returns": "bool",
+            "parameters": []
+          }
+        }
+      },
+      "programs": {
+        "getResult": {
+          "entryRva": 160212172,
+          "ownership": "completeOwnedUnwindFamily",
+          "windows": [
+            {
+              "startRva": 160212172,
+              "endRva": 160212394,
+              "sha256": "5F7BD83BF20848DA3F9CB7CBB2D6C7C8BDEDB243707D87162703C9091BF00A38",
+              "boundary": "completeOwnedUnwindFamily"
+            }
+          ]
+        },
+        "getValue": {
+          "entryRva": 87998256,
+          "ownership": "completeOwnedUnwindFamily",
+          "windows": [
+            {
+              "startRva": 87998256,
+              "endRva": 87998497,
+              "sha256": "CE8A0EB73754BA9C947C6FF13C496CE0C1B58C78BEB2918042F81D932F58AB20",
+              "boundary": "completeOwnedUnwindFamily"
+            },
+            {
+              "startRva": 120580532,
+              "endRva": 120580563,
+              "sha256": "CC8704D3CA03E2C1A8A8C544E8588B2039E5AAA85D41637F7B7E21C4AB033102",
+              "boundary": "completeOwnedUnwindFamily"
+            }
+          ]
+        },
+        "tryGetValue": {
+          "entryRva": 87996976,
+          "ownership": "completeOwnedUnwindFamily",
+          "windows": [
+            {
+              "startRva": 87996976,
+              "endRva": 87998136,
+              "sha256": "E8ED666819FEBBAB7B3475198AE96F665ABE8AC45DA19BF497096A82E4B4103F",
+              "boundary": "completeOwnedUnwindFamily"
+            },
+            {
+              "startRva": 120578424,
+              "endRva": 120580531,
+              "sha256": "2F8D90F87A582A7B0F3373DE928DA5C4E40608D0FDF752F4E60AB44193776ABE",
+              "boundary": "completeOwnedUnwindFamily"
+            }
+          ]
+        },
+        "useGetter": {
+          "entryRva": 103939248,
+          "ownership": "closedReachableLeaf",
+          "windows": [
+            {
+              "startRva": 103939248,
+              "endRva": 103939266,
+              "sha256": "74A87224AA344B084B739693344E1E0A434A1B83BA737F108B8341E6B82A2C28",
+              "boundary": "closedReachableLeaf"
+            }
+          ]
+        },
+        "thunk": {
+          "entryRva": 7229876,
+          "ownership": "completeOwnedUnwindFamily",
+          "windows": [
+            {
+              "startRva": 7229876,
+              "endRva": 7229951,
+              "sha256": "D0EF45D7949225A75B0867ED17453467F771B6CBFAE35D281C01CF969177F737",
+              "boundary": "completeOwnedUnwindFamily"
+            }
+          ]
+        },
+        "barrier": {
+          "entryRva": 1065824,
+          "ownership": "selectedCollectorDisabledReturnPrefix",
+          "windows": [
+            {
+              "startRva": 1065824,
+              "endRva": 1066336,
+              "sha256": "88941C0143E4DDD10AF07A9F6DEA1F3BB8488551042F0270F65D0006339CA823",
+              "boundary": "bounded bytes containing complete selected collector-disabled return, no full-helper extent claim"
+            }
+          ]
+        }
+      }
     }
-   ],
-   "switchEntry": {
-    "targetVa": "0x18299f4ca",
-    "bodyVa": "0x1829a4a0e",
-    "usageCellVa": "0x18d078a58",
-    "registeredTypeIndex": 103351,
-    "typeDefinition": 19721
-   },
-   "getResult": {
-    "token": "0x060087b3",
-    "va": "0x18690f0d4",
-    "fileOffset": 110156500,
-    "bodySize": 220,
-    "bodySha256": "4278D9BD8731BAC55B4166318EEA5F93F61506A8E050C18E6F3F8911062FF454"
-   },
-   "review": {
-    "bodySha256": "4278D9BD8731BAC55B4166318EEA5F93F61506A8E050C18E6F3F8911062FF454",
-    "finding": "Unless IFix WrappersManagerImpl.IsPatched(0x8658) diverts to the patch, returns ParamExtensions.GetValue<EntityPtr>(this._value) (_value at +0x60) copied into the 40-byte result. A constant _value is therefore the getter's value."
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.EntityListGetValue",
-   "resolutionKind": "runtime_list_index",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityListGetValueForMemoryPack",
-   "unionTag": 45,
-   "serializedMemberCount": 9,
-   "fields": [
-    {
-     "name": "_index",
-     "ordinal": 7,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<int>"
-    },
-    {
-     "name": "_list",
-     "ordinal": 8,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>>"
-    }
-   ],
-   "switchEntry": {
-    "targetVa": "0x18299f4e8",
-    "bodyVa": "0x1829a4d2f",
-    "usageCellVa": "0x18d078a50",
-    "registeredTypeIndex": 103357,
-    "typeDefinition": 19727
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.EntityPtrListGetValue",
-   "resolutionKind": "runtime_list_index",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityPtrListGetValueForMemoryPack",
-   "unionTag": 47,
-   "serializedMemberCount": 9,
-   "fields": [
-    {
-     "name": "_index",
-     "ordinal": 7,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<int>"
-    },
-    {
-     "name": "_list",
-     "ordinal": 8,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>>"
-    }
-   ],
-   "switchEntry": {
-    "targetVa": "0x18299f4fc",
-    "bodyVa": "0x1829a4f45",
-    "usageCellVa": "0x18d078a80",
-    "registeredTypeIndex": 103365,
-    "typeDefinition": 21515
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.EventArgsGetEntityPtr",
-   "resolutionKind": "runtime_event_args_key",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EventArgsGetEntityPtrForMemoryPack",
-   "unionTag": 50,
-   "serializedMemberCount": 9,
-   "fields": [
-    {
-     "name": "_eventArgsPtr",
-     "ordinal": 7,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EventArgsPtr>"
-    },
-    {
-     "name": "_key",
-     "ordinal": 8,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<string>"
-    }
-   ],
-   "switchEntry": {
-    "targetVa": "0x18299f51a",
-    "bodyVa": "0x1829a5266",
-    "usageCellVa": "0x18d078a98",
-    "registeredTypeIndex": 103386,
-    "typeDefinition": 21713
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.GetGodEntity",
-   "resolutionKind": "runtime_zero_field_entity",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetGodEntityForMemoryPack",
-   "unionTag": 97,
-   "serializedMemberCount": 7,
-   "fields": [],
-   "switchEntry": {
-    "targetVa": "0x18299f6f0",
-    "bodyVa": "0x1829a836b",
-    "usageCellVa": "0x18d078b08",
-    "registeredTypeIndex": 103508,
-    "typeDefinition": 21691
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.GetLevelScriptPropertyGeneric`1<Beyond.Gameplay.Core.EntityPtr>",
-   "resolutionKind": "runtime_levelscript_property",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetLevelScriptPropertyGeneric_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack",
-   "unionTag": 211,
-   "serializedMemberCount": 9,
-   "fields": [
-    {
-     "name": "_path",
-     "ordinal": 7,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<string>"
-    },
-    {
-     "name": "_target",
-     "ordinal": 8,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>"
-    }
-   ],
-   "switchEntry": {
-    "targetVa": "0x18299fb64",
-    "bodyVa": "0x1829afa51",
-    "usageCellVa": "0x18d077bf0",
-    "registeredTypeIndex": 103670,
-    "typeDefinition": 20215
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.GetMainCharacter",
-   "resolutionKind": "runtime_zero_field_entity",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetMainCharacterForMemoryPack",
-   "unionTag": 312,
-   "serializedMemberCount": 7,
-   "fields": [],
-   "switchEntry": {
-    "targetVa": "0x18299ff56",
-    "bodyVa": "0x1829b63a8",
-    "usageCellVa": "0x18d077e68",
-    "registeredTypeIndex": 103723,
-    "typeDefinition": 21693
-   }
-  },
-  {
-   "getterName": "Beyond.Gameplay.Actions.NpcProxyGetter",
-   "resolutionKind": "constant_proxy_id_lookup",
-   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyGetterForMemoryPack",
-   "unionTag": 998,
-   "serializedMemberCount": 8,
-   "fields": [
-    {
-     "name": "_targetProxy",
-     "ordinal": 7,
-     "managedType": "Beyond.Gameplay.Actions.Param`1<string>"
-    }
-   ],
-   "switchEntry": {
-    "targetVa": "0x1829a1a22",
-    "bodyVa": "0x1829e2f22",
-    "usageCellVa": "0x18d074950",
-    "registeredTypeIndex": 105089,
-    "typeDefinition": 19739
-   },
-   "getResult": {
-    "token": "0x060087c4",
-    "va": "0x18691df4c",
-    "fileOffset": 110217548,
-    "bodySize": 340,
-    "bodySha256": "3B7F50A5559961BDCFA01B04E3451546B7436CA67D41D9E59D997A0DBFD98166"
-   },
-   "review": {
-    "bodySha256": "3B7F50A5559961BDCFA01B04E3451546B7436CA67D41D9E59D997A0DBFD98166",
-    "finding": "Unless IFix IsPatched(0x8664) diverts, reads ParamExtensions.GetValue<string>(this._targetProxy) (+0x60); if non-empty, returns EntityPtr.op_Implicit(NpcProxyMgr.GetNpcProxyByProxyId(id).GetEntity()); otherwise logs (category 0x1D) and returns an empty EntityPtr."
-   }
+  ],
+  "evidenceBoundary": {
+    "direct": "Current typed original getter, generated parent route and independently gated Param store slots, actual optional-dispatch normal path, closed helper contexts/registrations and complete selected constant value transfer.",
+    "conditional": "Initialized coherent matching typed MethodInfo/classes, original optional-dispatch path, Param source zero and valid disjoint storage, normal helper ABI and disabled collector for reference barriers. Runtime context and optional patch selection are not observed.",
+    "unresolved": [
+      "live context/patch/helper selection",
+      "runtime object activation and target resolution",
+      "nonconstant Param sources",
+      "enclosing stored source physical EOF"
+    ]
   }
- ]
 }

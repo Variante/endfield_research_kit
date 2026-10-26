@@ -33,7 +33,7 @@ ENTITY_PTR_TYPE = "Beyond.Gameplay.Core.EntityPtr"
 
 
 def load_action_entity_field_contract(
-    contract_path: Path = DEFAULT_CONTRACT,
+    contract_path: Path = DEFAULT_CONTRACT, *, gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> tuple[dict[tuple[int, int], dict[str, Any]], dict[str, Any]]:
     """Rows keyed by current ``(unionTag, serializedMemberCount)``, or nothing."""
     failures: list[dict[str, Any]] = []
@@ -54,7 +54,7 @@ def load_action_entity_field_contract(
             reject(gate, expected, actual)
     inputs = contract.get("nativeInputs") or {}
     native = check_installed_native_inputs(
-        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
+        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""), gameassembly=gameassembly, metadata=metadata)
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         reject("installed_native_inputs", NATIVE_EVIDENCE_VALIDATED,
                {"status": native.status, "detail": native.detail})

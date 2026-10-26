@@ -2,9 +2,9 @@
   "schema": "endfield.dynamic-data-index-native-contract.v1",
   "status": "validated",
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "unityPlayerSha256": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "layout": {
     "gridType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
@@ -23,56 +23,56 @@
         "name": "Type",
         "offset": 4,
         "type": "System.Int32",
-        "getterMethodIndex": 89243
+        "getterMethodIndex": 94210
       },
       {
         "name": "Grid",
         "offset": 8,
         "type": "System.UInt32",
-        "getterMethodIndex": 89244
+        "getterMethodIndex": 94211
       },
       {
         "name": "Index",
         "offset": 12,
         "type": "System.Int32",
-        "getterMethodIndex": 89245
+        "getterMethodIndex": 94212
       }
     ],
-    "builderMethodIndex": 89246
+    "builderMethodIndex": 94213
   },
   "methods": [
     {
-      "index": 89243,
+      "index": 94210,
       "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
       "method": "get_Type",
       "parameters": [],
       "returnType": "System.Int32",
-      "rva": 48972336,
-      "bodyExtent": 128,
-      "bodySha256": "15F09758FB6B6D80AA658CF5D25238FCE40A3BB1FA8A551CFDDB8FF7F5721099"
+      "rva": 88039984,
+      "bodyExtent": 538,
+      "bodySha256": "64D576B6501EFEA3AA4C0923C0097126ECA96F43DE5C35C29E32874CADF5E3A6"
     },
     {
-      "index": 89244,
+      "index": 94211,
       "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
       "method": "get_Grid",
       "parameters": [],
       "returnType": "System.UInt32",
-      "rva": 48975712,
-      "bodyExtent": 110,
-      "bodySha256": "BDEAE0237245EEB97CBF7CACB9B0C981AD1E3FD4E604AC2733A7766F9F898D04"
+      "rva": 88072352,
+      "bodyExtent": 471,
+      "bodySha256": "F31C60A754F8B9E2AF325077EA6231E9DC7F557C484B61F30D3FB9C6C8056140"
     },
     {
-      "index": 89245,
+      "index": 94212,
       "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
       "method": "get_Index",
       "parameters": [],
       "returnType": "System.Int32",
-      "rva": 48537616,
-      "bodyExtent": 128,
-      "bodySha256": "9FBF30E5D60A0DCA0193BC4A7651A187C75C1AB1D55E8A56D381578499B61047"
+      "rva": 88040528,
+      "bodyExtent": 538,
+      "bodySha256": "BF78AAE5834D0D9AB7D98F1C318599D28C1418DFA394E1DD640A39D9DE211B46"
     },
     {
-      "index": 89246,
+      "index": 94213,
       "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
       "method": "CreateFBDynamicSceneDataIndex",
       "parameters": [
@@ -82,10 +82,10 @@
         "System.UInt32",
         "System.Int32"
       ],
-      "returnType": "<type-index:71260>",
-      "rva": 105262620,
-      "bodyExtent": 180,
-      "bodySha256": "0A2500F3FE5E524881E64243AA0DBE22860A6F1AF18104219535C978196AC67D"
+      "returnType": "<type-index:64186>",
+      "rva": 154223116,
+      "bodyExtent": 262,
+      "bodySha256": "8C176862131FD700B348EDD634D44AAFDE39356D4414C868ABB2BFFD1C96816F"
     }
   ],
   "evidenceBoundary": {

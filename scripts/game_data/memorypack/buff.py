@@ -1324,7 +1324,11 @@ def frame_buff_named_middle(
         if field_start >= id_marker_offset:
             raise ValueError("iconConfig:empty-range")
         member_count = data[field_start]
-        if member_count not in (19, 0xFF):
+        # The member count is the reviewed reader gate, not a constant here.
+        from scripts.game_data.memorypack.buff_icon_config import _contract as _icon_contract
+
+        icon_member_count = _icon_contract()["memberCountInstruction"]["memberCount"]
+        if member_count not in (icon_member_count, 0xFF):
             raise ValueError(f"iconConfig:member-count={member_count}")
         if member_count == 0xFF and field_start + 1 != id_marker_offset:
             raise ValueError("iconConfig:null-wrapper-has-trailing-bytes")

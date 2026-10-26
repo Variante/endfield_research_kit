@@ -1,195 +1,656 @@
 {
- "schema": "cutsceneCaseResolutionNativeContract.v4",
- "status": "validated",
- "sources": {
-  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-  "ifixPatchSha256": "A5BB5B3B4A4C7C0F3BD59685D809772F0A3FD73AD3E02A1CB28FFFA05FB98A5C"
- },
- "luaPlayback": {
-  "module": "Phase/GenderSelect/PhaseGenderSelect.lua",
-  "sourcePath": "scratch/animestudio/zhuangfy_lizi_lua_dither_20260724/Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
-  "sourceSha256": "A56B82797427F179D4F21E6C28989BE8AB8CCFAEDAC1B06D2BD5D286E243E368",
-  "line": 75,
-  "method": "PlayCutsceneAndGetHandle",
-  "resolvedLiteral": "Cutscene_e0m0_1",
-  "canonicalStoryKey": "cutscene_e0m0_1",
-  "registryStatus": "case_mismatch_registry_match"
- },
- "resolver": {
-  "gameAction": {
-   "type": "Beyond.Gameplay.Actions.GameAction",
-   "method": "PlayCutsceneAndGetHandle",
-   "parameters": [
-    "cutsceneId",
-    "callback",
-    "existingEntities",
-    "existingEnemies",
-    "existingSceneObjects",
-    "playParam",
-    "cinematicQueueItemHandle"
-   ],
-   "token": "0x0600866e",
-   "va": "0x1869030ac"
-  },
-  "playCutscene": {
-   "type": "Beyond.Gameplay.Core.CutsceneManager",
-   "method": "PlayCutscene",
-   "parameters": [
-    "key",
-    "afterFinish",
-    "existingInteractives",
-    "existingEnemies",
-    "existingSceneObjects",
-    "playParam",
-    "queueItemHandle"
-   ],
-   "token": "0x0600f86a",
-   "va": "0x1860c00e4"
-  },
-  "checkCanPlay": {
-   "type": "Beyond.Gameplay.Core.CutsceneManager",
-   "method": "CheckCanPlay",
-   "parameters": [
-    "key",
-    "cutsceneData"
-   ],
-   "token": "0x0600f86b",
-   "va": "0x1860bf6ac"
-  },
-  "getGenderedCutsceneId": {
-   "type": "Beyond.Gameplay.NarrativeUtils",
-   "method": "GetGenderedCutsceneId",
-   "parameters": [
-    "cutsceneId",
-    "gender"
-   ],
-   "token": "0x06001a7b",
-   "va": "0x18613f8a0"
-  },
-  "tryGetCinematicData": {
-   "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
-   "method": "TryGetCinematicData",
-   "parameters": [
-    "key",
-    "data"
-   ],
-   "token": "0x0600f6e5",
-   "va": "0x186d93aa8"
-  },
-  "tryLoadCutsceneDataByName": {
-   "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
-   "method": "_TryLoadCutsceneDataByName",
-   "parameters": [
-    "timelineName",
-    "cinematicData"
-   ],
-   "token": "0x0600f6e3",
-   "va": "0x186d93b18"
-  },
-  "cachedPathTryLoad": {
-   "type": "Beyond.Resource.CachedPathAssetLoader",
-   "method": "TryLoad",
-   "parameters": [
-    "path",
-    "asset"
-   ],
-   "token": "0x06000fd7",
-   "va": "0x183a6f720"
-  },
-  "cachedPathTypedTryLoad": {
-   "type": "Beyond.Resource.CachedPathAssetLoader",
-   "method": "TryLoad",
-   "parameters": [
-    "path",
-    "type",
-    "handle"
-   ],
-   "token": "0x06000fda",
-   "va": "0x183a6f7b0"
-  },
-  "stringPathHashConstructor": {
-   "type": "Beyond.Resource.StringPathHash",
-   "method": ".ctor",
-   "parameters": [
-    "str"
-   ],
-   "token": "0x06001179",
-   "va": "0x185bd7730"
-  },
-  "rawStringHashEntryPoints": [
-   "0x18351cda0"
-  ],
-  "caseConversionCalls": 0,
-  "caseConversionSites": [],
-  "protectedMethodPrefixes": [
-   "Beyond.Gameplay.Actions.GameAction::PlayCutsceneAndGetHandle",
-   "Beyond.Gameplay.Core.CinematicTimelineManagerBase::TryGetCinematicData",
-   "Beyond.Gameplay.Core.CinematicTimelineManagerBase::_TryLoadCutsceneDataByName",
-   "Beyond.Gameplay.Core.CutsceneManager::CheckCanPlay",
-   "Beyond.Gameplay.Core.CutsceneManager::PlayCutscene",
-   "Beyond.Gameplay.NarrativeUtils::GetGenderedCutsceneId",
-   "Beyond.Resource.CachedPathAssetLoader::TryLoad",
-   "Beyond.Resource.StringPathHash::.ctor"
-  ],
-  "ifixResolverMatches": 0
- },
- "conclusion": {
-  "caseResolution": "case_sensitive",
-  "literalResolvesToCanonicalKey": false,
-  "graphAction": "record_native_case_mismatch",
-  "ownershipAction": "none"
- },
- "recoveryAssociationPolicy": {
-  "comparison": "ascii_case_insensitive",
-  "requiresUniqueCanonicalStoryKey": true,
-  "literalAssociatesToCanonicalKey": true,
-  "graphAction": "associate_casefolded_playback_reference",
-  "suppliesMissionOrQuestOwnership": false,
-  "suppliesSpatialEvidence": false
- },
- "genderSelectBridge": {
+  "schema": "cutsceneCaseResolutionNativeContract.v5",
   "status": "validated",
-  "nativeMappingId": "gameassembly-2026-08-23-start-gender-select-phase-bridge",
-  "actionType": "Beyond.Gameplay.Actions.StartGenderSelect",
-  "actionTypeToken": "0x0200183d",
-  "execute": {
-   "token": "0x0600919d",
-   "virtualAddress": "0x185d735e8",
-   "fileOffset": 97984488,
-   "bodySize": 217,
-   "bodySha256": "CC89BFAB7E93456F225296F7B71395A96EB6AF0574CB29100862829FA8E9A08A",
-   "gameActionCallOffset": 159,
-   "gameActionCallBytes": "E86C68B900"
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
-  "gameAction": {
-   "token": "0x0600861f",
-   "virtualAddress": "0x186909ef8",
-   "fileOffset": 110135544,
-   "bodySize": 184,
-   "bodySha256": "A7834EFF7613DB69293973A7F6E1D8A5189CAE168399AC492B997277700AECD7",
-   "messageDispatchCallOffset": 130,
-   "messageDispatchCallBytes": "E851EE0EFD",
-   "messageDispatchTarget": "0x1839f8dd0",
-   "messageDispatch": "Beyond.EventManager.SendGlobal"
+  "sources": {
+    "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
   },
-  "levelScript": {
-   "levelId": "indie_dg002",
-   "scriptId": 8700020000,
-   "sourceFile": "game/Json/LevelScriptData/indie_dg002/8700020000.json",
-   "sourceSha256": "37ACE277162E10253B7AB29C94B4DF901E3871DD5CDB4DD0662281E2D8DB7BF1",
-   "headerLocalId": 12,
-   "triggerSlotId": 80001,
-   "switchLocalId": 13,
-   "switchCase": 0,
-   "actionLocalId": 16,
-   "actionRecordOffset": 310,
-   "actionName": "StartGenderSelect"
+  "nativeFacts": {
+    "programs": {
+      "execute": [
+        {
+          "metadataFlag": 6735314172,
+          "hookCell": 6735131216,
+          "actionClassCell": 6718537448,
+          "callbackMethodCell": 6731669032,
+          "gameActionClassCell": 6718173136,
+          "callback": "new Action(incoming this, OnCutscenePlayEnd), same receiver passed to StartGenderSelect",
+          "condition": "Initialized metadata, selected IFix receiver or callback slot absent, normal allocation/delegate construction/Pause/class-init helpers preserving nonvolatile registers, nonnull delegate; no execution or callback delivery observed.",
+          "typedUsages": {
+            "actionClassCell": {
+              "instructionRva": 160821138,
+              "instructionHex": "488B0D4FCFDE06",
+              "usageCellRva": 276086504,
+              "usageRawHex": "31DF022000000000",
+              "tag": 1,
+              "typeIndex": 94104,
+              "typeName": "System.Action",
+              "typeRawHex": "88070100000000000000120000000000"
+            },
+            "gameActionClassCell": {
+              "instructionRva": 160821185,
+              "instructionHex": "488B0D0840D906",
+              "usageCellRva": 275722192,
+              "usageRawHex": "B982032000000000",
+              "tag": 1,
+              "typeIndex": 115036,
+              "typeName": "Beyond.Gameplay.Actions.GameAction",
+              "typeRawHex": "41140000000000000000120000000000"
+            }
+          }
+        },
+        {
+          "metadataFlag": 6735314172,
+          "hookCell": 6735131216,
+          "actionClassCell": 6718537448,
+          "callbackMethodCell": 6731669032,
+          "gameActionClassCell": 6718173136,
+          "callback": "new Action(incoming this, OnCutscenePlayEnd), same receiver passed to StartGenderSelect",
+          "condition": "Initialized metadata, selected IFix receiver or callback slot absent, normal allocation/delegate construction/Pause/class-init helpers preserving nonvolatile registers, nonnull delegate; no execution or callback delivery observed.",
+          "typedUsages": {
+            "actionClassCell": {
+              "instructionRva": 160821138,
+              "instructionHex": "488B0D4FCFDE06",
+              "usageCellRva": 276086504,
+              "usageRawHex": "31DF022000000000",
+              "tag": 1,
+              "typeIndex": 94104,
+              "typeName": "System.Action",
+              "typeRawHex": "88070100000000000000120000000000"
+            },
+            "gameActionClassCell": {
+              "instructionRva": 160821185,
+              "instructionHex": "488B0D0840D906",
+              "usageCellRva": 275722192,
+              "usageRawHex": "B982032000000000",
+              "tag": 1,
+              "typeIndex": 115036,
+              "typeName": "Beyond.Gameplay.Actions.GameAction",
+              "typeRawHex": "41140000000000000000120000000000"
+            }
+          }
+        }
+      ],
+      "start": [
+        {
+          "metadataFlag": 6735312034,
+          "hookCell": 6735131216,
+          "singletonContextCell": 6718307888,
+          "eventClassCell": 6718307872,
+          "sendContextCell": 6722527792,
+          "keyWidth": 4,
+          "keyOffset": 1152,
+          "keyArgument": "ECX: exact owned CombineKey DWORD",
+          "payloadArgument": "RDX: unchanged incoming Action",
+          "normalResult": true,
+          "condition": "Initialized metadata, selected IFix receiver or callback slot absent, nonnull coherent PredefinedEventKeys singleton and ordinary class-init/SendGlobal effects; canonical reference sharing and matching current MethodInfo required. No runtime event identity/delivery/phase execution proved.",
+          "typedUsages": {
+            "singletonContextCell": {
+              "instructionRva": 160283629,
+              "instructionHex": "488B0D3C82E306",
+              "usageCellRva": 275856944,
+              "usageRawHex": "FDC212C000000000",
+              "tag": 6,
+              "methodSpecIndex": 614782,
+              "methodSpec": [
+                355287,
+                28645,
+                -1
+              ],
+              "typeName": "Beyond.Singleton`1",
+              "methodName": "get_instance",
+              "classArguments": [
+                "Beyond.PredefinedEventKeys"
+              ],
+              "methodArguments": []
+            },
+            "eventClassCell": {
+              "instructionRva": 160283652,
+              "instructionHex": "488B0D1582E306",
+              "usageCellRva": 275856928,
+              "usageRawHex": "B76D032000000000",
+              "tag": 1,
+              "typeIndex": 112347,
+              "typeName": "Beyond.EventManager",
+              "typeRawHex": "6BE90000000000000000120000000000"
+            },
+            "sendContextCell": {
+              "instructionRva": 160283670,
+              "instructionHex": "4C8B0513E62307",
+              "usageCellRva": 280076848,
+              "usageRawHex": "290513C000000000",
+              "tag": 6,
+              "methodSpecIndex": 623252,
+              "methodSpec": [
+                354209,
+                -1,
+                780
+              ],
+              "typeName": "Beyond.EventManager",
+              "methodName": "SendGlobal",
+              "classArguments": [],
+              "methodArguments": [
+                "System.Action"
+              ]
+            }
+          }
+        },
+        {
+          "metadataFlag": 6735312034,
+          "hookCell": 6735131216,
+          "singletonContextCell": 6718307888,
+          "eventClassCell": 6718307872,
+          "sendContextCell": 6722527792,
+          "keyWidth": 4,
+          "keyOffset": 1152,
+          "keyArgument": "ECX: exact owned CombineKey DWORD",
+          "payloadArgument": "RDX: unchanged incoming Action",
+          "normalResult": true,
+          "condition": "Initialized metadata, selected IFix receiver or callback slot absent, nonnull coherent PredefinedEventKeys singleton and ordinary class-init/SendGlobal effects; canonical reference sharing and matching current MethodInfo required. No runtime event identity/delivery/phase execution proved.",
+          "typedUsages": {
+            "singletonContextCell": {
+              "instructionRva": 160283629,
+              "instructionHex": "488B0D3C82E306",
+              "usageCellRva": 275856944,
+              "usageRawHex": "FDC212C000000000",
+              "tag": 6,
+              "methodSpecIndex": 614782,
+              "methodSpec": [
+                355287,
+                28645,
+                -1
+              ],
+              "typeName": "Beyond.Singleton`1",
+              "methodName": "get_instance",
+              "classArguments": [
+                "Beyond.PredefinedEventKeys"
+              ],
+              "methodArguments": []
+            },
+            "eventClassCell": {
+              "instructionRva": 160283652,
+              "instructionHex": "488B0D1582E306",
+              "usageCellRva": 275856928,
+              "usageRawHex": "B76D032000000000",
+              "tag": 1,
+              "typeIndex": 112347,
+              "typeName": "Beyond.EventManager",
+              "typeRawHex": "6BE90000000000000000120000000000"
+            },
+            "sendContextCell": {
+              "instructionRva": 160283670,
+              "instructionHex": "4C8B0513E62307",
+              "usageCellRva": 280076848,
+              "usageRawHex": "290513C000000000",
+              "tag": 6,
+              "methodSpecIndex": 623252,
+              "methodSpec": [
+                354209,
+                -1,
+                780
+              ],
+              "typeName": "Beyond.EventManager",
+              "methodName": "SendGlobal",
+              "classArguments": [],
+              "methodArguments": [
+                "System.Action"
+              ]
+            }
+          }
+        }
+      ],
+      "singleton": {
+        "result": "same nonnull reference from coherent generic class static slot zero",
+        "condition": "Selected initialized generic context, ordinary context/index helpers and stable nonnull static singleton; creation branch excluded."
+      },
+      "keys": {
+        "metadataFlag": 6735141866,
+        "fields": [
+          {
+            "name": "GENDER_SELECT_START",
+            "offset": 1152,
+            "contextCell": 6717565480,
+            "literalCell": 6717558096
+          }
+        ],
+        "baseContextCell": 6717564656,
+        "condition": "Initialized metadata and valid incoming object; typed GetKey helper returns its normal CombineKey DWORD, Win64 nonvolatile/disjoint object assumptions. Construction/registry execution and coherent Lua/native key identity remain conditional."
+      },
+      "keyTail": {
+        "contextCell": 6717565480,
+        "target": 6547422736,
+        "typedContext": {
+          "instructionRva": 7281972,
+          "instructionHex": "488B15EDCCF60F",
+          "usageCellRva": 275114536,
+          "usageRawHex": "B31312C000000000",
+          "tag": 6,
+          "methodSpecIndex": 592345,
+          "methodSpec": [
+            354048,
+            913,
+            -1
+          ],
+          "typeName": "Beyond.KeyGenerator`1",
+          "methodName": "GetKey",
+          "classArguments": [
+            "string"
+          ],
+          "methodArguments": []
+        },
+        "closedObservation": [],
+        "canonicalObservation": [
+          {
+            "pointer": 6547422736,
+            "methodSpecIndex": 216400,
+            "registration": {
+              "tableIndex": 204656,
+              "va": 6696236544,
+              "methodSpecIndex": 216400,
+              "rawHex": "504D0300321E0300A58D0100FFFFFFFF",
+              "indices": [
+                204338,
+                101797,
+                -1
+              ]
+            },
+            "classInstantiation": {
+              "index": 76,
+              "table_slot_va": 6679682464,
+              "record_va": 6678917600,
+              "argument_vector_va": 6727177032,
+              "padding_hex": "00000000",
+              "arguments": [
+                {
+                  "index": 0,
+                  "type_pointer_va": 6718844272,
+                  "raw_type_record_hex": "B90801000000000000001C0000000000"
+                }
+              ]
+            },
+            "methodInstantiation": {
+              "index": -1,
+              "table_slot_va": null,
+              "record_va": null,
+              "argument_vector_va": null,
+              "padding_hex": "",
+              "arguments": []
+            },
+            "methodDefinitionIndices": [
+              354048
+            ],
+            "uniqueMethodDefinitionForPointer": true,
+            "runtimeSelectionObserved": false,
+            "boundary": "Matching registration rows and physical pointers only; folded aliases, null pointers and duplicate rows remain explicit. No unique body identity, runtime context selection or callee effects follow."
+          }
+        ],
+        "condition": "Exact closed string MethodInfo tail-calls current canonical object GetKey; compatible reference sharing and actual context binding required, no closed AOT registration invented."
+      },
+      "callback": {
+        "methodIndex": 39311,
+        "owner": "Beyond.Gameplay.Actions.StartGenderSelect",
+        "method": "OnCutscenePlayEnd"
+      },
+      "keyField": {
+        "name": "GENDER_SELECT_START",
+        "type": "Beyond.CombineKey",
+        "offset": 1152
+      },
+      "closedSendObservation": [],
+      "canonicalSendObservation": [
+        {
+          "pointer": 6530677712,
+          "methodSpecIndex": 529314,
+          "registration": {
+            "tableIndex": 500427,
+            "va": 6700968880,
+            "methodSpecIndex": 529314,
+            "rawHex": "A213080026A10700617F0100FFFFFFFF",
+            "indices": [
+              500006,
+              98145,
+              -1
+            ]
+          },
+          "classInstantiation": {
+            "index": -1,
+            "table_slot_va": null,
+            "record_va": null,
+            "argument_vector_va": null,
+            "padding_hex": "",
+            "arguments": []
+          },
+          "methodInstantiation": {
+            "index": 76,
+            "table_slot_va": 6679682464,
+            "record_va": 6678917600,
+            "argument_vector_va": 6727177032,
+            "padding_hex": "00000000",
+            "arguments": [
+              {
+                "index": 0,
+                "type_pointer_va": 6718844272,
+                "raw_type_record_hex": "B90801000000000000001C0000000000"
+              }
+            ]
+          },
+          "methodDefinitionIndices": [
+            354209
+          ],
+          "uniqueMethodDefinitionForPointer": true,
+          "runtimeSelectionObserved": false,
+          "boundary": "Matching registration rows and physical pointers only; folded aliases, null pointers and duplicate rows remain explicit. No unique body identity, runtime context selection or callee effects follow."
+        }
+      ],
+      "keyAbi": {
+        "type": "Beyond.CombineKey",
+        "field": [
+          "Beyond.CombineKey",
+          "int",
+          16
+        ],
+        "boxedBytes": 20,
+        "nativeBytes": 4
+      },
+      "singletonRegistration": {
+        "closed": [],
+        "canonical": [
+          {
+            "pointer": 6526336720,
+            "methodSpecIndex": 387013,
+            "registration": {
+              "tableIndex": 364129,
+              "va": 6698788112,
+              "methodSpecIndex": 387013,
+              "rawHex": "C5E70500D88C0500B89A0100FFFFFFFF",
+              "indices": [
+                363736,
+                105144,
+                -1
+              ]
+            },
+            "classInstantiation": {
+              "index": 76,
+              "table_slot_va": 6679682464,
+              "record_va": 6678917600,
+              "argument_vector_va": 6727177032,
+              "padding_hex": "00000000",
+              "arguments": [
+                {
+                  "index": 0,
+                  "type_pointer_va": 6718844272,
+                  "raw_type_record_hex": "B90801000000000000001C0000000000"
+                }
+              ]
+            },
+            "methodInstantiation": {
+              "index": -1,
+              "table_slot_va": null,
+              "record_va": null,
+              "argument_vector_va": null,
+              "padding_hex": "",
+              "arguments": []
+            },
+            "methodDefinitionIndices": [
+              355287
+            ],
+            "uniqueMethodDefinitionForPointer": true,
+            "runtimeSelectionObserved": false,
+            "boundary": "Matching registration rows and physical pointers only; folded aliases, null pointers and duplicate rows remain explicit. No unique body identity, runtime context selection or callee effects follow."
+          }
+        ],
+        "condition": "Exact closed PredefinedEventKeys MethodInfo calls current canonical reference singleton body under compatible reference sharing, coherent initialized context/static storage; no closed AOT entry invented."
+      },
+      "keyContext": {
+        "instructionRva": 106543769,
+        "instructionHex": "488B15882F0C0A",
+        "usageCellRva": 275114536,
+        "usageRawHex": "B31312C000000000",
+        "tag": 6,
+        "methodSpecIndex": 592345,
+        "methodSpec": [
+          354048,
+          913,
+          -1
+        ],
+        "typeName": "Beyond.KeyGenerator`1",
+        "methodName": "GetKey",
+        "classArguments": [
+          "string"
+        ],
+        "methodArguments": []
+      }
+    },
+    "owned": [
+      {
+        "entryRva": 160821004,
+        "windows": [
+          {
+            "startRva": 160821004,
+            "endRva": 160821223,
+            "sha256": "35BB4E30521883797DD592BAF78118431B03C67BCC9F3CF288143A2DD2315D12"
+          }
+        ],
+        "names": [
+          {
+            "methodIndex": 39310,
+            "type": "Beyond.Gameplay.Actions.StartGenderSelect",
+            "method": "Execute",
+            "token": "0x0600998f",
+            "returnTypeName": "System.Void"
+          }
+        ]
+      },
+      {
+        "entryRva": 160283516,
+        "windows": [
+          {
+            "startRva": 160283516,
+            "endRva": 160283700,
+            "sha256": "4CFCB0BC0F4B8B9C363316B483118AB18F39D296F4D170E6E0BF44348BF569D3"
+          }
+        ],
+        "names": [
+          {
+            "methodIndex": 36305,
+            "type": "Beyond.Gameplay.Actions.GameAction",
+            "method": "StartGenderSelect",
+            "token": "0x06008dd2",
+            "returnTypeName": "System.Boolean"
+          }
+        ]
+      },
+      {
+        "entryRva": 83885776,
+        "windows": [
+          {
+            "startRva": 83885776,
+            "endRva": 83885887,
+            "sha256": "625C81FDF3F342D6D9DE8924A7C605D74360917E9A83C41F2CFEBD9A6AED6507"
+          }
+        ],
+        "names": [
+          {
+            "methodIndex": 355287,
+            "type": "Beyond.Singleton`1",
+            "method": "get_instance",
+            "token": "0x06000608",
+            "returnTypeName": "<type-index:5163>",
+            "genericInstantiation": true,
+            "genericMethodPointerSlot": 363736,
+            "methodSpecIndex": 387013,
+            "classInstantiation": {
+              "genericInstIndex": 76,
+              "arguments": [
+                {
+                  "typePointerVa": "0x190796d70",
+                  "typeIndex": 128669,
+                  "typeName": "System.Object",
+                  "status": "decoded"
+                }
+              ],
+              "argumentCount": 1,
+              "status": "decoded"
+            },
+            "methodInstantiation": {
+              "genericInstIndex": -1,
+              "arguments": [],
+              "status": "notPresent"
+            }
+          }
+        ]
+      },
+      {
+        "entryRva": 106527408,
+        "windows": [
+          {
+            "startRva": 106527408,
+            "endRva": 106577680,
+            "sha256": "C4D52D4E181899D54185EFCDA926FE0B29CC365FBB27A6191CA152A48C3FB4D6"
+          }
+        ],
+        "names": [
+          {
+            "methodIndex": 354232,
+            "type": "Beyond.PredefinedEventKeys",
+            "method": ".ctor",
+            "token": "0x060001e9",
+            "returnTypeName": "System.Void"
+          }
+        ]
+      },
+      {
+        "entryRva": 104971792,
+        "windows": [
+          {
+            "startRva": 104971792,
+            "endRva": 104971868,
+            "sha256": "754F4CCBC37BDEEA5DDD5B014150F05B523A962DDED2BA94AB6F5B07FE3623DD"
+          }
+        ],
+        "names": [
+          {
+            "methodIndex": 354048,
+            "type": "Beyond.KeyGenerator`1",
+            "method": "GetKey",
+            "token": "0x06000131",
+            "returnTypeName": "Beyond.CombineKey",
+            "genericInstantiation": true,
+            "genericMethodPointerSlot": 204338,
+            "methodSpecIndex": 216400,
+            "classInstantiation": {
+              "genericInstIndex": 76,
+              "arguments": [
+                {
+                  "typePointerVa": "0x190796d70",
+                  "typeIndex": 128669,
+                  "typeName": "System.Object",
+                  "status": "decoded"
+                }
+              ],
+              "argumentCount": 1,
+              "status": "decoded"
+            },
+            "methodInstantiation": {
+              "genericInstIndex": -1,
+              "arguments": [],
+              "status": "notPresent"
+            }
+          }
+        ]
+      }
+    ],
+    "runtimeCaseResolution": "unresolved",
+    "evidenceBoundary": "conditional"
   },
-  "luaMessage": "GENDER_SELECT_START",
-  "storyKey": "cutscene_e0m0_1",
-  "suppliesMissionOrQuestOwnership": false,
-  "conditionalPlayback": true
- },
- "boundary": "The reviewed current-build resolver preserves the original cutscene spelling through StringPathHash and therefore remains case-sensitive at runtime. The recovery association policy intentionally admits the unique ASCII-case-insensitive Story key as playback evidence only; this contract supplies no mission ownership, order, or spatial evidence."
+  "luaSources": [
+    {
+      "sourceFile": "game/Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
+      "length": 14590,
+      "sha256": "A56B82797427F179D4F21E6C28989BE8AB8CCFAEDAC1B06D2BD5D286E243E368"
+    },
+    {
+      "sourceFile": "game/Lua/Data/LuaScripts/Const/MessageConst.lua",
+      "length": 66769,
+      "sha256": "9282D9E1997DA59C3F6093CBDE7A0D30E4B34E1B7BFE5564B5804F66D19DABFF"
+    }
+  ],
+  "installedLuaInputs": [
+    {
+      "path": "StreamingAssets/VFS/19E3AE45/19E3AE45.blc",
+      "length": 200383,
+      "sha256": "AC904036B62DEE84C299D8133114527DE16514B98729DA1494F363C64F497376"
+    },
+    {
+      "path": "Persistent/VFS/19E3AE45/19E3AE45.blc",
+      "length": 200508,
+      "sha256": "736A5F9AB8B0C13DEED856C77B279907B1DA1F2B21DC96F1E95468EC03334929"
+    },
+    {
+      "path": "Persistent/VFS/19E3AE45/BFB3E735F8630184D341C8C0E584C363.chk",
+      "length": 24242558,
+      "sha256": "0F06760296674EC121980AF7FC1D5808AC2CD4246072C4165BA4AAE25F516D73"
+    }
+  ],
+  "installedLuaSelection": [
+    {
+      "path": "Persistent/VFS/19E3AE45/BFB3E735F8630184D341C8C0E584C363.chk",
+      "exists": true
+    },
+    {
+      "path": "StreamingAssets/VFS/19E3AE45/BFB3E735F8630184D341C8C0E584C363.chk",
+      "exists": false
+    }
+  ],
+  "luaPlayback": {
+    "module": "Phase/GenderSelect/PhaseGenderSelect.lua",
+    "sourceSha256": "A56B82797427F179D4F21E6C28989BE8AB8CCFAEDAC1B06D2BD5D286E243E368",
+    "line": 75,
+    "method": "PlayCutsceneAndGetHandle",
+    "resolvedLiteral": "Cutscene_e0m0_1",
+    "canonicalStoryKey": "cutscene_e0m0_1",
+    "registryStatus": "case_mismatch_registry_match"
+  },
+  "recoveryAssociationPolicy": {
+    "comparison": "ascii_case_insensitive",
+    "requiresUniqueCanonicalStoryKey": true,
+    "literalAssociatesToCanonicalKey": true,
+    "graphAction": "associate_casefolded_playback_reference",
+    "suppliesMissionOrQuestOwnership": false,
+    "suppliesSpatialEvidence": false
+  },
+  "conclusion": {
+    "runtimeCaseResolution": "unresolved",
+    "literalResolvesToCanonicalKey": null
+  },
+  "genderSelectBridge": {
+    "status": "conditional",
+    "actionType": "Beyond.Gameplay.Actions.StartGenderSelect",
+    "storyKey": "cutscene_e0m0_1",
+    "conditionalPlayback": true,
+    "suppliesMissionOrQuestOwnership": false,
+    "levelScript": {
+      "levelId": "indie_dg002",
+      "scriptId": 8700020000,
+      "headerLocalId": 12,
+      "triggerSlotId": 80001,
+      "switchLocalId": 13,
+      "switchCase": 0,
+      "actionLocalId": 16,
+      "actionName": "StartGenderSelect",
+      "sourceFile": "game/Json/LevelScriptData/indie_dg002/8700020000.json",
+      "sourceSha256": "6A2C7FD296B7E90CF282F00169F8272A2C884F265E734AECE2147ED3601C4203"
+    }
+  },
+  "evidenceBoundary": {
+    "native": "Conditional selected initialized original bodies with absent IFix receiver/callback slot; full owned windows and typed current generic contexts, normal helper effects and compatible reference sharing required.",
+    "lua": "Exact installed wrappers and maintained decoder/normalizer join to exported source. s_messages/handler/firstActive call are static source associations; coherent native/Lua event registration, runtime delivery, phase activation and playback are unobserved.",
+    "runtimeCaseResolution": "Unresolved; absence of ToLower calls does not establish case-sensitive lookup.",
+    "storedOwner": "Separate current full owner EOF and typed header/switch/action/trigger join required before spatial admission."
+  }
 }

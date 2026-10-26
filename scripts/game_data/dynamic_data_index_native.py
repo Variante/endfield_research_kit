@@ -110,6 +110,12 @@ def _builder_layout(raw: bytes) -> tuple[int, int, dict[str, int]]:
 
 
 def _getter_offset(raw: bytes, name: str) -> int:
+    if raw.count(b"\x48\x63\x31") == 1:  # movsxd rsi,[rcx]: inlined struct span read
+        bounds = _unique_pattern(raw, b"\x8d\x6e", f"DataIndex.get_{name} bounds offset")  # lea ebp,[rsi+offset]
+        read = _unique_pattern(raw, b"\x8b\x5c\x1e", f"DataIndex.get_{name} read offset")  # mov ebx,[rsi+offset+rbx]
+        if read + 3 >= len(raw) or raw[bounds + 2] != raw[read + 3]:
+            raise DynamicDataIndexError(f"DataIndex.get_{name} bounds and read offsets differ")
+        return raw[read + 3]
     pattern = b"\x8d\x53" if name == "Grid" else b"\x8d\x7e"
     position = _unique_pattern(raw, pattern, f"DataIndex.get_{name} offset")
     if position + len(pattern) >= len(raw):

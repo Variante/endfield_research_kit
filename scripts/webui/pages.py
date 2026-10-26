@@ -176,7 +176,7 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
             module("scripts.webui.story.build", "--languages", "CN", "--default-language", "CN"),
         ),
         reads=STORY_TEXT,
-        uses=of(("video", "audit-video")),
+        uses=of(("video", "audit-video", "lua")),
         # The setup path exports only the Story-named MonoBehaviours.
         accepts_partial=frozenset({"MonoBehaviour"}),
     ))
@@ -447,10 +447,13 @@ def plan_build(pages: tuple[str, ...], options: BuildOptions) -> BuildPlan:
     for page in pages:
         served = served | PAGES[page].serves
     # What tasks use but nothing in this run extracts is taken as published.
+    # A selected page's served outputs are extracted by this run too, so a use
+    # they cover is checked like any other present input, never reused.
+    extracted = inputs | served
     reused = frozenset({
-        *(f"structured/{block}" for block in used.structured_blocks if block not in inputs.structured),
+        *(f"structured/{block}" for block in used.structured_blocks if block not in extracted.structured),
         *(f"unity/{name}" for name in used.json_types | used.convert_types
-          if name not in inputs.json_types | inputs.convert_types),
+          if name not in extracted.json_types | extracted.convert_types),
     })
     checked = inputs | used
 

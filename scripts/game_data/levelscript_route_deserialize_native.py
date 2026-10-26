@@ -161,7 +161,8 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
                 for member in members] != [[item["name"], item["declaredType"], item["declaringWrapper"], item["setterMethodIndex"]]
                                           for item in row["readOrder"]]):
         raise ValueError(f"levelscriptRouteDeserialize.native:wrapper-members={key}")
-    aliases = {'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.CameraControlState>': 'Param<CameraControlState>',
+    aliases = {'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.CameraControllerBase>': 'Param<CameraControllerBase>',
+'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.CameraControlState>': 'Param<CameraControlState>',
 'Beyond.Gameplay.Actions.Param`1<Beyond.CameraBlendCurveKey>': 'Param<CameraBlendCurveKey>',
 'Beyond.Gameplay.Actions.Param`1<Cinemachine.CinemachineBlendDefinition+Style>': 'Param<CinemachineBlendDefinition.Style>',
 'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.View.CameraControlState>': 'ParamOutput<CameraControlState>',

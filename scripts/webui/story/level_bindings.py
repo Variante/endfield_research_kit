@@ -9,14 +9,16 @@ import struct
 from collections import Counter, defaultdict
 from functools import lru_cache, partial
 from pathlib import Path
-from scripts.game_data.string_pool import export_string_pool
-from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs
+from scripts.game_data.string_pool import StringPool, export_string_pool
+from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs, snapshot_complete_reader_inputs
 from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
 from scripts.common import (
     EXPORT_ROOT,
     ROOT,
     read_bytes_cached,
+    check_installed_native_inputs,
+    resolve_installed_native_inputs,
     read_json_cached,
     rel_path as repo_rel,
     unique_preserve as _unique_preserve,
@@ -74,9 +76,6 @@ from scripts.game_data.levelscript_binary import (
     _extract_levelscript_plain_ascii_strings,
     _extract_levelscript_tagged_ascii_strings,
 )
-from scripts.game_data.callserver_callback_native import (
-    load_callserver_callback_contract,
-)
 from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.action_entity_fields_native import (
     NATIVE_MAPPING_ID as ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID,
@@ -94,6 +93,7 @@ from scripts.game_data.entityptr_property_initialization_native import (
     NATIVE_MAPPING_ID as ENTITYPTR_PROPERTY_INITIALIZATION_NATIVE_MAPPING_ID,
     load_entityptr_property_initialization_contract,
 )
+from scripts.game_data.spawnerptr_getter_native import load_spawnerptr_getter_contract
 from scripts.game_data.entityptr_getter_native import (
     NATIVE_MAPPING_ID as ENTITYPTR_GETTER_NATIVE_MAPPING_ID,
     load_entityptr_getter_contract,
@@ -111,7 +111,6 @@ from scripts.game_data.codecs.leveldata.memorypack import (
 )
 from scripts.game_data.codecs.leveldata.radio_contexts import (
     parse_airwall_groups,
-    parse_function_area_radio_trigger,
 )
 from scripts.game_data.codecs.leveldata import interactive_layout
 from scripts.game_data.codecs.leveldata.levelscript_brief import (
@@ -122,6 +121,10 @@ from scripts.game_data.codecs.leveldata.levelscript_brief import (
 from scripts.game_data.codecs.levelscript.interactives import (
     LevelInteractiveCodecError,
     decode_progress_lock_condition,
+)
+from scripts.game_data.codecs.levelscript.param_graph import (
+    ParamGraphDecodeError,
+    decode_param_key_value_list,
 )
 from scripts.game_data.codecs.levelscript.params import (
     decode_bool_param,
@@ -712,7 +715,6 @@ ACTIONBASE_FORMATTER_ACTION_NAMES, ACTIONBASE_FORMATTER_NAME_AUDIT = (
     union_tags.formatter_name_table("ActionBase")
 )
 
-CALLSERVER_CALLBACK_CONTRACT_AUDIT = load_callserver_callback_contract()
 
 
 def levelscript_native_action_name_from_pair(pair: tuple[int, int]) -> str:
@@ -1544,6 +1546,8 @@ def _prepare_levelscript_native_control_context(
     data: bytes,
     records: list[dict],
     membership: dict[int, str],
+    *,
+    spawner_getter: tuple[dict, dict] | None = None,
 ) -> dict:
     """Prepare immutable per-file facts reused by every Story action lookup."""
     ordered = sorted(records or [], key=lambda row: int(row.get("start") or 0))
@@ -1675,6 +1679,7 @@ def _prepare_levelscript_native_control_context(
         "runtimeHeaderSlotMappingId": LEVELSCRIPT_NATIVE_HEADER_SLOT_MAPPING_ID,
         "decodedByStart": decoded_cache,
         "nextStarts": next_starts,
+        "spawnerGetter": spawner_getter,
     }
 
 
@@ -1756,16 +1761,14 @@ def _levelscript_native_callserver_callback_successors(
     records_by_uid: dict[str, list[dict]],
     membership: dict[int, str],
     decode_record,
+    native_audit: dict | None = None,
 ) -> list[tuple[str, int]]:
-    """Resolve binary-proven CallServer output UIDs to callback actions.
+    """Continue only under a separately proved current compiled UID consumer.
 
-    ``CallServer.Execute`` passes ``_callClientOutputUIDs`` to
-    ``ActionBase.SetResultWaitForPossibleSubExecutor``. Each admitted value
-    must therefore resolve to one exact ``ScriptEvent_OnCustomEvent`` header
-    whose event key is the same hash and whose typed header successor selects
-    the callback action. Missing or ambiguous UIDs fail closed.
+    Current Execute's direct list copy does not establish UID/header dispatch.
+    Ordinary typed action edges remain independent of this native join.
     """
-    if CALLSERVER_CALLBACK_CONTRACT_AUDIT.get("status") != "validated":
+    if (native_audit or {}).get("status") != "validated" or (native_audit or {}).get("callbackContinuationProved") is not True:
         return []
     if levelscript_record_semantic_key(record) != union_tags.action("CallServer"):
         return []
@@ -1911,46 +1914,9 @@ def _levelscript_native_control_paths_to_record(
                 return detail_kind, detail
         return "", {}
 
-    def resolve_spawner_filter_getter(event_detail: dict) -> dict:
-        """Resolve only the pinned constant SpawnerPtrGetter operand."""
-        if not isinstance(event_detail, dict):
-            return {}
-        result = copy.deepcopy(event_detail)
-        parameter = result.get("spawnerFilterParam") or {}
-        getter_local_id = parameter.get("idRef")
-        if not isinstance(getter_local_id, int) or getter_local_id < 0:
-            return result
-        getter_record = getter_by_local.get(getter_local_id)
-        if not isinstance(getter_record, dict):
-            result["spawnerFilterResolution"] = {
-                "status": "unresolved_getter_ref",
-                "getterLocalId": getter_local_id,
-            }
-            return result
-        getter_value = (decoded(getter_record).get("spawnerPtrGetter") or {})
-        evidence = {
-            "getterLocalId": getter_local_id,
-            "getterUnionTag": getter_record.get("unionTag"),
-            "getterSerializedMemberCount": getter_record.get("serializedMemberCount"),
-            "bindingKind": getter_value.get("bindingKind"),
-            "nativeMappingId": getter_value.get("nativeMappingId"),
-            "getterValue": getter_value,
-        }
-        if (
-            getter_record.get("unionTag") == 420
-            and getter_record.get("serializedMemberCount") == 8
-            and getter_value.get("bindingKind") == "constant"
-            and isinstance(getter_value.get("spawnerId"), int)
-            and getter_value["spawnerId"] > 0
-        ):
-            result["spawnerFilterId"] = getter_value["spawnerId"]
-            evidence["status"] = "exact_constant_spawnerptr_getter"
-        elif getter_value.get("bindingKind") == "source200_property":
-            evidence["status"] = "validated_source200_spawnerptr_nonfinal"
-        else:
-            evidence["status"] = "runtime_getter_unresolved"
-        result["spawnerFilterResolution"] = evidence
-        return result
+    resolve_spawner_filter_getter = partial(
+        _resolve_spawner_filter_getter, getter_by_local=getter_by_local, spawner_getter=context.get("spawnerGetter"),
+    )
 
     def compact_step(record: dict, edge: str) -> dict:
         # Everything below the ``edge`` key is a pure function of the physical
@@ -2118,16 +2084,13 @@ def _levelscript_native_control_paths_to_record(
                     if pair == union_tags.action("CallServer")
                     else None
                 ),
-                "callServerCallbackMappingId": (
-                    "gameassembly-2026-08-03-callserver-callback-header-uids-v1"
-                    if pair == union_tags.action("CallServer")
-                    and isinstance(
-                        (detail.get("callServer") or {}).get(
-                            "callClientOutputUIDs"
-                        ),
-                        list,
-                    )
-                    else None
+                "callServerCallbackNativeStatus": (
+                    "pending_current_wait_list_header_consumer"
+                    if pair == union_tags.action("CallServer") else None
+                ),
+                "callServerCallbackDiagnostic": (
+                    "Current stored output list and direct wait-field copy do not prove ActionExecutor UID/header lookup or OnCustomEvent continuation."
+                    if pair == union_tags.action("CallServer") else None
                 ),
                 "branchPredicate": predicate,
                 "equivalentRecordOffsets": equivalent_record_offsets.get(
@@ -3454,7 +3417,7 @@ def _load_levelscript_binding_data(
     return out
 
 
-def build_levelscript_action_story_occurrences(
+def _build_non_fmv_levelscript_action_story_occurrences(
     level_script_root: Path | None = None,
 ) -> dict[str, list[dict]]:
     """Return exact tagged Story ids in decoded LevelScript actionList rows."""
@@ -3561,50 +3524,7 @@ def build_levelscript_action_story_occurrences(
                         offset = hit.get("offset") if isinstance(hit, dict) else None
                         if isinstance(offset, int) and offset not in story_hits[story_key]:
                             story_hits[story_key].append(offset)
-                fmv_action: dict = {}
-                fmv_story_key = ""
-                fmv_field_offset = None
-                if record_class == "play_fmv":
-                    fmv_action = decode_levelscript_record_payload(
-                        data,
-                        record,
-                        next_start=next_starts.get(record_start),
-                        action_map_role=action_map_role,
-                    ).get("fmvAction") or {}
-                    fmv_id = str(fmv_action.get("fmvId") or "")
-                    if re.fullmatch(r"cs_video_[A-Za-z0-9][A-Za-z0-9_]*", fmv_id):
-                        fmv_story_key = f"cutscene_{fmv_id[len('cs_video_') :]}"
-                        raw_offset = fmv_action.get("fieldOffset")
-                        try:
-                            fmv_field_offset = int(str(raw_offset), 16)
-                        except (TypeError, ValueError):
-                            fmv_field_offset = None
-                        if (
-                            isinstance(fmv_field_offset, int)
-                            and fmv_field_offset not in story_hits[fmv_story_key]
-                        ):
-                            story_hits[fmv_story_key].append(fmv_field_offset)
-                    # FMV rows are playback evidence only when the exact native
-                    # target field decodes. Do not let another incidental
-                    # dlg_/cutscene_ literal in a malformed FMV payload become
-                    # a Story occurrence through the generic string scanner.
-                    if not (
-                        fmv_action
-                        and fmv_story_key
-                        and isinstance(fmv_field_offset, int)
-                    ):
-                        fmv_scan_failures.append({
-                            "gate": "decode_exact_levelscript_fmv_target_field",
-                            "source": source_file,
-                            "sourceSha256": hashlib.sha256(data).hexdigest(),
-                            "recordOffset": record_start,
-                            "localId": record.get("localId"),
-                            "code": f"0x{int(record.get('code') or 0):04x}",
-                            "kind": f"0x{int(record.get('kind') or 0):02x}",
-                            "fmvIdCandidates": fmv_id_candidates,
-                        })
-                        continue
-                    story_hits = {fmv_story_key: [fmv_field_offset]}
+                if record_class == "play_fmv":continue
                 reading_popup_action: dict = {}
                 if record_class == "play_reading_popup":
                     reading_popup_action = (
@@ -3685,12 +3605,6 @@ def build_levelscript_action_story_occurrences(
                             if native_detail.get("radioId") == story_key:
                                 out[story_key][-1]["play3DRadio"] = native_detail
                         if (
-                            record_class == "play_fmv"
-                            and fmv_action
-                            and story_key == fmv_story_key
-                        ):
-                            out[story_key][-1]["fmvAction"] = fmv_action
-                        if (
                             record_class == "play_reading_popup"
                             and reading_popup_action
                             and story_key == reading_popup_action.get("key")
@@ -3744,20 +3658,25 @@ def build_levelscript_action_story_occurrences(
     return result
 
 
+def build_levelscript_action_story_occurrences(level_script_root: Path | None = None, *,game_root=None) -> dict[str,list[dict]]:
+    """Keep generic stored carriers separate from freshly replayed pooled FMV names."""
+    global _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE
+    from scripts.webui.story.video_bindings import current_pooled_levelscript_fmv_sources
+    base=_build_non_fmv_levelscript_action_story_occurrences(level_script_root)
+    pooled,failures=current_pooled_levelscript_fmv_sources(level_script_root or LEVELSCRIPT_DIR,game_root=game_root)
+    result={key:list(rows)for key,rows in base.items()}
+    for key,rows in pooled.items():result.setdefault(key,[]).extend(rows)
+    if level_script_root is None:_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE=[r for r in(_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE or[])if r.get('validator')!='pooledFmvSource']+failures
+    return result
+
+
 def build_levelscript_fmv_playback_scan_failures() -> list[dict]:
-    """Return bounded failures that make an unused-cutscene claim unsafe."""
-    if _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE is None:
-        build_levelscript_action_story_occurrences()
-    failures = [
-        dict(row)
-        for row in (_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE or [])
-    ]
-    from scripts.game_data.codecs.levelscript import fmv
-    gate = fmv.check_fmv_source_native_inputs()
-    if gate.status != 'validated':
-        failures.append({'validator': 'fmvSource', 'gate': 'current_levelscript_fmv_source_native_inputs',
-                         'source': str(fmv.CONTRACTS_DIR / 'levelscript_fmv_video_native.json'),
-                         'expected': 'validated', 'actual': gate.status, 'detail': gate.detail[:240]})
+    """Fresh source/native refusals keep unused-cutscene classification unsafe."""
+    build_levelscript_action_story_occurrences()
+    failures=[dict(row)for row in(_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE or[])]
+    from scripts.game_data.levelscript_fmv_video_native import validate,CONTRACT_PATH
+    gate=validate()
+    if gate['status']!='validated':failures.append(dict(validator='fmvSource',gate='current_levelscript_fmv_source_native_programs',source=str(CONTRACT_PATH),expected='validated',actual=gate['status'],detail=str(gate.get('detail',''))[:500]))
     return failures
 
 
@@ -4723,87 +4642,141 @@ def _parse_levelscript_registered_script_entity_list(
     return candidates[0] if len(candidates) == 1 else []
 
 
-def _build_levelscript_entityptr_output_aliases(
-    data: bytes,
-    records: list[dict],
-    membership: dict[int, str],
-    next_starts: dict[int, int],
-    contracts: dict[tuple[int, int], dict],
-) -> dict[str, dict]:
-    """Decode only build-locked header output aliases from their own record."""
-    aliases: dict[str, dict] = {}
-    for record in records:
-        record_start = int(record.get("start") or 0)
-        if not str(membership.get(record_start) or "").startswith("headerList#"):
+def _typed_levelscript_field(record: dict, name: str, kind: str) -> tuple | None:
+    """Use only an owning typed field and its exact recorded range."""
+    node = record.get("typedNode") or {}
+    fields = node.get("fields") or {}
+    span = (node.get("fieldRanges") or {}).get(name)
+    if (type(record.get("start")) is not int or type(record.get("end")) is not int
+            or (node.get("fieldTypes") or {}).get(name) != kind or name not in fields
+            or not isinstance(span, list) or len(span) != 2
+            or any(type(value) is not int for value in span)
+            or node.get("sourceOffset") != record.get("start")
+            or node.get("endOffset") != record.get("end")
+            or not record["start"] < span[0] < span[1] <= record["end"]):
+        return None
+    return fields[name], span[0], span[1]
+
+
+def _typed_entity_ptr_param(value: object) -> dict | None:
+    if (not isinstance(value, dict) or not isinstance(value.get("value"), dict)
+            or any(type(value.get(key)) is not int for key in ("idRef", "paramSource"))
+            or value.get("path") is not None and not isinstance(value.get("path"), str)):
+        return None
+    pointer = value["value"]
+    if (any(type(pointer.get(key)) is not int for key in ("logicId", "slotId"))
+            or type(pointer.get("useSlotId")) is not bool):
+        return None
+    return {**value, **{key: pointer[key] for key in ("logicId", "slotId", "useSlotId")}}
+
+
+def _typed_action_entity_occurrences(record: dict, contract: dict, action_name: str) -> tuple:
+    fields, occurrences, nulls = [], [], {}
+    if contract.get("actionName") != action_name:
+        return fields, occurrences, nulls
+    for field in contract.get("entityFields") or []:
+        name = str(field.get("fieldName") or "")
+        wire = name.removeprefix("_")
+        decoded = _typed_levelscript_field(record, wire, "Param<EntityPtr>")
+        if decoded is None or field.get("memberOrdinalZeroBased") != list(record["typedNode"]["fields"]).index(wire):
             continue
-        key = levelscript_record_semantic_key(record)
-        contract = contracts.get(key)
+        value, start, end = decoded
+        if value is None:
+            nulls[name] = dict(state="null", startOffset=start, endOffset=end)
+            continue
+        pointer = _typed_entity_ptr_param(value)
+        if pointer is not None:
+            fields.append({**field, "constantPointerOrdinal": len(occurrences)})
+            occurrences.append((start, pointer, end))
+    return fields, occurrences, nulls
+
+
+def _resolve_spawner_filter_getter(
+    event_detail: dict, *, getter_by_local: dict, spawner_getter: tuple[dict, dict] | None = None,
+) -> dict:
+    """Resolve a typed constant under the caller's once-loaded SpawnerPtrGetter gate.
+
+    ``spawner_getter`` is the ``(contract, audit)`` pair the caller loaded with
+    its selected native pair; without it the getter stays unresolved
+    (``native_contract_not_supplied``) instead of re-opening the build here.
+    """
+    if not isinstance(event_detail, dict):
+        return {}
+    result = copy.deepcopy(event_detail)
+    parameter = result.get("spawnerFilter") or {}
+    if not isinstance(parameter, dict):
+        return result
+    local = parameter.get("idRef")
+    if parameter.get("paramSource") != -1 or parameter.get("path") is not None or type(local) is not int or local < 0:
+        return result
+    result.pop("spawnerFilterId", None)
+    record = getter_by_local.get(local)
+    evidence = dict(status="unresolved_getter_ref", getterLocalId=local)
+    if isinstance(record, dict) and spawner_getter is None:
+        evidence["status"] = "native_contract_not_supplied"
+    elif isinstance(record, dict):
+        contract, audit = spawner_getter
+        evidence.update(nativeStatus=audit.get("status"), nativeMappingId=audit.get("nativeMappingId"))
+        if audit.get("status") == "validated" and levelscript_record_semantic_key(record) == (contract.get("unionTag"), contract.get("serializedMemberCount")):
+            field = _typed_levelscript_field(record, contract.get("wireField"), "Param<SpawnerPtr>")
+            param = field[0] if field else None
+            value = param.get("value") if isinstance(param, dict) else None
+            if (isinstance(param, dict) and param.get("paramSource") == 0 and param.get("idRef") == -1
+                    and param.get("path") is None and isinstance(value, dict) and type(value.get("id")) is int and value["id"] > 0):
+                result["spawnerFilterId"] = value["id"]
+                evidence.update(status="exact_constant_spawnerptr_getter", valueRange=list(field[1:]), evidenceBoundary=contract.get("evidenceBoundary"))
+            else:
+                evidence["status"] = "runtime_getter_unresolved"
+    result["spawnerFilterResolution"] = evidence
+    return result
+
+
+def _build_levelscript_entityptr_output_aliases(
+    records: list[dict], membership: dict[int, str], contracts: dict[tuple[int, int], dict],
+) -> dict[str, dict]:
+    """Join named current fields only; identity equality never proves forty-byte equality."""
+    aliases = {}
+    for record in records:
+        start = record.get("start")
+        if not str(membership.get(start) or "").startswith("headerList#"):
+            continue
+        contract = contracts.get(levelscript_record_semantic_key(record))
         if not contract:
             continue
-        payload_start = int(record.get("payloadStart") or 0)
-        record_end = int(next_starts.get(record_start) or len(data))
-        local_id = record.get("localId")
-        output_name = str((contract.get("outputField") or {}).get("fieldName") or "")
-        expected_path = f"${local_id}@{output_name}"
-        outputs: list[tuple[int, dict, int]] = []
-        constants: list[tuple[int, dict, int]] = []
-        for cursor in range(payload_start, record_end):
-            output = decode_param_output(data, cursor)
-            if output is not None and output[1] <= record_end:
-                detail, end = output
-                if detail.get("paramSource") == 0 and detail.get("path") == expected_path:
-                    outputs.append((cursor, detail, end))
-            pointer = decode_constant_entity_ptr_param(data, cursor)
-            if pointer is not None and pointer[1] <= record_end:
-                constants.append((cursor, pointer[0], pointer[1]))
-        if len(outputs) != 1 or len(constants) != 1:
+        output_field = contract.get("outputField") or {}
+        filter_field = contract.get("filterField") or {}
+        output_wire = str(output_field.get("fieldName") or "").removeprefix("_")
+        filter_wire = str(filter_field.get("fieldName") or "").removeprefix("_")
+        wires = list((record.get("typedNode") or {}).get("fields") or [])
+        if (output_wire not in wires or filter_wire not in wires
+                or output_field.get("memberOrdinalZeroBased") != wires.index(output_wire)
+                or filter_field.get("memberOrdinalZeroBased") != wires.index(filter_wire)):
             continue
-        output_start, _output, output_end = outputs[0]
-        constant_start, pointer, constant_end = constants[0]
-        alias_status = contract.get("aliasStatus")
-        serialized_gate = False
-        if key == union_tags.header("LevelEvent_OnSpecificEntityDie"):
-            serialized_gate = output_end == constant_start
-        elif key == union_tags.header("EntityEvent_OnEntityEnterTrigger"):
-            try:
-                bridge = bytes.fromhex(
-                    str((contract.get("guard") or {}).get(
-                        "serializedBytesBetweenFilterAndOutput"
-                    ) or "")
-                )
-            except ValueError:
-                bridge = b""
-            serialized_gate = (
-                bool(bridge)
-                and constant_end + len(bridge) == output_start
-                and data[constant_end:output_start] == bridge
-            )
-        elif alias_status == "validated_non_alias":
-            serialized_gate = output_end == constant_start
-        if not serialized_gate:
+        output = _typed_levelscript_field(record, output_wire, "ParamOutput<EntityPtr>")
+        selected = _typed_levelscript_field(record, filter_wire, "Param<EntityPtr>")
+        expected = f"${record.get('localId')}@{output_field.get('fieldName')}"
+        if (not output or not isinstance(output[0], dict) or type(output[0].get("paramTarget")) is not int or output[0].get("paramTarget") != 0
+                or output[0].get("path") != expected or not selected):
             continue
-        pointer_state, _pointer_dynamic_kind = _entity_ptr_field_state(pointer)
-        aliases[expected_path] = {
-            "status": (
-                (
-                    "exact_constant_filter_alias"
-                    if pointer_state == "constant"
-                    else "validated_dynamic_filter_alias"
-                )
-                if alias_status == "aliases_filter_when_guard_matches"
-                else "validated_non_alias"
-            ),
-            "path": expected_path,
-            "producerHeaderName": contract.get("headerName"),
-            "producerHeaderLocalId": local_id,
-            "producerRecordOffset": record_start,
-            "outputFieldName": output_name,
-            "filterFieldName": (contract.get("filterField") or {}).get("fieldName"),
-            "constantPointer": pointer if alias_status != "validated_non_alias" else None,
-            "constantPointerOffset": constant_start,
-            "constantPointerEndOffset": constant_end,
-            "nativeMappingId": ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID,
-        }
+        pointer = _typed_entity_ptr_param(selected[0])
+        if pointer is None:
+            continue
+        condition = contract.get("constantCondition") or {}
+        is_alias = (contract.get("aliasStatus") == "aliases_filter_when_guard_matches"
+                    and set(condition) == {"useSlotId"} and condition["useSlotId"] is False
+                    and pointer.get("useSlotId") is False and _entity_ptr_field_state(pointer)[0] == "constant")
+        if not is_alias and contract.get("aliasStatus") != "validated_non_alias":
+            continue
+        aliases[expected] = dict(
+            status="exact_constant_filter_alias" if is_alias else "validated_non_alias", path=expected,
+            producerHeaderName=contract.get("headerName"), producerHeaderLocalId=record.get("localId"),
+            producerRecordOffset=start, outputFieldName=output_field.get("fieldName"), filterFieldName=filter_field.get("fieldName"),
+            constantPointer=pointer if is_alias else None, constantPointerOffset=selected[1], constantPointerEndOffset=selected[2],
+            nativeMappingId=ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID, evidenceBoundary="conditional",
+            aliasValueEquality="non_slot_logic_id_identity_only" if is_alias else None,
+            aliasCondition=contract.get("aliasCondition") if is_alias else None,
+            slotPath=copy.deepcopy(contract.get("slotPath")) if is_alias else None,
+        )
     return aliases
 
 
@@ -4959,7 +4932,6 @@ def _classify_levelscript_entityptr_output_reference(
 def _resolve_levelscript_entityptr_getter(
     pointer: dict,
     *,
-    data: bytes,
     prepared: dict,
     contracts: dict[tuple[int, int], dict],
     npc_proxy_briefs: object,
@@ -4986,10 +4958,10 @@ def _resolve_levelscript_entityptr_getter(
         return None, {"status": "unvalidated_getter_shape", "getterLocalId": getter_id,
                       "unionTag": pair[0], "serializedMemberCount": pair[1]}
     start = int(getter.get("start") or 0)
-    payload_start = int(getter.get("payloadStart") or 0)
-    # The typed record retains the exact seven-member GetterBase boundary.
-    member_start = payload_start
-    end = int((prepared.get("nextStarts") or {}).get(start) or len(data))
+    wire = contract.get("wireField")
+    kind = "Param<EntityPtr>" if contract.get("resolutionKind") == "constant_param_alias" else "Param<string>"
+    typed = _typed_levelscript_field(getter, wire, kind)
+    param = typed[0] if typed else None
     evidence = {
         "status": "validated_runtime_dependent",
         "getterLocalId": getter_id,
@@ -5003,17 +4975,17 @@ def _resolve_levelscript_entityptr_getter(
         ).get(getter_id),
     }
     if contract.get("resolutionKind") == "constant_param_alias":
-        decoded = decode_constant_entity_ptr_param(data, member_start)
-        if decoded is None or decoded[1] not in (end, end - 4):
-            return None, {**evidence, "status": "nonconstant_or_unbounded_alias_value"}
-        return decoded[0], {**evidence, "status": "exact_constant_param_alias",
-                            "getterValueOffset": member_start, "getterValueEndOffset": end,
-                            "resolvedValue": decoded[0]}
+        pointer = _typed_entity_ptr_param(param)
+        if pointer is None or _entity_ptr_field_state(pointer)[0] != "constant":
+            return None, {**evidence, "status": "nonconstant_or_unproved_typed_alias_value"}
+        return pointer, {**evidence, "status": "exact_constant_param_alias",
+                         "getterValueOffset": typed[1], "getterValueEndOffset": typed[2],
+                         "evidenceBoundary": contract.get("evidenceBoundary"), "resolvedValue": pointer}
     if contract.get("resolutionKind") == "constant_proxy_id_lookup":
-        decoded = decode_constant_string_param(data, member_start)
-        if decoded is None or decoded[1] not in (end, end - 4):
-            return None, {**evidence, "status": "nonconstant_or_unbounded_proxy_id"}
-        proxy_id = decoded[0]
+        if (not isinstance(param, dict) or param.get("paramSource") != 0 or param.get("idRef") != -1
+                or param.get("path") is not None or not isinstance(param.get("value"), str)):
+            return None, {**evidence, "status": "nonconstant_or_unproved_typed_proxy_id"}
+        proxy_id = param["value"]
         matches = [
             (logic_id, brief) for logic_id, brief in (
                 npc_proxy_briefs.items() if isinstance(npc_proxy_briefs, dict) else []
@@ -5169,16 +5141,30 @@ def build_levelscript_registered_action_target_index(
     """
     if not level_id or not levelscript_root.is_dir():
         return {}
-    field_contracts, field_contract_audit = load_action_entity_field_contract()
-    _slot_contract, slot_contract_audit = load_entityptr_script_slot_contract()
+    selected_ga, selected_md = resolve_installed_native_inputs()
+    selected_pair = dict(gameassembly=selected_ga, metadata=selected_md)
+    selected_native = check_installed_native_inputs(**selected_pair)
+    if selected_native.status != "validated":
+        return {ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY: [{"state": "unresolved", "failedCheck": "selected_native_inputs", "nativeStatus": selected_native.status, "detail": selected_native.detail}]}
+    reader_before = snapshot_complete_reader_inputs()
+    pool_before = snapshot_string_pool_inputs(levelscript_root.parent)
+    def source_inputs():
+        paths = {Path(selected_ga), Path(selected_md), Path(selected_ga).parent / "UnityPlayer.dll", Path(__file__), GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json", NPC_PROXY_TABLE_PATH}
+        for folder in (levelscript_root / level_id, LEVELDATA_DIR / level_id):
+            paths.update(folder.rglob("*.json"))
+        return {str(path): hashlib.sha256(path.read_bytes()).hexdigest().upper() if path.is_file() else None for path in sorted(paths)}
+    sources_before = source_inputs()
+    field_contracts, field_contract_audit = load_action_entity_field_contract(**selected_pair)
+    _slot_contract, slot_contract_audit = load_entityptr_script_slot_contract(**selected_pair)
     output_alias_contracts, output_alias_contract_audit = (
-        load_entityptr_output_alias_contract()
+        load_entityptr_output_alias_contract(**selected_pair)
     )
-    getter_contracts, getter_contract_audit = load_entityptr_getter_contract()
+    getter_contracts, getter_contract_audit = load_entityptr_getter_contract(**selected_pair)
+    spawner_getter = load_spawnerptr_getter_contract(**selected_pair)
     (
         _property_initialization_contract,
         property_initialization_audit,
-    ) = load_entityptr_property_initialization_contract()
+    ) = load_entityptr_property_initialization_contract(**selected_pair)
     slot_contract_valid = slot_contract_audit.get("status") == "validated"
     info = (
         _load_levelscript_binding_data(level_id)
@@ -5262,7 +5248,9 @@ def build_levelscript_registered_action_target_index(
             key=lambda row: int(row.get("start") or 0),
         )
         _action_map, membership = levelscript_action_map_membership(data, records)
-        prepared = _prepare_levelscript_native_control_context(data, records, membership)
+        prepared = _prepare_levelscript_native_control_context(
+            data, records, membership, spawner_getter=spawner_getter,
+        )
         named_entityptr_writer_counts: Counter[str] = Counter()
         for candidate in records:
             candidate_start = int(candidate.get("start") or 0)
@@ -5278,10 +5266,8 @@ def build_levelscript_registered_action_target_index(
                     named_entityptr_writer_counts[property_name] += 1
         next_starts = prepared.get("nextStarts") or {}
         output_aliases = _build_levelscript_entityptr_output_aliases(
-            data,
             records,
             membership,
-            next_starts,
             output_alias_contracts,
         )
         for record in records:
@@ -5298,152 +5284,16 @@ def build_levelscript_registered_action_target_index(
             field_contract = field_contracts.get(pair) or {}
             if field_contract.get("nonEntityContract") is True:
                 continue
-            cursor = payload_start
-            pointer_occurrences: list[tuple[int, dict, int]] = []
-            while True:
-                pointer_offset = data.find(b"\x04\x03", cursor, record_end)
-                if pointer_offset < 0:
-                    break
-                cursor = pointer_offset + 1
-                decoded = decode_constant_entity_ptr_param(data, pointer_offset)
-                if decoded is None or decoded[1] > record_end:
-                    continue
-                pointer, pointer_end = decoded
-                pointer_occurrences.append((pointer_offset, pointer, pointer_end))
             entity_fields = field_contract.get("entityFields") or []
             contracted_entity_fields = entity_fields
-            special_field_states: dict[str, dict] = {}
-            # EntityCastSkill has two contracted EntityPtr members separated
-            # by three typed members.  A nullable target serializes as one FF
-            # byte, so occurrence-count matching cannot see it.  Walk the
-            # intervening formatter members and, only when the walk lands on
-            # that exact null byte, retain the constant `_entity` member while
-            # proving `_targetEntity` is present-but-null rather than missing.
-            if pair == union_tags.action("EntityCastSkill") and len(entity_fields) == 2:
-                entity_value = decode_constant_entity_ptr_param(data, payload_start)
-                if entity_value is not None:
-                    cursor = entity_value[1]
-                    if cursor < record_end and data[cursor] == 0xFF:
-                        cursor += 1
-                    else:
-                        decoded_member = decode_bool_param(data, cursor)
-                        cursor = decoded_member[1] if decoded_member is not None else -1
-                    output_member = decode_param_output(data, cursor) if cursor >= 0 else None
-                    cursor = output_member[1] if output_member is not None else -1
-                    if cursor >= 0 and cursor < record_end and data[cursor] == 0xFF:
-                        cursor += 1
-                    elif cursor >= 0:
-                        string_member = decode_constant_string_param(data, cursor)
-                        cursor = string_member[1] if string_member is not None else -1
-                    if cursor >= 0 and cursor < record_end and data[cursor] == 0xFF:
-                        special_field_states["_targetEntity"] = {
-                            "state": "null",
-                            "startOffset": cursor,
-                            "endOffset": cursor + 1,
-                        }
-                        pointer_occurrences = [(
-                            payload_start,
-                            entity_value[0],
-                            entity_value[1],
-                        )]
-                        entity_fields = [entity_fields[0]]
-            # MemoryPack action records expose the action-specific payload
-            # after the eight inherited ActionBase members.  When the native
-            # contract proves one EntityPtr field at overall ordinal 8, its
-            # value starts exactly at payload_start.  Decode that member
-            # directly so embedded downstream actions sharing this physical
-            # record cannot contribute stray 04/03 byte patterns.
-            direct_first_field = (
-                len(entity_fields) == 1
-                and entity_fields[0].get("memberOrdinalZeroBased") == 8
-            )
-            if direct_first_field:
-                decoded = decode_constant_entity_ptr_param(data, payload_start)
-                pointer_occurrences = (
-                    [(payload_start, decoded[0], decoded[1])]
-                    if decoded is not None and decoded[1] <= record_end
-                    else []
-                )
-            resolved_fields = (
-                entity_fields
-                if len(pointer_occurrences) == len(entity_fields)
-                and str(field_contract.get("actionName") or "") == action_name
-                else []
-            )
-            layout_states: list[dict] | None = None
-            if not resolved_fields and entity_fields:
-                fields_by_name = {
-                    str(field.get("fieldName") or ""): field
-                    for field in entity_fields
-                    if isinstance(field, dict) and field.get("fieldName")
-                }
-                for layout in field_contract.get("serializedRecordLayouts") or []:
-                    if (
-                        not isinstance(layout, dict)
-                        or layout.get("sourceFile") != source_file
-                        or layout.get("recordOffset") != record_start
-                        or hashlib.sha256(data).hexdigest().upper()
-                        != layout.get("sourceSha256")
-                    ):
-                        continue
-                    layout_fields: list[dict] = []
-                    layout_occurrences: list[tuple[int, dict, int]] = []
-                    valid_layout = True
-                    for state in layout.get("fieldStates") or []:
-                        field = fields_by_name.get(str(state.get("fieldName") or ""))
-                        start = state.get("startOffset")
-                        end = state.get("endOffset")
-                        if (
-                            not field
-                            or not isinstance(start, int)
-                            or not isinstance(end, int)
-                            or not (record_start <= start < end <= record_end)
-                        ):
-                            valid_layout = False
-                            break
-                        if state.get("state") == "null":
-                            try:
-                                expected = bytes.fromhex(str(state.get("serializedHex") or ""))
-                            except ValueError:
-                                valid_layout = False
-                                break
-                            if data[start:end] != expected:
-                                valid_layout = False
-                                break
-                        elif state.get("state") == "constant":
-                            matches = [
-                                occurrence for occurrence in pointer_occurrences
-                                if occurrence[0] == start and occurrence[2] == end
-                            ]
-                            if len(matches) != 1:
-                                valid_layout = False
-                                break
-                            layout_fields.append({
-                                **field,
-                                "constantPointerOrdinal": len(layout_occurrences),
-                            })
-                            layout_occurrences.append(matches[0])
-                        else:
-                            valid_layout = False
-                            break
-                    if valid_layout:
-                        resolved_fields = layout_fields
-                        pointer_occurrences = layout_occurrences
-                        layout_states = [dict(state) for state in layout.get("fieldStates") or []]
-                        break
+            resolved_fields, pointer_occurrences, layout_by_field = _typed_action_entity_occurrences(record, field_contract, action_name)
             diagnostic_occurrences = {
                 field.get("fieldName"): occurrence
                 for field, occurrence in zip(resolved_fields, pointer_occurrences)
             }
-            layout_by_field = {
-                str(state.get("fieldName") or ""): state
-                for state in (layout_states or [])
-            }
-            layout_by_field.update(special_field_states)
             getter_resolutions = {
                 occurrence[0]: _resolve_levelscript_entityptr_getter(
                     occurrence[1],
-                    data=data,
                     prepared=prepared,
                     contracts=getter_contracts,
                     npc_proxy_briefs=npc_proxy_briefs,
@@ -5757,7 +5607,7 @@ def build_levelscript_registered_action_target_index(
                         else (
                             "exact_getter_to_static_entity"
                             if getter_resolution_evidence
-                            else "exact_constant_param_bytes_in_validated_action_record"
+                            else "exact_named_typed_entity_param_in_validated_action_record"
                         )
                     ),
                     "fieldNameStatus": (
@@ -5901,6 +5751,10 @@ def build_levelscript_registered_action_target_index(
             int(row.get("memberOrdinalZeroBased") or 0),
         ),
     )
+    native_after = check_installed_native_inputs(selected_native.gameassembly_sha256, selected_native.metadata_sha256, **selected_pair)
+    if (native_after.status != "validated" or reader_before != snapshot_complete_reader_inputs()
+            or pool_before != snapshot_string_pool_inputs(levelscript_root.parent) or sources_before != source_inputs()):
+        return {ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY: [{"state": "unresolved", "failedCheck": "pointer_consumer_input_bookend", "nativeStatus": native_after.status, "detail": "Selected native/Unity, reader, pool or authored source inputs changed; all pointer rows withheld."}]}
     return result
 
 
@@ -7636,82 +7490,17 @@ def build_leveldata_airwall_mission_radio_contexts(
     return rows
 
 
-def build_level_function_area_radio_trigger_story_contexts(
-    available_story_keys: set[str],
-    mission_runtime_ids: set[str],
-    *,
-    leveldata_root: Path = LEVELDATA_DIR,
-) -> list[dict]:
-    """Recover exact radio playback contexts from typed LevelData zones.
-
-    ``RadioTriggerZoneHandler.OnEnter`` consumes the same serialized object,
-    calls ``MissionSystem.GetMissionState`` for its three mission fields, and
-    calls ``GameAction.PlayRadio`` with ``radioId``. Rows establish exact
-    mission-state playback context, not quest causality or Story ownership.
-    """
-    rows: list[dict] = []
-    if not leveldata_root.exists():
-        return rows
-    for path in sorted(leveldata_root.rglob("*.json")):
-        try:
-            data = read_bytes_cached(path)
-        except OSError:
-            continue
-        if not data or data[0] != 0x2B:
-            continue
-        start = 0
-        while True:
-            offset = data.find(b"\x09\x07", start)
-            if offset < 0:
-                break
-            start = offset + 1
-            row = parse_function_area_radio_trigger(data, offset)
-            if row is None or row["radioId"] not in available_story_keys:
-                continue
-            mission_fields = [
-                ("hideAfterMissionId", row["hideAfterMissionId"]),
-                ("hideBeforeMissionId", row["hideBeforeMissionId"]),
-                ("hideCompleteMissionId", row["hideCompleteMissionId"]),
-            ]
-            nonempty_mission_ids = {
-                mission_id for _field, mission_id in mission_fields if mission_id
-            }
-            if (
-                not nonempty_mission_ids
-                or not nonempty_mission_ids.issubset(mission_runtime_ids)
-            ):
-                continue
-            roles_by_mission: dict[str, list[str]] = defaultdict(list)
-            for field_name, mission_id in mission_fields:
-                if mission_id:
-                    roles_by_mission[mission_id].append(field_name)
-            rows.append({
-                **row,
-                "levelId": path.parent.name,
-                "sourceFile": path.name,
-                "sourcePath": str(path),
-                "missionStateIds": sorted(roles_by_mission),
-                "missionStateRolesById": {
-                    mission_id: sorted(field_names)
-                    for mission_id, field_names in sorted(roles_by_mission.items())
-                },
-                "source": (
-                    "LevelData/43.member17:LevelFunctionAreaData.specificDatas"
-                    "(tag 9, RadioTriggerZoneData/7)"
-                ),
-                "nativeConsumer": (
-                    "RadioTriggerZoneHandler.OnEnter -> "
-                    "_GetRadioTriggerMissionState -> MissionSystem.GetMissionState; "
-                    "OnEnter -> GameAction.PlayRadio"
-                ),
-            })
-    rows.sort(key=lambda row: (
-        str(row.get("radioId") or ""),
-        str(row.get("levelId") or ""),
-        str(row.get("sourceFile") or ""),
-        int(row.get("recordOffset") or 0),
-    ))
-    return rows
+def level_function_area_radio_trigger_status() -> dict:
+    """Withhold links until the current sequential owner and consumer are proved."""
+    return {
+        "family": "level_function_area_radio_trigger",
+        "status": "pending_current_build_review",
+        "evidenceBoundary": "unresolved",
+        "rows": [],
+        "failedCheck": "current_sequential_owner_and_native_consumer",
+        "source": "LevelData.functionArea.specificDatas",
+        "detail": "Byte-pattern hits do not prove pooled fields, owner boundaries or radio playback.",
+    }
 
 
 def _read_level_interactive_param_atom_string(
@@ -8696,6 +8485,9 @@ def _decode_bounded_progress_lock(
     data: bytes,
     offset: int,
     end_limit: int,
+    *,
+    pooled: bool = False,
+    strings: StringPool | None = None,
 ) -> dict | None:
     """The shared progress-lock decode at ``offset``, or ``None`` past ``end_limit``.
 
@@ -8710,6 +8502,8 @@ def _decode_bounded_progress_lock(
             data,
             offset,
             "progressLockCondition",
+            pooled=pooled,
+            strings=strings,
         )
     except LevelInteractiveCodecError:
         return None
@@ -9299,6 +9093,8 @@ def parse_level_interactive_quest_progress_lock(
     data: bytes,
     offset: int,
     end_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
     """Decode one complete quest-state progress lock from LevelInteractiveData.
 
@@ -9312,6 +9108,13 @@ def parse_level_interactive_quest_progress_lock(
     resolved by type name per build; the literal ``0x10`` this parser once
     required is a one-member condition on the recorded build, so it admitted
     no quest lock at all.
+
+    Every string member is a signed ``i32`` index into the export's
+    StringPool on the current build -- ``entityDataIdKey``, the
+    ``ParamKeyValue`` keys and atom strings inside ``componentProperties``
+    (the shared pooled ``param_graph`` codec), and the quest ``ownerId`` of
+    the progress lock. ``strings`` must be the matching pool; without it no
+    index resolves and the record is refused. Inline UTF-8 is never tried.
     """
     if (
         offset < 0
@@ -9323,6 +9126,7 @@ def parse_level_interactive_quest_progress_lock(
     detail_decoded = _read_leveldata_memorypack_string(
         data,
         offset + 1 + (3 * 8),
+        strings=strings,
         max_length=256,
     )
     if detail_decoded is None:
@@ -9330,7 +9134,8 @@ def parse_level_interactive_quest_progress_lock(
     entity_detail_id, prefix_end = detail_decoded
     component_offset = prefix_end + 52
     if (
-        not entity_detail_id.startswith("int_")
+        not isinstance(entity_detail_id, str)
+        or not entity_detail_id.startswith("int_")
         or component_offset + 4 > end_offset
     ):
         return None
@@ -9364,12 +9169,19 @@ def parse_level_interactive_quest_progress_lock(
         component_key, cursor = key_decoded
         if component_key < 0 or component_key in component_keys:
             return None
-        prop_map = _parse_level_interactive_param_map(data, cursor, end_offset)
-        if prop_map is None:
+        try:
+            prop_list, cursor = decode_param_key_value_list(
+                data,
+                cursor,
+                f"componentProperties[{component_key}]",
+                strings=strings,
+            )
+        except ParamGraphDecodeError:
+            return None
+        if prop_list["count"] is None or cursor > end_offset:
             return None
         component_keys.append(component_key)
-        component_entry_counts.append(int(prop_map["entryCount"]))
-        cursor = int(prop_map["endOffset"])
+        component_entry_counts.append(int(prop_list["count"]))
     component_end = cursor
 
     null_collection_offsets: dict[str, int] = {}
@@ -9400,7 +9212,9 @@ def parse_level_interactive_quest_progress_lock(
         return None
 
     condition_offset = cursor
-    condition = _decode_bounded_progress_lock(data, cursor, end_offset)
+    condition = _decode_bounded_progress_lock(
+        data, cursor, end_offset, pooled=True, strings=strings,
+    )
     if (
         condition is None
         or condition["conditionType"] != "SimpleConditionCheckQuestState"
@@ -9666,6 +9480,13 @@ def build_quest_progress_locked_interactive_story_contexts(
                 signature,
             )].append(route)
 
+    # Every LevelInteractiveData string member is a StringPool index on the
+    # current build; without the export's pool no record can be read, and a
+    # pool that changes while the route reads it withholds every row.
+    pool_inputs = snapshot_string_pool_inputs(leveldata_root.parent)
+    strings = export_string_pool(leveldata_root.parent)
+    if strings is None:
+        return []
     leveldata_cache: dict[tuple[str, int], list[dict]] = {}
 
     def resolve_leveldata(level_id: str, logic_id: int) -> list[dict]:
@@ -9687,13 +9508,16 @@ def build_quest_progress_locked_interactive_story_contexts(
                 if not data or data[0] != 0x2B:
                     continue
                 for frame in (
-                    interactive_layout.level_interactive_data_list_frames(data)
+                    interactive_layout.level_interactive_data_list_frames(
+                        data, strings=strings,
+                    )
                 ):
                     for record in frame.get("records") or []:
                         parsed = parse_level_interactive_quest_progress_lock(
                             data,
                             int(record["recordOffset"]),
                             int(record["recordEndOffset"]),
+                            strings=strings,
                         )
                         if parsed is None or parsed["levelLogicId"] != logic_id:
                             continue
@@ -9887,6 +9711,8 @@ def build_quest_progress_locked_interactive_story_contexts(
             "clientRequest": False,
             "expectedClientReply": False,
         })
+    if pool_inputs != snapshot_string_pool_inputs(leveldata_root.parent):
+        return []
     rows.sort(key=lambda row: (
         str(row.get("missionId") or ""),
         str(row.get("questId") or ""),
