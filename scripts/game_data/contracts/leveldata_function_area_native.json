@@ -1,0 +1,372 @@
+{
+  "schema": "endfield.leveldata-function-area-native.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "base": {
+    "typeName": "Beyond.Gameplay.LevelFunctionAreaData+FunctionAreaBaseData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaBaseDataForMemoryPack",
+    "fields": [
+      [
+        "bufferDistance",
+        "float"
+      ],
+      [
+        "defaultOff",
+        "bool"
+      ],
+      [
+        "enableFactoryHide",
+        "bool"
+      ],
+      [
+        "euler",
+        "UnityEngine.Vector3"
+      ],
+      [
+        "factoryHideDesc",
+        "Beyond.Gameplay.LevelFunctionAreaData+FunctionAreaFactoryHideDesc"
+      ],
+      [
+        "functionType",
+        "Beyond.Gameplay.EFunctionAreaType"
+      ],
+      [
+        "hasCondition",
+        "bool"
+      ],
+      [
+        "index",
+        "int"
+      ],
+      [
+        "offset",
+        "UnityEngine.Vector3"
+      ],
+      [
+        "posList",
+        "System.Collections.Generic.List`1<UnityEngine.Vector2>"
+      ],
+      [
+        "postion",
+        "UnityEngine.Vector3"
+      ],
+      [
+        "radius",
+        "float"
+      ],
+      [
+        "shapeType",
+        "Beyond.Gameplay.Core.TriggerObserverComponent+Shape"
+      ],
+      [
+        "size",
+        "UnityEngine.Vector3"
+      ],
+      [
+        "uniqueId",
+        "ulong"
+      ]
+    ],
+    "method": [
+      247280,
+      "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaBaseDataForMemoryPack",
+      "Deserialize",
+      98858512
+    ],
+    "memberCountInstruction": [
+      98858623,
+      "40 80 fe 0f"
+    ],
+    "fieldSources": [
+      {
+        "field": "enableFactoryHide",
+        "fieldOffset": 104,
+        "readerArgument": "rbx",
+        "wrapperArgument": "rdi",
+        "callRva": 98858713,
+        "targetRva": 83754448,
+        "storeRva": 98858740
+      },
+      {
+        "field": "factoryHideDesc",
+        "fieldOffset": 112,
+        "readerArgument": "rbx",
+        "wrapperArgument": "rdi",
+        "callRva": 98858840,
+        "targetRva": 83900608,
+        "storeRva": 98858867,
+        "typedContext": {
+          "instructionRva": 98858830,
+          "instructionHex": "488B1553A38C0A",
+          "usageCellRva": 275847848,
+          "usageRawHex": "8BBA13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 646469,
+          "methodSpec": [
+            550348,
+            -1,
+            16256
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadValue",
+          "classArguments": [],
+          "methodArguments": [
+            "Beyond.Gameplay.LevelFunctionAreaData+FunctionAreaFactoryHideDesc"
+          ]
+        }
+      }
+    ],
+    "codeWindows": [
+      {
+        "startRva": 98858512,
+        "endRva": 98859564,
+        "sha256": "F799A8E1B21CB2D42B2A69BEF7E7AB3BA1E656CD04173566327957FF650D72E9",
+        "boundary": "complete owned reader coverage"
+      },
+      {
+        "startRva": 98858603,
+        "endRva": 98859412,
+        "sha256": "38C292216774F81A220B083E71594D016EA18DDA4047DA55810B68D1A87C79DF",
+        "boundary": "complete owned reader coverage"
+      },
+      {
+        "startRva": 98859412,
+        "endRva": 98859450,
+        "sha256": "E3AFD4AF0D7A30AE2B72DB9A8A0225FFBCEFE0F365332713E64F5247AB4625D5",
+        "boundary": "complete owned reader coverage"
+      },
+      {
+        "startRva": 98859450,
+        "endRva": 98859456,
+        "sha256": "6142D096CC22E93FB40784AD35189AF6821343049A4D74C5AFEC8CCE3106D705",
+        "boundary": "complete owned reader coverage"
+      },
+      {
+        "startRva": 98859456,
+        "endRva": 98859564,
+        "sha256": "FE90D54B42418D1E1D19BA589736526C4938782A0393E4ECA8B74EF74407BD5C",
+        "boundary": "complete owned reader coverage"
+      },
+      {
+        "startRva": 123911492,
+        "endRva": 123911540,
+        "sha256": "FD4E5C0E87D7A402CCCF1C95967FAE0C1E67137D3D70B860894B9BF1A3175A66",
+        "boundary": "complete owned reader coverage"
+      },
+      {
+        "startRva": 123911540,
+        "endRva": 123911839,
+        "sha256": "D00849B911968A2D1261FB5D90D14D0256F56E6085592007EAAF1091C8DC5E6A",
+        "boundary": "complete owned reader coverage"
+      }
+    ]
+  },
+  "description": {
+    "typeName": "Beyond.Gameplay.LevelFunctionAreaData+FunctionAreaFactoryHideDesc",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+    "fields": [
+      [
+        "hideAllBuildingUI",
+        "bool"
+      ],
+      [
+        "hideFacBuilding",
+        "bool"
+      ],
+      [
+        "hideFacBuildingAll",
+        "bool"
+      ],
+      [
+        "hideFacFence",
+        "bool"
+      ],
+      [
+        "hideSocialFac",
+        "bool"
+      ],
+      [
+        "hideSocialFacOwner",
+        "Beyond.Gameplay.Factory.SocialFragment+EOwner"
+      ],
+      [
+        "showFacBuildingTypes",
+        "System.Collections.Generic.List`1<Beyond.GEnums.FCNodeType>"
+      ]
+    ],
+    "method": [
+      259035,
+      "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+      "Deserialize",
+      205804556
+    ],
+    "memberCountInstruction": [
+      205804730,
+      "80 7c 24 30 07"
+    ],
+    "orderedReads": [
+      {
+        "field": "hideAllBuildingUI",
+        "readRva": 205804747,
+        "targetRva": 83754448,
+        "setter": [
+          259025,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___hideAllBuildingUI__",
+          126064116
+        ],
+        "transferRva": 205804769,
+        "proof": "buffered-byte-normalized-Boolean",
+        "typedContext": null
+      },
+      {
+        "field": "hideFacBuilding",
+        "readRva": 205804780,
+        "targetRva": 83754448,
+        "setter": [
+          259026,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___hideFacBuilding__",
+          126073892
+        ],
+        "transferRva": 205804802,
+        "proof": "buffered-byte-normalized-Boolean",
+        "typedContext": null
+      },
+      {
+        "field": "hideFacBuildingAll",
+        "readRva": 205804813,
+        "targetRva": 83754448,
+        "setter": [
+          259027,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___hideFacBuildingAll__",
+          126050480
+        ],
+        "transferRva": 205804835,
+        "proof": "buffered-byte-normalized-Boolean",
+        "typedContext": null
+      },
+      {
+        "field": "hideFacFence",
+        "readRva": 205804846,
+        "targetRva": 83754448,
+        "setter": [
+          259028,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___hideFacFence__",
+          126067044
+        ],
+        "transferRva": 205804864,
+        "proof": "buffered-byte-normalized-Boolean",
+        "typedContext": null
+      },
+      {
+        "field": "hideSocialFac",
+        "readRva": 205804875,
+        "targetRva": 83754448,
+        "setter": [
+          259029,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___hideSocialFac__",
+          126073864
+        ],
+        "transferRva": 205804893,
+        "proof": "buffered-byte-normalized-Boolean",
+        "typedContext": null
+      },
+      {
+        "field": "hideSocialFacOwner",
+        "readRva": 205804911,
+        "targetRva": 83752528,
+        "setter": [
+          259030,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___hideSocialFacOwner__",
+          126051172
+        ],
+        "transferRva": 205804929,
+        "proof": "ordered-source-call",
+        "typedContext": {
+          "instructionRva": 205804898,
+          "instructionHex": "488B15EFDCFD04",
+          "usageCellRva": 289550936,
+          "usageRawHex": "C9B613C000000000",
+          "tag": 6,
+          "methodSpecIndex": 645988,
+          "methodSpec": [
+            550332,
+            -1,
+            26292
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadUnmanaged",
+          "classArguments": [],
+          "methodArguments": [
+            "Beyond.Gameplay.Factory.SocialFragment+EOwner"
+          ]
+        }
+      },
+      {
+        "field": "showFacBuildingTypes",
+        "readRva": 205804947,
+        "targetRva": 96253232,
+        "setter": [
+          259031,
+          "Beyond.MemoryPack.Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaFactoryHideDescForMemoryPack",
+          "set___showFacBuildingTypes__",
+          96103584
+        ],
+        "transferRva": 205804966,
+        "proof": "ordered-source-call",
+        "typedContext": {
+          "instructionRva": 205804934,
+          "instructionHex": "488B15C3DCFD04",
+          "usageCellRva": 289550928,
+          "usageRawHex": "4B6F13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636837,
+          "methodSpec": [
+            550346,
+            -1,
+            64670
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadPackable",
+          "classArguments": [],
+          "methodArguments": [
+            "System.Collections.Generic.List`1<Beyond.GEnums.FCNodeType>"
+          ]
+        }
+      }
+    ],
+    "codeWindows": [
+      {
+        "startRva": 205804556,
+        "endRva": 205805058,
+        "sha256": "80CDB185409F762906FD550B30A4BC34CD8C269E1C2C1BE9505C21FE67165185",
+        "boundary": "complete owned reader coverage"
+      }
+    ]
+  },
+  "enumStorage": [
+    {
+      "typeName": "Beyond.Gameplay.Factory.SocialFragment+EOwner",
+      "backingType": "System.Int32"
+    },
+    {
+      "typeName": "Beyond.GEnums.FCNodeType",
+      "backingType": "System.Int32"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Complete owned reader bytes and current declarations; unchanged original-reader/byref-wrapper transfers for the two inserted fields, the normalized Boolean leaf, typed proved ReadValue clone for the factory-hide class, and the complete seven-member description read/setter order and scalar sources.",
+    "direct": "The base reads enableFactoryHide after defaultOff, and factoryHideDesc after euler. Its description reads five Boolean values, an Int32-backed owner enum and the typed building-type list.",
+    "conditional": "Valid disjoint source/wrapper arguments, normal ABI-preserving calls, initialized compatible providers and selected default collection framing.",
+    "unresolved": "Positive building-type list elements, other base fields, live provider/visibility state, parent owner admission and execution remain separate."
+  }
+}

@@ -12,13 +12,13 @@ from scripts.game_data.wwise_biquad_arithmetic import validate_program
 
 def load_contract():
     value, _ = read_reviewed_contract(CONTRACTS_DIR/'wwise_bus_processing_native.json',
-        schema='endfield.wwise-bus-processing-observer.v4', status='reviewedCurrentBuild', label='wwise-bus-processing')
+        schema='endfield.wwise-bus-processing-observer.v5', status='reviewedCurrentBuild', label='wwise-bus-processing')
     return value
 
 
 def validate_effect_classes(contract, indexed, image):
     parameters,_=read_reviewed_contract(CONTRACTS_DIR/'wwise_effect_parameters_native.json',
-        schema='endfield.wwise-effect-parameters-native.v4',status='reviewedCurrentBuild',label='wwise-effect-parameters')
+        schema='endfield.wwise-effect-parameters-native.v5',status='reviewedCurrentBuild',label='wwise-effect-parameters')
     if parameters['nativeInputs']!=contract['nativeInputs']:raise ValueError('bus effect parameter identity inputs differ')
     for binding in contract['effectClassBindings']:
         class_id=int(binding['classId'],16);factory=indexed[binding['factoryGroup']]
@@ -80,6 +80,18 @@ def validate(contract, pipeline, image):
 
 def validate_biquad_dispatch(contract,indexed,image):
     b=contract['biquadProcessing'];d=b['dispatch'];at=int(d['rva'],16)
+    identity=b['serviceIdentity']
+    point=int(identity['vtableRva'],16);object_rva=int(identity['objectRva'],16)
+    if image.bytes_at_va(image.image_base+object_rva,8)!=struct.pack('<Q',image.image_base+point):
+        raise ValueError('biquad static service address point differs')
+    if identity['executeSlot']!=contract['layout']['effectExecuteSlot'] or image.bytes_at_va(image.image_base+point+identity['executeSlot'],8)!=struct.pack('<Q',image.image_base+int(indexed[b['serviceGroup']]['entryRva'],16)):
+        raise ValueError('biquad static service execute slot differs')
+    load_at=int(identity['globalLoadRva'],16);encoded=bytes.fromhex(identity['globalLoadInstructionHex'])
+    owner=indexed['collectionEqProcessing']
+    if len(encoded)!=7 or encoded[:3]!=bytes.fromhex('488b0d') or not any(int(w['rva'],16)<=load_at and load_at+7<=int(w['rva'],16)+w['bodyLength'] for w in owner['windows']):
+        raise ValueError('biquad EQ service read exceeds its current owner')
+    if image.bytes_at_va(image.image_base+load_at,7)!=encoded or load_at+7+struct.unpack_from('<i',encoded,3)[0]!=int(b['eqLayout']['processorServiceRva'],16):
+        raise ValueError('biquad EQ service global read differs')
     raw=image.bytes_at_va(image.image_base+at,d['bodyLength'])
     if raw.hex()!=d['instructionHex'] or hashlib.sha256(raw).hexdigest()!=d['bodySha256']:
         raise ValueError('biquad dispatch bytes differ')

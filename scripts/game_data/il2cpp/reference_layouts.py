@@ -36,9 +36,11 @@ class NativeReferenceContext:
     native method bodies or importing a capture entry point.
     """
     def __init__(self, image: Any, *, index: Any = None):
+        from .native_image import NativeImage
         self.image = image
-        self.index = index if index is not None else SimpleNamespace(types={
-            image.metadata.type_full_name(td): td for td in image.metadata.types})
+        self.index = index if index is not None else SimpleNamespace(types=image.named_types
+            if isinstance(image,NativeImage) else {
+                image.metadata.type_full_name(td):td for td in image.metadata.types})
 
     def type_pointer(self, index: int) -> int:
         registration = self.image.registration

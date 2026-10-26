@@ -108,6 +108,7 @@ from typing import Any, Mapping
 from scripts.game_data.memorypack.buff import _ability_action_tag_bytes as _AB
 from scripts.common import canonical_json_sha256 as _canonical_sha256
 from scripts.game_data.memorypack.corpus_gate import (
+    native_validation,
     DEFAULT_CLI,
     DEFAULT_LEDGER,
     DEFAULT_OUTER,
@@ -2139,7 +2140,7 @@ def build_current_census(
     gate_start = _fingerprint(Path(__file__))
     timeline_contract_paths = _timeline_contract_paths()
     timeline_contract_start = [_fingerprint(path) for path in timeline_contract_paths]
-    timeline_native_validation = validate_timeline_play_animation_native_contract()
+    timeline_native_validation = native_validation(validate_timeline_play_animation_native_contract,TIMELINE_PLAY_ANIMATION_CONTRACT_PATH)
     timeline_play_animation_step_native_validation = (
         validate_timeline_play_animation_step_native_contract()
     )
@@ -2627,7 +2628,9 @@ def main(argv: list[str] | None = None) -> int:
             "code": "unexpected-error", "source": "skilldata-current-census", "offset": None,
             "expected": None, "actual": f"{type(exc).__name__}: {exc}",
         }
-        print(json.dumps({"status": "failed", "diagnostic": diagnostic}, ensure_ascii=False), file=sys.stderr)
+        failure={"status":"failed","diagnostic":diagnostic}
+        _atomic_write_json(args.output.with_suffix('.failed.json'),failure)
+        print(json.dumps(failure, ensure_ascii=False), file=sys.stderr)
         return 1
     print(json.dumps({
         "status": result["status"],

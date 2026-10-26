@@ -17,7 +17,6 @@ import argparse
 import gzip
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -150,7 +149,6 @@ def _validate_sources(
     return len(contract["sourceReceipts"])
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_encounter_opera_segments_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,

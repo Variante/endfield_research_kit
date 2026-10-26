@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data.memorypack.core import memorypack_union_header
 
 from . import params
 from .action_map import ActionMapCodecError, _Cursor
@@ -31,16 +32,17 @@ def decode_finish_buffs_action(
     data: bytes, offset: int, route: dict[str, Any],
 ) -> tuple[dict[str, Any], int]:
     fields = route["fields"]
+    header = memorypack_union_header(route["tag"], route["memberCount"])
     if (
         route.get("family") != "ActionBase"
-        or route.get("tag") != 0x00E6
+        or route.get("typeName") != "Beyond.Gameplay.Actions.FinishBuffs"
         or route.get("memberCount") != 9
         or len(fields) != 9
         or fields[8][:2] != ["buffs", "Param<List<BuffPtr>>"]
-        or offset < 0 or data[offset:offset+2] != b"\xe6\x09"
+        or offset < 0 or data[offset:offset+len(header)] != header
     ):
         raise ActionMapCodecError(f"finishBuffs:invalid-route-or-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind, *_ in fields:
@@ -51,7 +53,7 @@ def decode_finish_buffs_action(
             values[name] = cursor.value(kind, f"finishBuffs.{name}")
         spans[name] = [start, cursor.offset]
     return {
-        "family": "ActionBase", "unionTag": 0x00E6, "memberCount": 9,
+        "family": "ActionBase", "unionTag": route["tag"], "memberCount": 9,
         "sourceOffset": offset, "endOffset": cursor.offset,
         "fields": values, "fieldSpans": spans,
     }, cursor.offset

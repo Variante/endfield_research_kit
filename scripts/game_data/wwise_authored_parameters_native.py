@@ -6,18 +6,19 @@ does not load a bank, decode audio, change engine state or activate a device.
 from __future__ import annotations
 
 import hashlib
+import re
 import struct
 
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data import wwise_codec_factory_native as codec
 from scripts.game_data.wwise_source_queue_native import (
-    _digest, _hex, _rva, validate_native_group_declarations, validate_native_group_windows,
+    _digest, _hex, _rva, _selection_register, validate_native_group_declarations, validate_native_group_windows,
 )
 from scripts.game_data.wwise_voice_pipeline_native import _instruction
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_authored_parameters_native.json"
-SCHEMA = "endfield.wwise-authored-parameters-native.v1"
+SCHEMA = "endfield.wwise-authored-parameters-native.v2"
 OWNERS = ("wwise_source_queue_native", "wwise_voice_pipeline_native", "wwise_voice_routing_native")
 
 
@@ -53,6 +54,58 @@ def collect_data(contract, owners):
             codec._fail("authoredParameterDataDependency", str(row.get("key")), row.get("ownerDataWindow"), "missing or aliased data")
         data.append(window)
     return data
+
+
+def _mapped_memory(prefix, opcode, register, base, index=None, scale=0):
+    """Encode the bounded register/memory forms used by property-map reads."""
+    rex = 0x40 | (4 if register >= 8 else 0) | (1 if base >= 8 else 0)
+    if index is not None and index >= 8:
+        rex |= 2
+    mode = 0x40 if base & 7 == 5 else 0
+    sib = index is not None or base & 7 == 4
+    raw = prefix + (bytes((rex,)) if rex != 0x40 else b'') + opcode
+    raw += bytes((mode | ((register & 7) << 3) | (4 if sib else base & 7),))
+    if sib:
+        raw += bytes(((scale << 6) | ((index & 7 if index is not None else 4) << 3) | (base & 7),))
+    return raw + (b'\x00' if mode else b'')
+
+
+def validate_property_map_flow(mapping, image, groups, window):
+    """Distinguish the authored byte-key loop from the later controller loop."""
+    fail = codec._fail
+    table, index, slot, key, output = (_selection_register(mapping.get(name)) for name in
+                                     ('tableRegister','indexRegister','slotRegister','keyPointerRegister','outputRegister'))
+    value = mapping.get('valueRegister')
+    match = re.fullmatch(r'xmm([0-9]|1[0-5])', value) if isinstance(value, str) else None
+    argument = mapping.get('outputArgumentIndex')
+    if match is None or type(argument) is not int or not 0 <= argument <= 3:
+        fail('authoredParameterMappingRegisters', 'property map', 'XMM value and register output argument', mapping)
+    value = int(match[1])
+    def require(field, expected):
+        raw = _instruction(image, groups, mapping['group'], mapping.get(field), len(expected))
+        if raw != expected:
+            fail('authoredParameterMappingFlow', field, expected.hex(), raw.hex())
+    lea_prefix = bytes((0x48 | (4 if table >= 8 else 0), 0x8d, 5 | ((table & 7) << 3)))
+    reloads = mapping.get('tableReloadRvas')
+    if not isinstance(reloads, list) or len(reloads) > 8:
+        fail('authoredParameterMappingReloads', 'property map', 'bounded reload sites', reloads)
+    sites = [mapping['loadRva'], *reloads]
+    if len(set(sites)) != len(sites):
+        fail('authoredParameterMappingReloads', 'property map', 'distinct table loads', sites)
+    for at in sites:
+        expected = lea_prefix + struct.pack('<i', _rva(window['rva'], 'property map') - _rva(at, 'table load') - 7)
+        raw = _instruction(image, groups, mapping['group'], at, 7)
+        if raw != expected:
+            fail('authoredParameterMappingLoad', str(at), expected.hex(), raw.hex())
+    require('keyLoadRva', _mapped_memory(b'', b'\x0f\xb6', index, key))
+    require('rangeCheckRva', bytes((0x48 | (1 if index >= 8 else 0), 0x83, 0xf8 | (index & 7), len(mapping['slots']) - 1)))
+    require('indexLoadRva', _mapped_memory(b'', b'\x8b', slot, table, index, 2))
+    require('ignoredSlotCompareRva', (b'\x41' if slot >= 8 else b'') + bytes((0x83, 0xf8 | (slot & 7), mapping['ignoredSlot'])))
+    source = (1,2,8,9)[argument]
+    require('retainOutputRva', bytes((0x48 | (4 if output >= 8 else 0) | (1 if source >= 8 else 0), 0x8b,
+                                    0xc0 | ((output & 7) << 3) | (source & 7))))
+    require('addRva', _mapped_memory(b'\xf3', b'\x0f\x58', value, output, slot, 2))
+    require('storeRva', _mapped_memory(b'\xf3', b'\x0f\x11', value, output, slot, 2))
 
 
 def validate_authored_parameters_bytes(contract, image, bodies, records, owners):
@@ -99,7 +152,11 @@ def validate_authored_parameters_bytes(contract, image, bodies, records, owners)
         if actual_target != _rva(target["entryRva"], "virtual target"):
             fail("authoredParameterVirtualTarget", str(slot), target["entryRva"], hex(actual_target))
         raw = _hex(row.get("instructionHex"), str(slot), 15)
-        expected = b"\xff\x90" + slot.to_bytes(4, "little")
+        register = _selection_register(row.get('callRegister'))
+        expected = (b'\x41' if register >= 8 else b'') + bytes((0xff, 0x90 | (register & 7)))
+        if register & 7 == 4:
+            expected += b'\x24'
+        expected += slot.to_bytes(4, "little")
         if raw != expected or _instruction(image, groups, row.get("group"), row.get("rva"), len(raw)) != raw:
             fail("authoredParameterVirtualCall", str(slot), expected.hex(), raw.hex())
     mapping = contract.get("propertyMapping", {})
@@ -117,8 +174,11 @@ def validate_authored_parameters_bytes(contract, image, bodies, records, owners)
     raw = _instruction(image, groups, mapping.get("group"), mapping.get("loadRva"), 7)
     prefix = _hex(mapping.get("instructionPrefixHex"), "mapping prefix", 3)
     address = _rva(mapping.get("loadRva"), "mapping load") + 7 + struct.unpack_from("<i", raw, 3)[0]
-    if prefix != b"\x4c\x8d\x35" or raw[:3] != prefix or address != _rva(windows[key][0]["rva"], key):
+    table = _selection_register(mapping.get('tableRegister'))
+    expected_prefix = bytes((0x48 | (4 if table >= 8 else 0), 0x8d, 5 | ((table & 7) << 3)))
+    if prefix != expected_prefix or raw[:3] != prefix or address != _rva(windows[key][0]["rva"], key):
         fail("authoredParameterMappingLoad", str(key), windows[key][0]["rva"], hex(address))
+    validate_property_map_flow(mapping, image, groups, windows[key][0])
     seen = set()
     for row in codec._rows(mapping.get("properties"), "named parameter mappings", 32):
         prop, offset = row.get("id"), row.get("outputByteOffset")

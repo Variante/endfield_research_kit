@@ -16,6 +16,16 @@ MEMORYPACK_SCHEMA_SOURCE_NOTE = (
 STRING_SAMPLE_MAX_CHARS = 360
 
 
+def memorypack_union_header(tag: int, member_count: int) -> bytes:
+    """Canonical non-null union discriminator and object member count."""
+    if type(tag) is not int or not 0 <= tag <= 0xFFFF:
+        raise ValueError(f'union-tag:expected=uint16:actual={tag!r}')
+    if type(member_count) is not int or not 0 <= member_count < 250:
+        raise ValueError(f'union-member-count:expected=0..249:actual={member_count!r}')
+    discriminator = bytes((tag,)) if tag < MEMORYPACK_UNION_WIDE_TAG else bytes((MEMORYPACK_UNION_WIDE_TAG,)) + struct.pack('<H',tag)
+    return discriminator + bytes((member_count,))
+
+
 def format_offset(offset: int | None) -> str:
     return f"0x{offset:x}" if isinstance(offset, int) and offset >= 0 else ""
 

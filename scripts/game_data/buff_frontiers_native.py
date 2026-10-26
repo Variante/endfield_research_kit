@@ -237,7 +237,6 @@ def _validate_exact(contract: dict[str, Any], gameassembly: Path, metadata_path:
     return validated
 
 
-@lru_cache(maxsize=2 * len(FRONTIERS))
 def load_rows(
     name: str, *, game_root: Path | None = None, contract_path: Path | None = None
 ) -> tuple[dict[int, dict[str, Any]], dict[str, Any]]:

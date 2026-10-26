@@ -3,8 +3,8 @@
 The reviewed contract pins three ActionBase routes: the facility switch
 `FacShowForceUpdateSwitch` (a `Param<bool>` member) and the two settlement
 follow-on actions `AddListenerToSettlementReady` and `LandMarkUpgradeShow`
-(each a `Param<string>` member), with tags 0x00DE, 0x000F and 0x011C in the
-contract. Each check covers the dispatcher branch and registered wrapper,
+(each a `Param<string>` member). Each check covers the selected union tag,
+dispatcher branch and registered wrapper,
 complete method windows, member count, ordered reads, own setter and typed
 parameter context. Passing `--export-root`, `--ledger` and
 `--summary` together also replays the reviewed source cursors against the
@@ -30,7 +30,7 @@ from scripts.game_data.il2cpp.context import (
     generic_type_carrier, method_spec_record, method_spec_usage_index,
     unresolved_usage_index,
 )
-from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
@@ -114,8 +114,8 @@ def _validate_context(image: Any, context: dict[str, Any], kind: str) -> None:
         raise ValueError(f"{LABEL}.native:param-arity")
     argument = instance.arguments[0]
     raw = bytes.fromhex(argument.raw_type_record_hex)
-    if raw.hex().upper() != context["argumentRawHex"].upper() or raw[10] != context["typeKind"] != 0x15:
-        raise ValueError(f"{LABEL}.native:param-argument")
+    if raw.hex().upper() != context["argumentRawHex"].upper() or not raw[10] == context["typeKind"] == 0x15:
+        raise NativeIdentityMismatch(f"{LABEL}.native:param-argument", expected=0x15, recorded=context["typeKind"], actual=raw[10])
     pointer = struct.unpack_from("<Q", raw)[0]
     carrier_raw = image.pe.bytes_at_va(pointer, 32)
     base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
@@ -137,12 +137,12 @@ def _validate_context(image: Any, context: dict[str, Any], kind: str) -> None:
     expected_name, runtime_name, expected_kind = _ELEMENT[kind]
     if (
         element.hex().upper() != context["elementRawHex"].upper()
-        or element[10] != context["elementTypeKind"] != expected_kind
+        or not element[10] == context["elementTypeKind"] == expected_kind
         or context["elementTypeName"] != expected_name
         or context["elementTypeDefinition"] is not None
         or protocol_runtime_type_name(image, child.arguments[0].type_pointer_va) != runtime_name
     ):
-        raise ValueError(f"{LABEL}.native:param-element")
+        raise NativeIdentityMismatch(f"{LABEL}.native:param-element", expected=expected_kind, recorded=context["elementTypeKind"], actual=element[10])
 
 
 def protocol_runtime_type_name(image: Any, type_pointer_va: int) -> str:
@@ -356,14 +356,7 @@ def validate_settlement_followon_native_contract(
                            for row in contract["routes"]],
                 "sourceReceiptsChecked": checked, "nativeInputs": expected}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
-        failure = str(exc)
-        check = (failure.split(".contract:", 1)[1] if ".contract:" in failure
-                 else failure.split(".native:", 1)[1] if ".native:" in failure
-                 else failure.split(".source:", 1)[1] if ".source:" in failure
-                 else "contract-native-or-source")
-        return {"status": "validation_failed", "validator": LABEL,
-                "failedCheck": check, "detail": failure,
-                "validationFailures": [{"gate": check, "actual": failure[:500]}]}
+        return native_validation_failure(exc, label=LABEL, source_path=contract_path)
 
 
 def main() -> int:

@@ -26,6 +26,7 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.il2cpp import protocol as il2cpp
 from scripts.game_data.il2cpp.context import (
     generic_type_carrier, method_spec_record, method_spec_usage_index,
@@ -59,7 +60,7 @@ def _contract(path: Path) -> dict[str, Any]:
         data.get("schema") != SCHEMA or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or set(data.get("nativeInputs", {})) != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or route.get("family") != "ActionBase" or route.get("tag") != 0x00E6
+        or route.get("family") != "ActionBase" or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.FinishBuffs"
         or route.get("memberCount") != 9 or route.get("inheritedMemberCount") != 8
         or not isinstance(fields, list) or len(fields) != 9
@@ -306,13 +307,14 @@ def _validate_sources(data: dict[str, Any], export_root: Path, ledger_path: Path
                 ledger[row["exportRelativePath"]] = row
     if not ledger:
         raise ValueError(f"{LABEL}.source:missing-ledger")
+    prefix = memorypack_union_header(data["route"]["tag"], data["route"]["memberCount"])
     for path, digest, start, end, span_digest in data["sourceReceipts"]:
         if not path.startswith("LevelScriptData/"):
             raise ValueError(f"{LABEL}.source:path={path}")
         payload = (export_root / path).read_bytes()
         if (
             not 0 <= start < end <= len(payload)
-            or payload[start:start+2] != b"\xe6\x09"
+            or payload[start:start+len(prefix)] != prefix
             or _sha(payload) != digest.upper()
             or _sha(payload[start:end]) != span_digest.upper()
             or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()

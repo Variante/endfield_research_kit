@@ -10,7 +10,6 @@ from __future__ import annotations
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
@@ -33,7 +32,6 @@ BASE_CONTRACTS = {
 }
 
 
-@lru_cache(maxsize=1)
 def _selected_resolver():
     routes, resolver, audit = resolve_routes()
     if audit.get("status") != "validated" or resolver is None:
@@ -41,7 +39,6 @@ def _selected_resolver():
     return resolver, audit
 
 
-@lru_cache(maxsize=8)
 def validate_selected_selector_route(
     family: str, tag: int, *, wrapper_name: str, wrapped_type: str,
     member_name: str, child_type: str,
@@ -54,7 +51,6 @@ def validate_selected_selector_route(
     return {**validation, "memberName": member_name, "childType": child_type}
 
 
-@lru_cache(maxsize=16)
 def validate_selected_selector_route_plan(
     family: str, tag: int, *, wrapper_name: str, wrapped_type: str,
     members: tuple[tuple[str, str], ...],

@@ -2,19 +2,19 @@
   "schema": "endfield.levelscript-stop-effect-on-npc-proxy-native.v1",
   "status": "exact-current-build",
   "evidenceBoundary": "exact",
-  "evidenceNote": "Selected ActionBase dispatch, wrapper, complete reader and formatter, ordered native reads, typed Param contexts and eight ledger-joined source cursors prove stored fields. Runtime effects and proxy identity remain unobserved.",
+  "evidenceNote": "Selected native stored layout re-proved. sourceReceipts are historical, separately hash-gated cursor evidence; no current corpus or runtime claim.",
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "route": {
     "family": "ActionBase",
-    "tag": 1218,
+    "tag": 1239,
     "typeName": "Beyond.Gameplay.Actions.StopEffectOnNpcProxy",
     "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPack",
-    "typeDefinition": 19453,
-    "registeredTypeIndex": 105800,
+    "typeDefinition": 53462,
+    "registeredTypeIndex": 99894,
     "serializedMemberCount": 11,
     "inheritedMemberCount": 8,
     "fields": [
@@ -111,222 +111,222 @@
     ]
   },
   "dispatcher": {
-    "switchTableRva": 43598100,
-    "switchEntryCount": 1342,
-    "switchTableSha256": "A4B75AA63B2B4EA43A6D2FC11B08085893F62543E3A9B367C34E60E916730C88",
-    "switchTargetRva": 43225226,
-    "switchEntryHex": "E90FFB0400",
-    "bodyRva": 43551646,
-    "usageCellRva": 218466936,
-    "usageRawHex": "913A032000000000",
+    "switchTableRva": 78241800,
+    "switchEntryCount": 1364,
+    "switchTableSha256": "82027FD5D674D2C0E33CF24E0D692B5CB516831830FDE3323E09CFE396884E79",
+    "switchTargetRva": 77862820,
+    "switchEntryHex": "E900110500",
+    "bodyRva": 78194857,
+    "usageCellRva": 275431960,
+    "usageRawHex": "6D0C032000000000",
     "branchWindow": {
-      "startRva": 43551646,
-      "endRva": 43551774,
-      "sha256": "DD6C645B5664B45B08D6254DA1B070FCACAE289A929176747557E60AAD35E100",
+      "startRva": 78194857,
+      "endRva": 78194899,
+      "sha256": "0F647C7FDE7941336FABF0BAC0DC99E15AA3AD5B584549A7D95D1F5DF47DB9E9",
       "boundary": "selected wrapper usage and branch prefix"
     },
-    "typeLoadRva": 43551681,
-    "typeLoadHex": "488B15B0FE6C0A"
+    "typeLoadRva": 78194892,
+    "typeLoadHex": "488B154599C10B"
   },
   "methods": [
     [
-      143454,
+      285933,
       "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPack",
       "Deserialize",
-      155709420
+      207881672
     ],
     [
-      143455,
+      285934,
       "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPack+Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPackFormatter",
       "Deserialize",
-      155709180
+      207881432
     ]
   ],
   "codeWindows": [
     {
-      "startRva": 155709420,
-      "endRva": 155710095,
-      "sha256": "D9EDB71BC5A40320E07CAEDFD33B20C4E18885CAB4FF16164A3C784E28237826",
+      "startRva": 207881672,
+      "endRva": 207882350,
+      "sha256": "73CB2FBD1462F7EE87C7894DC307C0BCD75732248FAC016BCCF8FA987DF9DC13",
       "boundary": "complete-pdata-function"
     },
     {
-      "startRva": 155709180,
-      "endRva": 155709269,
-      "sha256": "587E4F3C204F3D98CC76AA265FC20930DA16A766A43E40433534C762CD6133F2",
+      "startRva": 207881432,
+      "endRva": 207881521,
+      "sha256": "45592A37B1DD01B07E9F2D92BAE0762FFFAACEA7590ADE32DAFB9C6D329668C7",
       "boundary": "complete-pdata-function"
     }
   ],
   "memberCountInstruction": {
-    "rva": 155709621,
+    "rva": 207881873,
     "hex": "807C24380B"
   },
   "readerHelpers": {
-    "bool": 46827712,
-    "int32": 46827184,
-    "string": 46827264,
-    "Param<string>": 47864976,
-    "Param<MountPoint>": 47864976
+    "bool": 83754448,
+    "int32": 83752528,
+    "string": 85929408,
+    "Param<string>": 83900608,
+    "Param<MountPoint>": 83900608
   },
   "orderedReads": [
     {
       "memberIndex": 0,
       "fieldName": "dontLogWarning",
       "readKind": "bool",
-      "sourceCallsiteRva": 155709638,
-      "sourceCallHex": "E8F59782F9",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 207881890,
+      "sourceCallHex": "E829F799F8",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 1,
       "fieldName": "ID",
       "readKind": "int32",
-      "sourceCallsiteRva": 155709671,
-      "sourceCallHex": "E8C49582F9",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 207881923,
+      "sourceCallHex": "E888EF99F8",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 2,
       "fieldName": "releaseWhenExecutionFinished",
       "readKind": "bool",
-      "sourceCallsiteRva": 155709704,
-      "sourceCallHex": "E8B39782F9",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 207881956,
+      "sourceCallHex": "E8E7F699F8",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 3,
       "fieldName": "uid",
       "readKind": "string",
-      "sourceCallsiteRva": 155709737,
-      "sourceCallHex": "E8D29582F9",
-      "sourceTargetRva": 46827264
+      "sourceCallsiteRva": 207881989,
+      "sourceCallHex": "E8B626BBF8",
+      "sourceTargetRva": 85929408
     },
     {
       "memberIndex": 4,
       "fieldName": "scopeMask",
       "readKind": "int32",
-      "sourceCallsiteRva": 155709778,
-      "sourceCallHex": "E8599582F9",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 207882030,
+      "sourceCallHex": "E81DEF99F8",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 5,
       "fieldName": "useCurrentScope",
       "readKind": "bool",
-      "sourceCallsiteRva": 155709811,
-      "sourceCallHex": "E8489782F9",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 207882063,
+      "sourceCallHex": "E87CF699F8",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 6,
       "fieldName": "useGraphScope",
       "readKind": "bool",
-      "sourceCallsiteRva": 155709844,
-      "sourceCallHex": "E8279782F9",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 207882096,
+      "sourceCallHex": "E85BF699F8",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 7,
       "fieldName": "nextID",
       "readKind": "int32",
-      "sourceCallsiteRva": 155709877,
-      "sourceCallHex": "E8F69482F9",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 207882129,
+      "sourceCallHex": "E8BAEE99F8",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 8,
       "fieldName": "effectId",
       "readKind": "Param<string>",
-      "sourceCallsiteRva": 155709913,
-      "sourceCallHex": "E8B26A92F9",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 207882165,
+      "sourceCallHex": "E806319CF8",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 9,
       "fieldName": "mountPoint",
       "readKind": "Param<MountPoint>",
-      "sourceCallsiteRva": 155709950,
-      "sourceCallHex": "E88D6A92F9",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 207882202,
+      "sourceCallHex": "E8E1309CF8",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 10,
       "fieldName": "npcProxyId",
       "readKind": "Param<string>",
-      "sourceCallsiteRva": 155709987,
-      "sourceCallHex": "E8686A92F9",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 207882239,
+      "sourceCallHex": "E8BC309CF8",
+      "sourceTargetRva": 83900608
     }
   ],
   "ownSetters": [
     {
       "memberIndex": 8,
-      "callsiteRva": 155709932,
-      "callHex": "E847020000",
-      "targetRva": 155710520,
       "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPack",
-      "methodIndex": 143449,
-      "setterName": "set____effectId__"
+      "setterName": "set____effectId__",
+      "callsiteRva": 207882184,
+      "callHex": "E84B020000",
+      "targetRva": 207882776,
+      "methodIndex": 285928
     },
     {
       "memberIndex": 9,
-      "callsiteRva": 155709969,
-      "callHex": "E856020000",
-      "targetRva": 155710572,
       "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPack",
-      "methodIndex": 143450,
-      "setterName": "set____mountPoint__"
+      "setterName": "set____mountPoint__",
+      "callsiteRva": 207882221,
+      "callHex": "E85A020000",
+      "targetRva": 207882828,
+      "methodIndex": 285929
     },
     {
       "memberIndex": 10,
-      "callsiteRva": 155710006,
-      "callHex": "E865020000",
-      "targetRva": 155710624,
       "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopEffectOnNpcProxyForMemoryPack",
-      "methodIndex": 143451,
-      "setterName": "set____npcProxyId__"
+      "setterName": "set____npcProxyId__",
+      "callsiteRva": 207882258,
+      "callHex": "E869020000",
+      "targetRva": 207882880,
+      "methodIndex": 285930
     }
   ],
   "nestedContexts": [
     {
       "memberIndex": 8,
-      "instructionRva": 155709900,
-      "instructionHex": "488B158570C203",
-      "cellRva": 218784344,
-      "usageRawHex": "FFE912C000000000",
-      "methodSpecIndex": 619775,
+      "instructionRva": 207882152,
+      "instructionHex": "488B15291D1404",
+      "cellRva": 276309208,
+      "usageRawHex": "7FB813C000000000",
+      "methodSpecIndex": 646207,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        13654
+        12746
       ],
-      "argumentRawHex": "0858208D010000000000150000000000",
+      "argumentRawHex": "C0CB8C90010000000000150000000000",
       "typeKind": 21,
       "classCarrier": {
-        "typePointerVa": 6647233496,
-        "typeRawHex": "0858208D010000000000150000000000",
-        "carrierPointerVa": 6662674440,
-        "carrierRawHex": "28C0248D01000000C039FE8A0100000000000000000000000000000000000000",
-        "basePointerVa": 6662963240,
-        "baseRawHex": "141A0000000000000000120000000000",
-        "baseDefinitionIndex": 6676,
-        "classInstantiationPointerVa": 6626884032,
+        "typePointerVa": 6704352424,
+        "typeRawHex": "C0CB8C90010000000000150000000000",
+        "carrierPointerVa": 6720113600,
+        "carrierRawHex": "E0AD84900100000000B5178E0100000000000000000000000000000000000000",
+        "basePointerVa": 6719581664,
+        "baseRawHex": "361B0000000000000000120000000000",
+        "baseDefinitionIndex": 6966,
+        "classInstantiationPointerVa": 6678885632,
         "opaqueCarrierTailHex": "00000000000000000000000000000000"
       },
       "classInstantiation": {
-        "index": 891,
-        "table_slot_va": 6625981304,
-        "record_va": 6626884032,
-        "argument_vector_va": 6669020808,
+        "index": 913,
+        "table_slot_va": 6679689160,
+        "record_va": 6678885632,
+        "argument_vector_va": 6727151064,
         "padding_hex": "00000000",
         "arguments": [
           {
             "index": 0,
-            "type_pointer_va": 6664879672,
-            "raw_type_record_hex": "C78C00000000000000000E0000000000"
+            "type_pointer_va": 6718844112,
+            "raw_type_record_hex": "7B0701000000000000000E0000000000"
           }
         ]
       },
-      "elementRawHex": "C78C00000000000000000E0000000000",
+      "elementRawHex": "7B0701000000000000000E0000000000",
       "elementTypeKind": 14,
       "elementTypeDefinition": null,
       "elementTypeName": "System.String",
@@ -334,89 +334,89 @@
     },
     {
       "memberIndex": 9,
-      "instructionRva": 155709937,
-      "instructionHex": "488B15F8B0B703",
-      "cellRva": 218079984,
-      "usageRawHex": "CFE912C000000000",
-      "methodSpecIndex": 619751,
+      "instructionRva": 207882189,
+      "instructionHex": "488B1544330B04",
+      "cellRva": 275725080,
+      "usageRawHex": "4DB813C000000000",
+      "methodSpecIndex": 646182,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        13630
+        12721
       ],
-      "argumentRawHex": "485C208D010000000000150000000000",
+      "argumentRawHex": "20C88C90010000000000150000000000",
       "typeKind": 21,
       "classCarrier": {
-        "typePointerVa": 6647240424,
-        "typeRawHex": "485C208D010000000000150000000000",
-        "carrierPointerVa": 6662675528,
-        "carrierRawHex": "28C0248D01000000B03DEA8A0100000000000000000000000000000000000000",
-        "basePointerVa": 6662963240,
-        "baseRawHex": "141A0000000000000000120000000000",
-        "baseDefinitionIndex": 6676,
-        "classInstantiationPointerVa": 6625574320,
+        "typePointerVa": 6704350936,
+        "typeRawHex": "20C88C90010000000000150000000000",
+        "carrierPointerVa": 6720112672,
+        "carrierRawHex": "E0AD84900100000060621E8E0100000000000000000000000000000000000000",
+        "basePointerVa": 6719581664,
+        "baseRawHex": "361B0000000000000000120000000000",
+        "baseDefinitionIndex": 6966,
+        "classInstantiationPointerVa": 6679323232,
         "opaqueCarrierTailHex": "00000000000000000000000000000000"
       },
       "classInstantiation": {
-        "index": 8642,
-        "table_slot_va": 6626043312,
-        "record_va": 6625574320,
-        "argument_vector_va": 6668313656,
+        "index": 9226,
+        "table_slot_va": 6679755664,
+        "record_va": 6679323232,
+        "argument_vector_va": 6727531504,
         "padding_hex": "00000000",
         "arguments": [
           {
             "index": 0,
-            "type_pointer_va": 6664702488,
-            "raw_type_record_hex": "80050000000000000000118000000000"
+            "type_pointer_va": 6719968816,
+            "raw_type_record_hex": "EE050000000000000000118000000000"
           }
         ]
       },
-      "elementRawHex": "80050000000000000000118000000000",
+      "elementRawHex": "EE050000000000000000118000000000",
       "elementTypeKind": 17,
-      "elementTypeDefinition": 1408,
+      "elementTypeDefinition": 1518,
       "elementTypeName": "Beyond.Gameplay.MountPoint",
       "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
     },
     {
       "memberIndex": 10,
-      "instructionRva": 155709974,
-      "instructionHex": "488B153B70C203",
-      "cellRva": 218784344,
-      "usageRawHex": "FFE912C000000000",
-      "methodSpecIndex": 619775,
+      "instructionRva": 207882226,
+      "instructionHex": "488B15DF1C1404",
+      "cellRva": 276309208,
+      "usageRawHex": "7FB813C000000000",
+      "methodSpecIndex": 646207,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        13654
+        12746
       ],
-      "argumentRawHex": "0858208D010000000000150000000000",
+      "argumentRawHex": "C0CB8C90010000000000150000000000",
       "typeKind": 21,
       "classCarrier": {
-        "typePointerVa": 6647233496,
-        "typeRawHex": "0858208D010000000000150000000000",
-        "carrierPointerVa": 6662674440,
-        "carrierRawHex": "28C0248D01000000C039FE8A0100000000000000000000000000000000000000",
-        "basePointerVa": 6662963240,
-        "baseRawHex": "141A0000000000000000120000000000",
-        "baseDefinitionIndex": 6676,
-        "classInstantiationPointerVa": 6626884032,
+        "typePointerVa": 6704352424,
+        "typeRawHex": "C0CB8C90010000000000150000000000",
+        "carrierPointerVa": 6720113600,
+        "carrierRawHex": "E0AD84900100000000B5178E0100000000000000000000000000000000000000",
+        "basePointerVa": 6719581664,
+        "baseRawHex": "361B0000000000000000120000000000",
+        "baseDefinitionIndex": 6966,
+        "classInstantiationPointerVa": 6678885632,
         "opaqueCarrierTailHex": "00000000000000000000000000000000"
       },
       "classInstantiation": {
-        "index": 891,
-        "table_slot_va": 6625981304,
-        "record_va": 6626884032,
-        "argument_vector_va": 6669020808,
+        "index": 913,
+        "table_slot_va": 6679689160,
+        "record_va": 6678885632,
+        "argument_vector_va": 6727151064,
         "padding_hex": "00000000",
         "arguments": [
           {
             "index": 0,
-            "type_pointer_va": 6664879672,
-            "raw_type_record_hex": "C78C00000000000000000E0000000000"
+            "type_pointer_va": 6718844112,
+            "raw_type_record_hex": "7B0701000000000000000E0000000000"
           }
         ]
       },
-      "elementRawHex": "C78C00000000000000000E0000000000",
+      "elementRawHex": "7B0701000000000000000E0000000000",
       "elementTypeKind": 14,
       "elementTypeDefinition": null,
       "elementTypeName": "System.String",
@@ -426,585 +426,585 @@
   "enumTypes": [
     {
       "memberIndex": 9,
-      "typeDefinition": 1408,
+      "typeDefinition": 1518,
       "typeName": "Beyond.Gameplay.MountPoint",
       "underlyingType": "int",
       "members": [
         {
           "id": 0,
           "name": "None",
-          "fieldIndex": 9452,
-          "token": "0x040024ed"
+          "fieldIndex": 10023,
+          "token": "0x04002728"
         },
         {
           "id": 1,
           "name": "HeadBar",
-          "fieldIndex": 9453,
-          "token": "0x040024ee"
+          "fieldIndex": 10024,
+          "token": "0x04002729"
         },
         {
           "id": 2,
           "name": "FootBar",
-          "fieldIndex": 9454,
-          "token": "0x040024ef"
+          "fieldIndex": 10025,
+          "token": "0x0400272a"
         },
         {
           "id": 3,
           "name": "LockPoint",
-          "fieldIndex": 9455,
-          "token": "0x040024f0"
+          "fieldIndex": 10026,
+          "token": "0x0400272b"
         },
         {
           "id": 4,
           "name": "HeadStatus",
-          "fieldIndex": 9456,
-          "token": "0x040024f1"
+          "fieldIndex": 10027,
+          "token": "0x0400272c"
         },
         {
           "id": 5,
           "name": "DmgTxtSpawnPoint",
-          "fieldIndex": 9457,
-          "token": "0x040024f2"
+          "fieldIndex": 10028,
+          "token": "0x0400272d"
         },
         {
           "id": 6,
           "name": "AirborneEffect",
-          "fieldIndex": 9458,
-          "token": "0x040024f3"
+          "fieldIndex": 10029,
+          "token": "0x0400272e"
         },
         {
           "id": 50,
           "name": "ModelStart",
-          "fieldIndex": 9459,
-          "token": "0x040024f4"
+          "fieldIndex": 10030,
+          "token": "0x0400272f"
         },
         {
           "id": 51,
           "name": "Head",
-          "fieldIndex": 9460,
-          "token": "0x040024f5"
+          "fieldIndex": 10031,
+          "token": "0x04002730"
         },
         {
           "id": 52,
           "name": "VBHit",
-          "fieldIndex": 9461,
-          "token": "0x040024f6"
+          "fieldIndex": 10032,
+          "token": "0x04002731"
         },
         {
           "id": 53,
           "name": "Muzzle",
-          "fieldIndex": 9462,
-          "token": "0x040024f7"
+          "fieldIndex": 10033,
+          "token": "0x04002732"
         },
         {
           "id": 54,
           "name": "Foot",
-          "fieldIndex": 9463,
-          "token": "0x040024f8"
+          "fieldIndex": 10034,
+          "token": "0x04002733"
         },
         {
           "id": 55,
           "name": "Hip",
-          "fieldIndex": 9464,
-          "token": "0x040024f9"
+          "fieldIndex": 10035,
+          "token": "0x04002734"
         },
         {
           "id": 56,
           "name": "HipL",
-          "fieldIndex": 9465,
-          "token": "0x040024fa"
+          "fieldIndex": 10036,
+          "token": "0x04002735"
         },
         {
           "id": 57,
           "name": "HipR",
-          "fieldIndex": 9466,
-          "token": "0x040024fb"
+          "fieldIndex": 10037,
+          "token": "0x04002736"
         },
         {
           "id": 58,
           "name": "Spine1",
-          "fieldIndex": 9467,
-          "token": "0x040024fc"
+          "fieldIndex": 10038,
+          "token": "0x04002737"
         },
         {
           "id": 59,
           "name": "Spine2",
-          "fieldIndex": 9468,
-          "token": "0x040024fd"
+          "fieldIndex": 10039,
+          "token": "0x04002738"
         },
         {
           "id": 60,
           "name": "Spine3",
-          "fieldIndex": 9469,
-          "token": "0x040024fe"
+          "fieldIndex": 10040,
+          "token": "0x04002739"
         },
         {
           "id": 61,
           "name": "WepM",
-          "fieldIndex": 9470,
-          "token": "0x040024ff"
+          "fieldIndex": 10041,
+          "token": "0x0400273a"
         },
         {
           "id": 62,
           "name": "WepL",
-          "fieldIndex": 9471,
-          "token": "0x04002500"
+          "fieldIndex": 10042,
+          "token": "0x0400273b"
         },
         {
           "id": 63,
           "name": "WepR",
-          "fieldIndex": 9472,
-          "token": "0x04002501"
+          "fieldIndex": 10043,
+          "token": "0x0400273c"
         },
         {
           "id": 64,
           "name": "KneeL",
-          "fieldIndex": 9473,
-          "token": "0x04002502"
+          "fieldIndex": 10044,
+          "token": "0x0400273d"
         },
         {
           "id": 65,
           "name": "KneeR",
-          "fieldIndex": 9474,
-          "token": "0x04002503"
+          "fieldIndex": 10045,
+          "token": "0x0400273e"
         },
         {
           "id": 66,
           "name": "AnkleL",
-          "fieldIndex": 9475,
-          "token": "0x04002504"
+          "fieldIndex": 10046,
+          "token": "0x0400273f"
         },
         {
           "id": 67,
           "name": "AnkleR",
-          "fieldIndex": 9476,
-          "token": "0x04002505"
+          "fieldIndex": 10047,
+          "token": "0x04002740"
         },
         {
           "id": 68,
           "name": "ToesL",
-          "fieldIndex": 9477,
-          "token": "0x04002506"
+          "fieldIndex": 10048,
+          "token": "0x04002741"
         },
         {
           "id": 69,
           "name": "ToesR",
-          "fieldIndex": 9478,
-          "token": "0x04002507"
+          "fieldIndex": 10049,
+          "token": "0x04002742"
         },
         {
           "id": 70,
           "name": "Chest",
-          "fieldIndex": 9479,
-          "token": "0x04002508"
+          "fieldIndex": 10050,
+          "token": "0x04002743"
         },
         {
           "id": 71,
           "name": "Neck",
-          "fieldIndex": 9480,
-          "token": "0x04002509"
+          "fieldIndex": 10051,
+          "token": "0x04002744"
         },
         {
           "id": 72,
           "name": "ScapulaL",
-          "fieldIndex": 9481,
-          "token": "0x0400250a"
+          "fieldIndex": 10052,
+          "token": "0x04002745"
         },
         {
           "id": 73,
           "name": "ScapulaR",
-          "fieldIndex": 9482,
-          "token": "0x0400250b"
+          "fieldIndex": 10053,
+          "token": "0x04002746"
         },
         {
           "id": 74,
           "name": "ShoulderL",
-          "fieldIndex": 9483,
-          "token": "0x0400250c"
+          "fieldIndex": 10054,
+          "token": "0x04002747"
         },
         {
           "id": 75,
           "name": "ShoulderR",
-          "fieldIndex": 9484,
-          "token": "0x0400250d"
+          "fieldIndex": 10055,
+          "token": "0x04002748"
         },
         {
           "id": 76,
           "name": "WristL",
-          "fieldIndex": 9485,
-          "token": "0x0400250e"
+          "fieldIndex": 10056,
+          "token": "0x04002749"
         },
         {
           "id": 77,
           "name": "WristR",
-          "fieldIndex": 9486,
-          "token": "0x0400250f"
+          "fieldIndex": 10057,
+          "token": "0x0400274a"
         },
         {
           "id": 78,
           "name": "FingerL",
-          "fieldIndex": 9487,
-          "token": "0x04002510"
+          "fieldIndex": 10058,
+          "token": "0x0400274b"
         },
         {
           "id": 79,
           "name": "FingerR",
-          "fieldIndex": 9488,
-          "token": "0x04002511"
+          "fieldIndex": 10059,
+          "token": "0x0400274c"
         },
         {
           "id": 80,
           "name": "LookAtPoint",
-          "fieldIndex": 9489,
-          "token": "0x04002512"
+          "fieldIndex": 10060,
+          "token": "0x0400274d"
         },
         {
           "id": 81,
           "name": "ModelRoot",
-          "fieldIndex": 9490,
-          "token": "0x04002513"
+          "fieldIndex": 10061,
+          "token": "0x0400274e"
         },
         {
           "id": 82,
           "name": "RootM",
-          "fieldIndex": 9491,
-          "token": "0x04002514"
+          "fieldIndex": 10062,
+          "token": "0x0400274f"
         },
         {
           "id": 83,
           "name": "ThrowPoint",
-          "fieldIndex": 9492,
-          "token": "0x04002515"
+          "fieldIndex": 10063,
+          "token": "0x04002750"
         },
         {
           "id": 84,
           "name": "IKWepL",
-          "fieldIndex": 9493,
-          "token": "0x04002516"
+          "fieldIndex": 10064,
+          "token": "0x04002751"
         },
         {
           "id": 85,
           "name": "IKWepR",
-          "fieldIndex": 9494,
-          "token": "0x04002517"
+          "fieldIndex": 10065,
+          "token": "0x04002752"
         },
         {
           "id": 86,
           "name": "NarrativeFx",
-          "fieldIndex": 9495,
-          "token": "0x04002518"
+          "fieldIndex": 10066,
+          "token": "0x04002753"
         },
         {
           "id": 87,
           "name": "GoldCoinPoint",
-          "fieldIndex": 9496,
-          "token": "0x04002519"
+          "fieldIndex": 10067,
+          "token": "0x04002754"
         },
         {
           "id": 151,
           "name": "Custom1",
-          "fieldIndex": 9497,
-          "token": "0x0400251a"
+          "fieldIndex": 10068,
+          "token": "0x04002755"
         },
         {
           "id": 152,
           "name": "Custom2",
-          "fieldIndex": 9498,
-          "token": "0x0400251b"
+          "fieldIndex": 10069,
+          "token": "0x04002756"
         },
         {
           "id": 153,
           "name": "Custom3",
-          "fieldIndex": 9499,
-          "token": "0x0400251c"
+          "fieldIndex": 10070,
+          "token": "0x04002757"
         },
         {
           "id": 154,
           "name": "Custom4",
-          "fieldIndex": 9500,
-          "token": "0x0400251d"
+          "fieldIndex": 10071,
+          "token": "0x04002758"
         },
         {
           "id": 155,
           "name": "Custom5",
-          "fieldIndex": 9501,
-          "token": "0x0400251e"
+          "fieldIndex": 10072,
+          "token": "0x04002759"
         },
         {
           "id": 156,
           "name": "Custom6",
-          "fieldIndex": 9502,
-          "token": "0x0400251f"
+          "fieldIndex": 10073,
+          "token": "0x0400275a"
         },
         {
           "id": 157,
           "name": "Custom7",
-          "fieldIndex": 9503,
-          "token": "0x04002520"
+          "fieldIndex": 10074,
+          "token": "0x0400275b"
         },
         {
           "id": 158,
           "name": "Custom8",
-          "fieldIndex": 9504,
-          "token": "0x04002521"
+          "fieldIndex": 10075,
+          "token": "0x0400275c"
         },
         {
           "id": 159,
           "name": "Custom9",
-          "fieldIndex": 9505,
-          "token": "0x04002522"
+          "fieldIndex": 10076,
+          "token": "0x0400275d"
         },
         {
           "id": 160,
           "name": "Custom10",
-          "fieldIndex": 9506,
-          "token": "0x04002523"
+          "fieldIndex": 10077,
+          "token": "0x0400275e"
         },
         {
           "id": 161,
           "name": "Custom11",
-          "fieldIndex": 9507,
-          "token": "0x04002524"
+          "fieldIndex": 10078,
+          "token": "0x0400275f"
         },
         {
           "id": 162,
           "name": "Custom12",
-          "fieldIndex": 9508,
-          "token": "0x04002525"
+          "fieldIndex": 10079,
+          "token": "0x04002760"
         },
         {
           "id": 163,
           "name": "Custom13",
-          "fieldIndex": 9509,
-          "token": "0x04002526"
+          "fieldIndex": 10080,
+          "token": "0x04002761"
         },
         {
           "id": 164,
           "name": "Custom14",
-          "fieldIndex": 9510,
-          "token": "0x04002527"
+          "fieldIndex": 10081,
+          "token": "0x04002762"
         },
         {
           "id": 165,
           "name": "Custom15",
-          "fieldIndex": 9511,
-          "token": "0x04002528"
+          "fieldIndex": 10082,
+          "token": "0x04002763"
         },
         {
           "id": 166,
           "name": "Custom16",
-          "fieldIndex": 9512,
-          "token": "0x04002529"
+          "fieldIndex": 10083,
+          "token": "0x04002764"
         },
         {
           "id": 167,
           "name": "Custom17",
-          "fieldIndex": 9513,
-          "token": "0x0400252a"
+          "fieldIndex": 10084,
+          "token": "0x04002765"
         },
         {
           "id": 168,
           "name": "Custom18",
-          "fieldIndex": 9514,
-          "token": "0x0400252b"
+          "fieldIndex": 10085,
+          "token": "0x04002766"
         },
         {
           "id": 169,
           "name": "Custom19",
-          "fieldIndex": 9515,
-          "token": "0x0400252c"
+          "fieldIndex": 10086,
+          "token": "0x04002767"
         },
         {
           "id": 170,
           "name": "Custom20",
-          "fieldIndex": 9516,
-          "token": "0x0400252d"
+          "fieldIndex": 10087,
+          "token": "0x04002768"
         },
         {
           "id": 171,
           "name": "Custom21",
-          "fieldIndex": 9517,
-          "token": "0x0400252e"
+          "fieldIndex": 10088,
+          "token": "0x04002769"
         },
         {
           "id": 172,
           "name": "Custom22",
-          "fieldIndex": 9518,
-          "token": "0x0400252f"
+          "fieldIndex": 10089,
+          "token": "0x0400276a"
         },
         {
           "id": 173,
           "name": "Custom23",
-          "fieldIndex": 9519,
-          "token": "0x04002530"
+          "fieldIndex": 10090,
+          "token": "0x0400276b"
         },
         {
           "id": 174,
           "name": "Custom24",
-          "fieldIndex": 9520,
-          "token": "0x04002531"
+          "fieldIndex": 10091,
+          "token": "0x0400276c"
         },
         {
           "id": 175,
           "name": "Custom25",
-          "fieldIndex": 9521,
-          "token": "0x04002532"
+          "fieldIndex": 10092,
+          "token": "0x0400276d"
         },
         {
           "id": 176,
           "name": "Custom26",
-          "fieldIndex": 9522,
-          "token": "0x04002533"
+          "fieldIndex": 10093,
+          "token": "0x0400276e"
         },
         {
           "id": 177,
           "name": "Custom27",
-          "fieldIndex": 9523,
-          "token": "0x04002534"
+          "fieldIndex": 10094,
+          "token": "0x0400276f"
         },
         {
           "id": 178,
           "name": "Custom28",
-          "fieldIndex": 9524,
-          "token": "0x04002535"
+          "fieldIndex": 10095,
+          "token": "0x04002770"
         },
         {
           "id": 179,
           "name": "Custom29",
-          "fieldIndex": 9525,
-          "token": "0x04002536"
+          "fieldIndex": 10096,
+          "token": "0x04002771"
         },
         {
           "id": 180,
           "name": "Custom30",
-          "fieldIndex": 9526,
-          "token": "0x04002537"
+          "fieldIndex": 10097,
+          "token": "0x04002772"
         },
         {
           "id": 181,
           "name": "Custom31",
-          "fieldIndex": 9527,
-          "token": "0x04002538"
+          "fieldIndex": 10098,
+          "token": "0x04002773"
         },
         {
           "id": 182,
           "name": "Custom32",
-          "fieldIndex": 9528,
-          "token": "0x04002539"
+          "fieldIndex": 10099,
+          "token": "0x04002774"
         },
         {
           "id": 183,
           "name": "Custom33",
-          "fieldIndex": 9529,
-          "token": "0x0400253a"
+          "fieldIndex": 10100,
+          "token": "0x04002775"
         },
         {
           "id": 184,
           "name": "Custom34",
-          "fieldIndex": 9530,
-          "token": "0x0400253b"
+          "fieldIndex": 10101,
+          "token": "0x04002776"
         },
         {
           "id": 185,
           "name": "Custom35",
-          "fieldIndex": 9531,
-          "token": "0x0400253c"
+          "fieldIndex": 10102,
+          "token": "0x04002777"
         },
         {
           "id": 186,
           "name": "Custom36",
-          "fieldIndex": 9532,
-          "token": "0x0400253d"
+          "fieldIndex": 10103,
+          "token": "0x04002778"
         },
         {
           "id": 187,
           "name": "Custom37",
-          "fieldIndex": 9533,
-          "token": "0x0400253e"
+          "fieldIndex": 10104,
+          "token": "0x04002779"
         },
         {
           "id": 188,
           "name": "Custom38",
-          "fieldIndex": 9534,
-          "token": "0x0400253f"
+          "fieldIndex": 10105,
+          "token": "0x0400277a"
         },
         {
           "id": 189,
           "name": "Custom39",
-          "fieldIndex": 9535,
-          "token": "0x04002540"
+          "fieldIndex": 10106,
+          "token": "0x0400277b"
         },
         {
           "id": 190,
           "name": "Custom40",
-          "fieldIndex": 9536,
-          "token": "0x04002541"
+          "fieldIndex": 10107,
+          "token": "0x0400277c"
         },
         {
           "id": 191,
           "name": "Custom41",
-          "fieldIndex": 9537,
-          "token": "0x04002542"
+          "fieldIndex": 10108,
+          "token": "0x0400277d"
         },
         {
           "id": 192,
           "name": "Custom42",
-          "fieldIndex": 9538,
-          "token": "0x04002543"
+          "fieldIndex": 10109,
+          "token": "0x0400277e"
         },
         {
           "id": 193,
           "name": "Custom43",
-          "fieldIndex": 9539,
-          "token": "0x04002544"
+          "fieldIndex": 10110,
+          "token": "0x0400277f"
         },
         {
           "id": 194,
           "name": "Custom44",
-          "fieldIndex": 9540,
-          "token": "0x04002545"
+          "fieldIndex": 10111,
+          "token": "0x04002780"
         },
         {
           "id": 195,
           "name": "Custom45",
-          "fieldIndex": 9541,
-          "token": "0x04002546"
+          "fieldIndex": 10112,
+          "token": "0x04002781"
         },
         {
           "id": 196,
           "name": "Custom46",
-          "fieldIndex": 9542,
-          "token": "0x04002547"
+          "fieldIndex": 10113,
+          "token": "0x04002782"
         },
         {
           "id": 197,
           "name": "Custom47",
-          "fieldIndex": 9543,
-          "token": "0x04002548"
+          "fieldIndex": 10114,
+          "token": "0x04002783"
         },
         {
           "id": 198,
           "name": "Custom48",
-          "fieldIndex": 9544,
-          "token": "0x04002549"
+          "fieldIndex": 10115,
+          "token": "0x04002784"
         },
         {
           "id": 199,
           "name": "Custom49",
-          "fieldIndex": 9545,
-          "token": "0x0400254a"
+          "fieldIndex": 10116,
+          "token": "0x04002785"
         },
         {
           "id": 200,
           "name": "Custom50",
-          "fieldIndex": 9546,
-          "token": "0x0400254b"
+          "fieldIndex": 10117,
+          "token": "0x04002786"
         },
         {
           "id": 1000,
           "name": "HeadLabel",
-          "fieldIndex": 9547,
-          "token": "0x0400254c"
+          "fieldIndex": 10118,
+          "token": "0x04002787"
         }
       ]
     }

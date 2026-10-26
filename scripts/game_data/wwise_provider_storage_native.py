@@ -15,12 +15,12 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data import wwise_owner_carrier_native as carrier
 from scripts.game_data import wwise_decoder_provider_native as preparation
-from scripts.game_data.wwise_source_queue_native import validate_native_group_windows, _digest, _hex, _rva
+from scripts.game_data.wwise_source_queue_native import validate_native_group_windows, _digest, _hex, _rva, _selection_register
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_provider_storage_native.json"
-SCHEMA = "endfield.wwise-provider-storage-native.v1"
+SCHEMA = "endfield.wwise-provider-storage-native.v2"
 GROUP_NAMES = {"singletonInitializer", "ordinaryProviderFactory", "ordinaryProviderConstructor", "providerDescriptorStorage", "wideTextCopy", "secureWideTextCopy", "alternateProviderFactory"}
-LEAF_NAMES = {"ordinaryProviderOpen", "alternateProviderConstructor", "wideTextLength"}
+LEAF_NAMES = {"ordinaryProviderOpen", "alternateProviderConstructor"}
 LAYOUT_FIELDS = {
     "factory": {"ordinarySlot", "alternateSlot"},
     "provider": {"primaryTable", "secondaryTable", "descriptorAllocation", "openSlot"},
@@ -32,6 +32,59 @@ LAYOUT_FIELDS = {
 def load_storage_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     contract, _ = read_reviewed_contract(path, schema=SCHEMA, status="reviewedCurrentBuild", label="wwise-provider-storage")
     return contract
+
+
+def validate_inline_wide_length(contract: dict, witnesses: dict) -> None:
+    """Check the current scalar unit loop, including its terminator and scaling."""
+    fail = preparation._fail
+    declaration = contract.get('inlineWideLength')
+    if not isinstance(declaration, dict) or declaration.get('owner') != 'providerDescriptorStorage':
+        fail('storageInlineLength', 'contract', 'named descriptor-storage loop', declaration)
+    names = ('descriptorRegister', 'textRegister', 'counterRegister', 'minusOneRegister', 'zeroRegister')
+    registers = {name: _selection_register(declaration.get(name)) for name in names}
+    if len(set(registers.values())) != len(registers):
+        fail('storageInlineLengthRegisters', 'inlineWideLength', 'distinct live register roles', declaration)
+    descriptor, text, counter, minus_one, zero = (registers[name] for name in names)
+    roles = declaration.get('roles')
+    if not isinstance(roles, dict) or set(roles) != {'zero','minusOne','counter','text','increment','compare','repeat','terminator','scale'}:
+        fail('storageInlineLengthRoles', 'inlineWideLength', 'complete named loop operations', roles)
+    local = witnesses[declaration['owner']]
+    def memory(opcode, register, base, index=None, scale=0, word=False):
+        rex = 0x40 | (0 if word else 8) | (4 if register >= 8 else 0) | (1 if base >= 8 else 0)
+        if index is not None and index >= 8:
+            rex |= 2
+        prefix = (b'\x66' if word else b'') + (bytes((rex,)) if rex != 0x40 else b'')
+        mode = 0x40 if base & 7 == 5 else 0
+        sib = index is not None or base & 7 == 4
+        raw = prefix + bytes((opcode, mode | ((register & 7) << 3) | (4 if sib else base & 7)))
+        if sib:
+            raw += bytes(((scale << 6) | ((index & 7 if index is not None else 4) << 3) | (base & 7),))
+        return raw + (b'\x00' if mode else b'')
+    def require(name, expected):
+        row = local.get(roles[name], {})
+        if bytes.fromhex(row.get('instructionHex', '')) != expected:
+            fail('storageInlineLengthInstruction', name, expected.hex(), row)
+        return int(row['rva'], 16), len(expected)
+    zero_bytes = (b'\x45' if zero >= 8 else b'') + bytes((0x33, 0xc0 | ((zero & 7) << 3) | (zero & 7)))
+    zero_at, _ = require('zero', zero_bytes)
+    minus_at, _ = require('minusOne', bytes((0x48 | (1 if minus_one >= 8 else 0), 0xc7, 0xc0 | (minus_one & 7))) + b'\xff' * 4)
+    move = bytes((0x48 | (4 if counter >= 8 else 0) | (1 if minus_one >= 8 else 0), 0x8b,
+                  0xc0 | ((counter & 7) << 3) | (minus_one & 7)))
+    counter_at, _ = require('counter', move)
+    text_at, text_size = require('text', memory(0x8b, text, descriptor))
+    increment = bytes((0x48 | (1 if counter >= 8 else 0), 0xff, 0xc0 | (counter & 7)))
+    increment_at, increment_size = require('increment', increment)
+    compare_at, compare_size = require('compare', memory(0x39, zero, text, counter, 1, True))
+    repeat = local.get(roles['repeat'], {})
+    raw = bytes.fromhex(repeat.get('instructionHex', ''))
+    repeat_at = _rva(repeat.get('rva'), 'inline wide-length backedge')
+    terminator_at, _ = require('terminator', increment)
+    scale_at, _ = require('scale', memory(0x8d, 2, counter, counter))
+    if not (zero_at < minus_at < counter_at < text_at and increment_at == text_at + text_size
+            and compare_at == increment_at + increment_size and repeat_at == compare_at + compare_size
+            and len(raw) == 2 and raw[0] == 0x75 and repeat_at + 2 + struct.unpack('<b', raw[1:])[0] == increment_at
+            and terminator_at == repeat_at + 2 and scale_at > terminator_at):
+        fail('storageInlineLengthFlow', 'inlineWideLength', 'ordered producers and contiguous unit loop/backedge/terminator', declaration)
 
 
 def validate_storage_declarations(contract: dict[str, Any]) -> None:
@@ -108,9 +161,10 @@ def validate_storage_declarations(contract: dict[str, Any]) -> None:
         if opcode not in (b"\xe8",b"\xe9") or len(encoded) != 5 or encoded[:1] != opcode or int(witness["rva"],16)+5+struct.unpack_from("<i",encoded,1)[0] != target:
             fail("storageCallTarget", binding["witness"], hex(target), encoded.hex())
         call_targets.add(binding["targetOwner"])
-    required_targets = {"ordinaryProviderConstructor", "providerDescriptorStorage", "wideTextLength", "wideTextCopy", "secureWideTextCopy", "alternateProviderConstructor"}
+    required_targets = {"ordinaryProviderConstructor", "providerDescriptorStorage", "wideTextCopy", "secureWideTextCopy", "alternateProviderConstructor"}
     if call_targets != required_targets:
         fail("storageCallCoverage", "callBindings", sorted(required_targets), sorted(call_targets))
+    validate_inline_wide_length(contract, witnesses)
     points = {}
     for bindings in (rows(contract["addressPointBindings"], "addressPointBindings", 4), rows(contract["singletonBindings"], "singletonBindings", 2)):
         for binding in bindings:

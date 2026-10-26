@@ -146,8 +146,9 @@ loader-to-instance identity bridge. Validate the selected-build ABI and hidden
 return carriers before installing hooks, especially Matrix4x4 and
 FAssetProxyHandle returns; named-call claims do not validate these carriers.
 Do not infer active colliders from the prefab's saved flags or report a failed
-load as an instantiated object. The generated current target shortlist belongs
-in `reports/assets/collision_live_capture_plan.json`.
+load as an instantiated object. The current capture filter plan belongs under
+`reports/runtime_capture/collision-current-source/`; wider historical asset
+shortlists retain their original-build evidence boundary.
 
 The first observer is prepared through
 `scripts.game_data.collision_capture_prepare` and the standalone collision
@@ -358,6 +359,16 @@ its type-name and vertex/triangle/count/remap getters, index-width selector and
 selected word/DWORD readers are authenticated against the selected native
 inputs. This is a pointer-bound type and array proof, beyond a name match or
 the occurrence of vertex bytes in a neighboring allocation.
+
+The installed-client port rederives the Mesh/cache and shape contracts from
+current constructor/destructor publications, named native type getters and
+their actual virtual slots. The named Mesh creation binding reaches the
+current Mesh factory and constructor; the holder release uses the current
+devirtualized consumer. The former standalone collider actor getter is now
+represented by its inline detach call site. These declarations pass their
+native gates and focused offline checks; historical captures remain evidence
+for their own frozen build. Other Collision capture dependencies still require
+porting before its preset can select this build.
 
 [`collision_runtime_mesh.py`](../../scripts/game_data/collision_runtime_mesh.py)
 reuses an admitted session only while the frozen profile/runtime/sources,
@@ -612,9 +623,9 @@ identity routes in `RaycastHit.get_colliderProxy` and
 `ECSColliderResultProxy.get_layer`; resolving only a managed Collider is
 insufficient. The capsule-overlap lookup names an ECS proxy result array, while
 capsule/sphere cast lookups name hit arrays. Internal-call lookup literals name
-the requested API, not the live cached function pointer. A paired native query
-table candidate has complete array framing, but its registration route is not
-proved and no binding is admitted from adjacency alone.
+the requested API, not the live cached function pointer. The current Physics
+registration loop pairs explicit same-index names and functions using its
+compiled count. Array adjacency alone never admits an observed query binding.
 
 [`collision_query_native.json`](../../scripts/game_data/contracts/collision_query_native.json)
 now authenticates the selected argument/result ABI, native result writers and
@@ -624,6 +635,10 @@ field. The observer admits native result interpretation only at a reviewed
 original caller whose live cache contains the exact reviewed target. Other
 callers/cache values remain diagnostics. This conditional gate supplies the
 missing live binding witness without inferring registration from table adjacency.
+Its current contract also names each selected managed caller and authenticates
+the lookup, cache store/load and indirect call within that caller's actual unwind
+family, including cold resolver fragments. Unused historical paired-array
+inventories and overlapping body slices are omitted from the observer contract.
 
 The observer records actual query arguments, masks, trigger mode, returned counts
 and bounded cast/ray/ECS-overlap buffers. Buffer getters and the hidden-return
@@ -656,8 +671,8 @@ sampling intervals, bounds and unbound calls are explicit.
 and [`collision_capture_queries.py`](../../scripts/game_data/collision_capture_queries.py)
 validate the native declarations and saved observations. Offline checks cover
 disabled client trampolines, synthetic forwarding/stop/exception/bound cases and
-saved-session admission. Retail execution now supplies live caller/cache
-matches, both ordinary Collider and ECS hit identities, actual filter returns
+saved-session admission. Previously admitted retail sessions supply live caller/cache
+matches on their frozen build, both ordinary Collider and ECS hit identities, actual filter returns
 and sampled blocking. Covered queries retain a preceding completed native-core
 reference, not an atomic scene-membership observation. Executed original call
 sites provide route witnesses; an owner without admitted descendant queries
@@ -707,14 +722,23 @@ ordinary attachment gate still consumes its stored record and mesh slot. The
 optional complex-mesh record has a different packed flag profile and no such
 bit-zero gate; it must not be classified as disabled from that bit.
 
+The installed-client port re-derives this family independently of the wider
+Streaming row decoder. Its ordinary and complex records gained an anonymous
+trailing word; terrain retains its previous width. Shape userdata now retains
+that word and uses different surface/secondary storage. The reviewed contract
+owns those coordinates, and both stored projection and runtime comparison use
+it. An absent shape-userdata read withholds parameter comparison; zero-filled
+transport storage is not an observed parameter value. Complex secondary
+selection remains separate from the ordinary packed secondary byte.
+
 The exported `FactoryUnitConfigAsset` source family has `colliderData` and
 `colliderMeshes` fields. The named
 [`ownership claims`](../../scripts/game_data/contracts/ecs_collision_ownership.json)
 re-prove a `CreateBusRender` route that reads both fields, supplies ordered Mesh
 instance IDs to decoding, obtains a returned actor's physics ID/version and
 records an owning entity. MonoScript CAB/PathID, exported PPtr declarations and
-per-output freshness can authenticate these authored inputs. The current stored
-factory definitions tile through EOF and preserve their declared mesh targets;
+per-output freshness can authenticate these authored inputs. Previously
+authenticated factory definitions tile through EOF and preserve their declared mesh targets;
 they do not establish this route's retail execution or Dijiang hit ownership.
 
 The hit's ECS ID/version and owning Entity are **different identity lanes**.
@@ -756,6 +780,14 @@ replays the current root directory, VFS file hashes, full table-local keys,
 counted body framing and native-selected descriptor layouts. Default callback
 compatibility is conditional: it is not a receipt of runtime root pairing,
 callback registration, resource load or scene activation.
+
+The broader field-2/marker contracts still describe their own selected build.
+The current Collision observer does not relabel them as current: its ECS
+contract independently authenticates the selected constructor's descriptor,
+slot-three callback assignments and publications, and its observer contract
+owns the current resource helper families, including cold paths. Producer
+labels follow those current selector assignments. This closes the capture
+dependencies without claiming a current stored Streaming corpus projection.
 
 The reviewed
 [`Streaming collision contract`](../../scripts/game_data/contracts/streaming_collision_native.json)
@@ -1263,6 +1295,14 @@ validated by
 That class name does not distinguish dynamic/kinematic mode, awake participation
 or contact response. The observer intentionally withholds its unread global pose;
 the local shape pose alone is insufficient for world placement.
+
+The current actor-type declarations select final constructor/factory address
+points, excluding intermediate construction tables that share the same name
+getter. The current body-mode contract follows the named managed setter through
+its cache/resolver, same-index Physics registration and native bool/flag path.
+That registration is bounded by its authenticated compiled count; the next word
+belongs to adjacent data and is not a sentinel. Neither static port establishes
+current live setter execution or changes the historical capture boundary.
 
 The reviewed
 [`collision_ecs_shape_policy_native.json`](../../scripts/game_data/contracts/collision_ecs_shape_policy_native.json),
@@ -3097,3 +3137,35 @@ requires the independent writer proof to be current, the same concrete receiver,
 unchanged State storage through the comparison, the getter's selected path and
 normal callee/frame noninterference. Neither method names nor enum declarations
 establish lifecycle order, reachability or runtime object identity.
+
+
+### Installed-build Collision observer port
+
+The Collision declaration families authenticate the selected installed engine
+and managed inputs through the ordinary `collision_capture_prepare` path.
+Current witnesses cover the compiled query-registration count, short accessor
+leaves, inline attachment sites and refactored helpers. Generated declarations
+live under `reports/runtime_capture/collision-current/`; the earlier profile
+remains historical. Release compilation and private-buffer forwarding, hidden
+returns, mixed arguments, LastError, C++/SEH unwind, nested stop and bounded-read
+checks pass. These checks establish no live ABI, worker ownership, continuous
+object lifetime, query hit or impulse.
+
+`collision_model_source_native` owns a narrow source filter: named
+Grids/UniqueId/Model/PathHash accessors and the vector builder establish only
+the selected table fields, inline stride and hash position. Preparation re-reads
+current VFS source frames through that layout. Other Model fields, authored
+prefab names, CAB/PathID and cooked-mesh joins are not carried over from the
+historical inventory. A path hash remains a filter until runtime enrollment
+supplies an actual identity.
+
+The current packed ECS layout adds anonymous trailing words to ordinary multi
+and single records, while single terrain retains its framing. Shape userdata
+moves the surface/secondary fields and carries an anonymous word. The ordinary
+secondary bit does not describe complex-mesh auxiliaries. The runtime decoder
+requires readable copied userdata before comparing values; unreadable fields
+are gaps rather than zeros. Current selector-to-callback identities are proved
+through descriptor, slot assignment and publication, including changed selector
+assignments. The ECS capture resource bodies own their current access path
+independently of the broader stored Streaming contracts; those older contracts
+still fail closed on this build.

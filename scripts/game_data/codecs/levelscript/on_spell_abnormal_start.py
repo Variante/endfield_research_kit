@@ -9,6 +9,8 @@ from __future__ import annotations
 from collections.abc import Collection
 from typing import Any
 
+from scripts.game_data.memorypack.core import memorypack_union_header
+
 from .action_map import ActionMapCodecError, _Cursor
 
 
@@ -34,7 +36,7 @@ _OWN = [
 
 def decode_on_spell_abnormal_start_header(
     data: bytes, offset: int, route: dict[str, Any], *,
-    enum_values: Collection[int] | None,
+    enum_values: Collection[int] | None, game_root=None, strings: Any=None,
 ) -> tuple[dict[str, Any], int]:
     """Read exactly one native-gated header and its signed enum parameter."""
     fields = route.get("fields") or []
@@ -43,7 +45,7 @@ def decode_on_spell_abnormal_start_header(
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") != _TYPE
-        or type(tag) is not int or not 0 <= tag < 0xFA
+        or type(tag) is not int or not 0 <= tag <= 0xFFFF
         or members != len(fields) or members != 20
         or fields[:14] != _INHERITED or fields[14:] != _OWN
     ):
@@ -54,16 +56,15 @@ def decode_on_spell_abnormal_start_header(
         or len(set(enum_values)) != len(enum_values)
     ):
         raise ActionMapCodecError("onSpellAbnormalStartHeader:enum-native-gate")
-    header = bytes((tag, members))
-    if offset < 0 or data[offset:offset + 2] != header:
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onSpellAbnormalStartHeader:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:
         start = cursor.offset
-        read_kind = "Param<int>" if kind == "Param<SpellAbnormalType>" else kind
-        value = cursor.value(read_kind, "onSpellAbnormalStartHeader." + name)
+        value = cursor.node_string("onSpellAbnormalStartHeader."+name,{**route,"nativeGate":"levelscript_on_spell_abnormal_start_native"},name) if kind=="string" else cursor.value(kind,"onSpellAbnormalStartHeader."+name)
         if (
             kind == "Param<SpellAbnormalType>"
             and value is not None

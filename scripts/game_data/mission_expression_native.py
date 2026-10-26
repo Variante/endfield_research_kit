@@ -355,6 +355,12 @@ def check_contract(image: Any, contract: dict[str, Any], *, index: Any = None) -
             "evidenceBoundary": contract["evidenceBoundary"]}
 
 
+def native_gate_diagnostic(gate: Any, expected: dict, source: Path, check: str) -> dict:
+    return {'validator':'mission_expression_native','failedCheck':check,
+        'sourcePath':str(source),'expected':expected,
+        'actual':_gate_row(gate),'detail':gate.detail[:1000]}
+
+
 def evaluate(*, image: Any = None, gameassembly: Path | None = None, metadata: Path | None = None,
              contract_path: Path = DEFAULT_CONTRACT, index: Any = None) -> dict[str, Any]:
     contract, digest = read_reviewed_contract(contract_path, schema=SCHEMA, status="reviewed", label="mission_expression")
@@ -366,6 +372,7 @@ def evaluate(*, image: Any = None, gameassembly: Path | None = None, metadata: P
     result = {"schema": REPORT_SCHEMA, "status": before.status, "nativeGate": _gate_row(before),
               "contract": {"path": str(contract_path), "sha256": digest}, "methods": [], "diagnostics": []}
     if before.status != "validated":
+        result['diagnostics']=[native_gate_diagnostic(before,native,contract_path,'selected_native_inputs')]
         return result
     image = image if image is not None else open_native_image(before.gameassembly, before.metadata)
     result.update(check_contract(image, contract, index=index))
@@ -373,6 +380,7 @@ def evaluate(*, image: Any = None, gameassembly: Path | None = None, metadata: P
                                          gameassembly=before.gameassembly, metadata=before.metadata)
     result["nativeGateAfter"] = _gate_row(after)
     if after.status != "validated":
+        result['diagnostics']=[native_gate_diagnostic(after,native,contract_path,'native_inputs_changed_during_validation')]
         result.update(status=after.status, methods=[], grammar={}, parameterResolution={}, ownerLookup={}, eventPublication={}, parameterLoading={}, activationOrderProofs=[], sourceSelectors=[], objectiveActivation={})
     return result
 

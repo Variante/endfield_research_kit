@@ -37,6 +37,7 @@ from scripts.common import (
     write_text_if_changed,
 )
 from scripts.game_data.il2cpp import protocol as il2cpp
+from scripts.game_data.protobuf_schema import message_schema
 from scripts.game_data.ifix_patch_native import (
     fixed_method_prefix_matches,
     load_ifix_patch_contract,
@@ -3512,44 +3513,6 @@ def levelscript_activation_control_contract(
         ),
         "validation": validation,
     }
-
-
-def message_schema(
-    metadata: Any,
-    defaults: dict[int, tuple[int, int]],
-    type_name: str,
-) -> dict[str, Any]:
-    for type_def in metadata.types:
-        if metadata.type_full_name(type_def) != type_name:
-            continue
-        tags: dict[str, dict[str, Any]] = {}
-        storage: dict[str, dict[str, Any]] = {}
-        for field in metadata.fields_for(type_def):
-            name = metadata.string(field.name_index)
-            if name.endswith("FieldNumber"):
-                tags[il2cpp.normalized_field_name(name)] = {
-                    "constantName": name,
-                    "tag": il2cpp.constant_value(metadata, defaults, field),
-                }
-            elif name.endswith("_"):
-                storage[il2cpp.normalized_field_name(name)] = {
-                    "name": name[:-1],
-                    "storageName": name,
-                    "storageTypeIndex": field.type_index,
-                    "metadataType": metadata.metadata_type_name(field.type_index),
-                }
-        fields: list[dict[str, Any]] = []
-        for key in sorted(set(tags) | set(storage)):
-            row = {**storage.get(key, {}), **tags.get(key, {})}
-            row["matchedTagAndStorage"] = key in tags and key in storage
-            fields.append(row)
-        fields.sort(key=lambda row: (row.get("tag") is None, row.get("tag", 0), row.get("name", "")))
-        return {
-            "type": type_name,
-            "token": f"0x{type_def.token:08x}",
-            "fields": fields,
-        }
-    raise RuntimeError(f"metadata type not found: {type_name}")
 
 
 def protobuf_identity_field_classes(field_name: str) -> set[str]:

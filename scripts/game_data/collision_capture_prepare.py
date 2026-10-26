@@ -137,9 +137,12 @@ def validate_contract(image, contract: dict) -> list[dict]:
         byref = [bool(image.pe.bytes_at_va(image.pe.u64_at_va(int(image.registration["types"],16)+p.type_index*8),16)[11] & 0x20) for p in parameters]
         if (actual, selected.type_name(method.return_type), bool(method.flags & 16), byref) != (row["parameters"], row["returnType"], row["static"], row["parameterByRef"]):
             raise ValueError(label + ": selected metadata signature/byref drift")
-        if not 16 <= row["bodyBytes"] <= 4096:
+        cached_leaf = row['role'] == 'cached_ptr' and not row['hook'] and row['bodyBytes'] == 7
+        if not (cached_leaf or 16 <= row["bodyBytes"] <= 4096):
             raise ValueError(label + ": unbounded body")
         raw = image.pe.bytes_at_va(image.pe.image_base+row["rva"], row["bodyBytes"])
+        if cached_leaf and raw != bytes.fromhex('6690488b4110c3'):
+            raise ValueError(label + ': cached pointer leaf differs')
         if hashlib.sha256(raw).hexdigest().lower() != row["bodySha256"].lower():
             raise ValueError(label + ": native body hash differs")
         for probe in row["abiEntryProbes"]:
@@ -390,13 +393,19 @@ def prepare(game_root: Path, plan_path: Path) -> dict:
             raise ValueError("collision-capture:source receipt changed:" + row["path"])
     model_receipt = next(row for row in plan["sources"] if "dynamic_model_current" in row["path"])
     models = json.loads((REPO_ROOT/model_receipt["path"]).read_text("utf-8"))
+    from scripts.game_data import collision_model_source_native
+    model_layout = collision_model_source_native.load(image, inputs)
+    if (models.get('schema') != 'endfield.collision-model-filter-selection.v1' or
+            models.get('nativeInputs') != inputs):
+        raise ValueError('collision-capture: current Model selection receipt differs')
     target_models = [row for row in models["models"] if row["pathHashHex"] == plan["firstTarget"]["pathHashHex"]]
     raw_sources = {row["virtualPath"]:row for row in models["files"]}
     archived = [dict(path=str((REPO_ROOT/row["path"]).resolve()),sha256=row["sha256"]) for row in plan["sources"]]
     archived += [dict(path=str(CONTRACT),sha256=digest),dict(path=str(plan_path.resolve()),sha256=sha256_file(plan_path))]
+    archived.append(dict(path=str(collision_model_source_native.CONTRACT),sha256=sha256_file(collision_model_source_native.CONTRACT)))
     archived.append(dict(path=str(CONTRACTS_DIR/"collision_runtime_shape_native.json"),sha256=sha256_file(CONTRACTS_DIR/"collision_runtime_shape_native.json")))
     archived.append(dict(path=str(collision_query_native.CONTRACT),sha256=query_capture['contractSha256']))
-    for name in ("collision_ecs_capture_native.json","ecs_collision_native.json","streaming_collision_native.json","streaming_marker17_native.json","collision_runtime_mesh_native.json"):
+    for name in ("collision_ecs_capture_native.json","ecs_collision_native.json","collision_runtime_mesh_native.json"):
         path=CONTRACTS_DIR/name
         archived.append(dict(path=str(path),sha256=sha256_file(path)))
     archived.append(dict(path=str(collision_physics_stage_native.CONTRACT),sha256=sha256_file(collision_physics_stage_native.CONTRACT)))
@@ -415,6 +424,9 @@ def prepare(game_root: Path, plan_path: Path) -> dict:
         if sha256_file(raw_path).upper() != source["sha256"].upper():
             raise ValueError("collision-capture:target Model source changed:"+model["source"])
         raw = raw_path.read_bytes()
+        framed = collision_model_source_native.selected_models(raw, model_layout, source=model['source'], path_hash=model['pathHashHex'])
+        if model not in framed:
+            raise ValueError('collision-capture: selected Model is outside the current named source framing')
         at = model["byteOffset"]
         if not 0 <= at <= len(raw)-96 or int.from_bytes(raw[at+64:at+72],"little") != int(model["pathHashHex"],16):
             raise ValueError("collision-capture:target Model framing differs")
@@ -632,8 +644,8 @@ def header(profile: dict, profile_path: Path) -> str:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--game-root", type=Path, required=True)
-    parser.add_argument("--plan", type=Path, default=REPO_ROOT/"reports/assets/collision_live_capture_plan.json")
-    parser.add_argument("--output-dir", type=Path, default=REPO_ROOT/"reports/runtime_capture/collision")
+    parser.add_argument("--plan", type=Path, default=REPO_ROOT/"reports/runtime_capture/collision-current-source/collision_live_capture_plan.json")
+    parser.add_argument("--output-dir", type=Path, default=REPO_ROOT/"reports/runtime_capture/collision-current")
     args = parser.parse_args(argv)
     output = args.output_dir.resolve()
     # Emitted files are artifacts; never route them into a tracked source folder.

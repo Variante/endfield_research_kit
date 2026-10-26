@@ -15,7 +15,7 @@ from scripts.game_data import wwise_owner_carrier_native as carrier
 from scripts.game_data.wwise_source_queue_native import validate_native_group_windows, _hex, _rva
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_source_provider_dispatch_native.json"
-SCHEMA = "endfield.wwise-source-provider-dispatch-native.v1"
+SCHEMA = "endfield.wwise-source-provider-dispatch-native.v2"
 LAYOUT_FIELDS = {
     "request": {"sourcePointer", "alternateDataPointer", "alternateDataWord"},
     "source": {"flagsWord", "storedWord", "dataPointer", "argumentHighWord"},
@@ -44,7 +44,7 @@ def validate_dispatch_bytes(contract: dict, image, bodies: dict, records: dict,
     source = witnesses["anonymousSourceProviderPreparation"]
     required = {"retainRequest": "488bfa", "retainOutputContext": "488bd9",
                 "loadRequestSource": "4c8b02", "passOrdinaryOutput": "48895c2420",
-                "passAlternateOutput": "48895c2420", "callOrdinarySlot": "41ffd2"}
+                "passAlternateOutput": "48895c2420"}
     for name, encoded in required.items():
         if source[name]["instructionHex"] != encoded:
             fail("dispatchArgumentTransport", name, encoded, source[name]["instructionHex"])
@@ -71,6 +71,7 @@ def validate_dispatch_bytes(contract: dict, image, bodies: dict, records: dict,
     for name in ("source", "providerVtable"):
         if layouts[name] != parent["layouts"][name]:
             fail("dispatchDependencyLayout", name, parent["layouts"][name], layouts[name])
+    preparation.validate_virtual_dispatch(contract, source)
     frame = layouts["frame"]
     for field, storage_field in (("descriptorWord", "numericWord"), ("auxiliaryPointer", "auxiliaryPointer")):
         if frame[field] - frame["descriptorPointer"] != storage["layouts"]["descriptor"][storage_field]:

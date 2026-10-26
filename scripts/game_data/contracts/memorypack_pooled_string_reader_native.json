@@ -8,7 +8,8 @@
   },
   "evidenceBoundary": {
     "exact": "Complete pdata/chained windows of the anonymous optimized reader and metadata-named BeyondReadString, plus the shared lookup helper.",
-    "direct": "Both consume an Int32 index, return the same empty-string literal for -1 and null for -2, and tail-forward the remaining index and identical pool instance to the same lookup helper.",
+    "direct": "On the pool-present branch, both consume an Int32 index, return the same empty-string literal for -1 and null for -2, and tail-forward the remaining index and identical pool instance to the same lookup helper.",
+    "conditional": "Selected initialized pool-present branch, compatible reader and pool, sufficient buffered index bytes and normal helpers. Pool-absent behavior and live pool selection are not admitted.",
     "unresolved": "This proves a string-valued read, not inline MemoryPack string wire compatibility or current corpus admission."
   },
   "claim": "MemoryPack.MemoryPackReader.ReadString",

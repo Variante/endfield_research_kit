@@ -34,7 +34,10 @@ terminal state is not thereby named field by field, and a whole-file claim
 still needs the family gate.  BuffData, SkillData and LevelScriptData have
 deeper family gates (``memorypack.buff_corpus``, ``memorypack.skill_corpus``,
 the LevelScript sequential owner) that own formatter, cursor, native-input and
-semantic claims.  Their reports are read here only after their own provenance
+semantic claims. A missing or mismatched required native input withholds only
+that family's named decoder and historical receipts; its authenticated source
+identities remain unsupported. Matching native inputs still require the full
+family receipt and every provenance check. Their reports are read only after their own provenance
 checks, and every BuffData row promoted to ``schema_decoded`` is replayed from
 the current exported bytes against the family's recorded root receipt
 (no-positive, positive-damage, sole-CreateBuffAction, or one of four
@@ -71,8 +74,9 @@ report pins that compressed ledger's length and SHA-256
 (``provenance.outputFiles``), so downstream source joins (the LevelScript
 validators' ``--ledger``/``--summary`` replay, ``play_sound_action_corpus``)
 can prove they read the same ledger. ``--buff-report`` and ``--skill-report``
-are the complete Buff and Skill gate reports of the same input set; run
-vfs-audit, ``memorypack.buff_corpus`` and ``memorypack.skill_corpus`` first.
+are the complete Buff and Skill gate reports of the same input set whenever
+their required native inputs match. Run vfs-audit first, then the family
+gates; a build mismatch withholds only that family's classifications.
 """
 
 from __future__ import annotations
@@ -82,6 +86,7 @@ import gzip
 import hashlib
 import json
 import os
+import re
 import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
@@ -128,7 +133,7 @@ from scripts.game_data.levelscript_binary import (
     LevelScriptTopLevelFramingError,
     frame_levelscript_named,
 )
-from scripts.game_data.levelscript_reader_inputs import reader_input_changes, snapshot_complete_reader_inputs
+from scripts.game_data.levelscript_reader_inputs import reader_input_changes, snapshot_complete_reader_inputs, snapshot_string_pool_inputs
 from scripts.game_data.levelscript_template_binary import (
     LevelScriptTemplateFramingError,
     frame_levelscript_template,
@@ -205,6 +210,7 @@ from scripts.game_data.memorypack import buff_event_maps
 from scripts.game_data.memorypack import buff_create_action_root_receipt
 from scripts.game_data.memorypack import buff_selected_roots
 from scripts.game_data.memorypack.lipsync import (
+    LIPSYNC_FIELD_NAMES,
     LipSyncDecodeError,
     decode_lipsync_memorypack,
 )
@@ -243,12 +249,7 @@ from scripts.game_data.memorypack.npc_montage import (
     frame_npc_montage,
 )
 from scripts.game_data.spawner_binary import (
-    SpawnerEnemyLibraryDecodeError,
-    SpawnerWaveDecodeError,
-    decode_spawner_enemy_library,
-    decode_spawner_named_prefix,
-    decode_spawner_wave_map,
-    decode_spawner_wave_map_sequential,
+    frame_spawner_named,
 )
 from scripts.game_data.teleport_validation_binary import (
     TeleportValidationDecodeError,
@@ -272,6 +273,11 @@ DEFAULT_MD = REPO_ROOT / "reports/animestudio/jsondata_current_latest.md"
 DEFAULT_FILES = REPO_ROOT / "reports/animestudio/jsondata_current_files_latest.jsonl.gz"
 DEFAULT_BUFF_REPORT = REPO_ROOT / "reports/animestudio/buffdata_current_latest.json"
 DEFAULT_SKILL_REPORT = REPO_ROOT / "reports/animestudio/skilldata_current_latest.json"
+from scripts.game_data.jsondata_blocks import is_jsondata_identity
+from scripts.game_data.lipsync_native import validate_lipsync_native_contract
+from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.pooled_source_helper import check_unity_input
 JSONDATA_PREFIX = PurePosixPath("Data/Json")
 
 FAMILY_REPORTS = {
@@ -2207,6 +2213,7 @@ def _run_reader(
     if isinstance(result, dict):
         for key in (
             "status", "schemaStatus", "bytesConsumed", "waveCount", "actionCount",
+            "diagnostic", "openField",
             "configId", "enemyLibraryCount", "enemyLibraryEndOffset", "routeMapCount",
             "waveMapOffset", "entryCount",
             "levelCount", "trackingRouteCount", "npcIdLutCount", "npcProxyCount",
@@ -2315,77 +2322,14 @@ def _classify_binary(
             "diagnostic": prefix_diagnostic or diagnostic,
         }
     if family == "SpawnerConfig":
-        prefix_ok, prefix_detail, prefix_diagnostic = _run_reader(
-            decode_spawner_named_prefix,
-            data,
-            (SpawnerEnemyLibraryDecodeError, ValueError),
-        )
-        if prefix_ok:
-            assert prefix_detail is not None
-            try:
-                wave_detail = decode_spawner_wave_map_sequential(
-                    data,
-                    wave_map_offset=int(prefix_detail["waveMapOffset"]),
-                )
-                action_tags: dict[str, int] = {}
-                for wave in wave_detail["waves"]:
-                    for group in wave["groupMap"]:
-                        for action in group["actionMap"]:
-                            key = str(action["unionTag"])
-                            action_tags[key] = action_tags.get(key, 0) + 1
-                return {
-                    "status": "schema_decoded",
-                    "reader": (
-                        "scripts.game_data.spawner_binary.decode_spawner_named_prefix+"
-                        "decode_spawner_wave_map_sequential"
-                    ),
-                    "detail": {
-                        "configId": prefix_detail["configId"],
-                        "enemyLibraryCount": prefix_detail["enemyLibraryCount"],
-                        "routeMapCount": prefix_detail["routeMapCount"],
-                        "waveMapOffset": prefix_detail["waveMapOffset"],
-                        "waveCount": wave_detail["waveCount"],
-                        "actionUnionTagCounts": action_tags,
-                        "schemaStatus": wave_detail["schemaStatus"],
-                    },
-                    "diagnostic": None,
-                }
-            except (SpawnerWaveDecodeError, ValueError) as exc:
-                return {
-                    "status": "bounded_partial",
-                    "reader": "scripts.game_data.spawner_binary.decode_spawner_named_prefix",
-                    "detail": {
-                        "configId": prefix_detail["configId"],
-                        "enemyLibraryCount": prefix_detail["enemyLibraryCount"],
-                        "routeMapCount": prefix_detail["routeMapCount"],
-                        "waveMapOffset": prefix_detail["waveMapOffset"],
-                        "schemaStatus": prefix_detail["schemaStatus"],
-                    },
-                    "diagnostic": str(exc),
-                }
-        wave_ok, wave_detail, wave_diagnostic = _run_reader(
-            decode_spawner_wave_map, data, (SpawnerWaveDecodeError, ValueError)
-        )
-        if wave_ok:
-            return {
-                "status": "schema_decoded",
-                "reader": "scripts.game_data.spawner_binary.decode_spawner_wave_map",
-                "detail": wave_detail,
-                "diagnostic": None,
-            }
-        enemy_ok, enemy_detail, enemy_diagnostic = _run_reader(
-            decode_spawner_enemy_library,
-            data,
-            (SpawnerEnemyLibraryDecodeError, ValueError),
+        ok, detail, diagnostic = _run_reader(
+            lambda payload: frame_spawner_named(payload, strings=strings), data, (ValueError,)
         )
         return {
-            "status": "bounded_partial" if enemy_ok else "unclassified_binary",
-            "reader": (
-                "scripts.game_data.spawner_binary.decode_spawner_enemy_library"
-                if enemy_ok else None
-            ),
-            "detail": enemy_detail,
-            "diagnostic": enemy_diagnostic or prefix_diagnostic or wave_diagnostic,
+            "status": ("schema_decoded" if detail.get("schemaStatus") == "named_exact" else "bounded_partial") if ok else "unclassified_binary",
+            "reader": "scripts.game_data.spawner_binary.frame_spawner_named" if ok else None,
+            "detail": detail,
+            "diagnostic": diagnostic or (detail or {}).get("diagnostic"),
         }
     if family == "AnimationConfig":
         ok, detail, diagnostic = _run_reader(
@@ -2406,7 +2350,7 @@ def _classify_binary(
         }
     if family == "LevelScriptData":
         try:
-            detail = frame_levelscript_named(data, source=relative)
+            detail = frame_levelscript_named(data, source=relative, strings=strings)
         except (LevelScriptTopLevelFramingError, ValueError) as exc:
             return {
                 "status": "unclassified_binary", "reader": None,
@@ -2420,7 +2364,7 @@ def _classify_binary(
         }
     if family == "LevelData":
         ok, detail, diagnostic = _run_reader(
-            frame_leveldata_named_prefix,
+            lambda payload: frame_leveldata_named_prefix(payload, strings=strings),
             data,
             (LevelDataTopLevelFramingError, ValueError),
         )
@@ -2443,7 +2387,8 @@ def _classify_binary(
             frame_leveldata_airwalls_prefix,
         ):
             ok, detail, diagnostic = _run_reader(
-                reader, data, (LevelDataTopLevelFramingError, ValueError)
+                lambda payload: reader(payload, strings=strings), data,
+                (LevelDataTopLevelFramingError, ValueError)
             )
             if ok:
                 return {
@@ -2717,6 +2662,22 @@ def _classify_binary(
     }
 
 
+def _family_native_input_gate(family,outer):
+    path=CONTRACTS_DIR/{'BuffData':'buff_icon_config_native.json','SkillData':'skill_timeline_play_animation_native.json'}[family]
+    pins=json.loads(path.read_bytes())['nativeInputs']
+    if set(pins)!={'GameAssembly.dll','global-metadata.dat','UnityPlayer.dll'} or any(not isinstance(value,str) or not re.fullmatch('[0-9A-Fa-f]{64}',value) for value in pins.values()):
+        raise ValueError(f'{family} required native contract pin scope: {path}')
+    root=Path(outer['primaryAssets']).parent
+    gate=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],
+        gameassembly=root.parent/'GameAssembly.dll',metadata=root/'il2cpp_data/Metadata/global-metadata.dat')
+    audit={'status':gate.status,'detail':gate.detail,'source':path.as_posix(),'sourceSha256':_fingerprint(path)['sha256'],
+        'gameassemblySha256':getattr(gate,'gameassembly_sha256',None),'metadataSha256':getattr(gate,'metadata_sha256',None)}
+    if gate.status=='validated':audit.update(check_unity_input(gate.gameassembly,pins) or {})
+    if audit['status'] not in ('validated','missing','mismatched'):
+        raise CensusGateError('family-native-input-gate',source=str(path),expected='resolved selected native inputs',actual=audit)
+    return audit
+
+
 def build_report(
     *,
     outer_path: Path,
@@ -2728,6 +2689,7 @@ def build_report(
     loaded_family_reports: dict[str, tuple[dict[str, Any], dict[str, Any]]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     levelscript_inputs_before = snapshot_complete_reader_inputs()
+    pool_inputs_before = snapshot_string_pool_inputs(export_root)
     expected = expected_input_set_sha256.upper()
     export_root = export_root.resolve()
     game_root, json_folder = _json_game_folder(export_root)
@@ -2737,13 +2699,14 @@ def build_report(
     )
     selected = [
         row for row in ledger_rows
-        if row.get("blockName") == "JsonData"
-        and row.get("blockTypeValue") == 19
+        if is_jsondata_identity(row)
         and row.get("boundaryStatus") == "boundary_verified"
     ]
     selected.sort(key=lambda row: str(row["virtualPath"]))
     if not selected:
         raise ValueError("authenticated ledger has no JsonData rows")
+    lipsync_native_validation = (validate_lipsync_native_contract(game_root=Path(outer['primaryAssets']).parent)
+        if any(str(row['virtualPath']).startswith('Data/Json/LipSync/') for row in selected) else None)
     for row in selected:
         if row.get("inputSetSha256") != expected or row.get("status") != "verified":
             raise ValueError(
@@ -2760,10 +2723,17 @@ def build_report(
     }
     family_evidence: dict[str, dict[str, dict[str, Any]]] = {}
     family_report_provenance: dict[str, dict[str, Any]] = {}
+    family_native_gates={};unavailable_families={}
     for family, report_path in (
         ("BuffData", buff_report_path),
         ("SkillData", skill_report_path),
     ):
+        family_evidence[family]={}
+        if ledger_family_paths[family]:
+            gate=_family_native_input_gate(family,outer);family_native_gates[family]=gate
+            if gate['status']!='validated':
+                unavailable_families[family]=gate
+                continue
         evidence, metadata = _load_family_evidence(
             report_path,
             family=family,
@@ -2837,7 +2807,16 @@ def build_report(
 
         is_json, json_root = _classify_json(data)
         logical_sha256 = hashlib.sha256(data).hexdigest().upper()
-        if is_json and is_npc_prefab_info_path(relative):
+        if family in unavailable_families:
+            classification={'status':'format_framed_json' if is_json else 'unsupported','reader':'python.json' if is_json else None,
+                'detail':{'rootType':json_root} if is_json else None,
+                'diagnostic':{'check':'family-native-input-gate','family':family,'source':virtual_path,'actual':unavailable_families[family]}}
+        elif family=='LipSync' and (not isinstance(lipsync_native_validation,dict)
+                or lipsync_native_validation.get('status')!='validated'
+                or lipsync_native_validation.get('channelNames')!=list(LIPSYNC_FIELD_NAMES)):
+            classification={'status':'unsupported','reader':None,'detail':None,
+                'diagnostic':{'check':'lipsync-native-validation','source':virtual_path,'actual':lipsync_native_validation}}
+        elif is_json and is_npc_prefab_info_path(relative):
             ok, detail, diagnostic = _run_reader(
                 lambda payload: decode_npc_prefab_info(payload, source=relative),
                 data,
@@ -2988,7 +2967,7 @@ def build_report(
             if is_json
             else _classify_binary(relative, family, data, strings)
             )
-        if not is_json and family in family_evidence:
+        if not is_json and family in family_evidence and family not in unavailable_families:
             evidence = family_evidence[family][virtual_path]
             if (
                 evidence["length"] != len(data)
@@ -3101,7 +3080,10 @@ def build_report(
                 "sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest().upper(),
             },
             "familyReports": family_report_provenance,
+            "familyNativeInputGates":family_native_gates,
+            "lipSyncNativeValidation":lipsync_native_validation,
             "levelscriptReaderInputs": levelscript_inputs_before,
+            "levelscriptStringPoolInputs": pool_inputs_before,
             **({"buffSelectedRootReplayInputs": buff_selected_roots.recheck_sources(buff_selected_root_context)}
                if buff_selected_root_context is not None else {}),
         },
@@ -3122,15 +3104,20 @@ def build_report(
         ),
     }
     levelscript_inputs_after = snapshot_complete_reader_inputs()
-    if levelscript_inputs_after != levelscript_inputs_before:
-        changes = reader_input_changes(levelscript_inputs_before, levelscript_inputs_after)
+    for family,before in family_native_gates.items():
+        after=_family_native_input_gate(family,outer)
+        if before!=after:raise CensusGateError('family-native-input-drift',source=family,expected=before,actual=after)
+    for check,before,after in (('levelscript-reader-inputs-drift',levelscript_inputs_before,levelscript_inputs_after),
+                               ('levelscript-string-pool-inputs-drift',pool_inputs_before,snapshot_string_pool_inputs(export_root))):
+        if before == after:continue
+        changes = reader_input_changes(before, after)
         first = changes["changes"][0] if changes["changes"] else None
-        error = CensusGateError("levelscript-reader-inputs-drift",
+        error = CensusGateError(check,
                                 source=first["path"] if first else "complete LevelScript reader scope",
                                 expected=first["expected"] if first else changes["expectedMetadata"],
                                 actual=first["actual"] if first else changes["actualMetadata"])
         error.diagnostic.update({"validator": "jsondata_corpus.build_report",
-                                 "check": "levelscript-reader-inputs-drift", **changes})
+                                 "check": check, **changes})
         error.args = (json.dumps(error.diagnostic, ensure_ascii=False, sort_keys=True),)
         raise error
     return report, results
@@ -3239,11 +3226,10 @@ def main(argv: list[str] | None = None) -> int:
         # write. Read each large family report once and reuse the same object
         # for admission; none of these paths adds a new evidence fingerprint.
         with args.outer_summary.open("r", encoding="utf-8") as handle:
-            protected_paths.extend(_recorded_input_paths(json.load(handle)))
-        loaded_family_reports = {
-            "BuffData": _load_family_report(args.buff_report),
-            "SkillData": _load_family_report(args.skill_report),
-        }
+            outer=json.load(handle);protected_paths.extend(_recorded_input_paths(outer))
+        loaded_family_reports = {family:_load_family_report(path)
+            for family,path in (('BuffData',args.buff_report),('SkillData',args.skill_report))
+            if _family_native_input_gate(family,outer)['status']=='validated'}
         for family_report, _pin in loaded_family_reports.values():
             protected_paths.extend(_recorded_input_paths(family_report.get("provenance")))
         _guard_publication_outputs(outputs, protected_paths)

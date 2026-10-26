@@ -14,7 +14,6 @@ from scripts.common import check_installed_native_inputs
 from scripts.game_data import levelscript_param_value_bridge as value_bridge
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.corpus_common import atomic_write_text
-from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.native_image import METADATA_HELPER_PATH, NATIVE_MAPPER_PATH, open_native_image
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
 from scripts.game_data.il2cpp.unwind_chains import UnwindChainIndex, read_exception_directory
@@ -37,10 +36,10 @@ def predicate_program(rows, slots, declarations):
 def caller_program(rows, predicate_rva, try_rva, slots):
     ref = bytes((slots['idRef'],)).hex()
     forms = ['48895c2410','48896c2418','4889742420','57','4883ec20','4983793800',
-             '498bd9','418ae8','488bf2','488bf9',None,'488bcb',None,'488364243000',
+             '498bd9','418ae8','488bf2','488bf9',None,'488bcb',None,'48c744243000000000',
              '4885ff',None,'488b4338','488b4808','4883792000',None,'ff11','488b5338',
-             '488bcf','488b5208',None,'84c0',None,'837f'+ref+'ff',None,'488b4338','488d542430',
-             '448ac5','488bcf','4c8b4810',None,'84c0','488b442430',None,'488bc6',
+             '488bcf','488b5208',None,'84c0',None,'837f'+ref+'ff',None,'4c8b4b38','488d542430',
+             '448ac5','488bcf','4d8b4910',None,'84c0','488b442430',None,'488bc6',
              '488b5c2438','488b6c2440','488b742448','4883c420','5f','c3']
     value_bridge.shape(rows, forms, 'longParamValue.caller')
     edges = {10:(b'\x75',13),15:(b'\x74',38),19:(b'\x75',21),26:(b'\x74',29),
@@ -103,7 +102,7 @@ def constant_program(parts, owner, slots, declaration):
 
 
 def evaluate(image,contract):
-    context=NativeReferenceContext(image);index=BodyIndex(image)
+    context=NativeReferenceContext(image);index=image.body_index
     entries=value_bridge.named_entries(image,contract['methods'],context,primitive_name='Int64',primitive_kind=10)
     bridge=value_bridge.wrapper_view(image,context,contract['methods']['wrapperView'],entries['value']['parameterDefinition'],index,primitive_name='Int64',primitive_type='long',primitive_kind=10,store_prefix=b'\x48\x89\x50')
     table_rva,size,table=read_exception_directory(image.pe)

@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -315,7 +316,7 @@ def _validate_sources(
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
     route = contract["route"]
-    prefix = b"\xFA" + struct.pack("<H", route["tag"]) + bytes((route["serializedMemberCount"],))
+    prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     for path, digest, start, end, span_digest in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         actual_digest = hashlib.sha256(data).hexdigest().upper()

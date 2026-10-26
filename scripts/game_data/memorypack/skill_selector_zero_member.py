@@ -16,7 +16,6 @@ from __future__ import annotations
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
@@ -50,7 +49,6 @@ ROUTES = {
 }
 
 
-@lru_cache(maxsize=3)
 def _reviewed_route(family: str, tag: int) -> tuple[dict[str, Any], dict[str, Any]]:
     try:
         filename, schema, wrapped_type, wrapper_name, _kind = ROUTES[(family, tag)]
@@ -90,7 +88,6 @@ def _reviewed_route(family: str, tag: int) -> tuple[dict[str, Any], dict[str, An
     return contract, catalog
 
 
-@lru_cache(maxsize=3)
 def validate_current_native_contract(family: str, tag: int) -> dict[str, Any]:
     """Check the selected branch, wrapper and complete zero-member source body."""
     contract, catalog = _reviewed_route(family, tag)

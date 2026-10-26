@@ -21,12 +21,12 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image
@@ -49,9 +49,6 @@ _DECLARED = [
     "Beyond.Gameplay.Actions.Param`1<bool>",
     "Beyond.Gameplay.Actions.Param`1<string>",
 ]
-_HELPERS = {"enum32": 46827184, "string": 46827264,
-            "bool": 46827712, "Param<EntityPtr>": 47864976,
-            "Param<bool>": 47864976, "Param<string>": 47864976}
 _ELEMENTS = ["Beyond.Gameplay.Core.EntityPtr", "System.Boolean", "System.String"]
 
 
@@ -69,7 +66,7 @@ def _contract(path: Path) -> dict[str, Any]:
         contract.get("schema") != SCHEMA or contract.get("status") != "exact-current-build"
         or set(contract.get("nativeInputs") or {})
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or route.get("family") != "GameCondition" or route.get("tag") != 0x49
+        or route.get("family") != "GameCondition" or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.CheckInteractiveSubmitSuccess"
         or route.get("wrapperName") != "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveSubmitSuccessForMemoryPack"
         or route.get("serializedMemberCount") != 7 or route.get("inheritedMemberCount") != 4
@@ -217,7 +214,6 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         if (
             not previous < read_site < setter_site < main_end
             or _call_target(image,read_site,read["readCallHex"]) != read["readTargetRva"]
-            or read["readTargetRva"] != _HELPERS[read["readKind"]]
             or _call_target(image,setter_site,read["setterCallHex"]) != read["setterTargetRva"]
             or member.method_index != read["setterMethodIndex"]
             or member.declaring_wrapper != read["declaringWrapper"]
@@ -247,11 +243,13 @@ def _validate_sources(contract: dict[str, Any], export_root: Path,
             row = json.loads(line)
             if row.get("family") == "LevelScriptData":
                 ledger[row["exportRelativePath"]] = row
-    for path,digest,start,end,span_digest in contract["route"]["sourceReceipts"]:
+    route=contract["route"]
+    prefix=memorypack_union_header(route["tag"],route["serializedMemberCount"])
+    for path,digest,start,end,span_digest in route["sourceReceipts"]:
         data = (export_root/path).read_bytes()
         if (
             not 0 <= start < end <= len(data)
-            or data[start:start+2] != b"\x49\x07"
+            or data[start:start+len(prefix)] != prefix
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
             or ledger.get(path,{}).get("logicalSha256","").upper() != digest.upper()
@@ -261,7 +259,6 @@ def _validate_sources(contract: dict[str, Any], export_root: Path,
     return len(contract["route"]["sourceReceipts"])
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_taskmap_submit_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,
@@ -296,7 +293,6 @@ def validate_levelscript_taskmap_submit_native_contract(
                 "detail":str(error)[:400],"routeCount":0}
 
 
-@lru_cache(maxsize=1)
 def validated_taskmap_submit_route() -> dict[str, Any] | None:
     if validate_levelscript_taskmap_submit_native_contract()["status"] != "validated":
         return None

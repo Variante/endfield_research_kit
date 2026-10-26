@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +25,6 @@ CONTRACT_PATH = CONTRACTS_DIR / "levelscript_task_condition.json"
 SCHEMA = "endfield.levelscript-task-condition-native.v1"
 
 
-@lru_cache(maxsize=4)
 def load_levelscript_task_condition_rows(
     *, game_root: Path | None = None, contract_path: Path = CONTRACT_PATH,
 ) -> tuple[dict[tuple[int, int], dict[str, Any]], dict[str, Any]]:

@@ -2,9 +2,9 @@
 
 The current Endfield build stores ``LipSyncRawDataCriware`` as a fifteen
 member object.  Every non-null member is a collection of six ``float32``
-values.  The native ``LipSyncTrack._ConvertToAnimationCurve`` consumer uses
-those values as a Unity ``Keyframe`` in the order documented by
-``LIPSYNC_ROW_FIELDS``.
+values. ``lipsync_native`` separately authenticates the selected channel
+reader. ``LIPSYNC_ROW_FIELDS`` retains the reviewed Keyframe labels; this
+pure framer does not prove the selected playback consumer or its semantics.
 
 This module intentionally only decodes the proven wire contract.  It does
 not guess a newer schema, accept a variable row width, or silently preserve

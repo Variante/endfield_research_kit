@@ -2,9 +2,9 @@
 
 Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
 
-``LevelScriptData`` is a 27-member generated wrapper.  Member 1 is
+``LevelScriptData`` is a 28-member generated wrapper.  Member 1 is
 ``actionMap``; every lane first proves an exact action-map boundary and then
-calls ``_frame_levelscript_sequential_owner`` for members 2..27.  The three
+calls ``_frame_levelscript_sequential_owner`` for members 2..28.  The three
 boundaries are: a null ``actionMap`` (one ``0xff`` byte, owner at offset 2),
 the complete 20-byte empty ``ActionMapAssetRaw``, and a positive
 ``ActionSerializedMap`` whose every action, getter and header plus the
@@ -17,20 +17,20 @@ positive collection whose element codec is not owned stops before its count
 and names the field.  From ``scriptId`` the terminal members
 (``startShapeList``, ``startType``, ``taskMap``, ``triggerVolumes``) are read
 positionally with ``top_level_tail``; an empty task map must lead to an
-exact ``triggerVolumes`` EOF, and a positive one is decoded entry by entry by
-``task_conditions``.  Results:
+exact ``triggerVolumes`` EOF, and positive entries remain bounded until current pooled child/owner
+composition is proved.  Results:
 
 - ``exact_named_levelscript_data`` / ``named_exact``: one cursor reached
   physical EOF;
 - ``exact_named_action_map_owner_through_task_map_header``: every member up
-  to the task count is named, ``taskMap.entries`` failed, and the first
+  to the task count is named, ``taskMap.entries`` remains unproved, and the first
   bounded task diagnostic is kept;
 - a named ``stopField`` partial with the rest as one opaque remainder.
 
 No suffix scan, filename, or identifier-shaped byte contributes to a
 boundary.  ``frame_levelscript_action_map_named_prefix`` is the weaker lane
 for other nonempty or null action maps: it names ``actionMap``, ``dataMap``,
-the ``actionList`` count and the first record's fixed envelope and leaves
+the ``actionList`` count and the first record's union header and leaves
 every later byte opaque.  Evidence tier: ``exact`` stored layout; nothing
 here proves runtime graph execution.
 """
@@ -42,14 +42,12 @@ import struct
 from scripts.game_data.codecs.levelscript import active_shapes as levelscript_active_shapes
 from scripts.game_data.codecs.levelscript import top_level_prefix as levelscript_top_level_prefix
 from scripts.game_data.codecs.levelscript import top_level_tail as levelscript_top_level_tail
-from scripts.game_data.codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
 from scripts.game_data.codecs.levelscript.framing_common import LevelScriptTopLevelFramingError
 from scripts.game_data.codecs.levelscript.framing_common import _is_plausible_levelscript_id
 from scripts.game_data.codecs.levelscript.framing_common import _record_start
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
-from scripts.game_data.codecs.levelscript.task_conditions import _decode_levelscript_task_entry
-from scripts.game_data.codecs.levelscript.uid_records import _decode_levelscript_uid_record
 from typing import Any
+from scripts.game_data.serialization_roots_native import check_root_native_inputs
 
 def _frame_levelscript_sequential_owner(
     data: bytes,
@@ -58,11 +56,15 @@ def _frame_levelscript_sequential_owner(
     owner_offset: int,
     action_map_boundary: str,
     partial_status: str,
+    strings: Any = None,
 ) -> dict[str, Any]:
-    """Advance members 2..27 after an independently exact action-map boundary."""
+    """Advance members 2..28 after an independently exact action-map boundary."""
+    gate = check_root_native_inputs()
+    if gate.status != "validated":
+        raise LevelScriptTopLevelFramingError(f"levelscriptRoot.native:{gate.status}:{gate.detail}")
     try:
         owner = levelscript_top_level_prefix.decode_empty_action_map_owner_prefix(
-            data, owner_offset
+            data, owner_offset, strings=strings
         )
     except levelscript_top_level_prefix.LevelScriptPrefixCodecError as error:
         raise LevelScriptTopLevelFramingError(str(error)) from error
@@ -79,7 +81,7 @@ def _frame_levelscript_sequential_owner(
         return {
             "status": partial_status,
             "schemaStatus": "partial",
-            "serializedMemberCount": 27,
+            "serializedMemberCount": 28,
             "bytesConsumed": cursor,
             "fields": fields,
             "ranges": ranges,
@@ -153,66 +155,13 @@ def _frame_levelscript_sequential_owner(
     }
 
     if task_map_count not in {None, 0}:
-        task_cursor = task_map_end
-        tasks: list[dict[str, Any]] = []
-        task_diagnostics: list[dict[str, Any]] = []
-        for _ in range(int(task_map_count)):
-            decoded_task = _decode_levelscript_task_entry(
-                data,
-                task_cursor,
-                len(data),
-                task_diagnostics,
-            )
-            if decoded_task is None:
-                break
-            task, task_cursor = decoded_task
-            tasks.append(task)
-        if len(tasks) == int(task_map_count):
-            trigger_volumes, trigger_end = (
-                levelscript_trigger_volumes.decode_trigger_volume_map(
-                    data,
-                    task_cursor,
-                )
-            )
-            if (
-                trigger_end == len(data)
-                and trigger_volumes.get("status") in {"null", "present"}
-                and trigger_volumes.get("parseStatus") != "truncated"
-            ):
-                fields["taskMap"] = {
-                    "status": "present",
-                    "count": int(task_map_count),
-                    "entries": tasks,
-                }
-                fields["triggerVolumes"] = trigger_volumes
-                ranges["taskMap"] = {
-                    "startOffset": task_map_offset,
-                    "endOffset": task_cursor,
-                }
-                ranges["triggerVolumes"] = {
-                    "startOffset": task_cursor,
-                    "endOffset": trigger_end,
-                }
-                return {
-                    "status": "exact_named_levelscript_data",
-                    "schemaStatus": "named_exact",
-                    "serializedMemberCount": 27,
-                    "bytesConsumed": len(data),
-                    "fields": fields,
-                    "ranges": ranges,
-                    "evidenceBoundary": (
-                        "The current generated 27-member wrapper advances one "
-                        f"sequential cursor from the exact {action_map_boundary} "
-                        "through every "
-                        "declared task entry and the final triggerVolumes map at "
-                        "physical EOF. Task conditions use their exact supported "
-                        "union codecs; unsupported condition bodies fail closed."
-                    ),
-                }
+        task_diagnostics = [{"validator": "levelscript-task-owner", "gate": "pooled-child-source",
+                             "sourceOffset": task_map_end,
+                             "detail": "positive task entries require current pooled owner/child composition"}]
         return {
             "status": "exact_named_action_map_owner_through_task_map_header",
             "schemaStatus": "partial",
-            "serializedMemberCount": 27,
+            "serializedMemberCount": 28,
             "bytesConsumed": task_map_end,
             "fields": fields,
             "ranges": ranges,
@@ -247,12 +196,12 @@ def _frame_levelscript_sequential_owner(
     return {
         "status": "exact_named_levelscript_data",
         "schemaStatus": "named_exact",
-        "serializedMemberCount": 27,
+        "serializedMemberCount": 28,
         "bytesConsumed": len(data),
         "fields": fields,
         "ranges": ranges,
         "evidenceBoundary": (
-            "The current generated 27-member wrapper advances one sequential cursor "
+            "The current generated 28-member wrapper advances one sequential cursor "
             f"from the exact {action_map_boundary} through physical EOF. Complex owner collections are "
             "null or empty; triggerVolumes uses its exact current entry codec."
         ),
@@ -262,7 +211,7 @@ def _frame_levelscript_sequential_owner(
 def frame_levelscript_action_map_named_prefix(
     data: bytes,
     *,
-    expected_member_count: int = 27,
+    expected_member_count: int = 28,
 ) -> dict[str, Any]:
     """Frame the named outer prefix of a current action map.
 
@@ -270,7 +219,7 @@ def frame_levelscript_action_map_named_prefix(
     first member to ``dataMap``, and the first serialized-map member to
     ``actionList``. A raw ``0xff`` tag proves a complete null action-map
     boundary. A non-empty ``02 03 <u32>`` object proves the named action-list
-    count and the fixed envelope of its first polymorphic record.
+    count and the union header of its first polymorphic record.
     The record payload and every later top-level byte remain one opaque range;
     finding UID-like bytes later in the file is not accepted as cursor proof.
     """
@@ -281,6 +230,9 @@ def frame_levelscript_action_map_named_prefix(
             "root member count mismatch: "
             f"expected={expected_member_count} actual={data[0]}"
         )
+    gate = check_root_native_inputs()
+    if gate.status != "validated":
+        raise LevelScriptTopLevelFramingError(f"levelscriptRoot.native:{gate.status}:{gate.detail}")
     if len(data) < 2:
         raise LevelScriptTopLevelFramingError(
             "truncated ActionSerializedMap: missing raw object tag"
@@ -337,48 +289,30 @@ def frame_levelscript_action_map_named_prefix(
             f"count={first_count} remainingBytes={len(data) - 7}"
         )
 
-    candidates: list[dict[str, Any]] = []
-    for uid_offset in (21, 19):
-        if uid_offset + 8 > len(data):
-            continue
-        raw_uid = data[uid_offset : uid_offset + 8]
-        if not all(
-            ord("0") <= value <= ord("9") or ord("a") <= value <= ord("f")
-            for value in raw_uid
-        ):
-            continue
-        record = _decode_levelscript_uid_record(
-            data,
-            uid_offset,
-            raw_uid.decode("ascii"),
-        )
-        if record is not None and _record_start(record) == 7:
-            candidates.append(record)
-    if len(candidates) != 1:
-        raise LevelScriptTopLevelFramingError(
-            "first polymorphic record envelope is not unique and exact: "
-            f"candidates={len(candidates)}"
-        )
-
-    record = candidates[0]
-    payload_start = int(record["payloadStart"])
-    if payload_start > len(data):
-        raise LevelScriptTopLevelFramingError(
-            "truncated first polymorphic record envelope"
-        )
-    layout = str(record["layout"])
-    if layout == "fa":
-        union_tag_encoding = "memorypack-fa-u16"
-        raw_union_tag = int(record["code"])
-        raw_member_count = int(record["kind"])
-    elif layout == "plain":
-        union_tag_encoding = "memorypack-u8"
-        raw_union_tag = int(record["unionTag"])
-        raw_member_count = int(record["serializedMemberCount"])
+    from scripts.game_data import levelscript_union_tags
+    families,audit = levelscript_union_tags._load()
+    if audit.get("status") != "validated":
+        raise LevelScriptTopLevelFramingError(f"actionMap.unionTags:{audit.get('status')}:{audit.get('detail')}")
+    cursor = 7
+    raw_union_tag = data[cursor]
+    cursor += 1
+    if raw_union_tag == 0xFA:
+        if cursor + 2 > len(data):
+            raise LevelScriptTopLevelFramingError("truncated first action wide union tag")
+        raw_union_tag = struct.unpack_from("<H",data,cursor)[0]
+        cursor += 2
+        layout,union_tag_encoding = "fa","memorypack-fa-u16"
+    elif raw_union_tag < 0xFA:
+        layout,union_tag_encoding = "plain","memorypack-u8"
     else:
-        raise LevelScriptTopLevelFramingError(
-            f"unsupported first polymorphic record envelope layout: {layout}"
-        )
+        raise LevelScriptTopLevelFramingError("first action requires a present current union tag")
+    if cursor >= len(data):
+        raise LevelScriptTopLevelFramingError("truncated first action member count")
+    raw_member_count = data[cursor]
+    payload_start = cursor + 1
+    names = [name for name,pair in families.get("ActionBase",{}).items() if tuple(pair)==(raw_union_tag,raw_member_count)]
+    if len(names) != 1:
+        raise LevelScriptTopLevelFramingError(f"first action union:expected=one-current-route:actual={raw_union_tag}/{raw_member_count},matches={len(names)}")
 
     opaque_ranges = []
     if payload_start < len(data):
@@ -410,13 +344,13 @@ def frame_levelscript_action_map_named_prefix(
                 "rawUnionTag": raw_union_tag,
                 "unionTagEncoding": union_tag_encoding,
                 "rawSerializedMemberCount": raw_member_count,
-                "uidAnchorAscii": str(record["uid"]),
+                "typeName": names[0],
             },
             "opaqueRemainder": opaque_ranges,
         },
         "evidenceBoundary": (
             "Generated setter order names actionMap.dataMap.actionList; its count "
-            "and first fixed polymorphic record envelope advance a real cursor. The record payload, later "
+            "and first union header advance a real cursor. The node fields, later "
             "list counts, and remaining top-level members are opaque."
         ),
     }

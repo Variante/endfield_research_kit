@@ -126,7 +126,20 @@ def _contract(path: Path) -> dict[str, Any]:
         or not isinstance(cursor.get("spanSha256"), str)
         or len(cursor["spanSha256"]) != 64
     ):
-        raise ValueError(f"{LABEL}.contract:reviewed-layout-join")
+        actual = layout.get("fields", []) if layout else []
+        expected = [[name, kind] for name, kind, _native in fields]
+        first = next((i for i in range(max(len(expected), len(actual)))
+                      if expected[i:i+1] != actual[i:i+1]), None)
+        failure = {"gate": "contract:reviewed-layout-join", "wrapper": route["wrapperName"],
+                   "memberIndex": first,
+                   "expected": {"memberCount": route["memberCount"], "field": expected[first:first+1] if first is not None else []},
+                   "actual": {"memberCount": layout.get("memberCount") if layout else None,
+                              "field": actual[first:first+1] if first is not None else []},
+                   "sources": [{"path": str(p), "sha256": sha256_file(p)} for p in (path, LAYOUT_PATH)]}
+        error = ValueError(f"{LABEL}.contract:reviewed-layout-join:wrapper={route['wrapperName']}:"
+                           f"member={first}:expected={failure['expected']}:actual={failure['actual']}")
+        error.diagnostic = failure
+        raise error
     return data
 
 
@@ -362,9 +375,9 @@ def validate_track_camera_native_contract(
                 "sourceReceiptsChecked": len(data["sourceReceipts"]) if export_root else 0}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
         detail = str(exc)
-        check = detail.split(f"{LABEL}.", 1)[1].split(":", 1)[0] if detail.startswith(f"{LABEL}.") else "contract-native-or-source"
+        check = ":".join(detail.split(f"{LABEL}.", 1)[1].split(":")[:2]) if detail.startswith(f"{LABEL}.") else "contract-native-or-source"
         return {"status": "validation_failed", "failedCheck": check,
-                "detail": detail, "validationFailures": [{"gate": check, "actual": detail[:500]}]}
+                "detail": detail, "validationFailures": [getattr(exc, "diagnostic", {"gate": check, "actual": detail[:500]})]}
 
 
 def regenerate(contract: dict[str, Any], *, opener: Any = None,

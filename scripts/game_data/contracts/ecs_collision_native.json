@@ -1,10 +1,10 @@
 {
-  "schema": "endfield.ecs-collision-native.v2",
+  "schema": "endfield.ecs-collision-native.v3",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "layout": {
     "header": {
@@ -27,19 +27,19 @@
         "convexMesh": 60
       },
       "strides": {
-        "complexMesh": 24,
-        "box": 52,
-        "capsule": 48,
-        "sphere": 28,
-        "triangleMesh": 56,
-        "convexMesh": 56
+        "complexMesh": 28,
+        "box": 56,
+        "capsule": 52,
+        "sphere": 32,
+        "triangleMesh": 60,
+        "convexMesh": 60
       }
     },
     "singleBytes": {
-      "box": 64,
-      "capsule": 60,
-      "sphere": 56,
-      "mesh": 68,
+      "box": 68,
+      "capsule": 64,
+      "sphere": 60,
+      "mesh": 72,
       "terrain": 64
     },
     "actor": {
@@ -66,13 +66,30 @@
     "shapeUserdata": {
       "gameplayOptions": 0,
       "tagConfig": 4,
-      "surfaceType": 8,
-      "secondaryFlag": 12
+      "surfaceType": 12,
+      "secondaryFlag": 13,
+      "anonymousWord": 8
     },
     "packedParameters": {
       "defaultSurfaceShift": 2,
       "complexSurfaceShift": 1,
       "complexAttachmentGateEncoded": false
+    },
+    "extraWord": {
+      "multi": {
+        "complexMesh": 24,
+        "box": 52,
+        "capsule": 48,
+        "sphere": 28,
+        "triangleMesh": 56,
+        "convexMesh": 56
+      },
+      "single": {
+        "box": 24,
+        "capsule": 20,
+        "sphere": 16,
+        "mesh": 28
+      }
     }
   },
   "kinds": {
@@ -90,165 +107,195 @@
   "codeWindows": [
     {
       "role": "decode_core",
-      "rva": 1880272,
-      "bytes": 2326,
-      "sha256": "f5289fa678ec8c74d91595ad4e54f4e4a459e7591221adf84c3a269e97eb7e6c"
+      "rva": 1263328,
+      "bytes": 2343,
+      "sha256": "208fa3eef257d8150142ac1ff0ad82209bff527dab1b79345cda2f073c45c113"
     },
     {
       "role": "decode_wrapper_candidate",
-      "rva": 2730336,
+      "rva": 3238064,
       "bytes": 110,
-      "sha256": "b57dc839c6c7dea7448520fb02afd534e3a3a8593c08b99247f628c6e3bdd889"
+      "sha256": "662bee5817f70cee3e23fc786ffdbd5f52ce2f7c3cb91a0b0c5bad6cfea10831"
     },
     {
       "role": "actor_userdata",
-      "rva": 13236000,
+      "rva": 13306096,
       "bytes": 17,
       "sha256": "d92a2d4ccbbd6d160b61cbdda16dac6b912f2de34f1cfc9b341e20f1b3284479"
     },
     {
       "role": "get_id_candidate",
-      "rva": 4978896,
-      "bytes": 27,
-      "sha256": "95aad5d6ce6882c17a6071cfeb1e3579d701264b2e9b26e8db598c72180e63d7"
+      "rva": 5189600,
+      "bytes": 22,
+      "sha256": "e27e437c0449f758d16ecc4edf82cbce71967f6a2a55ea5af3a288d0a3f51f1a"
     },
     {
       "role": "get_version_candidate",
-      "rva": 4978864,
-      "bytes": 27,
-      "sha256": "e61f15bc138f353712edca022a2d8cf9f129123f1ca7ac52958ab732765646d9"
+      "rva": 5189568,
+      "bytes": 22,
+      "sha256": "dfa95c6356a76d6fcf680e28f5dde4d596cb87413f9e635378962a0796723645"
     },
     {
       "role": "record_entity_candidate",
-      "rva": 4967136,
-      "bytes": 31,
-      "sha256": "d49c556e418939b4934431461e525766ace461900a4181a8e6240d81a73fd389"
+      "rva": 5179856,
+      "bytes": 23,
+      "sha256": "ed7b84cb8ccd9088cc73cabfdf30b646ba28892d3bfde5324bc26eb8d8488a7b"
     },
     {
       "role": "get_entity_candidate",
-      "rva": 5290352,
+      "rva": 17983948,
       "bytes": 23,
-      "sha256": "76e8327ad9bd5726c6b98c336d01f0366d684b4d109203caba964a640c22ada5"
+      "sha256": "b8f1792e467b2e995abf5dfb75b7c64cfc767a8f50612ae1e440e4984d7a355f"
     },
     {
       "role": "entity_resolve",
-      "rva": 5290384,
+      "rva": 20255420,
       "bytes": 175,
-      "sha256": "a6eddae80ea98079dd67460404abadaa6a573825c2000a178634bd12629b5fbf"
+      "sha256": "66315c00242476347c2c04f325d28b4e16d819e677e4e7ac78c623f412d36997"
     },
     {
       "role": "registry_valid_candidate",
-      "rva": 4098368,
-      "bytes": 62,
-      "sha256": "7e85ee3900dc10b9a31ccf4a76aa5841a91b9dce711e4619aa3a0fe2ef38b81b"
+      "rva": 3984080,
+      "bytes": 64,
+      "sha256": "a580091c5406bf1e0adf394fa5acdebbec78ef0a24f21b7b69a9e6c2654be194"
     },
     {
       "role": "hit_writer",
-      "rva": 2835504,
-      "bytes": 360,
-      "sha256": "8216cd445967da411f6dd49c10a19d555a1077c58547f228e4f118740abcdd34"
+      "rva": 1251072,
+      "bytes": 382,
+      "sha256": "63efb94bad3ee2c40c0cbc356fcfd5c9deddb571ee85ac6ea4f2ff469fbb15d1"
     },
     {
       "role": "producer_321f50",
-      "rva": 3284816,
-      "bytes": 579,
-      "sha256": "610a5fe0366a2a4e14eb3d9f478333733165099839cdb41335e1c0b404f606f7"
+      "rva": 4287584,
+      "bytes": 617,
+      "sha256": "7960f79f8cb3ff4348ed44fde200ffce7d9da3658224489d37da50daac5db5af"
     },
     {
       "role": "producer_e25d2a",
-      "rva": 14834986,
-      "bytes": 397,
-      "sha256": "19930f2de164ffd0c51228cfcbe01b1db1d1c08470f318313039c6666d8ae392"
+      "rva": 15055856,
+      "bytes": 1312,
+      "sha256": "54606a8e0ef4f3d2b9487636db7649dbdfeb37fc0557c8e8f96a0d0b78ddb256"
     },
     {
       "role": "producer_e3bf00",
-      "rva": 14925568,
-      "bytes": 281,
-      "sha256": "da6ef34a00780d743ecee72c8b6e01a6644ab31f0fbb7bf8cdc9b4af56b970d4"
+      "rva": 15108896,
+      "bytes": 292,
+      "sha256": "c41da035a4eb6eff9f07e3489c408d591417f38136fb356f1d185256450f54ee"
     },
     {
       "role": "producer_e3c020",
-      "rva": 14925856,
-      "bytes": 281,
-      "sha256": "60b1b32e996d50d1e2ca80cef12ff554898dfc1b0d022bf17c50da1772c75d2a"
+      "rva": 15109200,
+      "bytes": 292,
+      "sha256": "e3501cd7616d4faf0d221dae3f42667e27792920ced7610d4841c996398f249f"
     },
     {
       "role": "producer_e3d9b0",
-      "rva": 14932400,
-      "bytes": 1739,
-      "sha256": "e0c0c949b52774c6e3839ff4bb32a5ae3fde5348957d9b9d931d71bfe7202bd6"
+      "rva": 15115920,
+      "bytes": 1681,
+      "sha256": "b376e1eb69248f5a1bac1d1e9358b1362e56f26ee70d3ea074f4c72c27d7bfeb"
     },
     {
       "role": "producer_e3e1b0",
-      "rva": 14934448,
-      "bytes": 745,
-      "sha256": "1b08342902de7f692b43b5c8504c34d9a53859505d3a46cf32768987a3d6b214"
+      "rva": 15117920,
+      "bytes": 758,
+      "sha256": "f864ce211965b79e9af06c458df8fed99517e7c8c5d838b0aaa82c105d3636df"
     },
     {
       "role": "producer_e3e7a0",
-      "rva": 14935968,
-      "bytes": 745,
-      "sha256": "ec1375f38b4329848113a082ef163d94f03fe6a5f1e8ab3bdb36c63fa5c54064"
+      "rva": 15119456,
+      "bytes": 758,
+      "sha256": "ba7c36565f785569a963f64974ea94c7f46223dc722acb9ca167e153237c4cff"
     },
     {
       "role": "producer_e3edc0",
-      "rva": 14937536,
-      "bytes": 281,
-      "sha256": "471af7031a78ea73b8e01bcc6879dec45a86d50e9e7a3d92113ba703d0f9104f"
+      "rva": 15121056,
+      "bytes": 292,
+      "sha256": "344a3932dab782933aff4a461a2ba36267eeb6ed209464d2207f2caa607072eb"
     },
     {
       "role": "producer_e3ef40",
-      "rva": 14937920,
-      "bytes": 340,
-      "sha256": "51e05a59eef74cf13ddec234ffd7cf848d3e4695d75e6fcb5612b484a7decf24"
+      "rva": 15121456,
+      "bytes": 351,
+      "sha256": "58fad06e7a0ebf21045c224522c9f5f34781f0b58dec49660feab6bde3f03c1e"
     },
     {
       "role": "producer_e3f0a0",
-      "rva": 14938272,
-      "bytes": 2349,
-      "sha256": "1ab4ee0d6e419168419077a7c4cfc6e5a464356142ce6ec58a23d1a4d1ab408e"
+      "rva": 15121808,
+      "bytes": 2884,
+      "sha256": "51f88668015423b0e7d8f3c42dddb79aaaa910e872b4896b8e03b65d695d540c"
     },
     {
       "role": "shape_userdata_constructor",
-      "rva": 13234144,
-      "bytes": 784,
-      "sha256": "a43629ec65c1e0f5df4f2669a30580d4104d1316cb2773f5af689c235c589ac4"
+      "rva": 13304128,
+      "bytes": 768,
+      "sha256": "4cbb491502d1a313e50936ff2dcb4edd8aa942ea0a8b4b90e2c76b6f56fd37a6"
     },
     {
       "role": "shape_userdata_lookup",
-      "rva": 13236672,
-      "bytes": 184,
-      "sha256": "16c00af52014ab848d51abf5bb90be6b823792313d691f0b2ec75b8274690e96"
+      "rva": 13306784,
+      "bytes": 174,
+      "sha256": "ec0eb41371010801bb4b5aa5944883278c1848c6545397b84d770e4f06bd8690"
     },
     {
       "role": "gameplay_options_getter_candidate",
-      "rva": 4300928,
+      "rva": 4355040,
       "bytes": 293,
-      "sha256": "68756a125f2e583ca70386ae236e018b66ce17762e51a3ca8bf84c58e8fa3618"
+      "sha256": "6a55e30a50e70af22a0cd78690130d1deb26107d131a8c1bf14a82458cb94c68"
     },
     {
       "role": "surface_type_getter_candidate",
-      "rva": 5175040,
-      "bytes": 375,
-      "sha256": "5225fe446a1f12eafd24483e99379251e0e0243aa22436ab34bd9fcd4ed2459a"
+      "rva": 5290800,
+      "bytes": 295,
+      "sha256": "384863481777b0cd9d0d04505b224864e0b8e08f5f981bc771a4ffdd1a45174e"
     },
     {
       "role": "parameter_box_forward",
-      "rva": 13227227,
-      "bytes": 155,
-      "sha256": "167277bf9d9ab409e189296c4415cdf1dfde808fdd70a8a938448863508540b9"
+      "rva": 13296384,
+      "bytes": 797,
+      "sha256": "afae67f40ce48bfa5dac627c2a1506cefe335285fce38e2252d41efc5befca1f"
     },
     {
       "role": "complex_mesh_parameter_constructor",
-      "rva": 13228336,
-      "bytes": 955,
-      "sha256": "9ae0cc6f83ddb0b3e9e6007266622288844ad5a60b3ebb2b0b7d766abcbc5349"
+      "rva": 13298016,
+      "bytes": 1006,
+      "sha256": "c7167b1362838b456d42a53e792a057fdb34820ba03daeee7aba17dda58fc94a"
+    },
+    {
+      "role": "source_registration",
+      "rva": 4654055,
+      "bytes": 4809,
+      "sha256": "495108f8445231304b7cce3ed879a036629d144c3343e7804c57018184e3198d"
+    },
+    {
+      "role": "source_descriptor",
+      "rva": 4648960,
+      "bytes": 110,
+      "sha256": "867eccc1f8dc0a3fc36f1f4f361433ce1d811ff83a05b4fa43039b252d95c82b"
+    },
+    {
+      "role": "source_assignment",
+      "rva": 4659856,
+      "bytes": 401,
+      "sha256": "26147281c6d7ef8bf163a3b3ec03050f49a5ffc31d8ad59c86ab18a6e0719da1"
+    },
+    {
+      "role": "source_indexed_assignment",
+      "rva": 4653184,
+      "bytes": 72,
+      "sha256": "d2a9a6f7310ba0968daa4d82fbe2c4f5c4ad9bccae19940fe7f8c57bc42f922d"
+    },
+    {
+      "role": "source_publication",
+      "rva": 16784996,
+      "bytes": 95,
+      "sha256": "feaf2c4b74bcab5f23eaeb645dc933e97cd1217832328a4f4c3812e1893bc6c7"
     }
   ],
   "probes": [
     {
       "role": "decode_core",
-      "offset": 198,
+      "offset": 139,
       "hex": "488d510c",
       "layoutField": "header.rotation",
       "operandOffset": 3,
@@ -256,7 +303,7 @@
     },
     {
       "role": "decode_core",
-      "offset": 202,
+      "offset": 143,
       "hex": "448b4120",
       "layoutField": "header.layer",
       "operandOffset": 3,
@@ -264,7 +311,7 @@
     },
     {
       "role": "decode_core",
-      "offset": 194,
+      "offset": 135,
       "hex": "448b4924",
       "layoutField": "header.tag",
       "operandOffset": 3,
@@ -272,7 +319,7 @@
     },
     {
       "role": "decode_core",
-      "offset": 214,
+      "offset": 155,
       "hex": "0fbf591c",
       "layoutField": "header.kind",
       "operandOffset": 3,
@@ -280,7 +327,7 @@
     },
     {
       "role": "decode_core",
-      "offset": 840,
+      "offset": 1007,
       "hex": "8b4f28",
       "layoutField": "multi.countOffsets.complexMesh",
       "operandOffset": 2,
@@ -288,23 +335,23 @@
     },
     {
       "role": "decode_core",
-      "offset": 847,
-      "hex": "448b672c",
+      "offset": 1017,
+      "hex": "448b7f2c",
       "layoutField": "multi.countOffsets.box",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 843,
-      "hex": "448b6f30",
+      "offset": 1013,
+      "hex": "448b6730",
       "layoutField": "multi.countOffsets.capsule",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 828,
+      "offset": 998,
       "hex": "8b4734",
       "layoutField": "multi.countOffsets.sphere",
       "operandOffset": 2,
@@ -312,59 +359,80 @@
     },
     {
       "role": "decode_core",
-      "offset": 854,
-      "hex": "8b4738",
+      "offset": 1010,
+      "hex": "8b5738",
       "layoutField": "multi.countOffsets.triangleMesh",
       "operandOffset": 2,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 837,
-      "hex": "8b573c",
+      "offset": 1024,
+      "hex": "8b473c",
       "layoutField": "multi.countOffsets.convexMesh",
       "operandOffset": 2,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 1153,
-      "hex": "488d5b34",
+      "offset": 1232,
+      "hex": "488d5b38",
       "layoutField": "multi.strides.box",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 1283,
-      "hex": "488d5b30",
+      "offset": 1362,
+      "hex": "488d5b34",
       "layoutField": "multi.strides.capsule",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 1400,
-      "hex": "488d5b1c",
+      "offset": 1483,
+      "hex": "488d5b20",
       "layoutField": "multi.strides.sphere",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 1525,
-      "hex": "488d7638",
+      "offset": 1904,
+      "hex": "488d7f3c",
+      "layoutField": "multi.strides.convexMesh",
+      "operandOffset": 3,
+      "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1665,
+      "hex": "488d763c",
       "layoutField": "multi.strides.triangleMesh",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "decode_core",
-      "offset": 1769,
-      "hex": "488d7638",
-      "layoutField": "multi.strides.convexMesh",
-      "operandOffset": 3,
+      "offset": 1072,
+      "hex": "41bd17000000"
+    },
+    {
+      "role": "decode_core",
+      "offset": 256,
+      "hex": "c1f802",
+      "layoutField": "packedParameters.defaultSurfaceShift",
+      "operandOffset": 2,
       "mode": "u8"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1089,
+      "hex": "d1fe",
+      "layoutField": "packedParameters.complexSurfaceShift",
+      "operandOffset": 0,
+      "mode": "fixedSarOne"
     },
     {
       "role": "actor_userdata",
@@ -377,11 +445,14 @@
     {
       "role": "actor_userdata",
       "offset": 12,
-      "hex": "4883e0f8"
+      "hex": "4883e0f8",
+      "layoutField": "actor.tagMask",
+      "operandOffset": 3,
+      "mode": "andMaskComplement8"
     },
     {
       "role": "get_id_candidate",
-      "offset": 14,
+      "offset": 15,
       "hex": "8b4018",
       "layoutField": "userdata.physicsId",
       "operandOffset": 2,
@@ -389,7 +460,7 @@
     },
     {
       "role": "get_version_candidate",
-      "offset": 14,
+      "offset": 15,
       "hex": "8b401c",
       "layoutField": "userdata.physicsVersion",
       "operandOffset": 2,
@@ -397,8 +468,8 @@
     },
     {
       "role": "record_entity_candidate",
-      "offset": 22,
-      "hex": "48894810",
+      "offset": 18,
+      "hex": "48894110",
       "layoutField": "userdata.entity",
       "operandOffset": 3,
       "mode": "u8"
@@ -413,7 +484,7 @@
     },
     {
       "role": "producer_e25d2a",
-      "offset": 332,
+      "offset": 1270,
       "hex": "48895810",
       "layoutField": "userdata.entity",
       "operandOffset": 3,
@@ -429,7 +500,7 @@
     },
     {
       "role": "producer_e3d9b0",
-      "offset": 1655,
+      "offset": 1586,
       "hex": "48897810",
       "layoutField": "userdata.entity",
       "operandOffset": 3,
@@ -437,116 +508,155 @@
     },
     {
       "role": "producer_e3e1b0",
-      "offset": 665,
+      "offset": 667,
       "hex": "48895810",
       "layoutField": "userdata.entity",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
-      "role": "actor_userdata",
-      "offset": 12,
-      "hex": "4883e0f8",
-      "layoutField": "actor.tagMask",
-      "operandOffset": 3,
-      "mode": "andMaskComplement8"
-    },
-    {
-      "role": "producer_e3bf00",
-      "offset": 85,
-      "hex": "c1ea02"
-    },
-    {
-      "role": "producer_e3bf00",
-      "offset": 81,
-      "hex": "488d4804"
-    },
-    {
       "role": "shape_userdata_constructor",
-      "offset": 723,
-      "hex": "8b4d5089088b4d58"
-    },
-    {
-      "role": "shape_userdata_constructor",
-      "offset": 728,
-      "hex": "8b4d58894804",
+      "offset": 695,
+      "hex": "8b4d48894804",
       "layoutField": "shapeUserdata.tagConfig",
       "operandOffset": 5,
       "mode": "u8"
     },
     {
       "role": "shape_userdata_constructor",
-      "offset": 737,
-      "hex": "44886008",
+      "offset": 705,
+      "hex": "4488600c",
       "layoutField": "shapeUserdata.surfaceType",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "shape_userdata_constructor",
-      "offset": 741,
-      "hex": "4488780c",
-      "layoutField": "shapeUserdata.secondaryFlag",
+      "offset": 731,
+      "hex": "894808",
+      "layoutField": "shapeUserdata.anonymousWord",
+      "operandOffset": 2,
+      "mode": "u8"
+    },
+    {
+      "role": "surface_type_getter_candidate",
+      "offset": 161,
+      "hex": "0fb6400c",
+      "layoutField": "shapeUserdata.surfaceType",
       "operandOffset": 3,
       "mode": "u8"
     },
     {
       "role": "shape_userdata_constructor",
-      "offset": 745,
-      "hex": "4883c80148894110"
+      "offset": 687,
+      "hex": "8b4d404c8bc08908"
+    },
+    {
+      "role": "shape_userdata_constructor",
+      "offset": 701,
+      "hex": "0fb64d604488600c8b500cc1e1080fbaf2080bd18b4d6889500c4983c801894808488b064c"
+    },
+    {
+      "role": "complex_mesh_parameter_constructor",
+      "offset": 916,
+      "hex": "8b4d5f88480c8b4d6789088b4d6f8948048b4d7f8948080fb64d77f6d9481bd283e20248837dc7004d0f44e64c0be24c0be0410fb6c64d896510"
+    },
+    {
+      "role": "parameter_box_forward",
+      "offset": 576,
+      "hex": "8b8424f8000000488bcdf20f100ef20f1006448b8c24d00000000f54c489442448f30f5fc30fb68424e8000000884424408b8424e00000000fc6c955f30f114424640f54ccf30f104608f30f5fcb894424280f54c48b8424d8000000f30f5fc3c74424600300000089442420f30f114c2468f30f1144246ce8831b0000"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1057,
+      "hex": "83f90175538b4744488d4daf8b774841bd17000000448b67408945b3488b456fd1fe8b18895dafe893dc0d0084c074248b47584c8d474c89442438448bce8b45b38bd389442428498bce4489642420e80b9eb700448b6567"
     },
     {
       "role": "gameplay_options_getter_candidate",
       "offset": 146,
-      "hex": "8bd7488bcbe8a45888004885c074108b00"
+      "hex": "8bd7488bcbe8249788004885c074108b"
     },
     {
       "role": "surface_type_getter_candidate",
       "offset": 146,
-      "hex": "8bd7488bcbe824027b004885c074120fb64008"
+      "hex": "8bd7488bcbe8d44f7a004885c074120fb6400c"
+    },
+    {
+      "role": "source_descriptor",
+      "offset": 10,
+      "hex": "33ff881148897940488bd94889b9800000004889b9c00000004889b9000100004889b9400100004889b9800100004889b9c00100004889b9000200004889b9400200004889b98002000080fa100f8423f1b400488b"
+    },
+    {
+      "role": "source_indexed_assignment",
+      "offset": 24,
+      "hex": "80fb0a0f83ebe3b4004883c608488bcb48c1e106488bd74803ce"
+    },
+    {
+      "role": "source_publication",
+      "offset": 15,
+      "hex": "0fb6c2498bf04c69c888020000410fb600bf0a0000004981c1980000004c03c9492bf1418801498d5908488d141e488bcbe8e7fb46ff4883c3404883ef0175ea"
+    },
+    {
+      "role": "source_assignment",
+      "offset": 76,
+      "hex": "48897dd7488b4108488d4dd7488945df48894d0f"
     },
     {
       "role": "decode_core",
-      "offset": 329,
-      "hex": "8b4738894424308b4734c1f9020fb6c989442428894c242049"
-    },
-    {
-      "role": "parameter_box_forward",
-      "offset": 87,
-      "hex": "8b8424f0000000f30f5fd00fc6db55894424280f54d98b8424e8000000f30f5fd8f30f11642464f30f1154246cc74424600300000089442420f30f115c"
+      "offset": 263,
+      "hex": "8b474089442448"
     },
     {
       "role": "decode_core",
-      "offset": 339,
-      "hex": "c1f902",
-      "layoutField": "packedParameters.defaultSurfaceShift",
-      "mode": "u8",
-      "operandOffset": 2
+      "offset": 390,
+      "hex": "8b473c89442450"
     },
     {
       "role": "decode_core",
-      "offset": 1035,
-      "hex": "d1fe",
-      "layoutField": "packedParameters.complexSurfaceShift",
-      "mode": "fixedSarOne",
-      "operandOffset": 0
+      "offset": 506,
+      "hex": "8b473889442440"
     },
     {
       "role": "decode_core",
-      "offset": 1003,
-      "hex": "83f901754c8b4744488d4de78b774841be16000000448b6f408945eb488b456fd1fe8b18895de7e81915000084c0741d8b45eb4c8d474c89442428448bce8bd344896c2420498bcfe82824ad00448b6d67"
+      "offset": 850,
+      "hex": "8b4744"
     },
     {
-      "role": "complex_mesh_parameter_constructor",
-      "offset": 878,
-      "hex": "8b4d67807d7f008848088b4d6f89088b4d77894804"
+      "role": "decode_core",
+      "offset": 1105,
+      "hex": "8b47584c8d474c89442438"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1223,
+      "hex": "488d4318f20f11459f488d5b38f6c20174"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1346,
+      "hex": "4c8d7b14"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1468,
+      "hex": "4c8d7b08"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1656,
+      "hex": "07488d4e1c48894dff488d763c"
+    },
+    {
+      "role": "decode_core",
+      "offset": 1896,
+      "hex": "488d4f1c48894d9f488d7f3c"
     }
   ],
   "evidenceBoundary": {
-    "exact": "Selected decoder field offsets, group strides and actor userdata consumers match native bytes. Strict stored projections require bounded counts and exact EOF; the native consumer itself does not prove these bounds.",
+    "exact": "Current named Decode registration and direct callers establish header reads, enlarged record strides, added anonymous trailing words, shape-userdata fields and separate actor/registry identities. Strict parser bounds and EOF remain policy, not native length proof.",
     "direct": "The native hit writer copies physics ID/version from masked actor userdata. A distinct registry resolver reads the recorded packed entity. The shape ordinal is not a component-type bit index.",
     "structuralOnly": "Authored packed collider definitions and mesh-reference slot order; anonymous flag/mesh words retain raw bits.",
-    "conditional": "API labels on UnityPlayer candidate wrappers come from paired-table framing and managed requested names; live registration and execution require a caller/cache or direct-call witness.",
+    "conditional": "The five source labels come from the selected current constructor descriptor/publication and slot-3 assignments. This is an independent collision-source proof, not a revalidation of the wider Streaming field-2 contract or runtime callback receipt.",
     "unresolved": "Saved query hit actors lack userdata/registry snapshots, so physics IDs cannot be joined to live owning entities or CAB/PathID; definitions do not prove live instance selection."
   },
   "managedTypes": [
@@ -582,12 +692,22 @@
   "directCalls": [
     {
       "role": "producer_321f50",
-      "offset": 401,
+      "offset": 402,
       "targetRole": "decode_core"
     },
     {
+      "role": "producer_321f50",
+      "offset": 538,
+      "targetRole": "actor_userdata"
+    },
+    {
+      "role": "producer_321f50",
+      "offset": 555,
+      "targetRole": "actor_userdata"
+    },
+    {
       "role": "producer_e25d2a",
-      "offset": 188,
+      "offset": 1106,
       "targetRole": "decode_core"
     },
     {
@@ -602,17 +722,17 @@
     },
     {
       "role": "producer_e3d9b0",
-      "offset": 1503,
+      "offset": 1438,
       "targetRole": "decode_core"
     },
     {
       "role": "producer_e3e1b0",
-      "offset": 509,
+      "offset": 510,
       "targetRole": "decode_core"
     },
     {
       "role": "producer_e3e7a0",
-      "offset": 509,
+      "offset": 510,
       "targetRole": "decode_core"
     },
     {
@@ -627,12 +747,17 @@
     },
     {
       "role": "producer_e3f0a0",
-      "offset": 1981,
+      "offset": 2480,
+      "targetRole": "decode_core"
+    },
+    {
+      "role": "decode_wrapper_candidate",
+      "offset": 84,
       "targetRole": "decode_core"
     },
     {
       "role": "parameter_box_forward",
-      "offset": 150,
+      "offset": 696,
       "targetRole": "shape_userdata_constructor"
     },
     {
@@ -647,8 +772,13 @@
     },
     {
       "role": "decode_core",
-      "offset": 1075,
+      "offset": 1136,
       "targetRole": "complex_mesh_parameter_constructor"
+    },
+    {
+      "role": "entity_resolve",
+      "offset": 142,
+      "targetRole": "actor_userdata"
     }
   ],
   "producerBoundary": "Direct native producers call the same decoder; covered bodies record packed entities inline after decoder return, bypassing the managed RecordEntity entry. Several read a byte-length-prefixed buffer then shift length right by two for the decoder word-count argument. A decoder-return-only snapshot is too early for these subsequent entity writes; retail route selection and source-container identity remain unresolved.",
@@ -675,233 +805,233 @@
         {
           "value": 1,
           "name": "MovableBase",
-          "fieldIndex": 47598,
-          "token": "0x0400b9ef",
-          "dataIndex": 38708,
+          "fieldIndex": 49973,
+          "token": "0x0400c336",
+          "dataIndex": 40668,
           "encodedBytes": "02"
         },
         {
           "value": 2,
           "name": "IgnoreCamera",
-          "fieldIndex": 47599,
-          "token": "0x0400b9f0",
-          "dataIndex": 38709,
+          "fieldIndex": 49974,
+          "token": "0x0400c337",
+          "dataIndex": 40669,
           "encodedBytes": "04"
         },
         {
           "value": 4,
           "name": "IgnoreSkillSelect",
-          "fieldIndex": 47600,
-          "token": "0x0400b9f1",
-          "dataIndex": 38710,
+          "fieldIndex": 49975,
+          "token": "0x0400c338",
+          "dataIndex": 40670,
           "encodedBytes": "08"
         },
         {
           "value": 8,
           "name": "Unwalkable",
-          "fieldIndex": 47601,
-          "token": "0x0400b9f2",
-          "dataIndex": 38711,
+          "fieldIndex": 49976,
+          "token": "0x0400c339",
+          "dataIndex": 40671,
           "encodedBytes": "10"
         },
         {
           "value": 16,
           "name": "IgnoreCollider",
-          "fieldIndex": 47602,
-          "token": "0x0400b9f3",
-          "dataIndex": 38712,
+          "fieldIndex": 49977,
+          "token": "0x0400c33a",
+          "dataIndex": 40672,
           "encodedBytes": "20"
         },
         {
           "value": 32,
           "name": "Destructible",
-          "fieldIndex": 47603,
-          "token": "0x0400b9f4",
-          "dataIndex": 38713,
+          "fieldIndex": 49978,
+          "token": "0x0400c33b",
+          "dataIndex": 40673,
           "encodedBytes": "40"
         },
         {
           "value": 64,
           "name": "AirWall",
-          "fieldIndex": 47604,
-          "token": "0x0400b9f5",
-          "dataIndex": 38714,
+          "fieldIndex": 49979,
+          "token": "0x0400c33c",
+          "dataIndex": 40674,
           "encodedBytes": "8080"
         },
         {
           "value": 128,
           "name": "NeedStepEvent",
-          "fieldIndex": 47605,
-          "token": "0x0400b9f6",
-          "dataIndex": 38716,
+          "fieldIndex": 49980,
+          "token": "0x0400c33d",
+          "dataIndex": 40676,
           "encodedBytes": "8100"
         },
         {
           "value": 256,
           "name": "IgnoreProjectile",
-          "fieldIndex": 47606,
-          "token": "0x0400b9f7",
-          "dataIndex": 38718,
+          "fieldIndex": 49981,
+          "token": "0x0400c33e",
+          "dataIndex": 40678,
           "encodedBytes": "8200"
         },
         {
           "value": 512,
           "name": "IgnoreBomb",
-          "fieldIndex": 47607,
-          "token": "0x0400b9f8",
-          "dataIndex": 38720,
+          "fieldIndex": 49982,
+          "token": "0x0400c33f",
+          "dataIndex": 40680,
           "encodedBytes": "8400"
         },
         {
           "value": 1024,
           "name": "DynamicBattleShape",
-          "fieldIndex": 47608,
-          "token": "0x0400b9f9",
-          "dataIndex": 38722,
+          "fieldIndex": 49983,
+          "token": "0x0400c340",
+          "dataIndex": 40682,
           "encodedBytes": "8800"
         },
         {
           "value": 2048,
           "name": "Unclimbable",
-          "fieldIndex": 47609,
-          "token": "0x0400b9fa",
-          "dataIndex": 38724,
+          "fieldIndex": 49984,
+          "token": "0x0400c341",
+          "dataIndex": 40684,
           "encodedBytes": "9000"
         },
         {
           "value": 4096,
           "name": "IgnoreEnemyFloor",
-          "fieldIndex": 47610,
-          "token": "0x0400b9fb",
-          "dataIndex": 38726,
+          "fieldIndex": 49985,
+          "token": "0x0400c342",
+          "dataIndex": 40686,
           "encodedBytes": "a000"
         },
         {
           "value": 8192,
           "name": "UseTraceDither",
-          "fieldIndex": 47611,
-          "token": "0x0400b9fc",
-          "dataIndex": 38728,
+          "fieldIndex": 49986,
+          "token": "0x0400c343",
+          "dataIndex": 40688,
           "encodedBytes": "c0004000"
         },
         {
           "value": 16384,
           "name": "UseOverlapDither",
-          "fieldIndex": 47612,
-          "token": "0x0400b9fd",
-          "dataIndex": 38732,
+          "fieldIndex": 49987,
+          "token": "0x0400c344",
+          "dataIndex": 40692,
           "encodedBytes": "c0008000"
         },
         {
           "value": 32768,
           "name": "IgnoreEnemyCollision",
-          "fieldIndex": 47613,
-          "token": "0x0400b9fe",
-          "dataIndex": 38736,
+          "fieldIndex": 49988,
+          "token": "0x0400c345",
+          "dataIndex": 40696,
           "encodedBytes": "c0010000"
         },
         {
           "value": 65536,
           "name": "IgnoreTravelPoleBlock",
-          "fieldIndex": 47614,
-          "token": "0x0400b9ff",
-          "dataIndex": 38740,
+          "fieldIndex": 49989,
+          "token": "0x0400c346",
+          "dataIndex": 40700,
           "encodedBytes": "c0020000"
         },
         {
           "value": 131072,
           "name": "Stairs",
-          "fieldIndex": 47615,
-          "token": "0x0400ba00",
-          "dataIndex": 38744,
+          "fieldIndex": 49990,
+          "token": "0x0400c347",
+          "dataIndex": 40704,
           "encodedBytes": "c0040000"
         },
         {
           "value": 262144,
           "name": "IgnoreFollow",
-          "fieldIndex": 47616,
-          "token": "0x0400ba01",
-          "dataIndex": 38748,
+          "fieldIndex": 49991,
+          "token": "0x0400c348",
+          "dataIndex": 40708,
           "encodedBytes": "c0080000"
         },
         {
           "value": 524288,
           "name": "IgnoreWater",
-          "fieldIndex": 47617,
-          "token": "0x0400ba02",
-          "dataIndex": 38752,
+          "fieldIndex": 49992,
+          "token": "0x0400c349",
+          "dataIndex": 40712,
           "encodedBytes": "c0100000"
         },
         {
           "value": 1048576,
           "name": "QuickSlide",
-          "fieldIndex": 47618,
-          "token": "0x0400ba03",
-          "dataIndex": 38756,
+          "fieldIndex": 49993,
+          "token": "0x0400c34a",
+          "dataIndex": 40716,
           "encodedBytes": "c0200000"
         },
         {
           "value": 2097152,
           "name": "IgnorePlunge",
-          "fieldIndex": 47619,
-          "token": "0x0400ba04",
-          "dataIndex": 38760,
+          "fieldIndex": 49994,
+          "token": "0x0400c34b",
+          "dataIndex": 40720,
           "encodedBytes": "c0400000"
         },
         {
           "value": 4194304,
           "name": "InvisibleBridge",
-          "fieldIndex": 47620,
-          "token": "0x0400ba05",
-          "dataIndex": 38764,
+          "fieldIndex": 49995,
+          "token": "0x0400c34c",
+          "dataIndex": 40724,
           "encodedBytes": "c0800000"
         },
         {
           "value": 8388608,
           "name": "AllyBlockableMoveCollider",
-          "fieldIndex": 47621,
-          "token": "0x0400ba06",
-          "dataIndex": 38768,
+          "fieldIndex": 49996,
+          "token": "0x0400c34d",
+          "dataIndex": 40728,
           "encodedBytes": "c1000000"
         },
         {
           "value": 16777216,
           "name": "WallRunSupport",
-          "fieldIndex": 47622,
-          "token": "0x0400ba07",
-          "dataIndex": 38772,
+          "fieldIndex": 49997,
+          "token": "0x0400c34e",
+          "dataIndex": 40732,
           "encodedBytes": "c2000000"
         },
         {
           "value": 33554432,
           "name": "PushChargingCharacter",
-          "fieldIndex": 47623,
-          "token": "0x0400ba08",
-          "dataIndex": 38776,
+          "fieldIndex": 49998,
+          "token": "0x0400c34f",
+          "dataIndex": 40736,
           "encodedBytes": "c4000000"
         },
         {
-          "value": 67108864,
+          "value": 134217728,
           "name": "DeformSnow",
-          "fieldIndex": 47624,
-          "token": "0x0400ba09",
-          "dataIndex": 38780,
-          "encodedBytes": "c8000000"
+          "fieldIndex": 49999,
+          "token": "0x0400c350",
+          "dataIndex": 40740,
+          "encodedBytes": "d0000000"
         },
         {
           "value": 64,
           "name": "IgnoreFromBakeNavmesh",
-          "fieldIndex": 47625,
-          "token": "0x0400ba0a",
-          "dataIndex": 38784,
+          "fieldIndex": 50000,
+          "token": "0x0400c351",
+          "dataIndex": 40744,
           "encodedBytes": "f000000080"
         },
         {
           "value": -2147483648,
           "name": "UseComplexMeshBakeNavmesh",
-          "fieldIndex": 47626,
-          "token": "0x0400ba0b",
-          "dataIndex": 38789,
+          "fieldIndex": 50001,
+          "token": "0x0400c352",
+          "dataIndex": 40749,
           "encodedBytes": "ff"
         }
       ],
@@ -916,177 +1046,177 @@
         {
           "value": 0,
           "name": "Default",
-          "fieldIndex": 285088,
+          "fieldIndex": 310323,
           "token": "0x04000019",
-          "dataIndex": 597503,
+          "dataIndex": 477245,
           "encodedBytes": "00"
         },
         {
           "value": 1,
           "name": "Concrete",
-          "fieldIndex": 285089,
+          "fieldIndex": 310324,
           "token": "0x0400001a",
-          "dataIndex": 597504,
+          "dataIndex": 477246,
           "encodedBytes": "02"
         },
         {
           "value": 2,
           "name": "Wood",
-          "fieldIndex": 285090,
+          "fieldIndex": 310325,
           "token": "0x0400001b",
-          "dataIndex": 597505,
+          "dataIndex": 477247,
           "encodedBytes": "04"
         },
         {
           "value": 3,
           "name": "Dirt",
-          "fieldIndex": 285091,
+          "fieldIndex": 310326,
           "token": "0x0400001c",
-          "dataIndex": 597506,
+          "dataIndex": 477248,
           "encodedBytes": "06"
         },
         {
           "value": 4,
           "name": "Grass",
-          "fieldIndex": 285092,
+          "fieldIndex": 310327,
           "token": "0x0400001d",
-          "dataIndex": 597507,
+          "dataIndex": 477249,
           "encodedBytes": "08"
         },
         {
           "value": 5,
           "name": "Stone",
-          "fieldIndex": 285093,
+          "fieldIndex": 310328,
           "token": "0x0400001e",
-          "dataIndex": 597508,
+          "dataIndex": 477250,
           "encodedBytes": "0a"
         },
         {
           "value": 6,
           "name": "Water",
-          "fieldIndex": 285094,
+          "fieldIndex": 310329,
           "token": "0x0400001f",
-          "dataIndex": 597509,
+          "dataIndex": 477251,
           "encodedBytes": "0c"
         },
         {
           "value": 7,
           "name": "Flesh",
-          "fieldIndex": 285095,
+          "fieldIndex": 310330,
           "token": "0x04000020",
-          "dataIndex": 597510,
+          "dataIndex": 477252,
           "encodedBytes": "0e"
         },
         {
           "value": 8,
           "name": "Metal",
-          "fieldIndex": 285096,
+          "fieldIndex": 310331,
           "token": "0x04000021",
-          "dataIndex": 597511,
+          "dataIndex": 477253,
           "encodedBytes": "10"
         },
         {
           "value": 9,
           "name": "Crystal",
-          "fieldIndex": 285097,
+          "fieldIndex": 310332,
           "token": "0x04000022",
-          "dataIndex": 597512,
+          "dataIndex": 477254,
           "encodedBytes": "12"
         },
         {
           "value": 10,
           "name": "Rubber",
-          "fieldIndex": 285098,
+          "fieldIndex": 310333,
           "token": "0x04000023",
-          "dataIndex": 597513,
+          "dataIndex": 477255,
           "encodedBytes": "14"
         },
         {
           "value": 11,
           "name": "Sand",
-          "fieldIndex": 285099,
+          "fieldIndex": 310334,
           "token": "0x04000024",
-          "dataIndex": 597514,
+          "dataIndex": 477256,
           "encodedBytes": "16"
         },
         {
           "value": 12,
           "name": "Gravel",
-          "fieldIndex": 285100,
+          "fieldIndex": 310335,
           "token": "0x04000025",
-          "dataIndex": 597515,
+          "dataIndex": 477257,
           "encodedBytes": "18"
         },
         {
           "value": 13,
           "name": "Moss",
-          "fieldIndex": 285101,
+          "fieldIndex": 310336,
           "token": "0x04000026",
-          "dataIndex": 597516,
+          "dataIndex": 477258,
           "encodedBytes": "1a"
         },
         {
           "value": 14,
           "name": "Custom",
-          "fieldIndex": 285102,
+          "fieldIndex": 310337,
           "token": "0x04000027",
-          "dataIndex": 597517,
+          "dataIndex": 477259,
           "encodedBytes": "1c"
         },
         {
           "value": 15,
           "name": "Snow",
-          "fieldIndex": 285103,
+          "fieldIndex": 310338,
           "token": "0x04000028",
-          "dataIndex": 597518,
+          "dataIndex": 477260,
           "encodedBytes": "1e"
         },
         {
           "value": 16,
           "name": "Mud",
-          "fieldIndex": 285104,
+          "fieldIndex": 310339,
           "token": "0x04000029",
-          "dataIndex": 597519,
+          "dataIndex": 477261,
           "encodedBytes": "20"
         },
         {
           "value": 17,
           "name": "Cardboard",
-          "fieldIndex": 285105,
+          "fieldIndex": 310340,
           "token": "0x0400002a",
-          "dataIndex": 597520,
+          "dataIndex": 477262,
           "encodedBytes": "22"
         },
         {
           "value": 18,
           "name": "Plastic",
-          "fieldIndex": 285106,
+          "fieldIndex": 310341,
           "token": "0x0400002b",
-          "dataIndex": 597521,
+          "dataIndex": 477263,
           "encodedBytes": "24"
         },
         {
           "value": 19,
           "name": "Ice",
-          "fieldIndex": 285107,
+          "fieldIndex": 310342,
           "token": "0x0400002c",
-          "dataIndex": 597522,
+          "dataIndex": 477264,
           "encodedBytes": "26"
         },
         {
           "value": 20,
           "name": "Wet",
-          "fieldIndex": 285108,
+          "fieldIndex": 310343,
           "token": "0x0400002d",
-          "dataIndex": 597523,
+          "dataIndex": 477265,
           "encodedBytes": "28"
         },
         {
           "value": 128,
           "name": "WaterV2",
-          "fieldIndex": 285109,
+          "fieldIndex": 310344,
           "token": "0x0400002e",
-          "dataIndex": 597524,
+          "dataIndex": 477266,
           "encodedBytes": "8100"
         }
       ],
@@ -1094,10 +1224,112 @@
     }
   },
   "parameterInterpretation": {
-    "direct": "The covered primitive forward path passes first word to shape userdata+0, second word to +4, shifted low flag byte to +8 and secondary flag to +12. Getter candidate bodies resolve the same userdata helper and return the option dword or surface byte. Candidate API registration and live runtime values remain separate.",
+    "direct": "The current common constructor stores options at +0, tag config at +4, an anonymous word at +8 and the named surface byte at +12. Ordinary secondary selection is packed in bit 8 of the word at +12; complex tagged-pointer flags remain separate. Current getter reads independently establish option and surface coordinates.",
     "exact": "Metadata enum defaults are authenticated independently from native shape-userdata source/return operands. All raw parameter words remain preserved. Aliased enum values retain every label.",
     "conditional": "Shared descriptor parameter order is applied as a stored default-decoder interpretation; complex-mesh activation and actual per-shape assignment remain separate.",
     "unresolved": "High packed flag bits beyond the shifted byte, arbitrary future enum values, semantic tag-config hash lookup and live callback/branch selection.",
     "complexMesh": "The optional complex record consumes one ordered mesh slot. Its source flags shift right by one for the surface byte, not two. The covered entry has no packed bit-zero attachment test; mesh ID validation, allocation and later runtime ownership remain conditional. Do not classify its clear bit zero as a disabled shape."
-  }
+  },
+  "selectedDefaultSlot3": [
+    {
+      "selector": 2,
+      "key": [
+        4,
+        0,
+        0
+      ],
+      "producerRole": "producer_e3bf00",
+      "descriptorRva": 4654055,
+      "functionLeaRva": 4654225,
+      "publicationRva": 4654543,
+      "descriptorStack": 7168,
+      "descriptorLeaRva": 4654064,
+      "descriptorCallRva": 4654071,
+      "keyLiteral": {
+        "rva": 29594696,
+        "loadRva": 15108920,
+        "tailLoadRva": 15108931
+      }
+    },
+    {
+      "selector": 5,
+      "key": [
+        5,
+        0,
+        0
+      ],
+      "producerRole": "producer_e3e1b0",
+      "descriptorRva": 4655473,
+      "functionLeaRva": 4655593,
+      "publicationRva": 4655911,
+      "descriptorStack": 5200,
+      "descriptorLeaRva": 4655475,
+      "descriptorCallRva": 4655482,
+      "keyLiteral": {
+        "rva": 29594808,
+        "loadRva": 15118373,
+        "tailLoadRva": 15118385
+      }
+    },
+    {
+      "selector": 6,
+      "key": [
+        9,
+        0,
+        0
+      ],
+      "producerRole": "producer_e3e7a0",
+      "descriptorRva": 4655929,
+      "functionLeaRva": 4656049,
+      "publicationRva": 4656367,
+      "descriptorStack": 4544,
+      "descriptorLeaRva": 4655931,
+      "descriptorCallRva": 4655938,
+      "keyLiteral": {
+        "rva": 29595224,
+        "loadRva": 15119909,
+        "tailLoadRva": 15119921
+      }
+    },
+    {
+      "selector": 7,
+      "key": [
+        8,
+        0,
+        0
+      ],
+      "producerRole": "producer_e3ef40",
+      "descriptorRva": 4656385,
+      "functionLeaRva": 4656505,
+      "publicationRva": 4656823,
+      "descriptorStack": 3888,
+      "descriptorLeaRva": 4656387,
+      "descriptorCallRva": 4656394,
+      "keyLiteral": {
+        "rva": 29595416,
+        "loadRva": 15121540,
+        "tailLoadRva": 15121553
+      }
+    },
+    {
+      "selector": 9,
+      "key": [
+        255,
+        3,
+        0
+      ],
+      "producerRole": "producer_e3d9b0",
+      "descriptorRva": 4658241,
+      "functionLeaRva": 4658365,
+      "publicationRva": 4658695,
+      "descriptorStack": 1264,
+      "descriptorLeaRva": 4658243,
+      "descriptorCallRva": 4658250,
+      "keyLiteral": {
+        "rva": 29595752,
+        "loadRva": 15117029,
+        "tailLoadRva": 15117040
+      }
+    }
+  ]
 }

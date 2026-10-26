@@ -8,6 +8,10 @@
 *.nbc
 *.nbi
 
+# .NET intermediates include generated source and machine-local build paths.
+**/bin/
+**/obj/
+
 # -----------------------------------------------------------------------------
 # Generated output / exports
 # -----------------------------------------------------------------------------

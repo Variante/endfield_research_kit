@@ -41,15 +41,20 @@ def _fail(check: str,expected: Any,actual: Any) -> None:
     error.args=(json.dumps(error.diagnostic,sort_keys=True),);raise error
 
 
-def _skip(status: str,detail: str,pins: dict) -> dict:
-    return {'status':status,'detail':detail,'nativeInputs':pins,
+def _skip(status: str,detail: str,pins: dict,gate=None) -> dict:
+    row={'status':status,'detail':detail,'nativeInputs':pins,
             'childSchemaAdmitted':False,'wholeActionAdmitted':False,'wholeRootAdmitted':False}
+    if gate is not None:
+        row['nativeGate']={'status':gate.status,'detail':gate.detail,
+            'gameAssembly':{'path':str(gate.gameassembly),'sha256':gate.gameassembly_sha256},
+            'metadata':{'path':str(gate.metadata),'sha256':gate.metadata_sha256}}
+    return row
 
 
 def validate_current_native_contract(*,gameassembly: Path,metadata: Path) -> dict[str,Any]:
     c=_contract();pins=c['nativeInputs']
     gate=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gameassembly,metadata=metadata)
-    if gate.status!='validated':return _skip(gate.status,gate.detail,pins)
+    if gate.status!='validated':return _skip(gate.status,gate.detail,pins,gate)
     unity=Path(gate.gameassembly).parent/'UnityPlayer.dll'
     if not unity.is_file():return _skip('missing','UnityPlayer.dll missing beside selected GameAssembly.dll',pins)
     if _fingerprint(unity)['sha256']!=pins['UnityPlayer.dll']:return _skip('mismatched','Selected UnityPlayer.dll hash differs',pins)

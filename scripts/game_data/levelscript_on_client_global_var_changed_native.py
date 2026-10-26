@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -316,7 +317,7 @@ def _validate_sources(
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
     route = contract["route"]
-    prefix = bytes((route["tag"], route["serializedMemberCount"]))
+    prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     for path, digest, start, end, span_digest in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         actual_digest = hashlib.sha256(data).hexdigest().upper()
@@ -325,15 +326,12 @@ def _validate_sources(
         if (ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
                 or ledger.get(path, {}).get("length") != len(data)):
             raise ValueError(f"{LABEL}.source:ledger-row={path}:sha256={digest}:length={len(data)}")
-        if not 0 <= start < end <= len(data) or data[start:start+2] != prefix:
+        if not 0 <= start < end <= len(data) or data[start:start+len(prefix)] != prefix:
             raise ValueError(f"{LABEL}.source:union-prefix={path}@{start}:expected={prefix.hex().upper()}")
         actual_span_digest = hashlib.sha256(data[start:end]).hexdigest().upper()
         if actual_span_digest != span_digest.upper():
             raise ValueError(f"{LABEL}.source:span-hash={path}@{start}:expected={span_digest}:actual={actual_span_digest}")
-        cursor = _Cursor(data, start)
-        tag = cursor.byte("onClientGlobalVarChanged.tag")
-        if tag != route["tag"] or cursor.byte("onClientGlobalVarChanged.memberCount") != route["serializedMemberCount"]:
-            raise ValueError(f"{LABEL}.source:union-header={path}")
+        cursor = _Cursor(data, start + len(prefix))
         for name, kind in route["fields"]:
             try:
                 cursor.value(kind, "onClientGlobalVarChanged." + name)

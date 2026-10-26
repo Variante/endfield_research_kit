@@ -1,0 +1,408 @@
+{
+  "schema": "endfield.leveldata-airwalls-native.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "records": [
+    {
+      "typeName": "Beyond.Gameplay.AirWallGroup",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AirWallGroupForMemoryPack",
+      "fields": [
+        [
+          "bounds",
+          "Beyond.Gameplay.ThreeDimRange"
+        ],
+        [
+          "checkData",
+          "Beyond.Gameplay.AirWallCheckData"
+        ],
+        [
+          "defaultOn",
+          "bool"
+        ],
+        [
+          "groupId",
+          "ulong"
+        ],
+        [
+          "polyLineWalls",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.PolyLineWall>"
+        ],
+        [
+          "pushBackRadioId",
+          "string"
+        ],
+        [
+          "scriptId",
+          "ulong"
+        ],
+        [
+          "slotId",
+          "uint"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "pushBackRadioId",
+          "pooled-string"
+        ]
+      ],
+      "method": [
+        243705,
+        "Beyond.MemoryPack.Beyond_Gameplay_AirWallGroupForMemoryPack",
+        "Deserialize",
+        98857104
+      ],
+      "memberCountInstruction": [
+        98857205,
+        "40 80 fe 08"
+      ],
+      "fieldSources": [
+        {
+          "field": "pushBackRadioId",
+          "fieldOffset": 72,
+          "readerArgument": "rbx",
+          "wrapperArgument": "rdi",
+          "callRva": 98857453,
+          "targetRva": 85929408,
+          "storeRva": 98857472
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 98857104,
+          "endRva": 98857670,
+          "sha256": "ABA543ED349C2FCB4BA433A4B494ADC3653307F13B418F20DE6307BEA25A4AEE",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 123911180,
+          "endRva": 123911335,
+          "sha256": "9613B5CFF5E0159A7C58D6876B7A3F51989F736CD0056B24542974D95A566AF7",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.AirWallCheckData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AirWallCheckDataForMemoryPack",
+      "fields": [
+        [
+          "checkType",
+          "int"
+        ],
+        [
+          "missionData",
+          "Beyond.Gameplay.MissionTotalCheckData"
+        ]
+      ],
+      "sourceFields": [],
+      "method": [
+        246127,
+        "Beyond.MemoryPack.Beyond_Gameplay_AirWallCheckDataForMemoryPack",
+        "Deserialize",
+        103780432
+      ],
+      "memberCountInstruction": [
+        103780529,
+        "40 80 fe 02"
+      ],
+      "fieldSources": [],
+      "codeWindows": [
+        {
+          "startRva": 103780432,
+          "endRva": 103780710,
+          "sha256": "110404F5C6541BEF0C5CF2EE91C2F463AC9B02DF0BAF65BDDE6F1B653C4A02ED",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124528512,
+          "endRva": 124528667,
+          "sha256": "9BD23C900E960A69B3BCD9A6F7764A09F40CC0609E079F36D7E0C7112608F79F",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.PolyLineWall",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_PolyLineWallForMemoryPack",
+      "fields": [
+        [
+          "bounds",
+          "Beyond.Gameplay.ThreeDimRange"
+        ],
+        [
+          "disableDefaultEffect",
+          "bool"
+        ],
+        [
+          "enableNavObstacle",
+          "bool"
+        ],
+        [
+          "heightRange",
+          "UnityEngine.Vector2"
+        ],
+        [
+          "overrideEffectId",
+          "string"
+        ],
+        [
+          "posList",
+          "System.Collections.Generic.List`1<UnityEngine.Vector2>"
+        ],
+        [
+          "pushDis",
+          "float"
+        ],
+        [
+          "pushWarnDis",
+          "float"
+        ],
+        [
+          "usage",
+          "int"
+        ],
+        [
+          "visualHeightRange",
+          "UnityEngine.Vector2"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "overrideEffectId",
+          "pooled-string"
+        ]
+      ],
+      "method": [
+        246147,
+        "Beyond.MemoryPack.Beyond_Gameplay_PolyLineWallForMemoryPack",
+        "Deserialize",
+        98857776
+      ],
+      "memberCountInstruction": [
+        98857877,
+        "40 80 fe 0a"
+      ],
+      "fieldSources": [
+        {
+          "field": "overrideEffectId",
+          "fieldOffset": 56,
+          "readerArgument": "rbx",
+          "wrapperArgument": "rdi",
+          "callRva": 98858059,
+          "targetRva": 85929408,
+          "storeRva": 98858086
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 98857776,
+          "endRva": 98858413,
+          "sha256": "5A793B3373C36E5D6B65879E3A6A04CE60B76C987FE98BC47EF8A7FBF3C9A904",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 123911336,
+          "endRva": 123911491,
+          "sha256": "FEFDA21451EAAF87AAFDF98B964D0339E894BE5B3DF5527FC5C5FE708AE2BDA7",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.MissionTotalCheckData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_MissionTotalCheckDataForMemoryPack",
+      "fields": [
+        [
+          "downReason",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.MissionCheckData>"
+        ],
+        [
+          "isDownAny",
+          "bool"
+        ],
+        [
+          "isRiseAny",
+          "bool"
+        ],
+        [
+          "riseReason",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.MissionCheckData>"
+        ]
+      ],
+      "sourceFields": [],
+      "method": [
+        258796,
+        "Beyond.MemoryPack.Beyond_Gameplay_MissionTotalCheckDataForMemoryPack",
+        "Deserialize",
+        105268208
+      ],
+      "memberCountInstruction": [
+        105268283,
+        "40 80 fe 04"
+      ],
+      "fieldSources": [],
+      "codeWindows": [
+        {
+          "startRva": 105268208,
+          "endRva": 105268509,
+          "sha256": "35751D8AFF3A395AB03C5A6B17E72CC569BC25C97B9B4795CB767211502855DA",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 105268263,
+          "endRva": 105268432,
+          "sha256": "9911ABAA513BAC650C9EB3179AEE08E0284CA5E6BB9C643FBEC64EDFA5F6FBFB",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 105268432,
+          "endRva": 105268443,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 105268443,
+          "endRva": 105268449,
+          "sha256": "B6A1FEEE2FE2B85E335893A378E00E1A1813E17E2E8ADA04CD9198C50A1EC4A5",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 105268449,
+          "endRva": 105268509,
+          "sha256": "1560442A1FC0ADB39719DC8A29E8D35E57DB99104753C1141E73FE3E932FC43F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124670742,
+          "endRva": 124670849,
+          "sha256": "39244234334C75B911BE91F43B624275D67A06ABB18A7A04DD2FAE1E0B2970D8",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124670849,
+          "endRva": 124670870,
+          "sha256": "F4D158EC37075475B711B4C5CDDECDED4D311274F8A1CCC61C9CEF2A6F437094",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.MissionCheckData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_MissionCheckDataForMemoryPack",
+      "fields": [
+        [
+          "detailState",
+          "int"
+        ],
+        [
+          "id",
+          "string"
+        ],
+        [
+          "isQuest",
+          "bool"
+        ],
+        [
+          "isSame",
+          "bool"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "id",
+          "pooled-string-setter"
+        ]
+      ],
+      "method": [
+        305049,
+        "Beyond.MemoryPack.Beyond_Gameplay_MissionCheckDataForMemoryPack",
+        "Deserialize",
+        104722976
+      ],
+      "memberCountInstruction": [
+        104723051,
+        "40 80 fe 04"
+      ],
+      "fieldSources": [
+        {
+          "field": "id",
+          "fieldOffset": 16,
+          "readerArgument": "rdi",
+          "wrapperArgument": "rbx",
+          "callRva": 104723095,
+          "targetRva": 85929408,
+          "setter": [
+            305044,
+            "Beyond.MemoryPack.Beyond_Gameplay_MissionCheckDataForMemoryPack",
+            "set___id__",
+            88443952
+          ],
+          "setterCallRva": 104723114,
+          "setterWindows": [
+            {
+              "startRva": 88443952,
+              "endRva": 88443988,
+              "sha256": "1490A6C2BD8B515067547FCDB5E4AF2D2078371C4497842474F52D6D197A7809",
+              "boundary": "complete reference setter; collector behavior is separate"
+            }
+          ]
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 104722976,
+          "endRva": 104723245,
+          "sha256": "0752312ABDBB729A6D8905B42457C2CF4CDA8A7C304DA275B79E73335B90BD53",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 104723031,
+          "endRva": 104723180,
+          "sha256": "D0D87FF245E4D09333773B1278FE9B095568890CBBB39E500E7868B42B32774E",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 104723180,
+          "endRva": 104723191,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 104723191,
+          "endRva": 104723197,
+          "sha256": "3C2F87F1A30F5ADD1564A2872B00C2C7F79CF3641FB8D83DDC3BAF7A9AF92321",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 104723197,
+          "endRva": 104723245,
+          "sha256": "DA2816C3BEBEC0A7D0D183CF15E919DDF450D9ECCC5A2511FF9DC584241257F7",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124614608,
+          "endRva": 124614715,
+          "sha256": "091BC50A0218A28DF521EB017E6CFAC94E8DFAB64DB6A60AE254951227E2180F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124614715,
+          "endRva": 124614736,
+          "sha256": "7C2FD40AB4DB406A74BC9232348779FC87348AAD65537D9F5E7385CED7EF8556",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native inputs authenticate reviewed declarations/count checks and complete owned reader bytes. String fields use the independently proved pooled helper with preserved reader/wrapper arguments and unchanged direct stores or a typed generated setter.",
+    "direct": "AirWallGroup.pushBackRadioId, PolyLineWall.overrideEffectId and MissionCheckData.id source joins are proved separately; the generated mission-ID setter stores its original string argument.",
+    "conditional": "Normal non-null typed wrapper and reader arguments, sufficient bytes and the initialized matching pool/provider are required.",
+    "unresolved": "Other scalar/vector/collection programs, complete default composition, collector barrier effects, source-owner corpus admission and runtime wall activation are separate."
+  }
+}

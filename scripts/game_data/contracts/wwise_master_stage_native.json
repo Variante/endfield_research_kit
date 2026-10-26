@@ -2,10 +2,10 @@
   "schema": "endfield.wwise-master-stage-observer.v1",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "ownerContract": "wwise_voice_pipeline_native",
   "ownerGroup": "masterBusOutput",
@@ -44,14 +44,14 @@
     },
     {
       "field": "previousGain",
-      "offset": 479,
+      "offset": 482,
       "prefixHex": "f30f1048",
       "width": 1,
       "suffixHex": ""
     },
     {
       "field": "targetGain",
-      "offset": 474,
+      "offset": 477,
       "prefixHex": "f30f1050",
       "width": 1,
       "suffixHex": ""
@@ -59,14 +59,14 @@
     {
       "field": "nodeFormat",
       "offset": 326,
-      "prefixHex": "8b46",
+      "prefixHex": "8b47",
       "width": 1,
       "suffixHex": ""
     },
     {
       "field": "nodeExtended",
       "offset": 301,
-      "prefixHex": "80be",
+      "prefixHex": "80bf",
       "width": 4,
       "suffixHex": "00"
     },
@@ -136,8 +136,13 @@
       "argIndex": 0,
       "kind": "pointer",
       "offset": 24,
-      "pointerOffsets": [192],
-      "requireMemory": {"name": "firstInputSamplePointer", "nonzero": true}
+      "pointerOffsets": [
+        192
+      ],
+      "requireMemory": {
+        "name": "firstInputSamplePointer",
+        "nonzero": true
+      }
     },
     {
       "name": "firstInputPreviousGainBits",
@@ -205,15 +210,37 @@
     "validFrames": 512,
     "prefixFrames": 4
   },
-  "additionalBodyGroups": ["sourceFramePadding", "sourceFrameGain", "sourceConstantGain"],
+  "additionalBodyGroups": [
+    "sourceFramePadding",
+    "sourceFrameGain",
+    "sourceConstantGain"
+  ],
   "bodyInstructions": [
-    {"group": "masterBusOutput", "windowIndex": 0, "offset": 468, "instructionHex": "41b101", "role": "allChannelsGain"},
-    {"group": "sourceFrameGain", "windowIndex": 0, "offset": 65, "instructionHex": "0f2efe", "role": "constantGainSelection"},
-    {"group": "sourceConstantGain", "windowIndex": 0, "offset": 67, "instructionHex": "0f59c1", "role": "constantPlanarMultiply"}
+    {
+      "group": "masterBusOutput",
+      "windowIndex": 0,
+      "offset": 471,
+      "instructionHex": "41b101",
+      "role": "allChannelsGain"
+    },
+    {
+      "group": "sourceFrameGain",
+      "windowIndex": 0,
+      "offset": 65,
+      "instructionHex": "0f2efe",
+      "role": "constantGainSelection"
+    },
+    {
+      "group": "sourceConstantGain",
+      "windowIndex": 0,
+      "offset": 67,
+      "instructionHex": "0f59c1",
+      "role": "constantPlanarMultiply"
+    }
   ],
   "evidenceBoundary": {
     "direct": "Selected matching-layout master branch pads its first descriptor, loads retained previous/target gains and applies original per-channel gain before forwarding the same descriptor to the output consumer.",
-    "conditional": "Same-call four-sample first-plane comparison requires one matching stereo descriptor, ordinary output mode, unprocessed entry, constant normal gain and observed nearest rounding. Paired conversion/device joins retain their own write/consume checks.",
+    "conditional": "Same-call four-sample first-plane comparison requires one matching stereo descriptor, ordinary output mode, unprocessed entry, constant normal gain and observed nearest rounding. Paired conversion/device joins retain their own write/consume checks. Static field, branch and arithmetic witnesses were rederived on the installed bodies; historical host/native equation and PCM comparisons were not rerun.",
     "unresolved": "Upstream bus-output generations and intervening effects/writers, gain ramps, complete buffers, allocation lifetime, individual Event contribution and audibility."
   }
 }

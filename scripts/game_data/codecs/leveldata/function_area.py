@@ -1,8 +1,8 @@
 """Exact MemoryPack codecs for ``LevelFunctionAreaData`` nested collections.
 
-The 13-member base rows and ``ThreeDimRange`` records are read in
-``scripts.game_data.leveldata_binary``; this module owns the two
-polymorphic nested collections and the shared condition union.
+This module owns the current 15-member base rows, their seven-member factory
+hide description, the two polymorphic collections and the shared condition
+union. ``ThreeDimRange`` remains in ``scripts.game_data.leveldata_binary``.
 
 - ``ConditionData`` reads ``conditionRuntimeBase`` before ``uniqueId``.
 - ``decode_condition_runtime`` is the shared ``ConditionRuntimeBase`` codec
@@ -33,6 +33,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.leveldata_function_area_native import CONTRACT as FUNCTION_AREA_CONTRACT, check_function_area_native_inputs
 from scripts.game_data.codecs.leveldata.memorypack import (
     read_bool,
     read_count,
@@ -453,3 +454,190 @@ def decode_function_area_specific_data_list(data: bytes, cursor: int) -> dict[st
 
     value, _ = _list(data, cursor, "specificDatas", _specific_data)
     return value
+
+
+def _factory_hide_description(data, cursor, diagnostics):
+    def fail(gate, at, expected, actual):
+        if diagnostics is not None:
+            diagnostics.append({"validator":"functionAreaBase","gate":gate,"offset":at,"expected":expected,"actual":actual})
+        return None
+    start = cursor
+    if cursor >= len(data):return fail("factory-hide-member-count",cursor,"7/null","EOF")
+    marker = data[cursor];cursor += 1
+    if marker == 0xFF:return None,cursor
+    if marker != 7:return fail("factory-hide-member-count",start,7,marker)
+    values = {"sourceOffset":start,"memberCount":7}
+    for name in ("hideAllBuildingUI","hideFacBuilding","hideFacBuildingAll","hideFacFence","hideSocialFac"):
+        decoded = read_bool(data,cursor)
+        if decoded is None:return fail("factoryHideDesc."+name,cursor,"bool 0/1",data[cursor] if cursor<len(data) else "EOF")
+        values[name],cursor = decoded
+    decoded = read_i32(data,cursor)
+    if decoded is None:return fail("factory-hide-owner",cursor,"Int32",len(data)-cursor)
+    values["hideSocialFacOwner"],cursor = decoded
+    count = read_count(data,cursor,max_count=100000)
+    if count is None:return fail("factory-hide-count",cursor,"count -1..100000",data[cursor:cursor+4].hex())
+    if count[0] not in (-1,0):return fail("positive-building-types",cursor,"null/empty list",count[0])
+    values["showFacBuildingTypes"] = None if count[0] == -1 else []
+    values["endOffset"] = count[1]
+    return values,count[1]
+
+
+def decode_function_area_base_data_list(
+    data: bytes,
+    offset: int,
+    *,
+    diagnostics: list[dict[str, Any]] | None = None,
+) -> dict[str, Any] | None:
+    start = offset
+    decoded = read_count(data, offset, max_count=100_000)
+    if decoded is None:
+        return None
+    count, cursor = decoded
+    if count == -1:
+        return {"startOffset": start, "endOffset": cursor, "count": count, "value": None}
+    if count > 0:
+        gate = check_function_area_native_inputs()
+        if gate.status != "validated":
+            if diagnostics is not None:
+                diagnostics.append({"validator":"functionAreaBase","gate":"selected-native-inputs",
+                                    "source":str(FUNCTION_AREA_CONTRACT),"status":gate.status,"detail":gate.detail})
+            return None
+    rows: list[dict[str, Any]] = []
+    for index in range(count):
+        row_start = cursor
+        if cursor >= len(data):
+            return None
+        if data[cursor] == 0xFF:
+            rows.append({
+                "indexInCollection": index,
+                "startOffset": row_start,
+                "endOffset": row_start + 1,
+                "value": None,
+            })
+            cursor += 1
+            continue
+        if data[cursor] != 15:
+            if diagnostics is not None:
+                diagnostics.append({"validator":"functionAreaBase","gate":"member-count","offset":cursor,"expected":15,"actual":data[cursor]})
+            return None
+        cursor += 1
+
+        buffer_distance_decoded = read_f32(data, cursor)
+        if buffer_distance_decoded is None:
+            return None
+        buffer_distance, cursor = buffer_distance_decoded
+        default_off_decoded = read_bool(data, cursor)
+        if default_off_decoded is None:
+            return None
+        default_off, cursor = default_off_decoded
+        enable_decoded = read_bool(data,cursor)
+        if enable_decoded is None:
+            if diagnostics is not None:
+                diagnostics.append({"validator":"functionAreaBase","gate":"enableFactoryHide","offset":cursor,"expected":"bool 0/1","actual":data[cursor] if cursor<len(data) else "EOF"})
+            return None
+        enable_factory_hide,cursor = enable_decoded
+
+        vectors: dict[str, list[float]] = {}
+        for vector_name in ("euler",):
+            values: list[float] = []
+            for _ in range(3):
+                value_decoded = read_f32(data, cursor)
+                if value_decoded is None:
+                    return None
+                value, cursor = value_decoded
+                values.append(value)
+            vectors[vector_name] = values
+
+        hide_decoded = _factory_hide_description(data,cursor,diagnostics)
+        if hide_decoded is None:return None
+        factory_hide_desc,cursor = hide_decoded
+        function_type_decoded = read_i32(data, cursor)
+        if function_type_decoded is None:
+            return None
+        function_type, cursor = function_type_decoded
+        has_condition_decoded = read_bool(data, cursor)
+        if has_condition_decoded is None:
+            return None
+        has_condition, cursor = has_condition_decoded
+        index_decoded = read_i32(data, cursor)
+        if index_decoded is None:
+            return None
+        row_index, cursor = index_decoded
+
+        for vector_name in ("offset",):
+            values = []
+            for _ in range(3):
+                value_decoded = read_f32(data, cursor)
+                if value_decoded is None:
+                    return None
+                value, cursor = value_decoded
+                values.append(value)
+            vectors[vector_name] = values
+
+        pos_count_decoded = read_count(data, cursor, max_count=100_000)
+        if pos_count_decoded is None:
+            return None
+        pos_count, cursor = pos_count_decoded
+        positions: list[list[float]] | None = None if pos_count == -1 else []
+        for _ in range(max(0, pos_count)):
+            position: list[float] = []
+            # Generated ``FunctionAreaBaseData.posList`` is ``List<Vector2>``.
+            for _ in range(2):
+                value_decoded = read_f32(data, cursor)
+                if value_decoded is None:
+                    return None
+                value, cursor = value_decoded
+                position.append(value)
+            assert positions is not None
+            positions.append(position)
+
+        for vector_name in ("postion",):
+            values = []
+            for _ in range(3):
+                value_decoded = read_f32(data, cursor)
+                if value_decoded is None:
+                    return None
+                value, cursor = value_decoded
+                values.append(value)
+            vectors[vector_name] = values
+
+        radius_decoded = read_f32(data, cursor)
+        shape_type_decoded = read_i32(data, radius_decoded[1]) if radius_decoded else None
+        if radius_decoded is None or shape_type_decoded is None:
+            return None
+        radius, _ = radius_decoded
+        shape_type, cursor = shape_type_decoded
+
+        size: list[float] = []
+        for _ in range(3):
+            value_decoded = read_f32(data, cursor)
+            if value_decoded is None:
+                return None
+            value, cursor = value_decoded
+            size.append(value)
+        unique_id_decoded = read_u64(data, cursor)
+        if unique_id_decoded is None:
+            return None
+        unique_id, cursor = unique_id_decoded
+        rows.append({
+            "indexInCollection": index,
+            "startOffset": row_start,
+            "endOffset": cursor,
+            "memberCount": 15,
+            "bufferDistance": buffer_distance,
+            "defaultOff": default_off,
+            "enableFactoryHide": enable_factory_hide,
+            "factoryHideDesc": factory_hide_desc,
+            "euler": vectors["euler"],
+            "functionType": function_type,
+            "hasCondition": has_condition,
+            "index": row_index,
+            "offset": vectors["offset"],
+            "posList": positions,
+            "postion": vectors["postion"],
+            "radius": radius,
+            "shapeType": shape_type,
+            "size": size,
+            "uniqueId": str(unique_id),
+        })
+    return {"startOffset": start, "endOffset": cursor, "count": count, "rows": rows}

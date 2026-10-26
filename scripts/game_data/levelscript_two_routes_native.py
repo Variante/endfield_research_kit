@@ -37,6 +37,7 @@ from scripts.game_data.il2cpp.context import (
     unresolved_usage_index,
 )
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.il2cpp.protocol import canonical_type_name, RUNTIME_PRIMITIVE_TYPE_NAMES
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 
@@ -182,7 +183,7 @@ def _validate_dispatch(image: Any, route: dict[str, Any], catalog: dict[str, Any
         raise ValueError(f"{LABEL}.native:branch-start={family}")
     image.check_windows([branch], label=LABEL)
     load_rva = dispatcher["typeLoadRva"]
-    if not branch["startRva"] <= load_rva < branch["endRva"] - 7:
+    if not branch["startRva"] <= load_rva <= branch["endRva"] - 7:
         raise ValueError(f"{LABEL}.native:type-load-range={family}")
     load = image.pe.bytes_at_va(image.pe.image_base + load_rva, 7)
     if load[:3] != b"\x48\x8B\x15" or load.hex().upper() != dispatcher["typeLoadHex"]:
@@ -535,7 +536,8 @@ def _regenerate_route(image: Any, route: dict[str, Any], catalog: dict[str, Any]
     return regenerated
 
 
-def _derive_context(image: Any, member: int, load: dict[str, Any], expected_type: str) -> dict[str, Any]:
+def _derive_context(image: Any, member: int, load: dict[str, Any], expected_type: str,
+                    *, expected_base: str = 'Beyond.Gameplay.Actions.Param`1') -> dict[str, Any]:
     base = image.pe.image_base
     va = load["vaInt"]
     cell = va + 7 + struct.unpack_from("<i", load["raw"], 3)[0]
@@ -554,14 +556,22 @@ def _derive_context(image: Any, member: int, load: dict[str, Any], expected_type
     base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
     carrier = generic_type_carrier(raw, carrier_raw, base_raw, type_pointer=argument.type_pointer_va,
                                    type_count=len(image.metadata.types), source=LABEL)
+    if image.type_name(carrier['baseDefinitionIndex']) != expected_base:
+        raise RouteRefused(f'context-carrier=member={member}:expected={expected_base}:installed={image.type_name(carrier["baseDefinitionIndex"])}')
     child = image.instantiations.resolve_pointer(carrier["classInstantiationPointerVa"])
+    if len(child.arguments) != 1:
+        raise RouteRefused(f'context-element-arity=member={member}:expected=1:actual={len(child.arguments)}')
     child_row = child.as_dict()
     child_row["arguments"] = list(child_row["arguments"])
     element = bytes.fromhex(child.arguments[0].raw_type_record_hex)
-    definition = None if element[10] != 0x11 else struct.unpack_from("<Q", element)[0]
-    name = image.type_name(definition) if definition is not None else {
-        2: "System.Boolean", 8: "System.Int32", 12: "System.Single"}.get(element[10])
-    if name != expected_type:
+    named_definition = struct.unpack_from("<Q", element)[0] if element[10] in (0x11,0x12) else None
+    definition = named_definition if element[10] == 0x11 else None
+    name = image.type_name(named_definition) if named_definition is not None else canonical_type_name(
+        RUNTIME_PRIMITIVE_TYPE_NAMES.get(element[10],''))
+    if element[10] == 0x15:
+        from scripts.game_data.il2cpp.protocol import runtime_type_name
+        name = runtime_type_name(image.pe,image.metadata,child.arguments[0].type_pointer_va)
+    if name is None or canonical_type_name(name) != canonical_type_name(expected_type):
         raise RouteRefused(f"context-element=member={member}:expected={expected_type}:installed={name}")
     return {
         "memberIndex": member, "instructionRva": va - base, "instructionHex": load["raw"].hex().upper(),

@@ -6,7 +6,6 @@ unreviewed children. No runtime blackboard lookup is inferred.
 """
 from __future__ import annotations
 
-from functools import lru_cache
 from typing import Any
 
 from scripts.game_data.memorypack.buff_actions import Reader
@@ -30,7 +29,6 @@ MEMBERS = (
 CHILD_TYPE = "Beyond.Gameplay.Core.TargetSettings"
 
 
-@lru_cache(maxsize=1)
 def _selected_plan() -> dict[str, Any]:
     routes, resolver, audit = resolve_routes()
     route = routes.get(TAG, {})

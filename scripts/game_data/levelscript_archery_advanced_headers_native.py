@@ -26,11 +26,11 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
@@ -343,7 +343,7 @@ def _validate_sources(
     )
     count = 0
     for route in contract["routes"]:
-        prefix = bytes((route["tag"], route["serializedMemberCount"]))
+        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             if (
@@ -362,7 +362,6 @@ def _validate_sources(
     return count
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_archery_advanced_headers_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,

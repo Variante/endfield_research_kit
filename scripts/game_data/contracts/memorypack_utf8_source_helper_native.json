@@ -1,178 +1,360 @@
 {
-  "schema": "endfield.memorypack-utf8-source-helper-native.v1",
+  "schema": "endfield.memorypack-utf8-source-helper-native.v2",
   "status": "exact-current-build",
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "wireEncoding": "nullable-int32-byte-length-valid-utf8",
   "sourceHelpers": [
-    46827264
+    210516792
   ],
-  "methods": [
-    [
-      428447,
+  "methods": {
+    "readString": [
+      550329,
+      "MemoryPack.MemoryPackReader",
+      "ReadString",
+      210516792
+    ],
+    "readUtf8": [
+      550331,
       "MemoryPack.MemoryPackReader",
       "ReadUtf8",
-      46828048
+      210517112
     ],
-    [
-      280484,
+    "getNextSpan": [
+      550313,
+      "MemoryPack.MemoryPackReader",
+      "GetNextSpan",
+      210515120
+    ],
+    "getUtf8": [
+      397975,
+      "System.Text.Encoding",
+      "get_UTF8",
+      85939024
+    ],
+    "spanString": [
+      397961,
       "System.Text.Encoding",
       "GetString",
-      46826272
+      83399168
     ],
-    [
-      280353,
+    "pointer": [
+      397960,
+      "System.Text.Encoding",
+      "GetString",
+      85615472
+    ],
+    "constructor": [
+      397829,
       "System.Text.UTF8Encoding",
       ".ctor",
-      50051872
+      96303136
+    ],
+    "selectedInitializer": [
+      397830,
+      "System.Text.UTF8Encoding",
+      "SetDefaultFallbacks",
+      108129632
+    ],
+    "count": [
+      397847,
+      "System.Text.UTF8Encoding",
+      "GetCharCount",
+      85615952
+    ],
+    "fill": [
+      397848,
+      "System.Text.UTF8Encoding",
+      "GetChars",
+      85616752
+    ],
+    "insufficient": [
+      550522,
+      "MemoryPack.MemoryPackSerializationException",
+      "ThrowInsufficientBufferUnless",
+      210523516
     ]
-  ],
-  "codeWindows": [
-    {
-      "startRva": 46827264,
-      "endRva": 46827462,
-      "sha256": "B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF"
+  },
+  "bodies": {
+    "readString": {
+      "entryRva": 210516792,
+      "codeWindows": [
+        {
+          "startRva": 210516792,
+          "endRva": 210516895,
+          "sha256": "FB2524154C36EAE8EE76FD88A7756457A8D49CC42560405A018E40D1CE7E4029"
+        }
+      ]
     },
-    {
-      "startRva": 78517122,
-      "endRva": 78517180,
-      "sha256": "2604D3A08B35B51A7CD94A7C8564A5EC9D40FB83B8EB4B8377A8094D206F7FD1"
+    "readUtf8": {
+      "entryRva": 210517112,
+      "codeWindows": [
+        {
+          "startRva": 210517112,
+          "endRva": 210517246,
+          "sha256": "70775FB3D6E071E063E1776B085807FAFD3D30629394A861A266589654742128"
+        }
+      ]
     },
-    {
-      "startRva": 46828048,
-      "endRva": 46828107,
-      "sha256": "0F8D2636D39BB9C15FE285129180FED5FEACA14C625FDE32D98F443530DE645F"
+    "encodingGetter": {
+      "entryRva": 85939024,
+      "codeWindows": [
+        {
+          "startRva": 85939024,
+          "endRva": 85939194,
+          "sha256": "0253B5B9AAC85551FE6084AF97CA15C1CFABBC0BFB4301490447AFE7792D6804"
+        }
+      ]
     },
-    {
-      "startRva": 46828107,
-      "endRva": 46828262,
-      "sha256": "FD899788F10757E6DA207A97FC489520EFF14310F198D4C62390BF67E7B37756"
+    "pointerString": {
+      "entryRva": 85615472,
+      "codeWindows": [
+        {
+          "startRva": 85615472,
+          "endRva": 85615716,
+          "sha256": "07FD9C1CAA5C0A1A1A33BD32FF1ACA1A46BED1993BE4FE21756B629C357F93D0"
+        },
+        {
+          "startRva": 120490400,
+          "endRva": 120490600,
+          "sha256": "B41C4AE6412A95179D5DC311950CEF8E141734E5C3A7C92231F5F8874B364AC8"
+        }
+      ]
     },
-    {
-      "startRva": 46828262,
-      "endRva": 46828272,
-      "sha256": "B92110B9E37DBD52DB22242C95C099D6D740FB59FE03BBD4453671FFF1A12315"
+    "constructor": {
+      "entryRva": 96303136,
+      "codeWindows": [
+        {
+          "startRva": 96303136,
+          "endRva": 96303229,
+          "sha256": "CE83DF088F267CCB34530F40AAD6583F81E76EFCDD647CE06DE27FD7EF5F5046"
+        }
+      ]
     },
-    {
-      "startRva": 46828272,
-      "endRva": 46828285,
-      "sha256": "C2B839111658E3DF548C43138C8DFC17866AAC8D8C30B7F9408D9EF73C3D257A"
+    "header": {
+      "entryRva": 83754000,
+      "codeWindows": [
+        {
+          "startRva": 83754000,
+          "endRva": 83754116,
+          "sha256": "439B6018A51ACD9C02DD1E65DAC4E192500F5C1A796D7A20D50C77F4BDBBCF9B"
+        },
+        {
+          "startRva": 121754758,
+          "endRva": 121754814,
+          "sha256": "6C9F8F0D502558A9C6FAE58AC7A689717FAC484773F7A2C2C862BA45148279E3"
+        }
+      ]
     },
-    {
-      "startRva": 79834878,
-      "endRva": 79834894,
-      "sha256": "5916C84F233729A17F929F615F47B4EBDABE5642FE3B34DA8554530655565E65"
+    "advance": {
+      "entryRva": 83754576,
+      "codeWindows": [
+        {
+          "startRva": 83754576,
+          "endRva": 83754596,
+          "sha256": "F70A1CF33F9F70C6251B657B7E703D09B03355E827F56F2FC54F24E90876218D"
+        },
+        {
+          "startRva": 83754596,
+          "endRva": 83754640,
+          "sha256": "D108697763A7CCE8BB7D1EBC367F2515321CFF391C7B7152AF651B86BF079111"
+        },
+        {
+          "startRva": 83754640,
+          "endRva": 83754641,
+          "sha256": "AE3F4619B0413D70D3004B9131C3752153074E45725BE13B9A148978895E359E"
+        },
+        {
+          "startRva": 120410922,
+          "endRva": 120410942,
+          "sha256": "16FBBADC19B00C2EB14CE33A7D3DDBFDEF95EFE35C0ED7D5DF9D234193733FBC"
+        }
+      ]
     },
-    {
-      "startRva": 79834894,
-      "endRva": 79835009,
-      "sha256": "75FA6DE1E26D5A6CE590D89AC66843BB011A07653F1E3033E02675AEB0004332"
+    "spanCreation": {
+      "entryRva": 162997316,
+      "codeWindows": [
+        {
+          "startRva": 162997316,
+          "endRva": 162997387,
+          "sha256": "B63E3EFC51C7BAE1627223A5E3B9490ADECF952989A820CE157FA76E7D79A7C2"
+        }
+      ]
+    },
+    "spanGetString": {
+      "entryRva": 83399168,
+      "codeWindows": [
+        {
+          "startRva": 83399168,
+          "endRva": 83399277,
+          "sha256": "01F4F57EABD182F808E52D3E4EB93A1453A38440B91F9F3D2EF32A66C665569B"
+        }
+      ]
+    },
+    "virtualDispatch": {
+      "entryRva": 11488,
+      "codeWindows": [
+        {
+          "startRva": 11488,
+          "endRva": 12165,
+          "sha256": "5411E59BF65085E5FB11793151B3BB2DC4CC101770BAF5A66828902426DF0393"
+        },
+        {
+          "startRva": 7083634,
+          "endRva": 7083940,
+          "sha256": "E1340F146D9E5610FB783DCE9DA0C0838440E34378E004FC1ABB50C7701A054F"
+        }
+      ],
+      "prefixEndRva": 11589
+    },
+    "count": {
+      "entryRva": 85615952,
+      "codeWindows": [
+        {
+          "startRva": 85615952,
+          "endRva": 85616009,
+          "sha256": "FDA5DCDE5803C7EA9079B2B594186A5C00646C2B9052B77F1621A724CFEE12AC"
+        },
+        {
+          "startRva": 85616009,
+          "endRva": 85616138,
+          "sha256": "102AC3FD0BF154081D5F267EC2FB5BE63BC54C50C562DF17AF3CB69ACBB1B541"
+        },
+        {
+          "startRva": 85616138,
+          "endRva": 85616751,
+          "sha256": "E419CDD17939FC464E60580E5263234C861F83FEE8E05CB429B836A2B30FC4B4"
+        },
+        {
+          "startRva": 122015416,
+          "endRva": 122015459,
+          "sha256": "E7D085F44AE2EA95FBCC0AF2233086219C66BE89DEF685397DC4FC3AF953F329"
+        },
+        {
+          "startRva": 122015459,
+          "endRva": 122015895,
+          "sha256": "A665FCB99A6F5C8CC93C346506887ABA8F724E40C6C0E6A5E67E7DA0C61BD063"
+        }
+      ]
+    },
+    "fill": {
+      "entryRva": 85616752,
+      "codeWindows": [
+        {
+          "startRva": 85616752,
+          "endRva": 85618098,
+          "sha256": "E623B141F2694C97E3DD6449A41CDBD5D5A489DD94F5CFD644F7255046E1A4DA"
+        },
+        {
+          "startRva": 122015896,
+          "endRva": 122016758,
+          "sha256": "BA7F83054FF621002DDC3D27EE47985584ED38E6B25730B8CC02BAA3C79540C4"
+        }
+      ]
     }
-  ],
-  "instructionWindows": [
-    [
-      46827305,
-      "488B4350486338",
-      "read signed four-byte length"
-    ],
-    [
-      46827324,
-      "48834350048343400483434404897330",
-      "advance reader past length"
-    ],
-    [
-      46827360,
-      "83FFFF743785FF7517",
-      "minus-one null and zero empty branches"
-    ],
-    [
-      46827369,
-      "488B0500D83F0A",
-      "empty branch loads empty literal usage cell"
-    ],
-    [
-      46827392,
-      "4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000",
-      "reader and byte length passed to ReadUtf8 tail call"
-    ],
-    [
-      46827420,
-      "488B5C243033C0488B7424384883C4205FC3",
-      "null branch returns zero"
-    ],
-    [
-      46828063,
-      "4863FA488BD93B79300F8FD0A4F701",
-      "ReadUtf8 keeps byte length and reader; checks available span"
-    ],
-    [
-      46828085,
-      "488B6B50",
-      "read payload pointer from reader"
-    ],
-    [
-      46828100,
-      "488B059DAB3D0A4889742430488B88B8000000488B4120F0830C24004885C00F84A5A4F701488B0578AB3D0A488B88B8000000488B7120F0830C24004885F67472",
-      "load and reuse cached encoding instance"
-    ],
-    [
-      79834918,
-      "4533C94533C0B201488BC8E8EA8B39FE",
-      "initialize actual UTF8Encoding with emit-BOM true and throw-invalid false"
-    ],
-    [
-      79834939,
-      "488B0DA6064608488B91B800000048897220488B0594064608488B88B80000004883C120E8DC3B40FB90",
-      "store constructed UTF8 encoding in same cache"
-    ],
-    [
-      46828183,
-      "4533C9448BC7488BD5488BCEE878F8FFFF",
-      "pass cached encoding, payload pointer and byte count to Encoding.GetString"
-    ],
-    [
-      46828207,
-      "8B73302BF70F88B0A4F70148017B50017B40017B44897330",
-      "advance reader past exactly the payload byte count"
-    ]
-  ],
-  "calls": [
-    {
-      "rva": 46827415,
-      "targetRva": 46828048,
-      "methodIndex": 428447,
-      "kind": "tail-jump"
+  },
+  "opaqueCalls": {
+    "metadataInit": 267424,
+    "nullThrow": 911680,
+    "allocate": 89616,
+    "barrier": 1065824,
+    "classInit": 314912,
+    "prepareClass": 19440,
+    "allocateString": 86768,
+    "allocateException": 89616,
+    "rangeConstructor": 211395524,
+    "nullConstructor": 211394860,
+    "throwException": 372384,
+    "advanceFallback": 145415732
+  },
+  "readerFieldOffsets": {
+    "currentPtr": 80,
+    "bufferLength": 48,
+    "advancedCount": 64,
+    "consumed": 68,
+    "totalLength": 24
+  },
+  "encodingFields": {
+    "readOnly": 33,
+    "codePage": 16,
+    "emitIdentifier": 56,
+    "throwInvalid": 57,
+    "utf8Cache": 32
+  },
+  "contexts": {
+    "span": {
+      "instructionRva": 210517145,
+      "instructionHex": "4C8B0DE8E0E903",
+      "usageCellRva": 276176264,
+      "usageRawHex": "3F5210C000000000",
+      "tag": 6,
+      "methodSpecIndex": 534815,
+      "methodSpec": [
+        400584,
+        -1,
+        1374
+      ],
+      "typeName": "System.Runtime.InteropServices.MemoryMarshal",
+      "methodName": "CreateReadOnlySpan",
+      "classArguments": [],
+      "methodArguments": [
+        "byte"
+      ]
     },
-    {
-      "rva": 46828195,
-      "targetRva": 46826272,
-      "methodIndex": 280484,
-      "kind": "call"
+    "encodingType": {
+      "instructionRva": 85939030,
+      "instructionHex": "488B05CB444E0B",
+      "usageCellRva": 275617832,
+      "usageRawHex": "F564032000000000",
+      "tag": 1,
+      "typeIndex": 111226,
+      "typeName": "System.Text.Encoding",
+      "typeRawHex": "BE090100000000000000120000000000"
     },
-    {
-      "rva": 79834929,
-      "targetRva": 50051872,
-      "methodIndex": 280353,
-      "kind": "call"
+    "allocationType": {
+      "instructionRva": 85939087,
+      "instructionHex": "488B0DBA02560B",
+      "usageCellRva": 276125264,
+      "usageRawHex": "0557042000000000",
+      "tag": 1,
+      "typeIndex": 142210,
+      "typeName": "System.Text.UTF8Encoding",
+      "typeRawHex": "B6090100000000000000120000000000"
+    },
+    "emptyString": {
+      "instructionRva": 85615691,
+      "instructionHex": "488B052EE25B0B",
+      "usageCellRva": 276186752,
+      "usageRawHex": "0D3D042000000000",
+      "tag": 1,
+      "typeIndex": 138886,
+      "typeName": "string",
+      "typeRawHex": "7B0701000000000000000E0000000000"
     }
-  ],
+  },
+  "pointerLayout": {
+    "countFunction": 720,
+    "fillFunction": 784,
+    "firstChar": 20
+  },
   "emptyLiteral": {
-    "usageCellRva": 218783600,
+    "usageCellRva": 276086552,
     "value": ""
   },
   "evidenceBoundary": {
-    "proved": "Reviewed normal source path reads signed Int32 byte length, uses -1 null and zero empty, and passes reader plus byte count to ReadUtf8. Its cache initialization constructs UTF8Encoding and the normal decode path passes that encoding, payload pointer and byte count to Encoding.GetString before advancing the cursor by the byte count.",
-    "decoderScope": "Exact original spans containing null, empty or valid UTF-8 only. Invalid byte sequences are refused rather than claiming parity with native replacement/error behavior.",
-    "callerRequirement": "The field source-to-destination proof must independently identify this helper. Naming a string field or finding a call elsewhere is insufficient.",
+    "exact": "Pinned native identities, complete unwind-owned byte ranges, selected local edges and original signed-length/cursor programs.",
+    "direct": "Typed byte-span context and registered entry, UTF8 allocation/cache and constructor-equivalent flags, standard Encoding.GetString API calls and internal method declarations, count/allocation/fill/String return transfers.",
+    "conditional": "Buffered normal paths, stable valid disjoint storage, zeroed compatible allocation, matched initialized runtime type/context/cache and ordinary ABI-preserving callees. The virtual generic path excludes every checked optimized target.",
+    "decoderScope": "Original bounded null, empty and valid UTF8 spans only, decoded by the standard UTF8 contract. Native Unicode algorithm reconstruction, invalid-byte replacement/error parity and live execution are not claimed.",
+    "callerRequirement": "Each field must independently prove this actual source helper and its source-to-destination span; no whole-corpus admission follows.",
     "unresolved": [
-      "runtime field selection",
-      "file loading",
-      "IFix or other runtime changes",
-      "evaluated blackboard values",
-      "effects"
+      "live cache/receiver/provider selection",
+      "allocator/initializer/barrier effects",
+      "runtime loading or IFix changes",
+      "evaluated field meaning"
     ]
   }
 }

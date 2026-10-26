@@ -29,7 +29,7 @@ from scripts.game_data.wwise_source_native import SourceContractError, _collect_
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_source_queue_native.json"
-SCHEMA = "endfield.wwise-source-queue-native.v4"
+SCHEMA = "endfield.wwise-source-queue-native.v5"
 BRIDGE_ARGUMENT_NAMES = {
     "sourceSelector": {"anonymousNodePointer", "originalSourcePointer", "playbackBlobPointer"},
     "sourceClone": {"originalSourcePointer"},
@@ -38,7 +38,7 @@ BRIDGE_ARGUMENT_NAMES = {
     "ownerConstructor": {"anonymousPrimaryOwnerPointer", "sourceThisPointer"},
 }
 BRIDGE_RETURN_KINDS = {
-    "sourceSelector": "void", "sourceClone": "pointer", "sourceSetWideText": "void",
+    "sourceSelector": "u32", "sourceClone": "pointer", "sourceSetWideText": "void",
     "ownerFactory": "pointer", "ownerConstructor": "pointer",
 }
 BRIDGE_LAYOUT_NAMES = {
@@ -53,9 +53,9 @@ SELECTION_IMMEDIATES = {
     "sourceArgumentMask": (b"\x25", 4),
     "externalArgumentTag": (b"\x3d", 4),
     "descriptorCodecShift": (b"\xc1\xe1", 1),
-    "successStatus": (b"\xbf", 4),
-    "emptyStatus": (b"\xbf", 4),
-    "cloneFailureStatus": (b"\xbf", 4),
+    "successStatus": (None, 4),
+    "emptyStatus": (None, 4),
+    "cloneFailureStatus": (None, 4),
 }
 
 
@@ -106,10 +106,51 @@ def load_queue_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     return contract
 
 
+def _indirect_tail_instruction(encoded: bytes) -> bool:
+    """Recognize a complete register or pointer-table FF /4 near JMP.
+
+    Memory slots stay aligned and indexed entries stay pointer-sized. This
+    establishes the leaf terminal only. Its target/interface identity still
+    belongs to the owning contract's table and argument-flow bindings.
+    """
+    cursor = 0
+    if encoded and 0x40 <= encoded[0] <= 0x4f:
+        if encoded[0] & 4:  # The opcode-extension field is not a GP register.
+            return False
+        cursor = 1
+    if len(encoded) < cursor + 2 or encoded[cursor] != 0xff:
+        return False
+    modrm = encoded[cursor + 1]
+    if (modrm >> 3) & 7 != 4:
+        return False
+    cursor += 2
+    mode, operand = modrm >> 6, modrm & 7
+    if mode == 3:
+        return cursor == len(encoded)
+    displacement = 1 if mode == 1 else 4 if mode == 2 or operand == 5 else 0
+    if operand == 4:
+        if len(encoded) <= cursor:
+            return False
+        sib = encoded[cursor]
+        cursor += 1
+        if sib >> 6 != 3:  # Selected indirect tables contain pointer entries.
+            return False
+        if mode == 0 and sib & 7 == 5:
+            displacement = 4
+    if cursor + displacement != len(encoded):
+        return False
+    if displacement and not (mode == 0 and operand == 5):
+        slot = int.from_bytes(encoded[cursor:], 'little', signed=True)
+        if slot < 0 or slot % 8:
+            return False
+    return True
+
+
 def validate_native_group_declarations(groups: Any) -> None:
     """Bound full native groups and completely covered unwindless leaves."""
-    if not isinstance(groups, list) or not 1 <= len(groups) <= 64:
-        _fail("queueGroups", "contract", "1..64 groups", len(groups) if isinstance(groups, list) else type(groups).__name__)
+    # Shared consumers include the voice graph plus dependency-owned groups.
+    if not isinstance(groups, list) or not 1 <= len(groups) <= 96:
+        _fail("queueGroups", "contract", "1..96 groups", len(groups) if isinstance(groups, list) else type(groups).__name__)
     names: set[str] = set()
     for group in groups:
         if not isinstance(group, dict):
@@ -174,11 +215,8 @@ def validate_native_group_declarations(groups: Any) -> None:
                 cursor += len(bytes.fromhex(witness["instructionHex"]))
             terminal = max(witnesses, key=lambda row: int(row["rva"], 16))
             encoded_terminal = bytes.fromhex(terminal["instructionHex"])
-            slot_terminal = encoded_terminal[1:] if encoded_terminal[:1] == b"\x48" else encoded_terminal
-            memory_slot_tail = (len(slot_terminal) == 3 and slot_terminal[:2] == b"\xff\x60"
-                                and slot_terminal[2] <= 127 and slot_terminal[2] % 8 == 0)
             valid_terminal = (encoded_terminal == b"\xc3" if leaf_kind == "completeLeafThroughReturn" else
-                              encoded_terminal in (b"\xff\xe0", b"\x48\xff\xe0") or memory_slot_tail if leaf_kind == "completeLeafThroughIndirectTailDispatch" else
+                              _indirect_tail_instruction(encoded_terminal) if leaf_kind == "completeLeafThroughIndirectTailDispatch" else
                               len(encoded_terminal) == 5 and encoded_terminal[:1] == b"\xe9")
             if cursor != entry + windows[0]["bodyLength"] or not valid_terminal:
                 _fail("queueLeafReturnCoverage", name, "complete contiguous instructions ending in declared RET or tail dispatch", hex(cursor))
@@ -337,6 +375,7 @@ def validate_queue_declarations(contract: dict[str, Any]) -> None:
         required_layout = {(name, field) for name, layout in layouts.items() for field in layout}
         if layout_coverage != required_layout:
             _fail("queueBridgeLayoutCoverage", "sourceBridgeObserver", sorted(required_layout), sorted(layout_coverage))
+    validate_address_point_installations(contract)
     validate_source_selection_rules(contract)
     validate_bank_registration_rules(contract)
 
@@ -407,6 +446,121 @@ def validate_bank_registration_rules(contract: dict[str, Any]) -> None:
             _fail("queueBankHircDispatchTargetExtent", "bankRegistration", "target inside authenticated owner", branch)
 
 
+def validate_address_point_installations(contract: dict[str, Any]) -> None:
+    """Bind each selected address point to its constructor's actual publication."""
+    bindings = contract.get('addressPointInstallations', [])
+    windows = {row['key']: row for row in contract.get('dataWindows', []) if 'entrySlot' in row}
+    groups = {row['key']: row for row in contract['nativeGroups']}
+    if not isinstance(bindings, list) or len(bindings) > 16:
+        _fail('queueAddressPointInstallations', 'contract', 'bounded constructor bindings', bindings)
+    covered = set()
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            _fail('queueAddressPointInstallation', 'contract', 'constructor binding', binding)
+        key = binding.get('dataWindow')
+        group = groups.get(binding.get('group'), {})
+        witnesses = {row['role']: row for row in group.get('instructionWitnesses', [])}
+        load, store = witnesses.get(binding.get('loadRole'), {}), witnesses.get(binding.get('storeRole'), {})
+        point = windows.get(key)
+        if point is None or key in covered or point.get('module', 'akSoundEngine') != 'akSoundEngine':
+            _fail('queueAddressPointInstallation', str(key), 'distinct selected native address point', binding)
+        covered.add(key)
+        value = _selection_register(binding.get('valueRegister'))
+        owner = _selection_register(binding.get('ownerRegister'))
+        offset = binding.get('offset')
+        encoded = bytes.fromhex(load.get('instructionHex', ''))
+        expected_prefix = bytes((0x48 | (4 if value >= 8 else 0), 0x8d, 5 | ((value & 7) << 3)))
+        if (len(encoded) != 7 or encoded[:3] != expected_prefix
+                or int(load['rva'], 16) + 7 + struct.unpack_from('<i', encoded, 3)[0] != int(point['rva'], 16)):
+            _fail('queueAddressPointLoad', str(key), 'RIP-relative LEA of declared address point', load)
+        if type(offset) is not int or not 0 <= offset <= 127:
+            _fail('queueAddressPointStoreOffset', str(key), 'bounded nonnegative displacement', offset)
+        mode = 0x40 if offset or owner & 7 == 5 else 0
+        expected = bytes((0x48 | (4 if value >= 8 else 0) | (1 if owner >= 8 else 0), 0x89,
+                          mode | ((value & 7) << 3) | (owner & 7)))
+        if owner & 7 == 4:
+            expected += b'\x24'
+        if mode:
+            expected += bytes((offset,))
+        if (bytes.fromhex(store.get('instructionHex', '')) != expected
+                or int(store.get('rva', '0'), 16) < int(load['rva'], 16) + 7):
+            _fail('queueAddressPointStore', str(key), 'publication from the declared loaded register', store)
+    if covered != set(windows):
+        _fail('queueAddressPointInstallationCoverage', 'contract', sorted(windows), sorted(covered))
+
+
+def _selection_register(name: str) -> int:
+    registers=['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi',*[f'r{i}' for i in range(8,16)]]
+    if name not in registers or name=='rsp':
+        _fail('queueSelectionRegister','status/source register','ordinary GP register other than RSP',name)
+    return registers.index(name)
+
+
+def _selection_mov32(destination: str, source: str) -> bytes:
+    dst,src=_selection_register(destination),_selection_register(source)
+    rex=0x40|(4 if dst>=8 else 0)|(1 if src>=8 else 0)
+    return (bytes((rex,)) if rex!=0x40 else b'')+bytes((0x8b,0xc0|((dst&7)<<3)|(src&7)))
+
+
+def _selection_immediate32(register: str, value: int) -> bytes:
+    reg=_selection_register(register)
+    return (b'\x41' if reg>=8 else b'')+bytes((0xb8|(reg&7),))+value.to_bytes(4,'little')
+
+
+def _selection_flow(selection: dict, witnesses: dict, groups: dict) -> None:
+    statuses=selection.get('statusRegisters')
+    if not isinstance(statuses,dict) or set(statuses)!={'successStatus','emptyStatus','cloneFailureStatus'}:
+        _fail('queueSelectionStatusRegisters','externalSourceSelection','three declared status registers',statuses)
+    common=statuses['emptyStatus'];success=statuses['successStatus']
+    nonvolatile={'rbx','rbp','rsi','rdi','r12','r13','r14','r15'}
+    if statuses['cloneFailureStatus']!=common or common not in nonvolatile or success not in nonvolatile:
+        _fail('queueSelectionStatusRegisters','externalSourceSelection','nonnull/callee-preserved common and success registers',statuses)
+    def require(role, expected):
+        row=witnesses.get(role,{})
+        actual=bytes.fromhex(row.get('instructionHex',''))
+        if actual!=expected:_fail('queueSelectionFlowInstruction',role,expected.hex(),actual.hex())
+        return _rva(row.get('rva'),role),actual
+    one=selection.get('successConstantWitnesses')
+    if (not isinstance(one,list) or len(one)!=3 or any(not isinstance(role,str) for role in one)
+            or len(set(one))!=3 or selection['immediateWitnesses']['successStatus'] not in one):
+        _fail('queueSelectionSuccessConstants','externalSourceSelection','three selected success producers',one)
+    for role in one:require(role,_selection_immediate32(success,selection['values']['successStatus']))
+    paths=selection.get('statusPaths')
+    if (not isinstance(paths,list) or len(paths)!=2 or any(not isinstance(path,dict) for path in paths)
+            or {path.get('callRole') for path in paths}!={'callMemorySourceSetter','callWideTextSourceSetter'}):
+        _fail('queueSelectionStatusPaths','externalSourceSelection','memory and wide setter joins',paths)
+    compare_role=selection.get('statusCompareRole');reg=_selection_register(common)
+    value=selection['values']['successStatus']
+    if not 0<=value<=127:_fail('queueSelectionStatusValue','successStatus','bounded positive CMP immediate',value)
+    compare,_=require(compare_role,(b'\x41' if reg>=8 else b'')+bytes((0x83,0xf8|(reg&7),value)))
+    require(selection.get('statusReturnRole'), _selection_mov32('rax', common))
+    for path in paths:
+        call=witnesses.get(path.get('callRole'),{});call_bytes=bytes.fromhex(call.get('instructionHex',''))
+        if len(call_bytes)!=5 or call_bytes[0]!=0xe8:_fail('queueSelectionStatusCall','status path','direct setter call',call)
+        at,raw=require(path.get('storeRole'),_selection_mov32(common,success))
+        jump=witnesses.get(path.get('jumpRole'),{});branch=bytes.fromhex(jump.get('instructionHex',''));site=_rva(jump.get('rva'),'status jump')
+        if (at!=int(call['rva'],16)+5 or site!=at+len(raw) or not (len(branch)==2 and branch[0]==0xeb or len(branch)==5 and branch[0]==0xe9)
+                or site+len(branch)+int.from_bytes(branch[1:],'little',signed=True)!=compare):
+            _fail('queueSelectionStatusJoin','status path','contiguous call/store/direct jump to status comparison',path)
+    join=selection.get('wideSetterJoin',{});source=join.get('sourceRegister');base=_selection_register(source)
+    # EDX <- source DWORD zero, then R8D <- ECX and RCX <- source pointer.
+    prefix=(b'\x41' if base>=8 else b'')+b'\x8b'
+    lookup=prefix+bytes(((0x40 if base&7==5 else 0)|0x10|(base&7),))
+    if base&7==4:lookup+=b'\x24'
+    if base&7==5:lookup+=b'\x00'
+    sequence=[(join.get('lookupRole'),lookup),(join.get('argumentRole'),_selection_mov32('r8','rcx')),
+              (join.get('sourceRole'),bytes((0x48|(1 if base>=8 else 0),0x8b,0xc8|(base&7))))]
+    end=None
+    for role,expected in sequence:
+        at,raw=require(role,expected)
+        if end is not None and at!=end:_fail('queueSelectionWideJoin',role,'contiguous final setter argument setup',hex(at))
+        end=at+len(raw)
+    call=witnesses.get(join.get('callRole'),{});raw=bytes.fromhex(call.get('instructionHex',''));target=groups.get(join.get('targetGroup'),{})
+    if (len(raw)!=5 or raw[0]!=0xe8 or int(call.get('rva','0'),16)!=end
+            or end+5+int.from_bytes(raw[1:],'little',signed=True)!=int(target.get('entryRva','0'),16)):
+        _fail('queueSelectionWideJoin','setter call','direct common call after the selected source/word arguments',call)
+
+
 def validate_source_selection_rules(contract: dict[str, Any]) -> None:
     """Tie the optional offline selection plan to authenticated operand bytes."""
     selection = contract.get("externalSourceSelection")
@@ -425,7 +579,11 @@ def validate_source_selection_rules(contract: dict[str, Any]) -> None:
         value, witness = values[name], witnesses.get(bindings[name])
         if type(value) is not int or not 0 <= value < 1 << (width * 8) or witness is None:
             _fail("queueSelectionOperand", name, f"u{width * 8} with instruction witness", value)
-        expected = prefix + value.to_bytes(width, "little")
+    _selection_flow(selection,witnesses,groups)
+    for name, (prefix, width) in SELECTION_IMMEDIATES.items():
+        value, witness = values[name], witnesses[bindings[name]]
+        expected = (prefix + value.to_bytes(width, "little") if prefix is not None else
+                    _selection_immediate32(selection["statusRegisters"][name],value))
         if bytes.fromhex(witness["instructionHex"]) != expected:
             _fail("queueSelectionInstruction", name, expected.hex(), witness["instructionHex"])
     increment = witnesses.get(selection.get("codecIncrementWitness"))
@@ -650,6 +808,15 @@ def validate_source_role_dependencies(contract: dict[str, Any], managed: NativeI
         actual = int(call["rva"], 16) + 5 + struct.unpack_from("<i", bytes.fromhex(call["instructionHex"]), 1)[0]
         if method is None or actual != int(method["rva"], 16):
             _fail("queueBankSourceSetterDependency", binding["infoSetterMethod"], None if method is None else method["rva"], hex(actual))
+        binding = selection.get('memorySetterBinding', {})
+        method = next((row for row in source['methods'] if row['key'] == binding.get('method')), None)
+        selector = next(group for group in contract['nativeGroups'] if group['key'] == selection['selectorGroup'])
+        call = next((row for row in selector['instructionWitnesses'] if row['role'] == binding.get('callRole')), {})
+        encoded = bytes.fromhex(call.get('instructionHex', ''))
+        actual = (int(call['rva'], 16) + 5 + struct.unpack_from('<i', encoded, 1)[0]
+                  if len(encoded) == 5 and encoded[0] == 0xe8 else None)
+        if method is None or actual != int(method['rva'], 16):
+            _fail('queueMemorySourceSetterDependency', str(binding.get('method')), None if method is None else method['rva'], actual)
     transports = source["ownerTransports"]
     if len(transports) != 1:
         _fail("queueSourceOwnerSelection", "source roles", "one reviewed owner transport", len(transports))
@@ -722,7 +889,7 @@ def build_source_bridge_relation_spec(contract: dict[str, Any], source: dict[str
                             "consumerOutputOffset": consumer["outputReference"]["offset"]},
             "consumerAddressPointRva": transport["addressPointWindow"]["rva"],
             "callers": {"sourceClone": [next_instruction("cloneOriginalSource")],
-                        "sourceSetWideText": [next_instruction("callWideTextSourceSetterPointerBranch"), next_instruction("callWideTextSourceSetterWord28Branch")],
+                        "sourceSetWideText": [next_instruction("callWideTextSourceSetter")],
                         "ownerFactory": [next_instruction("callConfigInterfaceSlot32")],
                         "ownerConstructor": [hex(ctor_return)],
                         "ownerConsumer": [next_instruction("callEmbeddedOwnerSlot80")],

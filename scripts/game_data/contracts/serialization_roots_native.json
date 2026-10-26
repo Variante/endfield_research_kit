@@ -1,0 +1,605 @@
+{
+  "schema": "endfield.serialization-roots-native.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "records": [
+    {
+      "typeName": "Beyond.Gameplay.LevelScriptData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptDataForMemoryPack",
+      "fields": [
+        [
+          "actionMap",
+          "Beyond.Gameplay.Actions.ActionMapAssetRaw"
+        ],
+        [
+          "activeShapeList",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.Core.LevelScriptShape>"
+        ],
+        [
+          "allowStartOnTravelPole",
+          "bool"
+        ],
+        [
+          "allowTick",
+          "bool"
+        ],
+        [
+          "enablePreload",
+          "bool"
+        ],
+        [
+          "endType",
+          "Beyond.Gameplay.LevelScriptEndType"
+        ],
+        [
+          "enemies",
+          "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.LevelEnemyData>"
+        ],
+        [
+          "exitBuffer",
+          "float"
+        ],
+        [
+          "exitBufferOverride",
+          "bool"
+        ],
+        [
+          "interactiveActiveRiskEntityIdList",
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        [
+          "interactiveLocks",
+          "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.InteractiveLockData>"
+        ],
+        [
+          "interactives",
+          "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.LevelInteractiveData>"
+        ],
+        [
+          "levelScriptType",
+          "Beyond.GEnums.LevelScriptType"
+        ],
+        [
+          "lstTemplatePath",
+          "string"
+        ],
+        [
+          "maxStage",
+          "int"
+        ],
+        [
+          "modules",
+          "System.Collections.Generic.Dictionary`2<ulong,Beyond.Gameplay.LevelScriptModuleData>"
+        ],
+        [
+          "npcs",
+          "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.Core.NpcRuntimeProxyData>"
+        ],
+        [
+          "parentLevelScriptId",
+          "ulong"
+        ],
+        [
+          "properties",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.ParamKeyValue>"
+        ],
+        [
+          "propertyIdToKeyMap",
+          "System.Collections.Generic.Dictionary`2<int,string>"
+        ],
+        [
+          "refWorldEntityIdList",
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        [
+          "resetModeWhenActive",
+          "Beyond.GEnums.LevelScriptResetModeType"
+        ],
+        [
+          "resetModeWhenEnd",
+          "Beyond.GEnums.LevelScriptResetModeType"
+        ],
+        [
+          "scriptId",
+          "ulong"
+        ],
+        [
+          "startShapeList",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.Core.LevelScriptShape>"
+        ],
+        [
+          "startType",
+          "Beyond.Gameplay.LevelScriptStartType"
+        ],
+        [
+          "taskMap",
+          "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.LevelScriptTaskData>"
+        ],
+        [
+          "triggerVolumes",
+          "System.Collections.Generic.Dictionary`2<uint,Beyond.Gameplay.LevelScriptTriggerVolumeData>"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "interactiveActiveRiskEntityIdList",
+          "uint64-list"
+        ],
+        [
+          "refWorldEntityIdList",
+          "uint64-list"
+        ],
+        [
+          "lstTemplatePath",
+          "pooled-string"
+        ]
+      ],
+      "method": [
+        242765,
+        "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptDataForMemoryPack",
+        "Deserialize",
+        103415216
+      ],
+      "memberCountInstruction": [
+        103423611,
+        "41 80 fe 1c"
+      ],
+      "fieldSources": [
+        {
+          "field": "interactiveActiveRiskEntityIdList",
+          "fieldOffset": 88,
+          "readerArgument": "r13",
+          "wrapperArgument": "r15",
+          "callRva": 103424226,
+          "targetRva": 96253232,
+          "storeRva": 103424260,
+          "typedContext": {
+            "instructionRva": 103424216,
+            "instructionHex": "488B1579224D0A",
+            "usageCellRva": 276251480,
+            "usageRawHex": "5F7013C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636975,
+            "methodSpec": [
+              550346,
+              -1,
+              9090
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.List`1<ulong>"
+            ]
+          }
+        },
+        {
+          "field": "refWorldEntityIdList",
+          "fieldOffset": 80,
+          "readerArgument": "r13",
+          "wrapperArgument": "r15",
+          "callRva": 103425336,
+          "targetRva": 96253232,
+          "storeRva": 103425370,
+          "typedContext": {
+            "instructionRva": 103425323,
+            "instructionHex": "488B15261E4D0A",
+            "usageCellRva": 276251480,
+            "usageRawHex": "5F7013C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636975,
+            "methodSpec": [
+              550346,
+              -1,
+              9090
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.List`1<ulong>"
+            ]
+          }
+        },
+        {
+          "field": "lstTemplatePath",
+          "fieldOffset": 24,
+          "readerArgument": "r13",
+          "wrapperArgument": "r15",
+          "callRva": 103424636,
+          "targetRva": 85929408,
+          "storeRva": 103424670
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 103415216,
+          "endRva": 103426728,
+          "sha256": "A50265FD4BC0B831731C10DB0CFCF3FA2B53DF7A528B9172AACA528715CA09DA",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.LevelScriptBriefData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptBriefDataForMemoryPack",
+      "fields": [
+        [
+          "dataPath",
+          "Beyond.Resource.StringPathHash"
+        ],
+        [
+          "interactiveActiveRiskEntityIdList",
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        [
+          "levelScriptType",
+          "Beyond.GEnums.LevelScriptType"
+        ],
+        [
+          "maxStage",
+          "int"
+        ],
+        [
+          "parentLevelScriptId",
+          "ulong"
+        ],
+        [
+          "properties",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.ParamKeyValue>"
+        ],
+        [
+          "propertyIdToKeyMap",
+          "System.Collections.Generic.Dictionary`2<int,string>"
+        ],
+        [
+          "refWorldEntityIdList",
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        [
+          "scriptId",
+          "ulong"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "interactiveActiveRiskEntityIdList",
+          "uint64-list"
+        ],
+        [
+          "refWorldEntityIdList",
+          "uint64-list"
+        ]
+      ],
+      "method": [
+        242727,
+        "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptBriefDataForMemoryPack",
+        "Deserialize",
+        97775456
+      ],
+      "memberCountInstruction": [
+        97780289,
+        "40 80 fd 09"
+      ],
+      "fieldSources": [
+        {
+          "field": "interactiveActiveRiskEntityIdList",
+          "fieldOffset": 64,
+          "readerArgument": "r14",
+          "wrapperArgument": "r15",
+          "callRva": 97780384,
+          "targetRva": 96253232,
+          "storeRva": 97780418,
+          "typedContext": {
+            "instructionRva": 97780374,
+            "instructionHex": "488B15BB40A30A",
+            "usageCellRva": 276251480,
+            "usageRawHex": "5F7013C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636975,
+            "methodSpec": [
+              550346,
+              -1,
+              9090
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.List`1<ulong>"
+            ]
+          }
+        },
+        {
+          "field": "refWorldEntityIdList",
+          "fieldOffset": 56,
+          "readerArgument": "r14",
+          "wrapperArgument": "r15",
+          "callRva": 97780846,
+          "targetRva": 96253232,
+          "storeRva": 97780880,
+          "typedContext": {
+            "instructionRva": 97780833,
+            "instructionHex": "488B15F03EA30A",
+            "usageCellRva": 276251480,
+            "usageRawHex": "5F7013C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636975,
+            "methodSpec": [
+              550346,
+              -1,
+              9090
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.List`1<ulong>"
+            ]
+          }
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 97775456,
+          "endRva": 97781376,
+          "sha256": "7CD0F73F24F747B770C473B83181478C36C11890810C14F03450CFBEB40B0DA1",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 97775508,
+          "endRva": 97778247,
+          "sha256": "6E73C533D37EBA5FC8CABA85CA4C801FC36B4956F80BC4201324D0A262682FBC",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 97778247,
+          "endRva": 97778288,
+          "sha256": "BD71E53717A1EB60FB71B83A077B8D74F72B85D49BEE47F2F2BFB43777D2771A",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 97778288,
+          "endRva": 97778718,
+          "sha256": "53D4B958ED6088A127323774B6418C6F6B5D766A41A591CCB1B29794650CA78C",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 97778718,
+          "endRva": 97781376,
+          "sha256": "9F0BBAFCD35E741F8D8D344E844700C64CB934269D510053C22780B661A04280",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.LevelData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LevelDataForMemoryPack",
+      "fields": [
+        [
+          "airWalls",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.AirWallGroup>"
+        ],
+        [
+          "aiTransData",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelTransformData>"
+        ],
+        [
+          "autoSpawnedInteractives",
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        [
+          "blackbox",
+          "Beyond.Gameplay.LevelDataBlackbox"
+        ],
+        [
+          "buildableCondition",
+          "Beyond.Gameplay.ConditionRuntimeBase"
+        ],
+        [
+          "cameraPoses",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelCameraPoseData>"
+        ],
+        [
+          "charPatrol",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.AI.CharacterPatrolData>"
+        ],
+        [
+          "doodadGroup",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelDoodadGroupData>"
+        ],
+        [
+          "dynamicOccludeAreas",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelDynamicOccludeAreaData>"
+        ],
+        [
+          "enemies",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelEnemyData>"
+        ],
+        [
+          "enemyGroup",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelEnemyGroupData>"
+        ],
+        [
+          "enemyPatrol",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.AI.EnemyPatrolData>"
+        ],
+        [
+          "environmentVolumes",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelEnvironmentVolume>"
+        ],
+        [
+          "factoryMines",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelFactoryRegionMineInstanceData>"
+        ],
+        [
+          "factoryPredefineData",
+          "Beyond.Gameplay.LevelFactoryPredefineData"
+        ],
+        [
+          "factoryRegions",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelFactoryRegionData>"
+        ],
+        [
+          "functionArea",
+          "Beyond.Gameplay.LevelFunctionAreaData"
+        ],
+        [
+          "guideHints",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelDataGuideHintConfig>"
+        ],
+        [
+          "interactiveLockData",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.InteractiveLockData>"
+        ],
+        [
+          "interactives",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelInteractiveData>"
+        ],
+        [
+          "levelIdNum",
+          "int"
+        ],
+        [
+          "levelScriptBriefDataDict",
+          "System.Collections.Generic.Dictionary`2<ulong,Beyond.Gameplay.LevelScriptBriefData>"
+        ],
+        [
+          "levelScriptDataPathDict",
+          "System.Collections.Generic.Dictionary`2<ulong,string>"
+        ],
+        [
+          "levelUIs",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelUIData>"
+        ],
+        [
+          "levelWideConfigs",
+          "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.LevelWideConfig+LevelWideConfigType,System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.LevelWideConfig>>"
+        ],
+        [
+          "mapVolumeDatas",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelMapRegionData>"
+        ],
+        [
+          "missionAreas",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.MissionAreaData>"
+        ],
+        [
+          "npcAttractPointData",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.AI.AttractPointInEditorData>"
+        ],
+        [
+          "npcClusters",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelNpcClusterData>"
+        ],
+        [
+          "npcGroup",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelNpcGroupData>"
+        ],
+        [
+          "npcPatrol",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.AI.Config.NpcPatrolData>"
+        ],
+        [
+          "npcs",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.Core.NpcRuntimeProxyData>"
+        ],
+        [
+          "patrols",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.Core.PatrolData>"
+        ],
+        [
+          "predefinedParams",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelFactoryPredefinedParamData>"
+        ],
+        [
+          "riftVolumes",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelWaterVolumeData>"
+        ],
+        [
+          "safeZone",
+          "Beyond.Gameplay.LevelSafeZoneData"
+        ],
+        [
+          "sceneId",
+          "string"
+        ],
+        [
+          "sludgeDatas",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelErosionSludgeDataV2>"
+        ],
+        [
+          "spawners",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelSpawnerInstData>"
+        ],
+        [
+          "specificData",
+          "Beyond.Gameplay.LevelSpecificData"
+        ],
+        [
+          "splines",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelSplineData>"
+        ],
+        [
+          "waterVolumes",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.LevelWaterVolumeData>"
+        ],
+        [
+          "worldWayPointData",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.AI.WayPointInEditorData>"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "sceneId",
+          "pooled-string"
+        ]
+      ],
+      "method": [
+        242708,
+        "Beyond.MemoryPack.Beyond_Gameplay_LevelDataForMemoryPack",
+        "Deserialize",
+        97783744
+      ],
+      "memberCountInstruction": [
+        97783845,
+        "40 80 fe 2b"
+      ],
+      "fieldSources": [
+        {
+          "field": "sceneId",
+          "fieldOffset": 16,
+          "readerArgument": "rbx",
+          "wrapperArgument": "rdi",
+          "callRva": 97785899,
+          "targetRva": 85929408,
+          "storeRva": 97785926
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 97783744,
+          "endRva": 97786893,
+          "sha256": "5E8318B22C61CA383122070F63A7FE692AAA0F5F7BE20E62BF9E277EA880E135",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 123799412,
+          "endRva": 123799511,
+          "sha256": "D495D6F79220921C4E6C3CA90912DDB9B5C991A423BDA705704A0073D7B8C848",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native inputs authenticate complete owned reader bytes, reviewed root member counts/declarations, original reader/byref-wrapper arguments and unchanged reference-return stores. Risk/world-reference list calls share their typed usage/entry; LevelScript template and LevelData scene strings call the independently proved pooled helper. The existing LevelScript enum domains are checked against native metadata.",
+    "direct": "Both lists in each root load the identical ReadPackable<List<UInt64>> usage and call the identical entry before storing to their respective fields.",
+    "conditional": "Static source joins are conditional on valid wrapper/reader arguments, successful initialization, normal calls and selected collection/pool providers.",
+    "unresolved": "Positive risk-list framing, Brief property/string children, other root fields, complete default composition and owner EOF admission remain independent. No live formatter or execution is observed."
+  }
+}

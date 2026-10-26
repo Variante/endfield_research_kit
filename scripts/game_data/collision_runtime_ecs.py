@@ -39,6 +39,21 @@ def descriptor_candidate(projection, ordinal, selection):
     return (active[index] if 0 <= index < len(active) else None), 'enumerated_actor_shapes'
 
 
+def observed_parameters(snapshot, layout, *, auxiliary):
+    """Decode the copied userdata using its authenticated current layout."""
+    if len(snapshot) != 192:
+        raise ValueError('runtime ECS parameter snapshot width')
+    if not struct.unpack_from('<I', snapshot, 76)[0] & 8:
+        return None
+    fields = layout['shapeUserdata']
+    raw = snapshot[128:144]
+    return dict(gameplayOptionsWord=struct.unpack_from('<I', raw, fields['gameplayOptions'])[0],
+                tagConfigWord=struct.unpack_from('<I', raw, fields['tagConfig'])[0],
+                surfaceTypeByte=raw[fields['surfaceType']],
+                anonymousWord=struct.unpack_from('<I', raw, fields['anonymousWord'])[0],
+                secondaryFlag=None if auxiliary else bool(raw[fields['secondaryFlag']] & 1))
+
+
 def bind_meshes(ids, resources, objects, calls):
     """Agreeing repeated reads may bind one input; busy reads remain gaps."""
     bindings=[]
@@ -203,11 +218,12 @@ def audit(session: Path, *, game_root: Path | None=None, export_root: Path | Non
             source=join['sourceCandidates'][0];definition=defined[source['decoderCall']]
             hit=conversions[join['queryCall']];query=queries[join['queryCall']]
             observed=bytes.fromhex(query['before']['rawHex'])
-            actual=dict(gameplayOptionsWord=struct.unpack_from('<I',observed,128)[0],tagConfigWord=struct.unpack_from('<I',observed,132)[0],
-                        surfaceTypeByte=observed[136],secondaryFlag=bool(observed[140]))
+            actual=observed_parameters(observed,contract['layout'],
+                auxiliary=hit['result']['componentIndex']==indexing['selection']['auxiliaryIndex'])
             row=dict(queryCall=join['queryCall'],**source,entityGlobalIndex=query['after']['entityGlobalIndex'],entityVersion=query['after']['entityVersion'],
                      actor=query['after']['actor'],physicsId=query['after']['physicsId'],physicsVersion=query['after']['physicsVersion'],
                      shape=query['after']['shape'],shapeIndex=hit['result']['componentIndex'],observedParameters=actual,
+                     parameterReadStatus='observed' if actual is not None else 'shape_userdata_unreadable',
                      actorMeshSlots=[b['meshSlot'] for b in definition.get('meshBindings',[])],
                      geometrySelection='unresolved-constructor-success-attachment-history-and-geometry')
             ordinal=row['shapeIndex']
@@ -215,11 +231,13 @@ def audit(session: Path, *, game_root: Path | None=None, export_root: Path | Non
             row['shapeIndexDomain']=domain
             if candidate is not None:
                 expected={k:candidate[k] for k in ('gameplayOptionsWord','tagConfigWord','surfaceTypeByte')}
+                if 'anonymousWord' in candidate:
+                    expected['anonymousWord']=candidate['anonymousWord']
                 row['ordinalCandidate']=dict(offset=candidate['offset'],kind=candidate['kind'],meshSlot=candidate.get('meshSlot'),
-                    expectedParameters=expected,parametersMatch=all(actual[k]==v for k,v in expected.items()),
-                    gameplayOptionXor=actual['gameplayOptionsWord']^expected['gameplayOptionsWord'],
+                    expectedParameters=expected,parametersMatch=None if actual is None else all(actual[k]==v for k,v in expected.items()),
+                    gameplayOptionXor=None if actual is None else actual['gameplayOptionsWord']^expected['gameplayOptionsWord'],
                     boundary='conditional descriptor in native index domain; constructor success, attachment history and geometry remain unproved')
-                census['hitParameterMatch' if row['ordinalCandidate']['parametersMatch'] else 'hitParameterDifference']+=1
+                census['hitParameterUnavailable' if actual is None else 'hitParameterMatch' if row['ordinalCandidate']['parametersMatch'] else 'hitParameterDifference']+=1
             hits.append(row)
         if export_root is not None:
             from scripts.game_data.collision_runtime_asset_inputs import link_inputs

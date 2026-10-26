@@ -312,7 +312,6 @@ def levelscript_framers() -> tuple[tuple[Callable[[bytes], dict[str, Any]], ...]
             *declared,
             levelscript.frame_levelscript_empty_action_map_sequential,
             levelscript.frame_levelscript_null_action_map_sequential,
-            levelscript.frame_levelscript_single_call_server_leader_enter,
             levelscript.frame_levelscript_current_action_sequence_leader_enter,
             levelscript.frame_levelscript_terminal_suffix,
             levelscript.frame_levelscript_empty_action_map_top_level,
@@ -494,6 +493,8 @@ def declared_root_framers(
 
 
 FAMILIES: dict[str, Callable[[], tuple[tuple[Callable[[bytes], dict[str, Any]], ...], tuple[type[BaseException], ...]]]] = {
+    # Page decoding needs filename context; compressed-byte coverage is unmeasured.
+    "StringPool": lambda: ((), (ValueError,)),
     "LevelScriptData": levelscript_framers,
     "LevelScriptTemplateData": levelscript_template_framers,
     "SkillData": declared_root_framers("SkillData"),

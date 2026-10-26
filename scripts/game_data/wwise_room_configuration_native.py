@@ -23,7 +23,7 @@ def validate(c,image,selected_inputs):
         owner,_=read_reviewed_contract(CONTRACTS_DIR/(dependency['ownerContract']+'.json'),schema=dependency['ownerSchema'],status='reviewedCurrentBuild',label='room-configuration-owner')
         if owner['nativeInputs']!=selected_inputs:raise ValueError('room configuration owner inputs differ')
         owners[dependency['ownerContract']]=owner;indexed={g['key']:g for g in owner['nativeGroups']};groups.extend(indexed[k] for k in dependency['keys'])
-    parameters,_=read_reviewed_contract(CONTRACTS_DIR/(c['parameterOwnerContract']+'.json'),schema='endfield.wwise-effect-parameters-native.v4',status='reviewedCurrentBuild',label='room-configuration-parameters')
+    parameters,_=read_reviewed_contract(CONTRACTS_DIR/(c['parameterOwnerContract']+'.json'),schema='endfield.wwise-effect-parameters-native.v5',status='reviewedCurrentBuild',label='room-configuration-parameters')
     if parameters['nativeInputs']!=selected_inputs:raise ValueError('room configuration parameter inputs differ')
     validate_native_group_declarations(groups);_,bodies,records=_collect_opened_source_image(image,'selected Room configuration');validate_native_group_windows(groups,image,bodies,records)
     indexed={g['key']:g for g in groups}

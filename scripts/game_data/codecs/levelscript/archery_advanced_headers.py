@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from scripts.game_data.memorypack.core import memorypack_union_header
+
 from .action_map import ActionMapCodecError, _Cursor
 
 
@@ -23,7 +25,7 @@ def decode_archery_advanced_header(
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") not in _TYPES
-        or not isinstance(tag, int) or not 0 <= tag < 0xFA
+        or type(tag) is not int or not 0 <= tag <= 0xFFFF
         or members != len(fields) or members not in (16, 18)
         or fields[:14] != [
             ["dontLogWarning", "bool"], ["ID", "int32"],
@@ -36,10 +38,10 @@ def decode_archery_advanced_header(
         ]
     ):
         raise ActionMapCodecError("archeryAdvancedHeader:invalid-route")
-    header = bytes((tag, members))
-    if offset < 0 or data[offset:offset + 2] != header:
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"archeryAdvancedHeader:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:

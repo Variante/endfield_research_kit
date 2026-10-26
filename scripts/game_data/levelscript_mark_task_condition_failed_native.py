@@ -24,7 +24,6 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -314,7 +313,6 @@ def _validate_sources(contract: dict[str, Any], export_root: Path,
     return len(receipts)
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_mark_task_condition_failed_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,
@@ -349,7 +347,6 @@ def validate_levelscript_mark_task_condition_failed_native_contract(
                 "detail":str(error)[:400],"routeCount":0}
 
 
-@lru_cache(maxsize=1)
 def validated_mark_task_condition_failed_route() -> dict[str, Any] | None:
     if validate_levelscript_mark_task_condition_failed_native_contract()["status"] != "validated":
         return None

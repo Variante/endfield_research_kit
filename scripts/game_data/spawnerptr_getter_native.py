@@ -17,7 +17,6 @@ import argparse
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +35,6 @@ PARAM_LAYOUT = [("constValue", "object"), ("idRef", "scalar32"), ("paramSource",
 RECORD_BOUNDARY = {"payloadStartAdjustment": -4, "paramMarker": 4, "constantByteLength": 8, "tailByteLength": 12}
 
 
-@lru_cache(maxsize=1)
 def load_spawnerptr_getter_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[str, Any], dict[str, Any]]:

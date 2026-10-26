@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from scripts.game_data.memorypack.core import memorypack_union_header
+
 from .action_map import ActionMapCodecError, _Cursor
 
 
@@ -37,15 +39,16 @@ def decode_on_entity_cast_skill_header(
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") != _TYPE
-        or tag != 0x0069
+        or type(tag) is not int or not 0 <= tag <= 0xFFFF
         or members != len(fields) or members != 20
         or fields[:14] != _BASE_FIELDS
         or fields[14:] != _OWN_FIELDS
     ):
         raise ActionMapCodecError("onEntityCastSkillHeader:invalid-route")
-    if offset < 0 or data[offset:offset + 2] != bytes((tag, members)):
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onEntityCastSkillHeader:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:

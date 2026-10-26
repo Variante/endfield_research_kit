@@ -8,6 +8,8 @@ from __future__ import annotations
 from collections.abc import Collection
 from typing import Any
 
+from scripts.game_data.memorypack.core import memorypack_union_header
+
 from .action_map import ActionMapCodecError, _Cursor
 
 
@@ -34,7 +36,7 @@ _OWN = [
 
 def decode_on_physical_infliction_header(
     data: bytes, offset: int, route: dict[str, Any], *,
-    enum_values: Collection[int] | None,
+    enum_values: Collection[int] | None, game_root=None, strings: Any=None,
 ) -> tuple[dict[str, Any], int]:
     """Read one native-gated header without accepting unreviewed enum values."""
     fields = route.get("fields") or []
@@ -43,7 +45,7 @@ def decode_on_physical_infliction_header(
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") != _TYPE
-        or tag != 0x0030 or members != 21
+        or type(tag) is not int or not 0 <= tag <= 0xFFFF or members != 21
         or fields[:14] != _INHERITED or fields[14:] != _OWN
     ):
         raise ActionMapCodecError("onPhysicalInflictionHeader:invalid-route")
@@ -53,15 +55,15 @@ def decode_on_physical_infliction_header(
         or len(set(enum_values)) != len(enum_values)
     ):
         raise ActionMapCodecError("onPhysicalInflictionHeader:enum-native-gate")
-    if offset < 0 or data[offset:offset + 2] != bytes((tag, members)):
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onPhysicalInflictionHeader:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:
         start = cursor.offset
-        read_kind = "Param<int>" if kind == "Param<PhysicalInflictionType>" else kind
-        value = cursor.value(read_kind, "onPhysicalInflictionHeader." + name)
+        value = cursor.node_string("onPhysicalInflictionHeader."+name,{**route,"nativeGate":"levelscript_on_physical_infliction_native"},name) if kind=="string" else cursor.value(kind,"onPhysicalInflictionHeader."+name)
         if (
             kind == "Param<PhysicalInflictionType>"
             and value is not None

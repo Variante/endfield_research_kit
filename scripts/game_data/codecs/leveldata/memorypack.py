@@ -3,6 +3,8 @@ from __future__ import annotations
 import math
 import struct
 
+from scripts.game_data.string_pool import StringPool, resolve_string_pool_index
+
 
 def read_i32(data: bytes, offset: int) -> tuple[int, int] | None:
     if offset < 0 or offset + 4 > len(data):
@@ -28,22 +30,6 @@ def read_i64(data: bytes, offset: int) -> tuple[int, int] | None:
     return int.from_bytes(data[offset : offset + 8], "little", signed=True), offset + 8
 
 
-def skip_string(data: bytes, offset: int) -> int | None:
-    decoded = read_i32(data, offset)
-    if decoded is None:
-        return None
-    length, offset = decoded
-    if length == -1:
-        return offset
-    if length < 0 or offset + length > len(data):
-        return None
-    try:
-        data[offset : offset + length].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    return offset + length
-
-
 def read_count(
     data: bytes,
     offset: int,
@@ -59,25 +45,26 @@ def read_count(
     return count, offset
 
 
-def read_string(
-    data: bytes,
-    offset: int,
-    *,
-    max_length: int = 512,
-) -> tuple[str, int] | None:
+def read_string(data: bytes, offset: int, *, strings: StringPool | None = None,
+                max_length: int = 512) -> tuple[str | None, int] | None:
+    """Bounded current pooled read; unavailable/invalid entries refuse the codec."""
+    try:
+        return read_pooled_string(data, offset, strings=strings, max_length=max_length)
+    except ValueError:
+        return None
+
+
+def read_pooled_string(data: bytes, offset: int, *, strings: StringPool | None = None,
+                       max_length: int = 512) -> tuple[str | None, int] | None:
+    """Consume a proved signed pool index; absent pages never select inline text."""
     decoded = read_i32(data, offset)
     if decoded is None:
         return None
-    length, offset = decoded
-    if length == -1:
-        return "", offset
-    if length < 0 or length > max_length or offset + length > len(data):
+    index, end = decoded
+    value = resolve_string_pool_index(index, strings)
+    if value is not None and len(value.encode("utf-8")) > max_length:
         return None
-    try:
-        value = data[offset : offset + length].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    return value, offset + length
+    return value, end
 
 
 def read_bool(data: bytes, offset: int) -> tuple[bool, int] | None:

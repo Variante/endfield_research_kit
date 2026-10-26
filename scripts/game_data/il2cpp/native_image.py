@@ -21,6 +21,7 @@ import hashlib
 import json
 import struct
 from functools import cached_property, lru_cache
+from scripts.common import sha256_file_upper
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -40,6 +41,31 @@ METADATA_HELPER_PATH = REPO_ROOT / "tools/endfield-il2cpp/catalog_option_flow_me
 # The x64 ``mov r64, [rip+disp32]`` encodings a nested-context usage cell is
 # loaded with: REX.W 8B 15 (rdx) and REX.WR 8B 05 (r8).
 RIP_RELATIVE_LOAD_PREFIXES = (b"\x48\x8b\x15", b"\x4c\x8b\x05")
+
+
+class NativeIdentityMismatch(ValueError):
+    """A selected native value disagrees with its recorded or required identity."""
+    def __init__(self, message: str, *, expected: Any, recorded: Any, actual: Any):
+        self.message = message
+        self.diagnostic = {key: value if value is None or type(value) in (bool, int, float) else str(value)[:350]
+                           for key, value in (('expected', expected), ('recorded', recorded), ('actual', actual))}
+        super().__init__(message + ':' + ','.join(f'{key}={value!r}' for key, value in self.diagnostic.items()))
+
+
+def native_validation_failure(error: Exception, *, label: str, source_path: Path) -> dict[str, Any]:
+    """Keep a bounded failed gate, identity values and source provenance together."""
+    message = getattr(error, 'message', str(error))
+    check = next((message.split(marker, 1)[1] for marker in ('.contract:', '.native:', '.source:') if marker in message),
+                 'contract-native-or-source')[:160]
+    path = Path(source_path)
+    try:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    except OSError:
+        digest = None
+    return {'status': 'validation_failed', 'validator': label, 'failedCheck': check, 'detail': str(error)[:1500],
+            'sourcePath': str(path), 'sourceSha256': digest,
+            'validationFailures': [{'gate': check, 'actual': str(error)[:500], **getattr(error, 'diagnostic', {}),
+                                    'sourcePath': str(path), 'sourceSha256': digest}]}
 
 
 def pe_mapped_image_size(path: Path) -> int:
@@ -107,6 +133,41 @@ class NativeImage:
         self.registration = mapper.metadata_registration_summary(self.pe, self.metadata_registration)
 
     # ---- lazily built tables -------------------------------------------
+
+    @cached_property
+    def named_type_definitions(self):
+        """Index immutable declarations without collapsing ambiguous names."""
+        from types import MappingProxyType
+        groups = {}
+        for td in self.metadata.types:
+            groups.setdefault(self.metadata.type_full_name(td),[]).append(td)
+        return MappingProxyType({name:tuple(rows) for name,rows in groups.items()})
+
+    @cached_property
+    def named_types(self):
+        """Share the existing last-declaration view; native gates remain fresh."""
+        from types import MappingProxyType
+        return MappingProxyType({name:rows[-1] for name,rows in self.named_type_definitions.items()})
+
+    @cached_property
+    def unwind_index(self):
+        """Exhaust this image's exception metadata once; callers retain all gates."""
+        from .unwind_chains import read_exception_directory,UnwindChainIndex
+        table,size,raw=read_exception_directory(self.pe)
+        return UnwindChainIndex(raw,lambda r,n:self.pe.bytes_at_va(self.pe.image_base+r,n),
+            table_rva=table,image_size=size)
+
+    @cached_property
+    def body_index(self) -> Any:
+        """Share named body and generic indexes across validators of this image."""
+        from scripts.game_data.il2cpp.body_claims import BodyIndex
+        return BodyIndex(self)
+
+    @cached_property
+    def memorypack_wrappers(self) -> Any:
+        """Derive immutable wrapper rows once from this authenticated byte image."""
+        from scripts.game_data.memorypack.wrapper_members import _derive_from_image
+        return _derive_from_image(self)
 
     @cached_property
     def owners(self) -> Any:
@@ -311,10 +372,19 @@ class NativeImage:
         return owner
 
 
-@lru_cache(maxsize=2)
 def open_native_image(gameassembly: Path, metadata_path: Path) -> NativeImage:
-    """Open the selected build once per process for the given file pair.
+    """Share one immutable image per selected path pair and content revision.
 
-    Checks take their own ``label`` so one opened image serves every contract.
+    Consumers retain their own before/after installed-input gates.
     """
-    return NativeImage(Path(gameassembly).resolve(), Path(metadata_path).resolve())
+    gameassembly,metadata_path=Path(gameassembly).resolve(),Path(metadata_path).resolve()
+    return _open_native_image(gameassembly,metadata_path,sha256_file_upper(gameassembly),sha256_file_upper(metadata_path))
+
+
+@lru_cache(maxsize=2)
+def _open_native_image(gameassembly: Path, metadata_path: Path, assembly_hash: str, metadata_hash: str) -> NativeImage:
+    image=NativeImage(gameassembly,metadata_path)
+    for name,expected,raw in (('GameAssembly.dll',assembly_hash,image.pe.buf),('global-metadata.dat',metadata_hash,image.metadata.buf)):
+        actual=hashlib.sha256(raw).hexdigest().upper()
+        if actual!=expected:raise ValueError(f'nativeImage.native:inputs-changed-while-opening:{name}: expected={expected} actual={actual}')
+    return image

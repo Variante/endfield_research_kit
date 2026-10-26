@@ -70,7 +70,7 @@ CONTRACT_PATH = CONTRACTS_DIR / "wwise_effect_parameters_native.json"
 @lru_cache(maxsize=1)
 def load_effect_parameter_contract() -> dict[str, Any]:
     contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
-    if contract.get("schema") != "endfield.wwise-effect-parameters-native.v4":
+    if contract.get("schema") != "endfield.wwise-effect-parameters-native.v5":
         raise ValueError("unsupported Wwise effect parameter contract")
     return contract
 
@@ -164,6 +164,30 @@ def validate_structural_input_reads(
             fail("nativeReadPartitionOverrun", offset, span, cursor)
     if cursor != span:
         fail("nativeReadPartitionEnd", cursor, span, cursor)
+
+
+def validate_named_input_reads(class_id: str, schema: dict[str, Any], body: bytes) -> None:
+    """Authenticate the fixed read prefix and separately declared optional sites."""
+    lengths = schema.get("parameterByteLengths")
+    if not isinstance(lengths, list) or not lengths or any(type(n) is not int or n <= 0 for n in lengths):
+        raise EffectReadLayoutError(class_id, "namedParameterLengths", None, "positive byte lengths", lengths)
+    if schema.get("contiguousInputReadBytes") != min(lengths):
+        raise EffectReadLayoutError(class_id, "namedFixedReadPrefix", None, min(lengths), schema.get("contiguousInputReadBytes"))
+    validate_structural_input_reads(class_id, schema, body)
+    sites = schema.get("conditionalInputReadSites")
+    if not isinstance(sites, list) or len(sites) > 64:
+        raise EffectReadLayoutError(class_id, "namedConditionalReadSites", None, "bounded list", type(sites).__name__)
+    for row in sites:
+        at, offset, width = row.get("bodyOffset"), row.get("serializedOffset"), row.get("byteWidth")
+        try:
+            raw = bytes.fromhex(row.get("instructionHex", ""))
+        except (TypeError, ValueError):
+            raw = b""
+        if (type(at) is not int or type(offset) is not int or offset < min(lengths) or
+                type(width) is not int or width not in (1, 4) or not raw or not 0 <= at <= len(body)-len(raw)):
+            raise EffectReadLayoutError(class_id, "namedConditionalReadExtent", offset, "bounded optional tail witness", row)
+        if body[at:at+len(raw)] != raw:
+            raise EffectReadLayoutError(class_id, "namedConditionalReadBytes", offset, raw.hex(), body[at:at+len(raw)].hex())
 
 
 def decode_effect_parameter_native_reads(
@@ -371,6 +395,7 @@ def check_effect_parameter_native_inputs(game_root: Path) -> dict[str, Any]:
             body = _pe_body(image, int(method["rva"], 16), method["bodyLength"])
             if hashlib.sha256(body).hexdigest().casefold() != method["bodySha256"].casefold():
                 raise ValueError(f"SetParamsBlock body mismatch for {class_id}")
+            validate_named_input_reads(class_id, row, body)
             validated_class_ids.append(class_id)
         validated_structural_class_ids = []
         structural_rows = contract.get("structuralSchemas", {})

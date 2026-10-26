@@ -2,9 +2,9 @@
   "schema": "endfield.collision-pair-step-native.v3",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "layout": {
     "task": {
@@ -97,372 +97,343 @@
   "codeWindows": [
     {
       "role": "scene_constructor",
-      "rva": 7942832,
+      "rva": 8107760,
       "bytes": 4096,
-      "sha256": "51d5fc627088e9d57a316ad40cd7d55bc8636b4026f545b5f364363cce626dee",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "f76d5778612a93467fb5ff66c08b5b9325a343f502e750766a3b0c2ea0c487b0"
     },
     {
       "role": "scene_constructor_part_1",
-      "rva": 7946928,
+      "rva": 8111856,
       "bytes": 4096,
-      "sha256": "20c95aaa97d3fdb38b0133441005a9119bccc63a3e4bff04a8b7e3b6cd6e29f1",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "190485debd5a86ed5e07a263d46ed11f8dbe879c9dba5c28a780a4d387dedce9"
     },
     {
       "role": "scene_constructor_part_2",
-      "rva": 7951024,
+      "rva": 8115952,
       "bytes": 809,
-      "sha256": "a0b69188a8b6d72d6c28cbc56259a335f19b97a2f8d145c0940c41c7bd67715a",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "363f11f3d2a96dcec28613f2500765df2d920a5ffebaee54e6c17fb3daf34226"
     },
     {
       "role": "post_broadphase_run",
-      "rva": 8038080,
+      "rva": 8203008,
       "bytes": 84,
-      "sha256": "b358034ea63b1ccd04f2184050af6192279d5e4b428e7c18d6ae5be2c77d26ea",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "a3734d9fab4346b0a8686f76ce5a8d180b85d29181c9e867a0e63c448c2f09a9"
     },
     {
       "role": "post_broadphase_cont_run",
-      "rva": 8038176,
+      "rva": 8203104,
       "bytes": 76,
-      "sha256": "4d604747cc7a48efbddc56c494af97a9513186979af8cb34a452f3c14af7c416",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "6fcbca1390ee871854222d0871edc3a8daa51d574ae4f577de139936b84b4878"
     },
     {
       "role": "post_broadphase_scene",
-      "rva": 7990256,
+      "rva": 8155184,
       "bytes": 346,
-      "sha256": "92038b4b073d4167b936b271a39d3f2c081c9bdbe506f64be8d16248d77c9e69",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "92038b4b073d4167b936b271a39d3f2c081c9bdbe506f64be8d16248d77c9e69"
     },
     {
       "role": "post_broadphase_scene_part_1",
-      "rva": 7990602,
+      "rva": 8155530,
       "bytes": 299,
-      "sha256": "cbc351f52ed8db1c7b05fd8cbbf48d2ae6d875a238f71988240a0d9ba99e1a81",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "7f759f0c02cd8331ea2e22480f939ecd0d24506b78cb4463d8d6c8a895b8ef73"
     },
     {
       "role": "post_broadphase_scene_part_2",
-      "rva": 7990901,
+      "rva": 8155829,
       "bytes": 32,
-      "sha256": "76e111935b587290181a57858719031c637886af42da0667cbdddadcea3445d9",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "76e111935b587290181a57858719031c637886af42da0667cbdddadcea3445d9"
     },
     {
       "role": "overlap_filter_run",
-      "rva": 8039760,
+      "rva": 8204688,
       "bytes": 86,
-      "sha256": "17ae3c36669241f3dcefcc7de931cb3b267ef44a957743a3c5e8afc77082da45",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "17ae3c36669241f3dcefcc7de931cb3b267ef44a957743a3c5e8afc77082da45"
     },
     {
       "role": "overlap_filter_batch",
-      "rva": 8105568,
+      "rva": 8270496,
       "bytes": 138,
-      "sha256": "d12d3f984c780109ad6157206221f40fefbc991daa9ec351aa7e88082cc11db3",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "d12d3f984c780109ad6157206221f40fefbc991daa9ec351aa7e88082cc11db3"
     },
     {
       "role": "overlap_filter_batch_part_1",
-      "rva": 8105706,
+      "rva": 8270634,
       "bytes": 1451,
-      "sha256": "fbc91080fd397081f9724c1c23e95c601bd727fe73f2c2f5511ab7b1b1f92dfb",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "9f48e4654686668bfd982d49bb9f402f20cb54362da6c0caecac9bb079fe1592"
     },
     {
       "role": "overlap_filter_batch_part_2",
-      "rva": 8107157,
+      "rva": 8272085,
       "bytes": 32,
-      "sha256": "c57aea9ce8a06890a554c3f44eb17593f0ca3e6cbf6bb9bac7ba7b58666befdd",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "c57aea9ce8a06890a554c3f44eb17593f0ca3e6cbf6bb9bac7ba7b58666befdd"
     },
     {
       "role": "task_dependency_wiring",
-      "rva": 8037168,
+      "rva": 8202096,
       "bytes": 432,
-      "sha256": "ae64d1267a892d824ea4d47d218a1bec8ecc6261649bfb254ceff43d969f5fe3",
-      "boundary": "Contiguous bounded slice of the declared complete unwind family; protected dispatch remains conditional."
+      "sha256": "78dd3bb7ba867418c5e97220e1c858e65fab33997f5415c104ec6b1deb9fd62a"
     },
     {
       "role": "np_scene_constructor",
-      "rva": 7805856,
+      "rva": 7897824,
       "bytes": 13,
-      "sha256": "b150600072ea1aed4854febb94c71c83b348e5aaa43f874dddd73a5ccadaf75b",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "b150600072ea1aed4854febb94c71c83b348e5aaa43f874dddd73a5ccadaf75b"
     },
     {
       "role": "np_scene_constructor_part_1",
-      "rva": 7805869,
+      "rva": 7897837,
       "bytes": 505,
-      "sha256": "31120f317ac59694903e985c74b95593b7ce436804f7d6570155c620db67aeff",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "99f377272e80b40bf204e75c9b77ed85b99b657227d7733827fe839db200fcec"
     },
     {
       "role": "np_scene_constructor_part_2",
-      "rva": 7806374,
+      "rva": 7898342,
       "bytes": 251,
-      "sha256": "8f04d3b02f8dd7b156f13aac10c88a4f097713f5d78ff343bcad8311f200155c",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "7459143e6992ec7a7c3b0566021aad31fcac44cdba261b1a8036b826ef2f5990"
     },
     {
       "role": "np_scene_constructor_part_3",
-      "rva": 7806625,
+      "rva": 7898593,
       "bytes": 582,
-      "sha256": "432a7c32ab6e1427d821f20d32afc61f8e99a636a79aaa6d6331f02f099c6c05",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "b5ecd4de1ac92f858670bf91099d5eadc0c687048bde5e79762762309903ddd2"
     },
     {
       "role": "native_scene_simulate",
-      "rva": 8046864,
+      "rva": 8211792,
       "bytes": 24,
-      "sha256": "f59d4e0ff2d70ac531e964239ebd5af9de20f625dc095905609efaeed76f1aab",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "f59d4e0ff2d70ac531e964239ebd5af9de20f625dc095905609efaeed76f1aab"
     },
     {
       "role": "native_scene_simulate_part_1",
-      "rva": 8046888,
+      "rva": 8211816,
       "bytes": 165,
-      "sha256": "dd6e3d8662b03bf88f3d1f7fb5f25ecb8f084261af10eb31cde5c61aa74ec2c4",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "040ba4150516914440e7db2a41bdc88be322d1a5b30fe516349e57bbd84ec187"
     },
     {
       "role": "native_scene_simulate_part_2",
-      "rva": 8047053,
+      "rva": 8211981,
       "bytes": 6,
-      "sha256": "4eeabf8bcdc796d3a19ec782d70470e18a3a52ddfa5cfed7abe03e359a03625d",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "4eeabf8bcdc796d3a19ec782d70470e18a3a52ddfa5cfed7abe03e359a03625d"
     },
     {
       "role": "native_scene_collide",
-      "rva": 7980400,
+      "rva": 8145328,
       "bytes": 116,
-      "sha256": "c7da55f0b85f91359bdf0480634be138e73873df0225b76af78616fb1d26ac6a",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "f9e2f9e47d0d3d4155335e8310f9c8014cf3a3f48d6d81a83ecb5fc2d85a261b"
     },
     {
       "role": "update_shapes_producer",
-      "rva": 7980528,
+      "rva": 8145456,
       "bytes": 210,
-      "sha256": "ed516846a642202235e8cddb2e7b97d3c4be435b19383e1187dce86389abe691",
-      "boundary": "Complete original unwind family slice."
+      "sha256": "3061813a33f952d683012f89c3b36a05a0f2170fb95cee237a491c35c1078740"
     },
     {
       "role": "rigid_body_narrowphase_run",
-      "rva": 8038688,
+      "rva": 8203616,
       "bytes": 13,
-      "sha256": "b1c35d11b958ba22b9c62765c98ec4075787533626d45ee905c152d971bd6574",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "b1c35d11b958ba22b9c62765c98ec4075787533626d45ee905c152d971bd6574"
     },
     {
       "role": "update_shapes_run",
-      "rva": 8037968,
+      "rva": 8202896,
       "bytes": 13,
-      "sha256": "77996fee7e35f0e315eeee4a539d7ddaf45c821a64d1a5a4f0722a2718fa747f",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "77996fee7e35f0e315eeee4a539d7ddaf45c821a64d1a5a4f0722a2718fa747f"
     },
     {
       "role": "pre_narrowphase_run",
-      "rva": 8038352,
+      "rva": 8203280,
       "bytes": 13,
-      "sha256": "09131ea772269b087587cee15e6cdee49aaf4058a71e89e4af452fcd30cbd5e2",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "09131ea772269b087587cee15e6cdee49aaf4058a71e89e4af452fcd30cbd5e2"
     },
     {
       "role": "np_simulate_run",
-      "rva": 7894960,
+      "rva": 7986928,
       "bytes": 13,
-      "sha256": "4a0c3b5734c3026da01eea0f2606f8abb87059579082789a6ad2feeb2363d1b0",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "4a0c3b5734c3026da01eea0f2606f8abb87059579082789a6ad2feeb2363d1b0"
     },
     {
       "role": "np_collide_run",
-      "rva": 7894944,
+      "rva": 7986912,
       "bytes": 13,
-      "sha256": "e2203ada7027f0589fb50d79c094f86c93b05869122c5e586079bfe72a61dd0f",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "e2203ada7027f0589fb50d79c094f86c93b05869122c5e586079bfe72a61dd0f"
     },
     {
       "role": "np_simulate_bridge",
-      "rva": 7858224,
+      "rva": 7950192,
       "bytes": 23,
-      "sha256": "102d9eb2c8053f5b9a6b2db6bf9e60408dea9b8d824b92c2698e64dde5e0e669",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "1cb607f16a6137a6bcb19c1631adddc0ad363bd0bd562d218408e4112daaab96"
     },
     {
       "role": "np_collide_bridge",
-      "rva": 7858192,
+      "rva": 7950160,
       "bytes": 23,
-      "sha256": "2bd67b12b29f5374019a2d72d5966f657ddd183a20c81fa736de62a3e193444d",
-      "boundary": "Complete original leaf thunk."
+      "sha256": "a3111876ab8837cf64db8523016ffc61d41591809e5cd159975316a4514347f3"
     }
   ],
   "codeFamilies": [
     {
       "role": "scene_constructor",
-      "rva": 7942832,
+      "rva": 8107760,
       "runtimeRanges": [
         [
-          7942832,
-          7951833,
-          29111824
+          8107760,
+          8116761,
+          30974160
         ]
       ]
     },
     {
       "role": "post_broadphase_run",
-      "rva": 8038080,
+      "rva": 8203008,
       "runtimeRanges": [
         [
-          8038080,
-          8038164,
-          28540940
+          8203008,
+          8203092,
+          30281412
         ]
       ]
     },
     {
       "role": "post_broadphase_cont_run",
-      "rva": 8038176,
+      "rva": 8203104,
       "runtimeRanges": [
         [
-          8038176,
-          8038252,
-          28540940
+          8203104,
+          8203180,
+          30281412
         ]
       ]
     },
     {
       "role": "post_broadphase_scene",
-      "rva": 7990256,
+      "rva": 8155184,
       "runtimeRanges": [
         [
-          7990256,
-          7990602,
-          29110224
+          8155184,
+          8155530,
+          30972572
         ],
         [
-          7990602,
-          7990901,
-          29110248
+          8155530,
+          8155829,
+          30972596
         ],
         [
-          7990901,
-          7990933,
-          29110268
+          8155829,
+          8155861,
+          30972616
         ]
       ]
     },
     {
       "role": "overlap_filter_run",
-      "rva": 8039760,
+      "rva": 8204688,
       "runtimeRanges": [
         [
-          8039760,
-          8039846,
-          28562320
+          8204688,
+          8204774,
+          30288132
         ]
       ]
     },
     {
       "role": "overlap_filter_batch",
-      "rva": 8105568,
+      "rva": 8270496,
       "runtimeRanges": [
         [
-          8105568,
-          8105706,
-          29119984
+          8270496,
+          8270634,
+          30982324
         ],
         [
-          8105706,
-          8107157,
-          29119996
+          8270634,
+          8272085,
+          30982336
         ],
         [
-          8107157,
-          8107189,
-          29120036
+          8272085,
+          8272117,
+          30982376
         ]
       ]
     },
     {
       "role": "task_dependency_wiring",
-      "rva": 8037168,
+      "rva": 8202096,
       "runtimeRanges": [
         [
-          8037168,
-          8037600,
-          28544920
+          8202096,
+          8202528,
+          30299504
         ]
       ]
     },
     {
       "role": "np_scene_constructor",
-      "rva": 7805856,
+      "rva": 7897824,
       "runtimeRanges": [
         [
-          7805856,
-          7805869,
-          29099556
+          7897824,
+          7897837,
+          30957420
         ],
         [
-          7805869,
-          7806374,
-          29099572
+          7897837,
+          7898342,
+          30957436
         ],
         [
-          7806374,
-          7806625,
-          29099596
+          7898342,
+          7898593,
+          30957460
         ],
         [
-          7806625,
-          7807207,
-          29099616
+          7898593,
+          7899175,
+          30957480
         ]
       ]
     },
     {
       "role": "native_scene_simulate",
-      "rva": 8046864,
+      "rva": 8211792,
       "runtimeRanges": [
         [
-          8046864,
-          8046888,
-          28672176
+          8211792,
+          8211816,
+          30335220
         ],
         [
-          8046888,
-          8047053,
-          29110728
+          8211816,
+          8211981,
+          30973068
         ],
         [
-          8047053,
-          8047059,
-          29110748
+          8211981,
+          8211987,
+          30973088
         ]
       ]
     },
     {
       "role": "native_scene_collide",
-      "rva": 7980400,
+      "rva": 8145328,
       "runtimeRanges": [
         [
-          7980400,
-          7980516,
-          28540940
+          8145328,
+          8145444,
+          30281412
         ]
       ]
     },
     {
       "role": "update_shapes_producer",
-      "rva": 7980528,
+      "rva": 8145456,
       "runtimeRanges": [
         [
-          7980528,
-          7980738,
-          28547592
+          8145456,
+          8145666,
+          30281396
         ]
       ]
     }
@@ -471,25 +442,25 @@
     {
       "role": "scene_constructor",
       "offset": 3442,
-      "hex": "488d057f3613014889beb81900004889bec01900004889bec819000089bed01900004c89aeb81900004889b6d81900004889aee8190000488986e8190000",
+      "hex": "488d05ff552a014889beb81900004889bec01900004889bec819000089bed01900004c89aeb81900004889b6d81900004889aee8190000488986e8190000",
       "label": "Scene constructor initializes postBroadPhase, including its owner and selected vtable."
     },
     {
       "role": "scene_constructor",
       "offset": 3504,
-      "hex": "488d05a93e1301488986181a0000",
+      "hex": "488d05295e2a01488986181a0000",
       "label": "Scene constructor stores the postBroadPhase task name."
     },
     {
       "role": "scene_constructor",
       "offset": 3518,
-      "hex": "488d05733613014889bef01900004889bef81900004889be001a000089be081a00004c89aef01900004889b6101a00004889ae201a0000488986201a0000",
+      "hex": "488d05f3552a014889bef01900004889bef81900004889be001a000089be081a00004c89aef01900004889b6101a00004889ae201a0000488986201a0000",
       "label": "Scene constructor initializes postBroadPhaseCont, including its owner and selected vtable."
     },
     {
       "role": "scene_constructor",
       "offset": 3580,
-      "hex": "488d05753e1301488986501a0000",
+      "hex": "488d05f55d2a01488986501a0000",
       "label": "Scene constructor stores the postBroadPhaseCont task name."
     },
     {
@@ -513,7 +484,7 @@
     {
       "role": "post_broadphase_scene_part_1",
       "offset": 111,
-      "hex": "488d05e89a1201488903",
+      "hex": "488d0568ba2901488903",
       "label": "Filter-task constructor assigns the selected filter vtable."
     },
     {
@@ -615,7 +586,7 @@
   "taskTypes": [
     {
       "role": "postBroadPhase",
-      "vtableRva": 25982632,
+      "vtableRva": 27662952,
       "runRole": "post_broadphase_run",
       "ownerKind": "internalScene",
       "sceneField": "postBroadPhaseTask",
@@ -623,7 +594,7 @@
     },
     {
       "role": "postBroadPhaseCont",
-      "vtableRva": 25982696,
+      "vtableRva": 27663016,
       "runRole": "post_broadphase_cont_run",
       "ownerKind": "internalScene",
       "sceneField": "postBroadPhaseContTask",
@@ -631,7 +602,7 @@
     },
     {
       "role": "overlapFilter",
-      "vtableRva": 25987240,
+      "vtableRva": 27667560,
       "runRole": "overlap_filter_run",
       "ownerKind": "nphaseCore",
       "name": "OverlapFilterTask"
@@ -640,7 +611,7 @@
       "role": "rigidBodyNarrowPhase",
       "name": "ScScene.rigidBodyNarrowPhase",
       "sceneField": "rigidBodyNarrowPhaseTask",
-      "vtableRva": 25982504,
+      "vtableRva": 27662824,
       "runRole": "rigid_body_narrowphase_run",
       "ownerKind": "internalScene"
     },
@@ -648,7 +619,7 @@
       "role": "updateShapes",
       "name": "ScScene.collideStep",
       "sceneField": "updateShapesTask",
-      "vtableRva": 25983336,
+      "vtableRva": 27663656,
       "runRole": "update_shapes_run",
       "ownerKind": "internalScene"
     },
@@ -656,7 +627,7 @@
       "role": "preNarrowPhase",
       "name": "ScScene.preRigidBodyNarrowPhase",
       "sceneField": "preNarrowPhaseTask",
-      "vtableRva": 25982248,
+      "vtableRva": 27662568,
       "runRole": "pre_narrowphase_run",
       "ownerKind": "internalScene"
     },
@@ -664,7 +635,7 @@
       "role": "npSimulate",
       "name": "NpScene.execution",
       "sceneField": "npSimulateTask",
-      "vtableRva": 25970016,
+      "vtableRva": 27648928,
       "runRole": "np_simulate_run",
       "ownerKind": "publicScene"
     },
@@ -672,7 +643,7 @@
       "role": "npCollide",
       "name": "NpScene.collide",
       "sceneField": "npCollideTask",
-      "vtableRva": 25970080,
+      "vtableRva": 27648992,
       "runRole": "np_collide_run",
       "ownerKind": "publicScene"
     }
@@ -682,43 +653,43 @@
   "taskNames": [
     {
       "role": "postBroadPhase",
-      "nameRva": 25984784,
+      "nameRva": 27665104,
       "text": "ScScene.postBroadPhase"
     },
     {
       "role": "postBroadPhaseCont",
-      "nameRva": 25984808,
+      "nameRva": 27665128,
       "text": "ScScene.postBroadPhaseCont"
     },
     {
       "role": "overlapFilter",
-      "getterRva": 7997328,
+      "getterRva": 8162256,
       "text": "OverlapFilterTask"
     },
     {
       "role": "rigidBodyNarrowPhase",
       "text": "ScScene.rigidBodyNarrowPhase",
-      "nameRva": 25984720
+      "nameRva": 27665040
     },
     {
       "role": "updateShapes",
       "text": "ScScene.collideStep",
-      "nameRva": 25985104
+      "nameRva": 27665424
     },
     {
       "role": "preNarrowPhase",
       "text": "ScScene.preRigidBodyNarrowPhase",
-      "nameRva": 25984584
+      "nameRva": 27664904
     },
     {
       "role": "npSimulate",
       "text": "NpScene.execution",
-      "nameRva": 25974080
+      "nameRva": 27652992
     },
     {
       "role": "npCollide",
       "text": "NpScene.collide",
-      "nameRva": 25974104
+      "nameRva": 27653016
     }
   ],
   "evidenceBoundary": "Direct original typed public-Scene task, native phase producer, shape-update, narrowphase and broadphase task programs. Live generation requires original producer, reference decrement, queue and run at every handoff; scene/name/time proximity cannot supply a missing edge.",
@@ -799,13 +770,13 @@
   "nameGetterLeaves": [
     {
       "role": "embedded",
-      "rva": 5803712,
+      "rva": 5877616,
       "hex": "488b4130c3"
     },
     {
       "role": "overlapFilter",
-      "rva": 7997328,
-      "hex": "488d0551811201c3"
+      "rva": 8162256,
+      "hex": "488d05d1a02901c3"
     }
   ],
   "hooks": [

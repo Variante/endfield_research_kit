@@ -91,6 +91,14 @@ def check_members(plan: list[dict[str, Any]], members: Any) -> None:
 
 def prove_primitive(image: Any, target: int, kind: str) -> None:
     """Recognize reader operations, never a build-specific address or digest."""
+    if kind=='bool-byte':
+        from scripts.game_data.memorypack.scalar_param_native import boolean_source,reader_offsets
+        from scripts.game_data.il2cpp.string_source_instructions import decode_string_source_instructions
+        end=dict(image.mapper.pdata_function_extents(image.pe))[target];base=image.pe.image_base
+        raw=image.pe.bytes_at_va(target,end-target);rows=decode_string_source_instructions(image.mapper,raw,target)
+        record={'window':{k:v for k,v in _window(image,target,end,'').items() if k!='boundary'},
+                'instructions':[[int(r['va'],16)-base,bytes.fromhex(r['bytes']).hex().upper()] for r in rows]}
+        boolean_source(image,record,reader_offsets(image,'primitiveBoolean'),'primitiveBoolean');return
     data=image.pe.bytes_at_va(target,96)
     if kind == 'raw4':
         # Advance(n): subtract n from remaining bytes, increment the pointer
@@ -103,8 +111,7 @@ def prove_primitive(image: Any, target: int, kind: str) -> None:
     stop=next((i for i,r in enumerate(rows) if r['text']=='ret'),None)
     if stop is None: raise RouteRefused(f'primitive={kind}:no-ret')
     texts=[r['text'] for r in rows[:stop+1]]
-    required=(['movzx esi, [rax]', 'inc [rbx+0x50]', 'inc [rbx+0x40]', 'inc [rbx+0x44]', 'setne al']
-              if kind=='bool-byte' else ['mov esi, [rax]', 'add [rbx+0x50], 0x4', 'add [rbx+0x40], 0x4', 'add [rbx+0x44], 0x4'])
+    required=['mov esi, [rax]', 'add [rbx+0x50], 0x4', 'add [rbx+0x40], 0x4', 'add [rbx+0x44], 0x4']
     if any(t.startswith('db ') for t in texts) or not all(t in texts for t in required):
         raise RouteRefused(f'primitive={kind}:unreviewed-body')
 

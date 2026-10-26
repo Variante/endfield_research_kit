@@ -1,6 +1,6 @@
 """Exact top-level tail decoder for current-build ``LevelScriptData``.
 
-The generated 27-member wrapper ends with ``scriptId`` (u64),
+The generated 28-member wrapper ends with ``scriptId`` (u64),
 ``startShapeList``, ``startType`` (``START_TYPE_NAMES``), ``taskMap`` and
 ``triggerVolumes``.  ``decode_tail_candidate`` decodes that sequence from a
 given ``scriptId`` offset.  Two callers use it with different strength:

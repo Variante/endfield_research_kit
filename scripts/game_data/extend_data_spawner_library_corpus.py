@@ -47,6 +47,7 @@ from scripts.game_data.spawner_binary import (
     decode_spawner_named_prefix, decode_spawner_wave_map_sequential,
 )
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.string_pool import export_string_pool
 
 
 SCHEMA = "endfield.extend-data-spawner-library-corpus.v2"
@@ -139,6 +140,7 @@ def audit(
     })
     joins: list[dict[str, Any]] = []
     files: list[dict[str, Any]] = []
+    strings = export_string_pool(export_root / "game" / "Json")
     for row in rows:
         virtual_path = row["virtualPath"]
         path = _export_path(export_root, virtual_path)
@@ -148,9 +150,9 @@ def audit(
                  and digest == str(row["recomputedFileDataMd5"]).upper(),
                  f"logical-bytes:{virtual_path}:{len(data)}/{row['length']}:{digest}/{row['recomputedFileDataMd5']}")
         try:
-            prefix = decode_spawner_named_prefix(data)
+            prefix = decode_spawner_named_prefix(data, strings=strings)
             waves = decode_spawner_wave_map_sequential(
-                data, wave_map_offset=prefix["waveMapOffset"],
+                data, wave_map_offset=prefix["waveMapOffset"], strings=strings,
             )
         except (ValueError, RuntimeError) as error:
             raise SpawnerLibraryCorpusError(f"decode:{virtual_path}:{error}") from error

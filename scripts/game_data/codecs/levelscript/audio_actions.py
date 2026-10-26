@@ -5,7 +5,6 @@ Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
 
 from __future__ import annotations
 
-from functools import lru_cache
 
 import math
 import struct
@@ -312,7 +311,6 @@ def _finish_audio_action_fields(
     return out
 
 
-@lru_cache(maxsize=1)
 def _audio_action_layouts() -> dict[
     tuple[int, int],
     tuple[str, tuple[tuple[str, Any], ...]],

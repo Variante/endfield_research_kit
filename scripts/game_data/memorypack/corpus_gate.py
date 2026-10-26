@@ -55,6 +55,20 @@ def _fail(code: str, *, source: str, expected: Any = None, actual: Any = None, o
     raise CensusGateError(code, source=source, expected=expected, actual=actual, offset=offset)
 
 
+def native_validation(validator, contract_path: Path, *args, **kwargs):
+    """Keep a native refusal actionable without publishing a corpus receipt."""
+    try:return validator(*args, **kwargs)
+    except CensusGateError:raise
+    except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as exc:
+        path=Path(contract_path)
+        error=CensusGateError('native-validator-refused',source=path.resolve().as_posix(),
+            expected='validated selected-native contract',actual=f'{type(exc).__name__}: {exc}'[:600])
+        error.diagnostic.update(validator=getattr(validator,'__module__','')+'.'+getattr(validator,'__name__',type(validator).__name__),
+            sourceSha256=_sha256_file(path) if path.is_file() else None)
+        error.args=(json.dumps(error.diagnostic,ensure_ascii=False,sort_keys=True),)
+        raise error from exc
+
+
 
 def _fingerprint(path: Path) -> dict[str, Any]:
     resolved = path.resolve()
@@ -335,6 +349,7 @@ def family_rows(
     prefix: str,
     pattern: re.Pattern[str],
     label: str,
+    blocks: Mapping[int,str] | None = None,
 ) -> list[dict[str, Any]]:
     """Select and gate one JsonData family's current ledger rows."""
     selected: list[dict[str, Any]] = []
@@ -349,13 +364,15 @@ def family_rows(
             _fail(f"duplicate-{label}-identity", source=f"ledger.file[{ledger_index}]", actual=virtual_path)
         seen.add(virtual_path)
         row = dict(raw_row)
+        names={19:'JsonData'} if blocks is None else blocks
+        if row.get('blockTypeValue') not in names:
+            _fail(f'{label}-ledger-block-mismatch',source=virtual_path,expected=dict(names),actual=row.get('blockTypeValue'))
         checks = {
             "recordType": "file",
             "inputSetSha256": expected_input,
             "status": "verified",
             "boundaryStatus": "boundary_verified",
-            "blockName": "JsonData",
-            "blockTypeValue": 19,
+            "blockName": names[row['blockTypeValue']],
             "encrypted": True,
         }
         for field, expected in checks.items():

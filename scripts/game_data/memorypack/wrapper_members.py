@@ -481,6 +481,10 @@ def derive_from_image(image: NativeImage) -> dict[int, WrapperType]:
     A caller that has built a ``NativeImage`` for its own gate reuses it here
     instead of parsing the metadata a second time.
     """
+    return dict(image.memorypack_wrappers) if isinstance(image, NativeImage) else _derive_from_image(image)
+
+
+def _derive_from_image(image: NativeImage) -> dict[int, WrapperType]:
     deriver = _Deriver(image)
     deriver.index_wrappers()
     return {wrapper.type_definition: wrapper for wrapper in deriver.all_wrappers()}

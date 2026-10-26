@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import unresolved_usage_index
@@ -44,7 +45,7 @@ def _contract(path: Path) -> dict[str, Any]:
     if (
         contract.get("schema") != SCHEMA or contract.get("status") != "exact-current-build"
         or contract.get("evidenceBoundary") != "exact"
-        or route.get("family") != "ActionBase" or route.get("tag") != 0x040E
+        or route.get("family") != "ActionBase" or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.SetFacMode"
         or route.get("memberCount") != 9 or route.get("inheritedMemberCount") != 8
         or not isinstance(fields, list) or len(fields) != 9
@@ -197,11 +198,11 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
             if row.get("family") == "LevelScriptData":
                 ledger[row["exportRelativePath"]] = row
     route = contract["route"]
-    prefix = b"\xfa\x0e\x04\x09"
+    prefix = memorypack_union_header(route["tag"], route["memberCount"])
     for path,digest,start,end,span_digest in route["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (
-            not 0 <= start < end <= len(data) or data[start:start+4] != prefix
+            not 0 <= start < end <= len(data) or data[start:start+len(prefix)] != prefix
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
             or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()

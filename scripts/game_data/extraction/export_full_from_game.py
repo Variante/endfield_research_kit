@@ -175,7 +175,13 @@ from scripts.game_data.extraction.scope import (
     ExtractionScope,
     structured_dump_steps,
 )
-from scripts.game_data.extraction.unity_overlay import load_overlay_catalog, normalize_chunk_path
+from scripts.game_data.extraction.unity_overlay import (
+    chunk_slot_key,
+    effective_chunk_slot_keys,
+    iter_asset_map_rows,
+    load_overlay_catalog,
+    normalize_chunk_path,
+)
 from scripts.game_data.unity_store import UnityObjectStore, UnityObjectStoreWriter, UnityStoreError, is_store_file
 from scripts.game_data.game_file_store import GameFileStoreWriter
 from scripts.game_data.sprite_crops import (
@@ -1604,6 +1610,7 @@ def build_animestudio_asset_output_status(
     # Objects in bundles the effective manifest replaced were skipped on
     # purpose (--skip_sources_file); they are not missing outputs.
     entries, overlay_skipped_entry_count = without_overlay_skipped_entries(source, entries)
+    entries, unreferenced_entry_count = effective_asset_entries(output_root, entries)
 
     for entry in entries:
         resolved_output = resolve_animestudio_convert_output_path(
@@ -1869,6 +1876,7 @@ def build_animestudio_asset_output_status(
         "type": type_name,
         "matched_entry_count": len(entries),
         "overlay_skipped_entry_count": overlay_skipped_entry_count,
+        "unreferenced_asset_map_entry_count": unreferenced_entry_count,
         "source_group_count": len(groups),
         "status_counts": status_counts,
         "clean_source_group_count": status_counts.get("clean_outputs", 0),
@@ -3751,7 +3759,8 @@ def write_overlay_skip_lists(
         skipped = sorted(slot for slot in slots if slot not in catalog.effective)
         rows = [{"Source": chunk, "Offset": offset} for chunk, offset in skipped]
         payload = json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
-        signatures[layer] = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        identity = json.dumps(["effective-map-slots-v1", rows, sorted(catalog.effective)])
+        signatures[layer] = hashlib.sha256(identity.encode("utf-8")).hexdigest()
         path = ensure_dir(animestudio_work_dir(output_root) / "overlay") / f"skip_{layer}.json"
         path.write_text(payload, encoding="utf-8")
         out[layer] = path
@@ -3774,6 +3783,49 @@ def animestudio_export_manifest_path(output_root: Path, source: str, command_nam
 # Per-layer --skip_sources_file, set by main() once every layer's VFS catalogue
 # is indexed. Maps stages never skip: the asset map describes the whole layer.
 ANIMESTUDIO_SKIP_SOURCES_FILES: dict[str, Path] = {}
+
+
+def asset_entry_slot(entry: dict[str, Any]) -> tuple[str, int]:
+    source, offset = entry.get("Source"), entry.get("Offset")
+    if not isinstance(source, str) or not source or type(offset) is not int or offset < 0:
+        raise ValueError(
+            "assetOverlay.source-identity: expected Source and nonnegative Offset; "
+            f"actual={asset_entry_identity(entry)}"
+        )
+    return source, offset
+
+
+def effective_asset_entries(
+    output_root: Path, entries: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], int]:
+    """Physical map entries do not all belong to a selected logical VFS file."""
+    slots = effective_chunk_slot_keys(output_root)
+    if slots is None:
+        return entries, 0
+    selected = []
+    for entry in entries:
+        if chunk_slot_key(*asset_entry_slot(entry)) in slots:
+            selected.append(entry)
+    return selected, len(entries) - len(selected)
+
+
+def complete_overlay_skip_list(output_root: Path, source: str) -> None:
+    """Exclude physical map slots absent from both logical catalogues, too."""
+    path = ANIMESTUDIO_SKIP_SOURCES_FILES.get(source)
+    if path is None:
+        return
+    slots = effective_chunk_slot_keys(output_root)
+    if slots is None:
+        raise ValueError("assetOverlay: selected catalogue missing")
+    map_path = animestudio_stage_dir(output_root, source, "maps") / f"endfield_{source.lower()}_assets.json"
+    skipped = {(row["Source"], row["Offset"]) for row in json.loads(path.read_text(encoding="utf-8"))}
+    for row in iter_asset_map_rows(map_path):
+        slot = asset_entry_slot(row)
+        if chunk_slot_key(*slot) not in slots:
+            skipped.add(slot)
+    path.write_text(json.dumps([dict(Source=chunk, Offset=offset) for chunk, offset in sorted(skipped)]), encoding="utf-8")
+    _OVERLAY_SKIPPED_SLOTS.pop(path, None)
+    log(f"  overlay export exclusions {source}: {len(skipped)} non-effective slot(s)")
 
 
 def overlay_skipped_slots(source: str) -> frozenset[tuple[str, int]]:
@@ -5001,6 +5053,12 @@ def prepare_animestudio_asset_shards(
             entries=map_entries,
         )
     )
+    matched_entries, unreferenced_count = effective_asset_entries(output_root, matched_entries)
+    if unreferenced_count and not matched_entries:
+        raise ValueError(
+            f"assetOverlay.no-effective-assets: {source}/{type_name}; all {unreferenced_count} "
+            "physical map entries are outside the selected VFS; broad fallback refused"
+        )
     # A --sprite-images run checks every Sprite against AnimeStudio's own image,
     # so none may be reused from the cache.
     sprite_images = type_name == SPRITE_TYPE and bool(options.get("sprite_images"))
@@ -7230,6 +7288,8 @@ def main() -> int:
                             finish_animestudio_stage("maps")
                         else:
                             log(f"  animestudio stage maps for {source}: cache hit, skipping")
+
+                    complete_overlay_skip_list(output_root, source)
 
                     if stage_merge_attempt and stage_merge_attempt.get("mergeable"):
                         stage_results = run_animestudio_stage_merge_plan(

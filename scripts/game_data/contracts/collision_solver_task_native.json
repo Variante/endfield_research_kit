@@ -2,446 +2,446 @@
   "schema": "endfield.collision-solver-task-native.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "codeWindows": [
     {
       "role": "task_run_1",
-      "rva": 8828960,
+      "module": "unityPlayer",
+      "rva": 8920928,
       "bytes": 46,
-      "sha256": "5b070361cde182554af657adfb58019ce94235c11191c215279f78951b52b392",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_1",
-      "rva": 8791168,
-      "bytes": 8,
-      "sha256": "63e063d4cf09efc0a5399864c5f0f14c7341f53756213351cd54741617623948",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_run_2",
-      "rva": 8818464,
-      "bytes": 17,
-      "sha256": "20de1f471d20b2e8cb1a43a0bf2383240015c407a92f4132c8a526deeb788547",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_2",
-      "rva": 8791024,
-      "bytes": 8,
-      "sha256": "3b088ba646a5ecc8512eb4b9a31799caa38c788c8f861db5190a77a48a5ed357",
-      "module": "unityPlayer"
+      "sha256": "5b070361cde182554af657adfb58019ce94235c11191c215279f78951b52b392"
     },
     {
       "role": "task_run_3",
-      "rva": 8819136,
+      "module": "unityPlayer",
+      "rva": 8911104,
       "bytes": 74,
-      "sha256": "ec4472600148b0576a816911afaf575553ec4335ccbf3d82edcc294e543654d9",
-      "module": "unityPlayer"
+      "sha256": "ec4472600148b0576a816911afaf575553ec4335ccbf3d82edcc294e543654d9"
     },
     {
       "role": "task_run_3_part_1",
-      "rva": 8819210,
+      "module": "unityPlayer",
+      "rva": 8911178,
       "bytes": 62,
-      "sha256": "6d1669eed2325c0bf444bcdc66e970153735225900dd2bbcea88c5df922396bd",
-      "module": "unityPlayer"
+      "sha256": "6d1669eed2325c0bf444bcdc66e970153735225900dd2bbcea88c5df922396bd"
     },
     {
       "role": "task_run_3_part_2",
-      "rva": 8819272,
+      "module": "unityPlayer",
+      "rva": 8911240,
       "bytes": 34,
-      "sha256": "6b94f3ff79c4c30ded38bca500baf41f89230020d07cc2962083eaee2be88192",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_3",
-      "rva": 8791072,
-      "bytes": 8,
-      "sha256": "d4bea13ea290c6a14bdc3d5a9715a822fbff08f4fcc1c37e13406c0a1c0d6191",
-      "module": "unityPlayer"
+      "sha256": "6b94f3ff79c4c30ded38bca500baf41f89230020d07cc2962083eaee2be88192"
     },
     {
       "role": "task_run_4",
-      "rva": 8828000,
+      "module": "unityPlayer",
+      "rva": 8919968,
       "bytes": 43,
-      "sha256": "810b98b43cf19a692ebb40a0be57c380d0b1ca8a14c7873cdfd87102c560c5b0",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_4",
-      "rva": 8791136,
-      "bytes": 8,
-      "sha256": "a34b67d90b05df1798ad02bae89ce1d2b5aa1f769dac84fe58c9ac602792995b",
-      "module": "unityPlayer"
+      "sha256": "810b98b43cf19a692ebb40a0be57c380d0b1ca8a14c7873cdfd87102c560c5b0"
     },
     {
       "role": "task_run_5",
-      "rva": 8818608,
+      "module": "unityPlayer",
+      "rva": 8910576,
       "bytes": 61,
-      "sha256": "687087838d42f5e0a17708b18c4d268dca026d3d472d386b809224ab4b9e212e",
-      "module": "unityPlayer"
+      "sha256": "687087838d42f5e0a17708b18c4d268dca026d3d472d386b809224ab4b9e212e"
     },
     {
       "role": "task_run_5_part_1",
-      "rva": 8818669,
+      "module": "unityPlayer",
+      "rva": 8910637,
       "bytes": 169,
-      "sha256": "1d4a910ad5e805cc3f2d4e38b3f5ce1a773c4ddccc81a8a1e2af7a13f720c9f2",
-      "module": "unityPlayer"
+      "sha256": "1d4a910ad5e805cc3f2d4e38b3f5ce1a773c4ddccc81a8a1e2af7a13f720c9f2"
     },
     {
       "role": "task_run_5_part_2",
-      "rva": 8818838,
+      "module": "unityPlayer",
+      "rva": 8910806,
       "bytes": 285,
-      "sha256": "bd3b26d7c5528025947c9df88fbaf775b1ab8b1eff4ef7291210bd103cafcefe",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_5",
-      "rva": 8791056,
-      "bytes": 8,
-      "sha256": "9f00930a761953b119ad71da6d2787594a9f9ed8bc18fc0039d9c668a36f9c43",
-      "module": "unityPlayer"
+      "sha256": "6dd674de53199a2d0e53ad8ec75fa2bdaf1f5ca4f1a1a57941974e14861d7429"
     },
     {
       "role": "task_run_6",
-      "rva": 8821248,
+      "module": "unityPlayer",
+      "rva": 8913216,
       "bytes": 2616,
-      "sha256": "33d97c389ad02e728acb89a4513312cf459d7d555b2677ce11884995918d7d52",
-      "module": "unityPlayer"
+      "sha256": "2ec5c8c1a6fc67e36480202f234d4802c30c508f445b0ece80525a4a675b5eae"
     },
     {
       "role": "task_run_6_part_1",
-      "rva": 8823864,
+      "module": "unityPlayer",
+      "rva": 8915832,
       "bytes": 4034,
-      "sha256": "3075e1fa5f2af6b3990a871f073eebc616c265c8b37274934c21cb406d48c0bd",
-      "module": "unityPlayer"
+      "sha256": "1d939aef0e59e27645119130658090112360e4cc6c1afc1b614cbaa77d7bd967"
     },
     {
       "role": "task_run_6_part_2",
-      "rva": 8827898,
+      "module": "unityPlayer",
+      "rva": 8919866,
       "bytes": 102,
-      "sha256": "92e763faa74aa9d26dd130d58615a112a28a142bd7f972928a2682f247faba59",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_6",
-      "rva": 8791120,
-      "bytes": 8,
-      "sha256": "057e6cc6283d8230998a230ce09f39c7c76d6d3a7edcb3a662586ef501a79750",
-      "module": "unityPlayer"
+      "sha256": "fd634a56ade9694e641857082334e01c91480ed36fb5074baf3f6905ad892861"
     },
     {
       "role": "task_run_7",
-      "rva": 8820640,
+      "module": "unityPlayer",
+      "rva": 8912608,
       "bytes": 58,
-      "sha256": "005064e55f2f5267024398415c8ba1a16a6de8c3ebc3a0090dc78ed327121f5f",
-      "module": "unityPlayer"
+      "sha256": "005064e55f2f5267024398415c8ba1a16a6de8c3ebc3a0090dc78ed327121f5f"
     },
     {
       "role": "task_run_7_part_1",
-      "rva": 8820698,
+      "module": "unityPlayer",
+      "rva": 8912666,
       "bytes": 487,
-      "sha256": "955e2073386e94bac9e27affac08b6d7c33e3be25dcca3175f3cac1ec1d65630",
-      "module": "unityPlayer"
+      "sha256": "955e2073386e94bac9e27affac08b6d7c33e3be25dcca3175f3cac1ec1d65630"
     },
     {
       "role": "task_run_7_part_2",
-      "rva": 8821185,
+      "module": "unityPlayer",
+      "rva": 8913153,
       "bytes": 55,
-      "sha256": "ff8d0870ac1bf650c74d2e8ecfa38c9096760d1eb63309bd90ba43e08b4ec1d4",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_7",
-      "rva": 8791104,
-      "bytes": 8,
-      "sha256": "2034b3219b3e89c017529874b6e1309f81a31e30d42eaf9d5240f9a2248350c1",
-      "module": "unityPlayer"
+      "sha256": "ff8d0870ac1bf650c74d2e8ecfa38c9096760d1eb63309bd90ba43e08b4ec1d4"
     },
     {
       "role": "task_run_8",
-      "rva": 8819312,
+      "module": "unityPlayer",
+      "rva": 8911280,
       "bytes": 1319,
-      "sha256": "f53e75a37b9b7bcd61454607e53bc4274a90ce543a4fe2e086eca768442095e4",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_8",
-      "rva": 8791088,
-      "bytes": 8,
-      "sha256": "befb6e8c807317261e31167f0393abcb7c5369a437a5b89ff561925c708adc84",
-      "module": "unityPlayer"
+      "sha256": "02db9bcfa4471c583404b9f1b5caab7e4695e20c68979c9a523e46fb0813095f"
     },
     {
       "role": "task_run_9",
-      "rva": 8818384,
+      "module": "unityPlayer",
+      "rva": 8910352,
       "bytes": 46,
-      "sha256": "df0771cdb2c6b13c04f7ccb3a5e545d1f819542230951cafb0215ddb59e7d8e8",
-      "module": "unityPlayer"
-    },
-    {
-      "role": "task_name_9",
-      "rva": 8790992,
-      "bytes": 8,
-      "sha256": "5332f3ccf4d8ccc70b9df324cafa67ddd642ff02cf3264e6b28e27a7310d8cc9",
-      "module": "unityPlayer"
+      "sha256": "df0771cdb2c6b13c04f7ccb3a5e545d1f819542230951cafb0215ddb59e7d8e8"
     },
     {
       "role": "task_run_10",
-      "rva": 8817984,
+      "module": "unityPlayer",
+      "rva": 8909952,
       "bytes": 400,
-      "sha256": "a0a28676b27a262e886efaf34e44f5ca18e8c153e4be173c5f27a247847ffa57",
-      "module": "unityPlayer"
+      "sha256": "a0a28676b27a262e886efaf34e44f5ca18e8c153e4be173c5f27a247847ffa57"
     },
     {
       "role": "pgs_update",
-      "rva": 8886176,
+      "module": "unityPlayer",
+      "rva": 8978144,
       "bytes": 348,
-      "sha256": "7899ae03cc695eb8b695d2c44f8e5b67be72f63d9f60f1c577ea573621d8d89d",
-      "module": "unityPlayer"
+      "sha256": "6fac36d508b8ecf440583fbafcdf9b1061776d9d57ce9d5617bdc4b11bed746a"
     },
     {
       "role": "pgs_update_part_1",
-      "rva": 8886524,
+      "module": "unityPlayer",
+      "rva": 8978492,
       "bytes": 1699,
-      "sha256": "14395b016f5adb89f8e9f5ed55b2b1f51582823bd06dab29d98b0b5891fcfef6",
-      "module": "unityPlayer"
+      "sha256": "a70b14fc53c5c68b6193eb67debf1f035dcdd1b4e7713cbd059a23ba7a7c95be"
     },
     {
       "role": "root_phase",
-      "rva": 8890960,
+      "module": "unityPlayer",
+      "rva": 8982928,
       "bytes": 272,
-      "sha256": "312e8db35611dab64828cceaadb754385153dcd1e9a623407715bb7012f798cb",
-      "module": "unityPlayer"
+      "sha256": "6e469d822ed40959b7d9a3d4a2b61e0f3dccadbbb270b067cd559c6704319405"
     },
     {
       "role": "root_phase_part_1",
-      "rva": 8891232,
+      "module": "unityPlayer",
+      "rva": 8983200,
       "bytes": 611,
-      "sha256": "97167f01877bf67c46ce055e1c68108a958b4d0a8942f16a664a38fe168064a5",
-      "module": "unityPlayer"
+      "sha256": "97167f01877bf67c46ce055e1c68108a958b4d0a8942f16a664a38fe168064a5"
     },
     {
       "role": "root_phase_part_2",
-      "rva": 8891843,
+      "module": "unityPlayer",
+      "rva": 8983811,
       "bytes": 28,
-      "sha256": "a6ffbd3194b17c0940c9e846ca8f57fd3af1048c6c852d5e59aca4a6f52c4a41",
-      "module": "unityPlayer"
+      "sha256": "a6ffbd3194b17c0940c9e846ca8f57fd3af1048c6c852d5e59aca4a6f52c4a41"
     },
     {
       "role": "base_release",
-      "rva": 3964272,
-      "bytes": 70,
-      "sha256": "1691cc1c4b81fc536ea63f6b1aa721ead6a998a40ad28a0f1095d74634351943",
-      "module": "unityPlayer"
+      "module": "unityPlayer",
+      "rva": 4389584,
+      "bytes": 74,
+      "sha256": "d884bf339686826b0f7adc84bf1319b101456b8cbb471b2a5e0013a93c4a6184"
     },
     {
       "role": "run_wrapper",
-      "rva": 7894864,
+      "module": "unityPlayer",
+      "rva": 7986832,
       "bytes": 52,
-      "sha256": "3f5f103f8fcf8c5977197524542c95f3e2f9a67805dd3853cc7db5648844181a",
-      "module": "unityPlayer"
+      "sha256": "3f5f103f8fcf8c5977197524542c95f3e2f9a67805dd3853cc7db5648844181a"
+    },
+    {
+      "role": "task_name_1",
+      "module": "unityPlayer",
+      "rva": 8883136,
+      "bytes": 8,
+      "sha256": "9b8d0a42428b9c478a9727149babadca83d243a26870bb433fe8efcdb61c1670"
+    },
+    {
+      "role": "task_run_2",
+      "module": "unityPlayer",
+      "rva": 8910432,
+      "bytes": 17,
+      "sha256": "20de1f471d20b2e8cb1a43a0bf2383240015c407a92f4132c8a526deeb788547"
+    },
+    {
+      "role": "task_name_2",
+      "module": "unityPlayer",
+      "rva": 8882992,
+      "bytes": 8,
+      "sha256": "7bf782118df4d203974375d36f1b10dd69eb4cec44a2e369d3f8f4015e26a19d"
+    },
+    {
+      "role": "task_name_3",
+      "module": "unityPlayer",
+      "rva": 8883040,
+      "bytes": 8,
+      "sha256": "b3a2c7bf34aafef5973094d56640e7620d515e00dbdd1483697b4200c4ecaa61"
+    },
+    {
+      "role": "task_name_4",
+      "module": "unityPlayer",
+      "rva": 8883104,
+      "bytes": 8,
+      "sha256": "ed6297640c4958dec45e987086f773c2a42387d6ac5e722368a2430899190547"
+    },
+    {
+      "role": "task_name_5",
+      "module": "unityPlayer",
+      "rva": 8883024,
+      "bytes": 8,
+      "sha256": "5561822cb485a4028673eeab7d40862ed723674cdc70e3b9a5bcb418bc93b7e5"
+    },
+    {
+      "role": "task_name_6",
+      "module": "unityPlayer",
+      "rva": 8883088,
+      "bytes": 8,
+      "sha256": "acf9611b970bc2669c59002b50131a75756e50fa061af56e96f3e9fad5b50c2e"
+    },
+    {
+      "role": "task_name_7",
+      "module": "unityPlayer",
+      "rva": 8883072,
+      "bytes": 8,
+      "sha256": "cdd9d7874bf464446b352b3f8616755fcf46bc1515e34fade8e3fe7e23353fb8"
+    },
+    {
+      "role": "task_name_8",
+      "module": "unityPlayer",
+      "rva": 8883056,
+      "bytes": 8,
+      "sha256": "4df3439e7934882b7d8791fc865b4c5d84e6948e320fa8768e63d19078d70385"
+    },
+    {
+      "role": "task_name_9",
+      "module": "unityPlayer",
+      "rva": 8882960,
+      "bytes": 8,
+      "sha256": "8922ecd784b8323ed4e0c1d46fc2332ef487013997df53602730a861e66b50f0"
     }
   ],
   "codeFamilies": [
     {
       "role": "task_run_1",
-      "rva": 8828960,
+      "rva": 8920928,
       "runtimeRanges": [
         [
-          8828960,
-          8829006,
-          28545412
+          8920928,
+          8920974,
+          30280420
         ]
       ]
     },
     {
       "role": "task_run_3",
-      "rva": 8819136,
+      "rva": 8911104,
       "runtimeRanges": [
         [
-          8819136,
-          8819210,
-          29354080
+          8911104,
+          8911178,
+          31216028
         ],
         [
-          8819210,
-          8819272,
-          29161816
+          8911178,
+          8911240,
+          31019548
         ],
         [
-          8819272,
-          8819306,
-          29161836
+          8911240,
+          8911274,
+          31019568
         ]
       ]
     },
     {
       "role": "task_run_4",
-      "rva": 8828000,
+      "rva": 8919968,
       "runtimeRanges": [
         [
-          8828000,
-          8828043,
-          28545412
+          8919968,
+          8920011,
+          30280420
         ]
       ]
     },
     {
       "role": "task_run_5",
-      "rva": 8818608,
+      "rva": 8910576,
       "runtimeRanges": [
         [
-          8818608,
-          8818669,
-          29162004
+          8910576,
+          8910637,
+          31019736
         ],
         [
-          8818669,
-          8818838,
-          29162024
+          8910637,
+          8910806,
+          31019756
         ],
         [
-          8818838,
-          8819123,
-          29162044
+          8910806,
+          8911091,
+          31019776
         ]
       ]
     },
     {
       "role": "task_run_6",
-      "rva": 8821248,
+      "rva": 8913216,
       "runtimeRanges": [
         [
-          8821248,
-          8823864,
-          29162060
+          8913216,
+          8915832,
+          31019792
         ],
         [
-          8823864,
-          8827898,
-          29162084
+          8915832,
+          8919866,
+          31019816
         ],
         [
-          8827898,
-          8828000,
-          29162140
+          8919866,
+          8919968,
+          31019872
         ]
       ]
     },
     {
       "role": "task_run_7",
-      "rva": 8820640,
+      "rva": 8912608,
       "runtimeRanges": [
         [
-          8820640,
-          8820698,
-          29162156
+          8912608,
+          8912666,
+          31019888
         ],
         [
-          8820698,
-          8821185,
-          29162168
+          8912666,
+          8913153,
+          31019900
         ],
         [
-          8821185,
-          8821240,
-          29162208
+          8913153,
+          8913208,
+          31019940
         ]
       ]
     },
     {
       "role": "task_run_8",
-      "rva": 8819312,
+      "rva": 8911280,
       "runtimeRanges": [
         [
-          8819312,
-          8820631,
-          29367772
+          8911280,
+          8912599,
+          31237924
         ]
       ]
     },
     {
       "role": "task_run_9",
-      "rva": 8818384,
+      "rva": 8910352,
       "runtimeRanges": [
         [
-          8818384,
-          8818430,
-          28550936
+          8910352,
+          8910398,
+          30285456
         ]
       ]
     },
     {
       "role": "task_run_10",
-      "rva": 8817984,
+      "rva": 8909952,
       "runtimeRanges": [
         [
-          8817984,
-          8818384,
-          29162600
+          8909952,
+          8910352,
+          31020332
         ]
       ]
     },
     {
       "role": "pgs_update",
-      "rva": 8886176,
+      "rva": 8978144,
       "runtimeRanges": [
         [
-          8886176,
-          8886524,
-          29161000
+          8978144,
+          8978492,
+          31018732
         ],
         [
-          8886524,
-          8888223,
-          29161024
+          8978492,
+          8980191,
+          31018756
         ]
       ]
     },
     {
       "role": "root_phase",
-      "rva": 8890960,
+      "rva": 8982928,
       "runtimeRanges": [
         [
-          8890960,
-          8891232,
-          29161044
+          8982928,
+          8983200,
+          31018776
         ],
         [
-          8891232,
-          8891843,
-          29161068
+          8983200,
+          8983811,
+          31018800
         ],
         [
-          8891843,
-          8891871,
-          29161088
+          8983811,
+          8983839,
+          31018820
         ]
       ]
     },
     {
       "role": "base_release",
-      "rva": 3964272,
+      "rva": 4389584,
       "runtimeRanges": [
         [
-          3964272,
-          3964342,
-          28539632
+          4389584,
+          4389658,
+          30281440
         ]
       ]
     },
     {
       "role": "run_wrapper",
-      "rva": 7894864,
+      "rva": 7986832,
       "runtimeRanges": [
         [
-          7894864,
-          7894916,
-          28545412
+          7986832,
+          7986884,
+          30280420
         ]
       ]
     }
@@ -449,7 +449,7 @@
   "leafWindows": [
     {
       "role": "task_name_1",
-      "hex": "488d0569980601c3",
+      "hex": "488d0569cf1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
@@ -459,42 +459,42 @@
     },
     {
       "role": "task_name_2",
-      "hex": "488d0579950601c3",
+      "hex": "488d0579cc1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_3",
-      "hex": "488d05a9950601c3",
+      "hex": "488d05a9cc1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_4",
-      "hex": "488d05a1960601c3",
+      "hex": "488d05a1cd1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_5",
-      "hex": "488d0549970601c3",
+      "hex": "488d0549ce1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_6",
-      "hex": "488d0571970601c3",
+      "hex": "488d0571ce1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_7",
-      "hex": "488d05e1970601c3",
+      "hex": "488d05e1ce1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_8",
-      "hex": "488d0549980601c3",
+      "hex": "488d0549cf1e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     },
     {
       "role": "task_name_9",
-      "hex": "488d05c9990601c3",
+      "hex": "488d05c9d01e01c3",
       "boundary": "explicit straight-line leaf ending in ret or unconditional transfer"
     }
   ],
@@ -502,91 +502,91 @@
     {
       "role": 1,
       "name": "UpdateContinuationTask",
-      "vtableRva": 26000560,
-      "getterRva": 8791168,
-      "nameRva": 26000624,
-      "runRva": 8828960,
+      "vtableRva": 27679472,
+      "getterRva": 8883136,
+      "nameRva": 27679536,
+      "runRva": 8920928,
       "windowRole": "task_run_1"
     },
     {
       "role": 2,
       "name": "PxsDynamics.parallelSolver",
-      "vtableRva": 25999664,
-      "getterRva": 8791024,
-      "nameRva": 25999728,
-      "runRva": 8818464,
+      "vtableRva": 27678576,
+      "getterRva": 8882992,
+      "nameRva": 27678640,
+      "runRva": 8910432,
       "windowRole": "task_run_2"
     },
     {
       "role": 3,
       "name": "PxsDynamics.solverConstraintPostProcess",
-      "vtableRva": 25999760,
-      "getterRva": 8791072,
-      "nameRva": 25999824,
-      "runRva": 8819136,
+      "vtableRva": 27678672,
+      "getterRva": 8883040,
+      "nameRva": 27678736,
+      "runRva": 8911104,
       "windowRole": "task_run_3"
     },
     {
       "role": 4,
       "name": "PxsDynamics.solverStart",
-      "vtableRva": 26000072,
-      "getterRva": 8791136,
-      "nameRva": 26000136,
-      "runRva": 8828000,
+      "vtableRva": 27678984,
+      "getterRva": 8883104,
+      "nameRva": 27679048,
+      "runRva": 8919968,
       "windowRole": "task_run_4"
     },
     {
       "role": 5,
       "name": "PxsDynamics.solverConstraintPartition",
-      "vtableRva": 26000160,
-      "getterRva": 8791056,
-      "nameRva": 26000224,
-      "runRva": 8818608,
+      "vtableRva": 27679072,
+      "getterRva": 8883024,
+      "nameRva": 27679136,
+      "runRva": 8910576,
       "windowRole": "task_run_5"
     },
     {
       "role": 6,
       "name": "PxsDynamics.solverSetupSolve",
-      "vtableRva": 26000264,
-      "getterRva": 8791120,
-      "nameRva": 26000328,
-      "runRva": 8821248,
+      "vtableRva": 27679176,
+      "getterRva": 8883088,
+      "nameRva": 27679240,
+      "runRva": 8913216,
       "windowRole": "task_run_6"
     },
     {
       "role": 7,
       "name": "PxsDynamics.solverEnd",
-      "vtableRva": 26000360,
-      "getterRva": 8791104,
-      "nameRva": 26000424,
-      "runRva": 8820640,
+      "vtableRva": 27679272,
+      "getterRva": 8883072,
+      "nameRva": 27679336,
+      "runRva": 8912608,
       "windowRole": "task_run_7"
     },
     {
       "role": 8,
       "name": "PxsDynamics.solverCreateFinalizeConstraints",
-      "vtableRva": 26000448,
-      "getterRva": 8791088,
-      "nameRva": 26000512,
-      "runRva": 8819312,
+      "vtableRva": 27679360,
+      "getterRva": 8883056,
+      "nameRva": 27679424,
+      "runRva": 8911280,
       "windowRole": "task_run_8"
     },
     {
       "role": 9,
       "name": "PxsDynamics.createFinalizeContacts",
-      "vtableRva": 26000736,
-      "getterRva": 8790992,
-      "nameRva": 26000800,
-      "runRva": 8818384,
+      "vtableRva": 27679648,
+      "getterRva": 8882960,
+      "nameRva": 27679712,
+      "runRva": 8910352,
       "windowRole": "task_run_9"
     },
     {
       "role": 10,
       "name": "PxsDynamics.createFinalizeContacts",
-      "vtableRva": 26000840,
-      "getterRva": 8790992,
-      "nameRva": 26000800,
-      "runRva": 8817984,
+      "vtableRva": 27679752,
+      "getterRva": 8882960,
+      "nameRva": 27679712,
+      "runRva": 8909952,
       "windowRole": "task_run_10"
     }
   ],
@@ -613,14 +613,14 @@
     "auxiliaryArgument": 3,
     "sceneArgument": 5,
     "rootStoreRvas": [
-      8886720,
-      8886747,
-      8886751,
-      8886739,
-      8886760
+      8978688,
+      8978715,
+      8978719,
+      8978707,
+      8978728
     ],
-    "workerCallRva": 8828985,
-    "workerTargetRva": 8890960
+    "workerCallRva": 8920953,
+    "workerTargetRva": 8982928
   },
   "limits": {
     "maxReleases": 8192,
@@ -633,23 +633,23 @@
   "sharedTaskSlots": [
     {
       "offset": 8,
-      "targetRva": 7894864
+      "targetRva": 7986832
     },
     {
       "offset": 24,
-      "targetRva": 4459104
+      "targetRva": 4379152
     },
     {
       "offset": 32,
-      "targetRva": 4300880
+      "targetRva": 3949856
     },
     {
       "offset": 40,
-      "targetRva": 5796400
+      "targetRva": 5892512
     },
     {
       "offset": 48,
-      "targetRva": 3964272
+      "targetRva": 4389584
     }
   ],
   "hooks": [
@@ -669,99 +669,99 @@
   ],
   "instructionProbes": [
     {
-      "rva": 3964276,
+      "rva": 4389588,
       "hex": "4883791800"
     },
     {
-      "rva": 3964283,
-      "hex": "4c8b4918"
-    },
-    {
-      "rva": 3964297,
-      "hex": "488b4220"
-    },
-    {
-      "rva": 3964306,
-      "hex": "498b4110"
-    },
-    {
-      "rva": 3964323,
-      "hex": "49ffa080000000"
-    },
-    {
-      "rva": 7894895,
-      "hex": "ff5038"
-    },
-    {
-      "rva": 8886710,
-      "hex": "488d05f3220501"
-    },
-    {
-      "rva": 8886720,
-      "hex": "498906"
-    },
-    {
-      "rva": 8886723,
-      "hex": "488b842408010000"
-    },
-    {
-      "rva": 8886739,
-      "hex": "49894638"
-    },
-    {
-      "rva": 8886743,
-      "hex": "41896e20"
-    },
-    {
-      "rva": 8886747,
-      "hex": "49897e28"
-    },
-    {
-      "rva": 8886751,
-      "hex": "4d897e30"
-    },
-    {
-      "rva": 8886760,
-      "hex": "4d896618"
-    },
-    {
-      "rva": 8886789,
-      "hex": "498b4618488b481049894e10"
-    },
-    {
-      "rva": 8888193,
-      "hex": "ff5020"
-    },
-    {
-      "rva": 8828966,
-      "hex": "4c8b4938"
-    },
-    {
-      "rva": 8828973,
+      "rva": 4389595,
       "hex": "4c8b4118"
     },
     {
-      "rva": 8828977,
+      "rva": 4389609,
+      "hex": "488b4220"
+    },
+    {
+      "rva": 4389618,
+      "hex": "498b4010"
+    },
+    {
+      "rva": 4389629,
+      "hex": "488b8280000000"
+    },
+    {
+      "rva": 7986863,
+      "hex": "ff5038"
+    },
+    {
+      "rva": 8978678,
+      "hex": "488d05f3591d01"
+    },
+    {
+      "rva": 8978688,
+      "hex": "498906"
+    },
+    {
+      "rva": 8978691,
+      "hex": "488b842408010000"
+    },
+    {
+      "rva": 8978707,
+      "hex": "49894638"
+    },
+    {
+      "rva": 8978711,
+      "hex": "41896e20"
+    },
+    {
+      "rva": 8978715,
+      "hex": "49897e28"
+    },
+    {
+      "rva": 8978719,
+      "hex": "4d897e30"
+    },
+    {
+      "rva": 8978728,
+      "hex": "4d896618"
+    },
+    {
+      "rva": 8978757,
+      "hex": "498b4618488b481049894e10"
+    },
+    {
+      "rva": 8980161,
+      "hex": "ff5020"
+    },
+    {
+      "rva": 8920934,
+      "hex": "4c8b4938"
+    },
+    {
+      "rva": 8920941,
+      "hex": "4c8b4118"
+    },
+    {
+      "rva": 8920945,
       "hex": "488b5130"
     },
     {
-      "rva": 8828981,
+      "rva": 8920949,
       "hex": "488b4928"
     },
     {
-      "rva": 8828985,
+      "rva": 8920953,
       "hex": "e812f20000"
     },
     {
-      "rva": 8829002,
+      "rva": 8920970,
       "hex": "48ff6020"
     },
     {
-      "rva": 8886176,
+      "rva": 8978144,
       "hex": "4c894c2420"
     },
     {
-      "rva": 8886210,
+      "rva": 8978178,
       "hex": "4d8be04c8bfa488bf9"
     }
   ],
@@ -776,7 +776,7 @@
     {
       "role": "base_release",
       "offset": 34,
-      "prefix": "498b41",
+      "prefix": "498b40",
       "mode": "u8",
       "field": "task.manager"
     },

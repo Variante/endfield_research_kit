@@ -20,7 +20,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -45,7 +44,6 @@ def _mapping_id(contract: dict[str, Any]) -> str:
     return str(contract.get("nativeMappingId") or "")
 
 
-@lru_cache(maxsize=1)
 def load_entityptr_getter_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[tuple[int, int], dict[str, Any]], dict[str, Any]]:

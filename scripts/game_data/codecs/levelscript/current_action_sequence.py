@@ -1135,10 +1135,10 @@ def _read_current_leader_enter_header(
 
 
 def _read_reviewed_map_node(
-    data: bytes, cursor: int, family: str, original_error: ValueError,
+    data: bytes, cursor: int, family: str, original_error: ValueError | None = None, *, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     try:
-        return levelscript_action_map.decode_reviewed_node(data, cursor, family)
+        return levelscript_action_map.decode_reviewed_node(data, cursor, family, strings=strings)
     except levelscript_action_map.ActionMapCodecError as error:
         if getattr(error, "diagnostics", {}).get("validator") in (
             "levelscriptOnSquadMemberUspNative", "levelscriptPreloadCutscene",
@@ -1149,15 +1149,16 @@ def _read_reviewed_map_node(
             refusal.diagnostics = error.diagnostics
             raise refusal from error
         raise LevelScriptTopLevelFramingError(
-            f"{original_error}; reviewed {family} at offset={cursor}: {error}"
+            f"{str(original_error)+'; ' if original_error is not None else ''}reviewed {family} at offset={cursor}: {error}"
         ) from error
 
 
 def frame_levelscript_current_action_sequence_leader_enter(
     data: bytes,
+    *, strings: Any = None,
 ) -> dict[str, Any]:
     """Close selected current sequences, including reviewed shared union layouts."""
-    if len(data) < 7 or data[:3] != b"\x1b\x02\x03":
+    if len(data) < 7 or data[:3] != b"\x1c\x02\x03":
         raise LevelScriptTopLevelFramingError("selected action map root/member mismatch")
     action_count = _i32(data, 3)
     if action_count is None or not 0 <= action_count <= 4096:
@@ -1165,27 +1166,8 @@ def frame_levelscript_current_action_sequence_leader_enter(
     cursor = 7
     actions = []
     for _index in range(action_count):
-        try:
-            envelope, fields_start = _read_current_action_envelope(data, cursor)
-            fields, end = _read_current_action_fields(
-                data, fields_start, str(envelope["action"])
-            )
-        except LevelScriptTopLevelFramingError as error:
-            if getattr(error, "diagnostics", {}).get("validator") == "levelscriptPreloadCutscene":
-                raise
-            action, cursor = _read_reviewed_map_node(
-                data, cursor, "ActionBase", error
-            )
-            actions.append(action)
-            continue
-        cursor = end
-        actions.append({
-            "envelope": envelope,
-            "action": envelope["action"],
-            "fields": fields,
-            "startOffset": envelope["start"],
-            "endOffset": cursor,
-        })
+        action,cursor=_read_reviewed_map_node(data,cursor,'ActionBase',strings=strings)
+        actions.append(action)
     if cursor + 4 > len(data):
         raise LevelScriptTopLevelFramingError("truncated getterList count")
     getter_count = _i32(data, cursor)
@@ -1196,12 +1178,7 @@ def frame_levelscript_current_action_sequence_leader_enter(
     cursor += 4
     getters = []
     for _index in range(getter_count):
-        try:
-            getter, cursor = _read_current_getter(data, cursor)
-        except LevelScriptTopLevelFramingError as error:
-            getter, cursor = _read_reviewed_map_node(
-                data, cursor, "GetterBase", error
-            )
+        getter,cursor=_read_reviewed_map_node(data,cursor,'GetterBase',strings=strings)
         getters.append(getter)
     if cursor + 4 > len(data):
         raise LevelScriptTopLevelFramingError("truncated headerList count")
@@ -1214,12 +1191,7 @@ def frame_levelscript_current_action_sequence_leader_enter(
     cursor += 4
     headers = []
     for _index in range(header_count):
-        try:
-            header, cursor = _read_current_leader_enter_header(data, cursor)
-        except LevelScriptTopLevelFramingError as error:
-            header, cursor = _read_reviewed_map_node(
-                data, cursor, "ActionHeader", error
-            )
+        header,cursor=_read_reviewed_map_node(data,cursor,'ActionHeader',strings=strings)
         headers.append(header)
     if cursor + 5 > len(data) or data[cursor] != 1:
         raise LevelScriptTopLevelFramingError("ParamListForGraph member count mismatch")
@@ -1274,4 +1246,5 @@ def frame_levelscript_current_action_sequence_leader_enter(
         owner_offset=action_map_end,
         action_map_boundary="selected current action/getter/header sequence",
         partial_status="exact_named_current_action_sequence_owner_prefix",
+        strings=strings,
     )

@@ -69,7 +69,7 @@ def _contract(path: Path) -> dict[str, Any]:
         data.get("schema") != SCHEMA or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or set(data.get("nativeInputs", {})) != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or route.get("family") != "ActionBase" or route.get("tag") != 0x0406
+        or route.get("family") != "ActionBase" or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.SetEntitiesVisibility"
         or route.get("memberCount") != 12 or route.get("inheritedMemberCount") != 8
         or not isinstance(fields, list) or len(fields) != 12

@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.context import (
     generic_type_carrier,
@@ -42,7 +43,7 @@ from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
 
-SCHEMA = "endfield.levelscript-start-level-seq-loop-segment-native-contract.v1"
+SCHEMA = "endfield.levelscript-start-level-seq-loop-segment-native-contract.v2"
 LABEL = "levelscriptStartSeqLoopNative"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_start_seq_loop_native.json"
 
@@ -316,7 +317,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: Path) -> None:
     tag = contract["route"]["tag"]
     member_count = contract["route"]["serializedMemberCount"]
-    prefix = b"\xfa" + tag.to_bytes(2, "little") + bytes((member_count,))
+    prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     ledger: dict[str, dict[str, Any]] = {}
     with gzip.open(ledger_path, "rt", encoding="utf8") as stream:
         for line in stream:

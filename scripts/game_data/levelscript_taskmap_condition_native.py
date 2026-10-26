@@ -24,7 +24,6 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -205,7 +204,6 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger: Path,
     return checked
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_taskmap_condition_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,
@@ -243,7 +241,6 @@ def validate_levelscript_taskmap_condition_native_contract(
                 "detail": str(error)[:400], "routeCount": 0}
 
 
-@lru_cache(maxsize=1)
 def validated_taskmap_condition_routes() -> dict[tuple[int, int], dict[str, Any]]:
     """Return reviewed current routes only after their native proof passes."""
     if validate_levelscript_taskmap_condition_native_contract()["status"] != "validated":

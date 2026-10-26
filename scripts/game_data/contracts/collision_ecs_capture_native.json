@@ -1,10 +1,10 @@
 {
-  "schema": "endfield.collision-ecs-capture-native.v1",
+  "schema": "endfield.collision-ecs-capture-native.v2",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "hooks": [
     {
@@ -22,12 +22,12 @@
         ],
         "returnMode": "pointer"
       },
-      "entryHex": "4c89442418555657488d6c24c14881ecf0000000"
+      "entryHex": "4c89442418555657488d6c24c14881ec00010000"
     },
     {
       "role": "resource_resolve",
       "kind": 38,
-      "owner": "streaming",
+      "owner": "observer",
       "windowRole": "resource_resolve",
       "abi": {
         "arguments": [
@@ -70,7 +70,7 @@
         ],
         "returnMode": "void"
       },
-      "entryHex": "4883ec284885c97411e8322c7e004885c0"
+      "entryHex": "488b024885c9740e488b49104883e1f8"
     },
     {
       "role": "resource_object",
@@ -83,7 +83,7 @@
         ],
         "returnMode": "pointer"
       },
-      "entryHex": "48895c2410574883ec30488b3dff3cc901"
+      "entryHex": "48895c2410574883ec30488b3d7f0dde01"
     },
     {
       "role": "producer_2",
@@ -103,7 +103,7 @@
       "role": "producer_5",
       "kind": 43,
       "owner": "ecs",
-      "windowRole": "producer_e3d9b0",
+      "windowRole": "producer_e3e1b0",
       "abi": {
         "arguments": [
           "u64",
@@ -111,13 +111,13 @@
         ],
         "returnMode": "bool"
       },
-      "entryHex": "488954241048894c2408555356574154"
+      "entryHex": "48894c24085556574154415541564157"
     },
     {
       "role": "producer_6",
       "kind": 44,
       "owner": "ecs",
-      "windowRole": "producer_e3e1b0",
+      "windowRole": "producer_e3e7a0",
       "abi": {
         "arguments": [
           "u64",
@@ -145,7 +145,7 @@
       "role": "producer_9",
       "kind": 46,
       "owner": "ecs",
-      "windowRole": "producer_e3e7a0",
+      "windowRole": "producer_e3d9b0",
       "abi": {
         "arguments": [
           "u64",
@@ -153,28 +153,106 @@
         ],
         "returnMode": "bool"
       },
-      "entryHex": "48894c24085556574154415541564157"
+      "entryHex": "48894c2408555356574154415541564157"
     }
   ],
   "codeWindows": [
     {
+      "role": "resource_resolve",
+      "rva": 3406096,
+      "bytes": 215,
+      "sha256": "fac4a47b2683f546ec5fa6b986313cd1bd18a68152cc9c4fe487e8dc44a77e88"
+    },
+    {
+      "role": "resource_resolve_part_1",
+      "rva": 16306124,
+      "bytes": 109,
+      "sha256": "b53db7e73bf4cb0e0635653eeec76572efe50b6a3eadf0d80eb9b6aa7e1e9391"
+    },
+    {
       "role": "terrain_resource_resolve",
-      "rva": 5176944,
-      "bytes": 312,
-      "sha256": "a54fe14b215a5550eb0ed0e4dae97fce4f9db7da8540dc8201ee8103d6df44bd"
+      "rva": 2293216,
+      "bytes": 163,
+      "sha256": "6d0154fbeef1a7976a6701f581137ae0e78bbd4be3543bfc9493bfcb0103f152"
+    },
+    {
+      "role": "terrain_resource_resolve_part_1",
+      "rva": 16027412,
+      "bytes": 158,
+      "sha256": "53496ccabd3e9991582f718dc833cd2896ede7a60bbe18659b6a8ba0cf63753b"
     },
     {
       "role": "resource_object",
-      "rva": 394432,
+      "rva": 913328,
       "bytes": 97,
-      "sha256": "417c351e254ea8f475311fa8c6735798c3d749d444bbb2867939653d04d79543"
+      "sha256": "ffa59f282fe0393dca27e6ef0a8ebdd8e738483c1c00d3d8969460ec2f98adff"
+    },
+    {
+      "role": "resource_copy",
+      "rva": 3405968,
+      "bytes": 115,
+      "sha256": "e1e038e28936c1bf904591ccee2fbabe13e2d9d407ea26eb0c53d1d5c8f4bb25"
+    },
+    {
+      "role": "terrain_resource_copy",
+      "rva": 2293088,
+      "bytes": 115,
+      "sha256": "65b57d7f1345ee98293efdaef1853c655f262e22421832d0c945bd0b7f431610"
+    },
+    {
+      "role": "resource_target",
+      "rva": 3407360,
+      "bytes": 130,
+      "sha256": "17b6f909a8db9544f3e4f959de978e21f074aa19d69c8a82c4acbc64095d4477"
+    },
+    {
+      "role": "resource_find",
+      "rva": 3406320,
+      "bytes": 79,
+      "sha256": "7b81ae3d6d2d7076a22421e542d9312ca540e3095e8d229693e5703b93530f0d"
+    },
+    {
+      "role": "resource_key_find",
+      "rva": 3406400,
+      "bytes": 53,
+      "sha256": "cedcd0361d754b6cf9fdf167eea37823027138a6b994b2e9844ebceae272a184"
+    },
+    {
+      "role": "resource_key_find_part_1",
+      "rva": 3406453,
+      "bytes": 71,
+      "sha256": "f4753249bb06cb7d0bda22f46acae5994f486f17bc1d09e4f1329aff60de2574"
+    },
+    {
+      "role": "resource_key_find_part_2",
+      "rva": 3406524,
+      "bytes": 5,
+      "sha256": "3297a0e4175e5d032a2be5212c1a1980cd3df21251db492413a47fcb4b6187ac"
+    },
+    {
+      "role": "resource_key_find_part_3",
+      "rva": 3406529,
+      "bytes": 6,
+      "sha256": "a3986cfc6412db5d924407850dfbe5d0a284eedd1c146a6624a53902dd32be03"
+    },
+    {
+      "role": "resource_key_find_part_4",
+      "rva": 16306234,
+      "bytes": 16,
+      "sha256": "886e42669c4a1006711490f6ef790d298a2469e8f2a214ebbbee6cab305b8b1b"
+    },
+    {
+      "role": "resource_valid",
+      "rva": 3406800,
+      "bytes": 24,
+      "sha256": "b09549b1986d9e46f1bdd352c74fd0826baea0ba8a937ed971be7a23cf091810"
     }
   ],
   "registry": {
-    "singletonRva": 30362248,
+    "singletonRva": 32245304,
     "witnessRole": "entity_resolve",
     "witnessOffset": 10,
-    "witnessHex": "488b05e7907e01"
+    "witnessHex": "488b056bf3b600"
   },
   "layout": {
     "actor": {
@@ -206,10 +284,224 @@
     "maxRegistryCapacity": 1048576,
     "maxRows": 600000
   },
-  "evidenceBoundary": {
-    "exact": "Reviewed native windows and entry instructions for the selected build; typed adapters use the declared Windows x64 ABI.",
-    "direct": "Decoder EDX counts u32 words; Streaming callbacks take packed Entity in RCX and context in RDX and return AL. Resource resolvers take five pointer arguments and return AL; writes to three separate u32 output carriers are captured only on success. RecordEntity reads the packed Entity through RDX. Resource-object lookup takes a pointer to one u32 handle and returns a native object; the reviewed mesh producers read its dword at +8 into the ordered decoder mesh-ID array.",
-    "conditional": "Actor userdata, shape userdata and a versioned registry row are sampled during the original converter, during current decoder return, and after normal producer return. Separately timed double reads detect drift but do not promise atomicity or ownership across lifetimes.",
-    "unresolved": "Unentered routes, samples omitted by declared limits, resource/subasset ambiguity, missing entity/registry data, and solver contacts absent from report callbacks remain explicit gaps."
-  }
+  "evidenceBoundary": "direct: current named ECS decode/identity routes and five independently authenticated constructor-selected source callbacks. Resource resolution retains typed five-pointer bool ABI and 16-byte consumed spans; current factored field-5 accessor, full-key lookup and terrain specialization are separate native paths. No wider Streaming field-2/marker schema is promoted, no concrete stored file or live callback selection is implied, and context snapshots are bounded prefixes rather than full object extents.",
+  "codeFamilies": [
+    {
+      "role": "resource_resolve",
+      "rva": 3406096,
+      "runtimeRanges": [
+        [
+          3406096,
+          3406311,
+          30371968
+        ],
+        [
+          16306124,
+          16306233,
+          30631952
+        ]
+      ]
+    },
+    {
+      "role": "terrain_resource_resolve",
+      "rva": 2293216,
+      "runtimeRanges": [
+        [
+          2293216,
+          2293379,
+          30371968
+        ],
+        [
+          16027412,
+          16027570,
+          30496132
+        ]
+      ]
+    },
+    {
+      "role": "resource_object",
+      "rva": 913328,
+      "runtimeRanges": [
+        [
+          913328,
+          913425,
+          30297864
+        ]
+      ]
+    },
+    {
+      "role": "resource_copy",
+      "rva": 3405968,
+      "runtimeRanges": [
+        [
+          3405968,
+          3406083,
+          30296764
+        ]
+      ]
+    },
+    {
+      "role": "terrain_resource_copy",
+      "rva": 2293088,
+      "runtimeRanges": [
+        [
+          2293088,
+          2293203,
+          30296764
+        ]
+      ]
+    },
+    {
+      "role": "resource_target",
+      "rva": 3407360,
+      "runtimeRanges": [
+        [
+          3407360,
+          3407490,
+          30280868
+        ]
+      ]
+    },
+    {
+      "role": "resource_find",
+      "rva": 3406320,
+      "runtimeRanges": [
+        [
+          3406320,
+          3406399,
+          30281412
+        ]
+      ]
+    },
+    {
+      "role": "resource_key_find",
+      "rva": 3406400,
+      "runtimeRanges": [
+        [
+          3406400,
+          3406453,
+          30631968
+        ],
+        [
+          3406453,
+          3406524,
+          30631976
+        ],
+        [
+          3406524,
+          3406529,
+          30632000
+        ],
+        [
+          3406529,
+          3406535,
+          30632016
+        ],
+        [
+          16306234,
+          16306250,
+          30632040
+        ]
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "role": "resource_copy",
+      "offset": 10,
+      "hex": "f20f1002498bd88b4208488bf9488d542430f20f1144243089442438e8450500004885c0c744245800000000488d1533abaf014c8bc3480f45d04c8d4c2468488d442458488bcf48894424200f1002488d5424300f29442430e818000000"
+    },
+    {
+      "role": "terrain_resource_copy",
+      "offset": 10,
+      "hex": "f20f1002498bd88b4208488bf9488d542430f20f1144243089442438e8750011004885c0c744245800000000488d1563a6c0014c8bc3480f45d04c8d4c2468488d442458488bcf48894424200f1002488d5424300f29442430e818000000"
+    },
+    {
+      "role": "resource_target",
+      "offset": 45,
+      "hex": "488b9388000000488bca486302482bc8b80e000000663b0173370fb7490e488d040a6685c9742a8b104803d08b4424488d0c85000000004883c1044803d18b024803c24883c4305bc3"
+    },
+    {
+      "role": "resource_valid",
+      "offset": 0,
+      "hex": "48833900740f8379080d7409837908007403b001c332c0c3"
+    },
+    {
+      "role": "resource_key_find",
+      "offset": 4,
+      "hex": "4c8bca4c8bd1488b12e85ea0f7ff8bd041234208448bd883e2fc4c8d0440498b024903c039107509488b48084939097447"
+    },
+    {
+      "role": "resource_key_find_part_1",
+      "offset": 23,
+      "hex": "4d8b118338ff0f84a2d5c400438d040323c3448bd8488d04474903c3391075154c3b5008750f"
+    },
+    {
+      "role": "resource_resolve",
+      "offset": 24,
+      "hex": "48837968004d8bf1498bf0488bfa488bd90f84a4000000488bca"
+    },
+    {
+      "role": "resource_resolve",
+      "offset": 112,
+      "hex": "48634010418906488d1440488b4368488b08488b8424b0000000448b44d110448900418bd0488b430848c1e205488b48288b440a18488bce8906e811010000"
+    },
+    {
+      "role": "resource_object",
+      "offset": 10,
+      "hex": "488b3d7f0dde01488bd98b01894424404885ff7439"
+    },
+    {
+      "role": "resource_object",
+      "offset": 68,
+      "hex": "488b41104885c0740b488b5c24484883c4305fc38b0be8310a2f00"
+    }
+  ],
+  "directCalls": [
+    {
+      "role": "resource_resolve",
+      "offset": 50,
+      "targetRole": "resource_valid"
+    },
+    {
+      "role": "resource_resolve",
+      "offset": 75,
+      "targetRole": "resource_find"
+    },
+    {
+      "role": "terrain_resource_resolve",
+      "offset": 46,
+      "targetRole": "resource_valid"
+    },
+    {
+      "role": "terrain_resource_resolve_part_1",
+      "offset": 12,
+      "targetRole": "resource_find"
+    },
+    {
+      "role": "resource_copy",
+      "offset": 38,
+      "targetRole": "resource_target"
+    },
+    {
+      "role": "resource_copy",
+      "offset": 99,
+      "targetRole": "resource_resolve"
+    },
+    {
+      "role": "terrain_resource_copy",
+      "offset": 38,
+      "targetRole": "resource_target"
+    },
+    {
+      "role": "terrain_resource_copy",
+      "offset": 99,
+      "targetRole": "terrain_resource_resolve"
+    },
+    {
+      "role": "resource_find",
+      "offset": 30,
+      "targetRole": "resource_key_find"
+    }
+  ]
 }

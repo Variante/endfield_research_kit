@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import unresolved_usage_index
@@ -47,7 +48,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or route.get("family") != "ActionBase"
-        or route.get("tag") != 0x3A2
+        or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.ResetFollowCamera"
         or route.get("serializedMemberCount") != 8
         or route.get("inheritedMemberCount") != 8
@@ -114,7 +115,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     load_rva = dispatch["typeLoadRva"]
     load = image.pe.bytes_at_va(base+load_rva, 7)
     if (
-        not branch["startRva"] <= load_rva < branch["endRva"]-7
+        not branch["startRva"] <= load_rva <= branch["endRva"]-7
         or load[:3] != b"\x48\x8b\x15"
         or load.hex().upper() != dispatch["typeLoadHex"].upper()
     ):
@@ -201,6 +202,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
 ) -> int:
+    prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
     if (
@@ -224,7 +226,7 @@ def _validate_sources(
         if (
             not 0 <= start < end <= len(data)
             or not 0 <= id_offset <= len(data)-8
-            or data[start:start+4] != bytes((0xFA, 0xA2, 0x03, 8))
+            or data[start:start+len(prefix)] != prefix
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
             or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
@@ -233,12 +235,7 @@ def _validate_sources(
             or not Path(path).stem.isdecimal() or int(Path(path).stem) != script_id
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}")
-        cursor = _Cursor(data, start)
-        if (cursor.byte("resetFollowCamera.wideMarker") != 0xFA
-                or cursor.byte("resetFollowCamera.tagLo") != 0xA2
-                or cursor.byte("resetFollowCamera.tagHi") != 0x03
-                or cursor.byte("resetFollowCamera.memberCount") != 8):
-            raise ValueError(f"{LABEL}.source:union-header={path}")
+        cursor = _Cursor(data, start + len(prefix))
         for name, kind in contract["route"]["fields"]:
             cursor.value(kind, "resetFollowCamera."+name)
         if cursor.offset != end:

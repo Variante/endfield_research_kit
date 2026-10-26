@@ -20,11 +20,11 @@ from scripts.game_data import wwise_source_native as source_native
 from scripts.game_data import wwise_owner_carrier_native as carrier_native
 from scripts.game_data.wwise_source_native import SourceContractError, _collect_source_image
 from scripts.game_data.wwise_source_queue_native import (
-    _digest, _hex, _rva, validate_native_group_windows, validate_opened_managed_inputs,
+    _digest, _hex, _rva, _selection_register, validate_native_group_windows, validate_opened_managed_inputs,
 )
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_decoder_provider_native.json"
-SCHEMA = "endfield.wwise-decoder-provider-native.v1"
+SCHEMA = "endfield.wwise-decoder-provider-native.v2"
 GROUP_NAMES = {"anonymousDecoderProviderPreparation", "anonymousDecoderPrepareCaller", "anonymousDecoderRetryCaller"}
 LAYOUT_FIELDS = {
     "decoder": {"primaryOwnerPointer", "providerOutputPointer"},
@@ -49,6 +49,36 @@ def _rows(value: Any, subject: str, maximum: int) -> list[dict[str, Any]]:
 def load_decoder_provider_contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     contract, _ = read_reviewed_contract(path, schema=SCHEMA, status="reviewedCurrentBuild", label="wwise-decoder-provider")
     return contract
+
+
+def validate_virtual_dispatch(contract: dict, witnesses: dict) -> None:
+    """Bind the loaded singleton table and direct memory-slot calls."""
+    bindings = _rows(contract.get('virtualDispatchBindings'), 'virtualDispatchBindings', 2)
+    seen = set()
+    for binding in bindings:
+        field = binding.get('slotField')
+        if field not in ('ordinarySlot', 'alternateSlot') or field in seen:
+            _fail('providerVirtualDispatchCoverage', 'virtualDispatchBindings', 'two distinct slot bindings', binding)
+        seen.add(field)
+        register = _selection_register(binding.get('tableRegister'))
+        # MOV table, [RCX]; CALL qword ptr [table+disp8].
+        load = bytes((0x48 | (4 if register >= 8 else 0), 0x8b, ((register & 7) << 3) | 1))
+        slot = contract['layouts']['providerVtable'][field]
+        if type(slot) is not int or not 1 <= slot <= 127:
+            _fail('providerVirtualDispatchSlot', field, 'positive disp8 slot', slot)
+        call = (b'\x41' if register >= 8 else b'') + bytes((0xff, 0x50 | (register & 7)))
+        if register & 7 == 4:
+            call += b'\x24'
+        call += bytes((slot,))
+        for name, expected in ((binding.get('tableRole'), load), (binding.get('callRole'), call)):
+            row = witnesses.get(name, {})
+            if bytes.fromhex(row.get('instructionHex', '')) != expected:
+                _fail('providerVirtualDispatchInstruction', str(name), expected.hex(), row)
+        table_row, call_row = witnesses[binding['tableRole']], witnesses[binding['callRole']]
+        if int(table_row['rva'], 16) + len(load) > int(call_row['rva'], 16):
+            _fail('providerVirtualDispatchOrder', field, 'table load precedes call', binding)
+    if seen != {'ordinarySlot', 'alternateSlot'}:
+        _fail('providerVirtualDispatchCoverage', 'virtualDispatchBindings', 'ordinary and alternate slots', sorted(seen))
 
 
 def validate_provider_declarations(contract: dict[str, Any]) -> None:
@@ -150,6 +180,7 @@ def validate_provider_declarations(contract: dict[str, Any]) -> None:
         globals_seen.add(target)
     if len(globals_seen) != 1:
         _fail("providerSingletonContinuity", "globalBindings", "same singleton slot", sorted(globals_seen))
+    validate_virtual_dispatch(contract, witnesses)
     preparation = next(g for g in groups if g["key"] == "anonymousDecoderProviderPreparation")
     callers = contract["callerGroups"]
     if not isinstance(callers, list) or len(callers) != 2 or set(callers) != GROUP_NAMES - {preparation["key"]}:

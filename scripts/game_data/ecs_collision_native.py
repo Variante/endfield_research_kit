@@ -14,7 +14,7 @@ from scripts.game_data.il2cpp.body_claims import evaluate
 from scripts.game_data.mission_trace_capture_prepare import SelectedMethods
 
 CONTRACT = CONTRACTS_DIR / 'ecs_collision_native.json'
-SCHEMA = 'endfield.ecs-collision-native.v2'
+SCHEMA = 'endfield.ecs-collision-native.v3'
 OWNERSHIP_CONTRACT = CONTRACTS_DIR / 'ecs_collision_ownership.json'
 
 
@@ -59,6 +59,67 @@ def validate_player(pe, contract):
     return contract
 
 
+def validate_sources(pe, contract):
+    """Prove the collision callbacks without borrowing the wider row decoder.
+
+    These are constructor-selected defaults, not a runtime registration receipt.
+    The independently pinned descriptor, assignment and publication bodies own
+    the slot width and copy programme; no field-2 schema is implied here.
+    """
+    windows = {row['role']: row for row in contract['codeWindows']}
+    selected = contract['selectedDefaultSlot3']
+    require([r['selector'] for r in selected] == [2, 5, 6, 7, 9], 'source selectors')
+    registration = windows['source_registration']
+
+    def read(at, size):
+        require(registration['rva'] <= at <= registration['rva']+registration['bytes']-size,
+                'source programme outside registration span')
+        return pe.bytes_at_va(pe.image_base+at, size)
+
+    def call(at, role):
+        raw = read(at, 5)
+        require(raw[0] == 0xe8 and at+5+struct.unpack_from('<i', raw, 1)[0] == windows[role]['rva'],
+                'source helper target:' + role)
+
+    for row in selected:
+        selector, stack = row['selector'], row['descriptorStack']
+        require(0 <= stack <= 32767, 'source descriptor stack bound')
+        require(read(row['descriptorRva'], 2) == bytes((0xb2, selector)), 'source descriptor selector')
+        require(read(row['descriptorLeaRva'], 7) == bytes.fromhex('488d8d')+struct.pack('<i', stack),
+                'source descriptor base')
+        call(row['descriptorCallRva'], 'source_descriptor')
+        at = row['functionLeaRva']
+        raw = read(at, 7)
+        require(raw[:3] == bytes.fromhex('488d05') and
+                at+7+struct.unpack_from('<i', raw, 3)[0] == windows[row['producerRole']]['rva'],
+                'source callback address')
+        require(read(at+7, 10) == bytes.fromhex('48895c24504889442458'), 'source inline callback value')
+        if selector == 9:
+            require(read(at+17, 23) == bytes.fromhex('4c8d442450488d442450b203488d8d')+
+                    struct.pack('<i', stack)+bytes.fromhex('48894588'), 'indexed source slot three')
+            call(at+40, 'source_indexed_assignment')
+        else:
+            require(read(at+17, 21) == bytes.fromhex('488d542450488d442450488d8d')+
+                    struct.pack('<i', stack+8+3*64)+bytes.fromhex('48894588'), 'source slot three')
+            call(at+38, 'source_assignment')
+        at = row['publicationRva']
+        require(read(at, 13) == bytes.fromhex('488d4f08')+bytes((0xb2, selector))+
+                bytes.fromhex('4c8d85')+struct.pack('<i', stack), 'source publication arguments')
+        call(at+13, 'source_publication')
+        literal = row['keyLiteral']
+        require(pe.bytes_at_va(pe.image_base+literal['rva'], 12) == struct.pack('<3I', *row['key']),
+                'source counted-prefix key')
+        producer = windows[row['producerRole']]
+        for address, size, prefix, target in ((literal['loadRva'], 8, 'f20f1005', literal['rva']),
+                                             (literal['tailLoadRva'], 6, '8b05', literal['rva']+8)):
+            require(producer['rva'] <= address <= producer['rva']+producer['bytes']-size,
+                    'source key read outside callback')
+            raw = pe.bytes_at_va(pe.image_base+address, size)
+            require(raw.startswith(bytes.fromhex(prefix)) and
+                    address+size+struct.unpack_from('<i', raw, size-4)[0] == target, 'source key RIP read')
+    return selected
+
+
 def load(*, gameassembly: Path, metadata: Path, unityplayer: Path, contract_path=CONTRACT):
     audit = dict(validator='ecs_collision_native', status='failed', diagnostics=[])
     try:
@@ -72,7 +133,9 @@ def load(*, gameassembly: Path, metadata: Path, unityplayer: Path, contract_path
         if not unityplayer.is_file() or sha256_file(unityplayer).lower() != inputs['unityPlayerSha256'].lower():
             audit.update(status='missing' if not unityplayer.is_file() else 'mismatched', detail='UnityPlayer missing/hash differs')
             return None, audit
-        validate_player(load_native_mapper(NATIVE_MAPPER_PATH).PeImage(unityplayer), contract)
+        player = load_native_mapper(NATIVE_MAPPER_PATH).PeImage(unityplayer)
+        validate_player(player, contract)
+        validate_sources(player, contract)
         selected = SelectedMethods(open_native_image(gameassembly, metadata))
         for name,expected in contract['enums'].items():
             require(selected.enum_members(name) == expected, 'parameter enum defaults:' + name)

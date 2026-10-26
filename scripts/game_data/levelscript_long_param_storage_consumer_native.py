@@ -20,7 +20,7 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.native_image import METADATA_HELPER_PATH, NATIVE_MAPPER_PATH, open_native_image
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
-from scripts.game_data.memorypack import utf8_source_helper
+from scripts.game_data.memorypack import pooled_source_helper
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _guard_output_path, _parser_source_snapshots
 from scripts.game_data.memorypack.scalar_param_native import need
 from scripts.repo_paths import REPO_ROOT
@@ -30,7 +30,7 @@ CONTRACT_PATH = CONTRACTS_DIR / 'levelscript_long_param_storage_consumer_native_
 DEPENDENCIES = {
     'storage': storage.CONTRACT_PATH,
     'consumer': consumer.CONTRACT_PATH,
-    'utf8Source': utf8_source_helper.CONTRACT_PATH,
+    'pooledStringSource': pooled_source_helper.CONTRACT_PATH,
 }
 IDENTITY_CONDITIONS = [
     'same selected output-slot wrapper throughout field population, GetValue and consumer use',
@@ -127,7 +127,7 @@ def evaluate(image, declaration, stored, result):
             'conditions': IDENTITY_CONDITIONS + [
                 'selected default stored wrapper and buffered normal sources',
                 'ordinary closed ABI and compatible selected MethodInfo/context',
-                'selected initialized and ready branches, normal allocator/barrier/UTF8 callees',
+                'selected initialized and ready branches, normal allocator/barrier/StringPool callees',
                 'all conditions retained by the independent storage and consumer proofs'],
             'positiveEnclosingOwnerAdmissionProved': False,
             'runtimeReceiverOrProviderSelectionProved': False}

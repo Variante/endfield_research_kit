@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from scripts.game_data.memorypack.core import memorypack_union_header
 
 from .action_map import ActionMapCodecError, _Cursor
 
@@ -30,14 +31,15 @@ def decode_on_spawner_group_begin_header(
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") != _TYPE
-        or route.get("tag") != 0x0097
+        or type(route.get("tag")) is not int or not 0 <= route["tag"] <= 0xFFFF
         or route.get("serializedMemberCount") != 18
         or route.get("fields") != _FIELDS
     ):
         raise ActionMapCodecError("onSpawnerGroupBegin:invalid-route")
-    if offset < 0 or data[offset:offset + 2] != b"\x97\x12":
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onSpawnerGroupBegin:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in _FIELDS:
@@ -46,7 +48,7 @@ def decode_on_spawner_group_begin_header(
         spans[name] = [start, cursor.offset]
     return {
         "sourceOffset": offset, "endOffset": cursor.offset,
-        "unionTag": 0x0097, "memberCount": 18,
+        "unionTag": route["tag"], "memberCount": 18,
         "wrapperName": route["wrapperName"],
         "fields": values, "fieldSpans": spans,
     }, cursor.offset

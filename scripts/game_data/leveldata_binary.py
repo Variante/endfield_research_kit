@@ -14,8 +14,8 @@ Member lanes and their owners:
 - null/empty collections and the current empty ``LevelFactoryPredefineData``
   (one list) and ``LevelFunctionAreaData`` (four lists) wrappers close
   directly; member 22 ``Dictionary<ulong, LevelScriptBriefData>`` uses
-  ``levelscript_brief`` with its eight named value fields.
-- ``functionArea``: exact 13-member base rows (decoded here) and two-vector
+  ``levelscript_brief`` with its nine named value fields.
+- ``functionArea``: exact 15-member base rows (`codecs.leveldata.function_area`) and two-vector
   ``ThreeDimRange`` records with nullable elements; its condition and
   specific-data lists are ``codecs.leveldata.function_area``. The generated
   base row's ``posList`` is ``List<Vector2>``: consuming three floats per
@@ -38,25 +38,10 @@ Member lanes and their owners:
   ``npcAttractPointData``/``worldWayPointData``: ``npc``;
   ``npcPatrol``/``patrols``: ``patrol``; ``enemyPatrol``: ``enemy_patrol``;
   ``charPatrol``: ``char_patrol``.
-- Shared with LevelScript: ``enemies`` stores the exact 30-member
-  ``LevelEnemyData`` values of LevelScript's keyed enemy dictionary directly
-  in a list (``codecs.levelscript.enemies``); ``interactives`` is the exact
-  25-member ``LevelInteractiveData`` codec of LevelScript's keyed dictionary
-  (``codecs.levelscript.interactives``); ``interactiveLockData`` is
-  LevelScript's two-field ``InteractiveLockData`` value codec without keys
-  (``codecs.levelscript.interactive_locks``). One field order serves both
-  families; no second layout is kept here.
-
-Outer-frame fallbacks. When an unsupported ``interactives`` body blocks the
-sequential reader but the independently proved member-21 empty tail bounds
-the list, ``interactive_layout`` must find exactly one record partition; each
-record then gets an exact opaque range and the owner closes as
-``named_exact_frame`` rather than a full nested schema. Files that stop
-earlier keep an independent terminal frame: ``frame_leveldata_empty_tail``
-names the recurring long tail as members 21-43 (``levelIdNum`` through
-``worldWayPointData``) and ``frame_leveldata_terminal_suffix`` the shorter
-form as members 36-43 (``safeZone`` onward). Both require one unique
-candidate closing at physical EOF; their preceding bytes stay opaque.
+- Shared LevelScript enemy, interactive and lock children remain bounded until
+  their current pooled codecs and source composition are proved. A tail match
+  cannot close their unknown prefix. Independent terminal frames keep every
+  earlier byte opaque and are always partial.
 
 Evidence tier: exact stored layout under the generated wrapper order. None
 of these readers proves runtime spawning, patrol traversal, condition
@@ -73,12 +58,14 @@ from scripts.game_data.codecs.leveldata.memorypack import (
     read_count,
     read_f32,
     read_i32,
-    read_string,
+    read_pooled_string,
     read_u64,
 )
 from scripts.game_data.codecs.leveldata.levelscript_brief import (
     decode_levelscript_brief_dictionary_at,
 )
+from scripts.game_data.serialization_roots_native import check_root_native_inputs
+from scripts.game_data.string_pool import StringPool
 from scripts.game_data.codecs.leveldata.spatial import (
     decode_level_camera_pose_list,
     decode_level_environment_volume_list,
@@ -88,7 +75,6 @@ from scripts.game_data.codecs.leveldata.spatial import (
     decode_level_water_volume_list,
     decode_u64_identity_list,
 )
-from scripts.game_data.codecs.leveldata import interactive_layout
 from scripts.game_data.codecs.leveldata.factory import (
     decode_level_doodad_group_list,
     decode_level_factory_mine_list,
@@ -123,24 +109,11 @@ from scripts.game_data.codecs.leveldata.blackbox import (
 )
 from scripts.game_data.codecs.leveldata.function_area import (
     LevelFunctionAreaCodecError,
+    decode_function_area_base_data_list,
     decode_condition_runtime,
     decode_function_area_condition_list,
     decode_function_area_specific_data_list,
 )
-from scripts.game_data.codecs.levelscript.interactives import (
-    LevelInteractiveCodecError,
-    decode_interactive_list,
-)
-from scripts.game_data.codecs.levelscript.enemies import (
-    LevelEnemyCodecError,
-    decode_enemy_list,
-)
-from scripts.game_data.codecs.levelscript.interactive_locks import (
-    InteractiveLockCodecError,
-    decode_interactive_lock_list,
-)
-
-
 class LevelDataTopLevelFramingError(ValueError):
     """Raised when an exact partial ``LevelData`` frame cannot be proved."""
 
@@ -181,143 +154,6 @@ _LEVELDATA_COLLECTION_FIELDS = set(LEVELDATA_FIELDS) - {
 }
 
 
-def _decode_function_area_base_data_list(
-    data: bytes,
-    offset: int,
-) -> dict[str, Any] | None:
-    start = offset
-    decoded = read_count(data, offset, max_count=100_000)
-    if decoded is None:
-        return None
-    count, cursor = decoded
-    if count == -1:
-        return {"startOffset": start, "endOffset": cursor, "count": count, "value": None}
-    rows: list[dict[str, Any]] = []
-    for index in range(count):
-        row_start = cursor
-        if cursor >= len(data):
-            return None
-        if data[cursor] == 0xFF:
-            rows.append({
-                "indexInCollection": index,
-                "startOffset": row_start,
-                "endOffset": row_start + 1,
-                "value": None,
-            })
-            cursor += 1
-            continue
-        if data[cursor] != 13:
-            return None
-        cursor += 1
-
-        buffer_distance_decoded = read_f32(data, cursor)
-        if buffer_distance_decoded is None:
-            return None
-        buffer_distance, cursor = buffer_distance_decoded
-        default_off_decoded = read_bool(data, cursor)
-        if default_off_decoded is None:
-            return None
-        default_off, cursor = default_off_decoded
-
-        vectors: dict[str, list[float]] = {}
-        for vector_name in ("euler",):
-            values: list[float] = []
-            for _ in range(3):
-                value_decoded = read_f32(data, cursor)
-                if value_decoded is None:
-                    return None
-                value, cursor = value_decoded
-                values.append(value)
-            vectors[vector_name] = values
-
-        function_type_decoded = read_i32(data, cursor)
-        if function_type_decoded is None:
-            return None
-        function_type, cursor = function_type_decoded
-        has_condition_decoded = read_bool(data, cursor)
-        if has_condition_decoded is None:
-            return None
-        has_condition, cursor = has_condition_decoded
-        index_decoded = read_i32(data, cursor)
-        if index_decoded is None:
-            return None
-        row_index, cursor = index_decoded
-
-        for vector_name in ("offset",):
-            values = []
-            for _ in range(3):
-                value_decoded = read_f32(data, cursor)
-                if value_decoded is None:
-                    return None
-                value, cursor = value_decoded
-                values.append(value)
-            vectors[vector_name] = values
-
-        pos_count_decoded = read_count(data, cursor, max_count=100_000)
-        if pos_count_decoded is None:
-            return None
-        pos_count, cursor = pos_count_decoded
-        positions: list[list[float]] | None = None if pos_count == -1 else []
-        for _ in range(max(0, pos_count)):
-            position: list[float] = []
-            # Generated ``FunctionAreaBaseData.posList`` is ``List<Vector2>``.
-            for _ in range(2):
-                value_decoded = read_f32(data, cursor)
-                if value_decoded is None:
-                    return None
-                value, cursor = value_decoded
-                position.append(value)
-            assert positions is not None
-            positions.append(position)
-
-        for vector_name in ("postion",):
-            values = []
-            for _ in range(3):
-                value_decoded = read_f32(data, cursor)
-                if value_decoded is None:
-                    return None
-                value, cursor = value_decoded
-                values.append(value)
-            vectors[vector_name] = values
-
-        radius_decoded = read_f32(data, cursor)
-        shape_type_decoded = read_i32(data, radius_decoded[1]) if radius_decoded else None
-        if radius_decoded is None or shape_type_decoded is None:
-            return None
-        radius, _ = radius_decoded
-        shape_type, cursor = shape_type_decoded
-
-        size: list[float] = []
-        for _ in range(3):
-            value_decoded = read_f32(data, cursor)
-            if value_decoded is None:
-                return None
-            value, cursor = value_decoded
-            size.append(value)
-        unique_id_decoded = read_u64(data, cursor)
-        if unique_id_decoded is None:
-            return None
-        unique_id, cursor = unique_id_decoded
-        rows.append({
-            "indexInCollection": index,
-            "startOffset": row_start,
-            "endOffset": cursor,
-            "memberCount": 13,
-            "bufferDistance": buffer_distance,
-            "defaultOff": default_off,
-            "euler": vectors["euler"],
-            "functionType": function_type,
-            "hasCondition": has_condition,
-            "index": row_index,
-            "offset": vectors["offset"],
-            "posList": positions,
-            "postion": vectors["postion"],
-            "radius": radius,
-            "shapeType": shape_type,
-            "size": size,
-            "uniqueId": str(unique_id),
-        })
-    return {"startOffset": start, "endOffset": cursor, "count": count, "rows": rows}
 
 
 def _decode_three_dim_range_list(data: bytes, offset: int) -> dict[str, Any] | None:
@@ -358,7 +194,7 @@ def _decode_three_dim_range_list(data: bytes, offset: int) -> dict[str, Any] | N
     return {"startOffset": start, "endOffset": cursor, "count": count, "rows": rows}
 
 
-def frame_leveldata_airwalls_prefix(data: bytes) -> dict[str, Any]:
+def frame_leveldata_airwalls_prefix(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Decode the exact named ``airWalls`` first member and stop its cursor."""
     if not data or data[0] != 43:
         actual = data[0] if data else None
@@ -369,7 +205,10 @@ def frame_leveldata_airwalls_prefix(data: bytes) -> dict[str, Any]:
     if decoded is None or decoded[0] < 0:
         raise LevelDataTopLevelFramingError("invalid airWalls collection count")
     count, count_end = decoded
-    rows = parse_airwall_groups(data)
+    try:
+        rows = parse_airwall_groups(data, strings=strings)
+    except ValueError as exc:
+        raise LevelDataTopLevelFramingError(f"airWalls: {exc}") from exc
     if len(rows) != count:
         raise LevelDataTopLevelFramingError(
             f"airWalls record count mismatch: declared={count} decoded={len(rows)}"
@@ -400,7 +239,13 @@ def frame_leveldata_airwalls_prefix(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
+def _check_root_source() -> None:
+    gate = check_root_native_inputs()
+    if gate.status != "validated":
+        raise LevelDataTopLevelFramingError(f"leveldataRoot.native:{gate.status}:{gate.detail}")
+
+
+def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Advance the generated 43-field order through every supported shape.
 
     Null and empty collections always close. A nonempty collection closes
@@ -412,12 +257,12 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
     ``LevelFactoryPredefineData`` and ``LevelFunctionAreaData`` wrappers are
     also closed from their generated one- and four-list layouts.
     """
-    airwalls = frame_leveldata_airwalls_prefix(data)
+    _check_root_source()
+    airwalls = frame_leveldata_airwalls_prefix(data, strings=strings)
     cursor = int(airwalls["bytesConsumed"])
     fields: dict[str, Any] = {"airWalls": airwalls["airWalls"]}
     closed_fields = ["airWalls"]
     open_field: dict[str, Any] | None = None
-    has_opaque_nested_records = False
 
     def read_simple_collection(field: str) -> bool:
         nonlocal cursor, open_field
@@ -451,16 +296,25 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
         # Assigned only by exact-range structural closures whose nested record
         # fields are intentionally not decoded.
         if field == "levelScriptBriefDataDict":
-            decoded = decode_levelscript_brief_dictionary_at(data, cursor)
+            diagnostics = []
+            decoded = decode_levelscript_brief_dictionary_at(data, cursor, diagnostics=diagnostics)
             if decoded is None:
-                raise LevelDataTopLevelFramingError(
-                    f"{field}: exact dictionary codec rejected payload at {cursor}"
-                )
+                open_field = {"name":field, "startOffset":cursor,
+                    "status":"current_child_codec_refused", "diagnostics":diagnostics,
+                    "diagnostic":f"{field}: current dictionary codec rejected payload at {cursor}"}
+                break
             cursor = int(decoded["endOffset"])
             fields[field] = decoded
             closed_fields.append(field)
             continue
         if field in _LEVELDATA_COLLECTION_FIELDS:
+            if field in {"enemies", "interactives", "interactiveLockData"}:
+                count = read_count(data, cursor)
+                if count is not None and count[0] > 0:
+                    open_field = {"name":field, "startOffset":cursor, "count":count[0],
+                        "status":"current_child_codec_refused",
+                        "diagnostic":"current pooled child source/codec migration required"}
+                    break
             if field == "aiTransData":
                 decoded = decode_level_transform_list(data, cursor)
                 if decoded is not None:
@@ -473,17 +327,6 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
                 if decoded is not None:
                     cursor = int(decoded["endOffset"])
                     fields[field] = decoded
-                    closed_fields.append(field)
-                    continue
-            if field == "enemies":
-                try:
-                    decoded_enemies, enemy_end = decode_enemy_list(data, cursor)
-                except LevelEnemyCodecError:
-                    decoded_enemies = None
-                    enemy_end = cursor
-                if decoded_enemies is not None:
-                    cursor = enemy_end
-                    fields[field] = decoded_enemies
                     closed_fields.append(field)
                     continue
             if field == "enemyGroup":
@@ -650,69 +493,6 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
                     fields[field] = decoded
                     closed_fields.append(field)
                     continue
-            if field == "interactives":
-                try:
-                    decoded_interactives, interactive_end = (
-                        decode_interactive_list(data, cursor)
-                    )
-                except LevelInteractiveCodecError:
-                    decoded_interactives = None
-                    interactive_end = cursor
-                if decoded_interactives is not None:
-                    cursor = interactive_end
-                    fields[field] = decoded_interactives
-                    closed_fields.append(field)
-                    continue
-                count_decoded = read_count(data, cursor, max_count=100_000)
-                if count_decoded is None:
-                    raise LevelDataTopLevelFramingError(
-                        "interactives: invalid collection count"
-                    )
-                interactive_count, count_end = count_decoded
-                if interactive_count > 0:
-                    try:
-                        terminal = frame_leveldata_empty_tail(data)
-                    except LevelDataTopLevelFramingError:
-                        terminal = None
-                    if terminal is not None:
-                        member21_offset = int(
-                            terminal["ranges"]["emptyTail"]["startOffset"]
-                        )
-                        matches = [
-                            frame
-                            for frame in interactive_layout.level_interactive_data_list_frames(
-                                data,
-                                final_record_end_offset=member21_offset,
-                            )
-                            if frame.get("listCountOffset") == cursor
-                            and frame.get("listCount") == interactive_count
-                            and len(frame.get("records") or []) == interactive_count
-                        ]
-                        if len(matches) == 1:
-                            fields[field] = {
-                                "startOffset": cursor,
-                                "endOffset": member21_offset,
-                                "count": interactive_count,
-                                "records": matches[0]["records"],
-                                "recordSchemaStatus": "opaque_exact_ranges",
-                            }
-                            cursor = member21_offset
-                            closed_fields.append(field)
-                            has_opaque_nested_records = True
-                            continue
-            if field == "interactiveLockData":
-                try:
-                    decoded_locks, lock_end = decode_interactive_lock_list(
-                        data, cursor
-                    )
-                except InteractiveLockCodecError:
-                    decoded_locks = None
-                    lock_end = cursor
-                if decoded_locks is not None:
-                    cursor = lock_end
-                    fields[field] = decoded_locks
-                    closed_fields.append(field)
-                    continue
             if not read_simple_collection(field):
                 break
             continue
@@ -844,7 +624,8 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
             for member_name in member_names:
                 member_start = cursor
                 if field == "functionArea" and member_name == "baseData":
-                    base_data = _decode_function_area_base_data_list(data, cursor)
+                    base_diagnostics = []
+                    base_data = decode_function_area_base_data_list(data, cursor, diagnostics=base_diagnostics)
                     if base_data is None:
                         count_decoded = read_count(data, cursor, max_count=100_000)
                         if count_decoded is None:
@@ -863,6 +644,7 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
                             "countHeaderEndOffset": cursor,
                             "count": count,
                             "status": "unsupported_base_data_record_shape",
+                            "diagnostics": base_diagnostics,
                         }
                         complete = False
                         break
@@ -931,6 +713,7 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
                                 "countHeaderEndOffset": cursor,
                                 "count": base_count,
                                 "status": "unsupported_base_data_record_shape",
+                            "diagnostics": base_diagnostics,
                             }
                             complete = False
                             break
@@ -971,6 +754,7 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
                             "countHeaderEndOffset": cursor,
                             "count": base_count,
                             "status": "unsupported_base_data_record_shape",
+                            "diagnostics": base_diagnostics,
                         }
                         complete = False
                         break
@@ -1046,9 +830,9 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
 
         if field == "sceneId":
             start = cursor
-            decoded = read_string(data, cursor, max_length=1024)
+            decoded = read_pooled_string(data, cursor, strings=strings, max_length=1024)
             if decoded is None:
-                raise LevelDataTopLevelFramingError("sceneId: invalid UTF-8 string")
+                raise LevelDataTopLevelFramingError("sceneId: invalid pooled string")
             value, cursor = decoded
             fields[field] = {"startOffset": start, "endOffset": cursor, "value": value}
             closed_fields.append(field)
@@ -1062,25 +846,14 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
             f"LevelData trailing bytes: cursor={cursor} length={len(data)}"
         )
     result: dict[str, Any] = {
-        "status": (
-            "exact_named_outer_frame"
-            if exact and has_opaque_nested_records
-            else "exact_named_schema" if exact
-            else "exact_named_prefix_with_opaque_remainder"
-        ),
-        "schemaStatus": (
-            "named_exact_frame"
-            if exact and has_opaque_nested_records
-            else "named_exact" if exact
-            else "partial"
-        ),
+        "status": "exact_named_schema" if exact else "exact_named_prefix_with_opaque_remainder",
+        "schemaStatus": "named_exact" if exact else "partial",
         "serializedMemberCount": 43,
         "bytesConsumed": cursor,
         "fieldOrder": list(LEVELDATA_FIELDS),
         "closedFields": closed_fields,
         "fields": fields,
         "openField": open_field,
-        "hasOpaqueNestedRecords": has_opaque_nested_records,
         "opaqueRemainder": None if exact else {
             "startOffset": cursor,
             "endOffset": len(data),
@@ -1097,14 +870,14 @@ def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
     if not exact:
         for terminal_reader in (frame_leveldata_empty_tail, frame_leveldata_terminal_suffix):
             try:
-                result["independentTerminalFrame"] = terminal_reader(data)
+                result["independentTerminalFrame"] = terminal_reader(data, strings=strings)
                 break
             except LevelDataTopLevelFramingError:
                 continue
     return result
 
 
-def frame_leveldata_terminal_suffix(data: bytes) -> dict[str, Any]:
+def frame_leveldata_terminal_suffix(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Frame the named final eight members of a 43-member LevelData.
 
     This is intentionally weaker than :func:`frame_leveldata_empty_tail`: it
@@ -1113,6 +886,7 @@ def frame_leveldata_terminal_suffix(data: bytes) -> dict[str, Any]:
     marker/value, string, two empty collections, null union, and three final
     empty collections must close at physical EOF, with exactly one candidate.
     """
+    _check_root_source()
     if not data:
         raise LevelDataTopLevelFramingError("truncated LevelData: empty payload")
     if data[0] != 43:
@@ -1129,7 +903,10 @@ def frame_leveldata_terminal_suffix(data: bytes) -> dict[str, Any]:
         if data[start : start + 5] != b"\x01\x00\x00\x00\x00":
             continue
         cursor = start + 5
-        string_decoded = read_string(data, cursor, max_length=256)
+        try:
+            string_decoded = read_pooled_string(data, cursor, strings=strings, max_length=256)
+        except ValueError:
+            continue
         if string_decoded is None:
             continue
         string_value, cursor = string_decoded
@@ -1203,17 +980,18 @@ def frame_leveldata_terminal_suffix(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_leveldata_empty_tail(data: bytes) -> dict[str, Any]:
+def frame_leveldata_empty_tail(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Frame named members 21 through 43 in the known empty-tail shape.
 
     The current corpus contains a recurring tail made of a non-negative i32,
-    fourteen empty collections, a one-member object envelope, a UTF-8 string,
+    fourteen empty collections, a one-member object envelope, a pooled string index,
     two empty collections, a null union tag, and three empty collections.
     Generated wrapper order assigns the scalar to ``levelIdNum``, the next
     fourteen collections through ``riftVolumes``, and the common final suffix
     to ``safeZone`` through ``worldWayPointData``. The preceding bytes remain
     one explicit opaque range.
     """
+    _check_root_source()
     if not data:
         raise LevelDataTopLevelFramingError("truncated LevelData: empty payload")
     if data[0] != 43:
@@ -1246,7 +1024,10 @@ def frame_leveldata_empty_tail(data: bytes) -> dict[str, Any]:
             continue
         object_offset = cursor
         cursor += 5
-        string_decoded = read_string(data, cursor, max_length=256)
+        try:
+            string_decoded = read_pooled_string(data, cursor, strings=strings, max_length=256)
+        except ValueError:
+            continue
         if string_decoded is None:
             continue
         string_value, cursor = string_decoded

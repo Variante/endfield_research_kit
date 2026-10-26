@@ -24,6 +24,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
@@ -70,7 +71,7 @@ def _contract(path: Path) -> dict[str, Any]:
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
         or len(routes) != 1 or type(routes[0].get("tag")) is not int
         or not 0 <= routes[0]["tag"] < 0xFA
-        or routes[0].get("tag") != 0x00A1
+        or (type(routes[0].get("tag")) is not int or not 0 <= routes[0].get("tag") < 0x10000)
         or routes[0].get("typeName") != "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie"
         or not all(route.get("sourceReceipts") for route in routes)
     ):
@@ -346,7 +347,7 @@ def _validate_sources(
                 ledger[row["exportRelativePath"]] = row
     count = 0
     for route in contract["routes"]:
-        prefix = bytes((route["tag"], route["serializedMemberCount"]))
+        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             actual_digest = hashlib.sha256(data).hexdigest().upper()
@@ -371,9 +372,7 @@ def _validate_sources(
                     f"{LABEL}.source:span-sha256={path}@{start}:{end}:"
                     f"expected={span_digest},actual={actual_span_digest}"
                 )
-            cursor = _Cursor(data, start)
-            if cursor.byte("onSpecificEntityDie.tag") != route["tag"] or cursor.byte("onSpecificEntityDie.count") != route["serializedMemberCount"]:
-                raise ValueError(f"{LABEL}.source:union-header={path}@{start}")
+            cursor = _Cursor(data, start + len(prefix))
             for name, kind in route["fields"]:
                 try:
                     cursor.value(kind, "onSpecificEntityDie." + name)

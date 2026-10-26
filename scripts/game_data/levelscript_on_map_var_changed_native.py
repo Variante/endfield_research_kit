@@ -27,11 +27,11 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
@@ -68,7 +68,7 @@ def _contract(path: Path) -> dict[str, Any]:
         contract.get("schema") != SCHEMA or contract.get("status") != "exact-current-build"
         or set(contract.get("nativeInputs") or {})
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or len(routes) != 1 or routes[0].get("tag") != 0x00DC
+        or len(routes) != 1 or (type(routes[0].get("tag")) is not int or not 0 <= routes[0].get("tag") < 0x10000)
         or routes[0].get("typeName") != "Beyond.Gameplay.OnMapVarChanged"
         or not all(route.get("sourceReceipts") for route in routes)
     ):
@@ -325,7 +325,7 @@ def _validate_sources(
     )
     count = 0
     for route in contract["routes"]:
-        prefix = bytes((route["tag"], route["serializedMemberCount"]))
+        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             if (
@@ -344,7 +344,6 @@ def _validate_sources(
     return count
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_on_map_var_changed_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,

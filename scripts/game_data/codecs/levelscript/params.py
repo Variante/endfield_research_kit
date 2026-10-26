@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import struct
 from typing import Any
+from scripts.game_data.string_pool import resolve_string_pool_index
 
 
 DEFAULT_PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
@@ -48,6 +49,15 @@ def decode_param_tail(
     else:
         return None
     return {"idRef": id_ref, "paramSource": param_source, "path": path}, cursor
+
+
+def decode_pooled_param_tail(payload: bytes, cursor: int, *, strings: Any = None) -> tuple[dict[str, Any], int] | None:
+    """Read a separately native-proved pool-present Param tail, without inline fallback."""
+    if type(cursor) is not int or cursor < 0 or cursor+12 > len(payload):return None
+    id_ref,source,index=struct.unpack_from('<iii',payload,cursor)
+    if id_ref < -1 or source > 0x10000 or source < -1 or index < -2 or (source==-1 and (id_ref>0x10000 or index not in (-2,-1))):return None
+    path=resolve_string_pool_index(index,strings,'path')
+    return {'idRef':id_ref,'paramSource':source,'path':path},cursor+12
 
 
 def decode_string_param(

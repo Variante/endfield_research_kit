@@ -101,8 +101,11 @@ class UnwindChainIndex:
             _require(record.frame_byte == parent_record.frame_byte,
                      'frame-byte-match', (row, record.frame_byte, parent_record.frame_byte))
             self.parents[begin] = parent_begin
-        for begin in self.entries:
-            self.resolve(begin)
+        self.families = {}
+        for begin,triple in self.entries.items():
+            self.families.setdefault(self.resolve(begin),[]).append(triple)
+        self.versions = dict(sorted(Counter(self.record(row[2]).version for row in self.entries.values()).items()))
+        self.table_sha256 = hashlib.sha256(self.raw).hexdigest().upper()
 
     def _read(self, rva: int, size: int) -> bytes:
         _require(0 < rva and 0 < size and rva+size <= self.image_size,
@@ -157,9 +160,8 @@ class UnwindChainIndex:
     def family(self, entry_rva: int) -> dict:
         _require(self.resolve(entry_rva) == entry_rva, 'selected-entry-not-primary', entry_rva)
         selected = []
-        for begin, triple in self.entries.items():
-            if self.owners[begin] != entry_rva:
-                continue
+        for triple in self.families[entry_rva]:
+            begin = triple[0]
             record = self.record(triple[2])
             chain = []
             cursor = begin
@@ -174,11 +176,10 @@ class UnwindChainIndex:
                 'codeBytes': triple[1]-triple[0], 'unwindRawHex': record.raw.hex().upper(),
                 'unwindVersion': record.version, 'unwindFlags': record.flags,
                 'frameByte': record.frame_byte, 'parentChain': chain})
-        versions = Counter(self.record(row[2]).version for row in self.entries.values())
         return {'schema': 'endfield.amd64-unwind-chain-family.v1',
             'selectedPrimaryRva': entry_rva, 'tableRva': self.table_rva,
-            'tableBytes': len(self.raw), 'tableSha256': hashlib.sha256(self.raw).hexdigest().upper(),
-            'tableRowsChecked': len(self.entries), 'unwindVersionRows': dict(sorted(versions.items())),
+            'tableBytes': len(self.raw), 'tableSha256': self.table_sha256,
+            'tableRowsChecked': len(self.entries), 'unwindVersionRows': dict(self.versions),
             'completeParentTriplesChecked': True, 'allParentChainsTerminated': True,
             'chainFrameBytesMatched': True, 'ranges': selected,
             'unwindOperationsOrFixedAllocationSemanticsProved': False,

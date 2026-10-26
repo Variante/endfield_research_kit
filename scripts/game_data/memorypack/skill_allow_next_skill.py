@@ -12,7 +12,6 @@ allowed IDs, not proof that a player could or did move between skills.
 """
 from __future__ import annotations
 
-from functools import lru_cache
 from typing import Any
 
 from scripts.game_data.memorypack.buff_actions import Reader
@@ -32,7 +31,6 @@ MEMBERS = (
 )
 
 
-@lru_cache(maxsize=1)
 def _selected_plan() -> dict[str, Any]:
     routes, resolver, audit = resolve_routes()
     route = routes.get(TAG, {})

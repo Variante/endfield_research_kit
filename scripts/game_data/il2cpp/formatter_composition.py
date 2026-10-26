@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import struct
 from typing import Any
-from scripts.game_data.il2cpp.context import method_spec_record, select_rgctx_range
+from scripts.game_data.il2cpp.context import method_spec_record
+from scripts.game_data.il2cpp.context import unresolved_usage_index
 from scripts.game_data.il2cpp.native_image import NativeImage
 from scripts.game_data.il2cpp.protocol import runtime_type_name
+from scripts.game_data.il2cpp.rgctx_symbols import ContextSymbols, validate_claims
 
 
 def _type_pointer(image: NativeImage, index: int, label: str) -> int:
@@ -121,25 +123,43 @@ def validate_registered_formatter_composition(image: NativeImage, contract: dict
 
 def validate_generic_contexts(image: NativeImage, rows: list[dict[str, Any]], *, label: str) -> None:
     """Authenticate complete symbolic RGCTX ownership, ranges and slots."""
+    symbols = ContextSymbols(image)
     for row in rows:
-        owner = image.metadata.methods[row["definition"]] if row["isMethod"] else image.metadata.types[row["definition"]]
-        type_index = owner.declaring_type if row["isMethod"] else owner.index
-        image_name = image.metadata.string(image.metadata.images[image.owners[type_index]].name_index)
-        module = image.modules[image_name]
-        if image_name != row["image"] or owner.token != row["token"]:
-            raise ValueError(f"{label}.native:context-owner")
-        ranges_va = image.pe.u64_at_va(module + 0x48)
-        entries_va = image.pe.u64_at_va(module + 0x58)
-        actual = select_rgctx_range(image.pe.bytes_at_va(ranges_va, image.pe.u32_at_va(module + 0x40) * 12),
-                                    image.pe.u32_at_va(module + 0x50), owner.token, source=label, offset=ranges_va)
-        if actual != (row["start"], row["count"]):
-            raise ValueError(f"{label}.native:context-range")
-        if sorted(entry["relativeSlot"] for entry in row["entries"]) != list(range(row["count"])):
-            raise ValueError(f"{label}.contract:complete-context-slots")
-        for entry in row["entries"]:
-            raw = image.pe.bytes_at_va(entries_va + (row["start"] + entry["relativeSlot"]) * 16, 16)
-            if raw.hex().upper() != entry["rawHex"]:
-                raise ValueError(f"{label}.native:context-entry")
+        if not {'definition','isMethod','token','image','typeName','start','count','entries'} <= row.keys():
+            raise ValueError(f'{label}.contract:context-identity')
+        if any(not {'relativeSlot','rawHex','kind','index'} <= entry.keys() for entry in row['entries']):
+            raise ValueError(f'{label}.contract:context-entry-identity')
+        validate_claims(row, symbols.context(row["definition"], is_method=row["isMethod"]), label=label+'.native:context-symbols')
+
+
+def derive_typed_usage_context(image: NativeImage, rva: int, *, label: str) -> dict[str, Any]:
+    """Read one type or MethodSpec context from the selected RIP-relative load."""
+    raw = image.pe.bytes_at_va(image.pe.image_base + rva, 7)
+    if raw[:2] not in (b'\x48\x8b', b'\x4c\x8b') or raw[2] & 0xc7 != 5:
+        raise ValueError(f'{label}.native:usage-rip-load')
+    cell = image.pe.image_base + rva + 7 + struct.unpack_from('<i', raw, 3)[0]
+    usage = image.pe.bytes_at_va(cell, 8); tag = int.from_bytes(usage, 'little') >> 29
+    if tag not in (1, 2, 6): raise ValueError(f'{label}.native:unsupported-usage-kind={tag}')
+    index = unresolved_usage_index(usage, image.registration['methodSpecsCount' if tag == 6 else 'typesCount'],
+                                   tag=tag, source=label, offset=cell)
+    result = {'instructionRva': rva, 'instructionHex': raw.hex().upper(), 'usageCellRva': cell-image.pe.image_base,
+              'usageRawHex': usage.hex().upper(), 'tag': tag}
+    if tag == 6:
+        address = int(image.registration['methodSpecs'], 16) + index*12
+        spec = method_spec_record(image.pe.bytes_at_va(address, 12), len(image.metadata.methods),
+                                 image.registration['genericInstsCount'], source=label, offset=address)
+        method = image.metadata.methods[spec[0]]
+        result.update(methodSpecIndex=index, methodSpec=list(spec), typeName=image.type_name(method.declaring_type),
+                      methodName=image.metadata.string(method.name_index))
+        for instance, key in zip(spec[1:], ('classArguments', 'methodArguments')):
+            result[key] = [] if instance < 0 else [runtime_type_name(image.pe, image.metadata, arg.type_pointer_va)
+                                                  for arg in image.instantiations.resolve(instance).arguments]
+    else:
+        pointer = _type_pointer(image, index, label)
+        result.update(typeIndex=index, typeName=runtime_type_name(image.pe, image.metadata, pointer),
+                      typeRawHex=image.pe.bytes_at_va(pointer, 16).hex().upper())
+    validate_typed_usage_context(image, result, label=label)
+    return result
 
 
 def validate_typed_usage_context(image: NativeImage, row: dict[str, Any], *, label: str) -> None:

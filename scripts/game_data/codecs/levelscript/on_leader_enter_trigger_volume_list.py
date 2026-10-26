@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data.memorypack.core import memorypack_union_header
 
 from .action_map import ActionMapCodecError, _Cursor
 
@@ -46,14 +47,15 @@ def decode_on_leader_enter_trigger_volume_list_header(
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") != _TYPE
-        or route.get("tag") != 0x00C0
+        or type(route.get("tag")) is not int or not 0 <= route["tag"] <= 0xFFFF
         or route.get("serializedMemberCount") != 17
         or route.get("fields") != _FIELDS
     ):
         raise ActionMapCodecError("onLeaderEnterTriggerVolumeList:invalid-route")
-    if offset < 0 or data[offset:offset + 2] != b"\xc0\x11":
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onLeaderEnterTriggerVolumeList:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in _FIELDS:
@@ -67,7 +69,7 @@ def decode_on_leader_enter_trigger_volume_list_header(
     return {
         "sourceOffset": offset,
         "endOffset": cursor.offset,
-        "unionTag": 0x00C0,
+        "unionTag": route["tag"],
         "memberCount": 17,
         "wrapperName": route["wrapperName"],
         "fields": values,

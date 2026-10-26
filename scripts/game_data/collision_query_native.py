@@ -18,11 +18,12 @@ from scripts.game_data.corpus_common import atomic_write_text
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract, NATIVE_MAPPER_PATH
 from scripts.game_data.il2cpp.pe_exports import resolve_named_exports
 from scripts.game_data.il2cpp.protocol import load_native_mapper, runtime_type_field_offsets
+from scripts.game_data.il2cpp.unwind_chains import read_exception_directory, UnwindChainIndex
 from scripts.game_data.mission_trace_capture_prepare import SelectedMethods
 from scripts.repo_paths import REPO_ROOT
 
 CONTRACT = CONTRACTS_DIR / "collision_query_native.json"
-SCHEMA = "endfield.collision-query-native.v1"
+SCHEMA = "endfield.collision-query-native.v2"
 # These are compiled signatures and capacities, not selected-build addresses.
 ABI = {
     "capsule_results": (("pointer", "pointer", "pointer", "f32", "pointer", "pointer", "f32", "i32", "i32"), "i32", 16),
@@ -126,8 +127,12 @@ def validate_image(image, player, contract):
         value = 0 if p["implicitZero"] else int.from_bytes(raw[len(prefix):], "little")
         require(value == expected, "field operand value:" + p["path"])
     require(tuple(b["role"] for b in contract["bindings"]) == tuple(ABI)[:6], "binding identity/order")
+    table, size, raw = read_exception_directory(image.pe)
+    caller_chains = UnwindChainIndex(raw, lambda at, n: image.pe.bytes_at_va(image.pe.image_base+at, n),
+                                    table_rva=table, image_size=size)
     for b in contract["bindings"]:
         validate_binding(image.pe, b)
+        validate_binding_caller(image, b, caller_chains)
         require(b["functionRva"] == next(h["rva"] for h in hooks if h["role"] == b["role"]), "binding target:" + b["role"])
     api = contract["arrayLengthApi"]
     export = resolve_named_exports(image.pe, (api["name"],))["selectedExports"]
@@ -138,6 +143,19 @@ def validate_image(image, player, contract):
         require(type(value) is int and 1 <= value <= (60000 if name.endswith("Millis") else 65536), "sampling bound:" + name)
     require(contract["limits"]["maxPerQuery"] <= 64 and contract["arrayLayout"]["maxLength"] <= 1048576, "result buffer bounds")
     return dict(hooks=hooks, pins=pins, contract=contract)
+
+
+def validate_binding_caller(image, binding, chains):
+    """Bind every selected call/cache instruction to its named current caller."""
+    row = binding['callerMethod']
+    image.validate_method_row(row, label='collision-query:caller:'+binding['role'])
+    ranges = [part['runtimeTriple'][:2] for part in chains.family(row[3])['ranges']]
+    for address, code in (('lookupRva', 'lookupBytes'), ('cacheStoreRva', 'cacheStoreBytes'),
+                          ('cacheLoadRva', 'cacheLoadBytes'), ('callRva', 'callBytes')):
+        at = binding[address]
+        size = len(bytes.fromhex(binding[code]))
+        require(any(start <= at and at+size <= end for start, end in ranges),
+                'binding outside named caller:'+binding['role']+':'+address)
 
 
 def validate_binding(pe, b):

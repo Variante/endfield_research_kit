@@ -32,7 +32,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -46,7 +45,6 @@ NATIVE_MAPPING_ID = "entityptr-producer-output-alias.v2"
 ALIAS_STATUSES = frozenset({"aliases_filter_when_guard_matches", "validated_non_alias"})
 
 
-@lru_cache(maxsize=1)
 def load_entityptr_output_alias_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[tuple[int, int], dict[str, Any]], dict[str, Any]]:

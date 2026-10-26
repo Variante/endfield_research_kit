@@ -3,14 +3,9 @@
 Story/narrative admissibility stays with the caller-provided semantic parsers. This
 module only locates counted records and validates exact serialized boundaries.
 
-LevelData's full ``interactives`` reader is the shared 25-member
-``LevelInteractiveData`` codec in ``codecs.levelscript.interactives``. This
-module is the fallback used by ``leveldata_binary``: when that codec stops
-on an unsupported nested body but the independently proved member-21 empty
-tail bounds a nonempty list, ``level_interactive_data_list_frames`` must
-find exactly one partition of the counted records ending at that tail. Each
-record then receives an exact opaque byte range and the LevelData owner
-closes as a named outer frame, never as a full nested schema.
+These candidate searches serve Story probes only. The current LevelData
+owner stops before positive interactive collections until their selected
+pool and child programs are proved; these searches cannot close that owner.
 """
 
 from __future__ import annotations
@@ -35,7 +30,7 @@ def level_interactive_data_list_frames(
             offset + 1 + (3 * 8),
             max_length=256,
         )
-        if decoded is not None and decoded[0].startswith("int_"):
+        if decoded is not None and isinstance(decoded[0], str) and decoded[0].startswith("int_"):
             candidates.append((offset, decoded[0]))
     frames: list[dict] = []
     for index, (offset, _entity_id) in enumerate(candidates):

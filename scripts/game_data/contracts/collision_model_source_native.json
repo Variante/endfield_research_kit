@@ -1,0 +1,208 @@
+{
+  "schema": "endfield.collision-model-source-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
+  },
+  "layout": {
+    "rootGridField": 3,
+    "gridIdField": 0,
+    "gridModelField": 7,
+    "modelWidth": 96,
+    "pathHashOffset": 64
+  },
+  "methods": [
+    {
+      "index": 95035,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData",
+      "method": "Grids",
+      "rva": 154333096,
+      "windows": [
+        {
+          "rva": 154333096,
+          "bytes": 168,
+          "sha256": "372dee9d59fd7d9c4c1a7849744d88380484698c69c88daafe6ccf7bcebab840"
+        }
+      ],
+      "probes": [
+        {
+          "offset": 27,
+          "bytes": "ba0a000000",
+          "meaning": "root Grids vtable slot 10, field 3"
+        },
+        {
+          "offset": 70,
+          "bytes": "8d14b0",
+          "meaning": "table vector advances four-byte relative offsets"
+        }
+      ]
+    },
+    {
+      "index": 94754,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+      "method": "get_UniqueId",
+      "rva": 86075104,
+      "windows": [
+        {
+          "rva": 86075104,
+          "bytes": 34,
+          "sha256": "e0249a56873387a3c7952a10455e8c943c934055c8958b98aa488c669a49b75f"
+        },
+        {
+          "rva": 86075138,
+          "bytes": 75,
+          "sha256": "339d7de4c740488c0220415f9ef4e7cd6da9e0faf1d60634ce24601fb33201b3"
+        },
+        {
+          "rva": 86075213,
+          "bytes": 6,
+          "sha256": "9667a65fa9fcd422997054c459d7dc5ef772caf643d2919ba96ded1b69752224"
+        },
+        {
+          "rva": 86075219,
+          "bytes": 11,
+          "sha256": "83c28083ff082bd210bab3165da308fe0d25fdfee5791e3539dfa07fef32815d"
+        },
+        {
+          "rva": 122113118,
+          "bytes": 37,
+          "sha256": "adeb27d3a729bf14b3bdeb3747430703bdd75030d503ff6a979bb4bdce243d5b"
+        }
+      ],
+      "probes": [
+        {
+          "offset": 29,
+          "bytes": "ba04000000",
+          "meaning": "UniqueId vtable slot 4, field 0"
+        }
+      ]
+    },
+    {
+      "index": 94775,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+      "method": "Model",
+      "rva": 154379884,
+      "windows": [
+        {
+          "rva": 154379884,
+          "bytes": 165,
+          "sha256": "3358477f190a01c5c916a119555509500e04d9837b15a1ffb730ece6cc89d5c4"
+        }
+      ],
+      "probes": [
+        {
+          "offset": 27,
+          "bytes": "ba12000000",
+          "meaning": "Model vtable slot 18, field 7"
+        },
+        {
+          "offset": 71,
+          "bytes": "448d0476",
+          "meaning": "index multiplied by three"
+        },
+        {
+          "offset": 85,
+          "bytes": "41c1e005",
+          "meaning": "index multiplied by 32; stride 96"
+        },
+        {
+          "offset": 94,
+          "bytes": "4403c0",
+          "meaning": "vector base added to indexed offset"
+        }
+      ]
+    },
+    {
+      "index": 94914,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+      "method": "StartModelVector",
+      "rva": 154385348,
+      "windows": [
+        {
+          "rva": 154385348,
+          "bytes": 98,
+          "sha256": "7229642c6227525cb9f6df92add2cf897e333778cd499ba4b3e0daf63d045407"
+        }
+      ],
+      "probes": [
+        {
+          "offset": 66,
+          "bytes": "41b908000000",
+          "meaning": "alignment 8"
+        },
+        {
+          "offset": 81,
+          "bytes": "448bc2",
+          "meaning": "original count EDX to R8D"
+        },
+        {
+          "offset": 84,
+          "bytes": "418d5158",
+          "meaning": "element width alignment 8 plus 88 equals 96"
+        },
+        {
+          "offset": 88,
+          "bytes": "e84ffac402",
+          "meaning": "call named FlatBufferBuilder.StartVector"
+        }
+      ]
+    },
+    {
+      "index": 94278,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneModel",
+      "method": "get_PathHash",
+      "rva": 83947408,
+      "windows": [
+        {
+          "rva": 83947408,
+          "bytes": 29,
+          "sha256": "f87a0cb489c5f1b285d9db12af41aff429a6459bdb3ec39bab6a6f3e94d4c7de"
+        },
+        {
+          "rva": 83947437,
+          "bytes": 268,
+          "sha256": "2785bffa8110829a9653ef563690f44abc102c5b0d6dc674b50766043a7a4ed1"
+        },
+        {
+          "rva": 83947705,
+          "bytes": 5,
+          "sha256": "aee034048970f4800003a5541e71fa8548e35959e3bd55697833f2fb6ccfc668"
+        },
+        {
+          "rva": 83947710,
+          "bytes": 124,
+          "sha256": "ae817441256ee52663a6399b1071569d9e5f3e958a3dd4ebe81e4f7d2753236e"
+        },
+        {
+          "rva": 121779222,
+          "bytes": 37,
+          "sha256": "fb21e045eafa87e79dd62543066834c8b98a3c000c78d1b0edbbb7662c639a04"
+        },
+        {
+          "rva": 121779259,
+          "bytes": 8,
+          "sha256": "fb7dfa46313876d04eec4908afaeea01aa4bf163995eb44a0bceb77fc2f2cadf"
+        }
+      ],
+      "probes": [
+        {
+          "offset": 96,
+          "bytes": "83c640",
+          "meaning": "inline struct position plus 64"
+        },
+        {
+          "offset": 272,
+          "bytes": "e85b108500",
+          "meaning": "qword ByteBuffer read helper"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "Current named generated accessors and StartVector programme establish only Grids, UniqueId, inline Model stride and PathHash position on the default route.",
+    "conditional": "Selected stored path hash is a capture filter. Runtime enrollment must supply its actual object identity; patch dispatch can replace the default accessor.",
+    "unresolved": "Other Model fields, current authored prefab and cooked mesh joins, complete DynamicStreaming schema and runtime instance ownership are not established."
+  }
+}

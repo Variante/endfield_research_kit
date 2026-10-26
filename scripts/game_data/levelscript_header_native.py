@@ -26,7 +26,6 @@ from __future__ import annotations
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -46,9 +45,9 @@ LAYOUT_PATH = Path(__file__).parent / "codecs" / "levelscript" / "action_map_lay
 SCHEMA = "endfield.levelscript-header-native-contract.v1"
 
 
-def _read_contract() -> dict[str, Any]:
+def _contract(path: Path = CONTRACT_PATH) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
-        CONTRACT_PATH, schema=SCHEMA, status="exact-current-build", label=LABEL,
+        path, schema=SCHEMA, status="exact-current-build", label=LABEL,
     )
     routes = contract.get("routes")
     if (
@@ -127,12 +126,13 @@ def _validate_route(image: Any, route: dict[str, Any], switch: dict[str, Any], w
     target_rva = struct.unpack_from("<I", table, tag * 4)[0]
     entry = switch["entries"][tag]
     if (
-        target_rva != branch["switchTargetRva"] == branch["branchRva"]
+        not target_rva == branch["switchTargetRva"] == branch["branchRva"]
         or int(entry["targetVa"], 16) != base + target_rva
         or int(entry["bodyVa"], 16) != base + target_rva
         or entry["wrapperName"] != route["wrapperName"]
     ):
-        raise ValueError(f"{LABEL}.native:direct-branch=ActionHeader:{tag:#x}")
+        raise ValueError(f"{LABEL}.native:direct-branch=ActionHeader:{tag:#x}:"
+                         f"expected={branch['switchTargetRva'],branch['branchRva']}:actual={target_rva}")
     image.check_windows([branch["branchWindow"]], label=LABEL)
     load_rva = branch["typeLoadRva"]
     raw = image.pe.bytes_at_va(base + load_rva, 7)
@@ -146,11 +146,12 @@ def _validate_route(image: Any, route: dict[str, Any], switch: dict[str, Any], w
     if (
         cell_va - base != branch["usageCellRva"]
         or usage.hex().upper() != branch["usageRawHex"]
-        or index != branch["registeredTypeIndex"] == entry["registeredTypeIndex"]
-        or definition != branch["wrapperTypeDefinition"] == entry["typeDefinition"]
+        or not index == branch["registeredTypeIndex"] == entry["registeredTypeIndex"]
+        or not definition == branch["wrapperTypeDefinition"] == entry["typeDefinition"]
         or image.type_name(definition) != route["wrapperName"]
     ):
-        raise ValueError(f"{LABEL}.native:registered-wrapper=ActionHeader:{tag:#x}")
+        raise ValueError(f"{LABEL}.native:registered-wrapper=ActionHeader:{tag:#x}:"
+                         f"expected={branch['registeredTypeIndex'],branch['wrapperTypeDefinition']}:actual={index,definition}")
     wrapper = wrappers[definition]
     if (
         wrapper.name != route["wrapperName"]
@@ -201,13 +202,14 @@ def _validate_route(image: Any, route: dict[str, Any], switch: dict[str, Any], w
         inherited.method_index != setter["methodIndex"]
         or inherited.declaring_wrapper != setter["declaringWrapper"]
         or image.type_name(method.declaring_type) != inherited.declaring_wrapper
-        or image.metadata.string(method.name_index) != setter["setterName"] == "set____validate__"
+        or not image.metadata.string(method.name_index) == setter["setterName"] == "set____validate__"
         or not read_rows[-1]["sourceCallsiteRva"] < callsite < windows[0]["endRva"]
         or call[0] != 0xE8 or call.hex().upper() != setter["callHex"]
         or target != setter["targetRva"]
         or image.method_pointer_va(method) != base + target
     ):
-        raise ValueError(f"{LABEL}.native:inherited-setter=ActionHeader:{tag:#x}")
+        raise ValueError(f"{LABEL}.native:inherited-setter=ActionHeader:{tag:#x}:"
+                         f"expected={setter['setterName']}:actual={image.metadata.string(method.name_index)}")
     context = route["nestedContexts"][0]
     if context.get("memberIndex") != 13 or not read_rows[12]["sourceCallsiteRva"] < context["instructionRva"] < read_rows[13]["sourceCallsiteRva"]:
         raise ValueError(f"{LABEL}.native:validate-context-order=ActionHeader:{tag:#x}")
@@ -216,11 +218,18 @@ def _validate_route(image: Any, route: dict[str, Any], switch: dict[str, Any], w
             "sourceReadCount": len(read_rows), "sourceFragmentCount": len(fragments.get(source_ptr, ()))}
 
 
-@lru_cache(maxsize=1)
+def _validate_native(image: Any, contract: dict[str, Any]) -> list[dict[str, Any]]:
+    wrappers = derive_from_image(image)
+    switch = read_union_switch(image, "Beyond_Gameplay_Actions_ActionHeaderForMemoryPack", wrappers=wrappers)
+    extents = image.mapper.pdata_function_extents(image.pe)
+    fragments = BodyIndex(image).chained_fragments
+    return [_validate_route(image, route, switch, wrappers, fragments, extents) for route in contract["routes"]]
+
+
 def load_current_header_native() -> tuple[dict[int, dict[str, Any]] | None, dict[str, Any]]:
     """Return selected rows only after full installed-native validation."""
     try:
-        contract = _read_contract()
+        contract = _contract()
         expected = contract["nativeInputs"]
         gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
         if gate.status != "validated":
@@ -229,17 +238,17 @@ def load_current_header_native() -> tuple[dict[int, dict[str, Any]] | None, dict
         if not unityplayer.is_file() or sha256_file(unityplayer).upper() != expected["UnityPlayer.dll"].upper():
             return None, {"status": "mismatched", "validator": LABEL, "failedCheck": "UnityPlayer.dll", "detail": "selected UnityPlayer.dll is missing or has a different SHA256"}
         image = open_native_image(gate.gameassembly, gate.metadata)
-        wrappers = derive_from_image(image)
-        switch = read_union_switch(image, "Beyond_Gameplay_Actions_ActionHeaderForMemoryPack", wrappers=wrappers)
-        extents = image.mapper.pdata_function_extents(image.pe)
-        fragments = BodyIndex(image).chained_fragments
-        validated = [_validate_route(image, route, switch, wrappers, fragments, extents) for route in contract["routes"]]
+        validated = _validate_native(image, contract)
         routes = {route["tag"]: route for route in contract["routes"]}
         return routes, {"status": "validated", "validator": LABEL, "routes": validated,
                         "nativeInputs": expected}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
+        detail = str(exc)
+        check = detail.removeprefix(LABEL + ".").split("=", 1)[0] if detail.startswith(LABEL + ".") else type(exc).__name__
+        failure = {"gate": check, "sourcePath": str(CONTRACT_PATH), "detail": detail[:500]}
+        if CONTRACT_PATH.is_file(): failure["sourceSha256"] = sha256_file(CONTRACT_PATH)
         return None, {"status": "validation_failed", "validator": LABEL,
-                      "failedCheck": "selected-route-contract-or-native", "detail": str(exc)}
+                      "failedCheck": check, "detail": detail, "validationFailures": [failure]}
 
 
 def main() -> int:

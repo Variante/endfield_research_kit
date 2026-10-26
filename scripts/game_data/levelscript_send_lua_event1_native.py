@@ -1,6 +1,6 @@
 """Authenticate SendLuaEvent1's selected stored ActionBase layout.
 
-The native contract proves the generated outer reader and nested type. Current
+The native contract proves the generated outer reader and nested type. Historical
 source receipts prove the seven-member inner record, not a live Lua event.
 
 The generated outer reader makes eight ordinary setter calls for the
@@ -61,7 +61,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or route.get("family") != "ActionBase"
-        or route.get("tag") != 0x3C1
+        or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.SendLuaEvent1"
         or route.get("serializedMemberCount") != 9
         or route.get("inheritedMemberCount") != 8
@@ -123,9 +123,9 @@ def _validate_context(image: Any, context: dict[str, Any]) -> None:
     definition = struct.unpack_from("<Q", raw)[0]
     actual_name = protocol.runtime_type_name(image.pe, image.metadata, argument.type_pointer_va)
     if (
-        actual_name != context["typeName"] != "Beyond.Gameplay.Actions.SendLuaEvent1"
+        not actual_name == context["typeName"] == "Beyond.Gameplay.Actions.SendLuaEvent1"
         or raw.hex().upper() != context["argumentRawHex"].upper()
-        or raw[10] != context["typeKind"] != 0x12
+        or not raw[10] == context["typeKind"] == 0x12
         or definition != context["typeDefinition"]
         or image.type_name(definition) != actual_name
     ):
@@ -169,7 +169,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     load_rva = dispatch["typeLoadRva"]
     load = image.pe.bytes_at_va(base+load_rva, 7)
     if (
-        not branch["startRva"] <= load_rva < branch["endRva"]-7
+        not branch["startRva"] <= load_rva <= branch["endRva"]-7
         or load[:3] != b"\x48\x8b\x15"
         or load.hex().upper() != dispatch["typeLoadHex"].upper()
     ):
@@ -228,14 +228,14 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         raise ValueError(f"{LABEL}.native:complete-method-windows")
     source_ranges = [(row["startRva"], row["endRva"]) for row in windows[:-1]]
     count = contract["memberCountInstruction"]
-    if not any(start <= count["rva"] < end for start, end in source_ranges):
+    if not any(start <= count["rva"] and count["rva"] + len(bytes.fromhex(count["hex"])) <= end for start, end in source_ranges):
         raise ValueError(f"{LABEL}.native:member-count-range")
     previous = count["rva"]
     for read, setter, member in zip(contract["orderedReads"][:8], contract["setters"], wrapper.members[:8]):
         i, site = read["memberIndex"], read["sourceCallsiteRva"]
         if (
             not previous < site
-            or not any(start <= site < end for start, end in source_ranges)
+            or not any(start <= site and site + 5 <= end for start, end in source_ranges)
             or _call_target(image, site, read["sourceCallHex"]) != read["sourceTargetRva"]
             or read["sourceTargetRva"] != contract["readerHelpers"][read["readKind"]]
         ):
@@ -248,7 +248,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
             or member.declaring_wrapper != setter["declaringWrapper"]
             or image.type_name(method.declaring_type) != member.declaring_wrapper
             or image.metadata.string(method.name_index) != setter["setterName"]
-            or not site < callsite < contract["orderedReads"][i+1]["sourceCallsiteRva"]
+            or not site + 5 <= callsite <= contract["orderedReads"][i+1]["sourceCallsiteRva"] - 5
+            or not any(start <= callsite and callsite + 5 <= end for start, end in source_ranges)
             or _call_target(image, callsite, setter["callHex"]) != setter["targetRva"]
             or image.method_pointer_va(method) != base+setter["targetRva"]
         ):
@@ -256,8 +257,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         previous = callsite
     last = contract["orderedReads"][8]
     if (
-        not previous < last["sourceCallsiteRva"]
-        or not any(start <= last["sourceCallsiteRva"] < end for start, end in source_ranges)
+        not previous + 5 <= last["sourceCallsiteRva"]
+        or not any(start <= last["sourceCallsiteRva"] and last["sourceCallsiteRva"] + 5 <= end for start, end in source_ranges)
         or _call_target(image, last["sourceCallsiteRva"], last["sourceCallHex"])
         != last["sourceTargetRva"]
         or last["sourceTargetRva"] != contract["readerHelpers"]["SendLuaEvent1"]
@@ -270,9 +271,10 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         wrapper.members[8].method_index != assignment["declaredSetterMethodIndex"]
         or image.type_name(declared_setter.declaring_type) != wrapper.name
         or image.metadata.string(declared_setter.name_index) != assignment["declaredSetterName"]
-        or image.type_name(actual_setter.declaring_type) != assignment["declaringWrapper"] != wrapper.name
+        or not image.type_name(actual_setter.declaring_type) == assignment["declaringWrapper"] == wrapper.name
         or image.metadata.string(actual_setter.name_index) != assignment["assignmentName"]
-        or not last["sourceCallsiteRva"] < assignment["callsiteRva"] < windows[0]["endRva"]
+        or not last["sourceCallsiteRva"] + 5 <= assignment["callsiteRva"]
+        or not any(start <= assignment["callsiteRva"] and assignment["callsiteRva"] + 5 <= end for start, end in source_ranges)
         or _call_target(image, assignment["callsiteRva"], assignment["callHex"])
         != assignment["targetRva"]
         or image.method_pointer_va(actual_setter) != base+assignment["targetRva"]
@@ -280,7 +282,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         raise ValueError(f"{LABEL}.native:nested-assignment")
     for context in contract["nestedContexts"]:
         i = context["memberIndex"]
-        if not contract["orderedReads"][i-1]["sourceCallsiteRva"] < context["instructionRva"] < contract["orderedReads"][i]["sourceCallsiteRva"]:
+        if not contract["setters"][i-1]["callsiteRva"] + 5 <= context["instructionRva"] <= contract["orderedReads"][i]["sourceCallsiteRva"] - 7:
             raise ValueError(f"{LABEL}.native:context-order={i}")
         _validate_context(image, context)
 
@@ -307,6 +309,8 @@ def _validate_sources(
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
     from scripts.game_data.codecs.levelscript import send_lua_event
 
+    # These individually hashed receipts retain their historical discriminator.
+    # They are not current-build corpus admission.
     for path, digest, start, end, span_digest, id_offset, script_id in contract["sourceReceipts"]:
         data = (export_root/path).read_bytes()
         if (

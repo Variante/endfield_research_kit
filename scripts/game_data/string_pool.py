@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import re
 import struct
-from functools import lru_cache
 from pathlib import Path
 
 from scripts.game_data.lz4_block import decompress_lz4
@@ -168,11 +167,23 @@ class StringPool:
         return self._reverse.get(value, ())
 
 
-@lru_cache(maxsize=8)
+def resolve_string_pool_index(index: int, strings: StringPool | None, field: str = 'string') -> str | None:
+    """Resolve a proved signed pool index; missing pages never select inline text."""
+    if type(index) is not int or not -2 <= index < 1 << 31:
+        raise StringPoolDecodeError(f'{field}:invalid-pool-index={index!r}')
+    if index == EMPTY_INDEX:return ''
+    if index == NULL_INDEX:return None
+    if strings is None:raise StringPoolDecodeError(f'{field}:matching-StringPool-required,index={index}')
+    value=strings.resolve(index)
+    if not isinstance(value,str):raise StringPoolDecodeError(f'{field}:invalid-pool-entry,index={index}')
+    return value
+
+
 def export_string_pool(json_dir: Path) -> StringPool | None:
     """Return the pool beside an export's JsonData families, or ``None`` when absent.
 
-    Absence means the export predates pooled strings and payloads inline them.
+    Each call selects fresh pages. None means unavailable; the owning reader
+    must select its proved encoding rather than infer inline storage from absence.
     """
     root = Path(json_dir) / "StringPool"
     return StringPool(root) if root.is_dir() else None

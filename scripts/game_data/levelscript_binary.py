@@ -1,6 +1,6 @@
 """Framing entry points for current ``LevelScriptData`` MemoryPack payloads.
 
-``LevelScriptData`` is the 27-member generated wrapper whose first member is
+``LevelScriptData`` is the 28-member generated wrapper whose first member is
 ``actionMap``.  The lanes below differ only in how they prove the action-map
 boundary; all of them hand the rest of the file to one generated-order owner
 walk (``codecs.levelscript.sequential_owner``):
@@ -182,10 +182,8 @@ from scripts.game_data.codecs.levelscript.anonymous_bodies import (  # noqa: F40
     _read_anonymous_nullable_utf8,
     _read_anonymous_i32_string_collection,
     _read_anonymous_param_tail,
-    frame_levelscript_first_record_35_0e_00_anonymous_body,
     _read_nullable_levelscript_param,
     _read_levelscript_node_envelope,
-    frame_levelscript_single_call_server_leader_enter,
 )
 from scripts.game_data.codecs.levelscript.current_action_sequence import (  # noqa: F401
     _CURRENT_SEQUENTIAL_ACTION_MEMBERS,
@@ -302,10 +300,10 @@ def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
     fallback for files whose later top-level members do not match either of the
     stronger EOF-closing readers.
     """
-    if not data or data[0] != 27:
+    if not data or data[0] != 28:
         actual = data[0] if data else None
         raise LevelScriptTopLevelFramingError(
-            f"LevelScriptData member count mismatch: expected=27 actual={actual}"
+            f"LevelScriptData member count mismatch: expected=28 actual={actual}"
         )
     if len(data) < 15 or data[1:15] != (
         b"\x02\x03" + b"\x00\x00\x00\x00" * 3
@@ -326,7 +324,7 @@ def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
             else "exact_empty_serialized_map_prefix_with_opaque_remainder"
         ),
         "schemaStatus": "partial",
-        "serializedMemberCount": 27,
+        "serializedMemberCount": 28,
         "bytesConsumed": boundary_end,
         "actionMap": {
             "startOffset": 1,
@@ -357,7 +355,7 @@ def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
             "length": len(data) - boundary_end,
         },
         "evidenceBoundary": (
-            "The 27-member root and empty three-list ActionSerializedMap are exact. "
+            "The 28-member root and empty three-list ActionSerializedMap are exact. "
             + (
                 "The empty ParamListForGraph also closes the complete ActionMapAssetRaw; "
                 if complete_asset else "The following ParamListForGraph remains opaque; "
@@ -367,10 +365,10 @@ def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_levelscript_empty_action_map_sequential(data: bytes) -> dict[str, Any]:
+def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any = None) -> dict[str, Any]:
     """Advance the current owner from an exact empty action map.
 
-    The generated 27-member wrapper supplies the names and order.  Complex
+    The generated 28-member wrapper supplies the names and order.  Complex
     positive collections stop at their count word; null/empty collections and
     primitive fields advance a real cursor.  If that cursor reaches
     ``scriptId``, the terminal members are decoded positionally rather than by
@@ -386,23 +384,24 @@ def frame_levelscript_empty_action_map_sequential(data: bytes) -> dict[str, Any]
         action_map=action_map["actionMap"],
         owner_offset=int(action_map["bytesConsumed"]),
         action_map_boundary="complete empty action map",
+        strings=strings,
         partial_status="exact_named_empty_action_map_owner_prefix",
     )
 
 
-def frame_levelscript_null_action_map_sequential(data: bytes) -> dict[str, Any]:
+def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = None) -> dict[str, Any]:
     """Advance the current owner from an exact null ``actionMap`` union.
 
-    The generated 27-member wrapper permits a null reference for its first
+    The generated 28-member wrapper permits a null reference for its first
     member.  MemoryPack encodes that boundary as one ``0xff`` byte, so the
     following owner member begins physically at offset 2.  This lane shares
     the same generated-order owner and terminal codecs as the empty-map lane;
     it does not search for a suffix or reinterpret later bytes.
     """
-    if not data or data[0] != 27:
+    if not data or data[0] != 28:
         actual = data[0] if data else None
         raise LevelScriptTopLevelFramingError(
-            f"LevelScriptData member count mismatch: expected=27 actual={actual}"
+            f"LevelScriptData member count mismatch: expected=28 actual={actual}"
         )
     if len(data) < 2 or data[1] != 0xFF:
         raise LevelScriptTopLevelFramingError(
@@ -420,6 +419,7 @@ def frame_levelscript_null_action_map_sequential(data: bytes) -> dict[str, Any]:
         },
         owner_offset=2,
         action_map_boundary="null action map",
+        strings=strings,
         partial_status="exact_named_null_action_map_owner_prefix",
     )
 
@@ -658,7 +658,7 @@ def frame_levelscript_empty_action_map_top_level(
     """Frame a current ``LevelScriptData`` object with an empty action map.
 
     This is deliberately a *partial schema* reader.  It proves the outer
-    27-member marker, the complete three-list ``ActionSerializedMap`` at the
+    28-member marker, the complete three-list ``ActionSerializedMap`` at the
     front, and one uniquely positioned tail that consumes through EOF.  Bytes
     between those two independently framed regions are returned as one opaque
     range; they are not assigned to fields or interpreted from setter order.
@@ -670,9 +670,9 @@ def frame_levelscript_empty_action_map_top_level(
     """
     if not data:
         raise LevelScriptTopLevelFramingError("truncated LevelScriptData: empty payload")
-    if data[0] != 27:
+    if data[0] != 28:
         raise LevelScriptTopLevelFramingError(
-            f"LevelScriptData member count mismatch: expected=27 actual={data[0]}"
+            f"LevelScriptData member count mismatch: expected=28 actual={data[0]}"
         )
     if len(data) < 15:
         raise LevelScriptTopLevelFramingError(
@@ -733,7 +733,7 @@ def frame_levelscript_empty_action_map_top_level(
     return {
         "status": "exact_boundaries_with_opaque_top_level_range",
         "schemaStatus": "partial",
-        "serializedMemberCount": 27,
+        "serializedMemberCount": 28,
         "bytesConsumed": len(data),
         "ranges": {
             "memberCount": {"startOffset": 0, "endOffset": 1},
@@ -787,17 +787,17 @@ def frame_levelscript_empty_action_map_top_level(
 def frame_levelscript_terminal_suffix(data: bytes) -> dict[str, Any]:
     """Decode a unique named terminal suffix of ``LevelScriptData``.
 
-    The current 27-member wrapper ends with ``scriptId``, ``startShapeList``,
+    The current 28-member wrapper ends with ``scriptId``, ``startShapeList``,
     ``startType``, ``taskMap``, and ``triggerVolumes`` in that order.  This
     reader finds that sequence from its byte grammar; it never uses the source
     filename as an identifier.  Only null or empty task maps are accepted so
     every boundary advances a real cursor before the final trigger-volume map
     closes at physical EOF.
     """
-    if not data or data[0] != 27:
+    if not data or data[0] != 28:
         actual = data[0] if data else None
         raise LevelScriptTopLevelFramingError(
-            f"LevelScriptData member count mismatch: expected=27 actual={actual}"
+            f"LevelScriptData member count mismatch: expected=28 actual={actual}"
         )
     if len(data) < 25:
         raise LevelScriptTopLevelFramingError("truncated LevelScriptData terminal suffix")
@@ -869,7 +869,7 @@ def frame_levelscript_terminal_suffix(data: bytes) -> dict[str, Any]:
     return {
         "status": "exact_named_terminal_suffix_with_opaque_prefix",
         "schemaStatus": "partial",
-        "serializedMemberCount": 27,
+        "serializedMemberCount": 28,
         "bytesConsumed": len(data),
         "fieldOrder": [
             "scriptId", "startShapeList", "startType", "taskMap", "triggerVolumes"
@@ -901,7 +901,7 @@ def frame_levelscript_declared_root(
     """Frame a whole LevelScriptData file from its derived root declaration.
 
     Unlike every framing above it, this one names the file rather than a part
-    of it: the twenty-seven declared members are decoded in order and the
+    of it: the twenty-eight declared members are decoded in order and the
     cursor must land on physical EOF. A file that does not close is refused,
     so a partial read never reports as whole.
 
@@ -945,7 +945,7 @@ def frame_levelscript_declared_action_map(
     data: bytes,
     declarations: Any,
     *,
-    expected_member_count: int = 27,
+    expected_member_count: int = 28,
 ) -> dict[str, Any]:
     """Frame LevelScriptData through its complete action map.
 
@@ -1071,7 +1071,7 @@ def decode_levelscript_active_shape_list(
         "status": "unresolved",
         "candidateCount": 0,
     }
-    if not data or data[0] != 27 or script_id <= 0:
+    if not data or data[0] != 28 or script_id <= 0:
         out["diagnostic"] = "topLevelMemberCountOrScriptId"
         return out
 
@@ -2053,7 +2053,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
     active_shapes = decode_levelscript_active_shape_list(data, script_id)
     return {
         "serializedMemberCount": data[0],
-        "expectedMemberCount": 27,
+        "expectedMemberCount": 28,
         "actionMapStatus": action_map.get("status") or "",
         "actionMapRecordCount": action_map.get("recordCount"),
         "actionMapRecordStartOffsetHex": action_map.get("recordStartOffsetHex") or "",
@@ -2085,7 +2085,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
         "triggerVolumesDetails": best.get("triggerVolumes") or {},
         "triggerVolumeSlotIds": (best.get("triggerVolumes") or {}).get("slotIds") or [],
         "note": (
-            "current 27-member top-level MemoryPack plus actionMap header and "
+            "current 28-member top-level MemoryPack plus actionMap header and "
             "unique active shape, scriptId/startType/shape-list trigger fields decoded; "
             "final current-build Leader trigger-volume maps include exact slot and geometry; "
             "action start/end opcodes are still not decoded"
@@ -2117,7 +2117,7 @@ class LevelScriptNamedFramingError(LevelScriptTopLevelFramingError):
         )
 
 
-def frame_levelscript_named(data: bytes, *, source: str = "<payload>") -> dict[str, Any]:
+def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: Any = None) -> dict[str, Any]:
     """Return the first maintained exact or bounded LevelScript owner frame.
 
     This is the shared route order used by the JsonData registry and Data page.
@@ -2132,7 +2132,6 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>") -> dict[s
     for reader in (
         frame_levelscript_empty_action_map_sequential,
         frame_levelscript_null_action_map_sequential,
-        frame_levelscript_single_call_server_leader_enter,
         frame_levelscript_current_action_sequence_leader_enter,
         frame_levelscript_terminal_suffix,
         frame_levelscript_empty_action_map_top_level,
@@ -2140,7 +2139,7 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>") -> dict[s
         frame_levelscript_empty_action_map_prefix,
     ):
         try:
-            result = reader(data)
+            result = reader(data,strings=strings) if reader in (frame_levelscript_empty_action_map_sequential, frame_levelscript_null_action_map_sequential, frame_levelscript_current_action_sequence_leader_enter) else reader(data)
         except (LevelScriptTopLevelFramingError, ValueError) as exc:
             refusals.append({
                 "validator": reader.__name__, "check": "stored-profile",

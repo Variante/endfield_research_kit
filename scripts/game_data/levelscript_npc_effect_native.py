@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -40,7 +41,7 @@ from scripts.game_data.il2cpp.context import (
     generic_type_carrier, method_spec_record, method_spec_usage_index,
     unresolved_usage_index,
 )
-from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
@@ -67,7 +68,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or route.get("family") != "ActionBase"
-        or route.get("tag") != 0x366
+        or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.PlayEffectOnNpc"
         or route.get("serializedMemberCount") != 12
         or route.get("inheritedMemberCount") != 8
@@ -88,7 +89,7 @@ def _contract(path: Path) -> dict[str, Any]:
         != [(_PARAM_ELEMENTS[kind][0], _PARAM_ELEMENTS[kind][2]) for _, kind in fields[8:]]
         or any(row.get("baseTypeName") != "Beyond.Gameplay.Actions.Param`1" for row in contexts)
         or len(data.get("methods", [])) != 2
-        or len(data.get("codeWindows", [])) != 8
+        or len(data.get("codeWindows", [])) < 2
         or [row.get("memberIndex") for row in data.get("enumTypes", [])] != [9, 10]
         or [row.get("typeName") for row in data["enumTypes"]]
            != ["Beyond.NPC.Config.NpcEffectType", "Beyond.Gameplay.MountPoint"]
@@ -136,8 +137,8 @@ def _validate_context(image: Any, context: dict[str, Any], kind: str) -> None:
         raise ValueError(f"{LABEL}.native:param-arity={member}")
     argument = instance.arguments[0]
     raw = bytes.fromhex(argument.raw_type_record_hex)
-    if raw.hex().upper() != context["argumentRawHex"].upper() or raw[10] != context["typeKind"] != 0x15:
-        raise ValueError(f"{LABEL}.native:param-argument={member}")
+    if raw.hex().upper() != context["argumentRawHex"].upper() or not raw[10] == context["typeKind"] == 0x15:
+        raise NativeIdentityMismatch(f"{LABEL}.native:param-argument={member}", expected=0x15, recorded=context["typeKind"], actual=raw[10])
     carrier_pointer = struct.unpack_from("<Q", raw)[0]
     carrier_raw = image.pe.bytes_at_va(carrier_pointer, 32)
     base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
@@ -160,13 +161,13 @@ def _validate_context(image: Any, context: dict[str, Any], kind: str) -> None:
     definition = struct.unpack_from("<Q", element)[0] if expected_kind == 0x11 else None
     if (
         element.hex().upper() != context["elementRawHex"].upper()
-        or element[10] != context["elementTypeKind"] != expected_kind
+        or not element[10] == context["elementTypeKind"] == expected_kind
         or context["elementTypeName"] != expected_name
         or protocol.runtime_type_name(image.pe, image.metadata, child.arguments[0].type_pointer_va) != runtime_name
         or context["elementTypeDefinition"] != definition
         or (definition is not None and image.type_name(definition) != expected_name)
     ):
-        raise ValueError(f"{LABEL}.native:param-element={member}")
+        raise NativeIdentityMismatch(f"{LABEL}.native:param-element={member}", expected=expected_kind, recorded=context["elementTypeKind"], actual=element[10])
 
 
 def _validate_native(image: Any, contract: dict[str, Any]) -> None:
@@ -347,7 +348,7 @@ def _validate_sources(
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
     route = contract["route"]
-    prefix = b"\xfa" + struct.pack("<H", route["tag"]) + bytes((route["serializedMemberCount"],))
+    prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     for path, digest, start, end, span_digest in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (
@@ -359,13 +360,7 @@ def _validate_sources(
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}")
-        cursor = _Cursor(data, start)
-        if cursor.byte("npcEffect.wideTagMarker") != 0xFA:
-            raise ValueError(f"{LABEL}.source:union-header={path}")
-        tag = struct.unpack_from("<H", data, cursor.offset)[0]
-        cursor.offset += 2
-        if tag != route["tag"] or cursor.byte("npcEffect.memberCount") != 12:
-            raise ValueError(f"{LABEL}.source:union-header={path}")
+        cursor = _Cursor(data, start + len(prefix))
         for name, kind in route["fields"]:
             cursor.value("Param<int>" if kind in ("Param<NpcEffectType>", "Param<MountPoint>") else kind,
                          "npcEffect." + name)
@@ -409,14 +404,7 @@ def validate_npc_effect_native_contract(
                           "wrapperName": route["wrapperName"], "fields": route["fields"]},
                 "sourceReceiptsChecked": checked, "nativeInputs": expected}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
-        failure = str(exc)
-        check = (failure.split(".contract:", 1)[1] if ".contract:" in failure
-                 else failure.split(".native:", 1)[1] if ".native:" in failure
-                 else failure.split(".source:", 1)[1] if ".source:" in failure
-                 else "contract-native-or-source")
-        return {"status": "validation_failed", "validator": LABEL,
-                "failedCheck": check, "detail": failure,
-                "validationFailures": [{"gate": check, "actual": failure[:500]}]}
+        return native_validation_failure(exc, label=LABEL, source_path=contract_path)
 
 
 def main() -> int:

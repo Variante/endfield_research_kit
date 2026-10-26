@@ -33,7 +33,7 @@ from scripts.game_data.il2cpp.context import (
     generic_type_carrier, method_spec_record, method_spec_usage_index,
     unresolved_usage_index,
 )
-from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
@@ -133,8 +133,8 @@ def _validate_context(image: Any, context: dict[str, Any]) -> None:
         raise ValueError(f"{LABEL}.native:context-method-arity={context['memberIndex']}")
     argument = instance.arguments[0]
     raw = bytes.fromhex(argument.raw_type_record_hex)
-    if raw.hex().upper() != context["argumentRawHex"] or raw[10] != context["typeKind"] != 0x15:
-        raise ValueError(f"{LABEL}.native:context-argument={context['memberIndex']}")
+    if raw.hex().upper() != context["argumentRawHex"] or not raw[10] == context["typeKind"] == 0x15:
+        raise NativeIdentityMismatch(f"{LABEL}.native:context-argument={context['memberIndex']}", expected=0x15, recorded=context["typeKind"], actual=raw[10])
     carrier_pointer = struct.unpack_from("<Q", raw)[0]
     carrier_raw = image.pe.bytes_at_va(carrier_pointer, 32)
     base_pointer = struct.unpack_from("<Q", carrier_raw)[0]
@@ -220,14 +220,14 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     entry = switch["entries"][tag]
     target = struct.unpack_from("<I", table, tag * 4)[0]
     if (
-        target != dispatch["switchTargetRva"] == dispatch["bodyRva"]
+        not target == dispatch["switchTargetRva"] == dispatch["bodyRva"]
         or int(entry["targetVa"], 16) != base + target
         or int(entry["bodyVa"], 16) != base + target
         or entry["wrapperName"] != route["wrapperName"]
         or entry["registeredTypeIndex"] != route["registeredTypeIndex"]
         or entry["typeDefinition"] != route["typeDefinition"]
     ):
-        raise ValueError(f"{LABEL}.native:direct-branch")
+        raise NativeIdentityMismatch(f"{LABEL}.native:direct-branch", expected=dispatch["bodyRva"], recorded=dispatch["switchTargetRva"], actual=target)
     branch = dispatch["branchWindow"]
     if branch["startRva"] != target or branch["endRva"] <= branch["startRva"]:
         raise ValueError(f"{LABEL}.contract:branch-window")
@@ -235,7 +235,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     load_rva = dispatch["typeLoadRva"]
     load = image.pe.bytes_at_va(base + load_rva, 7)
     if (
-        not branch["startRva"] <= load_rva < branch["endRva"] - 7
+        not branch["startRva"] <= load_rva <= branch["endRva"] - 7
         or load[:3] != b"\x48\x8b\x15"
         or load.hex().upper() != dispatch["typeLoadHex"].upper()
     ):
@@ -390,8 +390,7 @@ def validate_entity_scanned_native_contract(
                           "wrapperName": route["wrapperName"], "fields": route["fields"]},
                 "sourceReceiptsChecked": checked, "nativeInputs": expected}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
-        return {"status": "validation_failed", "validator": LABEL,
-                "failedCheck": str(exc).split(":", 1)[-1][:160], "detail": str(exc)}
+        return native_validation_failure(exc, label=LABEL, source_path=contract_path)
 
 
 def main() -> int:

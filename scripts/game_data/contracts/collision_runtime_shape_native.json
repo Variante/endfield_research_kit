@@ -2,22 +2,22 @@
   "schema": "endfield.collision-runtime-shape-native-contract.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "conditional: Collider current shape member consumed through the bound PxShape getActor interface; concrete captured PxShape triangle geometry may join the same-call Mesh-held cache. Separately timed windows do not establish continuous lifetime, scene membership, contacts, or fresh fields at uncaptured epochs.",
   "typeName": {
-    "rva": 25939416,
+    "rva": 27618328,
     "ascii": "PxShape"
   },
   "layout": {
     "collider": {
-      "vtableRva": 25647504,
+      "vtableRva": 27294720,
       "shape": 88
     },
     "shape": {
-      "vtableRva": 25979232,
+      "vtableRva": 27659552,
       "actor": 40,
       "bufferFlags": 56,
       "bufferPointer": 64,
@@ -36,70 +36,70 @@
   "codeWindows": [
     {
       "role": "mesh_collider_cleanup",
-      "rva": 4567056,
+      "rva": 4365584,
       "bytes": 41,
-      "sha256": "dee1c138446012625ada35fccc20ccaf7af394d7eef00f213e2cf4ceacc2734c",
+      "sha256": "2134392b1694af2dc93d7f9e74c163b9e0f6d39bc76bff409a63ab66833b62d0",
       "evidenceBoundary": "direct"
     },
     {
       "role": "collider_shape_actor",
-      "rva": 2819840,
-      "bytes": 54,
-      "sha256": "ebec2547705c6ba5303d39b1f8ea2dd309b4a28ab1860b486a3aa472011bcb7a",
-      "evidenceBoundary": "direct"
+      "rva": 2275864,
+      "bytes": 13,
+      "sha256": "2dad66edc513e54a9a09bfa0b046b12a8e9550678fc91d843eaed636f055e8c8",
+      "evidenceBoundary": "direct: current detach inline actor-getter call site; the historical standalone helper is not selected"
     },
     {
       "role": "mesh_collider_physics_cleanup",
-      "rva": 2812208,
+      "rva": 2276496,
       "bytes": 107,
-      "sha256": "7f862f43c6397e20f1261986bdfa975b9db821fa24fac4adf57ed80cd87f0e2e",
+      "sha256": "0da0b6dff391588ee598356c8080157ec0ff8b98763a1386cb6ea4d5a7de5479",
       "evidenceBoundary": "direct: hot cleanup chunk; cold actor notification is not interpreted"
     },
     {
       "role": "collider_detach_prefix",
-      "rva": 2812384,
-      "bytes": 225,
-      "sha256": "f2abeafb8b2ecc8988b7bf35447048458e4aff77ec04c3d4128b800bd5f27526",
-      "evidenceBoundary": "direct: detach hot prefix and normal member-clear; cold/continuation routes are not interpreted"
+      "rva": 2275696,
+      "bytes": 256,
+      "sha256": "bceb19b15ddbcfd0ea348742999097c9fc18d64fb3e1411aeff2d071ef973025",
+      "evidenceBoundary": "direct: contiguous current detach entry, actor getter and normal member clear; cold notification routes are outside this window"
     },
     {
       "role": "shape_cleanup_prefix",
-      "rva": 7920992,
+      "rva": 8085920,
       "bytes": 34,
-      "sha256": "2705ed8ffb23df6bb5e1f73c6e5d5b19ec13be1ef03bf6b0e2a087aac951c692",
+      "sha256": "1eecb627cf01c77fc62b20d876dd08880ba315750f40e996bc906c53171ed2a4",
       "evidenceBoundary": "direct: complete instruction prefix only"
     },
     {
       "role": "shape_type_name",
-      "rva": 7922912,
+      "rva": 8087840,
       "bytes": 8,
-      "sha256": "e5ff1b701f0bdba6afc063ce2b7ef3dc82dc4039b722a98baafb066f2051710b",
+      "sha256": "f16d6a71e4584e786a451509267f062f5609ee5f262365a8dfe3de890d0bda15",
       "evidenceBoundary": "direct"
     },
     {
       "role": "shape_actor",
-      "rva": 5786896,
+      "rva": 5883200,
       "bytes": 5,
       "sha256": "cff2ef16c7ec552c1f7c9706cb926933e47de8667aaeb590d325e246c3669ef3",
       "evidenceBoundary": "direct"
     },
     {
       "role": "shape_geometry_type",
-      "rva": 7724576,
+      "rva": 7816544,
       "bytes": 7,
       "sha256": "84358b64bfaccfd336ed4b2ce706f45729f875f610a80f96346cc982b5cad304",
       "evidenceBoundary": "direct"
     },
     {
       "role": "shape_triangle_geometry",
-      "rva": 7926064,
+      "rva": 8090992,
       "bytes": 114,
       "sha256": "2a2ee9dd115813aa9beeac82bc9b46336238f1d90639eddf8a67790044548a67",
       "evidenceBoundary": "direct"
     },
     {
       "role": "shape_flags",
-      "rva": 7923088,
+      "rva": 8088016,
       "bytes": 33,
       "sha256": "ead520fe3ebfddfaa873bc776ed17073658314770275ad0764420cc09380c107",
       "evidenceBoundary": "direct"
@@ -115,21 +115,21 @@
     },
     {
       "role": "collider_shape_actor",
-      "offset": 16,
-      "prefix": "488b41",
+      "offset": 0,
+      "prefix": "488b4b",
       "mode": "u8",
       "field": "collider.shape"
     },
     {
       "role": "collider_detach_prefix",
-      "offset": 170,
-      "prefix": "488b43",
+      "offset": 168,
+      "prefix": "488b4b",
       "mode": "u8",
       "field": "collider.shape"
     },
     {
       "role": "collider_detach_prefix",
-      "offset": 211,
+      "offset": 206,
       "prefix": "488943",
       "mode": "u8",
       "field": "collider.shape"
@@ -232,21 +232,21 @@
       "offset": 0,
       "prefix": "488d05",
       "mode": "rip32",
-      "targetRva": 25939416
+      "targetRva": 27618328
     },
     {
       "role": "mesh_collider_physics_cleanup",
       "offset": 75,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 2812384
+      "targetRva": 2275696
     }
   ],
   "probes": [
     {
       "role": "collider_shape_actor",
-      "offset": 14,
-      "hex": "7420488b4158488bc8488b10"
+      "offset": 0,
+      "hex": "488b4b58488b01ff9088000000"
     },
     {
       "role": "shape_cleanup_prefix",
@@ -270,12 +270,12 @@
     },
     {
       "role": "collider_detach_prefix",
-      "offset": 174,
-      "hex": "488bc8488b10"
+      "offset": 172,
+      "hex": "488b01"
     },
     {
       "role": "collider_detach_prefix",
-      "offset": 209,
+      "offset": 204,
       "hex": "33c048894358"
     },
     {
@@ -306,32 +306,32 @@
   ],
   "vtableSlots": [
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 1,
       "role": "shape_type_name"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 7,
       "role": "shape_geometry_type"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 15,
       "role": "shape_triangle_geometry"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 17,
       "role": "shape_actor"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 38,
       "role": "shape_flags"
     },
     {
-      "tableRva": 25647504,
+      "tableRva": 27294720,
       "slot": 39,
       "role": "mesh_collider_physics_cleanup"
     }
@@ -339,20 +339,20 @@
   "virtualDispatches": [
     {
       "role": "collider_shape_actor",
-      "offset": 26,
-      "prefix": "ff92",
+      "offset": 7,
+      "prefix": "ff90",
       "width": 4,
       "slot": 17,
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "targetRole": "shape_actor"
     },
     {
       "role": "collider_detach_prefix",
-      "offset": 180,
-      "prefix": "ff92",
+      "offset": 175,
+      "prefix": "ff90",
       "width": 4,
       "slot": 17,
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "targetRole": "shape_actor"
     }
   ],

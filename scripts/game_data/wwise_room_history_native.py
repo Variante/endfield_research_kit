@@ -10,12 +10,12 @@ from scripts.game_data.wwise_source_queue_native import validate_native_group_de
 
 
 def load_contract():
-    c,_=read_reviewed_contract(CONTRACTS_DIR/'wwise_room_history_native.json',schema='endfield.wwise-room-history-native.v4',status='reviewedCurrentBuild',label='wwise-room-history')
+    c,_=read_reviewed_contract(CONTRACTS_DIR/'wwise_room_history_native.json',schema='endfield.wwise-room-history-native.v5',status='reviewedCurrentBuild',label='wwise-room-history')
     return c
 
 
 def validate(c,pipeline,image,selected_inputs):
-    if c.get('schema')!='endfield.wwise-room-history-native.v4' or c.get('status')!='reviewedCurrentBuild' or c['nativeInputs']!=selected_inputs:
+    if c.get('schema')!='endfield.wwise-room-history-native.v5' or c.get('status')!='reviewedCurrentBuild' or c['nativeInputs']!=selected_inputs:
         raise ValueError('room history schema/status/selected inputs differ')
     source=validate_input(load_input(),pipeline,image,selected_inputs)
     groups=c['nativeGroups']+[source[k] for k in c['borrowedGroups']]
@@ -48,7 +48,7 @@ def validate(c,pipeline,image,selected_inputs):
 def validate_diffusion_configuration(c,indexed,image):
     """Authenticate the existing parameter owner and complete refresh consumer."""
     d=c['diffusionConfiguration'];g=indexed[d['group']]
-    p,_=read_reviewed_contract(CONTRACTS_DIR/(d['parameterOwnerContract']+'.json'),schema='endfield.wwise-effect-parameters-native.v4',status='reviewedCurrentBuild',label='room-diffusion-parameter-owner')
+    p,_=read_reviewed_contract(CONTRACTS_DIR/(d['parameterOwnerContract']+'.json'),schema='endfield.wwise-effect-parameters-native.v5',status='reviewedCurrentBuild',label='room-diffusion-parameter-owner')
     if p['nativeInputs']!=c['nativeInputs']:raise ValueError('room diffusion parameter owner inputs differ')
     method=p['parameterSchemas'][d['classId']]['setParamsBlock'];start=int(method['rva'],16);size=method['bodyLength']
     if hashlib.sha256(image.bytes_at_va(image.image_base+start,size)).hexdigest()!=method['bodySha256']:raise ValueError('room diffusion parameter body differs')
@@ -57,7 +57,15 @@ def validate_diffusion_configuration(c,indexed,image):
         at=int(b['rva'],16);data=bytes.fromhex(b['instructionHex'])
         if not start<=at<=start+size-len(data) or image.bytes_at_va(image.image_base+at,len(data))!=data:raise ValueError('room diffusion serialized transport differs')
         raw[b['role']]=data
-    if set(raw)!= {'sourceBase','readControl','storeControl'} or raw['sourceBase']!=bytes.fromhex('488d5a')+bytes([d['serializedOffset']]) or raw['readControl']!=bytes.fromhex('f30f1003') or raw['storeControl']!=bytes.fromhex('f30f1141')+bytes([d['storedControlOffset']]):raise ValueError('room diffusion serialized/control relation differs')
+    base_offset,displacement,value_register=d['sourceBaseOffset'],d['readDisplacement'],d['valueRegisterIndex']
+    if (type(base_offset) is not int or not 0<=base_offset<128 or type(displacement) is not int or not 0<displacement<128 or
+            type(value_register) is not int or not 0<=value_register<8 or base_offset+displacement!=d['serializedOffset']):
+        raise ValueError('room diffusion serialized/control registers or displacement differ')
+    if (set(raw)!= {'sourceBase','readControl','storeControl'} or
+            raw['sourceBase']!=bytes.fromhex('488d5a')+bytes([base_offset]) or
+            raw['readControl']!=bytes.fromhex('f30f10')+bytes([0x43+(value_register<<3),displacement]) or
+            raw['storeControl']!=bytes.fromhex('f30f11')+bytes([0x41+(value_register<<3),d['storedControlOffset']])):
+        raise ValueError('room diffusion serialized/control relation differs')
     def read(at,n):
         if not any(int(w['rva'],16)<=at and at+n<=int(w['rva'],16)+w['bodyLength'] for w in g['windows']):raise ValueError('room diffusion configuration operand outside complete body')
         return image.bytes_at_va(image.image_base+at,n)

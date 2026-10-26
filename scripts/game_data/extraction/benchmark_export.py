@@ -429,7 +429,12 @@ def build_markdown(payload: dict[str, Any]) -> str:
 def prune_benchmark_runs(out_dir: Path, slug: str, runs_to_keep: int) -> None:
     if runs_to_keep < 1:
         return
-    json_paths = sorted(out_dir.glob(f"{slug}_*.json"), key=lambda path: path.name, reverse=True)
+    pattern = re.compile(rf"{re.escape(slug)}_\d{{8}}_\d{{6}}_\d{{3}}\.json")
+    json_paths = sorted(
+        (path for path in out_dir.glob(f"{slug}_*.json") if pattern.fullmatch(path.name)),
+        key=lambda path: path.name,
+        reverse=True,
+    )
     for json_path in json_paths[runs_to_keep:]:
         md_path = json_path.with_suffix(".md")
         json_path.unlink(missing_ok=True)

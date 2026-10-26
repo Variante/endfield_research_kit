@@ -10,26 +10,29 @@ from scripts.game_data.wwise_source_queue_native import validate_native_group_de
 
 
 def load_contract():
-    c,_=read_reviewed_contract(CONTRACTS_DIR/'wwise_room_input_native.json',schema='endfield.wwise-room-input-observer.v4',status='reviewedCurrentBuild',label='wwise-room-input')
+    c,_=read_reviewed_contract(CONTRACTS_DIR/'wwise_room_input_native.json',schema='endfield.wwise-room-input-observer.v5',status='reviewedCurrentBuild',label='wwise-room-input')
     return c
 
 
 def validate_tone_transport(c,image):
-    b=c['parameterTransport'];p,_=read_reviewed_contract(CONTRACTS_DIR/(b['ownerContract']+'.json'),schema='endfield.wwise-effect-parameters-native.v4',status='reviewedCurrentBuild',label='room-input-tone-owner')
+    b=c['parameterTransport'];p,_=read_reviewed_contract(CONTRACTS_DIR/(b['ownerContract']+'.json'),schema='endfield.wwise-effect-parameters-native.v5',status='reviewedCurrentBuild',label='room-input-tone-owner')
     if p['nativeInputs']!=c['nativeInputs']:raise ValueError('room tone parameter owner inputs differ')
     method=p['parameterSchemas'][b['classId']]['setParamsBlock'];start=int(method['rva'],16);size=method['bodyLength']
     if hashlib.sha256(image.bytes_at_va(image.image_base+start,size)).hexdigest()!=method['bodySha256']:raise ValueError('room tone parameter body differs')
     raw={}
-    for name in ('sourceBase','cursor','readByte','storeByte'):
+    for name in ('sourceBase','readByte','storeByte'):
         anchor=b[name];at=int(anchor['rva'],16);data=bytes.fromhex(anchor['instructionHex'])
         if not start<=at<=start+size-len(data) or image.bytes_at_va(image.image_base+at,len(data))!=data:raise ValueError('room tone parameter transport differs')
         raw[name]=data
-    if raw['sourceBase'][:3]!=bytes.fromhex('488d5a') or raw['cursor'][:3]!=bytes.fromhex('488d4b') or raw['readByte'][:3]!=bytes.fromhex('0fb641') or raw['storeByte'][:2]!=bytes.fromhex('8887'):raise ValueError('room tone parameter operands differ')
-    if sum(struct.unpack('<b',raw[n][-1:])[0] for n in ('sourceBase','cursor','readByte'))!=b['serializedOffset'] or struct.unpack_from('<i',raw['storeByte'],2)[0]!=c['layout'][b['layoutField']]:raise ValueError('room tone serialized/destination offset differs')
+    if (len(raw['sourceBase'])!=4 or raw['sourceBase'][:3]!=bytes.fromhex('488d5a') or
+            len(raw['readByte'])!=4 or raw['readByte'][:3]!=bytes.fromhex('0fb643') or
+            len(raw['storeByte'])!=6 or raw['storeByte'][:2]!=bytes.fromhex('8887')):
+        raise ValueError('room tone parameter operands differ')
+    if sum(struct.unpack('<b',raw[n][-1:])[0] for n in ('sourceBase','readByte'))!=b['serializedOffset'] or struct.unpack_from('<i',raw['storeByte'],2)[0]!=c['layout'][b['layoutField']]:raise ValueError('room tone serialized/destination offset differs')
 
 
 def validate(c,pipeline,image,selected_inputs):
-    if c.get('schema')!='endfield.wwise-room-input-observer.v4' or c.get('status')!='reviewedCurrentBuild' or c['nativeInputs']!=selected_inputs:raise ValueError('room input schema/status/selected inputs differ')
+    if c.get('schema')!='endfield.wwise-room-input-observer.v5' or c.get('status')!='reviewedCurrentBuild' or c['nativeInputs']!=selected_inputs:raise ValueError('room input schema/status/selected inputs differ')
     room=validate_room(load_room(),pipeline,image,selected_inputs);groups=c['nativeGroups']+[room[k] for k in c['borrowedGroups']]
     validate_native_group_declarations(groups);_,bodies,records=_collect_opened_source_image(image,'selected AkSoundEngine');validate_native_group_windows(groups,image,bodies,records)
     indexed={g['key']:g for g in groups}

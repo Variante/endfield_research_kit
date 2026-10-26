@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +35,6 @@ NATIVE_MAPPING_ID = "entityptr-property-initialization.v2"
 CLASSIFICATION = "validated_initial_entityptr_value_nonfinal"
 
 
-@lru_cache(maxsize=1)
 def load_entityptr_property_initialization_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[str, Any], dict[str, Any]]:

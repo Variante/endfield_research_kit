@@ -1,0 +1,899 @@
+{
+  "schema": "endfield.spawner-record-sources-native.v2",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "records": [
+    {
+      "typeName": "Beyond.Gameplay.SpawnerConfigData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+      "fields": [
+        [
+          "configId",
+          "string"
+        ],
+        [
+          "enemyLibrary",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.SpawnerEnemyLibraryItem>"
+        ],
+        [
+          "preprocessList",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.SpawnerPreprocess+Data>"
+        ],
+        [
+          "routeMap",
+          "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerRouteData>"
+        ],
+        [
+          "settings",
+          "Beyond.Gameplay.SpawnerSettings"
+        ],
+        [
+          "waveMap",
+          "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerWaveData>"
+        ]
+      ],
+      "method": [
+        242808,
+        "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+        "Deserialize",
+        114456704
+      ],
+      "memberCountInstruction": [
+        114456878,
+        "40 80 fe 06"
+      ],
+      "orderedReads": [
+        {
+          "field": "configId",
+          "readRva": 114456894,
+          "targetRva": 85929408,
+          "setter": [
+            242800,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+            "set___configId__",
+            96103632
+          ],
+          "transferRva": 114456919,
+          "proof": "signed-pool-index-helper",
+          "typedContext": null
+        },
+        {
+          "field": "enemyLibrary",
+          "readRva": 114456937,
+          "targetRva": 96253232,
+          "setter": [
+            242801,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+            "set___enemyLibrary__",
+            111673904
+          ],
+          "transferRva": 114456956,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 114456924,
+            "instructionHex": "488B155DCCA409",
+            "usageCellRva": 276252096,
+            "usageRawHex": "337013C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636953,
+            "methodSpec": [
+              550346,
+              -1,
+              64770
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.List`1<Beyond.Gameplay.SpawnerEnemyLibraryItem>"
+            ]
+          }
+        },
+        {
+          "field": "preprocessList",
+          "readRva": 114456974,
+          "targetRva": 96253232,
+          "setter": [
+            242802,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+            "set___preprocessList__",
+            111674000
+          ],
+          "transferRva": 114456993,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 114456961,
+            "instructionHex": "488B1530CCA409",
+            "usageCellRva": 276252088,
+            "usageRawHex": "D17013C000000000",
+            "tag": 6,
+            "methodSpecIndex": 637032,
+            "methodSpec": [
+              550346,
+              -1,
+              64831
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.List`1<Beyond.Gameplay.SpawnerPreprocess+Data>"
+            ]
+          }
+        },
+        {
+          "field": "routeMap",
+          "readRva": 114457011,
+          "targetRva": 96253232,
+          "setter": [
+            242803,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+            "set___routeMap__",
+            111673952
+          ],
+          "transferRva": 114457030,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 114456998,
+            "instructionHex": "488B15E3CBA409",
+            "usageCellRva": 276252048,
+            "usageRawHex": "616E13C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636720,
+            "methodSpec": [
+              550346,
+              -1,
+              64583
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerRouteData>"
+            ]
+          }
+        },
+        {
+          "field": "settings",
+          "readRva": 114457048,
+          "targetRva": 83900608,
+          "setter": [
+            242804,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+            "set___settings__",
+            97936528
+          ],
+          "transferRva": 114457071,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 114457035,
+            "instructionHex": "488B15DECBA409",
+            "usageCellRva": 276252080,
+            "usageRawHex": "19BA13C000000000",
+            "tag": 6,
+            "methodSpecIndex": 646412,
+            "methodSpec": [
+              550348,
+              -1,
+              9866
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadValue",
+            "classArguments": [],
+            "methodArguments": [
+              "Beyond.Gameplay.SpawnerSettings"
+            ]
+          }
+        },
+        {
+          "field": "waveMap",
+          "readRva": 114457089,
+          "targetRva": 96253232,
+          "setter": [
+            242805,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerConfigDataForMemoryPack",
+            "set___waveMap__",
+            96103584
+          ],
+          "transferRva": 114457112,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 114457076,
+            "instructionHex": "488B158DCBA409",
+            "usageCellRva": 276252040,
+            "usageRawHex": "636E13C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636721,
+            "methodSpec": [
+              550346,
+              -1,
+              64584
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerWaveData>"
+            ]
+          }
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 114456704,
+          "endRva": 114457133,
+          "sha256": "CDB302CEB16DA785FA634BD44794D2B5E326F0B129A3CEDE2F588885507FE6EA",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 114456858,
+          "endRva": 114457122,
+          "sha256": "C32A57CB43DB1CD29F585CD3B797C9B84A6E7EFFA6979F3F975A579E5BE7291D",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 114457122,
+          "endRva": 114457133,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 125454528,
+          "endRva": 125454635,
+          "sha256": "5EEA202D065F2A8C5909C7A611E9A62B859096563DE5B04F23C1FC6ED3073F58",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 125454635,
+          "endRva": 125454656,
+          "sha256": "F9BB4E02A774366EE5F6C649788081E3794A93D144D6E77837A4B4FCE2F622FB",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.SpawnerWaveData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+      "fields": [
+        [
+          "deadlineBeginDeltaTime",
+          "float"
+        ],
+        [
+          "defaultDisable",
+          "bool"
+        ],
+        [
+          "groupMap",
+          "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerGroupData>"
+        ],
+        [
+          "hasDeadlineBegin",
+          "bool"
+        ],
+        [
+          "isHidden",
+          "bool"
+        ],
+        [
+          "repeatable",
+          "bool"
+        ],
+        [
+          "timestamp",
+          "float"
+        ],
+        [
+          "waveId",
+          "int"
+        ],
+        [
+          "waveKey",
+          "string"
+        ],
+        [
+          "waveMode",
+          "Beyond.Gameplay.SpawnerWaveMode"
+        ],
+        [
+          "waveModeKillCount",
+          "int"
+        ],
+        [
+          "waveModeTargetKey",
+          "string"
+        ]
+      ],
+      "method": [
+        244570,
+        "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+        "Deserialize",
+        112944896
+      ],
+      "memberCountInstruction": [
+        112945034,
+        "40 80 fe 0c"
+      ],
+      "orderedReads": [
+        {
+          "field": "deadlineBeginDeltaTime",
+          "readRva": 112945050,
+          "targetRva": 83753904,
+          "setter": [
+            244556,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___deadlineBeginDeltaTime__",
+            126067408
+          ],
+          "transferRva": 112945075,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "defaultDisable",
+          "readRva": 112945086,
+          "targetRva": 83754448,
+          "setter": [
+            244557,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___defaultDisable__",
+            126047396
+          ],
+          "transferRva": 112945105,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "groupMap",
+          "readRva": 112945123,
+          "targetRva": 96253232,
+          "setter": [
+            244558,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___groupMap__",
+            112945472
+          ],
+          "transferRva": 112945142,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 112945110,
+            "instructionHex": "488B159BDFB809",
+            "usageCellRva": 276055928,
+            "usageRawHex": "5F6E13C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636719,
+            "methodSpec": [
+              550346,
+              -1,
+              64582
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerGroupData>"
+            ]
+          }
+        },
+        {
+          "field": "hasDeadlineBegin",
+          "readRva": 112945153,
+          "targetRva": 83754448,
+          "setter": [
+            244559,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___hasDeadlineBegin__",
+            126069108
+          ],
+          "transferRva": 112945172,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "isHidden",
+          "readRva": 112945183,
+          "targetRva": 83754448,
+          "setter": [
+            244560,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___isHidden__",
+            126074976
+          ],
+          "transferRva": 112945206,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "repeatable",
+          "readRva": 112945217,
+          "targetRva": 83754448,
+          "setter": [
+            244561,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___repeatable__",
+            126079628
+          ],
+          "transferRva": 112945240,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "timestamp",
+          "readRva": 112945251,
+          "targetRva": 83753904,
+          "setter": [
+            244562,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___timestamp__",
+            126063348
+          ],
+          "transferRva": 112945274,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "waveId",
+          "readRva": 112945285,
+          "targetRva": 83752528,
+          "setter": [
+            244563,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___waveId__",
+            126046456
+          ],
+          "transferRva": 112945307,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "waveKey",
+          "readRva": 112945318,
+          "targetRva": 85929408,
+          "setter": [
+            244564,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___waveKey__",
+            97936528
+          ],
+          "transferRva": 112945341,
+          "proof": "signed-pool-index-helper",
+          "typedContext": null
+        },
+        {
+          "field": "waveMode",
+          "readRva": 112945359,
+          "targetRva": 83752528,
+          "setter": [
+            244565,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___waveMode__",
+            126046400
+          ],
+          "transferRva": 112945381,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 112945346,
+            "instructionHex": "488B15B7DEB809",
+            "usageCellRva": 276055936,
+            "usageRawHex": "2FB513C000000000",
+            "tag": 6,
+            "methodSpecIndex": 645783,
+            "methodSpec": [
+              550332,
+              -1,
+              42737
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadUnmanaged",
+            "classArguments": [],
+            "methodArguments": [
+              "Beyond.Gameplay.SpawnerWaveMode"
+            ]
+          }
+        },
+        {
+          "field": "waveModeKillCount",
+          "readRva": 112945392,
+          "targetRva": 83752528,
+          "setter": [
+            244566,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___waveModeKillCount__",
+            126047344
+          ],
+          "transferRva": 112945414,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "waveModeTargetKey",
+          "readRva": 112945425,
+          "targetRva": 85929408,
+          "setter": [
+            244567,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerWaveDataForMemoryPack",
+            "set___waveModeTargetKey__",
+            111673952
+          ],
+          "transferRva": 112945448,
+          "proof": "signed-pool-index-helper",
+          "typedContext": null
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 112944896,
+          "endRva": 112945469,
+          "sha256": "2DF4F07E2FAC5FE865C1810FFA528A6BADC553C4CB5991A655625F1CF461ACE8",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 112945014,
+          "endRva": 112945458,
+          "sha256": "90D95C9765BB7E5B037F3DC6B185E4AA7166690D3C390A95F8D33BCF3C2F8C77",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 112945458,
+          "endRva": 112945469,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 125323178,
+          "endRva": 125323285,
+          "sha256": "778FA9AF06E2A2AB473B7BA1806DA9B710E59441D0526B02ADF20E78D700502E",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 125323285,
+          "endRva": 125323306,
+          "sha256": "F1CB05AB32110BF49762CC199067695EBB7A9E8B4FE265724D89167EA37E9271",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.SpawnerGroupData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+      "fields": [
+        [
+          "actionMap",
+          "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerActionData>"
+        ],
+        [
+          "deadlineBeginDeltaTime",
+          "float"
+        ],
+        [
+          "defaultDisable",
+          "bool"
+        ],
+        [
+          "groupBackUpCount",
+          "int"
+        ],
+        [
+          "groupId",
+          "int"
+        ],
+        [
+          "groupKey",
+          "string"
+        ],
+        [
+          "groupMaxCount",
+          "int"
+        ],
+        [
+          "groupMode",
+          "Beyond.Gameplay.SpawnerGroupMode"
+        ],
+        [
+          "groupModeKillCount",
+          "int"
+        ],
+        [
+          "groupModeTargetKey",
+          "string"
+        ],
+        [
+          "hasDeadlineBegin",
+          "bool"
+        ],
+        [
+          "limitGroupMaxCount",
+          "bool"
+        ],
+        [
+          "timestamp",
+          "float"
+        ]
+      ],
+      "method": [
+        248180,
+        "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+        "Deserialize",
+        111100640
+      ],
+      "memberCountInstruction": [
+        111100715,
+        "40 80 fe 0d"
+      ],
+      "orderedReads": [
+        {
+          "field": "actionMap",
+          "readRva": 111100738,
+          "targetRva": 96253232,
+          "setter": [
+            248165,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___actionMap__",
+            85897872
+          ],
+          "transferRva": 111100761,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 111100725,
+            "instructionHex": "488B157C25CC09",
+            "usageCellRva": 275474616,
+            "usageRawHex": "5D6E13C000000000",
+            "tag": 6,
+            "methodSpecIndex": 636718,
+            "methodSpec": [
+              550346,
+              -1,
+              64581
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadPackable",
+            "classArguments": [],
+            "methodArguments": [
+              "System.Collections.Generic.Dictionary`2<int,Beyond.Gameplay.SpawnerActionData>"
+            ]
+          }
+        },
+        {
+          "field": "deadlineBeginDeltaTime",
+          "readRva": 111100772,
+          "targetRva": 83753904,
+          "setter": [
+            248166,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___deadlineBeginDeltaTime__",
+            126067408
+          ],
+          "transferRva": 111100795,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "defaultDisable",
+          "readRva": 111100806,
+          "targetRva": 83754448,
+          "setter": [
+            248167,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___defaultDisable__",
+            126072024
+          ],
+          "transferRva": 111100829,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "groupBackUpCount",
+          "readRva": 111100840,
+          "targetRva": 83752528,
+          "setter": [
+            248168,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupBackUpCount__",
+            126068928
+          ],
+          "transferRva": 111100862,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "groupId",
+          "readRva": 111100873,
+          "targetRva": 83752528,
+          "setter": [
+            248169,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupId__",
+            126046456
+          ],
+          "transferRva": 111100895,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "groupKey",
+          "readRva": 111100906,
+          "targetRva": 85929408,
+          "setter": [
+            248170,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupKey__",
+            85897088
+          ],
+          "transferRva": 111100929,
+          "proof": "signed-pool-index-helper",
+          "typedContext": null
+        },
+        {
+          "field": "groupMaxCount",
+          "readRva": 111100940,
+          "targetRva": 83752528,
+          "setter": [
+            248171,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupMaxCount__",
+            126067016
+          ],
+          "transferRva": 111100962,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "groupMode",
+          "readRva": 111100980,
+          "targetRva": 83752528,
+          "setter": [
+            248172,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupMode__",
+            126046400
+          ],
+          "transferRva": 111101002,
+          "proof": "ordered-source-call",
+          "typedContext": {
+            "instructionRva": 111100967,
+            "instructionHex": "488B158224CC09",
+            "usageCellRva": 275474608,
+            "usageRawHex": "2BB513C000000000",
+            "tag": 6,
+            "methodSpecIndex": 645781,
+            "methodSpec": [
+              550332,
+              -1,
+              42736
+            ],
+            "typeName": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadUnmanaged",
+            "classArguments": [],
+            "methodArguments": [
+              "Beyond.Gameplay.SpawnerGroupMode"
+            ]
+          }
+        },
+        {
+          "field": "groupModeKillCount",
+          "readRva": 111101013,
+          "targetRva": 83752528,
+          "setter": [
+            248173,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupModeKillCount__",
+            126047344
+          ],
+          "transferRva": 111101035,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        },
+        {
+          "field": "groupModeTargetKey",
+          "readRva": 111101046,
+          "targetRva": 85929408,
+          "setter": [
+            248174,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___groupModeTargetKey__",
+            85899872
+          ],
+          "transferRva": 111101065,
+          "proof": "signed-pool-index-helper",
+          "typedContext": null
+        },
+        {
+          "field": "hasDeadlineBegin",
+          "readRva": 111101076,
+          "targetRva": 83754448,
+          "setter": [
+            248175,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___hasDeadlineBegin__",
+            126069108
+          ],
+          "transferRva": 111101095,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "limitGroupMaxCount",
+          "readRva": 111101106,
+          "targetRva": 83754448,
+          "setter": [
+            248176,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___limitGroupMaxCount__",
+            126078380
+          ],
+          "transferRva": 111101125,
+          "proof": "buffered-byte-normalized-Boolean",
+          "typedContext": null
+        },
+        {
+          "field": "timestamp",
+          "readRva": 111101136,
+          "targetRva": 83753904,
+          "setter": [
+            248177,
+            "Beyond.MemoryPack.Beyond_Gameplay_SpawnerGroupDataForMemoryPack",
+            "set___timestamp__",
+            126065212
+          ],
+          "transferRva": 111101155,
+          "proof": "ordered-source-call",
+          "typedContext": null
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 111100640,
+          "endRva": 111101254,
+          "sha256": "35135DA09C9763C3C0A9EB36C562772A0E21351888E31C3FA80EEA0850B582C4",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 111100695,
+          "endRva": 111101165,
+          "sha256": "913D537C34FAB7E798AA4A9709B76BE33AEF190F5AD02F2D9706A0AC031F702D",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 111101165,
+          "endRva": 111101176,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 111101176,
+          "endRva": 111101182,
+          "sha256": "0A264626446D02415EA03D5A868780AFD41CA26CEEB3CB7E98743058F69DCED1",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 111101182,
+          "endRva": 111101254,
+          "sha256": "B60160EBFF80132F49747DB9BA019B1DEF4A169BC14D8553F1C07CE2A1A3261A",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 125128720,
+          "endRva": 125128827,
+          "sha256": "0B2E97C3FBE21513C93D1D0497971B959216313DB4624790DA1FD96357D5A3D5",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 125128827,
+          "endRva": 125128848,
+          "sha256": "6946B6483FC3F3E06CF237E7E91858F0344F06D4E18A943EBCB5A929444DE608",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native inputs and complete owned source reader bytes authenticate the declared member order and named setter transfers; pooled string helpers and Boolean byte/cursor programs are independently proved.",
+    "direct": "The six-member root includes preprocessList after enemyLibrary. Waves and groups read defaultDisable immediately after deadlineBeginDeltaTime.",
+    "conditional": "The stored decoder uses the matching exported initialized StringPool and the standard collection framing. Typed source calls do not establish live formatter/provider selection.",
+    "unresolved": "Positive preprocess elements and non-null born behavior are not admitted. These source facts do not establish spawn timing, execution, callback ordering or mission order."
+  }
+}

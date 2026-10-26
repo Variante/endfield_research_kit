@@ -1,5 +1,12 @@
 """Authenticate one current SkillData cursor target set before a live capture.
 
+The v2 target contract binds current byte filters through the reviewed capture
+observer declaration. It makes no ambiguous-corpus, positive-control or terminal
+selection claim. With that contract, --corpus-report selects an outer VFS audit
+summary; its default is reports/runtime_capture/porting/vfs-current/summary.json.
+The current context is observation-only and historical receipt publication gates
+reject it. The v1 path below remains for replaying historical corpus evidence.
+
 The existing single-target native context remains the provenance source for its
 earlier receipt.  This context uses the same native observer validator and
 unselected corpus gate, but binds every still-ambiguous logical source at once.
@@ -258,6 +265,16 @@ def target_set_binding_sha256(target_sources: list[Mapping[str, Any]]) -> str:
 def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
                       target_contract_path: Path = TARGET_CONTRACT_PATH) -> dict[str, Any]:
     """Recheck the current corpus, reviewed targets and selected native build."""
+    from scripts.game_data.il2cpp import skill_cursor_filter_context as filters
+    selected_contract = _read_object(Path(target_contract_path), label='target-set contract')
+    if selected_contract.get('schema') == filters.CONTRACT_SCHEMA:
+        outer_path = (REPO_ROOT / 'reports/runtime_capture/porting/vfs-current/summary.json'
+                      if Path(corpus_path) == DEFAULT_CORPUS else Path(corpus_path))
+        try:
+            return filters.audit(selected_contract, outer_path)
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+            raise native.NativeCursorContextError('observation-filter-binding-failed', source=str(target_contract_path),
+                expected='current named observer and exact selected VFS source bytes', actual=str(exc)[:1500]) from exc
     corpus_path = Path(corpus_path).resolve()
     contract_path = native.CONTRACT_PATH.resolve()
     target_contract_path = Path(target_contract_path).resolve()
@@ -374,6 +391,9 @@ def preflight_native_only(corpus_path: Path = DEFAULT_CORPUS,
                     source=difference[0] if difference else str(context_path),
                     expected=difference[1] if difference else "current audited context",
                     actual=difference[2] if difference else "matching")
+    from scripts.game_data.il2cpp import skill_cursor_filter_context as filters
+    if expected.get('schema') == filters.SCHEMA:
+        return {key: expected[key] for key in ('inputSetSha256', 'targetSources', 'targetSetBindingSha256', 'captureMaxSourceBytes')}
     try:
         input_set = skill_cursor_receipt.preflight_skilldata_corpus(
             corpus_report_path=Path(corpus_path),

@@ -242,8 +242,37 @@ these historical SDK labels.
 
 The next observation sits above the family choice. The reviewed
 [`wwise_source_native.json`](../../scripts/game_data/contracts/wwise_source_native.json)
-and [`wwise_source_native.py`](../../scripts/game_data/wwise_source_native.py)
-now authenticate the three `CAkSource::SetSource` overloads, `LockDataPtr`,
+validates the selected installed inputs for the source/owner, decoder/provider,
+codec-factory, voice/routing, authored-parameter, inheritance, sink, playback,
+bus-processing and RoomVerb declaration families. Re-derived witnesses follow
+current callers, constructor-installed address points and registry records;
+register allocation, stack storage and compiler inlining are not identities.
+Named direct-memory calls and helper replacements require their own complete
+field, argument, control and return proofs. Native coordinates and instruction
+programs stay in the owning contracts.
+
+The owner/carrier command dispatcher requires an unsigned bounded index, the
+matching table load, module-base addition and terminal dispatch. Queue serials
+still describe batching; entry-only cleanup never licenses a return-time
+pointee read. Authored property maps keep byte-key and word-key loops separate,
+including their retained output and index registers. Sink format selection
+binds the current speaker-mask helper to its packed caller configuration.
+
+Current bus-processing expressions are derived from the selected SSE/AVX
+programs. Private-buffer kernel comparisons establish only those bounded
+expressions: compiler changes can alter final rounding bits, and historical
+numeric results cannot substitute for current programs. RoomVerb declarations
+likewise bind current tone, diffusion, feedback, lifecycle and parameter
+ownership paths without establishing live selection or whole audio output.
+
+Historical PCM, prepared-output, bus-sum, matrix, modeled-COM, impulse,
+registry and lifecycle cohorts retain their original-build scope. Static gates
+and offline forwarding/unwind checks establish no current live ownership,
+allocation generation or audibility. A manifest that prepares successfully
+is not a current execution result.
+
+Its loader, [`wwise_source_native.py`](../../scripts/game_data/wwise_source_native.py),
+authenticates the three `CAkSource::SetSource` overloads, `LockDataPtr`,
 their output-write helpers and two current managed post bridges against
 explicitly selected native inputs. Historical SDK matches supply method
 labels; the capture ABI and field flow come from the current instruction

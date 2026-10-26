@@ -22,6 +22,7 @@ from typing import Any
 from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
+from scripts.game_data.il2cpp.reference_field_programs import validate_reader_stores
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp import protocol
 from scripts.game_data.il2cpp.native_image import open_native_image
@@ -30,7 +31,7 @@ from scripts.game_data.memorypack.wrapper_members import derive_from_image
 from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
 
-SCHEMA = "endfield.levelscript-start-cutscene-hide-scene-object-native.v1"
+SCHEMA = "endfield.levelscript-start-cutscene-hide-scene-object-native.v2"
 LABEL = "levelscriptStartCutsceneHideSceneObjectNative"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_start_cutscene_hide_scene_object_native.json"
 _DECLARED_KIND = {
@@ -63,7 +64,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or set(contract.get("nativeInputs") or {})
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
         or len(routes) != 1 or type(routes[0].get("tag")) is not int
-        or routes[0].get("tag") != 0x04AE
+        or (type(routes[0].get("tag")) is not int or not 0 <= routes[0].get("tag") < 0x10000)
         or routes[0].get("typeName") != "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction"
         or not all(route.get("sourceReceipts") for route in routes)
     ):
@@ -79,7 +80,9 @@ def _contract(path: Path) -> dict[str, Any]:
             route.get("family") != "ActionBase"
             or route.get("typeName") != "Beyond.Gameplay.Actions.StartCutsceneAndHideSceneObjectAction"
             or route.get("serializedMemberCount") != len(fields)
-            or len(fields) != 18
+            or len(fields) != 19
+            or route.get("inlineSetterMembers") != [0,1,2,3,4,5,6]
+            or route.get("getterSetterMembers") != [7, 14, 15, 16, 17]
             or route.get("inheritedMemberCount") != 14
             or len(native) != len(fields)
             or [[name, _DECLARED_KIND.get(kind)] for name, kind in native] != fields
@@ -94,6 +97,7 @@ def _contract(path: Path) -> dict[str, Any]:
                 ["extraStreamPosition", "Param<Vector3>"],
                 ["needLoadExtraStream", "Param<bool>"],
                 ["nodeEnablePreload", "bool"],
+                ["preloadPriority", "int32"],
             ]
             or [row.get("memberIndex") for row in reads] != list(range(len(fields)))
             or [row.get("fieldName") for row in reads] != [row[0] for row in fields]
@@ -113,7 +117,7 @@ def _contract(path: Path) -> dict[str, Any]:
                  row.get("child", {}).get("elementKind"))
                 for row in contexts if row.get("memberIndex") in (8, 9)]
             != [(8, "Beyond.Gameplay.Core.EntityPtr", 0x11), (9, "ulong", 0x0B)]
-            or len(methods) != 2 or len(route.get("codeWindows") or []) < 3
+            or len(methods) != 2 or len(route.get("codeWindows") or []) < 2
             or methods[0][1] != route.get("wrapperName")
             or not methods[1][1].startswith(route["wrapperName"] + "+")
             or [row[2] for row in methods] != ["Deserialize", "Deserialize"]
@@ -259,7 +263,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     if hashlib.sha256(table).hexdigest().upper() != dispatcher["tableSha256"].upper():
         raise ValueError(f"{LABEL}.native:switch-table")
     extents = image.mapper.pdata_function_extents(image.pe)
-    chained = BodyIndex(image).chained_fragments
+    bodies = BodyIndex(image)
+    chained = bodies.chained_fragments
     for route in contract["routes"]:
         entry = switch["entries"][route["tag"]]
         wrapper = wrappers[route["typeDefinition"]]
@@ -313,28 +318,11 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         if (
             not in_reader_window(count["rva"], len(count_raw))
             or not count["rva"] < route["orderedReads"][0]["readCallRva"]
-            or len(count_raw) != 4 or count_raw[:3] != b"\x40\x80\xfe"
+            or len(count_raw) != 4 or count_raw[:3] != b"\x40\x80\xfd"
             or count_raw[-1] != route["serializedMemberCount"]
         ):
             raise ValueError(f"{LABEL}.native:member-count={route['tag']:#x}")
-        previous = count["rva"]
-        for read in route["orderedReads"]:
-            read_site, setter_site = read["readCallRva"], read["setterCallRva"]
-            member = wrapper.members[read["memberIndex"]]
-            setter = image.metadata.methods[member.method_index]
-            if (
-                not previous < read_site < setter_site
-                or not in_reader_window(read_site, 5)
-                or not in_reader_window(setter_site, 5)
-                or _call_target(image, read_site, read["readCallHex"]) != read["readTargetRva"]
-                or _call_target(image, setter_site, read["setterCallHex"]) != read["setterTargetRva"]
-                or member.method_index != read["setterMethodIndex"]
-                or member.declaring_wrapper != read["declaringWrapper"]
-                or image.metadata.string(setter.name_index) != f"set___{member.name}__"
-                or image.method_pointer_va(setter) != base + read["setterTargetRva"]
-            ):
-                raise ValueError(f"{LABEL}.native:ordered-read-setter={route['tag']:#x}:{read['memberIndex']}")
-            previous = setter_site
+        store_sites = validate_reader_stores(image,bodies,wrappers,wrapper,route,label=LABEL)
         for context in route["paramContexts"]:
             index = context["memberIndex"]
             read = route["orderedReads"][index]
@@ -343,7 +331,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
                 or context["instructionRva"] != read["contextLoadRva"]
                 or context["instructionHex"] != read["contextLoadHex"]
                 or context["cellRva"] != read["contextCellRva"]
-                or not route["orderedReads"][index - 1]["setterCallRva"]
+                or not store_sites[index - 1]
                 < context["instructionRva"] < read["readCallRva"]
             ):
                 raise ValueError(f"{LABEL}.native:context-order={route['tag']:#x}:{index}")
@@ -374,7 +362,8 @@ def _validate_sources(
                 ledger[row["exportRelativePath"]] = row
     count = 0
     for route in contract["routes"]:
-        prefix = b"\xFA" + struct.pack("<H", route["tag"]) + bytes((route["serializedMemberCount"],))
+        from scripts.game_data.memorypack.core import memorypack_union_header
+        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             actual_digest = hashlib.sha256(data).hexdigest().upper()

@@ -52,7 +52,6 @@ import math
 import re
 import struct
 from collections import Counter
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -1365,11 +1364,9 @@ def frame_buff_named_middle(
     return result
 
 
-@lru_cache(maxsize=1)
 def _gameplay_stacking_native_validated() -> bool:
     # Gameplay projects this newly named child field only after the selected
-    # installed build has authenticated its root-to-child source join. Cache
-    # the expensive native input hashes once for a builder process.
+    # installed build has authenticated its root-to-child source join.
     from scripts.game_data.memorypack.buff_stacking_compact_native import (
         validate_current_native_contract,
     )

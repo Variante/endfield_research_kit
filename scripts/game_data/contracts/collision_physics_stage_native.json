@@ -2,9 +2,9 @@
   "schema": "endfield.collision-physics-stage-native.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "direct: original triangle-getter consumed output and original solver contact entry/return. Conditional: sampled live typed Mesh cache equality and source provenance; descriptor preparation-to-solve joins require exact bodies/writeback and fresh repeated contact-manager bytes. Worker context and physics-step ownership remain explicit unresolved joins. Solver invocation alone does not establish positive impulse or character-controller response.",
   "hooks": [
@@ -227,10 +227,10 @@
   "codeWindows": [
     {
       "role": "triangle_getter",
-      "rva": 7926064,
+      "rva": 8090992,
       "ranges": [
         {
-          "rva": 7926064,
+          "rva": 8090992,
           "bytes": 114,
           "boundary": "complete leaf with explicit return/tail branch",
           "sha256": "2a2ee9dd115813aa9beeac82bc9b46336238f1d90639eddf8a67790044548a67"
@@ -240,82 +240,82 @@
     },
     {
       "role": "pgs_prepare",
-      "rva": 8771952,
+      "rva": 8863920,
       "ranges": [
         {
-          "rva": 8771952,
+          "rva": 8863920,
           "bytes": 404,
           "runtimeTriple": [
-            8771952,
-            8772356,
-            29162468
+            8863920,
+            8864324,
+            31020200
           ],
-          "sha256": "e2dcd13ea7a66be870f31a765672b103918c4984219b31eb389485e37bdd0f26"
+          "sha256": "0f0811aa50d2fa8a362943d2874d7e3d6237d4db01cb47d0c01e2dc945e820d6"
         },
         {
-          "rva": 8772356,
+          "rva": 8864324,
           "bytes": 1122,
           "runtimeTriple": [
-            8772356,
-            8773478,
-            29162520
+            8864324,
+            8865446,
+            31020252
           ],
-          "sha256": "4040089b650e28b81a97e04bf5acb72fd4e2040605f6c76105a64586d188a798"
+          "sha256": "fe1ec46a9bd2ac5f3aed7b4125c513683f0c81207c2d279f04e53548058c2fca"
         },
         {
-          "rva": 8773478,
+          "rva": 8865446,
           "bytes": 95,
           "runtimeTriple": [
-            8773478,
-            8773573,
-            29162544
+            8865446,
+            8865541,
+            31020276
           ],
           "sha256": "cc7a624b196d1eccc521da1f385185bb069f1e315e3e7e3fc72e03ce1e44fc72"
         },
         {
-          "rva": 8773573,
+          "rva": 8865541,
           "bytes": 739,
           "runtimeTriple": [
-            8773573,
-            8774312,
-            29162560
+            8865541,
+            8866280,
+            31020292
           ],
-          "sha256": "8ae20fb579a1e117940067ab2939b36185f10a07adff2e639977bb57254523a3"
+          "sha256": "f146bd79cc000d3a3811f371f14811d44468e6108ab31d0b5239a68583136a0c"
         }
       ],
       "evidenceBoundary": "exact"
     },
     {
       "role": "tgs_prepare",
-      "rva": 8906048,
+      "rva": 8998016,
       "ranges": [
         {
-          "rva": 8906048,
+          "rva": 8998016,
           "bytes": 188,
           "runtimeTriple": [
-            8906048,
-            8906236,
-            29166596
+            8998016,
+            8998204,
+            31024304
           ],
-          "sha256": "41f3d83275cace2f39bb1c59ede131294f066ef81956d061ed0b1bfea12259b0"
+          "sha256": "f0bf6004f9709a37e259211be590e0dbec528cc21a68a5e661840416f359c0c2"
         },
         {
-          "rva": 8906236,
+          "rva": 8998204,
           "bytes": 2022,
           "runtimeTriple": [
-            8906236,
-            8908258,
-            29166624
+            8998204,
+            9000226,
+            31024332
           ],
-          "sha256": "bd59b386a4b422287b345f7868580df756af9922a1e82118f94f1e26ec0e249a"
+          "sha256": "521542c06a0b50fb84c907e4665ba0d8dadeaf920170dbdeda1cf24f423bcd6e"
         },
         {
-          "rva": 8908258,
+          "rva": 9000226,
           "bytes": 31,
           "runtimeTriple": [
-            8908258,
-            8908289,
-            29166668
+            9000226,
+            9000257,
+            31024376
           ],
           "sha256": "18b36845d20488200d9106299275a822754ec8788611c6f7aa30694f03bec9da"
         }
@@ -324,35 +324,35 @@
     },
     {
       "role": "pgs_contact",
-      "rva": 8350768,
+      "rva": 8442736,
       "ranges": [
         {
-          "rva": 8350768,
+          "rva": 8442736,
           "bytes": 18,
           "runtimeTriple": [
-            8350768,
-            8350786,
-            28723372
+            8442736,
+            8442754,
+            30330276
           ],
           "sha256": "20c704d2b56ffe7e1ef62948f8c5a3079d21d5ba1dfb296ad50add556c8d33b8"
         },
         {
-          "rva": 8350786,
+          "rva": 8442754,
           "bytes": 882,
           "runtimeTriple": [
-            8350786,
-            8351668,
-            29137104
+            8442754,
+            8443636,
+            30994992
           ],
-          "sha256": "9734771e489837053c0bb17eaa752d82b765d10461feb1318703cb679567a52a"
+          "sha256": "7920025041b4bef71b11a016e292e1157f346a62e9ca85faf39cfd66b1aa5939"
         },
         {
-          "rva": 8351668,
+          "rva": 8443636,
           "bytes": 8,
           "runtimeTriple": [
-            8351668,
-            8351676,
-            29137180
+            8443636,
+            8443644,
+            30995068
           ],
           "sha256": "f986329278d6746df89b8262cc8dd048f0bef8917add4a599b96c754ad3f2775"
         }
@@ -361,35 +361,35 @@
     },
     {
       "role": "pgs_static",
-      "rva": 8352544,
+      "rva": 8444512,
       "ranges": [
         {
-          "rva": 8352544,
+          "rva": 8444512,
           "bytes": 15,
           "runtimeTriple": [
-            8352544,
-            8352559,
-            28647224
+            8444512,
+            8444527,
+            30422832
           ],
           "sha256": "80e476e5ae84881597db4700b87ac121c98b296f5bb8fdd59e1591b6cc92e32d"
         },
         {
-          "rva": 8352559,
+          "rva": 8444527,
           "bytes": 595,
           "runtimeTriple": [
-            8352559,
-            8353154,
-            29137312
+            8444527,
+            8445122,
+            30995200
           ],
-          "sha256": "5206286fc1bf2aa89eb1af8f0251b7dd935ff993a836bd821f27e82f14e2e635"
+          "sha256": "2fc4624cab568acf6521d511e24c2435ab2a47318728e27f2e8a892e7cee29d6"
         },
         {
-          "rva": 8353154,
+          "rva": 8445122,
           "bytes": 5,
           "runtimeTriple": [
-            8353154,
-            8353159,
-            29137364
+            8445122,
+            8445127,
+            30995252
           ],
           "sha256": "c6f24503f485623e15834e7d64329e7f954b1edff51033aee48aa7274a3ace45"
         }
@@ -398,10 +398,10 @@
     },
     {
       "role": "pgs_contact4",
-      "rva": 8733440,
+      "rva": 8825408,
       "ranges": [
         {
-          "rva": 8733440,
+          "rva": 8825408,
           "bytes": 8,
           "boundary": "complete leaf with explicit return/tail branch",
           "sha256": "ec6ef36cfc9c3bed8de56021ea8b0dfad1c45cef9ee91b7c6bb9e699ab8be267"
@@ -411,10 +411,10 @@
     },
     {
       "role": "pgs_static4",
-      "rva": 8733456,
+      "rva": 8825424,
       "ranges": [
         {
-          "rva": 8733456,
+          "rva": 8825424,
           "bytes": 8,
           "boundary": "complete leaf with explicit return/tail branch",
           "sha256": "e3ac12fde213cd93ba5834bb68f08ca54a0ac61a49c4b7d2ce22e22c5b57c713"
@@ -424,35 +424,35 @@
     },
     {
       "role": "pgs_friction_contact",
-      "rva": 8465920,
+      "rva": 8557888,
       "ranges": [
         {
-          "rva": 8465920,
+          "rva": 8557888,
           "bytes": 24,
           "runtimeTriple": [
-            8465920,
-            8465944,
-            29544284
+            8557888,
+            8557912,
+            31418608
           ],
           "sha256": "282239a5ba6f2de05b0eec2a852dba9a9c685b4b1861f8f488ce84f39e64b428"
         },
         {
-          "rva": 8465944,
+          "rva": 8557912,
           "bytes": 85,
           "runtimeTriple": [
-            8465944,
-            8466029,
-            29144176
+            8557912,
+            8557997,
+            31002064
           ],
           "sha256": "76620994a58659c7665c7e1de4a5b9ed6e5c805f838de23d0204538a98aaba5f"
         },
         {
-          "rva": 8466029,
+          "rva": 8557997,
           "bytes": 32,
           "runtimeTriple": [
-            8466029,
-            8466061,
-            29144204
+            8557997,
+            8558029,
+            31002092
           ],
           "sha256": "56c63128ebbe9b57b58a12a97557e7ad1ee431633618f13524845a45bd296f56"
         }
@@ -461,35 +461,35 @@
     },
     {
       "role": "pgs_friction_static",
-      "rva": 8467792,
+      "rva": 8559760,
       "ranges": [
         {
-          "rva": 8467792,
+          "rva": 8559760,
           "bytes": 24,
           "runtimeTriple": [
-            8467792,
-            8467816,
-            29544284
+            8559760,
+            8559784,
+            31418608
           ],
           "sha256": "282239a5ba6f2de05b0eec2a852dba9a9c685b4b1861f8f488ce84f39e64b428"
         },
         {
-          "rva": 8467816,
+          "rva": 8559784,
           "bytes": 85,
           "runtimeTriple": [
-            8467816,
-            8467901,
-            29144364
+            8559784,
+            8559869,
+            31002252
           ],
           "sha256": "484f260967182898205d8542783459ac529b1a85774cbca1d8556715024e6863"
         },
         {
-          "rva": 8467901,
+          "rva": 8559869,
           "bytes": 32,
           "runtimeTriple": [
-            8467901,
-            8467933,
-            29144392
+            8559869,
+            8559901,
+            31002280
           ],
           "sha256": "977f91ecf060b0233eb2b6c7e03daa20a3ab554dc622a50f3065aa4f6675d0b1"
         }
@@ -498,10 +498,10 @@
     },
     {
       "role": "pgs_friction_contact4",
-      "rva": 8978384,
+      "rva": 9070352,
       "ranges": [
         {
-          "rva": 8978384,
+          "rva": 9070352,
           "bytes": 8,
           "boundary": "complete leaf with explicit return/tail branch",
           "sha256": "79d56aecd3884698ad5859b63c4226ea72e8d4d6b9414873a012054b3f6bfcde"
@@ -511,10 +511,10 @@
     },
     {
       "role": "pgs_friction_static4",
-      "rva": 8978400,
+      "rva": 9070368,
       "ranges": [
         {
-          "rva": 8978400,
+          "rva": 9070368,
           "bytes": 8,
           "boundary": "complete leaf with explicit return/tail branch",
           "sha256": "9fe976a7fcaf3c483a2260601860544c1848c8fb7247d9f435690908b23402fd"
@@ -524,35 +524,35 @@
     },
     {
       "role": "tgs_contact",
-      "rva": 8969312,
+      "rva": 9061280,
       "ranges": [
         {
-          "rva": 8969312,
+          "rva": 9061280,
           "bytes": 28,
           "runtimeTriple": [
-            8969312,
-            8969340,
-            29169248
+            9061280,
+            9061308,
+            31026972
           ],
           "sha256": "739c6b1fd2fd8a9495084f47f88c7ca2c55245a2a37e7becc086de1e774e96a7"
         },
         {
-          "rva": 8969340,
+          "rva": 9061308,
           "bytes": 93,
           "runtimeTriple": [
-            8969340,
-            8969433,
-            29169260
+            9061308,
+            9061401,
+            31026984
           ],
           "sha256": "b025edd5fc38cd806a0450369486a74c0ac620a684e959fdfba524b40d4f52e5"
         },
         {
-          "rva": 8969433,
+          "rva": 9061401,
           "bytes": 10,
           "runtimeTriple": [
-            8969433,
-            8969443,
-            29169288
+            9061401,
+            9061411,
+            31027012
           ],
           "sha256": "95b14f0eef6df3f300e7cdcc7fabfd627632d1cb57bd884b1c06bd90378d2d54"
         }
@@ -561,10 +561,10 @@
     },
     {
       "role": "tgs_contact4",
-      "rva": 8867776,
+      "rva": 8959744,
       "ranges": [
         {
-          "rva": 8867776,
+          "rva": 8959744,
           "bytes": 29,
           "boundary": "complete leaf with explicit return/tail branch",
           "sha256": "b2e4c652adad4cc2ae0e4e69caa93619e30e13425eb8b3f4abb933eea64575b8"
@@ -574,35 +574,35 @@
     },
     {
       "role": "tgs_extended_contact",
-      "rva": 8972432,
+      "rva": 9064400,
       "ranges": [
         {
-          "rva": 8972432,
+          "rva": 9064400,
           "bytes": 28,
           "runtimeTriple": [
-            8972432,
-            8972460,
-            29169348
+            9064400,
+            9064428,
+            31027072
           ],
           "sha256": "f8da9d605319e78cb40040778364f8f853c65983a3d481daa775f2ad21c9e831"
         },
         {
-          "rva": 8972460,
+          "rva": 9064428,
           "bytes": 119,
           "runtimeTriple": [
-            8972460,
-            8972579,
-            29169360
+            9064428,
+            9064547,
+            31027084
           ],
           "sha256": "bbe26bfd0f11a86223855726265424132abd799fe1827d11a3b288dc0b0648bf"
         },
         {
-          "rva": 8972579,
+          "rva": 9064547,
           "bytes": 10,
           "runtimeTriple": [
-            8972579,
-            8972589,
-            29169392
+            9064547,
+            9064557,
+            31027116
           ],
           "sha256": "61e6f9bef59e60e48cacd07e0d51e4dbc58b40c9bc883137eb8f0648f366b786"
         }
@@ -611,10 +611,10 @@
     },
     {
       "role": "pgs_prepare_task",
-      "rva": 8818384,
+      "rva": 8910352,
       "ranges": [
         {
-          "rva": 8818384,
+          "rva": 8910352,
           "bytes": 46,
           "boundary": "complete native range with explicit return",
           "sha256": "df0771cdb2c6b13c04f7ccb3a5e545d1f819542230951cafb0215ddb59e7d8e8"
@@ -624,15 +624,15 @@
     },
     {
       "role": "tgs_prepare_task",
-      "rva": 8924592,
+      "rva": 9016560,
       "ranges": [
         {
-          "rva": 8924592,
+          "rva": 9016560,
           "bytes": 160,
           "runtimeTriple": [
-            8924592,
-            8924752,
-            28558104
+            9016560,
+            9016720,
+            30296208
           ],
           "sha256": "6847c499815f88fa04ff98dce4e303019edeba0c521884075d60c7feeef2bde7"
         }
@@ -641,69 +641,69 @@
     },
     {
       "role": "pgs_dispatch",
-      "rva": 8877488,
+      "rva": 8969456,
       "ranges": [
         {
-          "rva": 8877488,
+          "rva": 8969456,
           "bytes": 4946,
           "runtimeTriple": [
-            8877488,
-            8882434,
-            29161628
+            8969456,
+            8974402,
+            31019360
           ],
-          "sha256": "5bec1a804eaa9452e0b81687158a7a9830568b4e3e163a1348574a1d7009cf01"
+          "sha256": "7dcf5c7363609cf90b4f6c4918397ba9c53451eb25d66d42fd13ba96c396d752"
         }
       ],
       "evidenceBoundary": "exact"
     },
     {
       "role": "pgs_friction_dispatch",
-      "rva": 8991312,
+      "rva": 9083280,
       "ranges": [
         {
-          "rva": 8991312,
+          "rva": 9083280,
           "bytes": 4619,
           "runtimeTriple": [
-            8991312,
-            8995931,
-            29170592
+            9083280,
+            9087899,
+            31028316
           ],
-          "sha256": "6eb02375a67a07c6544a0346b1f42ea359e1f2fbee6bc048421cc8267738f934"
+          "sha256": "c5f499b40183c944e678a790615fa9631811025250aefdd8c18c81869f9e304c"
         }
       ],
       "evidenceBoundary": "exact"
     },
     {
       "role": "tgs_dispatch",
-      "rva": 8929312,
+      "rva": 9021280,
       "ranges": [
         {
-          "rva": 8929312,
+          "rva": 9021280,
           "bytes": 18,
           "runtimeTriple": [
-            8929312,
-            8929330,
-            29166684
+            9021280,
+            9021298,
+            31024392
           ],
           "sha256": "68d30ffa481799e4b634baf2944bcc49df0ce9e5fb00e7f1641bf23c90bd2989"
         },
         {
-          "rva": 8929330,
+          "rva": 9021298,
           "bytes": 158,
           "runtimeTriple": [
-            8929330,
-            8929488,
-            29166696
+            9021298,
+            9021456,
+            31024404
           ],
-          "sha256": "6215996605ef42405a366042e664a5afe66b6f11245c45d14d9435423d12030f"
+          "sha256": "aafd45703d9c3a56146ed3a114c664ead55feff99835e438ea0470087d9e720d"
         },
         {
-          "rva": 8929488,
+          "rva": 9021456,
           "bytes": 1,
           "runtimeTriple": [
-            8929488,
-            8929489,
-            29166736
+            9021456,
+            9021457,
+            31024444
           ],
           "sha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e"
         }
@@ -712,17 +712,17 @@
     },
     {
       "role": "hit_writer",
-      "rva": 2835504,
+      "rva": 1251072,
       "ranges": [
         {
-          "rva": 2835504,
-          "bytes": 360,
+          "rva": 1251072,
+          "bytes": 382,
           "runtimeTriple": [
-            2835504,
-            2835864,
-            28635740
+            1251072,
+            1251454,
+            30299112
           ],
-          "sha256": "8216cd445967da411f6dd49c10a19d555a1077c58547f228e4f118740abcdd34"
+          "sha256": "63efb94bad3ee2c40c0cbc356fcfd5c9deddb571ee85ac6ea4f2ff469fbb15d1"
         }
       ],
       "evidenceBoundary": "exact"
@@ -731,18 +731,18 @@
   "dispatchTables": [
     {
       "role": "pgs",
-      "rva": 29602848,
+      "rva": 31482896,
       "targets": [
         0,
-        8350768,
-        8462896,
+        8442736,
+        8554864,
         0,
         0,
-        8352544,
-        8350768,
-        8733440,
-        8733456,
-        8979184
+        8444512,
+        8442736,
+        8825408,
+        8825424,
+        9071152
       ],
       "contactSlots": [
         1,
@@ -754,18 +754,18 @@
     },
     {
       "role": "pgs_friction",
-      "rva": 29603472,
+      "rva": 31483520,
       "targets": [
         0,
-        8465920,
-        8462896,
+        8557888,
+        8554864,
         0,
         0,
-        8467792,
-        8465920,
-        8978384,
-        8978400,
-        8979184
+        8559760,
+        8557888,
+        9070352,
+        9070368,
+        9071152
       ],
       "contactSlots": [
         1,
@@ -777,18 +777,18 @@
     },
     {
       "role": "tgs",
-      "rva": 29603232,
+      "rva": 31483280,
       "targets": [
         0,
-        8969312,
-        8963264,
-        8972432,
-        8971136,
-        8969312,
-        8969312,
-        8867776,
-        8867776,
-        8861184
+        9061280,
+        9055232,
+        9064400,
+        9063104,
+        9061280,
+        9061280,
+        8959744,
+        8959744,
+        8953152
       ],
       "contactSlots": [
         1,
@@ -803,46 +803,46 @@
   "probes": [
     {
       "role": "pgs_prepare_call",
-      "rva": 8818420,
+      "rva": 8910388,
       "hex": "e8774affff",
-      "targetRva": 8771952,
+      "targetRva": 8863920,
       "mode": "rel32"
     },
     {
       "role": "tgs_prepare_call",
-      "rva": 8924718,
+      "rva": 9016686,
       "hex": "e80db7ffff",
-      "targetRva": 8906048,
+      "targetRva": 8998016,
       "mode": "rel32"
     },
     {
       "role": "pgs_table",
-      "rva": 8877812,
-      "hex": "4c8d35253d3c01",
-      "targetRva": 29602848,
+      "rva": 8969780,
+      "hex": "4c8d35d5855701",
+      "targetRva": 31482896,
       "mode": "rip32"
     },
     {
       "role": "pgs_friction_table",
-      "rva": 8991596,
-      "hex": "488d3d1d833a01",
-      "targetRva": 29603472,
+      "rva": 9083564,
+      "hex": "488d3dcdcb5501",
+      "targetRva": 31483520,
       "mode": "rip32"
     },
     {
       "role": "tgs_table",
-      "rva": 8929368,
-      "hex": "4c8d3d41753b01",
-      "targetRva": 29603232,
+      "rva": 9021336,
+      "hex": "4c8d3df1bd5601",
+      "targetRva": 31483280,
       "mode": "rip32"
     }
   ],
   "layout": {
-    "meshVtableRva": 27034160,
+    "meshVtableRva": 27229232,
     "meshCacheOffset": 320,
     "meshInstanceIdOffset": 8,
-    "triangleVtableRva": 26006104,
-    "shapeVtableRva": 25979232,
+    "triangleVtableRva": 27685016,
+    "shapeVtableRva": 27659552,
     "shapeActorOffset": 40,
     "geometryBytes": 48,
     "geometryConsumedBytes": 36,

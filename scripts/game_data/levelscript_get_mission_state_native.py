@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import (
@@ -297,12 +298,12 @@ def _validate_sources(
     if not ledger:
         raise ValueError(f"{LABEL}.source:missing-LevelScript-ledger")
     route = contract["route"]
-    prefix = b"\xFA" + route["tag"].to_bytes(2, "little") + bytes((route["memberCount"],))
+    prefix = memorypack_union_header(route["tag"], route["memberCount"])
     for path, digest, start, end, span_digest in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (
             not 0 <= start < end <= len(data)
-            or data[start:start+4] != prefix
+            or data[start:start+len(prefix)] != prefix
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
             or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()

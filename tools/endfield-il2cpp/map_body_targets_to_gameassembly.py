@@ -673,10 +673,10 @@ def canonical_arg_register(name: str) -> str | None:
 
 def canonical_register(name: str) -> str:
     aliases = {
-        "eax": "rax", "ax": "rax", "al": "rax",
-        "ecx": "rcx", "cx": "rcx", "cl": "rcx",
-        "edx": "rdx", "dx": "rdx", "dl": "rdx",
-        "ebx": "rbx", "bx": "rbx", "bl": "rbx",
+        "eax": "rax", "ax": "rax", "al": "rax", "ah": "rax",
+        "ecx": "rcx", "cx": "rcx", "cl": "rcx", "ch": "rcx",
+        "edx": "rdx", "dx": "rdx", "dl": "rdx", "dh": "rdx",
+        "ebx": "rbx", "bx": "rbx", "bl": "rbx", "bh": "rbx",
         "esp": "rsp", "sp": "rsp", "spl": "rsp",
         "ebp": "rbp", "bp": "rbp", "bpl": "rbp",
         "esi": "rsi", "si": "rsi", "sil": "rsi",
@@ -899,6 +899,13 @@ def decode_extra_x64(data: bytes, offset: int, start_va: int):
             return row(f'and {left}, {right}',pos+2,left)
     if pos+3>len(data) or data[pos]!=0x0f:return fallback()
     second=data[pos+1];mod,reg,rm=decode_modrm(data[pos+2]);end=pos+3
+    if 0x40<=second<=0x4f and not prefixes:
+        width=64 if rex&8 else 32;destination=reg_name(reg+(8 if rex&4 else 0),width=width)
+        operand=(reg_name(rm+(8 if rex&1 else 0),width=width),end) if mod==3 else memory(end,mod,rm)
+        if operand is not None:
+            source,end=operand
+            condition=('o','no','b','ae','e','ne','be','a','s','ns','p','np','l','ge','le','g')[second-0x40]
+            return row(f'cmov{condition} {destination}, {source}',end,destination)
     if second==0x1f and reg==0 and not rex&4 and mod!=3 and prefixes in ([],[0x66]):
         # NOP r/m uses its complete addressing encoding but reads no operand
         # and changes no register or flags. Unsupported address forms refuse.
@@ -1066,16 +1073,20 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
 
     if opcode in (0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF):
         reg = (opcode - 0xB8) | (rex_b << 3)
-        dst = reg_name(reg, width=width)
-        if pos + 4 > len(data):
-            return result(f"db 0x{opcode:02x}", None, offset + 1)
-        imm = struct.unpack_from("<I", data, pos)[0]
-        pos += 4
+        operand_width = 64 if rex_w else 16 if 0x66 in prefixes else 32
+        dst = reg_name(reg, width=operand_width)
+        size = operand_width // 8
+        if pos + size > len(data):
+            raise IndexError("truncated MOV register immediate")
+        imm = int.from_bytes(data[pos:pos + size], "little")
+        pos += size
+        if prefixes not in ([], [0x66]):
+            return result(f"db {data[offset:pos].hex(' ')}", (dst, "modified"), pos)
         return result(f"mov {dst}, 0x{imm:x}", (dst, f"0x{imm:x}"), pos)
 
     if 0xB0 <= opcode <= 0xB7 and pos < len(data):
         reg = (opcode - 0xB0) | (rex_b << 3)
-        dst = reg_name(reg, width=8)
+        dst = ("ah","ch","dh","bh")[reg-4] if not rex and reg>=4 else reg_name(reg, width=8)
         imm = data[pos]
         pos += 1
         return result(f"mov {dst}, 0x{imm:x}", (dst, f"0x{imm:x}"), pos)

@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol as il2cpp
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -310,7 +311,7 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
             if row.get("family") == "LevelScriptData":
                 ledger[row["exportRelativePath"]] = row
     route = contract["route"]
-    prefix = bytes((route["tag"], route["memberCount"]))
+    prefix = memorypack_union_header(route["tag"], route["memberCount"])
     for path,digest,start,end,span_digest in route["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (

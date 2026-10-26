@@ -1,9 +1,12 @@
-"""Exact current-build LevelScript FMV action field decoders."""
+"""Build-gated FMV diagnostic fields; pooled source migration remains required."""
 
 from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data import levelscript_union_tags as union_tags
 
 
@@ -14,6 +17,15 @@ LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID = (
 PLAY_FMV_ACTION_SEMANTIC_KEYS = frozenset({
     union_tags.action("PlayFmvAction"),
 })
+
+
+def check_fmv_source_native_inputs():
+    contract, _ = read_reviewed_contract(
+        CONTRACTS_DIR / 'levelscript_fmv_video_native.json',
+        schema='endfield.levelscript-fmv-video-native-contract.v1', status='validated', label='fmvSource',
+    )
+    pins = contract['nativeInputs']
+    return check_installed_native_inputs(pins['GameAssembly.dll'], pins['global-metadata.dat'])
 
 
 def _offset_hex(offset: int | None) -> str:
@@ -57,7 +69,7 @@ def decode_fmv_action(
     semantic_key: tuple[int, int],
     tagged_string_hits: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    """Decode exact authored FMV ids from the two current native actions.
+    """Decode an FMV hint only on the build that proved its inline layout.
 
     IL2CPP metadata and the generated MemoryPack setters prove that
     ``PlayFmvAction._moviePath`` is the first derived field, while
@@ -65,6 +77,7 @@ def decode_fmv_action(
     tag and member count in ``semantic_key`` are required together, so a tag
     collision or a future payload shape fails closed.
     """
+    if check_fmv_source_native_inputs().status != 'validated':return {}
     tagged_strings = sorted(
         (
             hit

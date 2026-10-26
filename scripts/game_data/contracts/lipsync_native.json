@@ -1,0 +1,533 @@
+{
+  "schema": "endfield.lipsync-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "proof": {
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+    "wrappedType": "Beyond.Gameplay.View.LipSync.LipSyncTrack+LipSyncRawDataCriware",
+    "typeDefinition": 47430,
+    "methods": [
+      [
+        243330,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+        "Deserialize",
+        204990112
+      ],
+      [
+        243331,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack+Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPackFormatter",
+        "Deserialize",
+        204989880
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 204990112,
+        "endRva": 204990971,
+        "sha256": "21C157E4C5A21FB0DE175611A67C78F92295E8F282CDB95F5F8B2279818B6F16",
+        "boundary": "complete owned reader or formatter body"
+      },
+      {
+        "startRva": 204989880,
+        "endRva": 204989969,
+        "sha256": "B145C83A15928FD65F3E64E5E245EAE51038D6F84110150C237E5F44C34EFA95",
+        "boundary": "complete owned reader or formatter body"
+      }
+    ],
+    "memberCountInstruction": {
+      "rva": 204990274,
+      "hex": "807C24300F"
+    },
+    "fields": [
+      {
+        "name": "A",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990285,
+          "instructionHex": "488B1574630E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990298,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990321,
+        "setterMethod": [
+          243313,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___A__",
+          96103632
+        ]
+      },
+      {
+        "name": "E",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990326,
+          "instructionHex": "488B154B630E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990339,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990362,
+        "setterMethod": [
+          243314,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___E__",
+          111673952
+        ]
+      },
+      {
+        "name": "EyebrowRaise",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990367,
+          "instructionHex": "488B1522630E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990380,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990403,
+        "setterMethod": [
+          243315,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___EyebrowRaise__",
+          204979680
+        ]
+      },
+      {
+        "name": "EyePitch",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990408,
+          "instructionHex": "488B15F9620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990421,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990444,
+        "setterMethod": [
+          243316,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___EyePitch__",
+          204991476
+        ]
+      },
+      {
+        "name": "EyeYaw",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990449,
+          "instructionHex": "488B15D0620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990462,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990485,
+        "setterMethod": [
+          243317,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___EyeYaw__",
+          204979068
+        ]
+      },
+      {
+        "name": "HeadPitch",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990490,
+          "instructionHex": "488B15A7620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990503,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990526,
+        "setterMethod": [
+          243318,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___HeadPitch__",
+          204991512
+        ]
+      },
+      {
+        "name": "HeadRoll",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990531,
+          "instructionHex": "488B157E620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990544,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990567,
+        "setterMethod": [
+          243319,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___HeadRoll__",
+          204991548
+        ]
+      },
+      {
+        "name": "HeadYaw",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990572,
+          "instructionHex": "488B1555620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990585,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990608,
+        "setterMethod": [
+          243320,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___HeadYaw__",
+          204979280
+        ]
+      },
+      {
+        "name": "Height",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990613,
+          "instructionHex": "488B152C620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990626,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990649,
+        "setterMethod": [
+          243321,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___Height__",
+          112945472
+        ]
+      },
+      {
+        "name": "I",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990654,
+          "instructionHex": "488B1503620E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990667,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990690,
+        "setterMethod": [
+          243322,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___I__",
+          97936528
+        ]
+      },
+      {
+        "name": "O",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990695,
+          "instructionHex": "488B15DA610E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990708,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990731,
+        "setterMethod": [
+          243323,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___O__",
+          111673904
+        ]
+      },
+      {
+        "name": "Squint",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990736,
+          "instructionHex": "488B15B1610E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990749,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990768,
+        "setterMethod": [
+          243324,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___Squint__",
+          204991584
+        ]
+      },
+      {
+        "name": "U",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990773,
+          "instructionHex": "488B158C610E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990786,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990805,
+        "setterMethod": [
+          243325,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___U__",
+          96103584
+        ]
+      },
+      {
+        "name": "WidthClose",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990810,
+          "instructionHex": "488B1567610E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990823,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990842,
+        "setterMethod": [
+          243326,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___WidthClose__",
+          114022288
+        ]
+      },
+      {
+        "name": "WidthOpen",
+        "declaredType": "float[][]",
+        "context": {
+          "instructionRva": 204990847,
+          "instructionHex": "488B1542610E05",
+          "usageCellRva": 289819336,
+          "usageRawHex": "3F6E13C000000000",
+          "tag": 6,
+          "methodSpecIndex": 636703,
+          "methodSpec": [
+            550353,
+            -1,
+            18835
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadArray",
+          "classArguments": [],
+          "methodArguments": [
+            "float[]"
+          ]
+        },
+        "readCallRva": 204990860,
+        "readTargetRva": 99317328,
+        "setterCallRva": 204990879,
+        "setterMethod": [
+          243327,
+          "Beyond.MemoryPack.Beyond_Gameplay_View_LipSync_LipSyncTrack_LipSyncRawDataCriwareForMemoryPack",
+          "set___WidthOpen__",
+          111674000
+        ]
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "Complete selected channel reader, member count, ordered named setter calls and closed ReadArray<float[]> contexts.",
+    "conditional": "Compatible selected array formatter, initialized metadata and valid reader/output storage; the corpus separately proves fifteen count-framed arrays of six finite floats through physical EOF.",
+    "unresolved": "Live formatter/provider selection, Keyframe consumer semantics, voice ownership and playback selection."
+  }
+}

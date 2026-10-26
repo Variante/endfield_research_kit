@@ -1,55 +1,55 @@
 {
-  "schema": "endfield.wwise-room-history-native.v4",
+  "schema": "endfield.wwise-room-history-native.v5",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "nativeGroups": [
     {
       "key": "roomToneKernel",
-      "entryRva": "0x177d80",
+      "entryRva": "0x178730",
       "windows": [
         {
-          "rva": "0x177d80",
+          "rva": "0x178730",
           "bodyLength": 74,
           "bodySha256": "13e93ad7b504a7c5a7a7b4342d7525d090cca1e3277395ba6da178fbcedc9d25",
-          "unwindRva": "0x30ecb8",
+          "unwindRva": "0x30f614",
           "unwindInfoHex": "014a19004af8030044e804003ed8050038c8060033b807002ea808002998090024880a001c780b0015680c0010741e0010011a0009e00000",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x177dca",
+          "rva": "0x17877a",
           "bodyLength": 14,
           "bodySha256": "b3db0387eadc372d5ea98f6134b15ffdeff9c45388ab14408511ef9aa636b1d1",
-          "unwindRva": "0x30ed38",
-          "unwindInfoHex": "2104020004341c00807d1700ca7d1700b8ec3000",
+          "unwindRva": "0x30f694",
+          "unwindInfoHex": "2104020004341c00308717007a87170014f63000",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x177dd8",
+          "rva": "0x178788",
           "bodyLength": 44,
-          "bodySha256": "fe22bd17d0ac61f4480bfc21adf0d8e18f4cf6920c8b6bdfd784d78f27471149",
-          "unwindRva": "0x30ed4c",
-          "unwindInfoHex": "2104020004641d00ca7d1700d87d170038ed3000",
+          "bodySha256": "fcbeaf9895481a6fcc2767fc8608a0df8fc14c04cd762b1192c81a3b4b00e3b8",
+          "unwindRva": "0x30f6a8",
+          "unwindInfoHex": "2104020004641d007a8717008887170094f63000",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x177e04",
+          "rva": "0x1787b4",
           "bodyLength": 108,
           "bodySha256": "d938425654cada29f0d55f853ad025e933e54967899f4576f978c82bee37f449",
-          "unwindRva": "0x30ed60",
-          "unwindInfoHex": "21000000ca7d1700d87d170038ed3000",
+          "unwindRva": "0x30f6bc",
+          "unwindInfoHex": "210000007a8717008887170094f63000",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x177e70",
+          "rva": "0x178820",
           "bodyLength": 230,
           "bodySha256": "62e2772c75824dfc62e0afa17fde9a470074c0aba7d3173bdfb1d3e9196c19c6",
-          "unwindRva": "0x30ed70",
-          "unwindInfoHex": "21000000807d1700ca7d1700b8ec3000",
+          "unwindRva": "0x30f6cc",
+          "unwindInfoHex": "21000000308717007a87170014f63000",
           "windowKind": "fullExceptionExtent"
         }
       ],
@@ -61,77 +61,707 @@
         "add",
         "output",
         "historyInputLast",
-        "historyOutputLast"
+        "historyOutputLast",
+        "currentInstruction0",
+        "currentInstruction1",
+        "currentInstruction2",
+        "currentInstruction3",
+        "currentInstruction4",
+        "currentInstruction5",
+        "currentInstruction6",
+        "currentInstruction7",
+        "currentInstruction8",
+        "currentInstruction9",
+        "currentInstruction10",
+        "currentInstruction11",
+        "currentInstruction12",
+        "currentInstruction13",
+        "currentInstruction14",
+        "currentInstruction15",
+        "currentInstruction16",
+        "currentInstruction17",
+        "currentInstruction18",
+        "currentInstruction19",
+        "currentInstruction20",
+        "currentInstruction21",
+        "currentInstruction22",
+        "currentInstruction23",
+        "currentInstruction24",
+        "currentInstruction25",
+        "currentInstruction26",
+        "currentInstruction27",
+        "currentInstruction28",
+        "currentInstruction29",
+        "currentInstruction30",
+        "currentInstruction31",
+        "currentInstruction32",
+        "currentInstruction33",
+        "currentInstruction34",
+        "currentInstruction35",
+        "currentInstruction36",
+        "currentInstruction37",
+        "currentInstruction38",
+        "currentInstruction39",
+        "currentInstruction40",
+        "currentInstruction41",
+        "currentInstruction42",
+        "currentInstruction43",
+        "currentInstruction44",
+        "currentInstruction45",
+        "currentInstruction46",
+        "currentInstruction47",
+        "currentInstruction48",
+        "currentInstruction49",
+        "currentInstruction50",
+        "currentInstruction51",
+        "currentInstruction52",
+        "currentInstruction53",
+        "currentInstruction54",
+        "currentInstruction55",
+        "currentInstruction56",
+        "currentInstruction57",
+        "currentInstruction58",
+        "currentInstruction59",
+        "currentInstruction60",
+        "currentInstruction61",
+        "currentInstruction62",
+        "currentInstruction63",
+        "currentInstruction64",
+        "currentInstruction65",
+        "currentInstruction66",
+        "currentInstruction67",
+        "currentInstruction68",
+        "currentInstruction69",
+        "currentInstruction70",
+        "currentInstruction71",
+        "currentInstruction72",
+        "currentInstruction73",
+        "currentInstruction74",
+        "currentInstruction75",
+        "currentInstruction76",
+        "currentInstruction77",
+        "currentInstruction78",
+        "currentInstruction79",
+        "currentInstruction80",
+        "currentInstruction81",
+        "currentInstruction82",
+        "currentInstruction83",
+        "currentInstruction84",
+        "currentInstruction85",
+        "currentInstruction86",
+        "currentInstruction87",
+        "currentInstruction88",
+        "currentInstruction89",
+        "currentInstruction90",
+        "currentInstruction91",
+        "currentInstruction92",
+        "currentInstruction93",
+        "currentInstruction94",
+        "currentInstruction95",
+        "currentInstruction96",
+        "currentInstruction97",
+        "currentInstruction98",
+        "currentInstruction99",
+        "currentInstruction100",
+        "currentInstruction101",
+        "currentInstruction102",
+        "currentInstruction103",
+        "currentInstruction104"
       ],
       "instructionWitnesses": [
         {
           "role": "source",
-          "rva": "0x177e70",
+          "rva": "0x178820",
           "instructionHex": "498b06"
         },
         {
           "role": "coefficientMatrix",
-          "rva": "0x177e13",
+          "rva": "0x1787c3",
           "instructionHex": "440f100b"
         },
         {
           "role": "history",
-          "rva": "0x177e1c",
+          "rva": "0x1787cc",
           "instructionHex": "f30f1032"
         },
         {
           "role": "multiply",
-          "rva": "0x177e77",
+          "rva": "0x178827",
           "instructionHex": "0f59c6"
         },
         {
           "role": "add",
-          "rva": "0x177eae",
+          "rva": "0x17885e",
           "instructionHex": "0f58d0"
         },
         {
           "role": "output",
-          "rva": "0x177eda",
+          "rva": "0x17888a",
           "instructionHex": "420f111c80"
         },
         {
           "role": "historyInputLast",
-          "rva": "0x177f2d",
+          "rva": "0x1788dd",
           "instructionHex": "f30f1132"
         },
         {
           "role": "historyOutputLast",
-          "rva": "0x177f36",
+          "rva": "0x1788e6",
           "instructionHex": "f30f117a08"
+        },
+        {
+          "role": "currentInstruction0",
+          "rva": "0x178730",
+          "instructionHex": "4c8bdc"
+        },
+        {
+          "role": "currentInstruction1",
+          "rva": "0x178733",
+          "instructionHex": "49897b18"
+        },
+        {
+          "role": "currentInstruction2",
+          "rva": "0x178737",
+          "instructionHex": "4156"
+        },
+        {
+          "role": "currentInstruction3",
+          "rva": "0x178739",
+          "instructionHex": "4881ecd0000000"
+        },
+        {
+          "role": "currentInstruction4",
+          "rva": "0x178740",
+          "instructionHex": "410f2973e8"
+        },
+        {
+          "role": "currentInstruction5",
+          "rva": "0x178745",
+          "instructionHex": "8bc2"
+        },
+        {
+          "role": "currentInstruction6",
+          "rva": "0x178747",
+          "instructionHex": "410f297bd8"
+        },
+        {
+          "role": "currentInstruction7",
+          "rva": "0x17874c",
+          "instructionHex": "4c8bf1"
+        },
+        {
+          "role": "currentInstruction8",
+          "rva": "0x17874f",
+          "instructionHex": "450f2943c8"
+        },
+        {
+          "role": "currentInstruction9",
+          "rva": "0x178754",
+          "instructionHex": "450f294bb8"
+        },
+        {
+          "role": "currentInstruction10",
+          "rva": "0x178759",
+          "instructionHex": "450f2953a8"
+        },
+        {
+          "role": "currentInstruction11",
+          "rva": "0x17875e",
+          "instructionHex": "450f295b98"
+        },
+        {
+          "role": "currentInstruction12",
+          "rva": "0x178763",
+          "instructionHex": "450f296388"
+        },
+        {
+          "role": "currentInstruction13",
+          "rva": "0x178768",
+          "instructionHex": "440f296c2450"
+        },
+        {
+          "role": "currentInstruction14",
+          "rva": "0x17876e",
+          "instructionHex": "440f29742440"
+        },
+        {
+          "role": "currentInstruction15",
+          "rva": "0x178774",
+          "instructionHex": "440f297c2430"
+        },
+        {
+          "role": "currentInstruction16",
+          "rva": "0x17877a",
+          "instructionHex": "49895b08"
+        },
+        {
+          "role": "currentInstruction17",
+          "rva": "0x17877e",
+          "instructionHex": "498bd9"
+        },
+        {
+          "role": "currentInstruction18",
+          "rva": "0x178781",
+          "instructionHex": "8bfa"
+        },
+        {
+          "role": "currentInstruction19",
+          "rva": "0x178783",
+          "instructionHex": "83e003"
+        },
+        {
+          "role": "currentInstruction20",
+          "rva": "0x178786",
+          "instructionHex": "742c"
+        },
+        {
+          "role": "currentInstruction21",
+          "rva": "0x178788",
+          "instructionHex": "49897310"
+        },
+        {
+          "role": "currentInstruction22",
+          "rva": "0x17878c",
+          "instructionHex": "be04000000"
+        },
+        {
+          "role": "currentInstruction23",
+          "rva": "0x178791",
+          "instructionHex": "2bf0"
+        },
+        {
+          "role": "currentInstruction24",
+          "rva": "0x178793",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "currentInstruction25",
+          "rva": "0x178796",
+          "instructionHex": "488d0cb8"
+        },
+        {
+          "role": "currentInstruction26",
+          "rva": "0x17879a",
+          "instructionHex": "740e"
+        },
+        {
+          "role": "currentInstruction27",
+          "rva": "0x17879c",
+          "instructionHex": "448bc6"
+        },
+        {
+          "role": "currentInstruction28",
+          "rva": "0x17879f",
+          "instructionHex": "33d2"
+        },
+        {
+          "role": "currentInstruction29",
+          "rva": "0x1787a1",
+          "instructionHex": "49c1e002"
+        },
+        {
+          "role": "currentInstruction30",
+          "rva": "0x1787a5",
+          "instructionHex": "e8261e1100"
+        },
+        {
+          "role": "currentInstruction31",
+          "rva": "0x1787aa",
+          "instructionHex": "03fe"
+        },
+        {
+          "role": "currentInstruction32",
+          "rva": "0x1787ac",
+          "instructionHex": "488bb424e8000000"
+        },
+        {
+          "role": "currentInstruction33",
+          "rva": "0x1787b4",
+          "instructionHex": "488b942400010000"
+        },
+        {
+          "role": "currentInstruction34",
+          "rva": "0x1787bc",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "currentInstruction35",
+          "rva": "0x1787bf",
+          "instructionHex": "0f104370"
+        },
+        {
+          "role": "currentInstruction36",
+          "rva": "0x1787c7",
+          "instructionHex": "440f105310"
+        },
+        {
+          "role": "currentInstruction37",
+          "rva": "0x1787d0",
+          "instructionHex": "f30f106a04"
+        },
+        {
+          "role": "currentInstruction38",
+          "rva": "0x1787d5",
+          "instructionHex": "f30f107a08"
+        },
+        {
+          "role": "currentInstruction39",
+          "rva": "0x1787da",
+          "instructionHex": "f3440f10420c"
+        },
+        {
+          "role": "currentInstruction40",
+          "rva": "0x1787e0",
+          "instructionHex": "440f105b20"
+        },
+        {
+          "role": "currentInstruction41",
+          "rva": "0x1787e5",
+          "instructionHex": "440f106330"
+        },
+        {
+          "role": "currentInstruction42",
+          "rva": "0x1787ea",
+          "instructionHex": "440f106b40"
+        },
+        {
+          "role": "currentInstruction43",
+          "rva": "0x1787ef",
+          "instructionHex": "440f107350"
+        },
+        {
+          "role": "currentInstruction44",
+          "rva": "0x1787f4",
+          "instructionHex": "440f107b60"
+        },
+        {
+          "role": "currentInstruction45",
+          "rva": "0x1787f9",
+          "instructionHex": "488b9c24e0000000"
+        },
+        {
+          "role": "currentInstruction46",
+          "rva": "0x178801",
+          "instructionHex": "0fc6f600"
+        },
+        {
+          "role": "currentInstruction47",
+          "rva": "0x178805",
+          "instructionHex": "0fc6ed00"
+        },
+        {
+          "role": "currentInstruction48",
+          "rva": "0x178809",
+          "instructionHex": "0fc6ff00"
+        },
+        {
+          "role": "currentInstruction49",
+          "rva": "0x17880d",
+          "instructionHex": "450fc6c000"
+        },
+        {
+          "role": "currentInstruction50",
+          "rva": "0x178812",
+          "instructionHex": "0f29442420"
+        },
+        {
+          "role": "currentInstruction51",
+          "rva": "0x178817",
+          "instructionHex": "85ff"
+        },
+        {
+          "role": "currentInstruction52",
+          "rva": "0x178819",
+          "instructionHex": "0f848d000000"
+        },
+        {
+          "role": "currentInstruction53",
+          "rva": "0x17881f",
+          "instructionHex": "90"
+        },
+        {
+          "role": "currentInstruction54",
+          "rva": "0x178823",
+          "instructionHex": "410f28c5"
+        },
+        {
+          "role": "currentInstruction55",
+          "rva": "0x17882a",
+          "instructionHex": "410f28ce"
+        },
+        {
+          "role": "currentInstruction56",
+          "rva": "0x17882e",
+          "instructionHex": "0f59cd"
+        },
+        {
+          "role": "currentInstruction57",
+          "rva": "0x178831",
+          "instructionHex": "420f102480"
+        },
+        {
+          "role": "currentInstruction58",
+          "rva": "0x178836",
+          "instructionHex": "0f28d4"
+        },
+        {
+          "role": "currentInstruction59",
+          "rva": "0x178839",
+          "instructionHex": "0f28ec"
+        },
+        {
+          "role": "currentInstruction60",
+          "rva": "0x17883c",
+          "instructionHex": "0fc6ecaa"
+        },
+        {
+          "role": "currentInstruction61",
+          "rva": "0x178840",
+          "instructionHex": "0f28dc"
+        },
+        {
+          "role": "currentInstruction62",
+          "rva": "0x178843",
+          "instructionHex": "0fc6dc55"
+        },
+        {
+          "role": "currentInstruction63",
+          "rva": "0x178847",
+          "instructionHex": "0f28f4"
+        },
+        {
+          "role": "currentInstruction64",
+          "rva": "0x17884a",
+          "instructionHex": "410f59db"
+        },
+        {
+          "role": "currentInstruction65",
+          "rva": "0x17884e",
+          "instructionHex": "410f59d1"
+        },
+        {
+          "role": "currentInstruction66",
+          "rva": "0x178852",
+          "instructionHex": "0fc6f4ff"
+        },
+        {
+          "role": "currentInstruction67",
+          "rva": "0x178856",
+          "instructionHex": "0fc6e400"
+        },
+        {
+          "role": "currentInstruction68",
+          "rva": "0x17885a",
+          "instructionHex": "410f59e4"
+        },
+        {
+          "role": "currentInstruction69",
+          "rva": "0x178861",
+          "instructionHex": "0f28c5"
+        },
+        {
+          "role": "currentInstruction70",
+          "rva": "0x178864",
+          "instructionHex": "410f59c2"
+        },
+        {
+          "role": "currentInstruction71",
+          "rva": "0x178868",
+          "instructionHex": "0f58d1"
+        },
+        {
+          "role": "currentInstruction72",
+          "rva": "0x17886b",
+          "instructionHex": "0f58c2"
+        },
+        {
+          "role": "currentInstruction73",
+          "rva": "0x17886e",
+          "instructionHex": "0f58d8"
+        },
+        {
+          "role": "currentInstruction74",
+          "rva": "0x178871",
+          "instructionHex": "410f28c7"
+        },
+        {
+          "role": "currentInstruction75",
+          "rva": "0x178875",
+          "instructionHex": "0f59c7"
+        },
+        {
+          "role": "currentInstruction76",
+          "rva": "0x178878",
+          "instructionHex": "0f58dc"
+        },
+        {
+          "role": "currentInstruction77",
+          "rva": "0x17887b",
+          "instructionHex": "0f58d8"
+        },
+        {
+          "role": "currentInstruction78",
+          "rva": "0x17887e",
+          "instructionHex": "0f28442420"
+        },
+        {
+          "role": "currentInstruction79",
+          "rva": "0x178883",
+          "instructionHex": "410f59c0"
+        },
+        {
+          "role": "currentInstruction80",
+          "rva": "0x178887",
+          "instructionHex": "0f58d8"
+        },
+        {
+          "role": "currentInstruction81",
+          "rva": "0x17888f",
+          "instructionHex": "4183c004"
+        },
+        {
+          "role": "currentInstruction82",
+          "rva": "0x178893",
+          "instructionHex": "0f28fb"
+        },
+        {
+          "role": "currentInstruction83",
+          "rva": "0x178896",
+          "instructionHex": "440f28c3"
+        },
+        {
+          "role": "currentInstruction84",
+          "rva": "0x17889a",
+          "instructionHex": "0fc6fbff"
+        },
+        {
+          "role": "currentInstruction85",
+          "rva": "0x17889e",
+          "instructionHex": "440fc6c3aa"
+        },
+        {
+          "role": "currentInstruction86",
+          "rva": "0x1788a3",
+          "instructionHex": "443bc7"
+        },
+        {
+          "role": "currentInstruction87",
+          "rva": "0x1788a6",
+          "instructionHex": "0f8274ffffff"
+        },
+        {
+          "role": "currentInstruction88",
+          "rva": "0x1788ac",
+          "instructionHex": "440f28742440"
+        },
+        {
+          "role": "currentInstruction89",
+          "rva": "0x1788b2",
+          "instructionHex": "4c8d9c24d0000000"
+        },
+        {
+          "role": "currentInstruction90",
+          "rva": "0x1788ba",
+          "instructionHex": "498b7b20"
+        },
+        {
+          "role": "currentInstruction91",
+          "rva": "0x1788be",
+          "instructionHex": "450f284bc0"
+        },
+        {
+          "role": "currentInstruction92",
+          "rva": "0x1788c3",
+          "instructionHex": "450f2853b0"
+        },
+        {
+          "role": "currentInstruction93",
+          "rva": "0x1788c8",
+          "instructionHex": "450f285ba0"
+        },
+        {
+          "role": "currentInstruction94",
+          "rva": "0x1788cd",
+          "instructionHex": "450f286390"
+        },
+        {
+          "role": "currentInstruction95",
+          "rva": "0x1788d2",
+          "instructionHex": "450f286b80"
+        },
+        {
+          "role": "currentInstruction96",
+          "rva": "0x1788d7",
+          "instructionHex": "440f287c2430"
+        },
+        {
+          "role": "currentInstruction97",
+          "rva": "0x1788e1",
+          "instructionHex": "410f2873f0"
+        },
+        {
+          "role": "currentInstruction98",
+          "rva": "0x1788eb",
+          "instructionHex": "410f287be0"
+        },
+        {
+          "role": "currentInstruction99",
+          "rva": "0x1788f0",
+          "instructionHex": "f3440f11420c"
+        },
+        {
+          "role": "currentInstruction100",
+          "rva": "0x1788f6",
+          "instructionHex": "450f2843d0"
+        },
+        {
+          "role": "currentInstruction101",
+          "rva": "0x1788fb",
+          "instructionHex": "f30f116a04"
+        },
+        {
+          "role": "currentInstruction102",
+          "rva": "0x178900",
+          "instructionHex": "498be3"
+        },
+        {
+          "role": "currentInstruction103",
+          "rva": "0x178903",
+          "instructionHex": "415e"
+        },
+        {
+          "role": "currentInstruction104",
+          "rva": "0x178905",
+          "instructionHex": "c3"
         }
       ]
     },
     {
       "key": "roomDiffusionKernel",
-      "entryRva": "0x2327f0",
+      "entryRva": "0x233280",
       "windows": [
         {
-          "rva": "0x2327f0",
+          "rva": "0x233280",
           "bodyLength": 29,
-          "bodySha256": "86c75eff30b9ca896709f615acc5d37ed097320b75edb21f19b784233179ff11",
-          "unwindRva": "0x318598",
-          "unwindInfoHex": "010f03000f3404000f600000",
+          "bodySha256": "df883ea54622757d4a2e7a768c40ea38a00cf0c21dc498c42dcc0b9e4ae3e0a1",
+          "unwindRva": "0x318ed4",
+          "unwindInfoHex": "010f03000f3403000f700000",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x23280d",
-          "bodyLength": 486,
-          "bodySha256": "d53fa1cf971e667a12226a0c3d87565f733980641b68464c94717bc2d8cfe7f7",
-          "unwindRva": "0x3185a4",
-          "unwindInfoHex": "210d04000d74030005540200f02723000d28230098853100",
+          "rva": "0x23329d",
+          "bodyLength": 481,
+          "bodySha256": "d5e2ae7c5e79cff4a7febdb16ef0cb7c1d76b5051a5c88ab4c224153aa5f2033",
+          "unwindRva": "0x318ee0",
+          "unwindInfoHex": "2105020005640200803223009d322300d48e3100",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x2329f3",
+          "rva": "0x23347e",
           "bodyLength": 1,
           "bodySha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e",
-          "unwindRva": "0x3185bc",
-          "unwindInfoHex": "21000000f02723000d28230098853100",
+          "unwindRva": "0x318ef4",
+          "unwindInfoHex": "21000000803223009d322300d48e3100",
           "windowKind": "fullExceptionExtent"
         }
       ],
@@ -146,92 +776,716 @@
         "storeHistory",
         "output",
         "wrap",
-        "gainField"
+        "gainField",
+        "currentInstruction0",
+        "currentInstruction1",
+        "currentInstruction2",
+        "currentInstruction3",
+        "currentInstruction4",
+        "currentInstruction5",
+        "currentInstruction6",
+        "currentInstruction7",
+        "currentInstruction8",
+        "currentInstruction9",
+        "currentInstruction10",
+        "currentInstruction11",
+        "currentInstruction12",
+        "currentInstruction13",
+        "currentInstruction14",
+        "currentInstruction15",
+        "currentInstruction16",
+        "currentInstruction17",
+        "currentInstruction18",
+        "currentInstruction19",
+        "currentInstruction20",
+        "currentInstruction21",
+        "currentInstruction22",
+        "currentInstruction23",
+        "currentInstruction24",
+        "currentInstruction25",
+        "currentInstruction26",
+        "currentInstruction27",
+        "currentInstruction28",
+        "currentInstruction29",
+        "currentInstruction30",
+        "currentInstruction31",
+        "currentInstruction32",
+        "currentInstruction33",
+        "currentInstruction34",
+        "currentInstruction35",
+        "currentInstruction36",
+        "currentInstruction37",
+        "currentInstruction38",
+        "currentInstruction39",
+        "currentInstruction40",
+        "currentInstruction41",
+        "currentInstruction42",
+        "currentInstruction43",
+        "currentInstruction44",
+        "currentInstruction45",
+        "currentInstruction46",
+        "currentInstruction47",
+        "currentInstruction48",
+        "currentInstruction49",
+        "currentInstruction50",
+        "currentInstruction51",
+        "currentInstruction52",
+        "currentInstruction53",
+        "currentInstruction54",
+        "currentInstruction55",
+        "currentInstruction56",
+        "currentInstruction57",
+        "currentInstruction58",
+        "currentInstruction59",
+        "currentInstruction60",
+        "currentInstruction61",
+        "currentInstruction62",
+        "currentInstruction63",
+        "currentInstruction64",
+        "currentInstruction65",
+        "currentInstruction66",
+        "currentInstruction67",
+        "currentInstruction68",
+        "currentInstruction69",
+        "currentInstruction70",
+        "currentInstruction71",
+        "currentInstruction72",
+        "currentInstruction73",
+        "currentInstruction74",
+        "currentInstruction75",
+        "currentInstruction76",
+        "currentInstruction77",
+        "currentInstruction78",
+        "currentInstruction79",
+        "currentInstruction80",
+        "currentInstruction81",
+        "currentInstruction82",
+        "currentInstruction83",
+        "currentInstruction84",
+        "currentInstruction85",
+        "currentInstruction86",
+        "currentInstruction87",
+        "currentInstruction88",
+        "currentInstruction89",
+        "currentInstruction90",
+        "currentInstruction91",
+        "currentInstruction92",
+        "currentInstruction93",
+        "currentInstruction94",
+        "currentInstruction95",
+        "currentInstruction96",
+        "currentInstruction97",
+        "currentInstruction98",
+        "currentInstruction99",
+        "currentInstruction100",
+        "currentInstruction101",
+        "currentInstruction102",
+        "currentInstruction103"
       ],
       "instructionWitnesses": [
         {
           "role": "index",
-          "rva": "0x2327ff",
+          "rva": "0x23328f",
           "instructionHex": "8b5910"
         },
         {
           "role": "ring",
-          "rva": "0x232805",
+          "rva": "0x233295",
           "instructionHex": "488b4108"
         },
         {
           "role": "doubleIndex",
-          "rva": "0x23281c",
+          "rva": "0x2332a7",
           "instructionHex": "448d0c1b"
         },
         {
           "role": "gain",
-          "rva": "0x23283c",
+          "rva": "0x2332c8",
           "instructionHex": "f3410f1028"
         },
         {
           "role": "subtract",
-          "rva": "0x232876",
+          "rva": "0x233306",
           "instructionHex": "0f5cd8"
         },
         {
           "role": "multiply",
-          "rva": "0x232880",
+          "rva": "0x233310",
           "instructionHex": "0f59dd"
         },
         {
           "role": "add",
-          "rva": "0x232883",
+          "rva": "0x233313",
           "instructionHex": "0f58da"
         },
         {
           "role": "storeHistory",
-          "rva": "0x232890",
+          "rva": "0x233320",
           "instructionHex": "410f1102"
         },
         {
           "role": "output",
-          "rva": "0x2328a1",
+          "rva": "0x233331",
           "instructionHex": "0f111a"
         },
         {
           "role": "wrap",
-          "rva": "0x2329d7",
-          "instructionHex": "41896b10"
+          "rva": "0x233467",
+          "instructionHex": "41897310"
         },
         {
           "role": "gainField",
-          "rva": "0x232809",
+          "rva": "0x233299",
           "instructionHex": "4c8d4114"
+        },
+        {
+          "role": "currentInstruction0",
+          "rva": "0x233280",
+          "instructionHex": "4585c0"
+        },
+        {
+          "role": "currentInstruction1",
+          "rva": "0x233283",
+          "instructionHex": "0f84f5010000"
+        },
+        {
+          "role": "currentInstruction2",
+          "rva": "0x233289",
+          "instructionHex": "48895c2410"
+        },
+        {
+          "role": "currentInstruction3",
+          "rva": "0x23328e",
+          "instructionHex": "57"
+        },
+        {
+          "role": "currentInstruction4",
+          "rva": "0x233292",
+          "instructionHex": "418bf8"
+        },
+        {
+          "role": "currentInstruction5",
+          "rva": "0x23329d",
+          "instructionHex": "4889742410"
+        },
+        {
+          "role": "currentInstruction6",
+          "rva": "0x2332a2",
+          "instructionHex": "4c8bd9"
+        },
+        {
+          "role": "currentInstruction7",
+          "rva": "0x2332ab",
+          "instructionHex": "4e8d1488"
+        },
+        {
+          "role": "currentInstruction8",
+          "rva": "0x2332af",
+          "instructionHex": "90"
+        },
+        {
+          "role": "currentInstruction9",
+          "rva": "0x2332b0",
+          "instructionHex": "418b0b"
+        },
+        {
+          "role": "currentInstruction10",
+          "rva": "0x2332b3",
+          "instructionHex": "2bcb"
+        },
+        {
+          "role": "currentInstruction11",
+          "rva": "0x2332b5",
+          "instructionHex": "3bf9"
+        },
+        {
+          "role": "currentInstruction12",
+          "rva": "0x2332b7",
+          "instructionHex": "0f42cf"
+        },
+        {
+          "role": "currentInstruction13",
+          "rva": "0x2332bc",
+          "instructionHex": "8d040b"
+        },
+        {
+          "role": "currentInstruction14",
+          "rva": "0x2332bf",
+          "instructionHex": "41894310"
+        },
+        {
+          "role": "currentInstruction15",
+          "rva": "0x2332c3",
+          "instructionHex": "83f904"
+        },
+        {
+          "role": "currentInstruction16",
+          "rva": "0x2332c6",
+          "instructionHex": "727a"
+        },
+        {
+          "role": "currentInstruction17",
+          "rva": "0x2332cd",
+          "instructionHex": "448bc9"
+        },
+        {
+          "role": "currentInstruction18",
+          "rva": "0x2332d0",
+          "instructionHex": "41c1e902"
+        },
+        {
+          "role": "currentInstruction19",
+          "rva": "0x2332d4",
+          "instructionHex": "0fc6ed00"
+        },
+        {
+          "role": "currentInstruction20",
+          "rva": "0x2332e0",
+          "instructionHex": "2bc8"
+        },
+        {
+          "role": "currentInstruction21",
+          "rva": "0x2332e2",
+          "instructionHex": "4585c9"
+        },
+        {
+          "role": "currentInstruction22",
+          "rva": "0x2332e5",
+          "instructionHex": "745b"
+        },
+        {
+          "role": "currentInstruction23",
+          "rva": "0x2332e7",
+          "instructionHex": "418bc1"
+        },
+        {
+          "role": "currentInstruction24",
+          "rva": "0x2332ea",
+          "instructionHex": "660f1f440000"
+        },
+        {
+          "role": "currentInstruction25",
+          "rva": "0x2332f0",
+          "instructionHex": "410f1012"
+        },
+        {
+          "role": "currentInstruction26",
+          "rva": "0x2332f7",
+          "instructionHex": "410f104a10"
+        },
+        {
+          "role": "currentInstruction27",
+          "rva": "0x2332fc",
+          "instructionHex": "0f28dc"
+        },
+        {
+          "role": "currentInstruction28",
+          "rva": "0x2332ff",
+          "instructionHex": "0f28c2"
+        },
+        {
+          "role": "currentInstruction29",
+          "rva": "0x233302",
+          "instructionHex": "0fc6c1dd"
+        },
+        {
+          "role": "currentInstruction30",
+          "rva": "0x233309",
+          "instructionHex": "0fc6d188"
+        },
+        {
+          "role": "currentInstruction31",
+          "rva": "0x23330d",
+          "instructionHex": "0f28c4"
+        },
+        {
+          "role": "currentInstruction32",
+          "rva": "0x233316",
+          "instructionHex": "0f16c3"
+        },
+        {
+          "role": "currentInstruction33",
+          "rva": "0x23331c",
+          "instructionHex": "0fc6c0d8"
+        },
+        {
+          "role": "currentInstruction34",
+          "rva": "0x233324",
+          "instructionHex": "0fc6e472"
+        },
+        {
+          "role": "currentInstruction35",
+          "rva": "0x233328",
+          "instructionHex": "410f116210"
+        },
+        {
+          "role": "currentInstruction36",
+          "rva": "0x23332d",
+          "instructionHex": "4983c220"
+        },
+        {
+          "role": "currentInstruction37",
+          "rva": "0x233334",
+          "instructionHex": "4883c210"
+        },
+        {
+          "role": "currentInstruction38",
+          "rva": "0x233338",
+          "instructionHex": "4883e801"
+        },
+        {
+          "role": "currentInstruction39",
+          "rva": "0x23333e",
+          "instructionHex": "4d8d4314"
+        },
+        {
+          "role": "currentInstruction40",
+          "rva": "0x233342",
+          "instructionHex": "8bc6"
+        },
+        {
+          "role": "currentInstruction41",
+          "rva": "0x233344",
+          "instructionHex": "83f904"
+        },
+        {
+          "role": "currentInstruction42",
+          "rva": "0x233347",
+          "instructionHex": "0f82cb000000"
+        },
+        {
+          "role": "currentInstruction43",
+          "rva": "0x23334d",
+          "instructionHex": "8d41fc"
+        },
+        {
+          "role": "currentInstruction44",
+          "rva": "0x233350",
+          "instructionHex": "c1e802"
+        },
+        {
+          "role": "currentInstruction45",
+          "rva": "0x233353",
+          "instructionHex": "ffc0"
+        },
+        {
+          "role": "currentInstruction46",
+          "rva": "0x233358",
+          "instructionHex": "8d048500000000"
+        },
+        {
+          "role": "currentInstruction47",
+          "rva": "0x23335f",
+          "instructionHex": "90"
+        },
+        {
+          "role": "currentInstruction48",
+          "rva": "0x233360",
+          "instructionHex": "f30f1002"
+        },
+        {
+          "role": "currentInstruction49",
+          "rva": "0x233364",
+          "instructionHex": "f30f105204"
+        },
+        {
+          "role": "currentInstruction50",
+          "rva": "0x233369",
+          "instructionHex": "0f28c8"
+        },
+        {
+          "role": "currentInstruction51",
+          "rva": "0x23336c",
+          "instructionHex": "f3410f5c4a04"
+        },
+        {
+          "role": "currentInstruction52",
+          "rva": "0x233377",
+          "instructionHex": "f3410f580a"
+        },
+        {
+          "role": "currentInstruction53",
+          "rva": "0x23337c",
+          "instructionHex": "f3410f1102"
+        },
+        {
+          "role": "currentInstruction54",
+          "rva": "0x233381",
+          "instructionHex": "0f28c2"
+        },
+        {
+          "role": "currentInstruction55",
+          "rva": "0x233384",
+          "instructionHex": "f3410f5c420c"
+        },
+        {
+          "role": "currentInstruction56",
+          "rva": "0x23338a",
+          "instructionHex": "f30f110a"
+        },
+        {
+          "role": "currentInstruction57",
+          "rva": "0x23338e",
+          "instructionHex": "f3410f114a04"
+        },
+        {
+          "role": "currentInstruction58",
+          "rva": "0x233394",
+          "instructionHex": "f3410f5900"
+        },
+        {
+          "role": "currentInstruction59",
+          "rva": "0x23339e",
+          "instructionHex": "f3410f584208"
+        },
+        {
+          "role": "currentInstruction60",
+          "rva": "0x2333a4",
+          "instructionHex": "f3410f115208"
+        },
+        {
+          "role": "currentInstruction61",
+          "rva": "0x2333aa",
+          "instructionHex": "f3410f11420c"
+        },
+        {
+          "role": "currentInstruction62",
+          "rva": "0x2333b0",
+          "instructionHex": "f30f114204"
+        },
+        {
+          "role": "currentInstruction63",
+          "rva": "0x2333b5",
+          "instructionHex": "0f28c1"
+        },
+        {
+          "role": "currentInstruction64",
+          "rva": "0x2333b8",
+          "instructionHex": "f3410f5c4214"
+        },
+        {
+          "role": "currentInstruction65",
+          "rva": "0x2333c3",
+          "instructionHex": "f3410f584210"
+        },
+        {
+          "role": "currentInstruction66",
+          "rva": "0x2333c9",
+          "instructionHex": "f3410f114a10"
+        },
+        {
+          "role": "currentInstruction67",
+          "rva": "0x2333cf",
+          "instructionHex": "f30f104a0c"
+        },
+        {
+          "role": "currentInstruction68",
+          "rva": "0x2333d4",
+          "instructionHex": "f3410f114214"
+        },
+        {
+          "role": "currentInstruction69",
+          "rva": "0x2333da",
+          "instructionHex": "f30f114208"
+        },
+        {
+          "role": "currentInstruction70",
+          "rva": "0x2333df",
+          "instructionHex": "0f28c1"
+        },
+        {
+          "role": "currentInstruction71",
+          "rva": "0x2333e2",
+          "instructionHex": "f3410f5c421c"
+        },
+        {
+          "role": "currentInstruction72",
+          "rva": "0x2333ed",
+          "instructionHex": "f3410f584218"
+        },
+        {
+          "role": "currentInstruction73",
+          "rva": "0x2333f3",
+          "instructionHex": "f3410f114a18"
+        },
+        {
+          "role": "currentInstruction74",
+          "rva": "0x2333f9",
+          "instructionHex": "f3410f11421c"
+        },
+        {
+          "role": "currentInstruction75",
+          "rva": "0x2333ff",
+          "instructionHex": "4983c220"
+        },
+        {
+          "role": "currentInstruction76",
+          "rva": "0x233403",
+          "instructionHex": "f30f11420c"
+        },
+        {
+          "role": "currentInstruction77",
+          "rva": "0x233408",
+          "instructionHex": "4883c210"
+        },
+        {
+          "role": "currentInstruction78",
+          "rva": "0x233410",
+          "instructionHex": "0f854affffff"
+        },
+        {
+          "role": "currentInstruction79",
+          "rva": "0x233416",
+          "instructionHex": "eb04"
+        },
+        {
+          "role": "currentInstruction80",
+          "rva": "0x233418",
+          "instructionHex": "4d8d4314"
+        },
+        {
+          "role": "currentInstruction81",
+          "rva": "0x23341c",
+          "instructionHex": "3bc1"
+        },
+        {
+          "role": "currentInstruction82",
+          "rva": "0x23341e",
+          "instructionHex": "7338"
+        },
+        {
+          "role": "currentInstruction83",
+          "rva": "0x233420",
+          "instructionHex": "2bc8"
+        },
+        {
+          "role": "currentInstruction84",
+          "rva": "0x233422",
+          "instructionHex": "8bc1"
+        },
+        {
+          "role": "currentInstruction85",
+          "rva": "0x233428",
+          "instructionHex": "0f28c8"
+        },
+        {
+          "role": "currentInstruction86",
+          "rva": "0x23342b",
+          "instructionHex": "f3410f5c4a04"
+        },
+        {
+          "role": "currentInstruction87",
+          "rva": "0x233431",
+          "instructionHex": "f3410f5908"
+        },
+        {
+          "role": "currentInstruction88",
+          "rva": "0x233436",
+          "instructionHex": "f3410f580a"
+        },
+        {
+          "role": "currentInstruction89",
+          "rva": "0x23343b",
+          "instructionHex": "f3410f1102"
+        },
+        {
+          "role": "currentInstruction90",
+          "rva": "0x233440",
+          "instructionHex": "f3410f114a04"
+        },
+        {
+          "role": "currentInstruction91",
+          "rva": "0x23344a",
+          "instructionHex": "f30f110a"
+        },
+        {
+          "role": "currentInstruction92",
+          "rva": "0x23344e",
+          "instructionHex": "4883c204"
+        },
+        {
+          "role": "currentInstruction93",
+          "rva": "0x233452",
+          "instructionHex": "4883e801"
+        },
+        {
+          "role": "currentInstruction94",
+          "rva": "0x233456",
+          "instructionHex": "75cc"
+        },
+        {
+          "role": "currentInstruction95",
+          "rva": "0x233458",
+          "instructionHex": "418b5b10"
+        },
+        {
+          "role": "currentInstruction96",
+          "rva": "0x23345c",
+          "instructionHex": "413b1b"
+        },
+        {
+          "role": "currentInstruction97",
+          "rva": "0x23345f",
+          "instructionHex": "750a"
+        },
+        {
+          "role": "currentInstruction98",
+          "rva": "0x233465",
+          "instructionHex": "8bde"
+        },
+        {
+          "role": "currentInstruction99",
+          "rva": "0x23346b",
+          "instructionHex": "85ff"
+        },
+        {
+          "role": "currentInstruction100",
+          "rva": "0x23346d",
+          "instructionHex": "0f853dfeffff"
+        },
+        {
+          "role": "currentInstruction101",
+          "rva": "0x233473",
+          "instructionHex": "488b742410"
+        },
+        {
+          "role": "currentInstruction102",
+          "rva": "0x233478",
+          "instructionHex": "488b5c2418"
+        },
+        {
+          "role": "currentInstruction103",
+          "rva": "0x23347d",
+          "instructionHex": "5f"
         }
       ]
     },
     {
       "key": "roomLateTonePreparation",
-      "entryRva": "0x230870",
+      "entryRva": "0x2312b0",
       "windows": [
         {
-          "rva": "0x230870",
+          "rva": "0x2312b0",
           "bodyLength": 40,
           "bodySha256": "b49f82c02bb896dc6e810a174cd7bef18dda06bbdcdaedbacd9d04d15a8ee5a2",
-          "unwindRva": "0x3048e0",
+          "unwindRva": "0x3053d0",
           "unwindInfoHex": "010f06000f640b000f540a000f520b70",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x230898",
+          "rva": "0x2312d8",
           "bodyLength": 95,
-          "bodySha256": "84daeea320a415b2694af4c9e4d39284c690a2b0d7c25fb6a30d05b64a3783b8",
-          "unwindRva": "0x318178",
-          "unwindInfoHex": "21050200053409007008230098082300e0483000",
+          "bodySha256": "00801338357a50b3023a3411c2a3248c951c3bd4c17869ce19e43dc9e6832428",
+          "unwindRva": "0x318ab4",
+          "unwindInfoHex": "2105020005340900b0122300d8122300d0533000",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x2308f7",
+          "rva": "0x231337",
           "bodyLength": 16,
           "bodySha256": "cf9d498bb6486d3dbff549636ee73f24c716126eb7fc47a07bd24722fc7ad87e",
-          "unwindRva": "0x31818c",
-          "unwindInfoHex": "210000007008230098082300e0483000",
+          "unwindRva": "0x318ac8",
+          "unwindInfoHex": "21000000b0122300d8122300d0533000",
           "windowKind": "fullExceptionExtent"
         }
       ],
@@ -241,83 +1495,269 @@
         "slotMode2",
         "matrix",
         "historyStack",
-        "toneCall"
+        "toneCall",
+        "currentInstruction0",
+        "currentInstruction1",
+        "currentInstruction2",
+        "currentInstruction3",
+        "currentInstruction4",
+        "currentInstruction5",
+        "currentInstruction6",
+        "currentInstruction7",
+        "currentInstruction8",
+        "currentInstruction9",
+        "currentInstruction10",
+        "currentInstruction11",
+        "currentInstruction12",
+        "currentInstruction13",
+        "currentInstruction14",
+        "currentInstruction15",
+        "currentInstruction16",
+        "currentInstruction17",
+        "currentInstruction18",
+        "currentInstruction19",
+        "currentInstruction20",
+        "currentInstruction21",
+        "currentInstruction22",
+        "currentInstruction23",
+        "currentInstruction24",
+        "currentInstruction25",
+        "currentInstruction26",
+        "currentInstruction27",
+        "currentInstruction28",
+        "currentInstruction29",
+        "currentInstruction30"
       ],
       "instructionWitnesses": [
         {
           "role": "toneEnabled",
-          "rva": "0x23088f",
+          "rva": "0x2312cf",
           "instructionHex": "80b89800000000"
         },
         {
           "role": "slotArray",
-          "rva": "0x2308bb",
+          "rva": "0x2312fb",
           "instructionHex": "48039748010000"
         },
         {
           "role": "slotMode2",
-          "rva": "0x2308c2",
+          "rva": "0x231302",
           "instructionHex": "83ba9000000002"
         },
         {
           "role": "matrix",
-          "rva": "0x2308cb",
+          "rva": "0x23130b",
           "instructionHex": "4c8d4a10"
         },
         {
           "role": "historyStack",
-          "rva": "0x2308cf",
+          "rva": "0x23130f",
           "instructionHex": "4889542420"
         },
         {
           "role": "toneCall",
-          "rva": "0x2308e3",
-          "instructionHex": "e89874f4ff"
+          "rva": "0x231323",
+          "instructionHex": "e80874f4ff"
+        },
+        {
+          "role": "currentInstruction0",
+          "rva": "0x2312b0",
+          "instructionHex": "48896c2418"
+        },
+        {
+          "role": "currentInstruction1",
+          "rva": "0x2312b5",
+          "instructionHex": "4889742420"
+        },
+        {
+          "role": "currentInstruction2",
+          "rva": "0x2312ba",
+          "instructionHex": "57"
+        },
+        {
+          "role": "currentInstruction3",
+          "rva": "0x2312bb",
+          "instructionHex": "4883ec30"
+        },
+        {
+          "role": "currentInstruction4",
+          "rva": "0x2312bf",
+          "instructionHex": "488b8158010000"
+        },
+        {
+          "role": "currentInstruction5",
+          "rva": "0x2312c6",
+          "instructionHex": "418bf0"
+        },
+        {
+          "role": "currentInstruction6",
+          "rva": "0x2312c9",
+          "instructionHex": "488bea"
+        },
+        {
+          "role": "currentInstruction7",
+          "rva": "0x2312cc",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "currentInstruction8",
+          "rva": "0x2312d6",
+          "instructionHex": "745f"
+        },
+        {
+          "role": "currentInstruction9",
+          "rva": "0x2312d8",
+          "instructionHex": "48895c2448"
+        },
+        {
+          "role": "currentInstruction10",
+          "rva": "0x2312dd",
+          "instructionHex": "32db"
+        },
+        {
+          "role": "currentInstruction11",
+          "rva": "0x2312df",
+          "instructionHex": "389934010000"
+        },
+        {
+          "role": "currentInstruction12",
+          "rva": "0x2312e5",
+          "instructionHex": "764b"
+        },
+        {
+          "role": "currentInstruction13",
+          "rva": "0x2312e7",
+          "instructionHex": "660f1f840000000000"
+        },
+        {
+          "role": "currentInstruction14",
+          "rva": "0x2312f0",
+          "instructionHex": "0fb6c3"
+        },
+        {
+          "role": "currentInstruction15",
+          "rva": "0x2312f3",
+          "instructionHex": "488d1480"
+        },
+        {
+          "role": "currentInstruction16",
+          "rva": "0x2312f7",
+          "instructionHex": "48c1e205"
+        },
+        {
+          "role": "currentInstruction17",
+          "rva": "0x231309",
+          "instructionHex": "751d"
+        },
+        {
+          "role": "currentInstruction18",
+          "rva": "0x231314",
+          "instructionHex": "8bd6"
+        },
+        {
+          "role": "currentInstruction19",
+          "rva": "0x231316",
+          "instructionHex": "48896c2440"
+        },
+        {
+          "role": "currentInstruction20",
+          "rva": "0x23131b",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "currentInstruction21",
+          "rva": "0x23131e",
+          "instructionHex": "488d4c2440"
+        },
+        {
+          "role": "currentInstruction22",
+          "rva": "0x231328",
+          "instructionHex": "fec3"
+        },
+        {
+          "role": "currentInstruction23",
+          "rva": "0x23132a",
+          "instructionHex": "3a9f34010000"
+        },
+        {
+          "role": "currentInstruction24",
+          "rva": "0x231330",
+          "instructionHex": "72be"
+        },
+        {
+          "role": "currentInstruction25",
+          "rva": "0x231332",
+          "instructionHex": "488b5c2448"
+        },
+        {
+          "role": "currentInstruction26",
+          "rva": "0x231337",
+          "instructionHex": "488b6c2450"
+        },
+        {
+          "role": "currentInstruction27",
+          "rva": "0x23133c",
+          "instructionHex": "488b742458"
+        },
+        {
+          "role": "currentInstruction28",
+          "rva": "0x231341",
+          "instructionHex": "4883c430"
+        },
+        {
+          "role": "currentInstruction29",
+          "rva": "0x231345",
+          "instructionHex": "5f"
+        },
+        {
+          "role": "currentInstruction30",
+          "rva": "0x231346",
+          "instructionHex": "c3"
         }
       ]
     },
     {
       "key": "roomParameterRefresh",
-      "entryRva": "0x230440",
+      "entryRva": "0x230e90",
       "windows": [
         {
-          "rva": "0x230440",
+          "rva": "0x230e90",
           "bodyLength": 9,
           "bodySha256": "de6a7940819676114c24e2e19757a6270f7072c73e9cacfc21c48a48e6af4b2b",
-          "unwindRva": "0x2efabc",
+          "unwindRva": "0x2f0434",
           "unwindInfoHex": "0106020006320230",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x230449",
+          "rva": "0x230e99",
           "bodyLength": 50,
-          "bodySha256": "d4aac8cf4a95b7d20ab55abee46bdfada35ba5bc6a3afa4340318ca88c310608",
-          "unwindRva": "0x318108",
-          "unwindInfoHex": "21050200056406004004230049042300bcfa2e00",
+          "bodySha256": "1ef60f4dc88ad1ade8abe1881bd259a5f7aa0fc4a8bcdcca19c192357cefdb99",
+          "unwindRva": "0x318a48",
+          "unwindInfoHex": "2105020005640600900e2300990e230034042f00",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x23047b",
-          "bodyLength": 159,
-          "bodySha256": "3c5b4dc7230498f9bffd3fe6b7221d6290a82b60a1cc3a227dd49442a4d30b87",
-          "unwindRva": "0x31811c",
-          "unwindInfoHex": "210c04000ce4080005740700490423007b04230008813100",
+          "rva": "0x230ecb",
+          "bodyLength": 145,
+          "bodySha256": "725f848f481b6b3526a6d5c1d8b1864a6823eb9cceea3304e9fb6f6d4fa12828",
+          "unwindRva": "0x318a5c",
+          "unwindInfoHex": "2105020005740700990e2300cb0e2300488a3100",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x23051a",
+          "rva": "0x230f5c",
           "bodyLength": 211,
-          "bodySha256": "7f80392c09158318847e3b8c67fc5b280b4f153f2c859d0cac5c39f707fccd19",
-          "unwindRva": "0x318134",
-          "unwindInfoHex": "21000000490423007b04230008813100",
+          "bodySha256": "c3aaeb3671bce814b5eaea819835f5de9fe472884fbc2ce415d6fc57fb4bbe6e",
+          "unwindRva": "0x318a70",
+          "unwindInfoHex": "21000000990e2300cb0e2300488a3100",
           "windowKind": "fullExceptionExtent"
         },
         {
-          "rva": "0x2305ed",
+          "rva": "0x23102f",
           "bodyLength": 110,
-          "bodySha256": "9a17b90d02467bc39dcbc9432c970b237c1f77e0083f4c1fa88db254e546110f",
-          "unwindRva": "0x318144",
-          "unwindInfoHex": "210000004004230049042300bcfa2e00",
+          "bodySha256": "d438a675fd092d629ec1441c6bb76eda5493b76798198c7db0eb34d87e39eaf6",
+          "unwindRva": "0x318a80",
+          "unwindInfoHex": "21000000900e2300990e230034042f00",
           "windowKind": "fullExceptionExtent"
         }
       ],
@@ -330,53 +1770,689 @@
         "secondGainStore",
         "thirdGainStore",
         "fourthGainStore",
-        "clearRefreshFlag"
+        "clearRefreshFlag",
+        "currentInstruction0",
+        "currentInstruction1",
+        "currentInstruction2",
+        "currentInstruction3",
+        "currentInstruction4",
+        "currentInstruction5",
+        "currentInstruction6",
+        "currentInstruction7",
+        "currentInstruction8",
+        "currentInstruction9",
+        "currentInstruction10",
+        "currentInstruction11",
+        "currentInstruction12",
+        "currentInstruction13",
+        "currentInstruction14",
+        "currentInstruction15",
+        "currentInstruction16",
+        "currentInstruction17",
+        "currentInstruction18",
+        "currentInstruction19",
+        "currentInstruction20",
+        "currentInstruction21",
+        "currentInstruction22",
+        "currentInstruction23",
+        "currentInstruction24",
+        "currentInstruction25",
+        "currentInstruction26",
+        "currentInstruction27",
+        "currentInstruction28",
+        "currentInstruction29",
+        "currentInstruction30",
+        "currentInstruction31",
+        "currentInstruction32",
+        "currentInstruction33",
+        "currentInstruction34",
+        "currentInstruction35",
+        "currentInstruction36",
+        "currentInstruction37",
+        "currentInstruction38",
+        "currentInstruction39",
+        "currentInstruction40",
+        "currentInstruction41",
+        "currentInstruction42",
+        "currentInstruction43",
+        "currentInstruction44",
+        "currentInstruction45",
+        "currentInstruction46",
+        "currentInstruction47",
+        "currentInstruction48",
+        "currentInstruction49",
+        "currentInstruction50",
+        "currentInstruction51",
+        "currentInstruction52",
+        "currentInstruction53",
+        "currentInstruction54",
+        "currentInstruction55",
+        "currentInstruction56",
+        "currentInstruction57",
+        "currentInstruction58",
+        "currentInstruction59",
+        "currentInstruction60",
+        "currentInstruction61",
+        "currentInstruction62",
+        "currentInstruction63",
+        "currentInstruction64",
+        "currentInstruction65",
+        "currentInstruction66",
+        "currentInstruction67",
+        "currentInstruction68",
+        "currentInstruction69",
+        "currentInstruction70",
+        "currentInstruction71",
+        "currentInstruction72",
+        "currentInstruction73",
+        "currentInstruction74",
+        "currentInstruction75",
+        "currentInstruction76",
+        "currentInstruction77",
+        "currentInstruction78",
+        "currentInstruction79",
+        "currentInstruction80",
+        "currentInstruction81",
+        "currentInstruction82",
+        "currentInstruction83",
+        "currentInstruction84",
+        "currentInstruction85",
+        "currentInstruction86",
+        "currentInstruction87",
+        "currentInstruction88",
+        "currentInstruction89",
+        "currentInstruction90",
+        "currentInstruction91",
+        "currentInstruction92",
+        "currentInstruction93",
+        "currentInstruction94",
+        "currentInstruction95",
+        "currentInstruction96",
+        "currentInstruction97",
+        "currentInstruction98",
+        "currentInstruction99",
+        "currentInstruction100",
+        "currentInstruction101",
+        "currentInstruction102",
+        "currentInstruction103",
+        "currentInstruction104",
+        "currentInstruction105"
       ],
       "instructionWitnesses": [
         {
           "role": "controlRead",
-          "rva": "0x23051a",
+          "rva": "0x230f5c",
           "instructionHex": "f30f104110"
         },
         {
           "role": "changeSelection",
-          "rva": "0x23051f",
+          "rva": "0x230f61",
           "instructionHex": "0f2e8370010000"
         },
         {
           "role": "scale",
-          "rva": "0x23053b",
+          "rva": "0x230f7d",
           "instructionHex": "f30f59c3"
         },
         {
           "role": "firstClamp",
-          "rva": "0x230547",
+          "rva": "0x230f89",
           "instructionHex": "f30f5fc2"
         },
         {
           "role": "firstGainStore",
-          "rva": "0x23054f",
+          "rva": "0x230f91",
           "instructionHex": "f30f11431c"
         },
         {
           "role": "secondGainStore",
-          "rva": "0x23056d",
+          "rva": "0x230faf",
           "instructionHex": "f30f114334"
         },
         {
           "role": "thirdGainStore",
-          "rva": "0x230587",
+          "rva": "0x230fc9",
           "instructionHex": "f30f11434c"
         },
         {
           "role": "fourthGainStore",
-          "rva": "0x23059d",
+          "rva": "0x230fdf",
           "instructionHex": "f30f114364"
         },
         {
           "role": "clearRefreshFlag",
-          "rva": "0x230651",
+          "rva": "0x231093",
           "instructionHex": "c6405800"
+        },
+        {
+          "role": "currentInstruction0",
+          "rva": "0x230e90",
+          "instructionHex": "4053"
+        },
+        {
+          "role": "currentInstruction1",
+          "rva": "0x230e92",
+          "instructionHex": "4883ec20"
+        },
+        {
+          "role": "currentInstruction2",
+          "rva": "0x230e96",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "currentInstruction3",
+          "rva": "0x230e99",
+          "instructionHex": "4889742430"
+        },
+        {
+          "role": "currentInstruction4",
+          "rva": "0x230e9e",
+          "instructionHex": "488db158010000"
+        },
+        {
+          "role": "currentInstruction5",
+          "rva": "0x230ea5",
+          "instructionHex": "488b0e"
+        },
+        {
+          "role": "currentInstruction6",
+          "rva": "0x230ea8",
+          "instructionHex": "f30f108368010000"
+        },
+        {
+          "role": "currentInstruction7",
+          "rva": "0x230eb0",
+          "instructionHex": "0f2e4108"
+        },
+        {
+          "role": "currentInstruction8",
+          "rva": "0x230eb4",
+          "instructionHex": "7515"
+        },
+        {
+          "role": "currentInstruction9",
+          "rva": "0x230eb6",
+          "instructionHex": "f30f10836c010000"
+        },
+        {
+          "role": "currentInstruction10",
+          "rva": "0x230ebe",
+          "instructionHex": "488bc1"
+        },
+        {
+          "role": "currentInstruction11",
+          "rva": "0x230ec1",
+          "instructionHex": "0f2e410c"
+        },
+        {
+          "role": "currentInstruction12",
+          "rva": "0x230ec5",
+          "instructionHex": "0f8491000000"
+        },
+        {
+          "role": "currentInstruction13",
+          "rva": "0x230ecb",
+          "instructionHex": "48897c2438"
+        },
+        {
+          "role": "currentInstruction14",
+          "rva": "0x230ed0",
+          "instructionHex": "33ff"
+        },
+        {
+          "role": "currentInstruction15",
+          "rva": "0x230ed2",
+          "instructionHex": "39bb28010000"
+        },
+        {
+          "role": "currentInstruction16",
+          "rva": "0x230ed8",
+          "instructionHex": "7642"
+        },
+        {
+          "role": "currentInstruction17",
+          "rva": "0x230eda",
+          "instructionHex": "660f1f440000"
+        },
+        {
+          "role": "currentInstruction18",
+          "rva": "0x230ee0",
+          "instructionHex": "488b16"
+        },
+        {
+          "role": "currentInstruction19",
+          "rva": "0x230ee3",
+          "instructionHex": "448b8b30010000"
+        },
+        {
+          "role": "currentInstruction20",
+          "rva": "0x230eea",
+          "instructionHex": "8bc7"
+        },
+        {
+          "role": "currentInstruction21",
+          "rva": "0x230eec",
+          "instructionHex": "4869c8a8000000"
+        },
+        {
+          "role": "currentInstruction22",
+          "rva": "0x230ef3",
+          "instructionHex": "f30f10520c"
+        },
+        {
+          "role": "currentInstruction23",
+          "rva": "0x230ef8",
+          "instructionHex": "f30f104a08"
+        },
+        {
+          "role": "currentInstruction24",
+          "rva": "0x230efd",
+          "instructionHex": "48038b40010000"
+        },
+        {
+          "role": "currentInstruction25",
+          "rva": "0x230f04",
+          "instructionHex": "e8a7270000"
+        },
+        {
+          "role": "currentInstruction26",
+          "rva": "0x230f09",
+          "instructionHex": "ffc7"
+        },
+        {
+          "role": "currentInstruction27",
+          "rva": "0x230f0b",
+          "instructionHex": "3bbb28010000"
+        },
+        {
+          "role": "currentInstruction28",
+          "rva": "0x230f11",
+          "instructionHex": "72cd"
+        },
+        {
+          "role": "currentInstruction29",
+          "rva": "0x230f13",
+          "instructionHex": "488d9358010000"
+        },
+        {
+          "role": "currentInstruction30",
+          "rva": "0x230f1a",
+          "instructionHex": "eb03"
+        },
+        {
+          "role": "currentInstruction31",
+          "rva": "0x230f1c",
+          "instructionHex": "488bd6"
+        },
+        {
+          "role": "currentInstruction32",
+          "rva": "0x230f1f",
+          "instructionHex": "488b0e"
+        },
+        {
+          "role": "currentInstruction33",
+          "rva": "0x230f22",
+          "instructionHex": "0f57c0"
+        },
+        {
+          "role": "currentInstruction34",
+          "rva": "0x230f25",
+          "instructionHex": "8b8330010000"
+        },
+        {
+          "role": "currentInstruction35",
+          "rva": "0x230f2b",
+          "instructionHex": "488bf2"
+        },
+        {
+          "role": "currentInstruction36",
+          "rva": "0x230f2e",
+          "instructionHex": "488b7c2438"
+        },
+        {
+          "role": "currentInstruction37",
+          "rva": "0x230f33",
+          "instructionHex": "f30f104960"
+        },
+        {
+          "role": "currentInstruction38",
+          "rva": "0x230f38",
+          "instructionHex": "f30f590db8230600"
+        },
+        {
+          "role": "currentInstruction39",
+          "rva": "0x230f40",
+          "instructionHex": "f3480f2ac0"
+        },
+        {
+          "role": "currentInstruction40",
+          "rva": "0x230f45",
+          "instructionHex": "f30f584908"
+        },
+        {
+          "role": "currentInstruction41",
+          "rva": "0x230f4a",
+          "instructionHex": "f30f59c8"
+        },
+        {
+          "role": "currentInstruction42",
+          "rva": "0x230f4e",
+          "instructionHex": "f3480f2cc1"
+        },
+        {
+          "role": "currentInstruction43",
+          "rva": "0x230f53",
+          "instructionHex": "898320010000"
+        },
+        {
+          "role": "currentInstruction44",
+          "rva": "0x230f59",
+          "instructionHex": "488bc1"
+        },
+        {
+          "role": "currentInstruction45",
+          "rva": "0x230f68",
+          "instructionHex": "747a"
+        },
+        {
+          "role": "currentInstruction46",
+          "rva": "0x230f6a",
+          "instructionHex": "f30f100df2980a00"
+        },
+        {
+          "role": "currentInstruction47",
+          "rva": "0x230f72",
+          "instructionHex": "0f57d2"
+        },
+        {
+          "role": "currentInstruction48",
+          "rva": "0x230f75",
+          "instructionHex": "f30f101de3980a00"
+        },
+        {
+          "role": "currentInstruction49",
+          "rva": "0x230f81",
+          "instructionHex": "f30f5c05e7980a00"
+        },
+        {
+          "role": "currentInstruction50",
+          "rva": "0x230f8d",
+          "instructionHex": "f30f5dc1"
+        },
+        {
+          "role": "currentInstruction51",
+          "rva": "0x230f96",
+          "instructionHex": "f30f104010"
+        },
+        {
+          "role": "currentInstruction52",
+          "rva": "0x230f9b",
+          "instructionHex": "f30f59c3"
+        },
+        {
+          "role": "currentInstruction53",
+          "rva": "0x230f9f",
+          "instructionHex": "f30f5c05c5980a00"
+        },
+        {
+          "role": "currentInstruction54",
+          "rva": "0x230fa7",
+          "instructionHex": "f30f5fc2"
+        },
+        {
+          "role": "currentInstruction55",
+          "rva": "0x230fab",
+          "instructionHex": "f30f5dc1"
+        },
+        {
+          "role": "currentInstruction56",
+          "rva": "0x230fb4",
+          "instructionHex": "f30f104010"
+        },
+        {
+          "role": "currentInstruction57",
+          "rva": "0x230fb9",
+          "instructionHex": "f30f59c3"
+        },
+        {
+          "role": "currentInstruction58",
+          "rva": "0x230fbd",
+          "instructionHex": "f30f5cc1"
+        },
+        {
+          "role": "currentInstruction59",
+          "rva": "0x230fc1",
+          "instructionHex": "f30f5fc2"
+        },
+        {
+          "role": "currentInstruction60",
+          "rva": "0x230fc5",
+          "instructionHex": "f30f5dc1"
+        },
+        {
+          "role": "currentInstruction61",
+          "rva": "0x230fce",
+          "instructionHex": "f30f104010"
+        },
+        {
+          "role": "currentInstruction62",
+          "rva": "0x230fd3",
+          "instructionHex": "f30f59c3"
+        },
+        {
+          "role": "currentInstruction63",
+          "rva": "0x230fd7",
+          "instructionHex": "f30f5fc2"
+        },
+        {
+          "role": "currentInstruction64",
+          "rva": "0x230fdb",
+          "instructionHex": "f30f5dc1"
+        },
+        {
+          "role": "currentInstruction65",
+          "rva": "0x230fe4",
+          "instructionHex": "488b06"
+        },
+        {
+          "role": "currentInstruction66",
+          "rva": "0x230fe7",
+          "instructionHex": "f30f108378010000"
+        },
+        {
+          "role": "currentInstruction67",
+          "rva": "0x230fef",
+          "instructionHex": "0f2e4018"
+        },
+        {
+          "role": "currentInstruction68",
+          "rva": "0x230ff3",
+          "instructionHex": "751c"
+        },
+        {
+          "role": "currentInstruction69",
+          "rva": "0x230ff5",
+          "instructionHex": "f30f10837c010000"
+        },
+        {
+          "role": "currentInstruction70",
+          "rva": "0x230ffd",
+          "instructionHex": "0f2e401c"
+        },
+        {
+          "role": "currentInstruction71",
+          "rva": "0x231001",
+          "instructionHex": "750e"
+        },
+        {
+          "role": "currentInstruction72",
+          "rva": "0x231003",
+          "instructionHex": "f30f108380010000"
+        },
+        {
+          "role": "currentInstruction73",
+          "rva": "0x23100b",
+          "instructionHex": "0f2e4020"
+        },
+        {
+          "role": "currentInstruction74",
+          "rva": "0x23100f",
+          "instructionHex": "7408"
+        },
+        {
+          "role": "currentInstruction75",
+          "rva": "0x231011",
+          "instructionHex": "488bcb"
+        },
+        {
+          "role": "currentInstruction76",
+          "rva": "0x231014",
+          "instructionHex": "e8f79bffff"
+        },
+        {
+          "role": "currentInstruction77",
+          "rva": "0x231019",
+          "instructionHex": "488b06"
+        },
+        {
+          "role": "currentInstruction78",
+          "rva": "0x23101c",
+          "instructionHex": "f30f108384010000"
+        },
+        {
+          "role": "currentInstruction79",
+          "rva": "0x231024",
+          "instructionHex": "488b742430"
+        },
+        {
+          "role": "currentInstruction80",
+          "rva": "0x231029",
+          "instructionHex": "0f2e4024"
+        },
+        {
+          "role": "currentInstruction81",
+          "rva": "0x23102d",
+          "instructionHex": "751c"
+        },
+        {
+          "role": "currentInstruction82",
+          "rva": "0x23102f",
+          "instructionHex": "f30f108388010000"
+        },
+        {
+          "role": "currentInstruction83",
+          "rva": "0x231037",
+          "instructionHex": "0f2e4028"
+        },
+        {
+          "role": "currentInstruction84",
+          "rva": "0x23103b",
+          "instructionHex": "750e"
+        },
+        {
+          "role": "currentInstruction85",
+          "rva": "0x23103d",
+          "instructionHex": "f30f10838c010000"
+        },
+        {
+          "role": "currentInstruction86",
+          "rva": "0x231045",
+          "instructionHex": "0f2e402c"
+        },
+        {
+          "role": "currentInstruction87",
+          "rva": "0x231049",
+          "instructionHex": "7408"
+        },
+        {
+          "role": "currentInstruction88",
+          "rva": "0x23104b",
+          "instructionHex": "488bcb"
+        },
+        {
+          "role": "currentInstruction89",
+          "rva": "0x23104e",
+          "instructionHex": "e81d9dffff"
+        },
+        {
+          "role": "currentInstruction90",
+          "rva": "0x231053",
+          "instructionHex": "488b8358010000"
+        },
+        {
+          "role": "currentInstruction91",
+          "rva": "0x23105a",
+          "instructionHex": "f30f108390010000"
+        },
+        {
+          "role": "currentInstruction92",
+          "rva": "0x231062",
+          "instructionHex": "0f2e4030"
+        },
+        {
+          "role": "currentInstruction93",
+          "rva": "0x231066",
+          "instructionHex": "751c"
+        },
+        {
+          "role": "currentInstruction94",
+          "rva": "0x231068",
+          "instructionHex": "f30f108394010000"
+        },
+        {
+          "role": "currentInstruction95",
+          "rva": "0x231070",
+          "instructionHex": "0f2e4034"
+        },
+        {
+          "role": "currentInstruction96",
+          "rva": "0x231074",
+          "instructionHex": "750e"
+        },
+        {
+          "role": "currentInstruction97",
+          "rva": "0x231076",
+          "instructionHex": "f30f108398010000"
+        },
+        {
+          "role": "currentInstruction98",
+          "rva": "0x23107e",
+          "instructionHex": "0f2e4038"
+        },
+        {
+          "role": "currentInstruction99",
+          "rva": "0x231082",
+          "instructionHex": "740f"
+        },
+        {
+          "role": "currentInstruction100",
+          "rva": "0x231084",
+          "instructionHex": "488bcb"
+        },
+        {
+          "role": "currentInstruction101",
+          "rva": "0x231087",
+          "instructionHex": "e8449effff"
+        },
+        {
+          "role": "currentInstruction102",
+          "rva": "0x23108c",
+          "instructionHex": "488b8358010000"
+        },
+        {
+          "role": "currentInstruction103",
+          "rva": "0x231097",
+          "instructionHex": "4883c420"
+        },
+        {
+          "role": "currentInstruction104",
+          "rva": "0x23109b",
+          "instructionHex": "5b"
+        },
+        {
+          "role": "currentInstruction105",
+          "rva": "0x23109c",
+          "instructionHex": "c3"
         }
       ]
     }
@@ -388,44 +2464,44 @@
   "callBindings": [
     {
       "group": "roomInputPreparation",
-      "rva": "0x2312a3",
+      "rva": "0x231d03",
       "targetGroup": "roomToneKernel",
-      "returnRva": "0x2312a8",
+      "returnRva": "0x231d08",
       "role": "inputTone"
     },
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d926",
+      "rva": "0x22e3a6",
       "targetGroup": "roomToneKernel",
-      "returnRva": "0x22d92b",
+      "returnRva": "0x22e3ab",
       "role": "earlyLeftTone"
     },
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d954",
+      "rva": "0x22e3d4",
       "targetGroup": "roomToneKernel",
-      "returnRva": "0x22d959",
+      "returnRva": "0x22e3d9",
       "role": "earlyRightTone"
     },
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d979",
+      "rva": "0x22e3f9",
       "targetGroup": "roomDiffusionKernel",
-      "returnRva": "0x22d97e",
+      "returnRva": "0x22e3fe",
       "role": "serialDiffusion"
     },
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d991",
+      "rva": "0x22e411",
       "targetGroup": "roomLateTonePreparation",
-      "returnRva": "0x22d996",
+      "returnRva": "0x22e416",
       "role": "lateTonePreparation"
     },
     {
       "group": "roomLateTonePreparation",
-      "rva": "0x2308e3",
+      "rva": "0x231323",
       "targetGroup": "roomToneKernel",
-      "returnRva": "0x2308e8",
+      "returnRva": "0x231328",
       "role": "lateTone"
     }
   ],
@@ -469,25 +2545,25 @@
   },
   "evidenceBoundary": {
     "exact": "Complete native tone kernel and serial diffusion kernel with direct input, early and post-diffusion late-tone callers. Diffusion uses paired delayed input/output history; the tone kernel uses an expanded coefficient matrix and four history words.",
-    "conditional": "Private original owned-buffer comparisons and captured operands can establish bounded numerical parity separately. Native structure does not establish which calls executed in a live recording.",
+    "conditional": "Current complete tone/diffusion/refresh bodies and native field/call/constant witnesses support the selected layouts and models. Diffusion-control transport uses the current retained source base plus displacement and declared XMM register. Historical history/DSP/device cohorts were not rerun.",
     "unresolved": "Live tone matrices and diffusion history were not recorded by the input recipe. ER tap generation, late reverberation feedback, complete live history and isolated Event attribution remain unresolved."
   },
   "fieldBindings": [
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d965",
+      "rva": "0x22e3e5",
       "instructionHex": "488d5e08",
       "layoutField": "diffusionFirstState"
     },
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d969",
+      "rva": "0x22e3e9",
       "instructionHex": "bf04000000",
       "layoutField": "diffusionStateCount"
     },
     {
       "group": "roomVerbStereo",
-      "rva": "0x22d97e",
+      "rva": "0x22e3fe",
       "instructionHex": "4883c318",
       "layoutField": "diffusionStateStride"
     }
@@ -1164,47 +3240,47 @@
     "bulkTransport": [
       {
         "role": "sourceBase",
-        "rva": "0x231d5c",
-        "instructionHex": "488d5a08"
+        "rva": "0x2327be",
+        "instructionHex": "488d5a04"
       },
       {
         "role": "readControl",
-        "rva": "0x231d6c",
-        "instructionHex": "f30f1003"
+        "rva": "0x2327d3",
+        "instructionHex": "f30f104304"
       },
       {
         "role": "storeControl",
-        "rva": "0x231d70",
+        "rva": "0x2327d8",
         "instructionHex": "f30f114110"
       }
     ],
     "constants": [
       {
         "role": "maximum",
-        "rva": "0x2d9d78",
-        "loadRva": "0x230528",
-        "instructionHex": "f30f100d48980a00",
+        "rva": "0x2da864",
+        "loadRva": "0x230f6a",
+        "instructionHex": "f30f100df2980a00",
         "word": 1058944823
       },
       {
         "role": "scale",
-        "rva": "0x2d9d74",
-        "loadRva": "0x230533",
-        "instructionHex": "f30f101d39980a00",
+        "rva": "0x2da860",
+        "loadRva": "0x230f75",
+        "instructionHex": "f30f101de3980a00",
         "word": 1019905053
       },
       {
         "role": "firstThreshold",
-        "rva": "0x2d9d84",
-        "loadRva": "0x23053f",
-        "instructionHex": "f30f5c053d980a00",
+        "rva": "0x2da870",
+        "loadRva": "0x230f81",
+        "instructionHex": "f30f5c05e7980a00",
         "word": 1072517842
       },
       {
         "role": "secondThreshold",
-        "rva": "0x2d9d80",
-        "loadRva": "0x23055d",
-        "instructionHex": "f30f5c051b980a00",
+        "rva": "0x2da86c",
+        "loadRva": "0x230f9f",
+        "instructionHex": "f30f5c05c5980a00",
         "word": 1067333431
       }
     ],
@@ -1223,8 +3299,11 @@
     ],
     "evidenceBoundary": {
       "direct": "Authored serialized diffusion control is copied to the parameter object; selected refresh compares its cached value and writes the four serial diffusion gain fields.",
-      "conditional": "Owned original bulk-loader/refresh comparisons isolate this update with every other cached parameter equal. Exact native numeric constants and separate multiply/subtract/clamp order; does not execute complete effect initialization.",
+      "conditional": "Selected current parameter and refresh state, exact constants and current separate multiply/subtract/clamp branches. Static transport is checked; historical controlled refresh comparisons and full initialization were not rerun.",
       "unresolved": "Live authored effect occurrence, complete initial configuration, derived FDN/tap/tone coefficients and update/lifetime identity."
-    }
+    },
+    "sourceBaseOffset": 4,
+    "readDisplacement": 4,
+    "valueRegisterIndex": 0
   }
 }

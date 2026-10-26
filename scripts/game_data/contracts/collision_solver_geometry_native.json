@@ -2,14 +2,14 @@
   "schema": "endfield.collision-solver-geometry-native.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "codeWindows": [
     {
       "role": "box_getter",
-      "rva": 7922768,
+      "rva": 8087696,
       "bytes": 60,
       "sha256": "c2a03f2d1528a807ded234a98743f6560bcdeb7e9b6f2bc734631e4ce833a918",
       "module": "unityPlayer",
@@ -18,7 +18,7 @@
     },
     {
       "role": "sphere_getter",
-      "rva": 7925968,
+      "rva": 8090896,
       "bytes": 51,
       "sha256": "c351a910a0bba6f8f9dad55cfea6939b03634c46aaf3e9f512ef8d3f8cf25426",
       "module": "unityPlayer",
@@ -27,7 +27,7 @@
     },
     {
       "role": "capsule_getter",
-      "rva": 7922832,
+      "rva": 8087760,
       "bytes": 67,
       "sha256": "a5560a16b285ee72e1ab67633090d43dcd0bfed41c8b37de35ffa9f6407d578c",
       "module": "unityPlayer",
@@ -38,7 +38,7 @@
   "fieldOperands": [],
   "layout": {
     "shape": {
-      "vtable": 25979232,
+      "vtable": 27659552,
       "inlineGeometry": 152,
       "bufferFlags": 56,
       "bufferPointer": 64,

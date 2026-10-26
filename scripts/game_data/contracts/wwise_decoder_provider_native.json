@@ -1,22 +1,22 @@
 {
-  "schema": "endfield.wwise-decoder-provider-native.v1",
+  "schema": "endfield.wwise-decoder-provider-native.v2",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "nativeGroups": [
     {
       "key": "anonymousDecoderProviderPreparation",
-      "entryRva": "0x1af7a0",
+      "entryRva": "0x1b0090",
       "windows": [
         {
-          "rva": "0x1af7a0",
-          "bodyLength": 437,
-          "bodySha256": "1e2952a9db65104dd31013ef680c1bfb35ecc5ea7c6fd29d78b93d5ea9ac8f64",
-          "unwindRva": "0x2fd0f0",
+          "rva": "0x1b0090",
+          "bodyLength": 441,
+          "bodySha256": "b97a99baf8a64511ef2f5155cd4588a51a3717e018b91cd8e3a4e7e574a58516",
+          "unwindRva": "0x2fdee8",
           "unwindInfoHex": "010d05000d3414000d01120006700000"
         }
       ],
@@ -63,7 +63,6 @@
         "addressOrdinaryOptions",
         "forwardSecondArgument",
         "loadOrdinaryVtable",
-        "loadOrdinarySlot",
         "storeOrdinaryOutput",
         "addressOrdinaryDescriptor",
         "callOrdinarySlot"
@@ -71,260 +70,255 @@
       "instructionWitnesses": [
         {
           "role": "loadDecoderOwner",
-          "rva": "0x1af7ad",
+          "rva": "0x1b009d",
           "instructionHex": "4c8b5918"
         },
         {
           "role": "retainSecondArgument",
-          "rva": "0x1af7b1",
+          "rva": "0x1b00a1",
           "instructionHex": "488bfa"
         },
         {
           "role": "retainDecoder",
-          "rva": "0x1af7b4",
-          "instructionHex": "4c8bd1"
+          "rva": "0x1b00a4",
+          "instructionHex": "488bd9"
         },
         {
           "role": "loadStoredSource",
-          "rva": "0x1af7bc",
+          "rva": "0x1b00ad",
           "instructionHex": "4d8b8b88020000"
         },
         {
           "role": "loadSourceFlags",
-          "rva": "0x1af819",
-          "instructionHex": "418b490c"
+          "rva": "0x1b010c",
+          "instructionHex": "418b510c"
         },
         {
           "role": "maskSourceKind",
-          "rva": "0x1af822",
-          "instructionHex": "83e17c"
+          "rva": "0x1b0110",
+          "instructionHex": "83e27c"
         },
         {
           "role": "compareAlternateKind",
-          "rva": "0x1af830",
-          "instructionHex": "83f90c"
+          "rva": "0x1b0124",
+          "instructionHex": "83fa0c"
         },
         {
           "role": "branchOrdinaryKind",
-          "rva": "0x1af833",
-          "instructionHex": "7555"
+          "rva": "0x1b0127",
+          "instructionHex": "7556"
         },
         {
           "role": "loadAlternatePointer",
-          "rva": "0x1af835",
+          "rva": "0x1b0129",
           "instructionHex": "498b9338030000"
         },
         {
           "role": "testAlternatePointer",
-          "rva": "0x1af83c",
+          "rva": "0x1b0130",
           "instructionHex": "4885d2"
         },
         {
           "role": "branchAlternatePointer",
-          "rva": "0x1af83f",
+          "rva": "0x1b0133",
           "instructionHex": "7516"
         },
         {
           "role": "missingAlternateStatus",
-          "rva": "0x1af841",
+          "rva": "0x1b0135",
           "instructionHex": "b82e000000"
         },
         {
           "role": "loadAlternateProvider",
-          "rva": "0x1af857",
-          "instructionHex": "488b0d92501900"
+          "rva": "0x1b014b",
+          "instructionHex": "488b0de6471900"
         },
         {
           "role": "addressAlternateOutput",
-          "rva": "0x1af85e",
-          "instructionHex": "4d8d4a58"
+          "rva": "0x1b0152",
+          "instructionHex": "488d4358"
         },
         {
           "role": "loadAlternateWord",
-          "rva": "0x1af862",
+          "rva": "0x1b0156",
           "instructionHex": "458b8340030000"
         },
         {
           "role": "storeAlternateOutput",
-          "rva": "0x1af869",
-          "instructionHex": "4c894c2420"
+          "rva": "0x1b0162",
+          "instructionHex": "4889442420"
         },
         {
           "role": "addressAlternateOptions",
-          "rva": "0x1af86e",
+          "rva": "0x1b015d",
           "instructionHex": "4c8d4c2440"
         },
         {
           "role": "loadAlternateVtable",
-          "rva": "0x1af873",
-          "instructionHex": "488b01"
+          "rva": "0x1b0167",
+          "instructionHex": "4c8b11"
         },
         {
           "role": "callAlternateSlot",
-          "rva": "0x1af876",
-          "instructionHex": "ff5020"
+          "rva": "0x1b016a",
+          "instructionHex": "41ff5220"
         },
         {
           "role": "loadOrdinaryFlags",
-          "rva": "0x1af88a",
+          "rva": "0x1b017f",
           "instructionHex": "418b490c"
         },
         {
           "role": "clearDescriptorPointer",
-          "rva": "0x1af88e",
-          "instructionHex": "4889542450"
+          "rva": "0x1b0183",
+          "instructionHex": "4c89442450"
         },
         {
           "role": "initializeDescriptorWord",
-          "rva": "0x1af893",
-          "instructionHex": "895c2458"
+          "rva": "0x1b0188",
+          "instructionHex": "4489542458"
         },
         {
           "role": "loadArgumentHighWord",
-          "rva": "0x1af8ab",
+          "rva": "0x1b019e",
           "instructionHex": "410fb7411a"
         },
         {
           "role": "storeArgumentHighWord",
-          "rva": "0x1af8b0",
+          "rva": "0x1b01a3",
           "instructionHex": "8944246c"
         },
         {
           "role": "testDirectDataBit",
-          "rva": "0x1af8bd",
+          "rva": "0x1b01b1",
           "instructionHex": "0fbae108"
         },
         {
           "role": "setDirectDataFlag",
-          "rva": "0x1af8da",
-          "instructionHex": "0f42d0"
+          "rva": "0x1b01ce",
+          "instructionHex": "440f42c0"
         },
         {
           "role": "shiftPointerBit",
-          "rva": "0x1af8dd",
+          "rva": "0x1b01d2",
           "instructionHex": "c1e909"
         },
         {
           "role": "addressFlagsDescriptor",
-          "rva": "0x1af8e0",
+          "rva": "0x1b01d5",
           "instructionHex": "488d442468"
         },
         {
           "role": "storeDirectDataFlag",
-          "rva": "0x1af8ec",
-          "instructionHex": "89542468"
+          "rva": "0x1b01e2",
+          "instructionHex": "4489442468"
         },
         {
           "role": "storeFlagsDescriptorPointer",
-          "rva": "0x1af8f0",
+          "rva": "0x1b01e7",
           "instructionHex": "488944245c"
         },
         {
           "role": "testPointerBit",
-          "rva": "0x1af8f5",
+          "rva": "0x1b01ec",
           "instructionHex": "f6c101"
         },
         {
           "role": "branchNumericDescriptor",
-          "rva": "0x1af8f8",
+          "rva": "0x1b01ef",
           "instructionHex": "740b"
         },
         {
           "role": "loadSourceDataPointer",
-          "rva": "0x1af8fa",
+          "rva": "0x1b01f1",
           "instructionHex": "498b4110"
         },
         {
           "role": "storeDescriptorPointer",
-          "rva": "0x1af8fe",
+          "rva": "0x1b01f5",
           "instructionHex": "4889442450"
         },
         {
           "role": "jumpProviderCall",
-          "rva": "0x1af903",
+          "rva": "0x1b01fa",
           "instructionHex": "eb08"
         },
         {
           "role": "loadSourceWord",
-          "rva": "0x1af905",
+          "rva": "0x1b01fc",
           "instructionHex": "418b4104"
         },
         {
           "role": "storeDescriptorWord",
-          "rva": "0x1af909",
+          "rva": "0x1b0200",
           "instructionHex": "89442458"
         },
         {
           "role": "loadOrdinaryProvider",
-          "rva": "0x1af90d",
-          "instructionHex": "488b0ddc4f1900"
+          "rva": "0x1b0204",
+          "instructionHex": "488b0d2d471900"
         },
         {
           "role": "addressOrdinaryOutput",
-          "rva": "0x1af914",
-          "instructionHex": "498d5258"
+          "rva": "0x1b020b",
+          "instructionHex": "488d5358"
         },
         {
           "role": "addressOrdinaryOptions",
-          "rva": "0x1af91d",
+          "rva": "0x1b0216",
           "instructionHex": "4c8d442440"
         },
         {
           "role": "forwardSecondArgument",
-          "rva": "0x1af922",
+          "rva": "0x1b0220",
           "instructionHex": "4c8bcf"
         },
         {
           "role": "loadOrdinaryVtable",
-          "rva": "0x1af925",
-          "instructionHex": "488b01"
-        },
-        {
-          "role": "loadOrdinarySlot",
-          "rva": "0x1af928",
-          "instructionHex": "4c8b5028"
+          "rva": "0x1b0227",
+          "instructionHex": "4c8b11"
         },
         {
           "role": "storeOrdinaryOutput",
-          "rva": "0x1af937",
+          "rva": "0x1b022a",
           "instructionHex": "4889542420"
         },
         {
           "role": "addressOrdinaryDescriptor",
-          "rva": "0x1af93c",
+          "rva": "0x1b022f",
           "instructionHex": "488d542450"
         },
         {
           "role": "callOrdinarySlot",
-          "rva": "0x1af941",
-          "instructionHex": "41ffd2"
+          "rva": "0x1b0234",
+          "instructionHex": "41ff5228"
         }
       ]
     },
     {
       "key": "anonymousDecoderPrepareCaller",
-      "entryRva": "0x1b0380",
+      "entryRva": "0x1b0c70",
       "windows": [
         {
-          "rva": "0x1b0380",
+          "rva": "0x1b0c70",
           "bodyLength": 74,
           "bodySha256": "252520cbcbda4ad2a49caff431f7f543add3978b9a6d92f62abe1b2b14185ce3",
-          "unwindRva": "0x2efabc",
+          "unwindRva": "0x2f0434",
           "unwindInfoHex": "0106020006320230"
         },
         {
-          "rva": "0x1b03ca",
+          "rva": "0x1b0cba",
           "bodyLength": 211,
-          "bodySha256": "39438f49f8e97813a3b36f5ee614e8e27ef4a9f5aa571b19654690a212929ac0",
-          "unwindRva": "0x3119b8",
-          "unwindInfoHex": "210a04000a7407000564060080031b00ca031b00bcfa2e00"
+          "bodySha256": "a6b331faa028303ea7020485898c6b8531126b2992890b76f5a364754ac8da57",
+          "unwindRva": "0x31234c",
+          "unwindInfoHex": "210a04000a74070005640600700c1b00ba0c1b0034042f00"
         },
         {
-          "rva": "0x1b049d",
+          "rva": "0x1b0d8d",
           "bodyLength": 6,
           "bodySha256": "b13c2122a4910ad1c7f40207d9561e5a2d3418bf2bc40c490e3f913641fd2989",
-          "unwindRva": "0x3119d0",
-          "unwindInfoHex": "2100000080031b00ca031b00bcfa2e00"
+          "unwindRva": "0x312364",
+          "unwindInfoHex": "21000000700c1b00ba0c1b0034042f00"
         }
       ],
       "requiredRoles": [
@@ -334,25 +328,25 @@
       "instructionWitnesses": [
         {
           "role": "clearCallerFlag",
-          "rva": "0x1b03b5",
+          "rva": "0x1b0ca5",
           "instructionHex": "4533c0"
         },
         {
           "role": "callPreparation",
-          "rva": "0x1b03b8",
+          "rva": "0x1b0ca8",
           "instructionHex": "e8e3f3ffff"
         }
       ]
     },
     {
       "key": "anonymousDecoderRetryCaller",
-      "entryRva": "0x1c56b0",
+      "entryRva": "0x1c6060",
       "windows": [
         {
-          "rva": "0x1c56b0",
+          "rva": "0x1c6060",
           "bodyLength": 334,
-          "bodySha256": "65463042b2b7c40fcd885eccb2c554ef79818dd84930fbd14ffe33b94c721f37",
-          "unwindRva": "0x312e1c",
+          "bodySha256": "b4dd70e3c50b7a60c2dc2aa497be74074475226477899bf5a680b45b49afc26a",
+          "unwindRva": "0x313728",
           "unwindInfoHex": "017d06007d6408000a3409000a520670"
         }
       ],
@@ -364,18 +358,18 @@
       "instructionWitnesses": [
         {
           "role": "clearCallerFlag",
-          "rva": "0x1c573a",
+          "rva": "0x1c60ea",
           "instructionHex": "4533c0"
         },
         {
           "role": "addressCallerDescriptor",
-          "rva": "0x1c5741",
+          "rva": "0x1c60f1",
           "instructionHex": "488d542420"
         },
         {
           "role": "callPreparation",
-          "rva": "0x1c5746",
-          "instructionHex": "e855a0feff"
+          "rva": "0x1c60f6",
+          "instructionHex": "e8959ffeff"
         }
       ]
     }
@@ -430,7 +424,7 @@
       "witness": "loadSourceFlags",
       "layout": "source",
       "field": "flagsWord",
-      "prefixHex": "418b49",
+      "prefixHex": "418b51",
       "displacementBytes": 1
     },
     {
@@ -486,14 +480,14 @@
       "witness": "clearDescriptorPointer",
       "layout": "frame",
       "field": "descriptorPointer",
-      "prefixHex": "48895424",
+      "prefixHex": "4c894424",
       "displacementBytes": 1
     },
     {
       "witness": "initializeDescriptorWord",
       "layout": "frame",
       "field": "descriptorWord",
-      "prefixHex": "895c24",
+      "prefixHex": "44895424",
       "displacementBytes": 1
     },
     {
@@ -528,7 +522,7 @@
       "witness": "storeDirectDataFlag",
       "layout": "frame",
       "field": "directDataFlag",
-      "prefixHex": "895424",
+      "prefixHex": "44894424",
       "displacementBytes": 1
     },
     {
@@ -542,14 +536,14 @@
       "witness": "addressOrdinaryOutput",
       "layout": "decoder",
       "field": "providerOutputPointer",
-      "prefixHex": "498d52",
+      "prefixHex": "488d53",
       "displacementBytes": 1
     },
     {
       "witness": "addressAlternateOutput",
       "layout": "decoder",
       "field": "providerOutputPointer",
-      "prefixHex": "4d8d4a",
+      "prefixHex": "488d43",
       "displacementBytes": 1
     },
     {
@@ -577,21 +571,21 @@
       "witness": "storeAlternateOutput",
       "layout": "frame",
       "field": "outputArgument",
-      "prefixHex": "4c894c24",
+      "prefixHex": "48894424",
       "displacementBytes": 1
     },
     {
       "witness": "callAlternateSlot",
       "layout": "providerVtable",
       "field": "alternateSlot",
-      "prefixHex": "ff50",
+      "prefixHex": "41ff52",
       "displacementBytes": 1
     },
     {
-      "witness": "loadOrdinarySlot",
+      "witness": "callOrdinarySlot",
       "layout": "providerVtable",
       "field": "ordinarySlot",
-      "prefixHex": "4c8b50",
+      "prefixHex": "41ff52",
       "displacementBytes": 1
     }
   ],
@@ -605,12 +599,12 @@
     {
       "witness": "maskSourceKind",
       "constant": "sourceKindMask",
-      "prefixHex": "83e1"
+      "prefixHex": "83e2"
     },
     {
       "witness": "compareAlternateKind",
       "constant": "alternateKind",
-      "prefixHex": "83f9"
+      "prefixHex": "83fa"
     },
     {
       "witness": "testDirectDataBit",
@@ -649,12 +643,12 @@
     {
       "witness": "loadAlternateProvider",
       "prefixHex": "488b0d",
-      "targetRva": "0x3448f0"
+      "targetRva": "0x344938"
     },
     {
       "witness": "loadOrdinaryProvider",
       "prefixHex": "488b0d",
-      "targetRva": "0x3448f0"
+      "targetRva": "0x344938"
     }
   ],
   "callerGroups": [
@@ -665,5 +659,19 @@
     "direct": "The preparation helper reads decoder -> primary owner -> stored source, transports the upper halfword of the source argument into a separate flags descriptor, and passes the address of the decoder provider output field to a singleton virtual call.",
     "conditional": "Outside the alternate source-kind branch, source flag bit 9 selects the stored data pointer versus stored numeric word in a temporary descriptor; source flag bit 8 supplies a separate Boolean field. The alternate branch instead passes an owner-held pointer and word to another singleton slot.",
     "unresolved": "Indirect slot implementation and concrete provider identity, file opening, codec meaning of the argument halfword, decoder allocation generation, live selector-to-provider continuity and audible output are not established by this contract."
-  }
+  },
+  "virtualDispatchBindings": [
+    {
+      "tableRole": "loadOrdinaryVtable",
+      "callRole": "callOrdinarySlot",
+      "tableRegister": "r10",
+      "slotField": "ordinarySlot"
+    },
+    {
+      "tableRole": "loadAlternateVtable",
+      "callRole": "callAlternateSlot",
+      "tableRegister": "r10",
+      "slotField": "alternateSlot"
+    }
+  ]
 }

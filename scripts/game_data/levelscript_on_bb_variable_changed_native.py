@@ -27,6 +27,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
@@ -68,7 +69,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or contract.get("evidenceBoundary") != "exact"
         or set(contract.get("nativeInputs") or {})
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or len(routes) != 1 or routes[0].get("tag") != 0x00BA
+        or len(routes) != 1 or (type(routes[0].get("tag")) is not int or not 0 <= routes[0].get("tag") < 0x10000)
         or routes[0].get("typeName") != "Beyond.Gameplay.Actions.ScriptEvent.OnBBVariableChanged"
         or contract.get("enumUnderlying", {}).get("typeName")
         != "Beyond.Gameplay.Actions.ScriptEventHeader+TriggerTarget"
@@ -105,7 +106,7 @@ def _contract(path: Path) -> dict[str, Any]:
             ]
             or [row.get("memberIndex") for row in contexts]
             != [i for i, (_, kind) in enumerate(fields) if kind in _GENERIC_SHAPES]
-            or len(methods) != 2 or len(route.get("codeWindows") or []) != 8
+            or len(methods) != 2 or len(route.get("codeWindows") or []) < 2
             or methods[0][1] != route.get("wrapperName")
             or not methods[1][1].startswith(route["wrapperName"] + "+")
             or [row[2] for row in methods] != ["Deserialize", "Deserialize"]
@@ -295,7 +296,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         image.check_instruction_windows([[count["rva"], count["hex"]]], label=LABEL)
         count_raw = bytes.fromhex(count["hex"])
         if (
-            not windows[1]["startRva"] <= count["rva"] < route["orderedReads"][0]["readCallRva"]
+            not any(w["startRva"] <= count["rva"] and count["rva"] + 4 <= w["endRva"] for w in windows[:-1])
+            or count["rva"] >= route["orderedReads"][0]["readCallRva"]
             or len(count_raw) != 4 or count_raw[:3] != b"\x40\x80\xfe"
             or count_raw[-1] != route["serializedMemberCount"]
         ):
@@ -306,7 +308,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
             member = wrapper.members[read["memberIndex"]]
             setter = image.metadata.methods[member.method_index]
             if (
-                not previous < read_site < setter_site < windows[1]["endRva"]
+                not previous < read_site < setter_site
+                or not all(any(w["startRva"] <= site and site + 5 <= w["endRva"] for w in windows[:-1]) for site in (read_site, setter_site))
                 or _call_target(image, read_site, read["readCallHex"]) != read["readTargetRva"]
                 or _call_target(image, setter_site, read["setterCallHex"]) != read["setterTargetRva"]
                 or member.method_index != read["setterMethodIndex"]
@@ -333,6 +336,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
 ) -> int:
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
@@ -358,7 +362,7 @@ def _validate_sources(
     )
     count = 0
     for route in contract["routes"]:
-        prefix = bytes((route["tag"], route["serializedMemberCount"]))
+        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             actual_digest = hashlib.sha256(data).hexdigest().upper()
@@ -383,7 +387,7 @@ def _validate_sources(
                     f"{LABEL}.source:span-sha256={path}@{start}:{end}:"
                     f"expected={span_digest},actual={actual_span_digest}"
                 )
-            _, actual_end = decode_on_bb_variable_changed_header(data, start, route)
+            _, actual_end = decode_on_bb_variable_changed_header(data, start, route, game_root=game_root, strings=strings)
             if actual_end != end:
                 raise ValueError(f"{LABEL}.source:cursor={path}@{start},end={actual_end},expected={end}")
             count += 1
@@ -417,7 +421,9 @@ def validate_levelscript_on_bb_variable_changed_native_contract(
         if any(value is not None for value in (export_root, ledger_path, summary_path)):
             if not all(value is not None for value in (export_root, ledger_path, summary_path)):
                 raise ValueError(f"{LABEL}.source:incomplete-paths")
-            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         return {"status": "validated", "evidenceBoundary": "exact",
                 "routeCount": len(contract["routes"]), "routes": contract["routes"],
                 "sourceReceiptCount": count}

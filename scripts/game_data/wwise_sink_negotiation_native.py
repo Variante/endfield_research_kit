@@ -17,7 +17,7 @@ from scripts.game_data.wwise_source_queue_native import (
 from scripts.game_data.wwise_voice_pipeline_native import _instruction
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_sink_negotiation_native.json"
-SCHEMA = "endfield.wwise-sink-negotiation-native.v1"
+SCHEMA = "endfield.wwise-sink-negotiation-native.v2"
 DEPENDENCIES = ("sinkConstructor", "sinkServiceSetup")
 
 

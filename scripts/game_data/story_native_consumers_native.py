@@ -34,7 +34,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -108,7 +107,6 @@ def _resolve_cited(contract: dict[str, Any], index: BodyIndex) -> dict[str, Any]
     return cited
 
 
-@lru_cache(maxsize=None)
 def load_story_native_consumers(
     contract_path: Path = DEFAULT_CONTRACT,
     report_path: Path = DEFAULT_REPORT,
@@ -127,18 +125,28 @@ def load_story_native_consumers(
         "gameAssemblySha256": native.gameassembly_sha256.upper(),
         "globalMetadataSha256": native.metadata_sha256.upper(),
     }
+    def after_read():
+        after = check_installed_native_inputs(native.gameassembly_sha256, native.metadata_sha256,
+            gameassembly=native.gameassembly, metadata=native.metadata)
+        if not after.validated:
+            return {"status":after.status, "detail":"Story consumer native inputs changed during evaluation: " + after.detail,
+                    "groups":{}, "failedGate":"selected_native_inputs_after_read"}
+        return None
     try:
         cached = json.loads(Path(report_path).read_bytes())
     except (OSError, ValueError):
         cached = {}
     if isinstance(cached, dict) and all(cached.get(k) == v for k, v in key.items()):
-        return {"status": "validated", **cached}
+        return after_read() or {"status": "validated", **cached}
     index = BodyIndex(open_native_image(native.gameassembly, native.metadata))
     result = {
         **key,
         "groups": _evaluate(contract, index),
         "cited": _resolve_cited(contract, index),
     }
+    drift = after_read()
+    if drift:
+        return drift
     write_canonical_json(Path(report_path), result)
     return {"status": "validated", **result}
 

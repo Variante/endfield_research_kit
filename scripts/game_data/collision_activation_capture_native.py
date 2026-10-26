@@ -99,6 +99,33 @@ def load(image, native_inputs, contract=None):
     return dict(contract=c, hooks=hooks, pins=pins, layout=layout)
 
 
+def _accessor_mov(raw, at, opcode, width, *, register_source=False):
+    """Decode the bounded register/disp8/disp32 MOV forms used by this chain."""
+    start = at
+    if type(at) is not int or not 0 <= at < len(raw):
+        raise ValueError('clipped MOV')
+    rex = raw[at] if 0x40 <= raw[at] <= 0x4f else 0
+    at += bool(rex)
+    if bool(rex & 8) != (width == 8) or rex & 2 or at + 2 > len(raw) or raw[at] != opcode:
+        raise ValueError('MOV opcode/width')
+    modrm = raw[at + 1]
+    at += 2
+    mod = modrm >> 6
+    reg = ((modrm >> 3) & 7) + (8 if rex & 4 else 0)
+    base = (modrm & 7) + (8 if rex & 1 else 0)
+    if register_source:
+        if mod != 3:
+            raise ValueError('MOV register source')
+        return reg, base, 0, at - start
+    if mod not in (1, 2) or modrm & 7 == 4:
+        raise ValueError('MOV field addressing')
+    size = 1 if mod == 1 else 4
+    if at + size > len(raw):
+        raise ValueError('clipped MOV displacement')
+    displacement = int.from_bytes(raw[at:at + size], 'little', signed=True)
+    return reg, base, displacement, at + size - start
+
+
 def validate_list_count_accessor(contract,windows,layout):
     """Prove the concrete list's size read, never an open generic offset."""
     accessor=contract['listCountAccessor'];offset=accessor['offset']
@@ -108,18 +135,28 @@ def validate_list_count_accessor(contract,windows,layout):
     field=next(t for t in contract['types'] if t['role']=='list')['fields']
     if len(field)!=1 or field[0]['name']!='_size' or field[0]['type']!='int':
         raise ValueError('activation concrete list size field identity')
-    # Fixed register flow from this to settings/list, then int32 size -> this.
-    expected=(b'\x48\x8b\xe9',b'\x48\x8b\x45'+bytes([layout['mono']['settings']]),
-              b'\x4c\x8b\x68'+bytes([layout['settings']['items']]),
-              b'\x41\x8b\x45'+bytes([offset])+b'\x89\x85'+layout['mono']['colliderCount'].to_bytes(4,'little'))
     reads=accessor['reads']
-    if len(reads)!=len(expected):raise ValueError('activation concrete list accessor read order')
-    if tuple(r['windowRole'] for r in reads)!=('load_data','load_data_part_1','load_data_part_1','load_data_part_1'):
+    if len(reads)!=4:raise ValueError('activation concrete list accessor read order')
+    if any(r['windowRole'] not in windows or
+           (r['windowRole']!='load_data' and not r['windowRole'].startswith('load_data_part_')) for r in reads):
         raise ValueError('activation concrete list accessor original family')
     addresses=[windows[r['windowRole']][0]['rva']+r['offset'] for r in reads]
     if addresses!=sorted(set(addresses)):
         raise ValueError('activation concrete list accessor read order')
-    for read,code in zip(reads,expected):
-        _,data=windows[read['windowRole']];at=read['offset']
-        if type(at) is not int or at<0 or data[at:at+len(code)]!=code:
-            raise ValueError('activation concrete list accessor code:'+read['windowRole'])
+    try:
+        data=[windows[r['windowRole']][1] for r in reads];at=[r['offset'] for r in reads]
+        owner,source,_,_=_accessor_mov(data[0],at[0],0x8b,8,register_source=True)
+        settings,base,disp,_=_accessor_mov(data[1],at[1],0x8b,8)
+        nonvolatile={3,5,6,7,12,13,14,15}
+        if source!=1 or owner not in nonvolatile or settings==owner or base!=owner or disp!=layout['mono']['settings']:
+            raise ValueError('receiver -> settings')
+        items,base,disp,_=_accessor_mov(data[2],at[2],0x8b,8)
+        if items not in nonvolatile or items==owner or base!=settings or disp!=layout['settings']['items']:
+            raise ValueError('settings -> items')
+        count,base,disp,size=_accessor_mov(data[3],at[3],0x8b,4)
+        if count==owner or base!=items or disp!=offset:raise ValueError('items -> int32 size')
+        value,base,disp,_=_accessor_mov(data[3],at[3]+size,0x89,4)
+        if value!=count or base!=owner or disp!=layout['mono']['colliderCount']:
+            raise ValueError('int32 size -> receiver collider count')
+    except ValueError as error:
+        raise ValueError('activation concrete list accessor code:'+str(error)) from error

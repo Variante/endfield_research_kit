@@ -97,6 +97,10 @@ def decode(payload: bytes, *, layout: dict, kinds: dict, limits: dict, mesh_coun
         r.update(gameplayOptionsWord=read('I',start+gameplay)[0],tagConfigWord=read('I',start+tag_config)[0],
                  flagWord=bits,attachmentGate=None if complex_mesh else bool(bits&1),
                  secondaryFlag=None if complex_mesh else bool(bits&2),surfaceTypeByte=(bits>>(1 if complex_mesh else 2))&255)
+        at = layout['extraWord']['single' if single else 'multi'].get(group)
+        if at is not None:
+            require(0 <= at <= size-4, 'anonymous word outside record:' + group)
+            r['anonymousWord'] = read('I', start+at)[0]
         if complex_mesh:r['attachmentGateStatus']='packed-bit-zero-not-tested; mesh validation and allocation remain conditional'
         if mesh_slot is not None:
             r['meshSlot'] = mesh_slot

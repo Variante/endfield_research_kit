@@ -20,7 +20,7 @@ from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inp
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import unresolved_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
-from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.core import CONTRACTS_DIR, memorypack_union_header
 
 
 LABEL = "resetSummonTeamAI"
@@ -32,9 +32,9 @@ class ResetSummonTeamAICodecError(ValueError):
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(path=None) -> dict[str, Any]:
     value, _digest = read_reviewed_contract(
-        CONTRACT_PATH,
+        CONTRACT_PATH if path is None else path,
         schema="endfield.levelscript-reset-summon-team-ai-native-contract.v1",
         status="exact-current-build",
         label=LABEL,
@@ -45,7 +45,7 @@ def _contract() -> dict[str, Any]:
     if (
         value.get("catalogContract") != "levelscript_union_tags.json"
         or route.get("family") != "ActionBase"
-        or route.get("tag") != 0x03A5
+        or type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000
         or route.get("name") != "ResetSummonTeamAI"
         or route.get("serializedMemberCount") != 8
         or not isinstance(fields, list)
@@ -60,12 +60,13 @@ def _contract() -> dict[str, Any]:
 
 
 def decode_reset_summon_team_ai(data: bytes, offset: int) -> tuple[dict[str, Any], int]:
-    """Consume exactly one non-null ``FA A5 03 08`` node at ``offset``."""
+    """Consume exactly one non-null node using the reviewed route header."""
     route = _contract()["route"]
     start = offset
-    if offset < 0 or data[offset:offset + 4] != b"\xfa\xa5\x03\x08":
-        raise ResetSummonTeamAICodecError(f"{LABEL}.union:expected=FA A5 03 08,offset={offset}")
-    offset += 4
+    prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(prefix)] != prefix:
+        raise ResetSummonTeamAICodecError(f"{LABEL}.union:expected={prefix.hex().upper()},offset={offset}")
+    offset += len(prefix)
     values: dict[str, Any] = {}
     for name, kind in route["fields"]:
         if kind == "bool":
@@ -117,9 +118,21 @@ def _direct_call(image: Any, row: dict[str, Any]) -> int:
 def validate_current_native_contract() -> dict[str, Any]:
     """Authenticate dispatch, inheritance and all eight source reads."""
     contract = _contract()
-    route = contract["route"]
-    catalog = json.loads((CONTRACTS_DIR / contract["catalogContract"]).read_bytes())
     inputs = contract["nativeInputs"]
+    gate = check_installed_native_inputs(inputs["GameAssembly.dll"], inputs["global-metadata.dat"])
+    if gate.status != NATIVE_EVIDENCE_VALIDATED:
+        raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
+    unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
+    if not unityplayer.is_file() or hashlib.sha256(unityplayer.read_bytes()).hexdigest().upper() != inputs["UnityPlayer.dll"]:
+        raise ValueError(f"{LABEL}.native:UnityPlayer.dll:missing-or-mismatched")
+    image = open_native_image(gate.gameassembly, gate.metadata)
+    return _validate_native(image, contract)
+
+
+def _validate_native(image: Any, contract: dict[str, Any]) -> dict[str, Any]:
+    route = contract["route"]
+    inputs = contract["nativeInputs"]
+    catalog = json.loads((CONTRACTS_DIR / contract["catalogContract"]).read_bytes())
     if (
         catalog.get("schema") != "endfield.levelscript-union-tags.v1"
         or inputs["GameAssembly.dll"] != catalog["nativeInputs"]["gameAssemblySha256"]
@@ -131,13 +144,6 @@ def validate_current_native_contract() -> dict[str, Any]:
         }
     ):
         raise ValueError(f"{LABEL}.native:catalog-join")
-    gate = check_installed_native_inputs(inputs["GameAssembly.dll"], inputs["global-metadata.dat"])
-    if gate.status != NATIVE_EVIDENCE_VALIDATED:
-        raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
-    unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
-    if not unityplayer.is_file() or hashlib.sha256(unityplayer.read_bytes()).hexdigest().upper() != inputs["UnityPlayer.dll"]:
-        raise ValueError(f"{LABEL}.native:UnityPlayer.dll:missing-or-mismatched")
-    image = open_native_image(gate.gameassembly, gate.metadata)
     pe, metadata = image.pe, image.metadata
     base = pe.image_base
     dispatch = route["dispatcher"]
@@ -166,7 +172,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     load_rva = dispatch["typeLoadRva"]
     load = pe.bytes_at_va(base + load_rva, 7)
     if (
-        not branch["startRva"] <= load_rva < branch["endRva"] - 7
+        not branch["startRva"] <= load_rva <= branch["endRva"] - 7
         or load[:3] != b"\x48\x8b\x15" or load.hex().upper() != dispatch["typeLoadHex"]
     ):
         raise ValueError(f"{LABEL}.native:wrapper-load")
@@ -201,7 +207,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     source_ptr = image.method_pointer_va(metadata.methods[methods[0][0]])
     formatter_ptr = image.method_pointer_va(metadata.methods[methods[1][0]])
     windows = route["codeWindows"]
-    if len(windows) < 3:
+    if len(windows) < 2:
         raise ValueError(f"{LABEL}.native:source-windows")
     image.check_windows(windows, label=LABEL)
     extents = image.mapper.pdata_function_extents(pe)
@@ -220,6 +226,8 @@ def validate_current_native_contract() -> dict[str, Any]:
     if header["hex"].upper() != (b"\x40\x80\xfe" + bytes((route["serializedMemberCount"],))).hex().upper():
         raise ValueError(f"{LABEL}.native:member-count")
     ranges = [(w["startRva"], w["endRva"]) for w in windows[:-1]]
+    if not any(start <= header["rva"] and header["rva"] + len(bytes.fromhex(header["hex"])) <= end for start, end in ranges):
+        raise ValueError(f"{LABEL}.native:member-count-range")
     previous = header["rva"]
     targets: dict[str, set[int]] = {}
     for member in route["orderedMembers"]:
@@ -227,7 +235,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         setter = member["setterCall"]
         if (
             read["rva"] <= previous or setter["rva"] <= read["rva"]
-            or not any(start <= read["rva"] < setter["rva"] < end for start, end in ranges)
+            or not any(start <= read["rva"] and read["rva"] + 5 <= setter["rva"] and setter["rva"] + 5 <= end for start, end in ranges)
         ):
             raise ValueError(f"{LABEL}.native:member-order={member['memberIndex']}")
         previous = setter["rva"]

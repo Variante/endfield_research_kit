@@ -129,7 +129,7 @@ def first_missing_in_order(calls: list[DirectCall], callees: list[str]) -> str |
 
 
 def loaded_literals(graph: CallGraph, start_va: int, size: int) -> set[str]:
-    """String literals whose usage cells the body loads with ``mov r64, [rip+disp32]``."""
+    """Literal cells read by MOV or conditional CMOV r64 RIP loads; execution is separate."""
     image = graph.image
     pe, metadata = image.pe, image.metadata
     literal_section = metadata.sections["stringLiteral"]
@@ -137,9 +137,14 @@ def loaded_literals(graph: CallGraph, start_va: int, size: int) -> set[str]:
     body = pe.bytes_at_va(start_va, size)
     found: set[str] = set()
     for offset in range(size - 6):
-        if body[offset] not in (0x48, 0x4C) or body[offset + 1] != 0x8B or (body[offset + 2] & 0xC7) != 0x05:
+        if body[offset] not in (0x48, 0x4C):
             continue
-        cell = start_va + offset + 7 + struct.unpack_from("<i", body, offset + 3)[0]
+        modrm=offset+2
+        if body[offset+1]==0x0F and 0x40<=body[offset+2]<=0x4F:modrm+=1
+        elif body[offset+1]!=0x8B:continue
+        end=modrm+5
+        if end>size or body[modrm]&0xC7!=0x05:continue
+        cell = start_va + end + struct.unpack_from("<i", body, modrm+1)[0]
         try:
             word = pe.u64_at_va(cell)
         except ValueError:

@@ -31,6 +31,8 @@ from scripts.game_data.memorypack.lipsync import (
     decode_lipsync_memorypack,
 )
 from scripts.common import canonical_json_sha256
+from scripts.game_data.jsondata_blocks import JSON_BLOCKS,is_jsondata_identity
+from scripts.game_data import lipsync_native
 
 
 LIPSYNC_PREFIX = "Data/Json/LipSync/"
@@ -43,12 +45,18 @@ DEFAULT_MD = vfs.MODULE_REPO_ROOT / "reports/animestudio/lipsync_current_latest.
 def select_rows(file_rows: Iterable[Mapping[str, Any]], *, expected_input: str) -> list[dict[str, Any]]:
     """Select every current, verified JsonData row in the LipSync family."""
     return vfs.family_rows(
-        file_rows,
+        (row for row in file_rows if not _excluded_language(row)),
         expected_input=expected_input,
         prefix=LIPSYNC_PREFIX,
         pattern=LIPSYNC_PATTERN,
         label="lipsync",
+        blocks=JSON_BLOCKS,
     )
+
+
+def _excluded_language(row):
+    return (str(row.get('virtualPath','')).startswith(LIPSYNC_PREFIX) and row.get('blockTypeValue')!=19
+        and row.get('boundaryStatus')==row.get('status')=='excluded_missing_voice' and is_jsondata_identity(row))
 
 
 def _stream_command(cli_path: Path, outer: Mapping[str, Any]) -> list[str]:
@@ -137,11 +145,11 @@ def _join_and_decode(
             vfs._fail("duplicate-stream-identity", source=f"stream[{index}]", actual=path)
         seen.add(path)
         ledger = ledger_by_path[path]
-        if stream_row.get("blockType") != "JsonData" or stream_row.get("blockTypeValue") != 19:
+        if [stream_row.get("blockType"),stream_row.get("blockTypeValue")] != [ledger['blockName'],ledger['blockTypeValue']]:
             vfs._fail(
                 "stream-block-mismatch",
                 source=path,
-                expected=["JsonData", 19],
+                expected=[ledger['blockName'],ledger['blockTypeValue']],
                 actual=[stream_row.get("blockType"), stream_row.get("blockTypeValue")],
             )
         length = vfs._require_int(stream_row.get("length"), source=f"{path}.length", minimum=1)
@@ -169,6 +177,7 @@ def _join_and_decode(
             )
 
         identity = {
+            "blockName":ledger['blockName'],"blockTypeValue":ledger['blockTypeValue'],
             "inputSetSha256": str(ledger["inputSetSha256"]).upper(),
             "virtualPath": path,
             "length": length,
@@ -295,6 +304,10 @@ def build_current_census(
         expected_input_set_sha256=expected_input_set_sha256,
     )
     selected = select_rows(file_rows, expected_input=expected_input_set_sha256.upper())
+    native=vfs.native_validation(lipsync_native.validate_lipsync_native_contract,lipsync_native.DEFAULT_CONTRACT,
+        game_root=Path(outer['primaryAssets']).parent)
+    if native.get('status')!='validated':
+        vfs._fail('lipsync-native-validation',source=str(lipsync_native.DEFAULT_CONTRACT),expected='validated',actual=native)
 
     def snapshot() -> dict[str, Any]:
         return {
@@ -303,6 +316,7 @@ def build_current_census(
             "streamToolFingerprints": vfs._stream_tool_snapshot(cli_path),
             "parser": vfs._parser_source_snapshots(Path(__file__)),
             "corpusGate": vfs._fingerprint(Path(__file__)),
+            "lipSyncNativeSources":[vfs._fingerprint(path) for path in (lipsync_native.DEFAULT_CONTRACT,lipsync_native.CLONES_CONTRACT)],
         }
 
     snapshot_start = snapshot()
@@ -327,6 +341,7 @@ def build_current_census(
         Path(outer["fallbackAssets"]),
     ]
     protected.extend(Path(row["physicalChunkPath"]) for row in selected)
+    protected.extend(Path(row['path']) for row in snapshot_start['lipSyncNativeSources'])
     for group in (
         provenance_start["sourceFingerprints"],
         provenance_start["buildFingerprints"],
@@ -373,9 +388,11 @@ def build_current_census(
         vfs._guard_output_path(output, protected + [path for path in outputs if path != output])
 
     summary = _summary(rows)
+    summary['filesExcludedMissingLanguage']=sum(_excluded_language(row) for row in file_rows)
     failed = summary["filesFailed"] != 0
     identity_rows = [
         {key: row[key] for key in (
+            "blockName","blockTypeValue",
             "virtualPath",
             "length",
             "logicalMd5",
@@ -399,6 +416,7 @@ def build_current_census(
         "provenance": {
             **provenance_start,
             **snapshot_start,
+            "lipSyncNativeValidation":native,
             "streamArguments": [
                 "stream",
                 "--block-type json-data",
@@ -410,11 +428,13 @@ def build_current_census(
         "identitySetSha256": canonical_json_sha256(identity_rows),
         "wholeFileFrameExact": not failed,
         "evidenceBoundary": (
-            "Every current LipSync identity is joined from the authenticated VFS ledger to one "
+            "Every available current LipSync identity is joined from the authenticated VFS ledger to one "
             "AnimeStudio stream --verify-md5 row by path, length and logical MD5. The maintained "
             "reader consumes the 15-member MemoryPack object through physical EOF and accepts only "
-            "count-framed rows of six finite float32 values. Native Keyframe argument order names "
-            "those six values; this report does not infer voice-audio availability."
+            "count-framed rows of six finite float32 values. The selected native reader independently "
+            "binds the ordered channel names to closed float[][] reads. Wholly absent language blocks "
+            "remain explicitly excluded; live formatter selection, Keyframe consumer semantics, voice "
+            "ownership and playback are not established."
         ),
         "files": rows,
     }
@@ -461,6 +481,7 @@ def main(argv: list[str] | None = None) -> int:
             output_md=args.output_md,
         )
     except vfs.CensusGateError as exc:
+        vfs._atomic_write_json(args.output_json.with_suffix('.failed.json'),{'status':'failed','diagnostic':exc.diagnostic})
         print(json.dumps({"status": "failed", "diagnostic": exc.diagnostic}, ensure_ascii=False), file=sys.stderr)
         return 1
     except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -471,6 +492,7 @@ def main(argv: list[str] | None = None) -> int:
             "expected": "current authenticated LipSync corpus",
             "actual": f"{type(exc).__name__}: {exc}",
         }
+        vfs._atomic_write_json(args.output_json.with_suffix('.failed.json'),{'status':'failed','diagnostic':diagnostic})
         print(json.dumps({"status": "failed", "diagnostic": diagnostic}, ensure_ascii=False), file=sys.stderr)
         return 1
 

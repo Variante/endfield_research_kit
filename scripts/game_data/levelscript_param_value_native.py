@@ -61,8 +61,8 @@ def check_value_return(rows, predicate_rva, try_rva):
              '4983793800', '498bd9', '410fb6f0', '8bea', '488bf9', None,
              'c744243000000000', '4885ff', None, '488b4338', '488b5008',
              '48837a2000', None, '488b5338', '488bcf', '488b5208', None,
-             '84c0', None, '488b4338', '488d542430', '440fb6c6', '488bcf',
-             '4c8b4810', None, '84c0', None, '8b442430', '488b5c2438',
+             '84c0', None, '4c8b4b38', '488d542430', '440fb6c6', '488bcf',
+             '4d8b4910', None, '84c0', None, '8b442430', '488b5c2438',
              '488b6c2440', '488b742448', '4883c420', '5f', 'c3', '488bcb',
              None, None, '837f24ff', None, '8bc5', None, 'ff12', None]
     _shape(rows, forms, 'paramValue.caller')

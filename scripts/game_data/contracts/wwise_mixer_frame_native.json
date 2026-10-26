@@ -2,10 +2,10 @@
   "schema": "endfield.wwise-mixer-frame-observer.v5",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "witnesses": [
     {
@@ -44,7 +44,7 @@
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
-      "bodyOffset": 658,
+      "bodyOffset": 664,
       "instructionHex": "0fb685d8000000",
       "role": "callee reads the sixth stack byte"
     },
@@ -52,8 +52,8 @@
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
-      "bodyOffset": 737,
-      "instructionHex": "488bc6",
+      "bodyOffset": 743,
+      "instructionHex": "488bc7",
       "role": "callee returns its caller-supplied result-storage pointer"
     },
     {
@@ -69,7 +69,7 @@
       "ownerGroup": "busFrameReset",
       "windowIndex": 1,
       "bodyOffset": 434,
-      "instructionHex": "4c892430",
+      "instructionHex": "4c892406",
       "role": "clear retained descriptor PCM pointer"
     },
     {
@@ -77,7 +77,7 @@
       "ownerGroup": "busFrameReset",
       "windowIndex": 1,
       "bodyOffset": 438,
-      "instructionHex": "664489643012",
+      "instructionHex": "664489640612",
       "role": "clear retained descriptor valid frames"
     },
     {
@@ -100,55 +100,55 @@
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
+      "bodyOffset": 555,
+      "instructionHex": "f3410f594170",
+      "role": "multiply stored first-row previous gain"
+    },
+    {
+      "ownerContract": "wwise_voice_routing_native",
+      "ownerGroup": "busRouteMix",
+      "windowIndex": 0,
       "bodyOffset": 549,
-      "instructionHex": "f30f104270",
-      "role": "load first row previous gain"
+      "instructionHex": "f3410f1047fc",
+      "role": "load incoming previous gain before stored-gain multiply"
     },
     {
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
-      "bodyOffset": 554,
-      "instructionHex": "f30f5946fc",
-      "role": "multiply incoming previous gain in float32"
-    },
-    {
-      "ownerContract": "wwise_voice_routing_native",
-      "ownerGroup": "busRouteMix",
-      "windowIndex": 0,
-      "bodyOffset": 569,
-      "instructionHex": "f30f1146fc",
+      "bodyOffset": 571,
+      "instructionHex": "f3410f1147fc",
       "role": "write effective previous gain back into the gain-pair array"
     },
     {
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
-      "bodyOffset": 574,
-      "instructionHex": "f30f104a74",
+      "bodyOffset": 577,
+      "instructionHex": "f3410f104974",
       "role": "load first row target gain"
     },
     {
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
-      "bodyOffset": 579,
-      "instructionHex": "f30f590e",
+      "bodyOffset": 583,
+      "instructionHex": "f3410f590f",
       "role": "multiply incoming target gain in float32"
     },
     {
       "ownerContract": "wwise_voice_routing_native",
       "ownerGroup": "busRouteMix",
       "windowIndex": 0,
-      "bodyOffset": 583,
-      "instructionHex": "f30f110e",
+      "bodyOffset": 588,
+      "instructionHex": "f3410f110f",
       "role": "write effective target gain back into the gain-pair array"
     },
     {
       "ownerContract": "wwise_voice_pipeline_native",
       "ownerGroup": "sinkFrameEnd",
       "windowIndex": 0,
-      "bodyOffset": 411,
+      "bodyOffset": 413,
       "instructionHex": "488d5760",
       "role": "direct submission uses the sink descriptor"
     },
@@ -157,14 +157,14 @@
       "ownerGroup": "sinkFrameEnd",
       "windowIndex": 0,
       "bodyOffset": 420,
-      "instructionHex": "e827080000",
+      "instructionHex": "e8b7070000",
       "role": "direct submission calls the owned sink submit body"
     },
     {
       "ownerContract": "wwise_voice_pipeline_native",
       "ownerGroup": "sinkFrameEnd",
       "windowIndex": 0,
-      "bodyOffset": 753,
+      "bodyOffset": 755,
       "instructionHex": "806500fe",
       "role": "frame end clears only the input-present bit"
     }
@@ -1039,16 +1039,16 @@
   ],
   "contextDescriptorOffset": 280,
   "evidenceBoundary": {
-    "exact": "Borrowed selected body windows authenticate the six integer/pointer bus-mix arguments and caller result-storage return, existing bus input/reset storage and native context descriptor publication.",
+    "exact": "Borrowed full current native body windows, current six-argument bus-mix caller/callee and result-storage return, descriptor reset/publication, complete result-storage leaves and current unfiltered-consumer/SSE-kernel bodies.",
     "direct": "Paired sampled bus mix retains actual input rows and completed bus descriptor/prefix. All source sample/release, route publication and bus reset invocations are retained while the recorder is active; each field is a bounded non-atomic read. Current numeric extension reads the incoming gain pair, first previous/target matrix pointer/words and guarded stereo right-plane words beside the original first-plane prefix. Return storage is anonymous word0/word8 data, not a proved task/dependency identity.",
-    "conditional": "First rows only. Reset and source-write intervals exclude observed intervening reuse only when the loss-free stream and zero intentional skips for those endpoints hold; other writers, lifetimes and asynchronous dispatch remain conditions.",
+    "conditional": "First rows only. Reset and source-write intervals exclude observed intervening reuse only when the loss-free stream and zero intentional skips for those endpoints hold; other writers, lifetimes and asynchronous dispatch remain conditions. This port validates current static transport and selected arithmetic instructions; historical numeric/PCM/consumer cohorts were not rerun or promoted.",
     "unresolved": "Complete allocation generations, all route rows, bus/effect hierarchy, full matrix/filter history, unrecorded planar samples and complete buffers, final Event contribution to device output and audibility.",
     "structuralOnly": "First matrix words and filter target are bounded stored values; complete matrix layout, filter history and effective processing are separate. Anonymous result-storage initialization/move does not establish asynchronous work."
   },
   "resultStorageLeaves": [
     {
       "key": "initializeAnonymousResultStorage",
-      "rva": "0xef700",
+      "rva": "0xf11b0",
       "bodyLength": 18,
       "bodySha256": "cbef0e41a1a5ee7c4fff84d5be867638c6f8da9bdfec3e37d8be8c0c97407834",
       "bodyHex": "c70100000000488bc148c74108ffffffffc3",
@@ -1056,7 +1056,7 @@
     },
     {
       "key": "moveAnonymousResultStorage",
-      "rva": "0xef5b0",
+      "rva": "0xf1070",
       "bodyLength": 38,
       "bodySha256": "37b88195feaa75a65752c272c8d10a851f63dc568d048a9a6ec04cd3afea7421",
       "bodyHex": "48c74108ffffffff488b4208488941088b028901488bc148c74208ffffffffc70200000000c3",
@@ -1087,7 +1087,7 @@
     {
       "ownerGroup": "sinkInput",
       "windowIndex": 3,
-      "bodyOffset": 307,
+      "bodyOffset": 144,
       "field": "descriptorOffset",
       "prefixHex": "488d73",
       "width": 1,
@@ -1096,7 +1096,7 @@
     {
       "ownerGroup": "sinkInput",
       "windowIndex": 3,
-      "bodyOffset": 356,
+      "bodyOffset": 297,
       "field": "inputFlagsOffset",
       "prefixHex": "488dbb",
       "width": 4,
@@ -1105,7 +1105,7 @@
     {
       "ownerGroup": "sinkInput",
       "windowIndex": 3,
-      "bodyOffset": 363,
+      "bodyOffset": 308,
       "field": "inputPresentMask",
       "prefixHex": "800f",
       "width": 1,
@@ -1123,7 +1123,7 @@
     {
       "ownerGroup": "sinkInput",
       "windowIndex": 2,
-      "bodyOffset": 215,
+      "bodyOffset": 206,
       "field": "excludedModesMask",
       "prefixHex": "a8",
       "width": 1,
@@ -1162,18 +1162,18 @@
   "consumerBodies": [
     {
       "key": "unfilteredMatrixConsumer",
-      "rva": "0x181d60",
-      "bodyLength": 1018,
-      "bodySha256": "85d651be5ad153fd911c658557d8c00ebbf44594e9d9e151c44959b7d838baae",
-      "readOrder": "Cohort source indices select the filter and descriptor arrays; save the last two source samples into filter history, expand each planar input channel into a gain/matrix row, then dispatch accumulation without a filter recurrence.",
+      "rva": "0x1828d0",
+      "bodyLength": 1014,
+      "bodySha256": "bd980f894be3b0f6fde0f3620078891649c0262721727ea947b77c2638bd2a4f",
+      "readOrder": "Current cohort indices select filter and descriptor arrays, retain the last source samples as history, build padded gain/matrix rows and call the selected matrix dispatch. The caller joins this to its unfiltered cohort branch; no current native execution is claimed.",
       "evidenceBoundary": "exact"
     },
     {
       "key": "matrixGainDispatch",
-      "rva": "0x19ccc0",
-      "bodyLength": 1235,
-      "bodySha256": "2d731ea263458361664e75bc4d6b0cd84c1dea144ee5bfd45ea38d2a50ae82e6",
-      "readOrder": "Multiply previous and target matrix coefficients by the respective gains, classify nonzero constant or ramp coefficients, then multiply source samples and add into existing planar output.",
+      "rva": "0x19d7f0",
+      "bodyLength": 1227,
+      "bodySha256": "8f307acd8170405219357f6515fe90917f55db85410f5f51c54386b888f7c234",
+      "readOrder": "Current SSE branch of the dependency-owned matrix dispatch multiplies matrix/gain coefficients and accumulates source contributions into planar output. Other CPU branches and current numeric parity remain separate.",
       "evidenceBoundary": "exact"
     }
   ],
@@ -1199,13 +1199,13 @@
     "witnesses": [
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 369,
+        "offset": 371,
         "instructionHex": "418d7607",
         "role": "roundOutputChannelsUp"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 380,
+        "offset": 382,
         "instructionHex": "83e6f8",
         "role": "paddedMatrixRowStride"
       },
@@ -1230,79 +1230,79 @@
       {
         "body": "unfilteredMatrixConsumer",
         "offset": 33,
-        "instructionHex": "448b6908",
+        "instructionHex": "448b6108",
         "role": "cohortCount"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 85,
+        "offset": 88,
         "instructionHex": "488b85c0000000",
         "role": "fifthStackOutputReference"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 103,
+        "offset": 105,
         "instructionHex": "448b7008",
         "role": "outputChannelCount"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 275,
+        "offset": 276,
         "instructionHex": "0fb708",
         "role": "cohortIndexWidth"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 278,
+        "offset": 279,
         "instructionHex": "4c8b85d8000000",
         "role": "eighthStackPreviousMatrix"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 300,
-        "instructionHex": "498b04c9",
+        "offset": 301,
+        "instructionHex": "498b44cd00",
         "role": "fourthRegisterSourceArray"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 304,
+        "offset": 306,
         "instructionHex": "440fb66008",
         "role": "sourceChannelCount"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 309,
+        "offset": 311,
         "instructionHex": "488b00",
         "role": "planarSourcePointer"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 316,
+        "offset": 318,
         "instructionHex": "488b85c8000000",
         "role": "sixthStackGainPairs"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 323,
+        "offset": 325,
         "instructionHex": "f30f100cc8",
         "role": "firstGainWord"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 328,
+        "offset": 330,
         "instructionHex": "f30f1054c804",
         "role": "secondGainWord"
       },
       {
         "body": "unfilteredMatrixConsumer",
-        "offset": 334,
+        "offset": 336,
         "instructionHex": "488b85d0000000",
         "role": "seventhStackTargetMatrix"
       }
     ],
     "evidenceBoundary": {
       "direct": "Selected native bodies establish the unfiltered consumer input boundary, eight argument forwarding, padded matrix rows and accumulation into existing output.",
-      "conditional": "The bounded first-output equation requires one first-row source, constant gain/matrix, one nonzero channel contribution, zero initial output and observed nearest MXCSR rounding; unsupported branches are withheld.",
+      "conditional": "The bounded first-output equation requires one first-row source, constant gain/matrix, one nonzero channel contribution, zero initial output and observed nearest MXCSR rounding; unsupported branches are withheld. Current static instructions do not establish an executed current equation comparison or CPU dispatch selection.",
       "unresolved": "Native consumer observations are prepared but not captured. Filters, ramps, unsupported layouts, complete bus generations and Event-to-device attribution remain open."
     },
     "captureRequestReady": true

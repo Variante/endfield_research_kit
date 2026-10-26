@@ -31,6 +31,7 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import unresolved_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image
@@ -50,14 +51,16 @@ def _contract(path: Path) -> dict[str, Any]:
             or contract.get("evidenceBoundary") != "exact"):
         raise ValueError(f"{LABEL}.contract:schema-status-boundary")
     routes = contract.get("routes")
-    if (not isinstance(routes, list) or len(routes) != 2
-            or sorted(route.get("tag") for route in routes) != [0x20, 0x29]):
-        raise ValueError(f"{LABEL}.contract:selected-routes")
     expected_tail = {
-        0x20: ["Param<BoolComparer>", "Param<MissionSystem.MissionState>",
+        "Beyond.Gameplay.Actions.CompareMissionState": ["Param<BoolComparer>", "Param<MissionSystem.MissionState>",
                "Param<MissionSystem.MissionState>"],
-        0x29: ["Param<EntityPtrComparer>", "Param<EntityPtr>", "Param<EntityPtr>"],
+        "Beyond.Gameplay.Actions.EntityCompare": ["Param<EntityPtrComparer>", "Param<EntityPtr>", "Param<EntityPtr>"],
     }
+    if (not isinstance(routes, list) or len(routes) != 2
+            or {r.get("typeName") for r in routes} != set(expected_tail)
+            or any(type(r.get("tag")) is not int or not 0 <= r["tag"] <= 0xFFFF for r in routes)
+            or len({r["tag"] for r in routes}) != 2):
+        raise ValueError(f"{LABEL}.contract:selected-routes")
     for route in routes:
         fields = route.get("fields")
         reads = route.get("readOrder")
@@ -68,7 +71,7 @@ def _contract(path: Path) -> dict[str, Any]:
             or not isinstance(fields, list) or len(fields) != 10
             or any(not isinstance(row, list) or len(row) != 3 for row in fields)
             or [row[1] for row in fields] != ["bool", "int32", "bool", "string", "int32",
-                                               "bool", "bool", *expected_tail[route["tag"]]]
+                                               "bool", "bool", *expected_tail[route["typeName"]]]
             or not isinstance(reads, list) or len(reads) != 10
             or [row.get("memberIndex") for row in reads] != list(range(10))
             or [(row.get("fieldName"), row.get("readKind")) for row in reads]
@@ -222,11 +225,11 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
                 ledger[row["exportRelativePath"]] = row
     checked = 0
     for route in contract["routes"]:
-        prefix = bytes([route["tag"], route["memberCount"]])
+        prefix = memorypack_union_header(route["tag"], route["memberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             if (
-                not 0 <= start < end <= len(data) or data[start:start+2] != prefix
+                not 0 <= start < end <= len(data) or data[start:start+len(prefix)] != prefix
                 or hashlib.sha256(data).hexdigest().upper() != digest.upper()
                 or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
                 or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()

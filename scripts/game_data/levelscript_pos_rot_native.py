@@ -14,6 +14,7 @@ from scripts.game_data.il2cpp.context import relative_branch_target, usage_metho
 from scripts.game_data.il2cpp.formatter_composition import validate_registered_formatter_composition
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.il2cpp.protocol import runtime_type_name
+from scripts.game_data.memorypack.vector3_source import validate_vector3_reader
 
 SCHEMA = "endfield.levelscript-pos-rot-native-contract.v2"
 LABEL = "levelscriptPosRotNative"
@@ -162,6 +163,10 @@ def _validate(image: Any, contract: dict[str, Any]) -> dict[str, Any]:
     _check_instructions(image, [[context["callRva"], context["callHex"]]])
     _require("vector-reader-core", pe.image_base + context["targetRva"],
              relative_branch_target(bytes.fromhex(context["callHex"]), pe.image_base + context["callRva"], source=LABEL))
+    _checked_native(image, "vector-buffered-source", "complete typed Vector3 clone and registered buffered reader",
+        lambda: {"forwardRva": context["instructionRva"] - 6, "sourceRva": context["targetRva"]},
+        lambda: validate_vector3_reader(image, context["instructionRva"] - 6, source_rva=context["targetRva"]),
+        {"instructionRva": context["instructionRva"], "sourceRva": context["targetRva"]})
     validate_registered_formatter_composition(image, contract["defaultComposition"], label=LABEL)
     return {"methodsChecked": len(contract["methods"]), "codeWindowsChecked": len(contract["codeWindows"]),
             "fieldOrder": [row["name"] for row in contract["fields"]], "parentProofStatus": "exact-default-stored", "runtimeProviderSelection": "unresolved"}
@@ -200,8 +205,17 @@ def load_pos_rot_contract(*, game_root: Path | None = None,
         ga_signature, metadata_signature = _signature(native.gameassembly), _signature(native.metadata)
         checked = _authenticate(path, signature, native.gameassembly, ga_signature, native.metadata, metadata_signature)
         _require("contract-unchanged", signature, _signature(path))
-        _require("gameassembly-unchanged", ga_signature, _signature(native.gameassembly))
-        _require("metadata-unchanged", metadata_signature, _signature(native.metadata))
+        after = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"],
+            gameassembly=native.gameassembly, metadata=native.metadata)
+        if after.status != "validated":
+            return {}, {**audit, "status": after.status, "failedCheck": "installed-native-inputs-after",
+                        "detail": "selected native inputs changed during validation: " + after.detail}
+        if not unity.is_file():
+            return {}, {**audit, "status": "missing", "failedCheck": "UnityPlayer.dll-after", "detail": "selected UnityPlayer.dll disappeared during validation"}
+        actual_unity = sha256_file(unity)
+        if actual_unity.upper() != expected["UnityPlayer.dll"].upper():
+            return {}, {**audit, "status": "mismatched", "failedCheck": "UnityPlayer.dll-after", "detail": "selected UnityPlayer.dll changed during validation",
+                        "validationFailures": [{"check": "UnityPlayer.dll-after", "expected": expected["UnityPlayer.dll"], "actual": actual_unity}]}
         return contract, {**audit, "status": "validated", "evidenceBoundary": "exact", **checked}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as error:
         diagnostic = {"check": getattr(error, "check", "contract-or-native"),

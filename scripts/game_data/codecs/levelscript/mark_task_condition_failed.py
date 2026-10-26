@@ -6,6 +6,8 @@ import struct
 from typing import Any
 
 from . import params
+from scripts.game_data.memorypack.core import memorypack_union_header
+
 from .action_map import ActionMapCodecError, _Cursor
 
 
@@ -40,8 +42,7 @@ def decode_mark_task_condition_failed_action(
         or not isinstance(tag, int) or not 0 <= tag <= 0xFFFF
     ):
         raise ActionMapCodecError("markTaskConditionFailed:invalid-route")
-    tag_bytes = bytes((tag,)) if tag < 0xFA else b"\xfa" + struct.pack("<H", tag)
-    header = tag_bytes + bytes((members,))
+    header = memorypack_union_header(tag, members)
     if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"markTaskConditionFailed:invalid-header,offset={offset}")
     cursor = _Cursor(data, offset + len(header))

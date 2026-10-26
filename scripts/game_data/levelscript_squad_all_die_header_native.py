@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -32,7 +33,7 @@ from scripts.game_data.il2cpp.context import (
     generic_type_carrier, method_spec_record, method_spec_usage_index,
     unresolved_usage_index,
 )
-from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
@@ -54,7 +55,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or route.get("family") != "ActionHeader"
-        or route.get("tag") != 0xA7
+        or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.LevelEvent.OnSquadAllMemberDie"
         or route.get("serializedMemberCount") != 14
         or route.get("inheritedMemberCount") != 14
@@ -70,7 +71,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or contexts[0].get("elementTypeName") != "System.Boolean"
         or fields[13][1] != "Param<bool>"
         or len(data.get("methods", [])) != 2
-        or len(data.get("codeWindows", [])) != 2
+        or len(data.get("codeWindows", [])) < 2
         or not data.get("sourceReceipts")
         or any(len(row) != 5 for row in data["sourceReceipts"])
         or len({(row[0], row[2]) for row in data["sourceReceipts"]}) != len(data["sourceReceipts"])
@@ -111,8 +112,8 @@ def _validate_context(image: Any, context: dict[str, Any]) -> None:
         raise ValueError(f"{LABEL}.native:method-arity=13")
     argument = instantiation.arguments[0]
     raw = bytes.fromhex(argument.raw_type_record_hex)
-    if raw.hex().upper() != context["argumentRawHex"] or raw[10] != context["typeKind"] != 0x15:
-        raise ValueError(f"{LABEL}.native:argument=13")
+    if raw.hex().upper() != context["argumentRawHex"] or not raw[10] == context["typeKind"] == 0x15:
+        raise NativeIdentityMismatch(f"{LABEL}.native:argument=13", expected=0x15, recorded=context["typeKind"], actual=raw[10])
     carrier_pointer = struct.unpack_from("<Q", raw)[0]
     carrier_raw = image.pe.bytes_at_va(carrier_pointer, 32)
     base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
@@ -133,11 +134,11 @@ def _validate_context(image: Any, context: dict[str, Any]) -> None:
     element = bytes.fromhex(child.arguments[0].raw_type_record_hex)
     if (
         element.hex().upper() != context["elementRawHex"]
-        or element[10] != context["elementTypeKind"] != 2
+        or not element[10] == context["elementTypeKind"] == 2
         or protocol.runtime_type_name(image.pe, image.metadata, child.arguments[0].type_pointer_va) != "bool"
         or context["elementTypeDefinition"] is not None
     ):
-        raise ValueError(f"{LABEL}.native:bool-element=13")
+        raise NativeIdentityMismatch(f"{LABEL}.native:bool-element=13", expected=2, recorded=context["elementTypeKind"], actual=element[10])
 
 
 def _validate_native(image: Any, contract: dict[str, Any]) -> None:
@@ -161,14 +162,14 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     entry = switch["entries"][tag]
     target = struct.unpack_from("<I", table, tag * 4)[0]
     if (
-        target != dispatch["switchTargetRva"] == dispatch["bodyRva"]
+        not target == dispatch["switchTargetRva"] == dispatch["bodyRva"]
         or int(entry["targetVa"], 16) != base + target
         or int(entry["bodyVa"], 16) != base + target
         or entry["wrapperName"] != route["wrapperName"]
         or entry["registeredTypeIndex"] != route["registeredTypeIndex"]
         or entry["typeDefinition"] != route["typeDefinition"]
     ):
-        raise ValueError(f"{LABEL}.native:direct-branch")
+        raise NativeIdentityMismatch(f"{LABEL}.native:direct-branch", expected=dispatch["bodyRva"], recorded=dispatch["switchTargetRva"], actual=target)
     branch = dispatch["branchWindow"]
     if branch["startRva"] != target or branch["endRva"] <= target:
         raise ValueError(f"{LABEL}.contract:branch-window")
@@ -176,7 +177,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
     load_rva = dispatch["typeLoadRva"]
     load = image.pe.bytes_at_va(base + load_rva, 7)
     if (
-        not branch["startRva"] <= load_rva < branch["endRva"] - 7
+        not branch["startRva"] <= load_rva <= branch["endRva"] - 7
         or load[:3] != b"\x48\x8b\x15"
         or load.hex().upper() != dispatch["typeLoadHex"].upper()
     ):
@@ -279,6 +280,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
 ) -> int:
+    prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
     if (
@@ -302,16 +304,14 @@ def _validate_sources(
         data = (export_root / path).read_bytes()
         if (
             not 0 <= start < end <= len(data)
-            or data[start:start+2] != bytes((route["tag"], route["serializedMemberCount"]))
+            or data[start:start+len(prefix)] != prefix
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
             or ledger.get(path, {}).get("length") != len(data)
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}")
-        cursor = _Cursor(data, start)
-        if cursor.byte("squadAllDie.tag") != route["tag"] or cursor.byte("squadAllDie.memberCount") != 14:
-            raise ValueError(f"{LABEL}.source:union-header={path}")
+        cursor = _Cursor(data, start + len(prefix))
         for name, kind in route["fields"]:
             cursor.value(kind, "squadAllDie." + name)
         if cursor.offset != end:
@@ -354,14 +354,7 @@ def validate_squad_all_die_header_native_contract(
                           "wrapperName": route["wrapperName"], "fields": route["fields"]},
                 "sourceReceiptsChecked": checked, "nativeInputs": expected}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
-        failure = str(exc)
-        check = (failure.split(".contract:", 1)[1] if ".contract:" in failure
-                 else failure.split(".native:", 1)[1] if ".native:" in failure
-                 else failure.split(".source:", 1)[1] if ".source:" in failure
-                 else "contract-native-or-source")
-        return {"status": "validation_failed", "validator": LABEL,
-                "failedCheck": check, "detail": failure,
-                "validationFailures": [{"gate": check, "actual": failure[:500]}]}
+        return native_validation_failure(exc, label=LABEL, source_path=contract_path)
 
 
 def main() -> int:

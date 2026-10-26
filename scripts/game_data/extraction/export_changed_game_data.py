@@ -65,6 +65,7 @@ from scripts.game_data.extraction.export_full_from_game import (
     collect_source_sizes,
 )
 from scripts.game_data.extraction.scope import FOCUSED_STRUCTURED_BLOCKS, STRUCTURED_LEVELS, TERRAIN_HEIGHT_FILE_REGEX
+from scripts.game_data.jsondata_blocks import JSON_BLOCKS, JSON_LIP_LANGUAGES
 
 
 SCHEMA_VERSION = 1
@@ -229,6 +230,8 @@ def _load_index_rows(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     files: list[dict[str, Any]] = []
     summary: dict[str, Any] | None = None
     seen: set[str] = set()
+    language_chunks: dict[str, dict[str, bool]] = {}
+    language_blocks = {JSON_BLOCKS[block] for block in JSON_LIP_LANGUAGES}
     try:
         with path.open("r", encoding="utf-8") as stream:
             for line_number, line in enumerate(stream, 1):
@@ -241,6 +244,17 @@ def _load_index_rows(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
                     if not logical_id or logical_id in seen:
                         raise ChangedExportError(f"duplicate/empty logicalId at {path}:{line_number}: {logical_id!r}")
                     seen.add(logical_id)
+                    block = row.get("blockName")
+                    language = JSON_LIP_LANGUAGES.get(row.get("fileBlockTypeValue"))
+                    if language or block in language_blocks:
+                        chunk, exists = row.get("chunkFile"), row.get("chunkExists")
+                        if (not language or block != "JsonLip" + language
+                                or type(exists) is not bool or not isinstance(chunk, str) or not chunk):
+                            raise ChangedExportError(f"invalid JsonLip chunk identity at {path}:{line_number}")
+                        chunks = language_chunks.setdefault(block, {})
+                        if chunk in chunks and chunks[chunk] != exists:
+                            raise ChangedExportError(f"conflicting JsonLip chunk state at {path}:{line_number}")
+                        chunks[chunk] = exists
                     files.append({
                         "logicalId": logical_id,
                         "blockName": str(row.get("blockName") or ""),
@@ -258,13 +272,19 @@ def _load_index_rows(path: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         raise ChangedExportError(f"invalid VFS index {path}: {exc}") from exc
     if summary is None:
         raise ChangedExportError(f"VFS index has no terminal summary: {path}")
-    if int(summary.get("missingChunkCount") or 0) != 0:
+    # An optional language may be wholly undownloaded, but a partly missing
+    # block must fail even if its summary incorrectly reports no missing chunks.
+    for block, chunks in language_chunks.items():
+        if any(chunks.values()) and not all(chunks.values()):
+            raise ChangedExportError(f"VFS index contains partially missing {block} chunks: {path}")
+    excluded = {name: chunks for name, chunks in language_chunks.items() if not any(chunks.values())}
+    if int(summary.get("missingChunkCount") or 0) != sum(map(len, excluded.values())):
         raise ChangedExportError(f"VFS index contains missing chunks: {path}")
     if int(summary.get("fileCount") or 0) != len(files):
         raise ChangedExportError(
             f"VFS index count mismatch for {path}: expected={summary.get('fileCount')}, actual={len(files)}"
         )
-    return files, summary
+    return [row for row in files if row["blockName"] not in excluded], summary
 
 
 def scan_source(
@@ -322,7 +342,7 @@ def classify_changes(
 
 
 def _audit_seed_rows(path: Path, mode: str) -> tuple[list[dict[str, Any]], str]:
-    allowed_blocks = {"Table", "JsonData", "Video", "AuditVideo"}
+    allowed_blocks = {"Table", "Video", "AuditVideo", *JSON_BLOCKS.values()}
     terrain_re = re.compile(TERRAIN_HEIGHT_FILE_REGEX) if mode == "default" else None
     rows: dict[str, dict[str, Any]] = {}
     input_set = ""
@@ -489,7 +509,7 @@ def stage_changed_files(
                 str(executable), "dump", "-s", str(primary), "-o", str(stage),
                 "--block-type", block, "--file-regex", pattern, "--verify-md5",
             ]
-            if block == "JsonData":
+            if block in JSON_BLOCKS.values():
                 packed_store = stage / f"_packed_{len(packed_stores)}.sqlite"
                 packed_stores.append(packed_store)
                 command.extend(["--packed-game-store", str(packed_store)])

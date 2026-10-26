@@ -118,13 +118,15 @@ PARAM_ENUM_UNDERLYING = {'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralA
     'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.TweenManager+TweenEase>': ('Beyond.Gameplay.Core.TweenManager+TweenEase', 'int'),
     'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>': ('Beyond.GEnums.CompareOperator', 'int'),
     'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.ServerGameVarEnum>': ('Beyond.GEnums.ServerGameVarEnum', 'int'),
-    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>': ('Beyond.Gameplay.Core.MovementSettingName', 'int')}
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>': ('Beyond.Gameplay.Core.MovementSettingName', 'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.ScriptEndReason>': ('Beyond.Gameplay.Core.ScriptEndReason', 'int')}
 HEADER_ENUM_UNDERLYING = {
     name: (name, "int") for name in (
         "Beyond.Gameplay.Actions.FilterLevel",
         "Beyond.Gameplay.Actions.FilterMask",
         "Beyond.Gameplay.Actions.TriggerActiveDuring",
         "Beyond.Gameplay.Actions.EntityEventHeader+TriggerTarget",
+        "Beyond.Gameplay.Actions.ScriptEventHeader+TriggerTarget",
     )
 }
 STORED_ENUM_UNDERLYING = {
@@ -187,12 +189,7 @@ def _typed_read_context(image: NativeImage, item: dict[str, Any], previous: int)
     if len(instance.arguments) != 1:
         raise ValueError(f"levelscriptRouteDeserialize.native:typed-context-arity={item['name']}")
     argument = instance.arguments[0]
-    if item['declaredType'] in (
-        'Beyond.Gameplay.Actions.Param`1<long>',
-        'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.CompareOperator>',
-        'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.ServerGameVarEnum>',
-        'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>',
-    ):
+    if item['declaredType'].startswith(('Beyond.Gameplay.Actions.Param`1<', 'Beyond.Gameplay.Actions.ParamOutput`1<')):
         _ordinary_param_reference_argument(argument.raw_type_record_hex)
     actual = runtime_type_name(image.pe, image.metadata, argument.type_pointer_va)
     if (actual != item["declaredType"] or actual != context["argumentType"]
@@ -217,6 +214,7 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'Beyond.Gameplay.Actions.FilterMask': 'int32',
  'Beyond.Gameplay.Actions.TriggerActiveDuring': 'int32',
  'Beyond.Gameplay.Actions.EntityEventHeader+TriggerTarget': 'int32',
+ 'Beyond.Gameplay.Actions.ScriptEventHeader+TriggerTarget': 'int32',
  'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.EntityPtr>': 'ParamOutput<EntityPtr>',
  'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.SpawnerPtr>': 'ParamOutput<SpawnerPtr>',
  'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.LsmPtr>': 'ParamOutput<LsmPtr>',
@@ -227,6 +225,7 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Actions.ShowUIToast+ShowToastType>': 'Param<ShowUIToast.ShowToastType>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.CommonMaskBlendData>': 'Param<CommonMaskBlendData>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>': 'Param<EntityPtr>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.ScriptEndReason>': 'Param<ScriptEndReason>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.GameplayTag>': 'Param<GameplayTag>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.GlobalBuffId>': 'Param<GlobalBuffId>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>': 'Param<LevelScriptPtr>',
@@ -267,8 +266,10 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
     'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.TweenManager+TweenEase>': 'Param<TweenManager.TweenEase>',
     'Beyond.Gameplay.Actions.ParamOutput`1<bool>': 'ParamOutput<bool>',
     'Beyond.Gameplay.Actions.ParamOutput`1<uint>': 'ParamOutput<uint>'}
-    if [[member.name.lstrip("_"), aliases.get(member.declared_type)] for member in members] != row["fields"]:
-        raise ValueError(f"levelscriptRouteDeserialize.native:codec-kinds={key}")
+    actual_fields = [[member.name.lstrip("_"), aliases.get(member.declared_type)] for member in members]
+    if actual_fields != row["fields"]:
+        differences = [(i,expected,actual) for i,(expected,actual) in enumerate(zip(row['fields'],actual_fields)) if expected != actual]
+        raise ValueError(f"levelscriptRouteDeserialize.native:codec-kinds={key}:counts={len(row['fields'])}/{len(actual_fields)}:expected-actual={differences[:8]}")
     for member in members:
         if (aliases.get(member.declared_type) == "int32" and member.declared_type != "int"
                 and (member.kind, member.underlying_kind, member.width) != ("enum", "scalar32", 4)):
@@ -365,7 +366,8 @@ def _validate_collection_readers(image: NativeImage, contract: dict[str, Any]) -
                 raise ValueError("levelscriptRouteDeserialize.contract:collection-reader-window")
 
 
-def _source_receipts(contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path) -> int:
+def _source_receipts(contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+                     *, game_root: Path | None = None, strings: Any = None) -> int:
     """Replay only declared native-proved spans joined to a complete receipt."""
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
@@ -403,10 +405,14 @@ def _source_receipts(contract: dict[str, Any], export_root: Path, ledger_path: P
                 raise ValueError(f"levelscriptRouteDeserialize.source:union-prefix={path}@{start}:expected={prefix.hex().upper()}")
             if hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper():
                 raise ValueError(f"levelscriptRouteDeserialize.source:span-sha256={path}@{start}:expected={span_digest}")
-            cursor = _Cursor(data, start + len(prefix))
+            cursor = _Cursor(data, start + len(prefix), game_root=game_root, strings=strings)
             for name, kind in route["fields"]:
                 try:
-                    cursor.value(kind, "storedRoutes." + name)
+                    if kind == 'string':
+                        from scripts.game_data.string_pool import resolve_string_pool_index
+                        resolve_string_pool_index(cursor.i32(name), strings, name)
+                    else:
+                        cursor.value(kind, "storedRoutes." + name)
                 except (ValueError, IndexError) as exc:
                     raise ValueError(f"levelscriptRouteDeserialize.source:field={path}@{cursor.offset}/{name}:{exc}") from exc
             if cursor.offset != end:
@@ -418,6 +424,7 @@ def _source_receipts(contract: dict[str, Any], export_root: Path, ledger_path: P
 def _validate(
     *, contract_path: Path = CONTRACT_PATH, layout_path: Path = LAYOUT_PATH,
     export_root: Path | None = None, ledger_path: Path | None = None, summary_path: Path | None = None,
+    gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> dict[str, Any]:
     contract = json.loads(contract_path.read_bytes())
     if contract.get("schema") not in (SCHEMA, TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA):
@@ -430,7 +437,7 @@ def _validate(
     native_inputs = contract["nativeInputs"]
     gate = check_installed_native_inputs(
         native_inputs["gameAssembly"]["sha256"],
-        native_inputs["metadata"]["sha256"],
+        native_inputs["metadata"]["sha256"], gameassembly=gameassembly, metadata=metadata,
     )
     audit: dict[str, Any] = {
         "schema": "endfield.levelscript-route-deserialize-native-audit.v2" if typed else "endfield.levelscript-route-deserialize-native-audit.v1",
@@ -590,7 +597,15 @@ def _validate(
     if export_root is not None:
         if not typed or ledger_path is None or summary_path is None:
             raise ValueError("levelscriptRouteDeserialize.source:explicit-v2-ledger-summary-required")
-        audit["sourceReceiptsChecked"] = _source_receipts(contract, export_root, ledger_path, summary_path)
+        from scripts.game_data.memorypack.pooled_source_helper import validate_current_native_contract
+        from scripts.game_data.string_pool import export_string_pool
+        strings = validate_current_native_contract(gameassembly=gate.gameassembly, metadata=gate.metadata)
+        targets = {item['readTargetRva'] for row in contract['routes'] for item in row['readOrder'] if item['declaredType'] == 'string'}
+        if (strings.get('status') != 'validated' or strings.get('wireEncoding') != 'int32-pool-index'
+                or not targets <= set(strings.get('sourceHelpers', []))):
+            raise ValueError(f"levelscriptRouteDeserialize.source:pooled-helper:status={strings.get('status')}")
+        audit["sourceReceiptsChecked"] = _source_receipts(contract, export_root, ledger_path, summary_path,
+            game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(export_root))
     elif ledger_path is not None or summary_path is not None:
         raise ValueError("levelscriptRouteDeserialize.source:explicit-export-root-required")
     # Recheck the pair actually opened, even when inner proofs reuse cached facts.
@@ -624,12 +639,13 @@ def _validate(
 def validate(
     *, contract_path: Path = CONTRACT_PATH, layout_path: Path = LAYOUT_PATH,
     export_root: Path | None = None, ledger_path: Path | None = None, summary_path: Path | None = None,
+    gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> dict[str, Any]:
     """V2 failures are actionable audit rows; keep V1's exception API intact."""
     typed = json.loads(contract_path.read_bytes()).get("schema") in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA)
     try:
         return _validate(contract_path=contract_path, layout_path=layout_path, export_root=export_root,
-                         ledger_path=ledger_path, summary_path=summary_path)
+                         ledger_path=ledger_path, summary_path=summary_path, gameassembly=gameassembly, metadata=metadata)
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
         if not typed:
             raise

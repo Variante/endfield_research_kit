@@ -2,292 +2,256 @@
   "schema": "endfield.collision-activation-capture-native.v3",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "codeWindows": [
     {
       "role": "load_data",
-      "rva": 59364608,
-      "bytes": 25,
-      "sha256": "8b2a39752bb08d13c0936cb3525c29ca6b539cfb063878c99408760189c77ece",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107794256,
+      "bytes": 228,
+      "sha256": "980d285ab431bb52aed06ea179ebc4b140da8bcbf4d6154d4fe2d46af7625ca4"
     },
     {
       "role": "load_data_part_1",
-      "rva": 59364633,
-      "bytes": 956,
-      "sha256": "f0b956e9a4325d91ea03c9376b39e598d51a71539b856736a5f16d084a946601",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107794484,
+      "bytes": 866,
+      "sha256": "24416b040732609290fe6ba46ba8762708782a1e1db4c1266678ad35fb87cf0d"
     },
     {
       "role": "load_data_part_2",
-      "rva": 59365589,
-      "bytes": 180,
-      "sha256": "fb73d598798c22863907a759886e51a8001d777c4e3c5f33316f204fe2082192",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107795350,
+      "bytes": 7,
+      "sha256": "158d7498717d9d8a4887d336f9abd26815ef09cd5162f222a91151151d97800c"
     },
     {
       "role": "load_data_part_3",
-      "rva": 59365769,
-      "bytes": 110,
-      "sha256": "8eaf1097fdc459630be09585264161295eb06efc600d2f4f3f876a88ede754e6",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107795357,
+      "bytes": 109,
+      "sha256": "287cfe1a2fd5f679a64d34e2874228a852f24e8adf2e0ccf4d72c4dde575a259"
     },
     {
       "role": "load_data_part_4",
-      "rva": 82139982,
-      "bytes": 147,
-      "sha256": "f289ae667f27ff6ee3c8ddf140fb96569c1e5bd21c5a087af5412fe13d0b1063",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 124874726,
+      "bytes": 37,
+      "sha256": "2c6f22b645fb3423d25de38960a4f3aeb947aefca26a43088152ace2fdb21bf7"
+    },
+    {
+      "role": "load_data_part_5",
+      "module": "gameAssembly",
+      "rva": 124874763,
+      "bytes": 103,
+      "sha256": "e93ddd7f9b519b28f6fd0710eb22ea8034102cb20542f31e189a07d5e2fc03c6"
     },
     {
       "role": "interactive_break",
-      "rva": 102749652,
-      "bytes": 974,
-      "sha256": "c7b409d0ed3f2153ad3d1e35d9da65a394c1521aee3c933e7278b6574226ac80",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 151790244,
+      "bytes": 968,
+      "sha256": "537a13c44de18b6e26ef6e1676d3fc7fad3da008fc870e3b3d5aa30068e18286"
     },
     {
       "role": "prepare_attack",
-      "rva": 71878976,
-      "bytes": 29,
-      "sha256": "8950042e44030fa9766ce4b0eda92edbcf2cd11f0ef322e7fe5fc688e3c489ed",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 112224592,
+      "bytes": 96,
+      "sha256": "fffcad5f1cd4e032a65aec76d4fee2fc5ada933455ae1adfc1d7291f3c40a439"
     },
     {
       "role": "prepare_attack_part_1",
-      "rva": 71879005,
-      "bytes": 214,
-      "sha256": "e682ca9a0907f850ccb35777b19205160b87a9f91b627d691253d5a0a2215579",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 112224688,
+      "bytes": 171,
+      "sha256": "217648bf184c875736b36db956e4c7a1922479eece9cea8d4f726b97fdf5cfc9"
     },
     {
       "role": "prepare_attack_part_2",
-      "rva": 71879219,
-      "bytes": 48,
-      "sha256": "abc27fdbc49d58fb5742b2c30888c35f0e006802d2f11518343dc58f97827947",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 112224859,
+      "bytes": 16,
+      "sha256": "4f2ed837fff1fb2ba9b9dab453d8013d99167861c42a4b04e825932d5d91df53"
     },
     {
       "role": "prepare_attack_part_3",
-      "rva": 71879267,
-      "bytes": 6,
-      "sha256": "8f1e72cd9a4b547b55095a2952efab1871cdd1dce0d9c73a6f4fa0f709372064",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 125244494,
+      "bytes": 61,
+      "sha256": "4624a1aebc2190b7e7266cf8f52b59917ffc5b9c46ccafb1839f69bc496718a7"
     },
     {
       "role": "prepare_attack_part_4",
-      "rva": 83717776,
-      "bytes": 137,
-      "sha256": "5c0828c1bd132f4d0141f0eb6d37ee9202e67874b07f413228168edb34a15988",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 125244555,
+      "bytes": 75,
+      "sha256": "0025d62c28bc9cfae22f86043573a92df1da2ab9da6b2a89f027e53f9c251ba6"
     },
     {
       "role": "attack_callback",
-      "rva": 59374320,
-      "bytes": 33,
-      "sha256": "afc37cabaee343983d011a922c63e4c2864812b68b841a7e4a4ddd0953e3c2a7",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107793760,
+      "bytes": 88,
+      "sha256": "b465380890d0f565c91e77fbdcdf1f4b11f540311825ed8713d109ed7048cb40"
     },
     {
       "role": "attack_callback_part_1",
-      "rva": 59374353,
-      "bytes": 440,
-      "sha256": "ec43b38b0f144b81a858df6f4ec41230d856c892d48e7b1739d42f25ae4745a8",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107793848,
+      "bytes": 380,
+      "sha256": "8848a2802727c32fcc9b8e48f50486988f261b93ff18e0fabb52024d2d6d3698"
     },
     {
       "role": "attack_callback_part_2",
-      "rva": 59374793,
-      "bytes": 36,
-      "sha256": "c00cfda00bbb38edccbd21e5a14e05cb621dee693563ac62dc844f97d900bc80",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 107794228,
+      "bytes": 22,
+      "sha256": "e557693451a754c4307906c3e039a065a5f6e1a1c22e4082c4c89f57b9200e5b"
     },
     {
       "role": "attack_callback_part_3",
-      "rva": 59374829,
-      "bytes": 6,
-      "sha256": "a9d1c3918db5ee58ab46dec1a2a798aeec57cc72d23b28721a425f6c95cffe9f",
-      "module": "gameAssembly"
-    },
-    {
-      "role": "attack_callback_part_4",
-      "rva": 82141326,
-      "bytes": 65,
-      "sha256": "60aa98281e34e15b915618ff0d49da962468b74752dd653b5894450befb70022",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 124874664,
+      "bytes": 62,
+      "sha256": "bc8da24caf0c2f97ccf6cb6410ca2116d588d86950ce073f9545baa85ebbad7b"
     },
     {
       "role": "manager_submit",
-      "rva": 71770464,
-      "bytes": 31,
-      "sha256": "4cf1b6d26028f525d7bc13d407298ed51df0b6a54b1424df688b1a126fb8fbff",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 114591104,
+      "bytes": 276,
+      "sha256": "933cb1bf43cfed877081b3ebb18d418d399d7782439723d82fbf7e794ad88ce3"
     },
     {
       "role": "manager_submit_part_1",
-      "rva": 71770495,
-      "bytes": 282,
-      "sha256": "1b94919e1ccc1d3440d62924f7ee9aedd4746a4a36001e84e12734772c18faac",
-      "module": "gameAssembly"
-    },
-    {
-      "role": "manager_submit_part_2",
-      "rva": 71770777,
-      "bytes": 72,
-      "sha256": "1cb8944c97b2cbe651d7322ca16012767aa4db1122a830ca9cfe67bc4386fbcb",
-      "module": "gameAssembly"
-    },
-    {
-      "role": "manager_submit_part_3",
-      "rva": 71770849,
-      "bytes": 6,
-      "sha256": "1a0ebe8388e404e4b695cb3c261f4b3e1ca358170474adeaa57ec75bbb292b1a",
-      "module": "gameAssembly"
-    },
-    {
-      "role": "manager_submit_part_4",
-      "rva": 83704284,
-      "bytes": 205,
-      "sha256": "339ace94baa946d2e76e6f0d67f75cfd5f90805f60276f7a253a0165e2bbc34b",
-      "module": "gameAssembly"
+      "module": "gameAssembly",
+      "rva": 125472736,
+      "bytes": 307,
+      "sha256": "d5a4a1e8bd7518091b922ac64f93770a6e2d73c8ca0da816d5cb63e5edbc07be"
     }
   ],
   "codeFamilies": [
     {
       "role": "load_data",
-      "rva": 59364608,
+      "rva": 107794256,
       "runtimeRanges": [
         [
-          59364608,
-          59364633,
-          212939464
+          107794256,
+          107794484,
+          269806836
         ],
         [
-          59364633,
-          59365589,
-          212939472
+          107794484,
+          107795350,
+          269806848
         ],
         [
-          59365589,
-          59365769,
-          212939516
+          107795350,
+          107795357,
+          269806888
         ],
         [
-          59365769,
-          59365879,
-          212939532
+          107795357,
+          107795466,
+          269806904
         ],
         [
-          82139982,
-          82140129,
-          212939576
+          124874726,
+          124874763,
+          269806944
+        ],
+        [
+          124874763,
+          124874866,
+          269806960
         ]
       ]
     },
     {
       "role": "interactive_break",
-      "rva": 102749652,
+      "rva": 151790244,
       "runtimeRanges": [
         [
-          102749652,
-          102750626,
-          215075140
+          151790244,
+          151791212,
+          270735820
         ]
       ]
     },
     {
       "role": "prepare_attack",
-      "rva": 71878976,
+      "rva": 112224592,
       "runtimeRanges": [
         [
-          71878976,
-          71879005,
-          214004800
+          112224592,
+          112224688,
+          270114324
         ],
         [
-          71879005,
-          71879219,
-          214004812
+          112224688,
+          112224859,
+          270114340
         ],
         [
-          71879219,
-          71879267,
-          214004840
+          112224859,
+          112224875,
+          270114364
         ],
         [
-          71879267,
-          71879273,
-          214004856
+          125244494,
+          125244555,
+          270114380
         ],
         [
-          83717776,
-          83717913,
-          214004884
+          125244555,
+          125244630,
+          270114396
         ]
       ]
     },
     {
       "role": "attack_callback",
-      "rva": 59374320,
+      "rva": 107793760,
       "runtimeRanges": [
         [
-          59374320,
-          59374353,
-          212940564
+          107793760,
+          107793848,
+          269806748
         ],
         [
-          59374353,
-          59374793,
-          212940580
+          107793848,
+          107794228,
+          269806768
         ],
         [
-          59374793,
-          59374829,
-          212940620
+          107794228,
+          107794250,
+          269806804
         ],
         [
-          59374829,
-          59374835,
-          212940636
-        ],
-        [
-          82141326,
-          82141391,
-          212940676
+          124874664,
+          124874726,
+          269806820
         ]
       ]
     },
     {
       "role": "manager_submit",
-      "rva": 71770464,
+      "rva": 114591104,
       "runtimeRanges": [
         [
-          71770464,
-          71770495,
-          213994536
+          114591104,
+          114591380,
+          267225008
         ],
         [
-          71770495,
-          71770777,
-          213994548
-        ],
-        [
-          71770777,
-          71770849,
-          213994568
-        ],
-        [
-          71770849,
-          71770855,
-          213994584
-        ],
-        [
-          83704284,
-          83704489,
-          213994604
+          125472736,
+          125473043,
+          270282916
         ]
       ]
     }
@@ -297,12 +261,12 @@
       "kind": 94,
       "role": "load_data",
       "module": "gameAssembly",
-      "rva": 59364608,
+      "rva": 107794256,
       "method": [
-        51670,
+        54219,
         "Beyond.Gameplay.View.DestructiblePhysicsMono",
         "_LoadData",
-        59364608
+        107794256
       ],
       "parameters": [],
       "static": false,
@@ -314,18 +278,18 @@
         ],
         "returnMode": "void"
       },
-      "entryHex": "40554881ec80000000803ddb61600a00"
+      "entryHex": "4053564883ec78803ddb6a050b00488b"
     },
     {
       "kind": 95,
       "role": "interactive_break",
       "module": "gameAssembly",
-      "rva": 102749652,
+      "rva": 151790244,
       "method": [
-        71137,
+        75306,
         "Beyond.Gameplay.Core.InteractivePhysicsDestructibleComponent",
         "Break",
-        102749652
+        151790244
       ],
       "parameters": [],
       "static": false,
@@ -343,12 +307,12 @@
       "kind": 96,
       "role": "prepare_attack",
       "module": "gameAssembly",
-      "rva": 71878976,
+      "rva": 112224592,
       "method": [
-        51664,
+        54213,
         "Beyond.Gameplay.View.DestructiblePhysicsMono",
         "PrepareBreakFromAttack",
-        71878976
+        112224592
       ],
       "parameters": [
         {
@@ -366,18 +330,18 @@
         ],
         "returnMode": "void"
       },
-      "entryHex": "48895c2418554883ec50803d966da109"
+      "entryHex": "48895c241048896c2418574883ec5080"
     },
     {
       "kind": 97,
       "role": "attack_callback",
       "module": "gameAssembly",
-      "rva": 59374320,
+      "rva": 107793760,
       "method": [
-        51666,
+        54215,
         "Beyond.Gameplay.View.DestructiblePhysicsMono",
         "_BreakFromAttack",
-        59374320
+        107793760
       ],
       "parameters": [
         {
@@ -395,18 +359,18 @@
         ],
         "returnMode": "void"
       },
-      "entryHex": "48895c242041564881ecd0000000803d"
+      "entryHex": "48895c241848897c242041564881ecd0"
     },
     {
       "kind": 98,
       "role": "manager_submit",
       "module": "gameAssembly",
-      "rva": 71770464,
+      "rva": 114591104,
       "method": [
-        13755,
+        14320,
         "Beyond.Gameplay.DestructiblePhysicsManager",
         "SubmitObject",
-        71770464
+        114591104
       ],
       "parameters": [
         {
@@ -424,13 +388,13 @@
         ],
         "returnMode": "bool"
       },
-      "entryHex": "48895c2410574883ec20803de049a309"
+      "entryHex": "48895c24084889742410574883ec2080"
     }
   ],
   "types": [
     {
       "role": "mono",
-      "index": 8610,
+      "index": 8952,
       "type": "Beyond.Gameplay.View.DestructiblePhysicsMono",
       "fields": [
         {
@@ -455,7 +419,7 @@
     },
     {
       "role": "settings",
-      "index": 8606,
+      "index": 8948,
       "type": "Beyond.Gameplay.View.DestructiblePhysicsMono+LevelEditorDestructiblePhysicsTable",
       "fields": [
         {
@@ -468,7 +432,7 @@
     },
     {
       "role": "interactive",
-      "index": 11305,
+      "index": 11842,
       "type": "Beyond.Gameplay.Core.InteractivePhysicsDestructibleComponent",
       "fields": [
         {
@@ -493,7 +457,7 @@
     },
     {
       "role": "manager",
-      "index": 2233,
+      "index": 2355,
       "type": "Beyond.Gameplay.DestructiblePhysicsManager",
       "fields": [
         {
@@ -506,7 +470,7 @@
     },
     {
       "role": "handle",
-      "index": 11302,
+      "index": 11839,
       "type": "Beyond.Gameplay.Core.DestructiblePhysicHandle",
       "fields": [
         {
@@ -525,7 +489,7 @@
     },
     {
       "role": "list",
-      "index": 37521,
+      "index": 68941,
       "type": "System.Collections.Generic.List`1",
       "fields": [
         {
@@ -548,19 +512,19 @@
     "reads": [
       {
         "windowRole": "load_data",
-        "offset": 16
+        "offset": 17
       },
       {
         "windowRole": "load_data_part_1",
-        "offset": 92
+        "offset": 62
       },
       {
         "windowRole": "load_data_part_1",
-        "offset": 105
+        "offset": 71
       },
       {
         "windowRole": "load_data_part_1",
-        "offset": 815
+        "offset": 756
       }
     ],
     "evidenceBoundary": "direct: original receiver -> physicsSettings -> concrete physicsItems list -> int32 size, assigned to receiver.colliderCount. The open generic field offset is a placeholder and is not used."

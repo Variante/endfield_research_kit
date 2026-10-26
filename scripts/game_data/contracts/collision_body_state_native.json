@@ -2,12 +2,12 @@
   "schema": "endfield.collision-body-state-native.v2",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "typeName": {
-    "rva": 25939416,
+    "rva": 27618328,
     "ascii": "PxShape"
   },
   "layout": {
@@ -17,8 +17,8 @@
       "stateShift": 30,
       "staticScb": 96,
       "staticControl": 8,
-      "staticVtable": 25972808,
-      "dynamicVtable": 25955928
+      "staticVtable": 27651720,
+      "dynamicVtable": 27634840
     },
     "body": {
       "bufferControl": 380,
@@ -40,11 +40,11 @@
       "inlineSimulationFilter": 96,
       "bufferedSimulationFilter": 28,
       "queryFilter": 80,
-      "vtable": 25979232
+      "vtable": 27659552
     },
     "scene": {
       "publicDelta": -16,
-      "vtable": 25970208,
+      "vtable": 27649120,
       "filterSlot0": 4016,
       "filterSlot1": 4024,
       "notificationCallback": 4240
@@ -53,91 +53,91 @@
   "codeWindows": [
     {
       "role": "dynamic_body_flags",
-      "rva": 7725392,
+      "rva": 7817360,
       "bytes": 60,
       "sha256": "bc9f868e0914fa7521d26328ede65d047b9ee493a06a8f9fa238190daf4d9e6f"
     },
     {
       "role": "dynamic_constructor",
-      "rva": 7701456,
+      "rva": 7793424,
       "bytes": 130,
-      "sha256": "8cd1fad5d4a499456e203c3f558039c4e2ce6de7d40a2ddf5d302f66f0a979e4"
+      "sha256": "20109476641596f05e8b070c1de8208a6ee2c22a4956378a4f0dd20f7b4a9229"
     },
     {
       "role": "actor_cleanup_prefix",
-      "rva": 7819744,
+      "rva": 7911712,
       "bytes": 25,
-      "sha256": "aa61b837a379b98c2ee93c07dab514ffb533da6d5fbc66e05fc0b696d804585a"
+      "sha256": "bea4a06ce4e0493d7de71458c6592d70e521a38b87c174786a81facca4ef5056"
     },
     {
       "role": "static_release",
-      "rva": 7886896,
+      "rva": 7978864,
       "bytes": 290,
-      "sha256": "263de73e626a1eee853ba1a659fe1115a9b2a3c3951206e7bf7539caa23e24c2"
+      "sha256": "74c2e1067b68925dfa3a528756727d8aa2d20dce976249f790a5d36cd8139855"
     },
     {
       "role": "scene_cleanup_prefix",
-      "rva": 7814720,
+      "rva": 7906688,
       "bytes": 44,
-      "sha256": "727de2b7a36e35612a39decec8cdfd943264a143bc15f835f4aefd4883906f1f"
+      "sha256": "598aaf0d2add21734d2688a9befff6ec66a7e7fa92fba773f60a76aa9bc4f60d"
     },
     {
       "role": "scb_to_public_scene",
-      "rva": 8141936,
+      "rva": 8306864,
       "bytes": 5,
       "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6"
     },
     {
       "role": "scene_constructor_part_2",
-      "rva": 7948832,
+      "rva": 8113760,
       "bytes": 3001,
-      "sha256": "6edaa690a262ca19e8c37f584cd4c2391e75060313215ff018f3a95620135f06"
+      "sha256": "d89cd11f9f575a31c4b4f6da955290abdc3a05a2017fe469445c63cb4abfcf04"
     },
     {
       "role": "dispatch_contact_callbacks",
-      "rva": 7993776,
+      "rva": 8158704,
       "bytes": 362,
       "sha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee"
     },
     {
       "role": "shape_cleanup_prefix",
-      "rva": 7920992,
+      "rva": 8085920,
       "bytes": 34,
-      "sha256": "2705ed8ffb23df6bb5e1f73c6e5d5b19ec13be1ef03bf6b0e2a087aac951c692"
+      "sha256": "1eecb627cf01c77fc62b20d876dd08880ba315750f40e996bc906c53171ed2a4"
     },
     {
       "role": "shape_actor",
-      "rva": 5786896,
+      "rva": 5883200,
       "bytes": 5,
       "sha256": "cff2ef16c7ec552c1f7c9706cb926933e47de8667aaeb590d325e246c3669ef3"
     },
     {
       "role": "shape_flags",
-      "rva": 7923088,
+      "rva": 8088016,
       "bytes": 33,
       "sha256": "ead520fe3ebfddfaa873bc776ed17073658314770275ad0764420cc09380c107"
     },
     {
       "role": "shape_geometry_type",
-      "rva": 7724576,
+      "rva": 7816544,
       "bytes": 7,
       "sha256": "84358b64bfaccfd336ed4b2ce706f45729f875f610a80f96346cc982b5cad304"
     },
     {
       "role": "dynamic_release",
-      "rva": 7733360,
+      "rva": 7825328,
       "bytes": 216,
-      "sha256": "68aa8f6d26f68e89597f77eac64403f5a3981146f7e76b15c0944d7494610af8"
+      "sha256": "a5c885d40eff55b34ab59f5125c6ea7df4d0416988a61e7c42315d8ceac1eb98"
     },
     {
       "role": "simulation_filter",
-      "rva": 7925920,
+      "rva": 8090848,
       "bytes": 46,
       "sha256": "d73cf74f4478643b30e3f4c574c9e8ffc3e491ee53e1994f0333e6faeba54800"
     },
     {
       "role": "query_filter",
-      "rva": 7925824,
+      "rva": 8090752,
       "bytes": 27,
       "sha256": "aec6eb5a6502461c59687e73b1aa6d821829bbf3d4f7a20ca5bd18572e6542b3"
     }
@@ -379,37 +379,37 @@
   ],
   "vtableSlots": [
     {
-      "tableRva": 25955928,
+      "tableRva": 27634840,
       "slot": 53,
       "role": "dynamic_body_flags"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 38,
       "role": "shape_flags"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 21,
       "role": "simulation_filter"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 23,
       "role": "query_filter"
     },
     {
-      "tableRva": 25972808,
+      "tableRva": 27651720,
       "slot": 0,
       "role": "static_release"
     },
     {
-      "tableRva": 25955928,
+      "tableRva": 27634840,
       "slot": 0,
       "role": "dynamic_release"
     },
     {
-      "tableRva": 25979232,
+      "tableRva": 27659552,
       "slot": 7,
       "role": "shape_geometry_type"
     }

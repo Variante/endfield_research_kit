@@ -50,6 +50,7 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file, write_report_json
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -173,6 +174,7 @@ def audit(
     _require("cursor_count", str(cursor_path), len({row["path"] for row in rows}), cursor.get("filesAdvanced"))
 
     source = contract["source"]
+    _require("wide_union_marker", str(contract_path), "FA", source["wireUnionMarkerHex"].upper())
     resolution = contract["resolution"]
     prefixes = resolution["genderPrefixes"]
     if not isinstance(prefixes, list) or len(prefixes) != 2 or any(
@@ -207,14 +209,14 @@ def audit(
         start, end = row["actionStart"], row["actionEnd"]
         if not isinstance(start, int) or not isinstance(end, int) or not 0 <= start < end <= len(data):
             raise CorpusError("action_range", path, "bounded nonempty range", [start, end, len(data)])
-        header = bytes.fromhex(source["wireUnionMarkerHex"]) + struct.pack("<HH", source["unionTag"], source["memberCount"])
+        header = memorypack_union_header(source["unionTag"], source["memberCount"])
         _require("action_union_header", path, header.hex(), data[start:start + len(header)].hex())
         movie = row["moviePath"]["value"]
         raw = movie.encode("utf-8")
         _require("movie_path_occurrences", path, 1, data[start:end].count(raw))
         at = data.find(raw, start, end)
-        if at < start + 5:
-            raise CorpusError("movie_path_field", path, "tagged string within action", at)
+        _require("movie_path_field_range", path, True,
+                 start + len(header) <= at - 5 and at + len(raw) + len(CONSTANT_TAIL) <= end)
         _require("movie_path_tag", path, 4, data[at - 5])
         _require("movie_path_length", path, len(raw), struct.unpack_from("<I", data, at - 4)[0])
         _require("movie_path_constant_tail", path, CONSTANT_TAIL.hex(), data[at + len(raw):at + len(raw) + 12].hex())

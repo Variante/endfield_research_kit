@@ -2,31 +2,31 @@
   "schema": "endfield.wwise-source-native.v4",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "captureFiles": {
     "gameAssembly": {
       "relativePath": "GameAssembly.dll",
-      "bytes": 256677352,
-      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+      "bytes": 320407528,
+      "sha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c"
     },
     "metadata": {
       "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
-      "bytes": 57021288,
-      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+      "bytes": 74424564,
+      "sha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
     },
     "akSoundEngine": {
       "relativePath": "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
-      "bytes": 3586536,
-      "sha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6"
+      "bytes": 3587560,
+      "sha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97"
     },
     "executable": {
       "relativePath": "Endfield.exe",
-      "bytes": 823352,
-      "sha256": "b409340ebdf73b07ab945e4200445d26e168a9be060c591d783ba8c9fbcebd17"
+      "bytes": 827960,
+      "sha256": "09f516d7c5c61933697e974a9c15ce38873fd031ba2a1d1575fdc358c3f046b5"
     }
   },
   "evidenceBoundary": {
@@ -127,11 +127,11 @@
   "methods": [
     {
       "key": "sourceLockDataPtr",
-      "rva": "0x1043f0",
+      "rva": "0x105e00",
       "bodyLength": 90,
-      "bodySha256": "556cb34caca5e0229e2566389f235a71f6051e9da319789ceb5039d7ea268f52",
+      "bodySha256": "0f03b5d78eb5962111bb1365411b9e0d83ba3a8b668fa99203ab6da4bfd97289",
       "priorSdkSymbol": "?LockDataPtr@CAkSource@@QEAAXAEAUAkMediaRef@@@Z",
-      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "symbolBoundary": "Current matching-version SDK COFF candidate, followed by complete current source-method disassembly and direct argument/field-flow review. The SDK label alone is not a layout proof.",
       "args": {
         "sourceThisPointer": {
           "index": 0,
@@ -172,7 +172,7 @@
         {
           "bodyOffset": 16,
           "instructionHex": "7228",
-          "instruction": "jb 0x10442a"
+          "instruction": "jb 0x180105e3a"
         },
         {
           "bodyOffset": 18,
@@ -196,13 +196,13 @@
         },
         {
           "bodyOffset": 31,
-          "instructionHex": "488b0d0a062400",
-          "instruction": "mov rcx, qword ptr [rip + 0x24060a]"
+          "instructionHex": "488b0dd2eb2300",
+          "instruction": "mov rcx, qword ptr [rip + 0x23ebd2]"
         },
         {
           "bodyOffset": 48,
-          "instructionHex": "e80b0cffff",
-          "instruction": "call 0xf5030"
+          "instructionHex": "e86b0bffff",
+          "instruction": "call 0x1800f69a0"
         },
         {
           "bodyOffset": 58,
@@ -231,18 +231,18 @@
         },
         {
           "bodyOffset": 80,
-          "instructionHex": "e89b52ffff",
-          "instruction": "call 0xf96e0"
+          "instructionHex": "e8fb51ffff",
+          "instruction": "call 0x1800fb050"
         }
       ]
     },
     {
       "key": "sourceSetScalar",
-      "rva": "0x104480",
+      "rva": "0x105e90",
       "bodyLength": 106,
-      "bodySha256": "0f4c2507fd84ab6fd971ec3a7aac1c02f615c58ab743ed8a04cbc9ee188877af",
+      "bodySha256": "736576667f23e7f0af7c7f558946a49df32f4fad8a7f1ddf177c8c5856961d68",
       "priorSdkSymbol": "?SetSource@CAkSource@@QEAAXI@Z",
-      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "symbolBoundary": "Current matching-version SDK COFF candidate, followed by complete current source-method disassembly and direct argument/field-flow review. The SDK label alone is not a layout proof.",
       "args": {
         "sourceThisPointer": {
           "index": 0,
@@ -279,7 +279,7 @@
         {
           "bodyOffset": 27,
           "instructionHex": "7413",
-          "instruction": "je 0x1044b0"
+          "instruction": "je 0x180105ec0"
         },
         {
           "bodyOffset": 29,
@@ -293,8 +293,8 @@
         },
         {
           "bodyOffset": 35,
-          "instructionHex": "e808c9faff",
-          "instruction": "call 0xb0db0"
+          "instructionHex": "e838cffaff",
+          "instruction": "call 0x1800b2df0"
         },
         {
           "bodyOffset": 40,
@@ -340,11 +340,11 @@
     },
     {
       "key": "sourceSetMemory",
-      "rva": "0x104630",
+      "rva": "0x106060",
       "bodyLength": 122,
-      "bodySha256": "9b4abe624574b13b6af6fc4be6ac18b24a3db616113da589b8c63c9e1a3c37c4",
+      "bodySha256": "f3e0e9e817b2eef760a0ef2359f0a7d14678698ef9ecd809878adca025b025d0",
       "priorSdkSymbol": "?SetSource@CAkSource@@QEAAXIPEAXUAkMediaInformation@@@Z",
-      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "symbolBoundary": "Current matching-version SDK COFF candidate, followed by complete current source-method disassembly and direct argument/field-flow review. The SDK label alone is not a layout proof.",
       "args": {
         "sourceThisPointer": {
           "index": 0,
@@ -403,7 +403,7 @@
         {
           "bodyOffset": 45,
           "instructionHex": "7413",
-          "instruction": "je 0x104672"
+          "instruction": "je 0x1801060a2"
         },
         {
           "bodyOffset": 47,
@@ -417,8 +417,8 @@
         },
         {
           "bodyOffset": 53,
-          "instructionHex": "e846c7faff",
-          "instruction": "call 0xb0db0"
+          "instructionHex": "e856cdfaff",
+          "instruction": "call 0x1800b2df0"
         },
         {
           "bodyOffset": 58,
@@ -459,11 +459,11 @@
     },
     {
       "key": "sourceSetInfo",
-      "rva": "0x1046b0",
+      "rva": "0x1060e0",
       "bodyLength": 101,
-      "bodySha256": "072f1eb45f52494d08cc0fed1adb703198e1ce8355a9318fe20c9d681c65f9ff",
+      "bodySha256": "9b55234e11ade0633cff8196c308e2bc4db477ffdddd7c4e935b194b283507c9",
       "priorSdkSymbol": "?SetSource@CAkSource@@QEAAXIUAkMediaInformation@@@Z",
-      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "symbolBoundary": "Current matching-version SDK COFF candidate, followed by complete current source-method disassembly and direct argument/field-flow review. The SDK label alone is not a layout proof.",
       "args": {
         "sourceThisPointer": {
           "index": 0,
@@ -513,7 +513,7 @@
         {
           "bodyOffset": 35,
           "instructionHex": "7413",
-          "instruction": "je 0x1046e8"
+          "instruction": "je 0x180106118"
         },
         {
           "bodyOffset": 37,
@@ -527,8 +527,8 @@
         },
         {
           "bodyOffset": 43,
-          "instructionHex": "e8d0c6faff",
-          "instruction": "call 0xb0db0"
+          "instructionHex": "e8e0ccfaff",
+          "instruction": "call 0x1800b2df0"
         },
         {
           "bodyOffset": 48,
@@ -565,7 +565,7 @@
   ],
   "supportWindows": [
     {
-      "rva": "0xf5030",
+      "rva": "0xf69a0",
       "bodyLength": 42,
       "bodySha256": "10a4b1df8aa4d9ddc6da1f085ec29ece5193c88795a76a2e21b2b810812eb19a",
       "instructionWitnesses": [
@@ -577,7 +577,7 @@
         {
           "bodyOffset": 4,
           "instructionHex": "0f8438020000",
-          "instruction": "je 0xf5272"
+          "instruction": "je 0x1800f6be2"
         },
         {
           "bodyOffset": 25,
@@ -597,14 +597,14 @@
         {
           "bodyOffset": 36,
           "instructionHex": "0f8409020000",
-          "instruction": "je 0xf5263"
+          "instruction": "je 0x1800f6bd3"
         }
       ]
     },
     {
-      "rva": "0xf505a",
+      "rva": "0xf69ca",
       "bodyLength": 521,
-      "bodySha256": "4cb98d8207dafe40776716598d87e9076e2735f1b6f6a8070b98402415131a2a",
+      "bodySha256": "cc95b6f70274134b2300704997c763afb7e035a50a22af3951a2b63b5df74bd1",
       "instructionWitnesses": [
         {
           "bodyOffset": 42,
@@ -629,7 +629,7 @@
         {
           "bodyOffset": 162,
           "instructionHex": "e87f460000",
-          "instruction": "call 0xf9780"
+          "instruction": "call 0x1800fb0f0"
         },
         {
           "bodyOffset": 224,
@@ -674,7 +674,7 @@
       ]
     },
     {
-      "rva": "0xf5263",
+      "rva": "0xf6bd3",
       "bodyLength": 16,
       "bodySha256": "b41bfa88b733096e81fdb1c064da55832505eeac30613eb436fb4b869e086f59",
       "instructionWitnesses": [
@@ -686,9 +686,9 @@
       ]
     },
     {
-      "rva": "0xf96e0",
+      "rva": "0xfb050",
       "bodyLength": 149,
-      "bodySha256": "ec0eddecbea02d922fcbfbb223874457d4c8c96c852fd91883694f60a3808d73",
+      "bodySha256": "2acdd57ec0cdf679f667e1811767168096e23e0086a70b2465823fead835fb96",
       "instructionWitnesses": [
         {
           "bodyOffset": 20,
@@ -738,9 +738,9 @@
       ]
     },
     {
-      "rva": "0xf9780",
+      "rva": "0xfb0f0",
       "bodyLength": 172,
-      "bodySha256": "d68e869debc9e0c9f5921bc39a13f01e8e6a25e3afad1561d301fa993900cedd",
+      "bodySha256": "2354954771b5e045c7bfc21cecfa6566b91b54ae62ed46bd708dad723be62f39",
       "instructionWitnesses": [
         {
           "bodyOffset": 24,
@@ -759,18 +759,18 @@
         },
         {
           "bodyOffset": 35,
-          "instructionHex": "488bf1",
-          "instruction": "mov rsi, rcx"
+          "instructionHex": "488bf9",
+          "instruction": "mov rdi, rcx"
         },
         {
           "bodyOffset": 40,
-          "instructionHex": "498b7818",
-          "instruction": "mov rdi, qword ptr [r8 + 0x18]"
+          "instructionHex": "498b7018",
+          "instruction": "mov rsi, qword ptr [r8 + 0x18]"
         },
         {
           "bodyOffset": 46,
-          "instructionHex": "33ff",
-          "instruction": "xor edi, edi"
+          "instructionHex": "33f6",
+          "instruction": "xor esi, esi"
         },
         {
           "bodyOffset": 48,
@@ -784,38 +784,38 @@
         },
         {
           "bodyOffset": 102,
-          "instructionHex": "48892e",
-          "instruction": "mov qword ptr [rsi], rbp"
+          "instructionHex": "48892f",
+          "instruction": "mov qword ptr [rdi], rbp"
         },
         {
           "bodyOffset": 131,
-          "instructionHex": "48897e08",
-          "instruction": "mov qword ptr [rsi + 8], rdi"
+          "instructionHex": "48897708",
+          "instruction": "mov qword ptr [rdi + 8], rsi"
         },
         {
-          "bodyOffset": 140,
-          "instructionHex": "4c897e10",
-          "instruction": "mov qword ptr [rsi + 0x10], r15"
+          "bodyOffset": 145,
+          "instructionHex": "4c897f10",
+          "instruction": "mov qword ptr [rdi + 0x10], r15"
         },
         {
-          "bodyOffset": 144,
-          "instructionHex": "44897618",
-          "instruction": "mov dword ptr [rsi + 0x18], r14d"
+          "bodyOffset": 149,
+          "instructionHex": "44897718",
+          "instruction": "mov dword ptr [rdi + 0x18], r14d"
         }
       ]
     }
   ],
   "managedMethods": [
     {
-      "methodIndex": 437389,
+      "methodIndex": 549252,
       "typeName": "Beyond.Audio.AudioAdapter",
       "methodName": "_PostEvent",
       "name": "AudioAdapter._PostEvent",
-      "rva": "0x337f270",
+      "rva": "0x577b3f0",
       "static": true,
       "returnType": "uint",
       "bodyLength": 64,
-      "bodySha256": "8ef57b0827f408bf0c3dabbc47f851256364ddd6e46dce3110ca37a28ffc3fe0",
+      "bodySha256": "ed9a5034c270ac158e0bd0584e292c1b0c8a9da58c10df21265c437ef8a3af2a",
       "args": {
         "eventId": {
           "index": 0,
@@ -852,15 +852,15 @@
       ]
     },
     {
-      "methodIndex": 437390,
+      "methodIndex": 549253,
       "typeName": "Beyond.Audio.AudioAdapter",
       "methodName": "_PostEventWithExternalSource",
       "name": "AudioAdapter._PostEventWithExternalSource",
-      "rva": "0x3fa4a80",
+      "rva": "0x63a7f60",
       "static": true,
       "returnType": "uint",
       "bodyLength": 64,
-      "bodySha256": "20f6a1d0ef0a1fdd6367436c1a70df568fb1868d2edf267b25e1aa30f725d357",
+      "bodySha256": "c76420a5fadaab7b1ce7750f0db69d16f71917721cfe790c5726eff1fbbbdbfb",
       "args": {
         "eventId": {
           "index": 0,
@@ -921,10 +921,10 @@
   "consumers": [
     {
       "key": "anonymousOwnerSourceLock",
-      "entryRva": "0xd34b0",
+      "entryRva": "0xd5460",
       "calleeKey": "sourceLockDataPtr",
-      "callRva": "0xd35c2",
-      "returnRva": "0xd35c7",
+      "callRva": "0xd5557",
+      "returnRva": "0xd555c",
       "ownerArgument": {
         "name": "anonymousCallerOwnerPointer",
         "index": 0,
@@ -941,10 +941,10 @@
       },
       "windows": [
         {
-          "rva": "0xd34b0",
-          "bodyLength": 23,
-          "bodySha256": "e67f505651df2c6f4c915d574506a9cecda39a1c67da93d124432cc803d3afc1",
-          "unwindRva": "0x2f226c",
+          "rva": "0xd5460",
+          "bodyLength": 26,
+          "bodySha256": "06762e113b009e5a99b1498bcf4c0922f3d3b323499ba43a1f2e8507e0a3ab02",
+          "unwindRva": "0x2f2e80",
           "unwindInfoHex": "0106020006520270",
           "instructionWitnesses": [
             {
@@ -956,62 +956,62 @@
           ]
         },
         {
-          "rva": "0xd34c7",
-          "bodyLength": 38,
-          "bodySha256": "994dcc3b928663657fcebc1ccdbe2ae7844e84463e0fcb264d08f053e16c1682",
-          "unwindRva": "0x300e34",
-          "unwindInfoHex": "210d04000d34080005640a00b0340d00c7340d006c222f00",
+          "rva": "0xd547a",
+          "bodyLength": 30,
+          "bodySha256": "8bb82ecc0315368274102d39f144a8ffac8dff88d0e37d2c7d8a2d67cd14e5e7",
+          "unwindRva": "0x301ab8",
+          "unwindInfoHex": "210502000534080060540d007a540d00802e2f00",
           "instructionWitnesses": []
         },
         {
-          "rva": "0xd34ed",
-          "bodyLength": 115,
-          "bodySha256": "8e430af73e08177be0f516ad6d115d7a3a6f99dc9882430224a591d8c97873d8",
-          "unwindRva": "0x300e4c",
-          "unwindInfoHex": "2105020005540900c7340d00ed340d00340e3000",
+          "rva": "0xd5498",
+          "bodyLength": 131,
+          "bodySha256": "0f3142b83a917232290c57a74273469137085892a3298017fda6a5960cd18e2e",
+          "unwindRva": "0x301acc",
+          "unwindInfoHex": "21050200056409007a540d0098540d00b81a3000",
           "instructionWitnesses": []
         },
         {
-          "rva": "0xd3560",
-          "bodyLength": 121,
-          "bodySha256": "4623074249905c481399d8a267a249fc635f4a36afd23386cb2fece36519cf16",
-          "unwindRva": "0x300e60",
-          "unwindInfoHex": "21000000c7340d00ed340d00340e3000",
+          "rva": "0xd551b",
+          "bodyLength": 78,
+          "bodySha256": "ed5a4af39753853110f45140a57e9b556a92293808871b96371d057be3e3c5fa",
+          "unwindRva": "0x301ae0",
+          "unwindInfoHex": "210000007a540d0098540d00b81a3000",
           "instructionWitnesses": [
             {
               "role": "loadSourceArgument",
-              "bodyOffset": 84,
+              "bodyOffset": 46,
               "instructionHex": "488b8f70020000",
               "readOrder": "RCX receives qword from anonymous owner+0x270."
             },
             {
               "role": "addressOutputArgument",
-              "bodyOffset": 91,
+              "bodyOffset": 53,
               "instructionHex": "488d9710030000",
               "readOrder": "RDX receives address of anonymous owner+0x310."
             },
             {
               "role": "callSourceLock",
-              "bodyOffset": 98,
-              "instructionHex": "e8290e0300",
+              "bodyOffset": 60,
+              "instructionHex": "e8a4080300",
               "readOrder": "Direct call to reviewed sourceLockDataPtr; next instruction is the observed returnsite."
             }
           ]
         },
         {
-          "rva": "0xd35d9",
-          "bodyLength": 15,
-          "bodySha256": "8898ac2ab2751f79bcf88574ab2e62cbe5df5bfc412ffbfa0b81ad1fa5ab6452",
-          "unwindRva": "0x300e70",
-          "unwindInfoHex": "2100040000640a0000340800b0340d00c7340d006c222f00",
+          "rva": "0xd5569",
+          "bodyLength": 10,
+          "bodySha256": "776d95178226312613147a93042d6be9056238ec6553a047bfa9bb5950a9f8ee",
+          "unwindRva": "0x301af0",
+          "unwindInfoHex": "210002000034080060540d007a540d00802e2f00",
           "instructionWitnesses": []
         },
         {
-          "rva": "0xd35e8",
+          "rva": "0xd5573",
           "bodyLength": 6,
           "bodySha256": "0c61f32494998963f591fb6f362ab44169f72cfa0df257acdaab71a6e278471a",
-          "unwindRva": "0x300e88",
-          "unwindInfoHex": "21000000b0340d00c7340d006c222f00",
+          "unwindRva": "0x301b04",
+          "unwindInfoHex": "2100000060540d007a540d00802e2f00",
           "instructionWitnesses": []
         }
       ],
@@ -1031,25 +1031,25 @@
       "consumerOwnerOffset": 24,
       "primarySourcePointerOffset": 648,
       "addressPointWindow": {
-        "rva": "0x293a30",
+        "rva": "0x2949d0",
         "bytes": 96,
-        "sha256": "1096a53584b2fe43922a1bc0c3ed5d9dfabcd96850e544789d5477d478f5d857",
+        "sha256": "9850e87b1ed40c695eb8a6cf4015d005a1edefdaaf73f0cd800fe1a74909e758",
         "consumerEntrySlot": 80
       },
       "consumerAdjustmentWitness": {
-        "rva": "0xd359f",
+        "rva": "0xd5534",
         "instructionHex": "4c8d47e8",
         "readOrder": "The reviewed consumer explicitly derives primary owner as its retained entry owner minus0x18 in R8 before its direct helper call."
       },
       "constructor": {
         "key": "anonymousPrimaryOwnerConstructor",
-        "entryRva": "0xd1f90",
+        "entryRva": "0xd3f50",
         "windows": [
           {
-            "rva": "0xd1f90",
-            "bodyLength": 1120,
-            "bodySha256": "305077b3704a4f0e3fbbdb7ef04b3e672dee2a1543ceb51d362270659047d55b",
-            "unwindRva": "0x300e1c",
+            "rva": "0xd3f50",
+            "bodyLength": 1121,
+            "bodySha256": "f189005a06b379d201d70b8aaca467935659f8abb298037d7c9dfbf88ab6ed7c",
+            "unwindRva": "0x301aa0",
             "unwindInfoHex": "011a0a001a7413001a6412001a5411001a3410001ad216e0",
             "instructionWitnesses": [
               {
@@ -1073,7 +1073,7 @@
               {
                 "role": "loadConsumerAddressPoint",
                 "bodyOffset": 120,
-                "instructionHex": "488d05211a1c00",
+                "instructionHex": "488d05010a1c00",
                 "readOrder": "RIP-relative address of the selected consumer address-point window."
               },
               {
@@ -1084,13 +1084,13 @@
               },
               {
                 "role": "storeConstructorSource",
-                "bodyOffset": 310,
+                "bodyOffset": 317,
                 "instructionHex": "4889af88020000",
                 "readOrder": "Store retained source input at primary owner+0x288."
               },
               {
                 "role": "returnPrimaryOwner",
-                "bodyOffset": 1095,
+                "bodyOffset": 1096,
                 "instructionHex": "488bc7",
                 "readOrder": "Return retained primary owner pointer in RAX."
               }
@@ -1110,13 +1110,13 @@
       },
       "factory": {
         "key": "anonymousPrimaryOwnerFactory",
-        "entryRva": "0xfc9e0",
+        "entryRva": "0xfe3d0",
         "windows": [
           {
-            "rva": "0xfc9e0",
+            "rva": "0xfe3d0",
             "bodyLength": 108,
-            "bodySha256": "ee61237baaa795a1d70aa996fbbb02346bf7dc4ccff24375a8085a4ec633ba12",
-            "unwindRva": "0x2f5150",
+            "bodySha256": "daad47d1b59a71fac9cc557a062516f134a01077a7b3f08547224837c11e8ad3",
+            "unwindRva": "0x2f5d0c",
             "unwindInfoHex": "010f06000f6409000f3408000f520b70",
             "instructionWitnesses": [
               {
@@ -1146,7 +1146,7 @@
               {
                 "role": "callConstructor",
                 "bodyOffset": 71,
-                "instructionHex": "e86455fdff",
+                "instructionHex": "e8345bfdff",
                 "readOrder": "Direct call to the reviewed primary-owner constructor."
               }
             ]
@@ -1169,7 +1169,7 @@
   ],
   "managedEnumStorage": [
     {
-      "typeDefinitionIndex": 55416,
+      "typeDefinitionIndex": 86896,
       "typeName": "Beyond.Audio.AudioCallbackType",
       "parentType": "System.Enum",
       "valueField": "value__",
@@ -1177,7 +1177,7 @@
       "evidenceBoundary": "exact selected metadata enum classification and registered value__ field storage type; no enum-value meaning or live codec instance is inferred"
     },
     {
-      "typeDefinitionIndex": 55423,
+      "typeDefinitionIndex": 86903,
       "typeName": "Beyond.Audio.AudioCodec",
       "parentType": "System.Enum",
       "valueField": "value__",

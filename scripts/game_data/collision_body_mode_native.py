@@ -23,7 +23,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image, NATIVE_MAPP
 from scripts.game_data.il2cpp.protocol import load_native_mapper
 
 CONTRACT=CONTRACTS_DIR/'collision_body_mode_native.json'
-SCHEMA='endfield.collision-body-mode-native.v1'
+SCHEMA='endfield.collision-body-mode-native.v2'
 
 
 def validate_route(image,player,contract):
@@ -52,10 +52,12 @@ def validate_route(image,player,contract):
     count=registration['count'];slot=row['slot']
     if not 0<=slot<count<=65536 or row['name']!=name:
         raise ValueError('isKinematic registration identity/count differs')
-    names=player.bytes_at_va(player.image_base+registration['nameTableRva'],(count+1)*8)
+    if row.get('termination')!='compiled-count':
+        raise ValueError('isKinematic registration compiled-count boundary differs')
+    # The reviewed loop authenticates the count. The next word belongs to
+    # adjacent data in this build and is not an array sentinel.
+    names=player.bytes_at_va(player.image_base+registration['nameTableRva'],count*8)
     functions=player.bytes_at_va(player.image_base+registration['functionTableRva'],count*8)
-    if struct.unpack_from('<Q',names,count*8)[0]:
-        raise ValueError('isKinematic registration sentinel differs')
     resolved=[]
     for index in range(count):
         current=player.c_string_at_va(struct.unpack_from('<Q',names,index*8)[0])

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from scripts.game_data.memorypack.core import memorypack_union_header
 
 from .action_map import ActionMapCodecError, _Cursor
 
@@ -25,30 +26,31 @@ _FIELDS = [
 
 
 def decode_on_bb_variable_changed_header(
-    data: bytes, offset: int, route: dict[str, Any],
+    data: bytes, offset: int, route: dict[str, Any], *, game_root=None, strings: Any=None,
 ) -> tuple[dict[str, Any], int]:
     """Read one header from the authenticated nineteen-member order."""
     if (
         route.get("family") != "ActionHeader"
         or route.get("typeName") != _TYPE
-        or route.get("tag") != 0x00BA
+        or type(route.get("tag")) is not int or not 0 <= route["tag"] <= 0xFFFF
         or route.get("serializedMemberCount") != 19
         or route.get("fields") != _FIELDS
     ):
         raise ActionMapCodecError("onBBVariableChanged:invalid-route")
-    if offset < 0 or data[offset:offset + 2] != b"\xba\x13":
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onBBVariableChanged:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 2)
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in _FIELDS:
         start = cursor.offset
-        values[name] = cursor.value(kind, f"onBBVariableChanged.{name}")
+        values[name] = cursor.node_string(f"onBBVariableChanged.{name}",{**route,"nativeGate":"levelscript_on_bb_variable_changed_native"},name) if kind=="string" else cursor.value(kind,f"onBBVariableChanged.{name}")
         spans[name] = [start, cursor.offset]
     return {
         "sourceOffset": offset,
         "endOffset": cursor.offset,
-        "unionTag": 0x00BA,
+        "unionTag": route["tag"],
         "memberCount": 19,
         "wrapperName": route["wrapperName"],
         "fields": values,

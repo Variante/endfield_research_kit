@@ -2,123 +2,123 @@
   "schema": "endfield.collision-solver-response-native.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "direct: selected PGS wrapper -> scalar solver reads/writes accumulated normal response after header plus normal points and updates only body vector lanes 0 and 16. Saved after-solve positive values are observed accumulated response, not proof of newly generated impulse in that call, a force in Newtons, continuous lifetime, stored asset identity, or physics-step ownership.",
   "codeWindows": [
     {
       "role": "contact_wrapper",
-      "rva": 8465920,
+      "rva": 8557888,
       "bytes": 141,
       "sha256": "8719261b754630e2cb294302163a8bfdb40307868da6aeb36e3e7bb4260f54c8",
       "boundary": "complete unwind family"
     },
     {
       "role": "static_wrapper",
-      "rva": 8467792,
+      "rva": 8559760,
       "bytes": 141,
       "sha256": "5e05c47c397ebf1931be384f42f0a66c0e5d673f0afc9507cab607b72c8c393a",
       "boundary": "complete unwind family"
     },
     {
       "role": "contact_core",
-      "rva": 8464416,
+      "rva": 8556384,
       "bytes": 1490,
-      "sha256": "e368b9bdccc46a25ac3b66c6f7068c0ceb409638c72058a56e54f0f7334eaced",
+      "sha256": "70daa06c8a29368417fca798a077fb9aaa0dd967f5382e4d04e0749d30e142fe",
       "boundary": "complete unwind family"
     },
     {
       "role": "static_core",
-      "rva": 8466608,
+      "rva": 8558576,
       "bytes": 1176,
-      "sha256": "da8fcbf175c14ca3150dd5fd916fb6dec999308c469eb6567cf3832a0e422408",
+      "sha256": "dfebd70df0c143749c863b402cfc87701781cd6edd7b696721f3baffdd430466",
       "boundary": "complete unwind family"
     }
   ],
   "unwindFamilies": [
     {
       "role": "contact_wrapper",
-      "rva": 8465920,
+      "rva": 8557888,
       "runtimeRanges": [
         [
-          8465920,
-          8465944,
-          29544284
+          8557888,
+          8557912,
+          31418608
         ],
         [
-          8465944,
-          8466029,
-          29144176
+          8557912,
+          8557997,
+          31002064
         ],
         [
-          8466029,
-          8466061,
-          29144204
+          8557997,
+          8558029,
+          31002092
         ]
       ]
     },
     {
       "role": "static_wrapper",
-      "rva": 8467792,
+      "rva": 8559760,
       "runtimeRanges": [
         [
-          8467792,
-          8467816,
-          29544284
+          8559760,
+          8559784,
+          31418608
         ],
         [
-          8467816,
-          8467901,
-          29144364
+          8559784,
+          8559869,
+          31002252
         ],
         [
-          8467901,
-          8467933,
-          29144392
+          8559869,
+          8559901,
+          31002280
         ]
       ]
     },
     {
       "role": "contact_core",
-      "rva": 8464416,
+      "rva": 8556384,
       "runtimeRanges": [
         [
-          8464416,
-          8464548,
-          29143712
+          8556384,
+          8556516,
+          31001600
         ],
         [
-          8464548,
-          8465722,
-          29143744
+          8556516,
+          8557690,
+          31001632
         ],
         [
-          8465722,
-          8465906,
-          29143800
+          8557690,
+          8557874,
+          31001688
         ]
       ]
     },
     {
       "role": "static_core",
-      "rva": 8466608,
+      "rva": 8558576,
       "runtimeRanges": [
         [
-          8466608,
-          8466690,
-          29143816
+          8558576,
+          8558658,
+          31001704
         ],
         [
-          8466690,
-          8467692,
-          29143840
+          8558658,
+          8559660,
+          31001728
         ],
         [
-          8467692,
-          8467784,
-          29143908
+          8559660,
+          8559752,
+          31001796
         ]
       ]
     }
@@ -278,35 +278,35 @@
       "offset": 75,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8464416
+      "targetRva": 8556384
     },
     {
       "role": "contact_wrapper",
       "offset": 136,
       "prefix": "e9",
       "mode": "rel32",
-      "targetRva": 8464416
+      "targetRva": 8556384
     },
     {
       "role": "static_wrapper",
       "offset": 75,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8466608
+      "targetRva": 8558576
     },
     {
       "role": "static_wrapper",
       "offset": 136,
       "prefix": "e9",
       "mode": "rel32",
-      "targetRva": 8466608
+      "targetRva": 8558576
     },
     {
       "role": "contact_core",
       "offset": 17,
       "prefix": "0f280d",
       "mode": "rip32",
-      "targetRva": 25992096
+      "targetRva": 27671008
     }
   ],
   "layout": {
@@ -337,7 +337,7 @@
         1,
         6
       ],
-      "dispatchTableRva": 29603472
+      "dispatchTableRva": 31483520
     },
     {
       "kind": 59,
@@ -347,11 +347,11 @@
       "constraintTags": [
         5
       ],
-      "dispatchTableRva": 29603472
+      "dispatchTableRva": 31483520
     }
   ],
   "vectorMask": {
-    "rva": 25992096,
+    "rva": 27671008,
     "hex": "ffffffffffffffffffffffff00000000"
   },
   "limits": {

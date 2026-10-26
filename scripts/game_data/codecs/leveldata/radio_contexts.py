@@ -4,15 +4,17 @@ from scripts.game_data.codecs.leveldata.memorypack import (
     read_bool,
     read_count,
     read_i32,
+    read_pooled_string,
     read_string,
     read_u32,
     read_u64,
     skip_bytes,
-    skip_string,
 )
+from scripts.game_data.string_pool import StringPool
+from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
 
-def parse_airwall_groups(data: bytes) -> list[dict]:
+def parse_airwall_groups(data: bytes, *, strings: StringPool | None = None) -> list[dict]:
     """Decode exact ``LevelData.airWalls`` MemoryPack rows."""
     if not data or data[0] != 43:
         return []
@@ -20,6 +22,8 @@ def parse_airwall_groups(data: bytes) -> list[dict]:
     if count_decoded is None or count_decoded[0] < 0:
         return []
     group_count, cursor = count_decoded
+    if group_count and check_airwall_native_inputs().status != "validated":
+        return []
 
     def object_header(offset: int, expected: int) -> int | None:
         if offset >= len(data) or data[offset] != expected:
@@ -41,7 +45,7 @@ def parse_airwall_groups(data: bytes) -> list[dict]:
         if detail_decoded is None:
             return None
         detail_state, offset = detail_decoded
-        id_decoded = read_string(data, offset)
+        id_decoded = read_pooled_string(data, offset, strings=strings)
         if id_decoded is None:
             return None
         check_id, offset = id_decoded
@@ -138,9 +142,10 @@ def parse_airwall_groups(data: bytes) -> list[dict]:
         offset = skip_bytes(data, offset, 8)
         if offset is None:
             return None
-        offset = skip_string(data, offset)
-        if offset is None:
+        effect = read_pooled_string(data, offset, strings=strings)
+        if effect is None:
             return None
+        _, offset = effect
         positions_decoded = read_count(data, offset, max_count=65536)
         if positions_decoded is None:
             return None
@@ -188,7 +193,7 @@ def parse_airwall_groups(data: bytes) -> list[dict]:
         cursor = skip_poly_line_wall_list(cursor)
         if cursor is None:
             return []
-        radio_decoded = read_string(data, cursor)
+        radio_decoded = read_pooled_string(data, cursor, strings=strings)
         if radio_decoded is None:
             return []
         pushback_radio_id, cursor = radio_decoded
@@ -245,7 +250,7 @@ def parse_function_area_radio_trigger(data: bytes, offset: int) -> dict | None:
         prts_id,
         radio_id,
     ) = values
-    if not radio_id.startswith("radio_"):
+    if not isinstance(radio_id, str) or not radio_id.startswith("radio_"):
         return None
     return {
         "recordOffset": offset,

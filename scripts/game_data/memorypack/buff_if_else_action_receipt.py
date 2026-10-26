@@ -58,7 +58,6 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-@lru_cache(maxsize=1)
 def _dependencies() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     contract = _contract()
     source = json.loads((CONTRACTS_DIR / contract["sourceContract"]).read_bytes())

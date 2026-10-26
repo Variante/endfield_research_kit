@@ -35,7 +35,6 @@ block, or one still on disk, stays unproven.
 """
 from __future__ import annotations
 
-import functools
 import json
 import os
 import re
@@ -198,7 +197,6 @@ def chunk_slot_key(chunk_path: str, offset: int) -> ChunkSlotKey:
     return (os.path.basename(str(chunk_path).replace("\\", "/")).lower(), int(offset))
 
 
-@functools.lru_cache(maxsize=4)
 def _effective_chunk_slot_keys(export_root_text: str) -> frozenset[ChunkSlotKey] | None:
     layout = ExportLayout(Path(export_root_text))
     base, effective = INSTALLED_LAYERS[0], INSTALLED_LAYERS[-1]

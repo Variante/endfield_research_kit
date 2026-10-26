@@ -1,10 +1,10 @@
 {
-  "schema": "endfield.collision-query-native.v1",
+  "schema": "endfield.collision-query-native.v2",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "conditional: selected machine ABI, result metadata and native writers plus requested-name/resolver/cache/call-site routes. Live registration is admitted only when the original caller and current cached function pointer match the reviewed target. No table adjacency, absent result or filtered result proves contact absence.",
   "hooks": [
@@ -12,9 +12,9 @@
       "role": "capsule_results",
       "kind": 16,
       "module": "unityPlayer",
-      "rva": 2825600,
-      "bodyBytes": 183,
-      "bodySha256": "e5747822ee8e7df140f48b2f68446b2a997dcaf788ed9bac5b1300e059f590de",
+      "rva": 1257424,
+      "bodyBytes": 185,
+      "bodySha256": "5026a06ec81a0f80151917fb0cd40a9d8ff330fc8e45f8c1a057648bb9487fde",
       "abi": {
         "arguments": [
           "pointer",
@@ -32,7 +32,23 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "488bc44889580848897010574883ec70"
+          "bytes": "488bc4"
+        },
+        {
+          "offset": 3,
+          "bytes": "48895808"
+        },
+        {
+          "offset": 7,
+          "bytes": "48897010"
+        },
+        {
+          "offset": 11,
+          "bytes": "57"
+        },
+        {
+          "offset": 12,
+          "bytes": "4883ec70"
         }
       ]
     },
@@ -40,9 +56,9 @@
       "role": "sphere_results",
       "kind": 17,
       "module": "unityPlayer",
-      "rva": 2832016,
-      "bodyBytes": 169,
-      "bodySha256": "0323750808ebf667c58aafceac8f529139538ca8f3a03e0857076dc718e9c31e",
+      "rva": 1259344,
+      "bodyBytes": 171,
+      "bodySha256": "dc87606b0bd5a68609aaa136ca2ab1501fa79372ebf380bbfba3aea4133c4a86",
       "abi": {
         "arguments": [
           "pointer",
@@ -59,7 +75,23 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "488bc44889580848897010574883ec70"
+          "bytes": "488bc4"
+        },
+        {
+          "offset": 3,
+          "bytes": "48895808"
+        },
+        {
+          "offset": 7,
+          "bytes": "48897010"
+        },
+        {
+          "offset": 11,
+          "bytes": "57"
+        },
+        {
+          "offset": 12,
+          "bytes": "4883ec70"
         }
       ]
     },
@@ -67,9 +99,9 @@
       "role": "ray_results",
       "kind": 18,
       "module": "unityPlayer",
-      "rva": 2833440,
+      "rva": 1261104,
       "bodyBytes": 128,
-      "bodySha256": "9a0379266da22a2507c8f53af8b14aa4429c1e3e85ee27832a5a6cbcf72f6a15",
+      "bodySha256": "e306233c2e484b0bd1bb28c75c4c33b7e0eda24ad98c3656b302df7b3fa7a7bc",
       "abi": {
         "arguments": [
           "pointer",
@@ -84,7 +116,27 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "488bc448895808574883ec60488bfa0f"
+          "bytes": "488bc4"
+        },
+        {
+          "offset": 3,
+          "bytes": "48895808"
+        },
+        {
+          "offset": 7,
+          "bytes": "57"
+        },
+        {
+          "offset": 8,
+          "bytes": "4883ec60"
+        },
+        {
+          "offset": 12,
+          "bytes": "488bda"
+        },
+        {
+          "offset": 15,
+          "bytes": "0f2970e8"
         }
       ]
     },
@@ -92,9 +144,9 @@
       "role": "overlap_results",
       "kind": 19,
       "module": "unityPlayer",
-      "rva": 2831344,
+      "rva": 1258688,
       "bodyBytes": 152,
-      "bodySha256": "3a5482c322338f4df9853966adbb71b7f75dd9a643b22a8600cf1503c9fe5847",
+      "bodySha256": "224bb7676592dd05f6cfa67d06085aa018dd3ac0278b53a1bb87c44632c930c3",
       "abi": {
         "arguments": [
           "pointer",
@@ -110,7 +162,23 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "488bc44889580848897010574883ec60"
+          "bytes": "488bc4"
+        },
+        {
+          "offset": 3,
+          "bytes": "48895808"
+        },
+        {
+          "offset": 7,
+          "bytes": "48897010"
+        },
+        {
+          "offset": 11,
+          "bytes": "57"
+        },
+        {
+          "offset": 12,
+          "bytes": "4883ec60"
         }
       ]
     },
@@ -118,7 +186,7 @@
       "role": "ray_single",
       "kind": 20,
       "module": "unityPlayer",
-      "rva": 2832784,
+      "rva": 1260528,
       "bodyBytes": 43,
       "bodySha256": "8e146a8c0faa062b713f39f2fc139d8e7f1532daa4fd7042819a15eaf1ea396f",
       "abi": {
@@ -135,7 +203,23 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "4883ec488b4424784c8bc28b110f28da"
+          "bytes": "4883ec48"
+        },
+        {
+          "offset": 4,
+          "bytes": "8b442478"
+        },
+        {
+          "offset": 8,
+          "bytes": "4c8bc2"
+        },
+        {
+          "offset": 11,
+          "bytes": "8b11"
+        },
+        {
+          "offset": 13,
+          "bytes": "0f28da"
         }
       ]
     },
@@ -143,9 +227,9 @@
       "role": "sphere_single",
       "kind": 21,
       "module": "unityPlayer",
-      "rva": 2825520,
+      "rva": 1262608,
       "bodyBytes": 77,
-      "bodySha256": "981fa2f13abb16781db90660bc0210f9dfadcf35c9d819cf0009041c37ce9f85",
+      "bodySha256": "309a91aac5efda19161ca3a2554357d27c9dadac8d3d0e0da0010162a685ccee",
       "abi": {
         "arguments": [
           "pointer",
@@ -162,15 +246,27 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "4883ec588b8424980000004c8bc2f30f"
+          "bytes": "4883ec58"
+        },
+        {
+          "offset": 4,
+          "bytes": "8b842498000000"
+        },
+        {
+          "offset": 11,
+          "bytes": "4c8bc2"
+        },
+        {
+          "offset": 14,
+          "bytes": "f30f10842480000000"
         }
       ]
     },
     {
       "type": "Beyond.Gameplay.Core.MovementComponent",
       "method": "_CheckIfColliderValidForCollisions",
-      "index": 79593,
-      "rva": 47088800,
+      "index": 84027,
+      "rva": 89744224,
       "parameters": [
         {
           "name": "coll",
@@ -185,8 +281,8 @@
       ],
       "returnType": "bool",
       "static": false,
-      "bodyBytes": 2830,
-      "bodySha256": "063981ef3873ad2e709a83cdceded484cac4ff04525b50a47922f1ca01b37a7f",
+      "bodyBytes": 66,
+      "bodySha256": "d2d8ff60597078acff23a9f57614c418230be6cc1908dece7c5eb31d1f409420",
       "role": "collider_filter",
       "kind": 23,
       "module": "gameAssembly",
@@ -202,15 +298,39 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "405556574155488bec4883ec58488bf1"
+          "bytes": "4488442418"
+        },
+        {
+          "offset": 5,
+          "bytes": "55"
+        },
+        {
+          "offset": 6,
+          "bytes": "56"
+        },
+        {
+          "offset": 7,
+          "bytes": "57"
+        },
+        {
+          "offset": 8,
+          "bytes": "4155"
+        },
+        {
+          "offset": 10,
+          "bytes": "488d6c24c1"
+        },
+        {
+          "offset": 15,
+          "bytes": "4881eca8000000"
         }
       ]
     },
     {
       "type": "Beyond.Gameplay.Core.MovementComponent",
       "method": "TryMoveCapsule",
-      "index": 79802,
-      "rva": 51567808,
+      "index": 84238,
+      "rva": 89729776,
       "parameters": [
         {
           "name": "displacement",
@@ -250,8 +370,8 @@
       ],
       "returnType": "bool",
       "static": false,
-      "bodyBytes": 1946,
-      "bodySha256": "231a444f2f6e62a9cf131f6bc47c2640465608d2c0e60c505a9c32b217a21b5e",
+      "bodyBytes": 119,
+      "bodySha256": "dd77901a83329abf76236f8769f3f8da1a74317569a4868f39dbfdf06416210b",
       "role": "movement",
       "kind": 24,
       "module": "gameAssembly",
@@ -272,15 +392,39 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "48895c24104889742418555741544155"
+          "bytes": "4889742418"
+        },
+        {
+          "offset": 5,
+          "bytes": "55"
+        },
+        {
+          "offset": 6,
+          "bytes": "57"
+        },
+        {
+          "offset": 7,
+          "bytes": "4154"
+        },
+        {
+          "offset": 9,
+          "bytes": "4156"
+        },
+        {
+          "offset": 11,
+          "bytes": "4157"
+        },
+        {
+          "offset": 13,
+          "bytes": "488d6c24a0"
         }
       ]
     },
     {
       "type": "Beyond.Gameplay.Core.MovementComponent",
       "method": "FindFloor",
-      "index": 79798,
-      "rva": 55490992,
+      "index": 84233,
+      "rva": 89257824,
       "parameters": [
         {
           "name": "position",
@@ -300,8 +444,8 @@
       ],
       "returnType": "void",
       "static": false,
-      "bodyBytes": 1086,
-      "bodySha256": "a13a422fea9d8e845249c88583217b19a6d96e5553a25b9f55d714b4eaac6ccd",
+      "bodyBytes": 73,
+      "bodySha256": "01879af2ee95e389d8834b1cd957341e472ef3246cbeccf24523d8c0ce9e73ec",
       "role": "floor",
       "kind": 25,
       "module": "gameAssembly",
@@ -318,15 +462,31 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "48895c2418555657488dac2440ffffff"
+          "bytes": "48895c2418"
+        },
+        {
+          "offset": 5,
+          "bytes": "55"
+        },
+        {
+          "offset": 6,
+          "bytes": "56"
+        },
+        {
+          "offset": 7,
+          "bytes": "57"
+        },
+        {
+          "offset": 8,
+          "bytes": "488dac2450ffffff"
         }
       ]
     },
     {
       "type": "Beyond.Gameplay.Core.MovementComponent",
       "method": "CharacterCollisionOverlap",
-      "index": 79573,
-      "rva": 47082576,
+      "index": 84007,
+      "rva": 89742704,
       "parameters": [
         {
           "name": "position",
@@ -356,8 +516,8 @@
       ],
       "returnType": "int",
       "static": false,
-      "bodyBytes": 1613,
-      "bodySha256": "9c4f1d68c1f3f94bb9c89a514a19a7c8b6f10cdec1a4d5ae17073a6cce12ae5a",
+      "bodyBytes": 92,
+      "bodySha256": "1e81eec74fe479a7ebfe1657db2f332667f8006791624b69e13e6c2484b027fe",
       "role": "movement_overlap",
       "kind": 26,
       "module": "gameAssembly",
@@ -376,15 +536,31 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "48895c241855574156488d6c24d14881"
+          "bytes": "4055"
+        },
+        {
+          "offset": 2,
+          "bytes": "56"
+        },
+        {
+          "offset": 3,
+          "bytes": "57"
+        },
+        {
+          "offset": 4,
+          "bytes": "488d6c24d1"
+        },
+        {
+          "offset": 9,
+          "bytes": "4881ecf0000000"
         }
       ]
     },
     {
       "type": "Beyond.Gameplay.Core.MovePhysQuery",
       "method": "ComputeCapsulePenetration",
-      "index": 79951,
-      "rva": 103960568,
+      "index": 84391,
+      "rva": 152933968,
       "parameters": [
         {
           "name": "point1",
@@ -429,8 +605,8 @@
       ],
       "returnType": "bool",
       "static": true,
-      "bodyBytes": 449,
-      "bodySha256": "79aad38bc8f436cbc9e0a57b6f40ec24e11fc17be540660463f8267715a3a088",
+      "bodyBytes": 450,
+      "bodySha256": "1148de5b10ae0cfa93a2335240f15088673cc44947837953c66eb20f02a6f944",
       "role": "penetration",
       "kind": 27,
       "module": "gameAssembly",
@@ -451,7 +627,23 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "488bc448895808488970104889781855"
+          "bytes": "488bc4"
+        },
+        {
+          "offset": 3,
+          "bytes": "48895808"
+        },
+        {
+          "offset": 7,
+          "bytes": "48897010"
+        },
+        {
+          "offset": 11,
+          "bytes": "48897818"
+        },
+        {
+          "offset": 15,
+          "bytes": "55"
         }
       ]
     },
@@ -459,7 +651,7 @@
       "role": "report_dispatch",
       "kind": 28,
       "module": "unityPlayer",
-      "rva": 7993776,
+      "rva": 8158704,
       "bodyBytes": 29,
       "bodySha256": "d628f852e60be119d4164d89a2028bb5b829ba1a39efb2b60cddda0e97753eb1",
       "abi": {
@@ -472,7 +664,19 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "488bc441574881ec800000004883b990"
+          "bytes": "488bc4"
+        },
+        {
+          "offset": 3,
+          "bytes": "4157"
+        },
+        {
+          "offset": 5,
+          "bytes": "4881ec80000000"
+        },
+        {
+          "offset": 12,
+          "bytes": "4883b99010000000"
         }
       ]
     },
@@ -480,7 +684,7 @@
       "role": "report_build",
       "kind": 29,
       "module": "unityPlayer",
-      "rva": 7997728,
+      "rva": 8162656,
       "bodyBytes": 110,
       "bodySha256": "7060dfb837f93c74f1500a3a2a9a353e3f9f3911167b5f117f5aad22af94e2e6",
       "abi": {
@@ -492,7 +696,27 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "405556415441554883ec38488b81b810"
+          "bytes": "4055"
+        },
+        {
+          "offset": 2,
+          "bytes": "56"
+        },
+        {
+          "offset": 3,
+          "bytes": "4154"
+        },
+        {
+          "offset": 5,
+          "bytes": "4155"
+        },
+        {
+          "offset": 7,
+          "bytes": "4883ec38"
+        },
+        {
+          "offset": 11,
+          "bytes": "488b81b8100000"
         }
       ]
     },
@@ -500,9 +724,9 @@
       "role": "hit_conversion",
       "kind": 30,
       "module": "unityPlayer",
-      "rva": 2835504,
-      "bodyBytes": 360,
-      "bodySha256": "8216cd445967da411f6dd49c10a19d555a1077c58547f228e4f118740abcdd34",
+      "rva": 1251072,
+      "bodyBytes": 382,
+      "bodySha256": "63efb94bad3ee2c40c0cbc356fcfd5c9deddb571ee85ac6ea4f2ff469fbb15d1",
       "abi": {
         "arguments": [
           "pointer",
@@ -514,20 +738,32 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "48895c241048896c2418488974242057"
+          "bytes": "48895c2410"
+        },
+        {
+          "offset": 5,
+          "bytes": "48896c2418"
+        },
+        {
+          "offset": 10,
+          "bytes": "4889742420"
+        },
+        {
+          "offset": 15,
+          "bytes": "57"
         }
       ]
     },
     {
       "type": "UnityEngine.ECSColliderResultProxy",
       "method": "get_layer",
-      "index": 438930,
-      "rva": 48826800,
+      "index": 559742,
+      "rva": 85447184,
       "parameters": [],
       "returnType": "int",
       "static": false,
-      "bodyBytes": 465,
-      "bodySha256": "b73d5587645d40a586bf25d90e04934a9f7e354beea5ba36908d84a34ebe3041",
+      "bodyBytes": 129,
+      "bodySha256": "46782a9898061c7ba8b4b9661acfbb977dbc7b147463598144ab9ccd9273e1a7",
       "role": "proxy_layer",
       "kind": 32,
       "module": "gameAssembly",
@@ -541,12 +777,28 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "48895c2410574883ec2083790800488b"
+          "bytes": "48895c2410"
+        },
+        {
+          "offset": 5,
+          "bytes": "57"
+        },
+        {
+          "offset": 6,
+          "bytes": "4883ec20"
+        },
+        {
+          "offset": 10,
+          "bytes": "83790800"
+        },
+        {
+          "offset": 14,
+          "bytes": "488bd9"
         }
       ]
     },
     {
-      "index": 15338,
+      "index": 15879,
       "type": "Beyond.Gameplay.PhysHelper",
       "method": "GetColliderOptionsFromCollider",
       "static": true,
@@ -558,12 +810,12 @@
           "byref": true
         }
       ],
-      "rva": 48830192,
-      "bodyBytes": 36,
+      "rva": 85434880,
+      "bodyBytes": 39,
       "role": "collider_options",
       "kind": 33,
       "module": "gameAssembly",
-      "bodySha256": "3aa3f75f44b4a8d5dd97a1e2bc802de69f7d71770c3a3ec12501848e7744c587",
+      "bodySha256": "5ca62abd13e05bc2834edc19723df2682f602d9f9bc52644eccd27b2e0cbc5f2",
       "abi": {
         "arguments": [
           "pointer",
@@ -574,20 +826,32 @@
       "entryProbes": [
         {
           "offset": 0,
-          "bytes": "40574883ec50488bf9488b0d901e160a"
+          "bytes": "4053"
+        },
+        {
+          "offset": 2,
+          "bytes": "4883ec50"
+        },
+        {
+          "offset": 6,
+          "bytes": "488b0543505a0c"
+        },
+        {
+          "offset": 13,
+          "bytes": "488bd9"
         }
       ]
     },
     {
       "type": "UnityEngine.RaycastHit",
       "method": "get_colliderProxy",
-      "index": 438961,
-      "rva": 48829312,
+      "index": 559773,
+      "rva": 85434048,
       "parameters": [],
       "returnType": "UnityEngine.ECSColliderResultProxy",
       "static": false,
-      "bodyBytes": 399,
-      "bodySha256": "1dfe4458815259df1f0037e40c3903885f96e30c68b3964e1d12f5cccd5953ed",
+      "bodyBytes": 97,
+      "bodySha256": "56de468d009d76559f9b9a391921e3dae2b8ab9e2339f5670412f2bc39e19e03",
       "role": "proxy_from_hit",
       "kind": 34,
       "module": "gameAssembly",
@@ -602,6 +866,22 @@
       },
       "entryProbes": [
         {
+          "offset": 0,
+          "bytes": "48895c2410"
+        },
+        {
+          "offset": 5,
+          "bytes": "4889742418"
+        },
+        {
+          "offset": 10,
+          "bytes": "57"
+        },
+        {
+          "offset": 11,
+          "bytes": "4883ec40"
+        },
+        {
           "offset": 15,
           "bytes": "8b7228"
         }
@@ -610,13 +890,13 @@
     {
       "type": "Beyond.Gameplay.Core.MovePhysQuery",
       "method": "get_castHits",
-      "index": 79945,
-      "rva": 47093168,
+      "index": 84385,
+      "rva": 89729648,
       "parameters": [],
       "returnType": "UnityEngine.RaycastHit[]",
       "static": true,
-      "bodyBytes": 122,
-      "bodySha256": "7ab62fb074250ff3c6c9e1027ae27fb9793dd18c13f2cfb6ea64a3a9866a3c62",
+      "bodyBytes": 126,
+      "bodySha256": "4a4590c1438f27d18081867fbd1acc15d3ffcaf143c886570407addd83e89233",
       "role": "cast_buffer",
       "kind": 35,
       "module": "gameAssembly",
@@ -630,19 +910,31 @@
         {
           "offset": 0,
           "bytes": "4883ec28"
+        },
+        {
+          "offset": 4,
+          "bytes": "488b05d5c7180c"
+        },
+        {
+          "offset": 11,
+          "bytes": "488bd1"
+        },
+        {
+          "offset": 14,
+          "bytes": "488b4868"
         }
       ]
     },
     {
       "type": "Beyond.Gameplay.Core.MovePhysQuery",
       "method": "get_overlappedColliders",
-      "index": 79946,
-      "rva": 47084192,
+      "index": 84386,
+      "rva": 89747968,
       "parameters": [],
       "returnType": "UnityEngine.ECSColliderResultProxy[]",
       "static": true,
-      "bodyBytes": 122,
-      "bodySha256": "16a52546d53fac20a02abe56ff556b895179c50435679be367529f05fb9c2159",
+      "bodyBytes": 64,
+      "bodySha256": "e3f206e9a4f64e57823e678396fe6d25831f3e09f385d5a3e0ffdb6a687f285b",
       "role": "overlap_buffer",
       "kind": 36,
       "module": "gameAssembly",
@@ -656,6 +948,18 @@
         {
           "offset": 0,
           "bytes": "4883ec28"
+        },
+        {
+          "offset": 4,
+          "bytes": "488b054580180c"
+        },
+        {
+          "offset": 11,
+          "bytes": "488bd1"
+        },
+        {
+          "offset": 14,
+          "bytes": "488b4868"
         }
       ]
     }
@@ -663,7 +967,7 @@
   "types": [
     {
       "type": "UnityEngine.RaycastHit",
-      "index": 55614,
+      "index": 88661,
       "value": true,
       "size": 64,
       "fields": [
@@ -721,7 +1025,7 @@
     },
     {
       "type": "UnityEngine.ECSColliderResultProxy",
-      "index": 55613,
+      "index": 88660,
       "value": true,
       "size": 24,
       "fields": [
@@ -754,7 +1058,7 @@
     },
     {
       "type": "UnityEngine.Vector3",
-      "index": 43717,
+      "index": 75544,
       "value": true,
       "size": 12,
       "fields": [
@@ -777,7 +1081,7 @@
     },
     {
       "type": "Beyond.Gameplay.Core.MovementComponent",
-      "index": 12227,
+      "index": 12793,
       "value": false,
       "size": null,
       "fields": [
@@ -800,7 +1104,7 @@
     },
     {
       "type": "UnityEngine.Quaternion",
-      "index": 43718,
+      "index": 75545,
       "value": true,
       "size": 16,
       "fields": [
@@ -828,7 +1132,7 @@
     },
     {
       "type": "Beyond.Gameplay.Core.MovementComponent+FindFloorResult",
-      "index": 12221,
+      "index": 12787,
       "value": true,
       "size": 152,
       "fields": [
@@ -912,879 +1216,1327 @@
   ],
   "codeWindows": [
     {
-      "role": "get_castHits:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::get_castHits:84385:0:0",
       "module": "gameAssembly",
-      "rva": 47093168,
-      "bytes": 122,
-      "sha256": "7ab62fb074250ff3c6c9e1027ae27fb9793dd18c13f2cfb6ea64a3a9866a3c62"
+      "rva": 89729648,
+      "bytes": 126,
+      "sha256": "4a4590c1438f27d18081867fbd1acc15d3ffcaf143c886570407addd83e89233"
     },
     {
-      "role": "get_castHits:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::get_castHits:84385:1:0",
       "module": "gameAssembly",
-      "rva": 79896062,
-      "bytes": 96,
-      "sha256": "313610c3e47f23f685b3e343a1471b539442206571d29d8595486da641a48cf2"
+      "rva": 122725822,
+      "bytes": 31,
+      "sha256": "7d26327c5d2d194b4706876f72e9b5fdf5435105ba873e39fe1567a25474b2c2"
     },
     {
-      "role": "get_overlappedColliders:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::get_overlappedColliders:84386:0:0",
       "module": "gameAssembly",
-      "rva": 47084192,
-      "bytes": 122,
-      "sha256": "16a52546d53fac20a02abe56ff556b895179c50435679be367529f05fb9c2159"
+      "rva": 89747968,
+      "bytes": 64,
+      "sha256": "e3f206e9a4f64e57823e678396fe6d25831f3e09f385d5a3e0ffdb6a687f285b"
     },
     {
-      "role": "get_overlappedColliders:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::get_overlappedColliders:84386:1:0",
       "module": "gameAssembly",
-      "rva": 79891036,
-      "bytes": 96,
-      "sha256": "e9afaf575a6dfcc20c732418fa7b1822440194dd5db44eca2381ded43377e1ec"
+      "rva": 122732478,
+      "bytes": 31,
+      "sha256": "b31638edde7f947ff57f26291dcd0cee2f03731398cf070f5eff275c54592f2b"
     },
     {
-      "role": "SphereCastAll:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCastAll:84387:0:0",
       "module": "gameAssembly",
-      "rva": 47080448,
-      "bytes": 723,
-      "sha256": "d7ed73a6a8abcf944d47893577376f51e17ddc071eef699b019e2bcee85d2e06"
+      "rva": 90264032,
+      "bytes": 91,
+      "sha256": "48215f61b5370a0c99234ae0ee1749dfb62c53d8f85572e2ed21e1541e156b99"
     },
     {
-      "role": "SphereCastAll:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCastAll:84387:1:0",
       "module": "gameAssembly",
-      "rva": 47080522,
-      "bytes": 482,
-      "sha256": "029f3f5b52b4bb2a0f728527f80a68c5e7315f14151954a2d9d949fbea06d9b2"
+      "rva": 90264123,
+      "bytes": 349,
+      "sha256": "6a12c8bbd31f687634aed32478a09498234bf77387f29edbbac0b617e29520a5"
     },
     {
-      "role": "SphereCastAll:2",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCastAll:84387:2:0",
       "module": "gameAssembly",
-      "rva": 47081004,
-      "bytes": 17,
-      "sha256": "644eb2058ab8301188324db3381361352fa8a34ed9a63b33542d41569bbb782d"
+      "rva": 90264472,
+      "bytes": 58,
+      "sha256": "a2f654df01613c1dc99a091b7a4683ee45099602ed74fbf3fb3ebd95e2316330"
     },
     {
-      "role": "SphereCastAll:3",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCastAll:84387:3:0",
       "module": "gameAssembly",
-      "rva": 47081021,
-      "bytes": 150,
-      "sha256": "949f4bc61a8410cf9c25688eb3f9dc683bc7271cdc38f3d7d4fda4de2cfd479b"
+      "rva": 90264530,
+      "bytes": 79,
+      "sha256": "20900bfda8f394532ef286d9d019caf29c72414f7c30102391510a3734771525"
     },
     {
-      "role": "SphereCastAll:4",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCastAll:84387:4:0",
       "module": "gameAssembly",
-      "rva": 79889552,
-      "bytes": 406,
-      "sha256": "82a75bf1ccc928c4f804f8dbb4c523447118141e9c1df24e5903b6ec0b213764"
-    },
-    {
-      "role": "OverlapCapsuleNonAlloc:0",
-      "module": "gameAssembly",
-      "rva": 47084320,
-      "bytes": 498,
-      "sha256": "4524d1f88b8afc0c4f003c758106467d1e950d09c5937137e90f962ab709dcff"
-    },
-    {
-      "role": "OverlapCapsuleNonAlloc:1",
-      "module": "gameAssembly",
-      "rva": 47084382,
-      "bytes": 295,
-      "sha256": "329afc5026ea73b6f58050d7da91dc91131ac50ee05a5476af4dfb72aba1cce8"
-    },
-    {
-      "role": "OverlapCapsuleNonAlloc:2",
-      "module": "gameAssembly",
-      "rva": 47084677,
-      "bytes": 17,
-      "sha256": "549d90d8b5cc35fbc7ec824e0dc0a55738280a50693b68e1b30fed921103b9f1"
-    },
-    {
-      "role": "OverlapCapsuleNonAlloc:3",
-      "module": "gameAssembly",
-      "rva": 47084694,
-      "bytes": 124,
-      "sha256": "af327dd97669ffca0ea9296d994dec1931718214b8f03e7455124b33910790af"
-    },
-    {
-      "role": "OverlapCapsuleNonAlloc:4",
-      "module": "gameAssembly",
-      "rva": 79891132,
-      "bytes": 386,
-      "sha256": "01a3f8a30ceae52288a8e6c77b0b071766153e51b2384a090a488204fb2353a6"
-    },
-    {
-      "role": "CapsuleCastAll:0",
-      "module": "gameAssembly",
-      "rva": 52617456,
-      "bytes": 983,
-      "sha256": "a3934565dfc4df3df544aa34faab9ca3944bf471e6f9a8badd19733860e6739e"
-    },
-    {
-      "role": "CapsuleCastAll:1",
-      "module": "gameAssembly",
-      "rva": 52617526,
-      "bytes": 726,
-      "sha256": "5e412c0fa13833fedfaed2efadc57f1cc7723a00ca1168209941977e7f5f26e1"
-    },
-    {
-      "role": "CapsuleCastAll:2",
-      "module": "gameAssembly",
-      "rva": 52618252,
-      "bytes": 17,
-      "sha256": "950e3dc127fb24cf8a41eb9fd12cc321c9ab2c986b5a8ab223779ea29774dfaa"
-    },
-    {
-      "role": "CapsuleCastAll:3",
-      "module": "gameAssembly",
-      "rva": 52618269,
-      "bytes": 170,
-      "sha256": "caf35df5db51b4ba5839153b250f104074c8f95653aac3da321d567976ff2873"
-    },
-    {
-      "role": "CapsuleCastAll:4",
-      "module": "gameAssembly",
-      "rva": 81010682,
-      "bytes": 410,
-      "sha256": "299a54c9b9428c1d1982ff933733c6806cd58db30606259f377aba6391c36b11"
-    },
-    {
-      "role": "ComputeCapsulePenetration:0",
-      "module": "gameAssembly",
-      "rva": 103960568,
-      "bytes": 449,
-      "sha256": "79aad38bc8f436cbc9e0a57b6f40ec24e11fc17be540660463f8267715a3a088"
-    },
-    {
-      "role": "RaycastAll:0",
-      "module": "gameAssembly",
-      "rva": 62911136,
-      "bytes": 168,
-      "sha256": "5c3c11c21a7667df161927d476ff071673ec51887520130ebaa6913bbc597ed9"
-    },
-    {
-      "role": "RaycastAll:1",
-      "module": "gameAssembly",
-      "rva": 82679902,
+      "rva": 122813836,
       "bytes": 97,
-      "sha256": "dca3310ca7703a07e266e222166a639d0ed959cc7be2da8f19c002ab070b60f3"
+      "sha256": "5ab2f47b1516965b5a8160de217afb01fd752ca93ee8e8e5d73e250c793e4a74"
     },
     {
-      "role": "CharacterCollisionOverlap:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCastAll:84387:5:0",
       "module": "gameAssembly",
-      "rva": 47082576,
-      "bytes": 1613,
-      "sha256": "9c4f1d68c1f3f94bb9c89a514a19a7c8b6f10cdec1a4d5ae17073a6cce12ae5a"
+      "rva": 122813933,
+      "bytes": 162,
+      "sha256": "b0d8e04fe269202f75d65b95488a8316e4abb8c5cf6de3d3ec75929c516ea1c8"
     },
     {
-      "role": "CharacterCollisionOverlap:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::OverlapCapsuleNonAlloc:84388:0:0",
       "module": "gameAssembly",
-      "rva": 47082646,
-      "bytes": 1240,
-      "sha256": "c046b17c369df73c118674b3d32232d3200097faa405c7246c78f3a79dfce236"
+      "rva": 89748128,
+      "bytes": 79,
+      "sha256": "644c4953eea2680a343be1b30f9ad29e39c75232ba8ad20f148db12da72bc06c"
     },
     {
-      "role": "CharacterCollisionOverlap:2",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::OverlapCapsuleNonAlloc:84388:1:0",
       "module": "gameAssembly",
-      "rva": 47083886,
-      "bytes": 17,
-      "sha256": "bcf397a0dc0faa20ce571499eaa871c4e32e0ce1da36af31ee9de294c0b0c624"
+      "rva": 89748207,
+      "bytes": 169,
+      "sha256": "3b5283abc14ac0c6a0eec0d444a15e03cf3e263399b1ccfdb9da62bbb99b3067"
     },
     {
-      "role": "CharacterCollisionOverlap:3",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::OverlapCapsuleNonAlloc:84388:2:0",
       "module": "gameAssembly",
-      "rva": 47083903,
-      "bytes": 286,
-      "sha256": "3deea4d76dd9fd3435bbc8f449e259cf8ec0e605918e2c1c6b55a5944247e840"
+      "rva": 89748376,
+      "bytes": 53,
+      "sha256": "9152210d575d39691162ef1a7132a51a8094b4f2d8607342e9cb8cc29255a90a"
     },
     {
-      "role": "CharacterCollisionOverlap:4",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::OverlapCapsuleNonAlloc:84388:3:0",
       "module": "gameAssembly",
-      "rva": 79890058,
-      "bytes": 977,
-      "sha256": "ef70fcccbfec496c52048418236b00933e02aeaf0704b6543e6b9bd3a474c81c"
+      "rva": 89748429,
+      "bytes": 53,
+      "sha256": "78b54272144219d9cd76ada1ab3fb2f91f94ae7c80816a369f5cdab8fa351490"
     },
     {
-      "role": "CharacterCollisionSweep:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::OverlapCapsuleNonAlloc:84388:4:0",
       "module": "gameAssembly",
-      "rva": 52295952,
-      "bytes": 2764,
-      "sha256": "b7fa8775d4355203bfb189bb24a2b664713cf185b2812fe9d14b0f0d31d4b7b0"
-    },
-    {
-      "role": "CharacterCollisionSweep:1",
-      "module": "gameAssembly",
-      "rva": 52296034,
-      "bytes": 2468,
-      "sha256": "8ea8de288b84cf7e90f832e812a1bf62c7e52db55a38727587a513c33fb8419e"
-    },
-    {
-      "role": "CharacterCollisionSweep:2",
-      "module": "gameAssembly",
-      "rva": 52298502,
-      "bytes": 17,
-      "sha256": "3fd5527a4c5d03357ffc9480ad86baae9ebd2d5c0b138b145ac1a9edb50b1d58"
-    },
-    {
-      "role": "CharacterCollisionSweep:3",
-      "module": "gameAssembly",
-      "rva": 52298519,
-      "bytes": 197,
-      "sha256": "385cd3ed5c5beca9d31978fa040b48e99316e552b032785d4c64d1264b0439be"
-    },
-    {
-      "role": "CharacterCollisionSweep:4",
-      "module": "gameAssembly",
-      "rva": 80941916,
-      "bytes": 857,
-      "sha256": "5c8325e08bd077c0053b364d3ad9fa2a32c4fc9ad4deb8f823f5fc401f7c8145"
-    },
-    {
-      "role": "_CheckIfColliderValidForCollisions:0",
-      "module": "gameAssembly",
-      "rva": 47088800,
-      "bytes": 2830,
-      "sha256": "063981ef3873ad2e709a83cdceded484cac4ff04525b50a47922f1ca01b37a7f"
-    },
-    {
-      "role": "_CheckIfColliderValidForCollisions:1",
-      "module": "gameAssembly",
-      "rva": 47088850,
-      "bytes": 1970,
-      "sha256": "2992acde627eebe744007a3c0d66b7f8b8d9bc81a1ac6cd2a13b00c130369594"
-    },
-    {
-      "role": "_CheckIfColliderValidForCollisions:2",
-      "module": "gameAssembly",
-      "rva": 47090820,
-      "bytes": 17,
-      "sha256": "4cb8f2cbaba5807340a62521faa7599da7391166fdd2edbb028b04ae2a18b17f"
-    },
-    {
-      "role": "_CheckIfColliderValidForCollisions:3",
-      "module": "gameAssembly",
-      "rva": 47090837,
-      "bytes": 793,
-      "sha256": "6b69c4067fccfea68da699d3e0ef604beb5b22d0ced0e63cf143176d5e2c26ac"
-    },
-    {
-      "role": "_CheckIfColliderValidForCollisions:4",
-      "module": "gameAssembly",
-      "rva": 79893674,
-      "bytes": 1404,
-      "sha256": "64fba0bc50485e0f9c07d11a1e9d483bbd59eb18100b3f0c2d6672ceceb073ab"
-    },
-    {
-      "role": "FindFloor:0",
-      "module": "gameAssembly",
-      "rva": 55490992,
-      "bytes": 1086,
-      "sha256": "a13a422fea9d8e845249c88583217b19a6d96e5553a25b9f55d714b4eaac6ccd"
-    },
-    {
-      "role": "FindFloor:1",
-      "module": "gameAssembly",
-      "rva": 55491108,
-      "bytes": 857,
-      "sha256": "54cab109692809be1606fab1a6d69096ba3247af2a0fd2e270ef71a8e84fa600"
-    },
-    {
-      "role": "FindFloor:2",
-      "module": "gameAssembly",
-      "rva": 55491965,
-      "bytes": 17,
-      "sha256": "99684f972d48239494ba764f42ec600d1fe02d79c1b55dba6db411a134bf4b37"
-    },
-    {
-      "role": "FindFloor:3",
-      "module": "gameAssembly",
-      "rva": 55491982,
+      "rva": 122732510,
       "bytes": 96,
-      "sha256": "6bf67edfcf1c9f4d121ea234d23afee7162bda321634e2aea813a48be8755898"
+      "sha256": "78042ab16e979b98bbf7c329565f7f0c146a5a7b96ff7e9c01e409610a6978aa"
     },
     {
-      "role": "FindFloor:4",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::OverlapCapsuleNonAlloc:84388:5:0",
       "module": "gameAssembly",
-      "rva": 81509890,
-      "bytes": 548,
-      "sha256": "efa40c65238eed23732e82d8fbcf977eb6056824c221ae2bf4d383244f67a16e"
+      "rva": 122732606,
+      "bytes": 173,
+      "sha256": "c8a26f08fd826ad02b06f07b94f4136d1b3b4fb597394223059bdccbeae21839"
     },
     {
-      "role": "TryMoveCapsule:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:0:0",
       "module": "gameAssembly",
-      "rva": 51567808,
-      "bytes": 1946,
-      "sha256": "231a444f2f6e62a9cf131f6bc47c2640465608d2c0e60c505a9c32b217a21b5e"
+      "rva": 89727168,
+      "bytes": 88,
+      "sha256": "4b651f721ea5dd4e72783fb1cfb16fd7b31d0e6db3afbb05201fd3074bdd3202"
     },
     {
-      "role": "TryMoveCapsule:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:1:0",
       "module": "gameAssembly",
-      "rva": 51567925,
-      "bytes": 1548,
-      "sha256": "5e8d6abc0ed299294872f88a09ad381dd72d2e037531dd7602cef0a706c44ebb"
+      "rva": 89727256,
+      "bytes": 520,
+      "sha256": "98819c13afb01053c8da3a488589fe774f99f5c43f7baccfb75845eec5389dd2"
     },
     {
-      "role": "TryMoveCapsule:2",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:2:0",
       "module": "gameAssembly",
-      "rva": 51569473,
-      "bytes": 20,
-      "sha256": "3a413b1999600979e1fbf28c36b3099b4dd08ce52ca0f27498016b670d0ca17b"
+      "rva": 89727776,
+      "bytes": 25,
+      "sha256": "2015ada7bb2597927752942bdfd29cd7ef2020d9e5bea0c9fff9ec067818a10a"
     },
     {
-      "role": "TryMoveCapsule:3",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:3:0",
       "module": "gameAssembly",
-      "rva": 51569493,
-      "bytes": 261,
-      "sha256": "c4228d1a746014adb376a3c72a67e2bd5117eca6cbdfe79822bd6a2284e5a7b1"
+      "rva": 89727801,
+      "bytes": 91,
+      "sha256": "54053e41b0349d0af3067e4705c6e00ba83c843798cc4a5341a5f6faf23e8df9"
     },
     {
-      "role": "TryMoveCapsule:4",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:4:0",
       "module": "gameAssembly",
-      "rva": 80822788,
-      "bytes": 750,
-      "sha256": "38bef2f82727af14e4d3489d4058b5a080868a49b56b3afc4611bd42a5bcbc9b"
+      "rva": 89727892,
+      "bytes": 27,
+      "sha256": "7842ebeaf5a1768d9dd498a5e828f2f10d8ccae12dffa4d617b2e33c5b27572a"
     },
     {
-      "role": "ComputeFloorDist:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:5:0",
       "module": "gameAssembly",
-      "rva": 52298720,
-      "bytes": 2147,
-      "sha256": "2368079d033e4b9ccf05a30e98a40f8f1eb0c6d8c50b2390c5aa0bc3f6f5ef9c"
+      "rva": 89727919,
+      "bytes": 109,
+      "sha256": "a8c89df9aba9088dd113e94235a4ce5fb36f8e48b42b7369ce9f8bcf8228735c"
     },
     {
-      "role": "ComputeFloorDist:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:6:0",
       "module": "gameAssembly",
-      "rva": 52298810,
-      "bytes": 1718,
-      "sha256": "5fc5dacf879a9b229fe85af05a90c9f208278430866d3b8a5aa741553bbc694a"
+      "rva": 122725248,
+      "bytes": 127,
+      "sha256": "ad216cd63d702de8cb2d5e932f063002c6a9360d5ab83e536d05dbd4fb52c5c6"
     },
     {
-      "role": "ComputeFloorDist:2",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::CapsuleCastAll:84389:7:0",
       "module": "gameAssembly",
-      "rva": 52300528,
-      "bytes": 17,
-      "sha256": "08702cb884854423f457d467d2e8627f1e64eba21902c02d646200464324bea3"
+      "rva": 122725375,
+      "bytes": 208,
+      "sha256": "5f19a669e707a1c915b550a6b74da0706f45da4b679d57e49a6abf4997673a01"
     },
     {
-      "role": "ComputeFloorDist:3",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::ComputeCapsulePenetration:84391:0:0",
       "module": "gameAssembly",
-      "rva": 52300545,
-      "bytes": 322,
-      "sha256": "25db23ff2210188c0d2fb2faf46dcf1d07935c6762106f6892ebdefc8b9ebc40"
+      "rva": 152933968,
+      "bytes": 450,
+      "sha256": "1148de5b10ae0cfa93a2335240f15088673cc44947837953c66eb20f02a6f944"
     },
     {
-      "role": "ComputeFloorDist:4",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::RaycastAll:84392:0:0",
       "module": "gameAssembly",
-      "rva": 80942774,
-      "bytes": 1097,
-      "sha256": "2100202cac23dca8263874e2878a187dd38880b76fa038a5bce797f4e13588df"
+      "rva": 100664160,
+      "bytes": 168,
+      "sha256": "b16b596661141d70fb70c7f431d9ab1d99d71469df72e92c0903dfd654ff7e4a"
     },
     {
-      "role": "get_IsECSCollider:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::RaycastAll:84392:1:0",
       "module": "gameAssembly",
-      "rva": 52615312,
-      "bytes": 32,
-      "sha256": "3d6c34648dc2f3fd345d714c5937aeecafc55e5109ce9ad6a8568718e082a37f"
+      "rva": 124100592,
+      "bytes": 96,
+      "sha256": "85f87b038d5ee89d4f1d8338e578ed23cf3e74a0f1b01465ffd47bfa7e14f307"
     },
     {
-      "role": "get_colliderProxy:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCast:84393:0:0",
       "module": "gameAssembly",
-      "rva": 48829312,
-      "bytes": 399,
-      "sha256": "1dfe4458815259df1f0037e40c3903885f96e30c68b3964e1d12f5cccd5953ed"
-    },
-    {
-      "role": "get_colliderProxy:1",
-      "module": "gameAssembly",
-      "rva": 48829409,
-      "bytes": 67,
-      "sha256": "6a33aeb5ea0c49f1897f3005259464a6c0e5d4e9858ca8a7ab80807ab52fe692"
-    },
-    {
-      "role": "get_colliderProxy:2",
-      "module": "gameAssembly",
-      "rva": 48829476,
-      "bytes": 139,
-      "sha256": "d73cbe0e416dddaf888161b8b5e37e967d466d28b5a1298551b3bd4bfcbc0704"
-    },
-    {
-      "role": "get_colliderProxy:3",
-      "module": "gameAssembly",
-      "rva": 48829615,
-      "bytes": 7,
-      "sha256": "b61f13bc9b09530b8cde5263a26f07859587760b14069287c3feacf37304b092"
-    },
-    {
-      "role": "get_colliderProxy:4",
-      "module": "gameAssembly",
-      "rva": 48829622,
+      "rva": 89248864,
       "bytes": 89,
-      "sha256": "6d5d33ffc2b4333c55460a3c196d0c5b41ca76b3e461ac1f4664a8f921d31160"
+      "sha256": "ce4c08d1121accfdc5cae14a65f329b13944451fd5c1b0993c105b47fc85f959"
     },
     {
-      "role": "get_colliderProxy:5",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCast:84393:1:0",
       "module": "gameAssembly",
-      "rva": 78643026,
-      "bytes": 52,
-      "sha256": "7f317bde4c4ccb506027719a36e7344082ce979176ee92cb25267bb03469a7c6"
+      "rva": 89248953,
+      "bytes": 331,
+      "sha256": "c9ae62f82eba0e746753218e37c7b2c73a956d2aa83f8c030e7a608778de0c44"
     },
     {
-      "role": "get_collider:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCast:84393:2:0",
       "module": "gameAssembly",
-      "rva": 48830000,
-      "bytes": 128,
-      "sha256": "667c369005dc216c61bdd138ec4bee19b85865d0ea1144dbf7bf00529fc183b5"
+      "rva": 89249284,
+      "bytes": 47,
+      "sha256": "ae633e7f8c90cf1dea9ac38a412749e7b88c54d49dcb0d87ea0c2b4002873f02"
     },
     {
-      "role": "get_collider:1",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCast:84393:3:0",
       "module": "gameAssembly",
-      "rva": 78643078,
-      "bytes": 23,
-      "sha256": "a005c04c21173c770fbd1506f11a971b1860ff10dd1317f278ec44abecdcd0c3"
+      "rva": 89249331,
+      "bytes": 59,
+      "sha256": "afb7f05b0a23da7500c6da73644f5537ef89550067ec61dd7378db2f1d82100f"
     },
     {
-      "role": "get_layer:0",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCast:84393:4:0",
       "module": "gameAssembly",
-      "rva": 48826800,
-      "bytes": 465,
-      "sha256": "b73d5587645d40a586bf25d90e04934a9f7e354beea5ba36908d84a34ebe3041"
-    },
-    {
-      "role": "get_layer:1",
-      "module": "gameAssembly",
-      "rva": 48826929,
-      "bytes": 69,
-      "sha256": "c2b562670ec0a31ff242fc415a5f3aeb232fad35f80766cb67536b2bd20cdb1c"
-    },
-    {
-      "role": "get_layer:2",
-      "module": "gameAssembly",
-      "rva": 48826998,
+      "rva": 122607478,
       "bytes": 108,
-      "sha256": "5704449f50b7dd4d6c628083aa27bf1450f2f95208e16fba1e83d1e80dd19feb"
+      "sha256": "fc9f388a38b1db461b8e50083b74d31e5bc5bf6be9c71a9a12b9b6dcbda4113c"
     },
     {
-      "role": "get_layer:3",
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::SphereCast:84393:5:0",
       "module": "gameAssembly",
-      "rva": 48827106,
+      "rva": 122607586,
+      "bytes": 146,
+      "sha256": "c20270bc1b45e690c4e2e2626f085bc3d463cea1a87b2e9252e700c0f96e2586"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:0:0",
+      "module": "gameAssembly",
+      "rva": 89742704,
+      "bytes": 92,
+      "sha256": "1e81eec74fe479a7ebfe1657db2f332667f8006791624b69e13e6c2484b027fe"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:1:0",
+      "module": "gameAssembly",
+      "rva": 89742796,
+      "bytes": 777,
+      "sha256": "f94dc74ae9a2c38664d2427a7bb261ca46c6ab081509f4d8a53f364483108808"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:2:0",
+      "module": "gameAssembly",
+      "rva": 89743573,
+      "bytes": 251,
+      "sha256": "8854520c1ec2e81b0300ac51e555ea4d1fb3d72d05fb3a697c484153264ef4c1"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:3:0",
+      "module": "gameAssembly",
+      "rva": 89743824,
+      "bytes": 20,
+      "sha256": "e02822025a316d916d442d76ab9e5f09a9d03621b9557c1cae65b6eb9a151795"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:4:0",
+      "module": "gameAssembly",
+      "rva": 89743844,
+      "bytes": 61,
+      "sha256": "08f236041d63b024ce232c4a49c91a60ba989e1e635c95e2690698810f7f6c37"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:5:0",
+      "module": "gameAssembly",
+      "rva": 89743905,
+      "bytes": 84,
+      "sha256": "b7e26c16764bde12ca1f4b68d4c9e63ec020d2cd0d45dbd6ee88fa051726d94a"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:6:0",
+      "module": "gameAssembly",
+      "rva": 89743989,
+      "bytes": 10,
+      "sha256": "470ef360408be1ce2878b2540da17311dfc6ef20d129da52d87d1f7f2f1dce04"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:7:0",
+      "module": "gameAssembly",
+      "rva": 89743999,
+      "bytes": 12,
+      "sha256": "d6d3b817d26740ffac9ffa42c140bbb572a8a3bfb8d3265925d0b4f077129126"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:8:0",
+      "module": "gameAssembly",
+      "rva": 122730326,
+      "bytes": 150,
+      "sha256": "e236b8b94327242d2d2e30e43d98a0ba960bf1f916ea4fe307978e8180fe2008"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:9:0",
+      "module": "gameAssembly",
+      "rva": 122730476,
+      "bytes": 52,
+      "sha256": "b76e17a6ea31b8e864dabc8c038f1cf35be9b1f4aca07dfd2bddbcb3a77a7834"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:10:0",
+      "module": "gameAssembly",
+      "rva": 122730528,
+      "bytes": 369,
+      "sha256": "d7fb292c7dd6b24da0935718ebb9c9bcf485411a0804778268a196cf5659b27c"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionOverlap:84007:11:0",
+      "module": "gameAssembly",
+      "rva": 122730897,
+      "bytes": 33,
+      "sha256": "1bc2012c23b0af3cfcb7ae3bb573b86f2b8df00e6b361369848031ebfb3cd6cd"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:0:0",
+      "module": "gameAssembly",
+      "rva": 89731840,
+      "bytes": 121,
+      "sha256": "8ffd1b42ea2a67b7f0209192291d0919c406d62decfdeb105d91d692ff3ed605"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:1:0",
+      "module": "gameAssembly",
+      "rva": 89731961,
+      "bytes": 500,
+      "sha256": "23a780f7b16f13c9bd1edd43df1160e1e1aaf2095d1c9c4aa646de1ae9bf1856"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:2:0",
+      "module": "gameAssembly",
+      "rva": 89732461,
+      "bytes": 1410,
+      "sha256": "3f354f826cc4b3e9dc07414d4fc10fb05c67371520c2fe9dc8212487658ff04e"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:3:0",
+      "module": "gameAssembly",
+      "rva": 89733871,
+      "bytes": 510,
+      "sha256": "6987ae343d0ae6a1c430e919124425b42617fd71abe4f6119f90b938cfb44033"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:4:0",
+      "module": "gameAssembly",
+      "rva": 89734381,
+      "bytes": 35,
+      "sha256": "56a28000d94f292dd7541b36e2e21cbfa4af600215707faa78b49dca71cf8df0"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:5:0",
+      "module": "gameAssembly",
+      "rva": 89734416,
+      "bytes": 14,
+      "sha256": "4403de4ed015a4051ddd41f5b29bff2019c81e427e37f91aa42f908a30c2ace8"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:6:0",
+      "module": "gameAssembly",
+      "rva": 89734430,
+      "bytes": 591,
+      "sha256": "8f4c1a636a712bd75164926a9c9f7b666a92de2fcce84faebb930c169c599de0"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:7:0",
+      "module": "gameAssembly",
+      "rva": 89735021,
+      "bytes": 17,
+      "sha256": "c2c0d74b9679adc48ff2ddd2f95712ba098aff5f773997e4c2e5b6d3d61f8ce8"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:8:0",
+      "module": "gameAssembly",
+      "rva": 89735038,
+      "bytes": 73,
+      "sha256": "a1cd24bc81214a8e87600c0848dc034b3e218716347dc83397e38082c75103af"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:9:0",
+      "module": "gameAssembly",
+      "rva": 89735111,
+      "bytes": 86,
+      "sha256": "421f54a33cc35a8e71251683f6891f0f5c05c57fedabb8e676583e471128bd02"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:10:0",
+      "module": "gameAssembly",
+      "rva": 89735197,
+      "bytes": 52,
+      "sha256": "aa90f21c4aeeb1b73cc5f9881de97dbb3cec65b709274b9c6eaecfd8a7fd8e68"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:11:0",
+      "module": "gameAssembly",
+      "rva": 89735249,
+      "bytes": 126,
+      "sha256": "9e58e29f0857b2c6aa739f793e06970fda39972cd48a59f79c0fec11b767e8ab"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:12:0",
+      "module": "gameAssembly",
+      "rva": 89735375,
+      "bytes": 69,
+      "sha256": "83be9235892e9f5e123f6a853458aa29fb3eb53ca52a4ef45ac86eac747133b7"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:13:0",
+      "module": "gameAssembly",
+      "rva": 122726322,
+      "bytes": 241,
+      "sha256": "b49017f82611bedac1f391131a26e4b7c91066f1487f0b44d79539c0db8e9abe"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:14:0",
+      "module": "gameAssembly",
+      "rva": 122726563,
+      "bytes": 52,
+      "sha256": "7da5de1b03b5f49c305a9b2ddd434b8bdedc1cc1135244b977d9388ff4d9ff0d"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:15:0",
+      "module": "gameAssembly",
+      "rva": 122726615,
+      "bytes": 496,
+      "sha256": "43aab698b8781f7084d42720fb440ce4207ad0fb9381a5c3a498e3a1d20b7be9"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::CharacterCollisionSweep:84008:16:0",
+      "module": "gameAssembly",
+      "rva": 122727111,
+      "bytes": 165,
+      "sha256": "226857c9faf8afbad6676fb75c2e51baef463c64f0eca83ad4d531f36c1dd69f"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:0:0",
+      "module": "gameAssembly",
+      "rva": 89744224,
+      "bytes": 66,
+      "sha256": "d2d8ff60597078acff23a9f57614c418230be6cc1908dece7c5eb31d1f409420"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:1:0",
+      "module": "gameAssembly",
+      "rva": 89744290,
+      "bytes": 1009,
+      "sha256": "cd4cbd59ac674e996c67ca6450bba6008e88c8396782c85f5ac4ec47e690eac2"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:2:0",
+      "module": "gameAssembly",
+      "rva": 89745299,
+      "bytes": 13,
+      "sha256": "a6c9e82205b0406e422accee55b3e9f065431086f475631dc9abc2fa9a44614c"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:3:0",
+      "module": "gameAssembly",
+      "rva": 89745312,
+      "bytes": 887,
+      "sha256": "7d3ec19c6393c7465f936964cd022c76e767425a7a84f708b247cf1aba679028"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:4:0",
+      "module": "gameAssembly",
+      "rva": 89746199,
+      "bytes": 10,
+      "sha256": "59d74ebbdcdec519fb5915665e5410b5a4995b0cebf70a0b85c370c1a1ec6b95"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:5:0",
+      "module": "gameAssembly",
+      "rva": 89746209,
+      "bytes": 701,
+      "sha256": "816abf6d05a8a747635e8a0cb90b8b57c4115e775b9c5da342c9882e6e4265f7"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:6:0",
+      "module": "gameAssembly",
+      "rva": 122731052,
+      "bytes": 64,
+      "sha256": "0b34670a809b03eeada514089c889268224df2caec1af4438ee0d65974a5bb12"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::_CheckIfColliderValidForCollisions:84027:7:0",
+      "module": "gameAssembly",
+      "rva": 122731116,
+      "bytes": 899,
+      "sha256": "fb38cfdcc59406772f42f4b4391267d1ff338b7cc3e93681697ef36f2e997aaa"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:0:0",
+      "module": "gameAssembly",
+      "rva": 89257824,
+      "bytes": 73,
+      "sha256": "01879af2ee95e389d8834b1cd957341e472ef3246cbeccf24523d8c0ce9e73ec"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:1:0",
+      "module": "gameAssembly",
+      "rva": 89257897,
+      "bytes": 477,
+      "sha256": "c4fa30727de112e980e9b2ba09e5450d06f113c851804c00a08fe05e04d85007"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:2:0",
+      "module": "gameAssembly",
+      "rva": 89258374,
+      "bytes": 49,
+      "sha256": "e949dea997f2f3f85116286fa01e9bfb2b6910a41ca0e3496f3beb833123701c"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:3:0",
+      "module": "gameAssembly",
+      "rva": 89258423,
+      "bytes": 27,
+      "sha256": "74bcebc74ac24b446462dbb02824f20dbc40928201fd7e78173d8dcc985f70b9"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:4:0",
+      "module": "gameAssembly",
+      "rva": 89258450,
+      "bytes": 212,
+      "sha256": "71b12173c6d5765566bcdd8243308f33926051aa730b0c150377a05dcf77ac52"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:5:0",
+      "module": "gameAssembly",
+      "rva": 89258662,
+      "bytes": 17,
+      "sha256": "175484fbe33632a3d7ef551e059aaf262a1db289be10d8a7c6fe4ea18d42b790"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:6:0",
+      "module": "gameAssembly",
+      "rva": 89258679,
+      "bytes": 27,
+      "sha256": "06551fa2dada70fac4301a031d27d31072f6a50a11d9305116b7fcc0feb307c5"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:7:0",
+      "module": "gameAssembly",
+      "rva": 122609436,
+      "bytes": 78,
+      "sha256": "ec4be47dbcceeccee8ad040f115274ea0ff1a8b8712e6136bb72512c35120f5e"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:8:0",
+      "module": "gameAssembly",
+      "rva": 122609514,
+      "bytes": 106,
+      "sha256": "935973a6b6a0dd41bfbdebdea4a6056ad7001f0e483398a08ec71502feba79ec"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::FindFloor:84233:9:0",
+      "module": "gameAssembly",
+      "rva": 122609620,
+      "bytes": 155,
+      "sha256": "2ce3ebd461766ec6e032cb1440c3047fbed4b045d29170055693ba4d0b64f463"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:0:0",
+      "module": "gameAssembly",
+      "rva": 89729776,
+      "bytes": 119,
+      "sha256": "dd77901a83329abf76236f8769f3f8da1a74317569a4868f39dbfdf06416210b"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:1:0",
+      "module": "gameAssembly",
+      "rva": 89729895,
+      "bytes": 111,
+      "sha256": "1f1cb1849beb8cb7c6e0398fe26f678777eb1a13945037737e449fdfe2a96280"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:2:0",
+      "module": "gameAssembly",
+      "rva": 89730006,
+      "bytes": 32,
+      "sha256": "b27cfe43150d26432b529f41c911ea0adac748c170edf1584019233d9f6b220a"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:3:0",
+      "module": "gameAssembly",
+      "rva": 89730038,
+      "bytes": 642,
+      "sha256": "391d560afd0193c10ed07a2919d634b5bbf12af5a77d1e23d82cdc8f0184d630"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:4:0",
+      "module": "gameAssembly",
+      "rva": 89730680,
+      "bytes": 601,
+      "sha256": "29376aa876bb7944cbcccff4e92311d40907e5f4c2fb42a0dd2968fb8efff28f"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:5:0",
+      "module": "gameAssembly",
+      "rva": 89731281,
+      "bytes": 10,
+      "sha256": "1ef985e0a6deb2e3770a9e57b4fb703a6661098ceb97aa65c2e19218656e3023"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:6:0",
+      "module": "gameAssembly",
+      "rva": 89731291,
+      "bytes": 85,
+      "sha256": "c63c9db9b2c52c4f4cc4ffc4f98b041d4cfb18ca78c105295527b47f3443c517"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:7:0",
+      "module": "gameAssembly",
+      "rva": 122725854,
+      "bytes": 122,
+      "sha256": "976a68375cc3090a030fdb3ba8773dbb9dc596c884697fcb9569bc2957666790"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::TryMoveCapsule:84238:8:0",
+      "module": "gameAssembly",
+      "rva": 122725976,
+      "bytes": 123,
+      "sha256": "23a6eadf8cd9488552267831d15e0b7313838e6f096ff706d7df9c5c84c9343b"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:0:0",
+      "module": "gameAssembly",
+      "rva": 89737744,
+      "bytes": 69,
+      "sha256": "08c5a2aeaff8de11e62fad7e85704a036b1c2eec4096143fad4793687f7b5f69"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:1:0",
+      "module": "gameAssembly",
+      "rva": 89737813,
+      "bytes": 128,
+      "sha256": "ed0cdabacf1635bfc80f89f1a78e026eec3d73b36ed358580519c0c4cb87039e"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:2:0",
+      "module": "gameAssembly",
+      "rva": 89737941,
+      "bytes": 395,
+      "sha256": "9a7bd905cc5f8743ad34b9e25c393258035f401b4f7702f70dd6a94be59abc1e"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:3:0",
+      "module": "gameAssembly",
+      "rva": 89738336,
+      "bytes": 800,
+      "sha256": "e0819adbef130d71a24e91f52b1e007ddf180d9b5dcbcef78e38a3d61806f181"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:4:0",
+      "module": "gameAssembly",
+      "rva": 89739136,
+      "bytes": 17,
+      "sha256": "bc3602641ae8d901fb8680b7c769aa18a49f268ea06ee4aa2952a2a41a3fe2d5"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:5:0",
+      "module": "gameAssembly",
+      "rva": 89739153,
+      "bytes": 24,
+      "sha256": "df9bd916e80b7835eceb25162c700ed24ccb46a70c9405d7f34c28dd4dbe7211"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:6:0",
+      "module": "gameAssembly",
+      "rva": 89739177,
+      "bytes": 22,
+      "sha256": "66e99da9648a483ae4ef637139f0b8df83661e391e17834680773c2b4c3b2721"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:7:0",
+      "module": "gameAssembly",
+      "rva": 89739199,
+      "bytes": 226,
+      "sha256": "92fcad909c0a73a923be88e6ceef1b57a2872fc9d29862c5a117da6be1cae3f1"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:8:0",
+      "module": "gameAssembly",
+      "rva": 89739425,
+      "bytes": 85,
+      "sha256": "84af73d756abec10aec7043443c11f058c5638016b6fd2601bbf01edf6034c7f"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:9:0",
+      "module": "gameAssembly",
+      "rva": 89739510,
+      "bytes": 144,
+      "sha256": "2feac76fa2141c1b93b049e09080e54b9b4d630384e80b073fb791bea9e6b237"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:10:0",
+      "module": "gameAssembly",
+      "rva": 89739654,
+      "bytes": 9,
+      "sha256": "2c9dac545a9d7607b222e5a0633c08bb429d0ef61d8efb0a710a9d47799d616e"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:11:0",
+      "module": "gameAssembly",
+      "rva": 89739663,
+      "bytes": 217,
+      "sha256": "c7d9c69728599c68a574caf7172281965bba237bdd55dc332371ea6580bd48c3"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:12:0",
+      "module": "gameAssembly",
+      "rva": 122728338,
+      "bytes": 128,
+      "sha256": "c5963a3f9b318df4a5e256dcf61bcafbe58393a95cd23d91c86542fdb9a47f20"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:13:0",
+      "module": "gameAssembly",
+      "rva": 122728466,
+      "bytes": 44,
+      "sha256": "846cbe23755e1e44f5440a77a25cff7b27bc129574c06fa6415b3b7adbd66e95"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:14:0",
+      "module": "gameAssembly",
+      "rva": 122728510,
+      "bytes": 146,
+      "sha256": "d8136a46651eb6ea9a1b5af77b2ae7ac3f346e71b2e7fd3c32ece6ac113637b9"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovementComponent::ComputeFloorDist:84242:15:0",
+      "module": "gameAssembly",
+      "rva": 122728656,
+      "bytes": 525,
+      "sha256": "03c51b19742d04736be0036a19a03d7b1745a75ebcaba9e420e6137a4d5d63d7"
+    },
+    {
+      "role": "UnityEngine.ECSColliderResultProxy::get_collider:559736:0:0",
+      "module": "gameAssembly",
+      "rva": 85433936,
+      "bytes": 102,
+      "sha256": "d65944100459c57e3a10d36fca4638d02e8c386988b8e2c7ecdf27c8fedb904c"
+    },
+    {
+      "role": "UnityEngine.ECSColliderResultProxy::get_collider:559736:1:0",
+      "module": "gameAssembly",
+      "rva": 120482016,
+      "bytes": 52,
+      "sha256": "2d02d3d742216351b60ba2b3ee55659273e8d2cd882ea3448dfd48d87161e6d6"
+    },
+    {
+      "role": "UnityEngine.ECSColliderResultProxy::get_layer:559742:0:0",
+      "module": "gameAssembly",
+      "rva": 85447184,
+      "bytes": 129,
+      "sha256": "46782a9898061c7ba8b4b9661acfbb977dbc7b147463598144ab9ccd9273e1a7"
+    },
+    {
+      "role": "UnityEngine.ECSColliderResultProxy::get_layer:559742:1:0",
+      "module": "gameAssembly",
+      "rva": 85447313,
+      "bytes": 69,
+      "sha256": "6d906d4fb7ab97284c78478bbba4c21e7a7e70b02f0cfeffa01219e5ab6951ba"
+    },
+    {
+      "role": "UnityEngine.ECSColliderResultProxy::get_layer:559742:2:0",
+      "module": "gameAssembly",
+      "rva": 85447382,
+      "bytes": 108,
+      "sha256": "36c829d24c5eed63e94befdd222ed491668fcab3266bc5ec12ed2cc6652be2a8"
+    },
+    {
+      "role": "UnityEngine.ECSColliderResultProxy::get_layer:559742:3:0",
+      "module": "gameAssembly",
+      "rva": 85447490,
       "bytes": 9,
       "sha256": "d7a0db736abe4fba7cd537d0c8ff899738f907cd3e57b19e5aaae72106d0cbd1"
     },
     {
-      "role": "get_layer:4",
+      "role": "UnityEngine.ECSColliderResultProxy::get_layer:559742:4:0",
       "module": "gameAssembly",
-      "rva": 48827115,
+      "rva": 85447499,
       "bytes": 150,
-      "sha256": "7025067c379638278b5ed53e78ca75f0591ad7a4047d5c46483b8beef27b0e12"
+      "sha256": "93c124545c1a1bdd1236fa2688aa1151c346d92f6fefc23627f09e161a0409bf"
     },
     {
-      "role": "get_layer:5",
+      "role": "UnityEngine.ECSColliderResultProxy::get_layer:559742:5:0",
       "module": "gameAssembly",
-      "rva": 80249048,
+      "rva": 120484308,
       "bytes": 93,
-      "sha256": "63553ed546d18dace4b48b8eff5348d460d358390bfba6f1b3839b7d99fcabdb"
+      "sha256": "2d64fa3e2b9b974b5fbebf8ec38dbf03f31c2e90dbd64c533bd897312c8ba74e"
     },
     {
-      "role": "RaycastAll:more:0",
+      "role": "UnityEngine.RaycastHit::get_IsECSCollider:559769:0:0",
       "module": "gameAssembly",
-      "rva": 48835936,
-      "bytes": 958,
-      "sha256": "cf054a592321c6c819ae00c53bee8a4f6ff78ae45089ecc1dd5a256c55d39bc5"
-    },
-    {
-      "role": "RaycastAll:more:1",
-      "module": "gameAssembly",
-      "rva": 48835997,
-      "bytes": 34,
-      "sha256": "051d2cc2b31a226e98b51d732d2d0b3783da079dec3c85197bc65b934fb0b55c"
-    },
-    {
-      "role": "RaycastAll:more:2",
-      "module": "gameAssembly",
-      "rva": 48836031,
-      "bytes": 61,
-      "sha256": "61ce111c136965da62275daa2e2f8d9cf6ba02465cfdd457dbb55a4bd7364bd4"
-    },
-    {
-      "role": "RaycastAll:more:3",
-      "module": "gameAssembly",
-      "rva": 48836092,
-      "bytes": 153,
-      "sha256": "ef76d5b58c07361a81fc7cf14525f311ad4ff1ca245f79cd2e19019ffd3abfe0"
-    },
-    {
-      "role": "RaycastAll:more:4",
-      "module": "gameAssembly",
-      "rva": 48836245,
+      "rva": 89653264,
       "bytes": 21,
-      "sha256": "79c752017f806639615aa833e64835b25e20487cb746b2824ceaa930219c13c7"
+      "sha256": "637fc5ab48b1007af8e862d097e974de0d10686ef5f5e08baca85e3c11458a20"
     },
     {
-      "role": "RaycastAll:more:5",
+      "role": "UnityEngine.RaycastHit::get_collider:559770:0:0",
       "module": "gameAssembly",
-      "rva": 48836266,
+      "rva": 102940432,
+      "bytes": 106,
+      "sha256": "7d3c398881e17e293ad462449ee45d5294532e2c5cb141d8d5f8da960d034a96"
+    },
+    {
+      "role": "UnityEngine.RaycastHit::get_colliderProxy:559773:0:0",
+      "module": "gameAssembly",
+      "rva": 85434048,
+      "bytes": 97,
+      "sha256": "56de468d009d76559f9b9a391921e3dae2b8ab9e2339f5670412f2bc39e19e03"
+    },
+    {
+      "role": "UnityEngine.RaycastHit::get_colliderProxy:559773:1:0",
+      "module": "gameAssembly",
+      "rva": 85434145,
+      "bytes": 67,
+      "sha256": "ac69e993d6a1f51f8fea5a0e456f259f6bbbbe9412818c44914753f1a7da3b61"
+    },
+    {
+      "role": "UnityEngine.RaycastHit::get_colliderProxy:559773:2:0",
+      "module": "gameAssembly",
+      "rva": 85434212,
+      "bytes": 139,
+      "sha256": "53a50364018f5875ed15fb5e2e1d7867d46f35ca3ec6220db0dfa3c73398a793"
+    },
+    {
+      "role": "UnityEngine.RaycastHit::get_colliderProxy:559773:3:0",
+      "module": "gameAssembly",
+      "rva": 85434351,
+      "bytes": 7,
+      "sha256": "b61f13bc9b09530b8cde5263a26f07859587760b14069287c3feacf37304b092"
+    },
+    {
+      "role": "UnityEngine.RaycastHit::get_colliderProxy:559773:4:0",
+      "module": "gameAssembly",
+      "rva": 85434358,
+      "bytes": 128,
+      "sha256": "d09b4c0e47b407c0316620808666670f88fdf7a291061c496aaab6abe9aa9b73"
+    },
+    {
+      "role": "UnityEngine.RaycastHit::get_colliderProxy:559773:5:0",
+      "module": "gameAssembly",
+      "rva": 120482068,
+      "bytes": 23,
+      "sha256": "4bb8c2d7f83190dd993be1348581dbf992e3f0ed643498c9c6ef59ed8c8a4804"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:0:0",
+      "module": "gameAssembly",
+      "rva": 89263840,
+      "bytes": 89,
+      "sha256": "7392ace3d6ad0de12c44e72ab3599d11adabc0559ebd61c47caa848a8cdfe485"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:1:0",
+      "module": "gameAssembly",
+      "rva": 89263929,
+      "bytes": 448,
+      "sha256": "303d5e109ad1a4283297c72a9dcb0c2bf84ad49f053d8c8a941e2fd69a1e6869"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:2:0",
+      "module": "gameAssembly",
+      "rva": 89264377,
+      "bytes": 30,
+      "sha256": "ed3a3bc547e37ae42be98c6c22b4e849eb678440ffee41f4ecbf32833ae16933"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:3:0",
+      "module": "gameAssembly",
+      "rva": 89264407,
+      "bytes": 15,
+      "sha256": "18464baa2862dbdf258f066898aafdaa0e31c3e50d1db692589c6a8e6645a49b"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:4:0",
+      "module": "gameAssembly",
+      "rva": 89264422,
+      "bytes": 17,
+      "sha256": "cd3cd96411d21a6a5ca6f7bf993b3ffd5d3f54bdf8bdbadf852db55fcdcad008"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:5:0",
+      "module": "gameAssembly",
+      "rva": 89264439,
+      "bytes": 59,
+      "sha256": "a1689b49a12bdd3462e729d1c5ae38fbaeffab0a1ccbfd58a3a3beab8f5c4d85"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:6:0",
+      "module": "gameAssembly",
+      "rva": 122611958,
+      "bytes": 98,
+      "sha256": "2c1961918c8cf9703dd1c7969453a817218c8e1d855a99d7c27096224db47042"
+    },
+    {
+      "role": "Beyond.Gameplay.Core.MovePhysQuery::Raycast:84395:7:0",
+      "module": "gameAssembly",
+      "rva": 122612056,
+      "bytes": 218,
+      "sha256": "334a0396f5c6352f85547c6c66c8eb2bdad777550037d493d1485d1abe1ee164"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_Raycast_Injected:560133:0:0",
+      "module": "gameAssembly",
+      "rva": 98623488,
+      "bytes": 112,
+      "sha256": "63b63a37f393ef343ce17876c145baa2121a6bb0bb5a75901139f6f4e0ffa164"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_Raycast_Injected:560133:1:0",
+      "module": "gameAssembly",
+      "rva": 123889896,
+      "bytes": 23,
+      "sha256": "2f3268cfa396e54bbfb0f3b4d5c8018f7f99a37bc7045f5fd7ede3471df8c366"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_RaycastNonAlloc_Injected:560134:0:0",
+      "module": "gameAssembly",
+      "rva": 97959392,
+      "bytes": 112,
+      "sha256": "4632214617033a5bf677ff4541855a6d5d10621fb4e9263f27e4def498dd7de3"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_RaycastNonAlloc_Injected:560134:1:0",
+      "module": "gameAssembly",
+      "rva": 123817702,
+      "bytes": 23,
+      "sha256": "b69608137ffa1dbd60b99cd002a42020123d9dec2b5901afef3f37434cf5b8d7"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_CapsuleCastNonAlloc_Injected:560136:0:0",
+      "module": "gameAssembly",
+      "rva": 100969280,
+      "bytes": 112,
+      "sha256": "e1e75a59199f739830ab4d4fe2c4c9affb48ac305440e3e04b1ecce04a69f125"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_CapsuleCastNonAlloc_Injected:560136:1:0",
+      "module": "gameAssembly",
+      "rva": 124174000,
+      "bytes": 23,
+      "sha256": "47b0467832c31d153aaf7ae70be975add97f0a7a82bbd3ae40b345407e5629c2"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::OverlapCapsuleNonAlloc_InternalV2_Injected:560139:0:0",
+      "module": "gameAssembly",
+      "rva": 100422272,
+      "bytes": 112,
+      "sha256": "f899238ea8aae5909bddad85cf5035b88b0bbfedc817a719e4b19d2405595742"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::OverlapCapsuleNonAlloc_InternalV2_Injected:560139:1:0",
+      "module": "gameAssembly",
+      "rva": 124070958,
+      "bytes": 23,
+      "sha256": "72fad5f06babac31fa42b4e9b0ac0e405e77174968b45220c879876f2a50f040"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Query_SphereCast_Injected:560140:0:0",
+      "module": "gameAssembly",
+      "rva": 101497936,
+      "bytes": 112,
+      "sha256": "803fa9e045bf6b02e539b617fba3f0472e1130ca675af83ef53c81bf020ffc46"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Query_SphereCast_Injected:560140:1:0",
+      "module": "gameAssembly",
+      "rva": 124220302,
+      "bytes": 23,
+      "sha256": "4f54080467e8a730dc236d69e50032e18d76413734f210ea6c2873cf1ce644d1"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_SphereCastNonAlloc_Injected:560141:0:0",
+      "module": "gameAssembly",
+      "rva": 99792800,
+      "bytes": 112,
+      "sha256": "30aa9f0273ca6bccaf218cd532a5eb39edfa118acc6050c850d715c96465664e"
+    },
+    {
+      "role": "UnityEngine.PhysicsScene::Internal_SphereCastNonAlloc_Injected:560141:1:0",
+      "module": "gameAssembly",
+      "rva": 123998182,
+      "bytes": 23,
+      "sha256": "c10c083f275cdfc6d98b42ae021a16d8d058c37275ffadaeda055538ee6d4dcc"
+    },
+    {
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:0:0",
+      "module": "gameAssembly",
+      "rva": 85430000,
+      "bytes": 61,
+      "sha256": "f3eb226db7293fb15c78b1c36e2cea79e1775d5a72a3031dbe99f1b9c4898260"
+    },
+    {
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:1:0",
+      "module": "gameAssembly",
+      "rva": 85430061,
+      "bytes": 62,
+      "sha256": "d1b5343dfee42087bfbae61d03926b0946131a26d10c2aa7e7810a802d7bddc1"
+    },
+    {
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:2:0",
+      "module": "gameAssembly",
+      "rva": 85430123,
+      "bytes": 153,
+      "sha256": "ea013861d27d9fc76c466627dc06747a8abca239ccdb1033e5c7faa4763d9824"
+    },
+    {
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:3:0",
+      "module": "gameAssembly",
+      "rva": 85430276,
+      "bytes": 21,
+      "sha256": "dddb24be2fd5424d6bf490b8379396a08e6aca49c14d88e10c8c0d838febdda0"
+    },
+    {
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:4:0",
+      "module": "gameAssembly",
+      "rva": 85430297,
       "bytes": 9,
       "sha256": "797ff1658bf76920dc6fc1c5747d53f4efe5671a7823970b2ed8cddce7e73743"
     },
     {
-      "role": "RaycastAll:more:6",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:5:0",
       "module": "gameAssembly",
-      "rva": 48836275,
-      "bytes": 216,
-      "sha256": "c5f5db1ec18e80d45daf26480cec83cd5a5861083aa5e398343a50e38b58438a"
+      "rva": 85430306,
+      "bytes": 215,
+      "sha256": "0f08e6da134b1e28e24b52550617472185917b914a3b6e7436d373d08202696c"
     },
     {
-      "role": "RaycastAll:more:7",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:6:0",
       "module": "gameAssembly",
-      "rva": 48836491,
+      "rva": 85430521,
       "bytes": 85,
-      "sha256": "96e6f7f4e12db13d4fc8bd9b7f831ddc1f6c5e0860335c6d79197bbf302e68b7"
+      "sha256": "9c8dec6cbe75563a4699b52586db6dda5003c3f73ee29fc648a2581491556761"
     },
     {
-      "role": "RaycastAll:more:8",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:7:0",
       "module": "gameAssembly",
-      "rva": 48836576,
-      "bytes": 73,
-      "sha256": "3774eb5334b27c968e1d16864cd510295188dddfc15c9a3dbd8ff688847234d7"
+      "rva": 85430606,
+      "bytes": 81,
+      "sha256": "43d4284bcb0cf19c2afc78dc364d6ceffa1db93f82dc2836f606f52edb8174eb"
     },
     {
-      "role": "RaycastAll:more:9",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:8:0",
       "module": "gameAssembly",
-      "rva": 48836649,
-      "bytes": 29,
-      "sha256": "12acb1b671314b1bf86898605ea7f2e742e2eb602eeb23ba1ae3a5654d637b2c"
+      "rva": 85430687,
+      "bytes": 21,
+      "sha256": "fae13ea98b0fa3254acadfa04f5793175e630027c3b3b903a3dccdea433437ef"
     },
     {
-      "role": "RaycastAll:more:10",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:9:0",
       "module": "gameAssembly",
-      "rva": 48836678,
+      "rva": 85430708,
       "bytes": 15,
-      "sha256": "0b33a903f212c60aeb0d66550cc72bc669970200f746276530d416520c9240dd"
+      "sha256": "74d9a94e43685a1fcb65feec2c3776e81528e54891809990f65e61da29e241a6"
     },
     {
-      "role": "RaycastAll:more:11",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:10:0",
       "module": "gameAssembly",
-      "rva": 48836693,
+      "rva": 85430723,
       "bytes": 11,
       "sha256": "79cb1420fea94d92fdad38bf6e7b45078bd9b415ee0efe2bc5a66de3065a1108"
     },
     {
-      "role": "RaycastAll:more:12",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:11:0",
       "module": "gameAssembly",
-      "rva": 48836704,
-      "bytes": 17,
-      "sha256": "6e536dbeb96390f885b506bbb4e9fc1461fcfd14f603ffe9920f930504ef96a5"
-    },
-    {
-      "role": "RaycastAll:more:13",
-      "module": "gameAssembly",
-      "rva": 48836721,
+      "rva": 85430734,
       "bytes": 20,
-      "sha256": "212c99f12be8f28fd7be0ef39a62b07d380ce20a41faf8fae49972eb60ac6d9f"
+      "sha256": "49de069c9144f511ea42a73a1c7a363593cd611fdd2e2e3f0a6f081ec5eef11f"
     },
     {
-      "role": "RaycastAll:more:14",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:12:0",
       "module": "gameAssembly",
-      "rva": 48836741,
+      "rva": 85430754,
       "bytes": 20,
-      "sha256": "fc4d94554cee77fd1aefdef55940d5032b4c09dabbaf793a8ee7b1c5af079d2f"
+      "sha256": "524b2e3e51f1e45c4693c861b27e06c3b53bf95bd690827cb84a446c5a66e87b"
     },
     {
-      "role": "RaycastAll:more:15",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:13:0",
       "module": "gameAssembly",
-      "rva": 48836761,
+      "rva": 85430774,
+      "bytes": 33,
+      "sha256": "0a92200309e80bb76e29d8bd6883198d763733ab7b2cd94cdb25e89d171796bb"
+    },
+    {
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:14:0",
+      "module": "gameAssembly",
+      "rva": 85430807,
       "bytes": 13,
-      "sha256": "5f9621a55b54f573544b5d9f881ed32ef5ed8a3f6e86742907b8d82d27b19e12"
+      "sha256": "35642a89dccbb2516d0332b3cc0d02c36f63461afa71082547906571ca5f5e30"
     },
     {
-      "role": "RaycastAll:more:16",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:15:0",
       "module": "gameAssembly",
-      "rva": 48836774,
-      "bytes": 59,
-      "sha256": "3e65c2cb993256f1a58181ae0227bb9e1cc21c417d1cac48346a2883e1e467ca"
+      "rva": 85430820,
+      "bytes": 26,
+      "sha256": "c96ac753e3e64ddbd9991955ca443f70fae7122b329b611fbea1b277d889aec6"
     },
     {
-      "role": "RaycastAll:more:17",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:16:0",
       "module": "gameAssembly",
-      "rva": 48836833,
+      "rva": 85430846,
       "bytes": 36,
-      "sha256": "fdaeed24885b7d5bc4a92a81d419d24654932eb5f263d0a5cfa19a6da3f99b56"
+      "sha256": "11d8255c3dfae73597f28917daafb891afc33d4b25489480d19be00908600e5a"
     },
     {
-      "role": "RaycastAll:more:18",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:17:0",
       "module": "gameAssembly",
-      "rva": 48836869,
-      "bytes": 25,
-      "sha256": "35522b23dcf213198947d78621a9470b5b884d58dac22b90a3e31615943bd74e"
+      "rva": 120481732,
+      "bytes": 109,
+      "sha256": "2cbab812999520e1c44154dacdc586234383dae7fc33d3460ba0b4f1ecca9264"
     },
     {
-      "role": "RaycastAll:more:19",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:18:0",
       "module": "gameAssembly",
-      "rva": 80250660,
-      "bytes": 169,
-      "sha256": "3c835e7aca17cbed2b7317e085263401523c27ffbd61409f49f7f8aa3348f07e"
-    },
-    {
-      "role": "RaycastAll:more:20",
-      "module": "gameAssembly",
-      "rva": 80250829,
+      "rva": 120481841,
       "bytes": 52,
-      "sha256": "cd8870dcf1a3eb54cad21bdaa4582f327b56eb8be2abaed5ac40beb59e3230f0"
+      "sha256": "63f4e1dd90f8f6ba8845c24792b3bb9941b23d9cea03011d706edde62d645b4a"
     },
     {
-      "role": "RaycastAll:more:21",
+      "role": "Beyond.Gameplay.PhysHelper::RaycastAll:15862:19:0",
       "module": "gameAssembly",
-      "rva": 80250881,
+      "rva": 120481893,
       "bytes": 23,
-      "sha256": "0a3c0802fd9c109e413f7d77d66298ffcd9c7703c5c46f4f3092765657ad1670"
+      "sha256": "e96b7126ca095965f4f8f887d27e4e5a1ac6f667b98644e39a0953c84dc7bec5"
     },
     {
-      "role": "SphereCast:more:0",
+      "role": "collider_options:0:0",
       "module": "gameAssembly",
-      "rva": 55503952,
-      "bytes": 671,
-      "sha256": "c9507b33ae7eacee6e10fc1e21cde0aec4a6cdd827d51bb94b887ca5eeb6fc95"
+      "rva": 85434880,
+      "bytes": 39,
+      "sha256": "5ca62abd13e05bc2834edc19723df2682f602d9f9bc52644eccd27b2e0cbc5f2"
     },
     {
-      "role": "SphereCast:more:1",
+      "role": "collider_options:1:0",
       "module": "gameAssembly",
-      "rva": 55504024,
-      "bytes": 442,
-      "sha256": "906554524b32562d7078a3af32fc4843a83ed9c9d86c7551d1737baf63de4fd4"
+      "rva": 85434919,
+      "bytes": 320,
+      "sha256": "ab2cb5fde4485d83b2da4bfbeed91c0023e6fdfa605f7e06cf3aee3a3381808e"
     },
     {
-      "role": "SphereCast:more:2",
+      "role": "collider_options:2:0",
       "module": "gameAssembly",
-      "rva": 55504466,
-      "bytes": 17,
-      "sha256": "d948c0ebf4354c211c9035ba28c35c2947ca17a5f2036e1380326a6829232cab"
+      "rva": 85435239,
+      "bytes": 6,
+      "sha256": "b9b14c82b7a3be6a7a463d7b10fda89cb2e6710757bdb66397a72e9bbc372a97"
     },
     {
-      "role": "SphereCast:more:3",
+      "role": "collider_options:3:0",
       "module": "gameAssembly",
-      "rva": 55504483,
-      "bytes": 140,
-      "sha256": "085a27a03e191c5dc25c34312ab3a47f272289f740ddf34f34d620d625a0d158"
+      "rva": 85435245,
+      "bytes": 942,
+      "sha256": "dd98f6cd46e088577656f06aa8a3e15b2e80a02b5f291826751c8baf27b5702f"
     },
     {
-      "role": "SphereCast:more:4",
+      "role": "collider_options:4:0",
       "module": "gameAssembly",
-      "rva": 81512678,
-      "bytes": 383,
-      "sha256": "1a3464ce67c64ed86759afd9d4339440ce0573ce210a23d1cab6eaafbd3c0296"
+      "rva": 85436187,
+      "bytes": 15,
+      "sha256": "813082f53b011207e5d36c7c7ee15360c1049210be6fee89e5bdbe02a849846e"
     },
     {
-      "role": "Raycast:more:0",
+      "role": "collider_options:5:0",
       "module": "gameAssembly",
-      "rva": 55485472,
-      "bytes": 803,
-      "sha256": "835566f65aa872a4acfd3cb1f6a1cc0797f212868218521da32af67c476a51a0"
+      "rva": 85436202,
+      "bytes": 346,
+      "sha256": "55837aa7db3516fcefd95d371961a92ff9d48bd2a086d0753c552f0fb5321935"
     },
     {
-      "role": "Raycast:more:1",
+      "role": "collider_options:6:0",
       "module": "gameAssembly",
-      "rva": 55485544,
-      "bytes": 574,
-      "sha256": "73dec62cfb32f05c7fdbac1a4164b193609ca5aff2d20a1eaa718fb94508a10e"
+      "rva": 120482092,
+      "bytes": 37,
+      "sha256": "b3fb7483147826e7f8e3436b4fbbb63084821aa9aad120c9d22eed04b856bc31"
     },
     {
-      "role": "Raycast:more:2",
+      "role": "collider_options:7:0",
       "module": "gameAssembly",
-      "rva": 55486118,
-      "bytes": 17,
-      "sha256": "87880f003732085a87ab9a0e9e04d93647d5c57b1dd4535c76ca968389b9720c"
+      "rva": 120482129,
+      "bytes": 429,
+      "sha256": "55e83405dac5e84dd84410b4dde58dcd34a20c944e0468beb4ee18cd37f62b46"
     },
     {
-      "role": "Raycast:more:3",
-      "module": "gameAssembly",
-      "rva": 55486135,
-      "bytes": 140,
-      "sha256": "731fdb869c21c82f17a2d35040e0f6678a3ba9a1231ec29980c603b8c8f29e35"
-    },
-    {
-      "role": "Raycast:more:4",
-      "module": "gameAssembly",
-      "rva": 81507024,
-      "bytes": 443,
-      "sha256": "d5843cab2168a1da65a99692b7cafe042b13a459c302a3e4e465fea946c8b2f5"
-    },
-    {
-      "role": "capsule_full",
+      "role": "capsule_full:0:0",
       "module": "unityPlayer",
-      "rva": 2825792,
-      "bytes": 512,
-      "sha256": "28667678220a9c42949d327183d6b0777473331e1cb9d380230f4e065787a1a4"
+      "rva": 1257616,
+      "bytes": 372,
+      "sha256": "aad1125794367338094b00a6278ae951f17860c0c99db5e33ff6474091d01669"
     },
     {
-      "role": "sphere_full",
+      "role": "capsule_full:1:0",
       "module": "unityPlayer",
-      "rva": 2832192,
-      "bytes": 576,
-      "sha256": "0006cd439e9c93bd0cc6799426b709da6f31c4c85bc65987f9276b2595b8dde0"
+      "rva": 15823900,
+      "bytes": 11,
+      "sha256": "382f8b403380452576e845eea674ff1d4c4ac2cb1005de475441e374854b7dad"
     },
     {
-      "role": "overlap_full",
+      "role": "sphere_full:0:0",
       "module": "unityPlayer",
-      "rva": 2831504,
-      "bytes": 512,
-      "sha256": "c6be49eb48c8ec2a5e3c39fda0f936de7f555ec044ea1e95a1fd58acd4a40147"
+      "rva": 1259520,
+      "bytes": 354,
+      "sha256": "493696c4bded978cd85f0c899d58098efa8f701683fa364d840b2336e80c7e62"
     },
     {
-      "role": "ray_full",
+      "role": "sphere_full:1:0",
       "module": "unityPlayer",
-      "rva": 2833568,
-      "bytes": 576,
-      "sha256": "02842161d5abe949051721eaf2019873055b56ef5a9b57def110ae33c19dee2d"
+      "rva": 15823968,
+      "bytes": 11,
+      "sha256": "b79c5760723e624cf56ade9ff8b83a6d4bf7efd090d41ee0dee349496c9dcca5"
     },
     {
-      "role": "array_length",
+      "role": "overlap_full:0:0",
       "module": "unityPlayer",
-      "rva": 2834320,
-      "bytes": 112,
-      "sha256": "46056dbd61777d85c29c4c1ac638e5850ceffd51404e7dd09da4e7f6a7c5e051"
+      "rva": 1258848,
+      "bytes": 333,
+      "sha256": "490d8a78f50869258e8c3df59f3852326fd9e4aa01bb64f3316e57a76c116cbf"
     },
     {
-      "role": "hit_writer",
+      "role": "overlap_full:1:0",
       "module": "unityPlayer",
-      "rva": 2835504,
-      "bytes": 768,
-      "sha256": "07cc49604e1f24bb9f1845c906bf29d662c1d5266943da55a62a53e565a99bcd"
+      "rva": 15823956,
+      "bytes": 11,
+      "sha256": "1cfa2c5d97465fc83d60dc4ee2a68e60b1c23b7217acb2d6692e8cb6e57e7e55"
     },
     {
-      "role": "build_contact_headers",
+      "role": "ray_full:0:0",
       "module": "unityPlayer",
-      "rva": 7997728,
-      "bytes": 373,
-      "sha256": "448a850910be2bd44a70420f477b675a3729458872c1c8d7d4b9906ad6a55f4d"
+      "rva": 1261440,
+      "bytes": 317,
+      "sha256": "109ff276a01f1979581dae72a87afebfaa8572b094199f97a01ec921a832e11a"
     },
     {
-      "role": "dispatch_contact_callbacks",
+      "role": "ray_full:1:0",
       "module": "unityPlayer",
-      "rva": 7993776,
-      "bytes": 362,
-      "sha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee"
+      "rva": 15823980,
+      "bytes": 11,
+      "sha256": "059a78513aceb8fd14bd4f027873c9c3d686b18ef0b7f0d2b315467c61b7faf8"
     },
     {
-      "role": "capsule_results:lookup",
-      "module": "gameAssembly",
-      "rva": 52618359,
+      "role": "array_length:0:0",
+      "module": "unityPlayer",
+      "rva": 1261760,
       "bytes": 12,
-      "sha256": "0b7c92fdcc8f380e4be2c1a9b2c622f485e8bb0524832e97b82e955d9f392758"
+      "sha256": "05e337cdd937d4a4fe3fe1bdc652d735aea71ac087a952424ac36a10479b2730"
     },
     {
-      "role": "capsule_results:store",
-      "module": "gameAssembly",
-      "rva": 52618383,
-      "bytes": 7,
-      "sha256": "36a68f08ae65a31c804bd5aea9c04b2b7fc5d3a233b225e511aaa8801ee574a1"
+      "role": "array_length:1:0",
+      "module": "unityPlayer",
+      "rva": 1261772,
+      "bytes": 37,
+      "sha256": "0a94a96bb344269c694a61d55cd0789b6236966955a62233bd5feb5df40205ae"
     },
     {
-      "role": "capsule_results:arguments",
-      "module": "gameAssembly",
-      "rva": 52617963,
-      "bytes": 120,
-      "sha256": "3029264aa0f20e4f2b736cf4d2578bcb65c5a1ced1d5b8b60f43b2b2bfe17a6b"
+      "role": "array_length:2:0",
+      "module": "unityPlayer",
+      "rva": 1261809,
+      "bytes": 9,
+      "sha256": "658f23d2d392c9b87888b9adf65c2968daecdc99b3cc0d6ee57e5dbed747ac23"
     },
     {
-      "role": "sphere_results:lookup",
-      "module": "gameAssembly",
-      "rva": 47081091,
-      "bytes": 12,
-      "sha256": "20daa3bd893b77eb3c7fbb8a8cd9e4483aa19181f9a85d14bb14a4b62ba0e745"
+      "role": "hit_writer:0:0",
+      "module": "unityPlayer",
+      "rva": 1251072,
+      "bytes": 382,
+      "sha256": "63efb94bad3ee2c40c0cbc356fcfd5c9deddb571ee85ac6ea4f2ff469fbb15d1"
     },
     {
-      "role": "sphere_results:store",
-      "module": "gameAssembly",
-      "rva": 47081115,
-      "bytes": 7,
-      "sha256": "b8d36a66feba6c46588648500ac455266efe3845690747772c3d40ef5dc35e31"
+      "role": "build_contact_headers:0:0",
+      "module": "unityPlayer",
+      "rva": 8162656,
+      "bytes": 110,
+      "sha256": "7060dfb837f93c74f1500a3a2a9a353e3f9f3911167b5f117f5aad22af94e2e6"
     },
     {
-      "role": "sphere_results:arguments",
-      "module": "gameAssembly",
-      "rva": 47080833,
-      "bytes": 95,
-      "sha256": "1f53350305a245d386b2168218fdbc88c50595e2958e0302ec12acce8b4151fe"
+      "role": "build_contact_headers:1:0",
+      "module": "unityPlayer",
+      "rva": 8162766,
+      "bytes": 249,
+      "sha256": "b15724a73eb7aec9d76493b1cff246aeb43f6479d3d5c2e40f1a2e3869266a04"
     },
     {
-      "role": "ray_results:lookup",
-      "module": "gameAssembly",
-      "rva": 48836833,
-      "bytes": 12,
-      "sha256": "5989d33abb9db0e5fe641ec42a69bee3a51cf191643aa7899a3d7fc6e0fd844f"
+      "role": "build_contact_headers:2:0",
+      "module": "unityPlayer",
+      "rva": 8163015,
+      "bytes": 14,
+      "sha256": "c3d2b7a2e8a41355a2150d6777671774dd27816db095cf7d9ce4a643733d7c86"
     },
     {
-      "role": "ray_results:store",
-      "module": "gameAssembly",
-      "rva": 48836857,
-      "bytes": 7,
-      "sha256": "e222d962fb935cb1c343242d868ba0f26c0bb5bcabf8c58081f84b95387467ed"
+      "role": "dispatch_contact_callbacks:0:0",
+      "module": "unityPlayer",
+      "rva": 8158704,
+      "bytes": 29,
+      "sha256": "d628f852e60be119d4164d89a2028bb5b829ba1a39efb2b60cddda0e97753eb1"
     },
     {
-      "role": "ray_results:arguments",
-      "module": "gameAssembly",
-      "rva": 48836513,
-      "bytes": 99,
-      "sha256": "5de36c34e012447253f1ada749302ae5b490bae7019ee66e60768979ec1687e2"
+      "role": "dispatch_contact_callbacks:1:0",
+      "module": "unityPlayer",
+      "rva": 8158733,
+      "bytes": 83,
+      "sha256": "e7b51c9f9a84e483726ba2328b466ed6baba3dfa4aa6b2cbee1f970bfa70f43e"
     },
     {
-      "role": "overlap_results:lookup",
-      "module": "gameAssembly",
-      "rva": 47084741,
-      "bytes": 12,
-      "sha256": "85bb075f8cda638ce816f5da29d66c4bd3588f91b24ab510f3bc2bf3bbfd3d23"
+      "role": "dispatch_contact_callbacks:2:0",
+      "module": "unityPlayer",
+      "rva": 8158816,
+      "bytes": 217,
+      "sha256": "322b9607b764f23a5bfe04a42cdd5d7ca56fc5d5b7ab70dc322df8d761858c70"
     },
     {
-      "role": "overlap_results:store",
-      "module": "gameAssembly",
-      "rva": 47084762,
-      "bytes": 7,
-      "sha256": "672bdd1272096d9fe27985e2f7e19c0ca2380030f48b7fc2a5d8b0172045b7fc"
+      "role": "dispatch_contact_callbacks:3:0",
+      "module": "unityPlayer",
+      "rva": 8159033,
+      "bytes": 23,
+      "sha256": "676704642fa0c077e80ac9823e034aad64a461a57f0caa8d0321589105a4a7d6"
     },
     {
-      "role": "overlap_results:arguments",
-      "module": "gameAssembly",
-      "rva": 47084574,
-      "bytes": 69,
-      "sha256": "d1ea0284ff9e0217d40b55e7b4bd9c826c5c3cca8af7c643d0276d93db04a507"
-    },
-    {
-      "role": "ray_single:lookup",
-      "module": "gameAssembly",
-      "rva": 81507412,
-      "bytes": 12,
-      "sha256": "ada6c3b291943e8ab33c7e1a7a47c705ba41e905755ea660e8d78c086e2423e2"
-    },
-    {
-      "role": "ray_single:store",
-      "module": "gameAssembly",
-      "rva": 81507455,
-      "bytes": 7,
-      "sha256": "b5642a094230f9d4db89f24bade093e9818ed5c45e50a3f98fb0ba4ee9166aaa"
-    },
-    {
-      "role": "ray_single:arguments",
-      "module": "gameAssembly",
-      "rva": 55485960,
-      "bytes": 80,
-      "sha256": "5cc6c293a22c03374a79db8b5f6fca620e65bad1f074043f83409f5fb5d9ac43"
-    },
-    {
-      "role": "sphere_single:lookup",
-      "module": "gameAssembly",
-      "rva": 55504543,
-      "bytes": 12,
-      "sha256": "d9665da85d3d3cb97990d3588aaa074c69bc648cc77b7637c06b40a5c2d5b046"
-    },
-    {
-      "role": "sphere_single:store",
-      "module": "gameAssembly",
-      "rva": 55504567,
-      "bytes": 7,
-      "sha256": "1b61703c397d6db464479d2e893ffaa02b5f8b5dbdbd11631effce1325b64da1"
-    },
-    {
-      "role": "sphere_single:arguments",
-      "module": "gameAssembly",
-      "rva": 55504303,
-      "bytes": 100,
-      "sha256": "5486f5116e8586b1f136200b7c4e601fc011ea41e5ded8961b2780525e485d21"
+      "role": "dispatch_contact_callbacks:4:0",
+      "module": "unityPlayer",
+      "rva": 8159056,
+      "bytes": 10,
+      "sha256": "722b79e374d92f485f553491e41f443e93cf40cd75e97d1d328d7b53d238993c"
     }
   ],
   "bindings": [
@@ -1792,157 +2544,193 @@
       "role": "capsule_results",
       "name": "UnityEngine.PhysicsScene::Internal_CapsuleCastNonAlloc_Injected(UnityEngine.PhysicsScene&,UnityEngine.Vector3&,UnityEngine.Vector3&,System.Single,UnityEngine.Vector3&,UnityEngine.RaycastHit[],System.Single,System.Int32,UnityEngine.QueryTriggerInteraction)",
       "tableName": "UnityEngine.PhysicsScene::Internal_CapsuleCastNonAlloc_Injected",
-      "literalRva": 176391680,
-      "lookupRva": 52618359,
-      "lookupBytes": "488d0d82a16007e82d0ddffc",
-      "resolverRva": 127408,
-      "cacheStoreRva": 52618383,
-      "cacheStoreBytes": "4889055a1ac80a",
-      "cacheCellRva": 233504496,
-      "cacheLoadRva": 52617963,
-      "cacheLoadBytes": "4c8b0dfe1bc80a",
+      "literalRva": 228607424,
+      "lookupRva": 89727992,
+      "lookupBytes": "488d0dc1214708e89c06aafa",
+      "resolverRva": 207520,
+      "cacheStoreRva": 89728016,
+      "cacheStoreBytes": "48890521fe190c",
+      "cacheCellRva": 292758072,
+      "cacheLoadRva": 89727609,
+      "cacheLoadBytes": "4c8b0db8ff190c",
       "indirectRegister": "r9",
-      "callRva": 52618080,
+      "callRva": 89727728,
       "callBytes": "41ffd1",
-      "returnRva": 52618083,
-      "functionRva": 2825600
+      "returnRva": 89727731,
+      "functionRva": 1257424,
+      "callerMethod": [
+        84389,
+        "Beyond.Gameplay.Core.MovePhysQuery",
+        "CapsuleCastAll",
+        89727168
+      ]
     },
     {
       "role": "sphere_results",
       "name": "UnityEngine.PhysicsScene::Internal_SphereCastNonAlloc_Injected(UnityEngine.PhysicsScene&,UnityEngine.Vector3&,System.Single,UnityEngine.Vector3&,UnityEngine.RaycastHit[],System.Single,System.Int32,UnityEngine.QueryTriggerInteraction)",
       "tableName": "UnityEngine.PhysicsScene::Internal_SphereCastNonAlloc_Injected",
-      "literalRva": 176384832,
-      "lookupRva": 47081091,
-      "lookupBytes": "488d0db604b507e8218b33fd",
-      "resolverRva": 127408,
-      "cacheStoreRva": 47081115,
-      "cacheStoreBytes": "48890566981c0b",
-      "cacheCellRva": 233504520,
-      "cacheLoadRva": 47080833,
-      "cacheLoadBytes": "4c8b0580991c0b",
+      "literalRva": 228603552,
+      "lookupRva": 90264573,
+      "lookupBytes": "488d0d9ce23e08e897d6a1fa",
+      "resolverRva": 207520,
+      "cacheStoreRva": 90264597,
+      "cacheStoreBytes": "48890534ce110c",
+      "cacheCellRva": 292758096,
+      "cacheLoadRva": 90264333,
+      "cacheLoadBytes": "4c8b053ccf110c",
       "indirectRegister": "r8",
-      "callRva": 47080925,
+      "callRva": 90264424,
       "callBytes": "41ffd0",
-      "returnRva": 47080928,
-      "functionRva": 2832016
+      "returnRva": 90264427,
+      "functionRva": 1259344,
+      "callerMethod": [
+        84387,
+        "Beyond.Gameplay.Core.MovePhysQuery",
+        "SphereCastAll",
+        90264032
+      ]
     },
     {
       "role": "ray_results",
       "name": "UnityEngine.PhysicsScene::Internal_RaycastNonAlloc_Injected(UnityEngine.PhysicsScene&,UnityEngine.Ray&,UnityEngine.RaycastHit[],System.Single,System.Int32,UnityEngine.QueryTriggerInteraction)",
       "tableName": "UnityEngine.PhysicsScene::Internal_RaycastNonAlloc_Injected",
-      "literalRva": 176379744,
-      "lookupRva": 48836833,
-      "lookupBytes": "488d0d78269a07e8c3c018fd",
-      "resolverRva": 127408,
-      "cacheStoreRva": 48836857,
-      "cacheStoreBytes": "488905e0cd010b",
-      "cacheCellRva": 233504480,
-      "cacheLoadRva": 48836513,
-      "cacheLoadBytes": "4c8b0d38cf010b",
+      "literalRva": 228596832,
+      "lookupRva": 85430846,
+      "lookupBytes": "488d0d1b8a8808e85698ebfa",
+      "resolverRva": 207520,
+      "cacheStoreRva": 85430870,
+      "cacheStoreBytes": "488905cb8f5b0c",
+      "cacheCellRva": 292758056,
+      "cacheLoadRva": 85430543,
+      "cacheLoadBytes": "4c8b0d12915b0c",
       "indirectRegister": "r9",
-      "callRva": 48836609,
+      "callRva": 85430639,
       "callBytes": "41ffd1",
-      "returnRva": 48836612,
-      "functionRva": 2833440
+      "returnRva": 85430642,
+      "functionRva": 1261104,
+      "callerMethod": [
+        15862,
+        "Beyond.Gameplay.PhysHelper",
+        "RaycastAll",
+        85430000
+      ]
     },
     {
       "role": "overlap_results",
       "name": "UnityEngine.PhysicsScene::OverlapCapsuleNonAlloc_InternalV2_Injected(UnityEngine.PhysicsScene&,UnityEngine.Vector3&,UnityEngine.Vector3&,System.Single,UnityEngine.ECSColliderResultProxy[],System.Int32,UnityEngine.QueryTriggerInteraction)",
       "tableName": "UnityEngine.PhysicsScene::OverlapCapsuleNonAlloc_InternalV2_Injected",
-      "literalRva": 176385920,
-      "lookupRva": 47084741,
-      "lookupBytes": "488d0db4fab407e8df7c33fd",
-      "resolverRva": 127408,
-      "cacheStoreRva": 47084762,
-      "cacheStoreBytes": "488905178a1c0b",
-      "cacheCellRva": 233504504,
-      "cacheLoadRva": 47084574,
-      "cacheLoadBytes": "488b05d38a1c0b",
+      "literalRva": 228605232,
+      "lookupRva": 89748449,
+      "lookupBytes": "488d0d48c94608e8b3b6a9fa",
+      "resolverRva": 207520,
+      "cacheStoreRva": 89748470,
+      "cacheStoreBytes": "48890543ae190c",
+      "cacheCellRva": 292758080,
+      "cacheLoadRva": 89748303,
+      "cacheLoadBytes": "488b05eaae190c",
       "indirectRegister": "rax",
-      "callRva": 47084641,
+      "callRva": 89748366,
       "callBytes": "ffd0",
-      "returnRva": 47084643,
-      "functionRva": 2831344
+      "returnRva": 89748368,
+      "functionRva": 1258688,
+      "callerMethod": [
+        84388,
+        "Beyond.Gameplay.Core.MovePhysQuery",
+        "OverlapCapsuleNonAlloc",
+        89748128
+      ]
     },
     {
       "role": "ray_single",
       "name": "UnityEngine.PhysicsScene::Internal_Raycast_Injected(UnityEngine.PhysicsScene&,UnityEngine.Ray&,System.Single,UnityEngine.RaycastHit&,System.Int32,UnityEngine.QueryTriggerInteraction)",
       "tableName": "UnityEngine.PhysicsScene::Internal_Raycast_Injected",
-      "literalRva": 176381504,
-      "lookupRva": 81507412,
-      "lookupBytes": "488d0de5a9a705e8503d26fb",
-      "resolverRva": 127408,
-      "cacheStoreRva": 81507455,
-      "cacheStoreBytes": "488905524a0f09",
-      "cacheCellRva": 233504472,
-      "cacheLoadRva": 55485960,
-      "cacheLoadBytes": "4c8b05c9589c0a",
+      "literalRva": 228598560,
+      "lookupRva": 122612219,
+      "lookupBytes": "488d0d1e395106e89940b4f8",
+      "resolverRva": 207520,
+      "cacheStoreRva": 122612262,
+      "cacheStoreBytes": "488905f337240a",
+      "cacheCellRva": 292758048,
+      "cacheLoadRva": 89264264,
+      "cacheLoadBytes": "4c8b059111210c",
       "indirectRegister": "r8",
-      "callRva": 55486037,
+      "callRva": 89264341,
       "callBytes": "41ffd0",
-      "returnRva": 55486040,
-      "functionRva": 2832784
+      "returnRva": 89264344,
+      "functionRva": 1260528,
+      "callerMethod": [
+        84395,
+        "Beyond.Gameplay.Core.MovePhysQuery",
+        "Raycast",
+        89263840
+      ]
     },
     {
       "role": "sphere_single",
       "name": "UnityEngine.PhysicsScene::Query_SphereCast_Injected(UnityEngine.PhysicsScene&,UnityEngine.Vector3&,System.Single,UnityEngine.Vector3&,System.Single,UnityEngine.RaycastHit&,System.Int32,UnityEngine.QueryTriggerInteraction)",
       "tableName": "UnityEngine.PhysicsScene::Query_SphereCast_Injected",
-      "literalRva": 176395344,
-      "lookupRva": 55504543,
-      "lookupBytes": "488d0daaa53407e80503b3fc",
-      "resolverRva": 127408,
-      "cacheStoreRva": 55504567,
-      "cacheStoreBytes": "48890542109c0a",
-      "cacheCellRva": 233504512,
-      "cacheLoadRva": 55504303,
-      "cacheLoadBytes": "4c8b054a119c0a",
+      "literalRva": 228609744,
+      "lookupRva": 89249354,
+      "lookupBytes": "488d0d7f784e08e84a54b1fa",
+      "resolverRva": 207520,
+      "cacheStoreRva": 89249378,
+      "cacheStoreBytes": "488905df4b210c",
+      "cacheCellRva": 292758088,
+      "cacheLoadRva": 89249138,
+      "cacheLoadBytes": "4c8b05cf4c210c",
       "indirectRegister": "r8",
-      "callRva": 55504400,
+      "callRva": 89249248,
       "callBytes": "41ffd0",
-      "returnRva": 55504403,
-      "functionRva": 2825520
+      "returnRva": 89249251,
+      "functionRva": 1262608,
+      "callerMethod": [
+        84393,
+        "Beyond.Gameplay.Core.MovePhysQuery",
+        "SphereCast",
+        89248864
+      ]
     }
   ],
   "probes": [
     {
       "module": "unityPlayer",
-      "rva": 2826064,
+      "rva": 1257872,
       "bytes": "0f10070f104f100f1057200f105f300f11441f200f114c1f300f11541f400f115c1f50488d7f404883e90175d3",
       "meaning": "64-byte result copied to array data +32"
     },
     {
       "module": "unityPlayer",
-      "rva": 2831744,
+      "rva": 1259076,
       "bytes": "f20f1047100f100f488d7f180f114c3b08f20f11443b184883e901",
       "meaning": "24-byte proxy copied to array data +32"
     },
     {
       "module": "unityPlayer",
-      "rva": 2835569,
+      "rva": 1251137,
       "bytes": "8b41188942308b411c894234488b0748894238",
       "meaning": "ECS ID/version and actor output slots"
     },
     {
       "module": "unityPlayer",
-      "rva": 2835845,
-      "bytes": "8b410889422848895a30e9e9feffff",
+      "rva": 1251435,
+      "bytes": "8b410889422848895a30e9d3feff",
       "meaning": "normal Collider ID and cleared ECS lane"
     },
     {
       "module": "unityPlayer",
-      "rva": 7993788,
+      "rva": 8158716,
       "bytes": "4883b990100000004c8bf90f8443010000",
       "meaning": "callback consumer guard"
     },
     {
       "module": "unityPlayer",
-      "rva": 7993856,
+      "rva": 8158784,
       "bytes": "488b81980f000041bd11000000440f45ef8b68104c8b700885ed0f84d900",
       "meaning": "raw pair pointer/count loads"
     },
     {
       "module": "unityPlayer",
-      "rva": 7993937,
+      "rva": 8158865,
       "bytes": "4c8b06498b58204885db7476f6430a027570",
       "meaning": "actor-pair stream and excluded state checks"
     }
@@ -1958,116 +2746,6 @@
     "ownerIntervalMillis": 100,
     "standaloneIntervalMillis": 250,
     "maxFilterReads": 8192
-  },
-  "tableCandidate": {
-    "nameTableRva": 27663536,
-    "functionTableRva": 27668368,
-    "count": 603,
-    "sentinel": 0,
-    "tableSha256": "9396987b3864755f6997c3933638939371a1112a2cbbe8d254002b81ce6c5c21",
-    "rows": [
-      {
-        "slot": 281,
-        "name": "UnityEngine.Collider::GetActor",
-        "functionRva": 4012352
-      },
-      {
-        "slot": 282,
-        "name": "UnityEngine.Collider::GetComponentIndex",
-        "functionRva": 4012016
-      },
-      {
-        "slot": 580,
-        "name": "UnityEngine.PhysicsScene::IsValid_Internal_Injected",
-        "functionRva": 17075320
-      },
-      {
-        "slot": 581,
-        "name": "UnityEngine.PhysicsScene::IsEmpty_Internal_Injected",
-        "functionRva": 17075284
-      },
-      {
-        "slot": 582,
-        "name": "UnityEngine.PhysicsScene::Internal_RaycastTest_Injected",
-        "functionRva": 5054864
-      },
-      {
-        "slot": 583,
-        "name": "UnityEngine.PhysicsScene::Internal_Raycast_Injected",
-        "functionRva": 2832784
-      },
-      {
-        "slot": 584,
-        "name": "UnityEngine.PhysicsScene::Internal_RaycastNonAlloc_Injected",
-        "functionRva": 2833440
-      },
-      {
-        "slot": 585,
-        "name": "UnityEngine.PhysicsScene::Query_CapsuleCast_Injected",
-        "functionRva": 5426912
-      },
-      {
-        "slot": 586,
-        "name": "UnityEngine.PhysicsScene::Internal_CapsuleCastNonAlloc_Injected",
-        "functionRva": 2825600
-      },
-      {
-        "slot": 587,
-        "name": "UnityEngine.PhysicsScene::Internal_CapsuleCastNonAllocV2_Injected",
-        "functionRva": 17075104
-      },
-      {
-        "slot": 588,
-        "name": "UnityEngine.PhysicsScene::OverlapCapsuleNonAlloc_Internal_Injected",
-        "functionRva": 17075484
-      },
-      {
-        "slot": 589,
-        "name": "UnityEngine.PhysicsScene::OverlapCapsuleNonAlloc_InternalV2_Injected",
-        "functionRva": 2831344
-      },
-      {
-        "slot": 590,
-        "name": "UnityEngine.PhysicsScene::Query_SphereCast_Injected",
-        "functionRva": 2825520
-      },
-      {
-        "slot": 591,
-        "name": "UnityEngine.PhysicsScene::Internal_SphereCastNonAlloc_Injected",
-        "functionRva": 2832016
-      },
-      {
-        "slot": 592,
-        "name": "UnityEngine.PhysicsScene::OverlapSphereNonAlloc_Internal_Injected",
-        "functionRva": 17075636
-      },
-      {
-        "slot": 593,
-        "name": "UnityEngine.PhysicsScene::OverlapSphereNonAllocV2_Internal_Injected",
-        "functionRva": 4679840
-      },
-      {
-        "slot": 594,
-        "name": "UnityEngine.PhysicsScene::Query_BoxCast_Injected",
-        "functionRva": 17075768
-      },
-      {
-        "slot": 595,
-        "name": "UnityEngine.PhysicsScene::OverlapBoxNonAlloc_Internal_Injected",
-        "functionRva": 17075344
-      },
-      {
-        "slot": 596,
-        "name": "UnityEngine.PhysicsScene::OverlapBoxNonAllocV2_Internal_Injected",
-        "functionRva": 5004416
-      },
-      {
-        "slot": 597,
-        "name": "UnityEngine.PhysicsScene::Internal_BoxCastNonAlloc_Injected",
-        "functionRva": 2828608
-      }
-    ],
-    "boundary": "structuralOnly: paired arrays. Registration is not inferred; live cached binding and original caller gate result admission."
   },
   "reportLayout": {
     "callbackConsumer": 4240,
@@ -2089,7 +2767,7 @@
   },
   "arrayLengthApi": {
     "name": "il2cpp_array_length",
-    "rva": 541616,
+    "rva": 520960,
     "bytes": 4,
     "sha256": "38058506e8e859d5be73a33baa621352c08ea01f2224ee170173253757193941",
     "expectedBytes": "8b4118c3"
@@ -2097,7 +2775,7 @@
   "fieldOperands": [
     {
       "module": "unityPlayer",
-      "rva": 7993788,
+      "rva": 8158716,
       "prefix": "4883b9",
       "width": 4,
       "path": "reportLayout.callbackConsumer",
@@ -2105,7 +2783,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 7993856,
+      "rva": 8158784,
       "prefix": "488b81",
       "width": 4,
       "path": "reportLayout.reportCore",
@@ -2113,7 +2791,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 7993873,
+      "rva": 8158801,
       "prefix": "8b68",
       "width": 1,
       "path": "reportLayout.actorPairCount",
@@ -2121,7 +2799,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 7993876,
+      "rva": 8158804,
       "prefix": "4c8b70",
       "width": 1,
       "path": "reportLayout.actorPairs",
@@ -2129,7 +2807,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 7993940,
+      "rva": 8158868,
       "prefix": "498b58",
       "width": 1,
       "path": "reportLayout.actorPairStream",
@@ -2137,7 +2815,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 7993949,
+      "rva": 8158877,
       "prefix": "f643",
       "width": 1,
       "path": "reportLayout.streamState",
@@ -2145,7 +2823,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 2835524,
+      "rva": 1251092,
       "prefix": "488b41",
       "width": 1,
       "path": "conversionInput.shape",
@@ -2153,7 +2831,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 2826079,
+      "rva": 1257887,
       "prefix": "0f11441f",
       "width": 1,
       "path": "arrayLayout.data",
@@ -2161,7 +2839,7 @@
     },
     {
       "module": "gameAssembly",
-      "rva": 541616,
+      "rva": 520960,
       "prefix": "8b41",
       "width": 1,
       "path": "arrayLayout.length",
@@ -2169,7 +2847,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 2835581,
+      "rva": 1251149,
       "prefix": "488b07",
       "width": 0,
       "path": "conversionInput.actor",
@@ -2177,7 +2855,7 @@
     },
     {
       "module": "unityPlayer",
-      "rva": 7993949,
+      "rva": 8158877,
       "prefix": "f6430a",
       "width": 1,
       "path": "reportLayout.invalidStreamMask",

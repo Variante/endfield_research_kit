@@ -1,0 +1,321 @@
+{
+  "schema": "endfield.memorypack-reader-clones-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "evidenceBoundary": {
+    "exact": "Complete selected pdata bodies, chained fragments, registered generic method identities and instruction windows.",
+    "direct": "Reviewed code/dataflow equivalence to the registered reference-sharing ReadValue<T> and ReadArray<T> bodies; only these exact targets are admitted.",
+    "conditional": "Reference-typed Param<T> and ParamOutput<T> carriers must independently prove their exact class base, matching reader MethodSpec, generic carrier, element kind and full type; setter/read order and owning consumer validation remain required. The reference-sharing body carries MethodInfo through the same provider/dispatch dataflow without specializing the child wire grammar.",
+    "unresolved": "No new Param wire schema, source-corpus admission or runtime gameplay effect is established."
+  },
+  "clones": [
+    {
+      "claim": "MemoryPack.MemoryPackReader.ReadValue",
+      "targetRva": 83900608,
+      "equivalentMethod": [
+        550348,
+        "MemoryPack.MemoryPackReader",
+        "ReadValue"
+      ],
+      "equivalentBody": {
+        "rva": 163057452,
+        "methodSpecIndex": 536092,
+        "genericMethodPointerSlot": 505507
+      },
+      "bodyRoots": [
+        83900608,
+        83902352,
+        83903760,
+        232112,
+        163057452
+      ],
+      "proof": {
+        "inputs": "RCX reader is saved in RDI; RDX MethodInfo is saved in RBX. Initialize its RGCTX at +0x38, take RGCTX[0] as the formatter-provider MethodInfo, and initialize a null result local.",
+        "inlinedProvider": "The clone inlines the complete provider at 0x185003f90: both load provider RGCTX[0], obtain its runtime type key, use the identical cache and monitor cells, hash/probe/insert with the same callees, including chained fallback fragments, and obtain the same R14 cache entry. Both pass R14 through 0x185004510, resolve the identical expected formatter type from provider RGCTX, and use the same type check and exception path. RBP holds the provider MethodInfo in both. Clone stack locals differ by +0x18 and it reloads the saved reader after the cache loop.",
+        "registeredBody": "The registered ReadValue<System.Object> body independently initializes a null local, loads MethodInfo.RGCTX[0], calls that same provider, and invokes virtual slot 5 with formatter, reader and address of result. The clone performs exactly this invocation after the inlined provider and returns its result local.",
+        "dispatch": "Both pass ECX=5, RDX=formatter, R8=reader, R9=&null-initialized result to the same dispatch helper. Its generic path preserves all operands and invokes the slot with its MethodInfo; selected optimized branches are shared by both callers.",
+        "boundary": "This proves the reference-sharing generic read, not a special Param formatter layout."
+      },
+      "codeWindows": [
+        {
+          "startRva": 83900608,
+          "endRva": 83902061,
+          "sha256": "CF5CF3E415A3B966CEF2130CFCA2FD74012AA746A6434D135BAB04B73CF23A4D",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 120421436,
+          "endRva": 120421525,
+          "sha256": "447FF4A44F83682B84C9FC9D2FB842144A2CC2F7D787124C2F2F98B467BC47DC",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83902352,
+          "endRva": 83903675,
+          "sha256": "463015EFFA8E4F1FE29B44299B2165BE7CB0779D675D5C467241717957BD901D",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 120421540,
+          "endRva": 120421629,
+          "sha256": "4E9948678A37F58C81E6888BE51434B7D556C8DC0738D2479DB0449C11430A09",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83903760,
+          "endRva": 83903970,
+          "sha256": "ECB2E0AD1B44AC77EDEB22F41898D621324C7F6A7304F9819C4DE3C3E893AB76",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83903970,
+          "endRva": 83905092,
+          "sha256": "CB2E6F80CD50466F9A9411F4EB7058E4CA720C2EC48BDDE5C1130E8C334C2FF2",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83905092,
+          "endRva": 83905151,
+          "sha256": "5039CA4ED8208765BE108A5378515D082346C78FD6C0AFE76F88C74832004711",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83905151,
+          "endRva": 83905157,
+          "sha256": "9B24BA47FB82D47021ED85180A6FADFCC1CAF9BA27C2390E9ACE522B5620CF61",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83905157,
+          "endRva": 83905274,
+          "sha256": "3150D67C856DF7E8B6EFECE4B1618F8D498819C06F2FE3B5DD34CF79C4BA7305",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 232112,
+          "endRva": 234512,
+          "sha256": "5F6117E1BF3C06C207A4704F97FD5274379D0AB87E93631557C353FF7218E8CB",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 163057452,
+          "endRva": 163057577,
+          "sha256": "225A92E997CBB7F48783D153140CF482764DAC80C0F4107125FAB3AC44ABDC7A",
+          "boundary": "complete pdata body or chained fragment"
+        }
+      ],
+      "instructions": [
+        [
+          83900629,
+          "488BDA488BF948837A38000F84FA03000048C78424C000000000000000488B0D7735640B83B9E0000000000F8456040000488B4338488B2848837D38000F84EC030000488B5D38488B1B488B0D9287740B83B9E0000000000F8433040000",
+          "reader/MethodInfo preservation, result initialization and provider RGCTX"
+        ],
+        [
+          83900732,
+          "83B9E0000000000F842E040000B201488BCBE83D3800FB4C8D6020488B1D42B7710C488B8B80000000FF150D899F0890488B4340483B43380F84BA0300004533ED4C8B734849FFCE498BCCE8345204FB488BF8488B7368448B7B504923FE488D0C7F",
+          "type-key and shared cache lookup setup"
+        ],
+        [
+          83900982,
+          "488BBC24B0000000488B0D2B34640B83B9E0000000000F842F030000803DB6A3710C000F84E9030000488B0D0A34640B83B9E0000000000F8418030000498BCEE8950A0000488BD8BA01000000488B4D38E8440810FB4885DB744B488BD0488B0BE8240F00FB84C0743CB9050000004C8D8C24C00000004C8BC7488BD3E8F84F03FB488B8424C00000004883C468415F415E415D415C5F5E5D5BC3",
+          "provider conversion/type check followed by slot-5 call and result return"
+        ],
+        [
+          83902386,
+          "488B5D38488B1B488B0DF880740B83B9E0000000000F84E70300004885DB0F841F3D2D0283B9E0000000000F84E2030000B201488BCBE8A33100FB4C8D6020488B1DA8B0710C488B8B80000000FF1573829F0890488B4340483B43380F84780300004533ED4C8B734849FFCE498BCCE89A4B04FB488BF8488B7368448B7B504923FE488D0C7F",
+          "out-of-line provider: same RGCTX, type-key and cache setup"
+        ],
+        [
+          83902672,
+          "488B0D992D640B83B9E0000000000F84EB020000803D249D710C000F84A5030000488B0D782D640B83B9E0000000000F84D4020000498BCEE803040000488BD8BA01000000488B4D38E8B20110FB4885DB7435488BD0488B0BE8920800FB84C07426488BC3488B9C24B00000004883C460415F415E415D415C5F5E5DC3",
+          "out-of-line provider: same converter/type-check and returned formatter"
+        ],
+        [
+          163057502,
+          "488B0D0B5FAC0648C744243800000000E84D2148F6488B4B38488B09E8113048FB4885C07415B9050000004C8D4C24384C8BC7488BD0E8177B4BF6488B442438488B5C24304883C4205FC3",
+          "registered generic read: null result, provider, slot-5 call, return"
+        ],
+        [
+          232132,
+          "4D8BE94D8BF8488BFA0FB7D9488B0AE818C1FCFF488D4B144803C9488B074C8B14C8488B5CC808",
+          "shared dispatch preserves operands and reads slot (20+5)*16"
+        ],
+        [
+          234405,
+          "4C8BCB4D8BC5498BD7488BCF41FFD2",
+          "shared dispatch generic fallback forwards formatter, reader, result address and MethodInfo"
+        ]
+      ]
+    },
+    {
+      "claim": "MemoryPack.MemoryPackReader.ReadArray",
+      "targetRva": 99317328,
+      "equivalentMethod": [
+        550353,
+        "MemoryPack.MemoryPackReader",
+        "ReadArray"
+      ],
+      "equivalentBody": {
+        "rva": 163042776,
+        "methodSpecIndex": 535769,
+        "genericMethodPointerSlot": 505271
+      },
+      "bodyRoots": [
+        99317328,
+        87579520,
+        83902352,
+        83903760,
+        163042776
+      ],
+      "proof": {
+        "inputs": "RCX reader is saved in RBX; RDX MethodInfo is saved in RDI, initialized and dereferenced through RGCTX[0]. A null result local replaces the byref argument of the shared helper.",
+        "registeredBody": "Registered ReadArray<System.Object> initializes a null local, passes reader, &local and MethodInfo.RGCTX[0] to 0x185385b80, then returns local. The anonymous clone inlines this same helper, saving the local at stack+0x40.",
+        "header": "Both ensure four readable bytes with the same GetNextSpan/advance-slow helpers; load signed Int32 at reader+0x50; subtract four from remaining, advance cursor/consumed/offset by four; check totalLength-consumed against signed count and throw through the same insufficient-buffer target.",
+        "cases": "Count -1 stores null, count zero obtains the same RGCTX[1] cached empty array, otherwise reuse a correctly sized array or allocate count elements from RGCTX[2]. The clone local is initially null, so the reuse arm is initially ineligible. All stores retain GC barrier paths.",
+        "elements": "Both obtain the formatter through the same provider using RGCTX[3], loop from zero to count, check array/formatter and bounds, then pass formatter in RCX, reader in RDX, &array[32+index*8] in R8, and virtual MethodInfo in R9 to the identical vtable slot at +0x190/+0x198. Return local after the last element.",
+        "boundary": "This target proves ReadArray, not ReadValue. The reviewed context MethodSpec must name ReadArray."
+      },
+      "codeWindows": [
+        {
+          "startRva": 99317328,
+          "endRva": 99318151,
+          "sha256": "F50521BA6735EDB81F68A150B026E5AD3059E2767F080A5478DA4ED4C7E46322",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 87579520,
+          "endRva": 87579698,
+          "sha256": "EFB7792D3ED2A61645BBFC0CBB6E8FD2D902161D5200FB518497B2B68ADBB969",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 87579698,
+          "endRva": 87579973,
+          "sha256": "170939CB85BDFACA30A12F909B619970D7F2733AFA731AF6B630C2147CA8525E",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 87579973,
+          "endRva": 87580281,
+          "sha256": "650351BA1EE7FD75F0C1DB7B535457629C8F59FCF650504722E1284965F5EF3F",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 87580281,
+          "endRva": 87580293,
+          "sha256": "5C54437C7EF45E4E9DE82C1BAF802AB96FEC2D56C5F72273F6FF7E59EFF0A6CE",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83902352,
+          "endRva": 83903675,
+          "sha256": "463015EFFA8E4F1FE29B44299B2165BE7CB0779D675D5C467241717957BD901D",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 120421540,
+          "endRva": 120421629,
+          "sha256": "4E9948678A37F58C81E6888BE51434B7D556C8DC0738D2479DB0449C11430A09",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83903760,
+          "endRva": 83903970,
+          "sha256": "ECB2E0AD1B44AC77EDEB22F41898D621324C7F6A7304F9819C4DE3C3E893AB76",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83903970,
+          "endRva": 83905092,
+          "sha256": "CB2E6F80CD50466F9A9411F4EB7058E4CA720C2EC48BDDE5C1130E8C334C2FF2",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83905092,
+          "endRva": 83905151,
+          "sha256": "5039CA4ED8208765BE108A5378515D082346C78FD6C0AFE76F88C74832004711",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83905151,
+          "endRva": 83905157,
+          "sha256": "9B24BA47FB82D47021ED85180A6FADFCC1CAF9BA27C2390E9ACE522B5620CF61",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 83905157,
+          "endRva": 83905274,
+          "sha256": "3150D67C856DF7E8B6EFECE4B1618F8D498819C06F2FE3B5DD34CF79C4BA7305",
+          "boundary": "complete pdata body or chained fragment"
+        },
+        {
+          "startRva": 163042776,
+          "endRva": 163042852,
+          "sha256": "36C171E76E1C4002146E484570C70E2C1A393290F2189945017FA6BFB66A16A1",
+          "boundary": "complete pdata body or chained fragment"
+        }
+      ],
+      "instructions": [
+        [
+          99317346,
+          "48837A3800488BFA488BD97508488BCAE8A95719FA488B473833F64889742440488B3848397738751A488D0DDEF7780AE8099E18FA483977387508488BCFE87B5719FA",
+          "clone RGCTX and null result local"
+        ],
+        [
+          99317413,
+          "837B30047D104533C0BA04000000488BCBE8F5BDA006488B43508B28448B73304183C6FC7911BA04000000488BCBE85C67BF0284C07511488343500483434004834344044489733048634344488B4B18482BC84863C5483BC80F8C6D02000083FDFF0F84EE01000085ED0F8421010000",
+          "clone four-byte signed header, cursor updates, bounds and sentinel branches"
+        ],
+        [
+          99317673,
+          "488B0DC0F6780A39B1E00000007505E823EE15FA488B4F38488B4918E8C6C714FF4C8BF085ED0F8E840100006666660F1F840000000000488B7C24404885FF0F84930100004D85F60F848A0100003B77180F837B010000498B0EE8E8D314FA4D8B0E488BD38BC6498BCE4883C0044C8D04C7498B81900100004D8B8998010000FFD0FFC63BF57CAFE923010000",
+          "clone same formatter provider and per-element slot/dataflow"
+        ],
+        [
+          99317814,
+          "488B4738488B5808483973387508488BCBE8D45519FA488B4338488B00F68038010000017508488BC8E83C9E18FA39B0E00000007508488BC8E86CED15FA488B4338488B00F68038010000017508488BC8E8149E18FA39359E6B860B488B80B8000000488B0848894C24400F84B2000000",
+          "clone zero-length cached array"
+        ],
+        [
+          99318011,
+          "39352F6B860B48897424407451",
+          "clone null sentinel"
+        ],
+        [
+          99318105,
+          "488B442440488B5C2450488B6C24584883C420415E5F5EC333D28BCDE802DCA006CC",
+          "clone result return and insufficient-buffer exception"
+        ],
+        [
+          163042807,
+          "4C8B4338488D54243848C744243800000000488BCF4D8B00E86C8580FB488B442438488B5C24304883C4205FC3",
+          "registered ReadArray: null local and forwarding helper"
+        ],
+        [
+          87579581,
+          "837E30047D104533C0BA04000000488BCEE8DDD85307488B4650448B388B6E3083C5FC7911BA04000000488BCEE84582720384C0751048834650048346400483464404896E3048634644488B4E18482BC84963C7483BC80F8C540200004183FFFF0F95C084C00F84E50100004585FF0F8426010000",
+          "shared helper same signed header/cursor/bounds/sentinels"
+        ],
+        [
+          87579855,
+          "488B4F38488B4918E8B4E2C7FF33ED4C8BF04585FF7E5A66660F1F840000000000488B3B4885FF0F84830100004D85F60F847A0100003B6F180F836B010000498B0EE8DAEEC7FA4D8B0E488BD68BC5498BCE4883C0044C8D04C7498B81900100004D8B8998010000FFD0FFC5413BEF7CB0",
+          "shared helper same provider and element vtable call"
+        ],
+        [
+          87579992,
+          "488B4738488B780848837F38007508488BCFE8B170CCFA488B4738488B00F68038010000017508488BC8E819B9CBFA83B8E0000000007508488BC8E84808C9FA488B4738488B00F68038010000017508488BC8E8F0B8CBFA833D7986390C00488B80B8000000488B0848890B0F847BFFFFFF",
+          "shared helper zero-length cached array"
+        ],
+        [
+          87580174,
+          "33ED392D1A86390C48892B0F8426FFFFFF",
+          "shared helper null sentinel"
+        ]
+      ]
+    }
+  ]
+}

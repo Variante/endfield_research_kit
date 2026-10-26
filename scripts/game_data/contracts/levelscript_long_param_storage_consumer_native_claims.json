@@ -4,7 +4,7 @@
   "dependencies": [
     {"role": "storage", "path": "levelscript_long_param_native.json"},
     {"role": "consumer", "path": "levelscript_long_param_value_native_claims.json"},
-    {"role": "utf8Source", "path": "memorypack_utf8_source_helper_native.json"}
+    {"role": "pooledStringSource", "path": "memorypack_pooled_string_reader_native.json"}
   ],
   "claims": {
     "sameConcreteWrapperAndParameter": true,

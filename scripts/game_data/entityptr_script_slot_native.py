@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -37,7 +36,6 @@ NATIVE_MAPPING_ID = "entityptr-current-script-slot.v2"
 FIELD_LOAD_WINDOW = 0x40
 
 
-@lru_cache(maxsize=1)
 def load_entityptr_script_slot_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[str, Any], dict[str, Any]]:

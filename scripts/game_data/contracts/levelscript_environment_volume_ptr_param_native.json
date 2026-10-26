@@ -1,0 +1,1282 @@
+{
+  "schema": "endfield.levelscript-environment-volume-ptr-param-native.v2",
+  "status": "exact-current-build",
+  "codecKind": "Param<EnvironmentVolumePtr>",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+  },
+  "dependencies": [
+    {
+      "role": "pooledStringSource",
+      "path": "memorypack_pooled_string_reader_native.json"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Ordinary typed scalar constant source/cursor and four-field owned Param composition; the path consumes a signed StringPool index through the independently authenticated BeyondReadString clone.",
+    "conditional": "Selected default generated wrapper, normal allocator/metadata initialization/barrier, compatible disjoint reader/storage and buffered scalar path. String paths select the initialized pool-present branch; non-sentinel paths require the independently supplied matching exported StringPool. Native pool instance/file identity and live selection are not observed.",
+    "unresolved": "Environment-volume selection/enablement, live provider/cache/pool identity and runtime execution."
+  },
+  "leaf": {
+    "typeDefinition": 13072,
+    "typeName": "Beyond.Gameplay.Core.EnvironmentVolumePtr",
+    "fieldName": "id",
+    "fieldType": "ulong",
+    "fieldKind": 11,
+    "rawSize": 8,
+    "wrapperTypeDefinition": 51086,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnvironmentVolumePtrForMemoryPack",
+    "methods": {
+      "GetValue": {
+        "methodIndex": 269872,
+        "pointerRva": 43147504,
+        "window": {
+          "startRva": 43147504,
+          "endRva": 43147509,
+          "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+        },
+        "instructions": [
+          [
+            43147504,
+            "488B4110"
+          ],
+          [
+            43147508,
+            "C3"
+          ]
+        ]
+      },
+      "set___id__": {
+        "methodIndex": 269874,
+        "pointerRva": 90289568,
+        "window": {
+          "startRva": 90289568,
+          "endRva": 90289573,
+          "sha256": "85C6D406A2744A18DCBE3267FE98569C0232097F55C324D669E5120955289415"
+        },
+        "instructions": [
+          [
+            90289568,
+            "48895110"
+          ],
+          [
+            90289572,
+            "C3"
+          ]
+        ]
+      }
+    }
+  },
+  "parameter": {
+    "typeDefinition": 56672,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_EnvironmentVolumePtr_ForMemoryPack",
+    "wrappedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EnvironmentVolumePtr>",
+    "members": [
+      {
+        "name": "constValue",
+        "declaredType": "Beyond.Gameplay.Core.EnvironmentVolumePtr",
+        "methodIndex": 306997
+      },
+      {
+        "name": "idRef",
+        "declaredType": "int",
+        "methodIndex": 306998
+      },
+      {
+        "name": "paramSource",
+        "declaredType": "int",
+        "methodIndex": 306999
+      },
+      {
+        "name": "path",
+        "declaredType": "string",
+        "methodIndex": 307000
+      }
+    ],
+    "methods": {
+      "Deserialize": {
+        "methodIndex": 307003,
+        "pointerRva": 113692880,
+        "window": {
+          "startRva": 113692880,
+          "endRva": 113693172,
+          "sha256": "AEAB451C38A74F86062E55720E61CF5466135FDC9ED44936A4AA1437D885E5D6"
+        },
+        "instructions": [
+          [
+            113692880,
+            "48895C2418"
+          ],
+          [
+            113692885,
+            "57"
+          ],
+          [
+            113692886,
+            "4883EC20"
+          ],
+          [
+            113692890,
+            "803D4F09AC0A00"
+          ],
+          [
+            113692897,
+            "488BDA"
+          ],
+          [
+            113692900,
+            "488BF9"
+          ],
+          [
+            113692903,
+            "0F84CB000000"
+          ],
+          [
+            113692909,
+            "488D542430"
+          ],
+          [
+            113692914,
+            "C644243000"
+          ],
+          [
+            113692919,
+            "488BCF"
+          ],
+          [
+            113692922,
+            "E8712C37FE"
+          ],
+          [
+            113692927,
+            "84C0"
+          ],
+          [
+            113692929,
+            "0F84466CB200"
+          ],
+          [
+            113692935,
+            "4889742438"
+          ],
+          [
+            113692940,
+            "48833B00"
+          ],
+          [
+            113692944,
+            "0F84CC6BB200"
+          ],
+          [
+            113692950,
+            "0FB6742430"
+          ],
+          [
+            113692955,
+            "4080FE04"
+          ],
+          [
+            113692959,
+            "0F85F06BB200"
+          ],
+          [
+            113692965,
+            "488B1594B2B009"
+          ],
+          [
+            113692972,
+            "488BCF"
+          ],
+          [
+            113692975,
+            "488B33"
+          ],
+          [
+            113692978,
+            "E88995FBFF"
+          ],
+          [
+            113692983,
+            "4885F6"
+          ],
+          [
+            113692986,
+            "7476"
+          ],
+          [
+            113692988,
+            "4533C0"
+          ],
+          [
+            113692991,
+            "488BD0"
+          ],
+          [
+            113692994,
+            "488BCE"
+          ],
+          [
+            113692997,
+            "E88A92BC00"
+          ],
+          [
+            113693002,
+            "488B33"
+          ],
+          [
+            113693005,
+            "488BCF"
+          ],
+          [
+            113693008,
+            "E8FB2437FE"
+          ],
+          [
+            113693013,
+            "4885F6"
+          ],
+          [
+            113693016,
+            "7458"
+          ],
+          [
+            113693018,
+            "4533C0"
+          ],
+          [
+            113693021,
+            "8BD0"
+          ],
+          [
+            113693023,
+            "488BCE"
+          ],
+          [
+            113693026,
+            "E8F57FBC00"
+          ],
+          [
+            113693031,
+            "488B33"
+          ],
+          [
+            113693034,
+            "488BCF"
+          ],
+          [
+            113693037,
+            "E8DE2437FE"
+          ],
+          [
+            113693042,
+            "4885F6"
+          ],
+          [
+            113693045,
+            "743B"
+          ],
+          [
+            113693047,
+            "4533C0"
+          ],
+          [
+            113693050,
+            "8BD0"
+          ],
+          [
+            113693052,
+            "488BCE"
+          ],
+          [
+            113693055,
+            "E8747FBC00"
+          ],
+          [
+            113693060,
+            "488B1B"
+          ],
+          [
+            113693063,
+            "488BCF"
+          ],
+          [
+            113693066,
+            "E8315C58FE"
+          ],
+          [
+            113693071,
+            "4885DB"
+          ],
+          [
+            113693074,
+            "741E"
+          ],
+          [
+            113693076,
+            "4533C0"
+          ],
+          [
+            113693079,
+            "488BD0"
+          ],
+          [
+            113693082,
+            "488BCB"
+          ],
+          [
+            113693085,
+            "E8DEDD57FE"
+          ],
+          [
+            113693090,
+            "488B742438"
+          ],
+          [
+            113693095,
+            "488B5C2440"
+          ],
+          [
+            113693100,
+            "4883C420"
+          ],
+          [
+            113693104,
+            "5F"
+          ],
+          [
+            113693105,
+            "C3"
+          ],
+          [
+            113693106,
+            "E8891747F9"
+          ],
+          [
+            113693111,
+            "CC"
+          ],
+          [
+            113693112,
+            "488D0DD1B1B009"
+          ],
+          [
+            113693119,
+            "E8DC423DF9"
+          ],
+          [
+            113693124,
+            "488D0DBDB1B009"
+          ],
+          [
+            113693131,
+            "E8D0423DF9"
+          ],
+          [
+            113693136,
+            "488D0DE9B1B009"
+          ],
+          [
+            113693143,
+            "E8C4423DF9"
+          ],
+          [
+            113693148,
+            "488D0DD5EEAD09"
+          ],
+          [
+            113693155,
+            "E8B8423DF9"
+          ],
+          [
+            113693160,
+            "C6054108AC0A01"
+          ],
+          [
+            113693167,
+            "E9F9FEFFFF"
+          ]
+        ]
+      },
+      ".ctor": {
+        "methodIndex": 306992,
+        "pointerRva": 118096592,
+        "window": {
+          "startRva": 118096592,
+          "endRva": 118096691,
+          "sha256": "00C32588727591D5EBD2847A933811DF4B499EE7F6125A7B0E0AE1326E1012EF"
+        },
+        "instructions": [
+          [
+            118096592,
+            "4053"
+          ],
+          [
+            118096594,
+            "4883EC20"
+          ],
+          [
+            118096598,
+            "803D51D7680A00"
+          ],
+          [
+            118096605,
+            "488BD9"
+          ],
+          [
+            118096608,
+            "742A"
+          ],
+          [
+            118096610,
+            "488B0D67806D09"
+          ],
+          [
+            118096617,
+            "E8225BF7F8"
+          ],
+          [
+            118096622,
+            "4885C0"
+          ],
+          [
+            118096625,
+            "743A"
+          ],
+          [
+            118096627,
+            "C74028FFFFFFFF"
+          ],
+          [
+            118096634,
+            "488D4B10"
+          ],
+          [
+            118096638,
+            "48894310"
+          ],
+          [
+            118096642,
+            "4883C420"
+          ],
+          [
+            118096646,
+            "5B"
+          ],
+          [
+            118096647,
+            "E9544006F9"
+          ],
+          [
+            118096652,
+            "488D0D4D806D09"
+          ],
+          [
+            118096659,
+            "E88811FAF8"
+          ],
+          [
+            118096664,
+            "488D0D31806D09"
+          ],
+          [
+            118096671,
+            "E87C11FAF8"
+          ],
+          [
+            118096676,
+            "C60503D7680A01"
+          ],
+          [
+            118096683,
+            "EBB5"
+          ],
+          [
+            118096685,
+            "E80EE603F9"
+          ],
+          [
+            118096690,
+            "CC"
+          ]
+        ]
+      },
+      "CreateInstance": {
+        "methodIndex": 306996,
+        "pointerRva": 210042840,
+        "window": {
+          "startRva": 210042840,
+          "endRva": 210042937,
+          "sha256": "A310C3D4329A7947CD9E385E4C386251B9F645C98AFBCF5859A307F274EC90CB"
+        },
+        "instructions": [
+          [
+            210042840,
+            "4053"
+          ],
+          [
+            210042842,
+            "4883EC20"
+          ],
+          [
+            210042846,
+            "803D98D3F00400"
+          ],
+          [
+            210042853,
+            "488BD9"
+          ],
+          [
+            210042856,
+            "751F"
+          ],
+          [
+            210042858,
+            "488D0D6F83F203"
+          ],
+          [
+            210042865,
+            "E8AA147FF3"
+          ],
+          [
+            210042870,
+            "488D0D5383F203"
+          ],
+          [
+            210042877,
+            "E89E147FF3"
+          ],
+          [
+            210042882,
+            "C60574D3F00401"
+          ],
+          [
+            210042889,
+            "488B0D4083F203"
+          ],
+          [
+            210042896,
+            "E8FB5D7CF3"
+          ],
+          [
+            210042901,
+            "4885C0"
+          ],
+          [
+            210042904,
+            "7506"
+          ],
+          [
+            210042906,
+            "E821E988F3"
+          ],
+          [
+            210042911,
+            "CC"
+          ],
+          [
+            210042912,
+            "C74028FFFFFFFF"
+          ],
+          [
+            210042919,
+            "488D4B10"
+          ],
+          [
+            210042923,
+            "48894310"
+          ],
+          [
+            210042927,
+            "4883C420"
+          ],
+          [
+            210042931,
+            "5B"
+          ],
+          [
+            210042932,
+            "E927438BF3"
+          ]
+        ]
+      },
+      "GetValue": {
+        "methodIndex": 306995,
+        "pointerRva": 43147504,
+        "window": {
+          "startRva": 43147504,
+          "endRva": 43147509,
+          "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+        },
+        "instructions": [
+          [
+            43147504,
+            "488B4110"
+          ],
+          [
+            43147508,
+            "C3"
+          ]
+        ]
+      },
+      "set___constValue__": {
+        "methodIndex": 306997,
+        "pointerRva": 126051284,
+        "window": {
+          "startRva": 126051284,
+          "endRva": 126051312,
+          "sha256": "3A315F705A3BC1C2B270DA015DE76D184363A9B29BB55434F123002027ABA35B"
+        },
+        "instructions": [
+          [
+            126051284,
+            "4883EC28"
+          ],
+          [
+            126051288,
+            "488B4110"
+          ],
+          [
+            126051292,
+            "4885C0"
+          ],
+          [
+            126051295,
+            "7506"
+          ],
+          [
+            126051297,
+            "E85A858AF8"
+          ],
+          [
+            126051302,
+            "CC"
+          ],
+          [
+            126051303,
+            "48895020"
+          ],
+          [
+            126051307,
+            "4883C428"
+          ],
+          [
+            126051311,
+            "C3"
+          ]
+        ]
+      },
+      "set___idRef__": {
+        "methodIndex": 306998,
+        "pointerRva": 126046556,
+        "window": {
+          "startRva": 126046556,
+          "endRva": 126046583,
+          "sha256": "7070EFDAC44B95D065DAF277629480A9FAC7498F8B4DF388EC48976A8C436A65"
+        },
+        "instructions": [
+          [
+            126046556,
+            "4883EC28"
+          ],
+          [
+            126046560,
+            "488B4110"
+          ],
+          [
+            126046564,
+            "4885C0"
+          ],
+          [
+            126046567,
+            "7506"
+          ],
+          [
+            126046569,
+            "E8D2978AF8"
+          ],
+          [
+            126046574,
+            "CC"
+          ],
+          [
+            126046575,
+            "895028"
+          ],
+          [
+            126046578,
+            "4883C428"
+          ],
+          [
+            126046582,
+            "C3"
+          ]
+        ]
+      },
+      "set___paramSource__": {
+        "methodIndex": 306999,
+        "pointerRva": 126046456,
+        "window": {
+          "startRva": 126046456,
+          "endRva": 126046483,
+          "sha256": "DC6B41838B5D15D97654EEA8C298225F58B42B73007367EDC36F11CDF19F0932"
+        },
+        "instructions": [
+          [
+            126046456,
+            "4883EC28"
+          ],
+          [
+            126046460,
+            "488B4110"
+          ],
+          [
+            126046464,
+            "4885C0"
+          ],
+          [
+            126046467,
+            "7506"
+          ],
+          [
+            126046469,
+            "E836988AF8"
+          ],
+          [
+            126046474,
+            "CC"
+          ],
+          [
+            126046475,
+            "895010"
+          ],
+          [
+            126046478,
+            "4883C428"
+          ],
+          [
+            126046482,
+            "C3"
+          ]
+        ]
+      },
+      "set___path__": {
+        "methodIndex": 307000,
+        "pointerRva": 85897088,
+        "window": {
+          "startRva": 85897088,
+          "endRva": 85897124,
+          "sha256": "CE85982081BE3B661C6213E5F4306CF41CD2C51D86F020418D02E97689C6B43C"
+        },
+        "instructions": [
+          [
+            85897088,
+            "4883EC28"
+          ],
+          [
+            85897092,
+            "488B4910"
+          ],
+          [
+            85897096,
+            "4885C9"
+          ],
+          [
+            85897099,
+            "7411"
+          ],
+          [
+            85897101,
+            "48895118"
+          ],
+          [
+            85897105,
+            "4883C118"
+          ],
+          [
+            85897109,
+            "4883C428"
+          ],
+          [
+            85897113,
+            "E9C293F1FA"
+          ],
+          [
+            85897118,
+            "E89D39EFFA"
+          ],
+          [
+            85897123,
+            "CC"
+          ]
+        ]
+      }
+    },
+    "orderedReads": [
+      {
+        "name": "constValue",
+        "declaredType": "Beyond.Gameplay.Core.EnvironmentVolumePtr",
+        "setterMethodIndex": 306997,
+        "readCall": [
+          113692978,
+          "E88995FBFF",
+          113403584
+        ],
+        "setterCall": [
+          113692997,
+          "E88A92BC00",
+          126051284
+        ],
+        "readerSetup": [
+          [
+            113692972,
+            "488BCF"
+          ],
+          [
+            113692975,
+            "488B33"
+          ]
+        ],
+        "returnToSetter": [
+          [
+            113692983,
+            "4885F6"
+          ],
+          [
+            113692986,
+            "7476"
+          ],
+          [
+            113692988,
+            "4533C0"
+          ],
+          [
+            113692991,
+            "488BD0"
+          ],
+          [
+            113692994,
+            "488BCE"
+          ]
+        ]
+      },
+      {
+        "name": "idRef",
+        "declaredType": "int",
+        "setterMethodIndex": 306998,
+        "readCall": [
+          113693008,
+          "E8FB2437FE",
+          83752528
+        ],
+        "setterCall": [
+          113693026,
+          "E8F57FBC00",
+          126046556
+        ],
+        "readerSetup": [
+          [
+            113693002,
+            "488B33"
+          ],
+          [
+            113693005,
+            "488BCF"
+          ]
+        ],
+        "returnToSetter": [
+          [
+            113693013,
+            "4885F6"
+          ],
+          [
+            113693016,
+            "7458"
+          ],
+          [
+            113693018,
+            "4533C0"
+          ],
+          [
+            113693021,
+            "8BD0"
+          ],
+          [
+            113693023,
+            "488BCE"
+          ]
+        ]
+      },
+      {
+        "name": "paramSource",
+        "declaredType": "int",
+        "setterMethodIndex": 306999,
+        "readCall": [
+          113693037,
+          "E8DE2437FE",
+          83752528
+        ],
+        "setterCall": [
+          113693055,
+          "E8747FBC00",
+          126046456
+        ],
+        "readerSetup": [
+          [
+            113693031,
+            "488B33"
+          ],
+          [
+            113693034,
+            "488BCF"
+          ]
+        ],
+        "returnToSetter": [
+          [
+            113693042,
+            "4885F6"
+          ],
+          [
+            113693045,
+            "743B"
+          ],
+          [
+            113693047,
+            "4533C0"
+          ],
+          [
+            113693050,
+            "8BD0"
+          ],
+          [
+            113693052,
+            "488BCE"
+          ]
+        ]
+      },
+      {
+        "name": "path",
+        "declaredType": "string",
+        "setterMethodIndex": 307000,
+        "readCall": [
+          113693066,
+          "E8315C58FE",
+          85929408
+        ],
+        "setterCall": [
+          113693085,
+          "E8DEDD57FE",
+          85897088
+        ],
+        "readerSetup": [
+          [
+            113693060,
+            "488B1B"
+          ],
+          [
+            113693063,
+            "488BCF"
+          ]
+        ],
+        "returnToSetter": [
+          [
+            113693071,
+            "4885DB"
+          ],
+          [
+            113693074,
+            "741E"
+          ],
+          [
+            113693076,
+            "4533C0"
+          ],
+          [
+            113693079,
+            "488BD0"
+          ],
+          [
+            113693082,
+            "488BCB"
+          ]
+        ]
+      }
+    ],
+    "allocationContext": {
+      "instructionRva": 118096610,
+      "instructionHex": "488B0D67806D09",
+      "usageCellRva": 276267856,
+      "usageRawHex": "5BFA012000000000",
+      "tag": 1,
+      "typeIndex": 64813,
+      "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EnvironmentVolumePtr>",
+      "typeRawHex": "90D78C90010000000000150000000000"
+    },
+    "ownedFieldSlots": {
+      "constValue": 32,
+      "idRef": 40,
+      "paramSource": 16,
+      "path": 24
+    },
+    "memberCountInstruction": [
+      113692955,
+      "4080FE04"
+    ]
+  },
+  "constantSource": {
+    "typedContext": {
+      "instructionRva": 113692965,
+      "instructionHex": "488B1594B2B009",
+      "usageCellRva": 276267968,
+      "usageRawHex": "755A10C000000000",
+      "tag": 6,
+      "methodSpecIndex": 535866,
+      "methodSpec": [
+        550332,
+        -1,
+        6722
+      ],
+      "typeName": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadUnmanaged",
+      "classArguments": [],
+      "methodArguments": [
+        "Beyond.Gameplay.Core.EnvironmentVolumePtr"
+      ]
+    },
+    "registeredMethod": 550332,
+    "registeredEntry": {
+      "pointer": 6605500212,
+      "methodSpecIndex": 535866,
+      "registration": {
+        "tableIndex": 505818,
+        "va": 6701055136,
+        "methodSpecIndex": 535866,
+        "rawHex": "3A2D080010B60700FB200100FFFFFFFF",
+        "indices": [
+          505360,
+          73979,
+          -1
+        ]
+      },
+      "classInstantiation": {
+        "index": -1,
+        "table_slot_va": null,
+        "record_va": null,
+        "argument_vector_va": null,
+        "padding_hex": "",
+        "arguments": []
+      },
+      "methodInstantiation": {
+        "index": 6722,
+        "table_slot_va": 6679735632,
+        "record_va": 6679399056,
+        "argument_vector_va": 6727584840,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6719804496,
+            "raw_type_record_hex": "10330000000000000000118000000000"
+          }
+        ]
+      },
+      "methodDefinitionIndices": [
+        550332
+      ],
+      "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+    },
+    "actualEqualsRegistered": false,
+    "window": {
+      "startRva": 113403584,
+      "endRva": 113403641,
+      "sha256": "FA158CF5478D686C5065326C89B2DF1DBD9931E60C14EE701A3CA90AB93233E0"
+    },
+    "instructions": [
+      [
+        113403584,
+        "48895C2408"
+      ],
+      [
+        113403589,
+        "57"
+      ],
+      [
+        113403590,
+        "4883EC20"
+      ],
+      [
+        113403594,
+        "83793008"
+      ],
+      [
+        113403598,
+        "488BF9"
+      ],
+      [
+        113403601,
+        "0F8C1D72B600"
+      ],
+      [
+        113403607,
+        "488B5F50"
+      ],
+      [
+        113403611,
+        "BA08000000"
+      ],
+      [
+        113403616,
+        "488BCF"
+      ],
+      [
+        113403619,
+        "488B1B"
+      ],
+      [
+        113403622,
+        "E865973BFE"
+      ],
+      [
+        113403627,
+        "488BC3"
+      ],
+      [
+        113403630,
+        "488B5C2430"
+      ],
+      [
+        113403635,
+        "4883C420"
+      ],
+      [
+        113403639,
+        "5F"
+      ],
+      [
+        113403640,
+        "C3"
+      ]
+    ],
+    "advance": {
+      "pointerRva": 83754576,
+      "window": {
+        "startRva": 83754576,
+        "endRva": 83754641,
+        "sha256": "798871A4E95E154AB0AAC0B29AA0682DFCFC6473976E7270D5C74FAAA3532ABA"
+      },
+      "fragmentWindows": [
+        {
+          "startRva": 83754596,
+          "endRva": 83754640,
+          "sha256": "D108697763A7CCE8BB7D1EBC367F2515321CFF391C7B7152AF651B86BF079111"
+        },
+        {
+          "startRva": 83754640,
+          "endRva": 83754641,
+          "sha256": "AE3F4619B0413D70D3004B9131C3752153074E45725BE13B9A148978895E359E"
+        },
+        {
+          "startRva": 120410922,
+          "endRva": 120410942,
+          "sha256": "16FBBADC19B00C2EB14CE33A7D3DDBFDEF95EFE35C0ED7D5DF9D234193733FBC"
+        }
+      ]
+    }
+  },
+  "int32Source": {
+    "window": {
+      "startRva": 83752528,
+      "endRva": 83752608,
+      "sha256": "C1D63B45B187409C02CE9DC3291CDDC2ED578D0B4080B37C62CD3333DC5B4A6B"
+    },
+    "instructions": [
+      [
+        83752528,
+        "48895C2408"
+      ],
+      [
+        83752533,
+        "4889742410"
+      ],
+      [
+        83752538,
+        "57"
+      ],
+      [
+        83752539,
+        "4883EC20"
+      ],
+      [
+        83752543,
+        "83793004"
+      ],
+      [
+        83752547,
+        "488BD9"
+      ],
+      [
+        83752550,
+        "0F8CBEDD4302"
+      ],
+      [
+        83752556,
+        "488B4350"
+      ],
+      [
+        83752560,
+        "8B30"
+      ],
+      [
+        83752562,
+        "8B7B30"
+      ],
+      [
+        83752565,
+        "83C7FC"
+      ],
+      [
+        83752568,
+        "0F88BFDD4302"
+      ],
+      [
+        83752574,
+        "4883435004"
+      ],
+      [
+        83752579,
+        "83434004"
+      ],
+      [
+        83752583,
+        "83434404"
+      ],
+      [
+        83752587,
+        "897B30"
+      ],
+      [
+        83752590,
+        "488B5C2430"
+      ],
+      [
+        83752595,
+        "8BC6"
+      ],
+      [
+        83752597,
+        "488B742438"
+      ],
+      [
+        83752602,
+        "4883C420"
+      ],
+      [
+        83752606,
+        "5F"
+      ],
+      [
+        83752607,
+        "C3"
+      ]
+    ]
+  }
+}

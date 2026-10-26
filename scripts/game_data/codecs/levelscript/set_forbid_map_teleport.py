@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from scripts.game_data.memorypack.core import memorypack_union_header
 
 from .action_map import ActionMapCodecError, _Cursor
 
@@ -24,14 +25,15 @@ def decode_set_forbid_map_teleport_action(
     if (
         route.get("family") != "ActionBase"
         or route.get("typeName") != _TYPE
-        or route.get("tag") != 0x041A
+        or type(route.get("tag")) is not int or not 0 <= route["tag"] <= 0xFFFF
         or route.get("serializedMemberCount") != 10
         or route.get("fields") != _FIELDS
     ):
         raise ActionMapCodecError("setForbidMapTeleport:invalid-route")
-    if offset < 0 or data[offset:offset + 4] != b"\xfa\x1a\x04\x0a":
+    header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
+    if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"setForbidMapTeleport:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + 4)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in _FIELDS:
@@ -40,7 +42,7 @@ def decode_set_forbid_map_teleport_action(
         spans[name] = [start, cursor.offset]
     return {
         "sourceOffset": offset, "endOffset": cursor.offset,
-        "unionTag": 0x041A, "memberCount": 10,
+        "unionTag": route["tag"], "memberCount": 10,
         "wrapperName": route["wrapperName"],
         "fields": values, "fieldSpans": spans,
     }, cursor.offset

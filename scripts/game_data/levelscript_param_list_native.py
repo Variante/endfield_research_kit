@@ -12,7 +12,6 @@ graph execution or what a parameter reference means.
 """
 from __future__ import annotations
 
-from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
@@ -26,7 +25,6 @@ CONTRACT_PATH = CONTRACTS_DIR / "levelscript_param_list.json"
 SCHEMA = "endfield.levelscript-template-param-list-native.v1"
 
 
-@lru_cache(maxsize=4)
 def load_param_list_for_graph_contract(
     *, game_root: Path | None = None, contract_path: Path = CONTRACT_PATH,
 ) -> tuple[dict[str, Any] | None, dict[str, Any]]:

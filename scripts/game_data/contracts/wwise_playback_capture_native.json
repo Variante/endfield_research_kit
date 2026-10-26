@@ -1,11 +1,11 @@
 {
-  "schema": "endfield.wwise-playback-observer.v3",
+  "schema": "endfield.wwise-playback-observer.v4",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "hooks": [
     {
@@ -39,7 +39,7 @@
         {
           "name": "defaultComponent",
           "argIndex": 5,
-          "offset": 3429176,
+          "offset": 3429240,
           "kind": "pointer"
         },
         {
@@ -1283,7 +1283,7 @@
         {
           "name": "outputRegistryHead",
           "argIndex": 5,
-          "offset": 3429840,
+          "offset": 3429904,
           "kind": "pointer"
         }
       ],
@@ -1413,10 +1413,10 @@
     }
   ],
   "evidenceBoundary": {
-    "exact": "Borrowed complete selected native consumer groups and reviewed operand layouts supply the sites; no duplicate code catalog is owned here.",
+    "exact": "Borrowed complete current native consumer groups, current caller argument retention and pointer-array use, reviewed field layouts and explicit RIP-global read bindings supply the sites; no duplicate code catalog is owned here.",
     "direct": "Paired pointer getters, owner routing, source sample output, parameter value output, available-frame request and normal Action execution preserve same-call results and nesting. Entry-only consumers retain their declared raw arguments and field reads.",
     "structuralOnly": "Raw scalar and bounded byte prefixes preserve observed state. Prefixes are not whole vectors or whole PCM buffers, and snapshots are not atomic.",
-    "conditional": "Readability, observed branches, explicit object/default selection and retained allocation validity apply per observation. Post-read current value bits require native success; native integer output status is not a Windows HRESULT.",
+    "conditional": "Readability, observed branches, explicit object/default selection and retained allocation validity apply per observation. Post-read current value bits require native success; native integer output status is not a Windows HRESULT. Current declarations establish static argument/read/forwarding shape. Historical execution or PCM cohorts were not rerun by this port.",
     "unresolved": "Complete cross-thread allocation generations, unobserved route branches, full bus/effect graphs, individual COM GetBuffer/ReleaseBuffer HRESULTs and audibility."
   },
   "argumentScope": "Transparent entries preserve and sample the first four integer registers and low128 bits of XMM0..XMM5. Additional stack inputs remain unobserved. Paired calls observe only their reviewed pointer/integer prototype; parameter lookup explicitly forwards and records its fifth stack input.",
@@ -1457,7 +1457,41 @@
       "bodyOffset": 41,
       "instructionHex": "4d8be1",
       "useBodyOffset": 384,
-      "useInstructionHex": "498b5434fc"
+      "useInstructionHex": "4f8b4c3cfc"
+    }
+  ],
+  "globalArguments": [
+    {
+      "hookKind": "ownerRoutingConsumer",
+      "fieldName": "defaultComponent",
+      "ownerContract": "wwise_inheritance_native",
+      "ownerGroup": "defaultComponentGetter",
+      "rva": "0x53a34",
+      "instructionHex": "488b053d192f00"
+    },
+    {
+      "hookKind": "pcmFrameConsumer",
+      "fieldName": "engineSampleRate",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkServiceSetup",
+      "rva": "0x198460",
+      "instructionHex": "8b0d96751900"
+    },
+    {
+      "hookKind": "eventQueueDrain",
+      "fieldName": "engineSampleRate",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "sinkServiceSetup",
+      "rva": "0x198460",
+      "instructionHex": "8b0d96751900"
+    },
+    {
+      "hookKind": "outputConsumer",
+      "fieldName": "outputRegistryHead",
+      "ownerContract": "wwise_voice_pipeline_native",
+      "ownerGroup": "outputRegistryDeviceUpdate",
+      "rva": "0x13a434",
+      "instructionHex": "488b1dd5b12000"
     }
   ]
 }

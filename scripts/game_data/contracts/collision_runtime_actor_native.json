@@ -2,25 +2,25 @@
   "schema": "endfield.collision-runtime-actor-native-contract.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "conditional: typed rigid-static actor registration state and public PxScene from same-call saved windows. State IN_SCENE establishes sampled membership, not continuous lifetime, reverse scene-array coverage, contact reports or physical touch. Empty split-results header arrays are not evidence of absent contacts.",
   "typeName": {
-    "rva": 25939248,
+    "rva": 27618160,
     "ascii": "PxRigidStatic"
   },
   "layout": {
     "actor": {
-      "vtableRva": 25972808,
+      "vtableRva": 27651720,
       "scb": 96,
       "control": 8,
       "stateShift": 30,
       "arrayIndex": 88
     },
     "scene": {
-      "vtableRva": 25970208,
+      "vtableRva": 27649120,
       "fromScb": -16,
       "scb": 16,
       "actorEntries": 9160,
@@ -44,168 +44,168 @@
   "codeWindows": [
     {
       "role": "actor_cleanup_prefix",
-      "rva": 7819744,
+      "rva": 7911712,
       "bytes": 25,
-      "sha256": "aa61b837a379b98c2ee93c07dab514ffb533da6d5fbc66e05fc0b696d804585a",
+      "sha256": "bea4a06ce4e0493d7de71458c6592d70e521a38b87c174786a81facca4ef5056",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "actor_type_name",
-      "rva": 7861248,
+      "rva": 7953216,
       "bytes": 8,
-      "sha256": "e566f5d3263ff592ce813a4943d282f2a8aaaa307b3582b208346fd159c7f961",
+      "sha256": "e71070aa69b26e0bde8caf9423dc9cc8e8d5194d87c1c4987ec81ce6b914d6d9",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "static_release",
-      "rva": 7886896,
+      "rva": 7978864,
       "bytes": 290,
-      "sha256": "263de73e626a1eee853ba1a659fe1115a9b2a3c3951206e7bf7539caa23e24c2",
+      "sha256": "74c2e1067b68925dfa3a528756727d8aa2d20dce976249f790a5d36cd8139855",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "actor_scene_thunk",
-      "rva": 7725504,
+      "rva": 7817472,
       "bytes": 5,
-      "sha256": "1abb3b26c594321a3de9c97050c4fe01da22ab629b030df9b15a5fa86dcd5e8e",
+      "sha256": "a518fef804bcfd043bc84d643184e97321f394a7d149a9c9f5f3c78808465c5f",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "actor_scene",
-      "rva": 7922656,
+      "rva": 8087584,
       "bytes": 46,
-      "sha256": "0064f7252c8d070521ccb4ed73034173b75361aa8009f716f2fd9dd33e435d70",
+      "sha256": "946e067669b672f61c23b775e5cf0cadb4b860024b360f377d44ad6ee5787d2f",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "scb_to_public_scene",
-      "rva": 8141936,
+      "rva": 8306864,
       "bytes": 5,
       "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "scene_cleanup_prefix",
-      "rva": 7814720,
+      "rva": 7906688,
       "bytes": 44,
-      "sha256": "727de2b7a36e35612a39decec8cdfd943264a143bc15f835f4aefd4883906f1f",
+      "sha256": "598aaf0d2add21734d2688a9befff6ec66a7e7fa92fba773f60a76aa9bc4f60d",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "scene_destructor_prefix",
-      "rva": 7819872,
+      "rva": 7911840,
       "bytes": 20,
       "sha256": "fe8e5aec83378a0de7add265bcecf027c3e85ae7dcd7313ab19dedd9e36e0b13",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "collider_detach_prefix",
-      "rva": 2812384,
+      "rva": 2275696,
       "bytes": 49,
-      "sha256": "ce6859d9b31ba02d8da5134c7b24626801a17ca25bca5a75630814f1bcbbbeac",
+      "sha256": "003b0151325059b6caed06af0ab745802b66914c0e0e33f5f15f09ea35ee899b",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "physics_scene_pointer",
-      "rva": 2842144,
+      "rva": 1255888,
       "bytes": 2048,
-      "sha256": "6ccc64020530ff900bfdf74daacbb8802ba0991ebe68ecd26f30c1de5a756ea2",
+      "sha256": "09800da020fd7891bf01d8d8988849926c52602a59a6fdc95dabd23c95d88ed1",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "fetch_results_start",
-      "rva": 7859280,
+      "rva": 7951248,
       "bytes": 251,
-      "sha256": "8e93ca2560dd301101803dc2251a80b5c90ad73d5974a2a7f41efdf4650ebe7a",
+      "sha256": "3596b8b47a7403284f0026a0e704dab894228d9663701226ddca3007a5a4cf40",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "build_contact_headers",
-      "rva": 7997728,
+      "rva": 8162656,
       "bytes": 373,
       "sha256": "448a850910be2bd44a70420f477b675a3729458872c1c8d7d4b9906ad6a55f4d",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "fetch_results",
-      "rva": 7858656,
+      "rva": 7950624,
       "bytes": 255,
-      "sha256": "d793a9a2529b35e2259961adaabbf5f3a18d9eaa49ca8874400308c1bca5488a",
+      "sha256": "2e6dc71f92e2b51a893e2b6c676b80d6c64b0417425fe43cd0a36e05456fa2a6",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "post_callbacks",
-      "rva": 7859008,
+      "rva": 7950976,
       "bytes": 272,
-      "sha256": "b9ff4ed267a672a3fa8d99c4b68aff0741e1b45f30839b9ad458620dbbae4de2",
+      "sha256": "d0bf5996ca84161e3f21b194bd62b2f3213d44ee6f030d5819ca35c93a0f0121",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "report_stream_cleanup",
-      "rva": 8013888,
+      "rva": 8178816,
       "bytes": 226,
-      "sha256": "ee23f151cbe03d2217df2c5cbb507f8903d0aeb7b1fab1559eec0ef6603681f6",
+      "sha256": "b23748477cad901fb3d545652c409c5a0b4dd0946c8accc688ecfc639460b5ab",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "clear_report_actor_pairs",
-      "rva": 8074912,
+      "rva": 8239840,
       "bytes": 286,
       "sha256": "94b4c0d9bc3263aad4f6cae4c4aeedfd0a47aa992aed070c49f94009150896dd",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "dispatch_contact_callbacks",
-      "rva": 7993776,
+      "rva": 8158704,
       "bytes": 362,
       "sha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee",
       "evidenceBoundary": "direct: reviewed instruction window; only declared fields/calls are interpreted"
     },
     {
       "role": "scene_constructor_part_0",
-      "rva": 7942832,
+      "rva": 8107760,
       "bytes": 3000,
-      "sha256": "046d29adef0ce6cebfa00a7f0cc1718047fb42cd0e00c8382be023e921180a37",
+      "sha256": "7ab83db7ee31a11e1a9e6885f88f9b171ee67ad280d600f778f116ac2b69a556",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
     },
     {
       "role": "scene_constructor_part_1",
-      "rva": 7945832,
+      "rva": 8110760,
       "bytes": 3000,
-      "sha256": "bfdfd2f104c77b1e6d1bd05bf75cacb41d28df6a29441489c0d530c0c6fc1387",
+      "sha256": "f654926e9482c53617dada09a5dc4e5fdc215e178bf0e1419b5bb073fb4fefaa",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
     },
     {
       "role": "scene_constructor_part_2",
-      "rva": 7948832,
+      "rva": 8113760,
       "bytes": 3001,
-      "sha256": "6edaa690a262ca19e8c37f584cd4c2391e75060313215ff018f3a95620135f06",
+      "sha256": "d89cd11f9f575a31c4b4f6da955290abdc3a05a2017fe469445c63cb4abfcf04",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
     },
     {
       "role": "callback_setter_entry",
-      "rva": 8045584,
+      "rva": 8210512,
       "bytes": 29,
       "sha256": "2afdf9ca26949b4e426f4f92d45c58b0cea7b5359f4e1212afbbc5cd9de8559f",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
     },
     {
       "role": "callback_setter_body",
-      "rva": 8045615,
+      "rva": 8210543,
       "bytes": 88,
-      "sha256": "c746bf8468c6617ca8e3a678033b0a1bdd17b4dbe62e29ef562fda3a95de83cc",
+      "sha256": "b9751c7edd463981d70d8e9cda579cc114736597651e6f2c253d6021272d8f2f",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
     },
     {
       "role": "callback_setter_empty_bodies",
-      "rva": 8045703,
+      "rva": 8210631,
       "bytes": 9,
       "sha256": "187f8b564da7d8d64986b12824bd55610f105865d46f697cdbdfe68584973692",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
     },
     {
       "role": "callback_setter_direct_store",
-      "rva": 8045712,
+      "rva": 8210640,
       "bytes": 18,
       "sha256": "5d361cc7125f2363ec37631d63afb9e0d0f331aebc218a2601188bcb5ba92d4e",
       "evidenceBoundary": "direct: contiguous reviewed constructor/setter instructions; installed callback value, filter identity and notification policy remain unresolved"
@@ -284,15 +284,15 @@
     },
     {
       "role": "collider_detach_prefix",
-      "offset": 35,
+      "offset": 19,
       "prefix": "488b49",
       "mode": "u8",
       "field": "collider.sceneWrapper"
     },
     {
       "role": "physics_scene_pointer",
-      "offset": 114,
-      "prefix": "4c8b70",
+      "offset": 72,
+      "prefix": "4c8b60",
       "mode": "u8",
       "field": "wrapper.scene"
     },
@@ -373,91 +373,91 @@
       "offset": 0,
       "prefix": "488d05",
       "mode": "rip32",
-      "targetRva": 25939248
+      "targetRva": 27618160
     },
     {
       "role": "actor_scene_thunk",
       "offset": 0,
       "prefix": "e9",
       "mode": "rel32",
-      "targetRva": 7922656
+      "targetRva": 8087584
     },
     {
       "role": "actor_scene",
       "offset": 37,
       "prefix": "0f85",
       "mode": "rel32",
-      "targetRva": 8141936
+      "targetRva": 8306864
     },
     {
       "role": "static_release",
       "offset": 170,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8141936
+      "targetRva": 8306864
     },
     {
       "role": "scene_destructor_prefix",
       "offset": 15,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7814720
+      "targetRva": 7906688
     },
     {
       "role": "fetch_results_start",
       "offset": 193,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7997728
+      "targetRva": 8162656
     },
     {
       "role": "fetch_results",
       "offset": 194,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7993776
+      "targetRva": 8158704
     },
     {
       "role": "fetch_results",
       "offset": 202,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7859008
+      "targetRva": 7950976
     },
     {
       "role": "post_callbacks",
       "offset": 19,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8013888
+      "targetRva": 8178816
     },
     {
       "role": "report_stream_cleanup",
       "offset": 49,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8074912
+      "targetRva": 8239840
     },
     {
       "role": "physics_scene_pointer",
-      "offset": 44,
+      "offset": 40,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 2834432
+      "targetRva": 1261872
     },
     {
       "role": "dispatch_contact_callbacks",
       "offset": 217,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7989440
+      "targetRva": 8154368
     },
     {
       "role": "scene_constructor_part_2",
       "offset": 2759,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8045584
+      "targetRva": 8210512
     }
   ],
   "probes": [
@@ -538,8 +538,8 @@
     },
     {
       "role": "physics_scene_pointer",
-      "offset": 1227,
-      "hex": "498b064533c0b201498bce"
+      "offset": 548,
+      "hex": "498b04244533c0410fb6d7498bcc"
     },
     {
       "role": "scene_constructor_part_0",
@@ -584,37 +584,37 @@
   ],
   "vtableSlots": [
     {
-      "tableRva": 25972808,
+      "tableRva": 27651720,
       "slot": 0,
       "role": "static_release"
     },
     {
-      "tableRva": 25972808,
+      "tableRva": 27651720,
       "slot": 1,
       "role": "actor_type_name"
     },
     {
-      "tableRva": 25972808,
+      "tableRva": 27651720,
       "slot": 3,
       "role": "actor_cleanup_prefix"
     },
     {
-      "tableRva": 25972808,
+      "tableRva": 27651720,
       "slot": 6,
       "role": "actor_scene_thunk"
     },
     {
-      "tableRva": 25970208,
+      "tableRva": 27649120,
       "slot": 0,
       "role": "scene_destructor_prefix"
     },
     {
-      "tableRva": 25970208,
+      "tableRva": 27649120,
       "slot": 54,
       "role": "fetch_results"
     },
     {
-      "tableRva": 25970208,
+      "tableRva": 27649120,
       "slot": 55,
       "role": "fetch_results_start"
     }
@@ -622,11 +622,11 @@
   "virtualDispatches": [
     {
       "role": "physics_scene_pointer",
-      "offset": 1238,
+      "offset": 562,
       "prefix": "ff90",
       "width": 4,
       "slot": 54,
-      "tableRva": 25970208,
+      "tableRva": 27649120,
       "targetRole": "fetch_results"
     }
   ],

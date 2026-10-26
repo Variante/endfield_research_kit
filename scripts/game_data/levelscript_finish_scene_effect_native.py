@@ -36,7 +36,7 @@ from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
 
-SCHEMA = "endfield.levelscript-finish-scene-effect-native-contract.v1"
+SCHEMA = "endfield.levelscript-finish-scene-effect-native-contract.v2"
 LABEL = "levelscriptFinishSceneEffectNative"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_finish_scene_effect_native.json"
 

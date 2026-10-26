@@ -7,13 +7,11 @@ It stops at the first malformed member and makes no runtime behavior claim.
 from __future__ import annotations
 
 import struct
-from functools import lru_cache
 from typing import Any
 
 from scripts.game_data import levelscript_two_routes_native
 
 
-@lru_cache(maxsize=1)
 def _native_validation() -> dict[str, Any]:
     result = levelscript_two_routes_native.validate_current_native_contract()
     if result.get("status") != "validated":

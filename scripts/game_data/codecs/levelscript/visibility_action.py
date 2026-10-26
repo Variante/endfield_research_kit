@@ -7,6 +7,7 @@ decoded action. This reads the declared fields at the supplied cursor only.
 from __future__ import annotations
 
 from typing import Any
+from scripts.game_data.memorypack.core import memorypack_union_header
 
 from . import params
 from .action_map import ActionMapCodecError, _Cursor
@@ -36,17 +37,17 @@ def decode_visibility_action(
     fields = route["fields"]
     tag = route["tag"]
     count = route["memberCount"]
+    header = memorypack_union_header(tag, count)
     if (
         route.get("family") != "ActionBase"
-        or tag != 0x0406
+        or route.get("typeName") != "Beyond.Gameplay.Actions.SetEntitiesVisibility"
         or count != 12
         or len(fields) != count
         or fields[-1][:2] != ["visibleSource", "Param<ModelVisibleType>"]
-        or offset < 0 or offset + 4 > len(data)
-        or data[offset:offset + 4] != b"\xfa\x06\x04\x0c"
+        or offset < 0 or data[offset:offset + len(header)] != header
     ):
         raise ActionMapCodecError(f"visibilityAction:invalid-route-or-header,offset={offset}")
-    cursor = _Cursor(data, offset + 4)
+    cursor = _Cursor(data, offset + len(header))
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind, *_ in fields:

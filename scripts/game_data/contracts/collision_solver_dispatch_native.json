@@ -2,9 +2,9 @@
   "schema": "endfield.collision-solver-dispatch-native.v2",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "direct: selected CPU factories, separate scene context members, virtual update and zero-active-island early return. Conditional: saved same-call typed scene/context fields may identify a backend and checkpoint population. Checkpoint values do not prove update-time branches, worker scheduling, contact constraints or solver participation.",
   "layout": {
@@ -13,12 +13,12 @@
       "dynamicsContext": 1888,
       "simulationController": 1904,
       "publicSceneDelta": -16,
-      "vtableRva": 25970208
+      "vtableRva": 27649120
     },
     "context": {
-      "pgsVtableRva": 25999344,
-      "tgsVtableRva": 26001192,
-      "cpuControllerVtableRva": 25994040,
+      "pgsVtableRva": 27678256,
+      "tgsVtableRva": 27680104,
+      "cpuControllerVtableRva": 27672952,
       "pgsPoolOffset": 400,
       "tgsPoolOffset": 432
     },
@@ -40,133 +40,133 @@
   "codeWindows": [
     {
       "role": "controller_factory",
-      "rva": 8547072,
+      "rva": 8639040,
       "bytes": 82,
-      "sha256": "001777ddb9cc416ef594ffb8b0c9a4590ab3af6eabf54c7806ab68939f94fe3f",
+      "sha256": "04db82fc878970e71aab4f0be43c3d57eb1ba8e6175759d1f3e8bc0a18202a55",
       "boundary": "complete unwind family"
     },
     {
       "role": "pgs_factory",
-      "rva": 8770896,
+      "rva": 8862864,
       "bytes": 278,
-      "sha256": "033c383b40756d9ee305061d0339be131af7e8a4e822f3bb0c03a60705d3ac59",
+      "sha256": "5340ad2d4cef18659787ff900c1e5828a99d7e42e3fd8aac6e5b95e8536963db",
       "boundary": "complete unwind family"
     },
     {
       "role": "tgs_factory",
-      "rva": 8905776,
+      "rva": 8997744,
       "bytes": 260,
-      "sha256": "6dd61d7e3a72dae8b2371aade87ef618bedef6454afcddc1869988db8a96952c",
+      "sha256": "5a8da19191d803ab8fc56eb888eec49b743fe408e5f42d882d6624baee9134b4",
       "boundary": "complete unwind family"
     },
     {
       "role": "pgs_constructor",
-      "rva": 8740752,
+      "rva": 8832720,
       "bytes": 1304,
-      "sha256": "22c0baa893ec5f62d4f482c3423f40fafef5c269499f9b2a61765ef4f18e5c6c",
+      "sha256": "b78bb2da296f58698a95ecb1bee1babe7b631552d28511cf1ede5f1febe91bc2",
       "boundary": "complete unwind family"
     },
     {
       "role": "tgs_constructor",
-      "rva": 8894992,
+      "rva": 8986960,
       "bytes": 1171,
-      "sha256": "731539b4981d4a089efa27f37ee4ba4fb55359c5fd0d965a72a32c539958e6c7",
+      "sha256": "59fabd8d9d81e860222ae29bf1569b29172ad7fd00b68b231a87f1e155e5df94",
       "boundary": "complete unwind family"
     },
     {
       "role": "scene_update",
-      "rva": 8051248,
+      "rva": 8216176,
       "bytes": 515,
-      "sha256": "3323cb4753bfc93aa61a7fa5b6850e41af872a247a27f30438eec3498bd3f7b6",
+      "sha256": "9af1150c67cf06375dc10535bf91a63b5d90fc65fc22318d29176bdcad99390c",
       "boundary": "complete unwind family"
     },
     {
       "role": "pgs_update",
-      "rva": 8886176,
+      "rva": 8978144,
       "bytes": 2047,
-      "sha256": "65d69221c8c2cfbbe475bca55beb637fb2fcd6c9caa6810b682091273f4623d4",
+      "sha256": "44c550250e0b17be3fa0a629a88d2aba565dd70d8cd5f431dacbbde4f2fd57fc",
       "boundary": "complete unwind family"
     },
     {
       "role": "tgs_update",
-      "rva": 8931808,
+      "rva": 9023776,
       "bytes": 2352,
-      "sha256": "9c023e31284cc9534f34c8ab3f6fc0dda0e534f4b1a88a7936cdc937fc3f3aab",
+      "sha256": "d89fe2abb86b2f5e341779fed7397f4b668892f5830e092b5a62b0de74f0a87e",
       "boundary": "complete unwind family"
     },
     {
       "role": "scene_select",
-      "rva": 7950269,
+      "rva": 8115197,
       "bytes": 350,
-      "sha256": "d012f3d3aa41a7d840d327129b708554e9a1707d7b891067e5108abe1b692a6c",
+      "sha256": "e75aa9b83a77832c08017e11955c21a7b5863a649596ff3366f6810caab39de3",
       "boundary": "selected constructor instructions"
     },
     {
       "role": "pgs_factory_thunk",
-      "rva": 8771904,
+      "rva": 8863872,
       "bytes": 41,
       "sha256": "da2309c5ec99a0eb035b975b231916c0ee5c6aa9b90ae79c5f54619e0eddbe17",
       "boundary": "complete explicit leaf"
     },
     {
       "role": "tgs_factory_thunk",
-      "rva": 8908304,
+      "rva": 9000272,
       "bytes": 32,
       "sha256": "7cefbe469214d3ed72c1400b57f57df35f3a79aa564221f3f85c969fd2b669ad",
       "boundary": "complete explicit leaf"
     },
     {
       "role": "controller_task",
-      "rva": 8038832,
+      "rva": 8203760,
       "bytes": 22,
       "sha256": "b07951f3e533175e8564c59eae5945f98b7bef0222d44a4a9a6a38bb748e3c06",
       "boundary": "complete explicit leaf"
     },
     {
       "role": "update_task",
-      "rva": 8038912,
+      "rva": 8203840,
       "bytes": 13,
       "sha256": "1711f2906730ad7b974ed6c428960635127214520f09d410a60e1b4a6d3bb36f",
       "boundary": "complete explicit leaf"
     },
     {
       "role": "empty_return",
-      "rva": 503632,
+      "rva": 1083680,
       "bytes": 3,
       "sha256": "b6cbececf1b07e74f37d57710c68c31f0b92cb08d51093252b321b07542e177b",
       "boundary": "complete explicit leaf"
     },
     {
       "role": "scb_to_public_scene",
-      "rva": 8141936,
+      "rva": 8306864,
       "bytes": 5,
       "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6",
       "boundary": "selected constructor instructions"
     },
     {
       "role": "scene_cleanup_prefix",
-      "rva": 7814720,
+      "rva": 7906688,
       "bytes": 44,
-      "sha256": "727de2b7a36e35612a39decec8cdfd943264a143bc15f835f4aefd4883906f1f",
+      "sha256": "598aaf0d2add21734d2688a9befff6ec66a7e7fa92fba773f60a76aa9bc4f60d",
       "boundary": "selected constructor instructions"
     },
     {
       "role": "physics_scene_pointer",
-      "rva": 2842144,
+      "rva": 1255888,
       "bytes": 2048,
-      "sha256": "6ccc64020530ff900bfdf74daacbb8802ba0991ebe68ecd26f30c1de5a756ea2",
+      "sha256": "09800da020fd7891bf01d8d8988849926c52602a59a6fdc95dabd23c95d88ed1",
       "boundary": "selected constructor instructions"
     },
     {
       "role": "flush_thunk",
-      "rva": 7620160,
+      "rva": 7712128,
       "bytes": 7,
-      "sha256": "9e9c9512023c447b0e333851f0d22486147bad5eb0d6d0220c913cc884277e27",
+      "sha256": "fb93671d2af63ab03d37f77271a5aa2e9397f45221d3b6efef5fbbe83eef499e",
       "boundary": "complete explicit leaf"
     },
     {
       "role": "task_run_virtual_dispatch",
-      "rva": 7894864,
+      "rva": 7986832,
       "bytes": 52,
       "sha256": "3f5f103f8fcf8c5977197524542c95f3e2f9a67805dd3853cc7db5648844181a",
       "boundary": "complete unwind family; saved floating-point control state and virtual task run call; task receiver and step generation are not captured"
@@ -322,8 +322,8 @@
     },
     {
       "role": "physics_scene_pointer",
-      "offset": 114,
-      "prefix": "4c8b70",
+      "offset": 72,
+      "prefix": "4c8b60",
       "mode": "u8",
       "field": "wrapper.scene"
     },
@@ -348,85 +348,85 @@
       "offset": 134,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8771904
+      "targetRva": 8863872
     },
     {
       "role": "scene_select",
       "offset": 210,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8908304
+      "targetRva": 9000272
     },
     {
       "role": "pgs_factory_thunk",
       "offset": 36,
       "prefix": "e9",
       "mode": "rel32",
-      "targetRva": 8770896
+      "targetRva": 8862864
     },
     {
       "role": "tgs_factory_thunk",
       "offset": 27,
       "prefix": "e9",
       "mode": "rel32",
-      "targetRva": 8905776
+      "targetRva": 8997744
     },
     {
       "role": "pgs_factory",
       "offset": 240,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8740752
+      "targetRva": 8832720
     },
     {
       "role": "tgs_factory",
       "offset": 225,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8894992
+      "targetRva": 8986960
     },
     {
       "role": "update_task",
       "offset": 8,
       "prefix": "e9",
       "mode": "rel32",
-      "targetRva": 8051248
+      "targetRva": 8216176
     },
     {
       "role": "flush_thunk",
       "offset": 0,
       "prefix": "48ff25",
       "mode": "rip32",
-      "targetRva": 25540096
+      "targetRva": 27190840
     },
     {
       "role": "pgs_update",
       "offset": 356,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7620160
+      "targetRva": 7712128
     },
     {
       "role": "tgs_update",
       "offset": 363,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7620160
+      "targetRva": 7712128
     }
   ],
   "vtableSlots": [
     {
-      "tableRva": 25999344,
+      "tableRva": 27678256,
       "slot": 1,
       "role": "pgs_update"
     },
     {
-      "tableRva": 26001192,
+      "tableRva": 27680104,
       "slot": 1,
       "role": "tgs_update"
     },
     {
-      "tableRva": 25994040,
+      "tableRva": 27672952,
       "slot": 13,
       "role": "empty_return"
     }
@@ -438,7 +438,7 @@
       "prefix": "41ff52",
       "width": 1,
       "slot": 1,
-      "tableRva": 25999344,
+      "tableRva": 27678256,
       "targetRole": "pgs_update",
       "boundary": "conditional on observed dynamics context vtable"
     },
@@ -448,7 +448,7 @@
       "prefix": "41ff52",
       "width": 1,
       "slot": 1,
-      "tableRva": 26001192,
+      "tableRva": 27680104,
       "targetRole": "tgs_update",
       "boundary": "conditional on observed dynamics context vtable"
     },
@@ -458,7 +458,7 @@
       "prefix": "48ff60",
       "width": 1,
       "slot": 13,
-      "tableRva": 25994040,
+      "tableRva": 27672952,
       "targetRole": "empty_return",
       "boundary": "CPU factory route only"
     }
@@ -466,179 +466,179 @@
   "unwindFamilies": [
     {
       "role": "controller_factory",
-      "rva": 8547072,
+      "rva": 8639040,
       "runtimeRanges": [
         [
-          8547072,
-          8547154,
-          28546068
+          8639040,
+          8639122,
+          30280868
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "pgs_factory",
-      "rva": 8770896,
+      "rva": 8862864,
       "runtimeRanges": [
         [
-          8770896,
-          8771174,
-          28562296
+          8862864,
+          8863142,
+          30297268
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "tgs_factory",
-      "rva": 8905776,
+      "rva": 8997744,
       "runtimeRanges": [
         [
-          8905776,
-          8906036,
-          28582396
+          8997744,
+          8998004,
+          30312748
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "pgs_constructor",
-      "rva": 8740752,
+      "rva": 8832720,
       "runtimeRanges": [
         [
-          8740752,
-          8740787,
-          29149468
+          8832720,
+          8832755,
+          31007316
         ],
         [
-          8740787,
-          8741021,
-          29161140
+          8832755,
+          8832989,
+          31018872
         ],
         [
-          8741021,
-          8741118,
-          29161176
+          8832989,
+          8833086,
+          31018908
         ],
         [
-          8741118,
-          8741138,
-          29161196
+          8833086,
+          8833106,
+          31018928
         ],
         [
-          8741138,
-          8741477,
-          29161212
+          8833106,
+          8833445,
+          31018944
         ],
         [
-          8741477,
-          8741979,
-          29161244
+          8833445,
+          8833947,
+          31018976
         ],
         [
-          8741979,
-          8742056,
-          29161264
+          8833947,
+          8834024,
+          31018996
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "tgs_constructor",
-      "rva": 8894992,
+      "rva": 8986960,
       "runtimeRanges": [
         [
-          8894992,
-          8895138,
-          29154520
+          8986960,
+          8987106,
+          31012316
         ],
         [
-          8895138,
-          8895216,
-          29166220
+          8987106,
+          8987184,
+          31023952
         ],
         [
-          8895216,
-          8895313,
-          29166252
+          8987184,
+          8987281,
+          31023984
         ],
         [
-          8895313,
-          8895333,
-          29166272
+          8987281,
+          8987301,
+          31024004
         ],
         [
-          8895333,
-          8895703,
-          29166288
+          8987301,
+          8987671,
+          31024020
         ],
         [
-          8895703,
-          8896163,
-          29166316
+          8987671,
+          8988131,
+          31024048
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "scene_update",
-      "rva": 8051248,
+      "rva": 8216176,
       "runtimeRanges": [
         [
-          8051248,
-          8051763,
-          28575620
+          8216176,
+          8216691,
+          30376196
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "pgs_update",
-      "rva": 8886176,
+      "rva": 8978144,
       "runtimeRanges": [
         [
-          8886176,
-          8886524,
-          29161000
+          8978144,
+          8978492,
+          31018732
         ],
         [
-          8886524,
-          8888223,
-          29161024
+          8978492,
+          8980191,
+          31018756
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "tgs_update",
-      "rva": 8931808,
+      "rva": 9023776,
       "runtimeRanges": [
         [
-          8931808,
-          8932163,
-          29166176
+          9023776,
+          9024131,
+          31023908
         ],
         [
-          8932163,
-          8934160,
-          29166200
+          9024131,
+          9026128,
+          31023932
         ]
       ],
       "boundary": "complete family within window"
     },
     {
       "role": "task_run_virtual_dispatch",
-      "rva": 7894864,
+      "rva": 7986832,
       "runtimeRanges": [
         [
-          7894864,
-          7894916,
-          28545412
+          7986832,
+          7986884,
+          30280420
         ]
       ]
     }
   ],
   "typeName": {
-    "rva": 25984216,
+    "rva": 27664536,
     "ascii": "ScScene.updateDynamics"
   },
   "dispatch": {
@@ -651,22 +651,22 @@
   "flushImport": {
     "selectedImports": [
       {
-        "slotRva": 25540096,
-        "descriptorRva": 29581900,
-        "descriptorHex": "48 66 c3 01 00 00 00 00 00 00 00 00 88 80 c3 01 58 b2 85 01",
-        "libraryNameRva": 29589640,
+        "slotRva": 27190840,
+        "descriptorRva": 31460892,
+        "descriptorHex": "38 12 e0 01 00 00 00 00 00 00 00 00 ec 2c e0 01 88 e2 9e 01",
+        "libraryNameRva": 31468780,
         "libraryName": "KERNEL32.dll",
         "libraryNameHex": "4b 45 52 4e 45 4c 33 32 2e 64 6c 6c 00",
-        "originalThunkRva": 29582920,
-        "firstThunkRva": 25539160,
-        "thunkIndex": 117,
-        "actualThunkCount": 230,
-        "terminatedLookupBytes": 1848,
-        "terminatedLookupSha256": "6BC9FBDC85F380519FD4ED762DCAD390FD8A82DF0D12CFEEA208CD1B8892A260",
-        "lookupEntryRva": 29583856,
-        "lookupEntryHex": "3a 92 c3 01 00 00 00 00",
-        "iatEntryHex": "3a 92 c3 01 00 00 00 00",
-        "hintNameRva": 29594170,
+        "originalThunkRva": 31461944,
+        "firstThunkRva": 27189896,
+        "thunkIndex": 118,
+        "actualThunkCount": 237,
+        "terminatedLookupBytes": 1904,
+        "terminatedLookupSha256": "2457E9190E76C6374DBBD063C8EA30E9D79D6CEE00BFCCDA697D00BDF015628D",
+        "lookupEntryRva": 31462888,
+        "lookupEntryHex": "08 3f e0 01 00 00 00 00",
+        "iatEntryHex": "08 3f e0 01 00 00 00 00",
+        "hintNameRva": 31473416,
         "hint": 926,
         "hintHex": "9e 03",
         "symbolName": "InterlockedFlushSList",
@@ -675,20 +675,20 @@
         "liveIatValueOrCalleeSelected": false
       }
     ],
-    "importDirectoryRva": 29581900,
-    "importDirectoryBytes": 420,
+    "importDirectoryRva": 31460892,
+    "importDirectoryBytes": 400,
     "importDirectoryHeader": {
-      "fileOffset": 488,
-      "rawHex": "4c 62 c3 01 a4 01 00 00"
+      "fileOffset": 472,
+      "rawHex": "1c 0e e0 01 90 01 00 00"
     },
-    "iatDirectoryRva": 25538560,
-    "iatDirectoryBytes": 4288,
+    "iatDirectoryRva": 27189248,
+    "iatDirectoryBytes": 4384,
     "iatDirectoryHeader": {
-      "fileOffset": 576,
-      "rawHex": "00 b0 85 01 c0 10 00 00"
+      "fileOffset": 560,
+      "rawHex": "00 e0 9e 01 20 11 00 00"
     },
-    "walkedDescriptors": 20,
-    "descriptorNullTerminatorRva": 29582300,
+    "walkedDescriptors": 19,
+    "descriptorNullTerminatorRva": 31461272,
     "actualTerminatedTableOwnershipChecked": true,
     "completeImportSymbolCatalogProved": false,
     "liveIatValueOrCalleeSelected": false
@@ -761,7 +761,7 @@
       "role": "original_island_decision",
       "kind": 69,
       "windowRole": "flush_thunk",
-      "entryHex": "48ff25b96f1101",
+      "entryHex": "48ff25b1382901",
       "abi": {
         "arguments": [
           "pointer"
@@ -781,17 +781,17 @@
       "backend": "pgs",
       "kind": 67,
       "windowRole": "pgs_update",
-      "callRva": 8886532,
-      "returnRva": 8886537,
+      "callRva": 8978500,
+      "returnRva": 8978505,
       "countFromReturnSlot": 336,
-      "storeRva": 8886345,
+      "storeRva": 8978313,
       "storePrefix": "44899c24",
       "storeDisplacement": 328,
       "framePointerFromStack": 0,
-      "allocationRva": 8886192,
+      "allocationRva": 8978160,
       "allocationBytes": 176,
-      "compareRva": 8886618,
-      "zeroReturnRva": 8888196,
+      "compareRva": 8978586,
+      "zeroReturnRva": 8980164,
       "branchHex": "39ac24480100000f841d060000",
       "poolOffset": 400
     },
@@ -799,20 +799,20 @@
       "backend": "tgs",
       "kind": 68,
       "windowRole": "tgs_update",
-      "callRva": 8932171,
-      "returnRva": 8932176,
+      "callRva": 9024139,
+      "returnRva": 9024144,
       "countFromReturnSlot": 400,
-      "storeRva": 8931980,
+      "storeRva": 9023948,
       "storePrefix": "44899d",
       "storeDisplacement": 159,
       "framePointerFromStack": 233,
-      "allocationRva": 8931834,
+      "allocationRva": 9023802,
       "allocationBytes": 240,
-      "compareRva": 8932250,
-      "zeroReturnRva": 8934133,
+      "compareRva": 9024218,
+      "zeroReturnRva": 9026101,
       "branchHex": "4439b59f0000000f844e070000",
       "poolOffset": 432,
-      "framePointerLeaRva": 8931829,
+      "framePointerLeaRva": 9023797,
       "framePointerLeaHex": "488d6c24f9"
     }
   ],

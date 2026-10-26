@@ -1,83 +1,39 @@
-"""Fail-closed readers for current Endfield ``SpawnerConfig`` MemoryPack data.
+"""Sequential readers for current SpawnerConfigData and its nested records.
 
-The current generated formatters serialize ``SpawnerConfig`` as five fields,
-``SpawnerEnemyLibraryItem`` as thirteen fields, ``SpawnerWaveData`` as eleven
-fields, and ``SpawnerGroupData`` as twelve fields.
-
-Primary path (one sequential owner cursor):
-
-1. ``decode_spawner_named_prefix`` reads ``configId``, the exact
-   enemy-library prefix (named 13-member rows, the nullable born-behavior
-   boundary), then the route profile: generated two-field
-   ``SpawnerRouteData`` values, 39-field ``PatrolData`` values whose action
-   list holds exact four-member ``PatrolAction`` values (type, position,
-   nested subactions, subpositions), and the complete six-field settings
-   object. Subactions retain all 26 generated members; their
-   blackboard-pair lists are empty and polymorphic ``subActionData`` is null
-   in the current corpus, so a future positive body fails closed. This
-   proves the ``waveMap`` offset as an exact generated-order cursor.
-2. ``decode_spawner_wave_map_sequential`` reads the 11-field wave and
-   12-field group values and every current action map to physical EOF. The
-   admitted ``SpawnerActionData`` wrappers are pause, play-audio,
-   preview-route, raise-event and spawn-monster
-   (``SpawnMonsterFromTemplateV2``), each in generated order. Their union
-   tags are resolved by type name per build through
-   ``levelscript_union_tags``; an unvalidated build or a changed member
-   count admits no action, so the sequential reader fails closed.
-
-``decode_spawner_wave_map`` is the older unique-tail fallback, kept for a
-changed future route profile: it accepts a frame only when exactly one
-complete wave/group parse reaches physical EOF. If both readers fail, the
-exact enemy-library prefix is kept as bounded partial evidence.
-
-Negative kept on purpose: the enemy row's ``preWarnEffectFixedRotation`` is
-a 16-byte ``Optional<Vector3>`` (presence byte, three zero padding bytes,
-three floats). The earlier four-float reading reached the same cursor but
-turned the presence byte into a tiny false axis (float bits ``0x00000001``);
-present values have the form ``(0, yaw, 0)``. It is the lane's proof that EOF
-closure is necessary, not sufficient: a same-width wrong reading also closes,
-so a framing conclusion needs a second signal (a boundary on a known marker, a
-coherent value distribution, or a closed field domain).
-
-The wave map's MemoryPack dictionary key and the serialized ``waveKey`` are
-independent fields (keys such as ``1`` with values such as ``w1``); both are
-retained.
-
-Evidence tier: exact stored schema for the current corpus; it does not
-prove spawn timing, wave progression or audio playback.
+The root has six members, waves twelve and groups thirteen. Strings are signed
+indices into the caller-selected pool; missing pages never select inline text.
+Positive preprocess lists and non-null born behaviors remain explicit stops.
+Only the complete generated-order cursor can establish whole-file closure.
+Stored settings and action routes do not establish runtime spawn behavior.
 """
 from __future__ import annotations
 
 import math
 import struct
-from functools import lru_cache
 from typing import Any
 
 from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.string_pool import StringPool, resolve_string_pool_index
+from scripts.game_data.spawner_records_native import check_spawner_records_native_inputs
 
 
 NULL_COUNT = 0xFFFFFFFF
-SPAWNER_CONFIG_MEMBER_COUNT = 5
+SPAWNER_CONFIG_MEMBER_COUNT = 6
 SPAWNER_ENEMY_LIBRARY_ITEM_MEMBER_COUNT = 13
 SPAWNER_ENEMY_BORN_BEHAVIOR_MEMBER_COUNT = 18
 SPAWNER_BUFF_ITEM_MEMBER_COUNT = 2
 SPAWNER_BLACKBOARD_ITEM_MEMBER_COUNT = 4
-SPAWNER_WAVE_MEMBER_COUNT = 11
-SPAWNER_GROUP_MEMBER_COUNT = 12
+SPAWNER_WAVE_MEMBER_COUNT = 12
+SPAWNER_GROUP_MEMBER_COUNT = 13
 MAX_ENEMY_COUNT = 10_000
 MAX_BUFF_COUNT = 256
 MAX_BLACKBOARD_COUNT = 256
 MAX_WAVE_COUNT = 256
 MAX_GROUP_COUNT = 1_024
-MAX_STRING_BYTES = 256
+MAX_STRING_BYTES = 4096
 
-SPAWNER_ENEMY_LIBRARY_SCHEMA_MAPPING_ID = (
-    "gameassembly-0c557367-memorypack-spawner-enemy-library-item-v14"
-)
+SPAWNER_ENEMY_LIBRARY_SCHEMA_MAPPING_ID = "endfield.spawner-enemy-library.pooled.v1"
 
-SPAWNER_WAVE_SCHEMA_MAPPING_ID = (
-    "gameassembly-2026-07-23-memorypack-spawner-wave-group-v2"
-)
 SPAWNER_WAVE_RUNTIME_MAPPING_ID = (
     "levelscript-union-tags-spawner-wave-group-runtime-v2"
 )
@@ -135,25 +91,16 @@ def _enemy_read_optional_vector3(
     return (vector if present else None), cursor
 
 
-def _enemy_read_string(
-    data: bytes,
-    offset: int,
-    field: str,
-    *,
-    max_bytes: int = 512,
-) -> tuple[str | None, int]:
-    length, offset = _enemy_read_u32(data, offset, f"{field}.length")
-    if length == NULL_COUNT:
-        return None, offset
-    if length > max_bytes or offset + length > len(data):
-        raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid string length {length}")
+def _enemy_read_string(data: bytes, offset: int, field: str, *,
+                       strings: StringPool | None = None, max_bytes: int = 512) -> tuple[str | None, int]:
+    index, end = _enemy_read_i32(data, offset, f"{field}.poolIndex")
     try:
-        value = data[offset:offset + length].decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid UTF-8") from exc
-    if any(ord(character) < 0x20 for character in value):
-        raise SpawnerEnemyLibraryDecodeError(f"{field}: control character")
-    return value, offset + length
+        value = resolve_string_pool_index(index, strings, field)
+    except ValueError as exc:
+        raise SpawnerEnemyLibraryDecodeError(str(exc)) from exc
+    if value is not None and (len(value.encode("utf-8")) > max_bytes or any(ord(ch) < 0x20 for ch in value)):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid pooled string")
+    return value, end
 
 
 def _enemy_read_count(
@@ -170,7 +117,7 @@ def _enemy_read_count(
     return count, offset
 
 
-def _decode_spawner_buff_item(data: bytes, offset: int, index: int) -> tuple[dict[str, Any], int]:
+def _decode_spawner_buff_item(data: bytes, offset: int, index: int, *, strings: StringPool | None = None) -> tuple[dict[str, Any], int]:
     start = offset
     if offset >= len(data) or data[offset] != SPAWNER_BUFF_ITEM_MEMBER_COUNT:
         raise SpawnerEnemyLibraryDecodeError(f"bornBuffList[{index}]: member count changed")
@@ -191,7 +138,7 @@ def _decode_spawner_buff_item(data: bytes, offset: int, index: int) -> tuple[dic
         key, offset = _enemy_read_string(
             data,
             offset,
-            f"bornBuffList[{index}].blackboards[{blackboard_index}].key",
+            f"bornBuffList[{index}].blackboards[{blackboard_index}].key", strings=strings
         )
         use_string, offset = _enemy_read_bool(
             data,
@@ -206,7 +153,7 @@ def _decode_spawner_buff_item(data: bytes, offset: int, index: int) -> tuple[dic
         value_string, offset = _enemy_read_string(
             data,
             offset,
-            f"bornBuffList[{index}].blackboards[{blackboard_index}].valueString",
+            f"bornBuffList[{index}].blackboards[{blackboard_index}].valueString", strings=strings
         )
         blackboards.append({
             "key": key or "",
@@ -214,7 +161,7 @@ def _decode_spawner_buff_item(data: bytes, offset: int, index: int) -> tuple[dic
             "valueFloat": value_float,
             "valueString": value_string or "",
         })
-    buff_id, offset = _enemy_read_string(data, offset, f"bornBuffList[{index}].buffId")
+    buff_id, offset = _enemy_read_string(data, offset, f"bornBuffList[{index}].buffId", strings=strings)
     return {
         "sourceOffset": start,
         "blackboards": blackboards,
@@ -222,7 +169,7 @@ def _decode_spawner_buff_item(data: bytes, offset: int, index: int) -> tuple[dic
     }, offset
 
 
-def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
+def decode_spawner_enemy_library(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Decode the exact current-build ``SpawnerEnemyLibraryItem`` prefix.
 
     ``bornBehaviorData`` is nullable and every row in the current exported
@@ -232,7 +179,7 @@ def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
     """
     if not data or data[0] != SPAWNER_CONFIG_MEMBER_COUNT:
         raise SpawnerEnemyLibraryDecodeError("SpawnerConfig member count changed")
-    config_id, offset = _enemy_read_string(data, 1, "configId")
+    config_id, offset = _enemy_read_string(data, 1, "configId", strings=strings)
     if not config_id:
         raise SpawnerEnemyLibraryDecodeError("missing configId")
     enemy_count, offset = _enemy_read_count(data, offset, "enemyLibrary", MAX_ENEMY_COUNT)
@@ -265,30 +212,30 @@ def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
         )
         buffs: list[dict[str, Any]] = []
         for buff_index in range(buff_count):
-            buff, offset = _decode_spawner_buff_item(data, offset, buff_index)
+            buff, offset = _decode_spawner_buff_item(data, offset, buff_index, strings=strings)
             buffs.append(buff)
 
         born_template_id, offset = _enemy_read_string(
-            data, offset, f"enemyLibrary[{index}].bornTemplateId"
+            data, offset, f"enemyLibrary[{index}].bornTemplateId", strings=strings
         )
-        enemy_id, offset = _enemy_read_string(data, offset, f"enemyLibrary[{index}].enemyId")
+        enemy_id, offset = _enemy_read_string(data, offset, f"enemyLibrary[{index}].enemyId", strings=strings)
         enemy_level, offset = _enemy_read_i32(data, offset, f"enemyLibrary[{index}].enemyLevel")
         force_to_battle, offset = _enemy_read_bool(
             data, offset, f"enemyLibrary[{index}].forceToBattle"
         )
-        key, offset = _enemy_read_string(data, offset, f"enemyLibrary[{index}].key")
+        key, offset = _enemy_read_string(data, offset, f"enemyLibrary[{index}].key", strings=strings)
         override_ai_config, offset = _enemy_read_string(
-            data, offset, f"enemyLibrary[{index}].overrideAIConfig"
+            data, offset, f"enemyLibrary[{index}].overrideAIConfig", strings=strings
         )
         patrol_gait, offset = _enemy_read_i32(data, offset, f"enemyLibrary[{index}].patrolGait")
         pre_warn_audio_event_key, offset = _enemy_read_string(
-            data, offset, f"enemyLibrary[{index}].preWarnAudioEventKey"
+            data, offset, f"enemyLibrary[{index}].preWarnAudioEventKey", strings=strings
         )
         pre_warn_effect_fixed_rotation, offset = _enemy_read_optional_vector3(
             data, offset, f"enemyLibrary[{index}].preWarnEffectFixedRotation"
         )
         pre_warn_effect_key, offset = _enemy_read_string(
-            data, offset, f"enemyLibrary[{index}].preWarnEffectKey"
+            data, offset, f"enemyLibrary[{index}].preWarnEffectKey", strings=strings
         )
         pre_warn_time, offset = _enemy_read_f32(
             data, offset, f"enemyLibrary[{index}].preWarnTime"
@@ -318,7 +265,7 @@ def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
         "enemyLibraryCount": len(enemies),
         "enemyLibrary": enemies,
         "schemaMappingId": SPAWNER_ENEMY_LIBRARY_SCHEMA_MAPPING_ID,
-        "schemaStatus": "exact-current-null-born-behavior",
+        "schemaStatus": "exact-pooled-null-born-behavior",
     }
 
 
@@ -326,6 +273,8 @@ def _decode_patrol_sub_action(
     data: bytes,
     offset: int,
     field: str,
+    *,
+    strings: StringPool | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode the authored member-26 ``PatrolSubAction`` profile.
 
@@ -341,7 +290,7 @@ def _decode_patrol_sub_action(
     values: dict[str, Any] = {}
     for name in ("actionEndType", "animKeyTag", "animMaskType"):
         values[name], offset = _enemy_read_i32(data, offset, f"{field}.{name}")
-    values["animName"], offset = _enemy_read_string(data, offset, f"{field}.animName")
+    values["animName"], offset = _enemy_read_string(data, offset, f"{field}.animName", strings=strings)
     for name in ("configMovementStyle", "configSnap"):
         values[name], offset = _enemy_read_bool(data, offset, f"{field}.{name}")
     values["duration"], offset = _enemy_read_f32(data, offset, f"{field}.duration")
@@ -353,7 +302,7 @@ def _decode_patrol_sub_action(
             f"{field}.eventBBDataPairs: positive list count {pair_count} has no current fixture"
         )
     values["eventBBDataPairs"] = []
-    values["eventKey"], offset = _enemy_read_string(data, offset, f"{field}.eventKey")
+    values["eventKey"], offset = _enemy_read_string(data, offset, f"{field}.eventKey", strings=strings)
     values["eventToLevelType"], offset = _enemy_read_i32(
         data, offset, f"{field}.eventToLevelType"
     )
@@ -364,7 +313,7 @@ def _decode_patrol_sub_action(
     values["overrideSpeedValue"], offset = _enemy_read_f32(
         data, offset, f"{field}.overrideSpeedValue"
     )
-    values["radioId"], offset = _enemy_read_string(data, offset, f"{field}.radioId")
+    values["radioId"], offset = _enemy_read_string(data, offset, f"{field}.radioId", strings=strings)
     for name in ("radioWaitTime", "radius"):
         values[name], offset = _enemy_read_f32(data, offset, f"{field}.{name}")
     for name in ("repeatAnim", "rootMotion"):
@@ -388,6 +337,8 @@ def _decode_patrol_action(
     data: bytes,
     offset: int,
     field: str,
+    *,
+    strings: StringPool | None = None,
 ) -> tuple[dict[str, Any], int]:
     start = offset
     if offset >= len(data) or data[offset] != 4:
@@ -403,7 +354,7 @@ def _decode_patrol_action(
     )
     sub_actions: list[dict[str, Any]] = []
     for index in range(sub_action_count):
-        row, offset = _decode_patrol_sub_action(data, offset, f"{field}.subActions[{index}]")
+        row, offset = _decode_patrol_sub_action(data, offset, f"{field}.subActions[{index}]", strings=strings)
         sub_actions.append(row)
     sub_position_count, offset = _enemy_read_count(
         data, offset, f"{field}.subPositions", MAX_GROUP_COUNT
@@ -432,6 +383,8 @@ def _decode_patrol_data(
     data: bytes,
     offset: int,
     field: str,
+    *,
+    strings: StringPool | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode the generated 39-member patrol profile and its authored actions."""
 
@@ -447,7 +400,7 @@ def _decode_patrol_data(
         )
     actions: list[dict[str, Any]] = []
     for index in range(action_count):
-        action, offset = _decode_patrol_action(data, offset, f"{field}.actions[{index}]")
+        action, offset = _decode_patrol_action(data, offset, f"{field}.actions[{index}]", strings=strings)
         actions.append(action)
     values: dict[str, Any] = {
         "actions": None if raw_action_count == NULL_COUNT else actions,
@@ -506,7 +459,7 @@ def _decode_patrol_data(
     }, offset
 
 
-def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
+def decode_spawner_named_prefix(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Decode configId, enemyLibrary, routeMap and settings at one cursor.
 
     Route patrols are accepted only for the current profile: positive
@@ -516,8 +469,12 @@ def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
     generated-order cursor, not a byte-pattern candidate.
     """
 
-    enemy_prefix = decode_spawner_enemy_library(data)
+    enemy_prefix = decode_spawner_enemy_library(data, strings=strings)
     offset = int(enemy_prefix["enemyLibraryEndOffset"])
+    preprocess_start = offset
+    preprocess_count, offset = _enemy_read_u32(data, offset, "preprocessList.count")
+    if preprocess_count not in (0, NULL_COUNT):
+        raise SpawnerEnemyLibraryDecodeError(f"preprocessList: unsupported positive count {preprocess_count}")
     raw_route_count, offset = _enemy_read_u32(data, offset, "routeMap.count")
     route_count = 0 if raw_route_count == NULL_COUNT else raw_route_count
     if route_count > MAX_GROUP_COUNT:
@@ -532,7 +489,7 @@ def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
             )
         offset += 1
         patrol, offset = _decode_patrol_data(
-            data, offset, f"routeMap[{index}].patrolData"
+            data, offset, f"routeMap[{index}].patrolData", strings=strings
         )
         route_id, offset = _enemy_read_i32(data, offset, f"routeMap[{index}].routeId")
         routes.append({
@@ -561,7 +518,7 @@ def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
     effects: list[str] = []
     for index in range(effect_count):
         value, offset = _enemy_read_string(
-            data, offset, f"settings.preloadEffectKeyList[{index}]", max_bytes=4096
+            data, offset, f"settings.preloadEffectKeyList[{index}]", max_bytes=4096, strings=strings
         )
         effects.append(value or "")
     settings["preloadEffectKeyList"] = (
@@ -573,302 +530,22 @@ def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
     settings["endOffset"] = offset
     return {
         **enemy_prefix,
-        "routeMapOffset": enemy_prefix["enemyLibraryEndOffset"],
+        "preprocessList": None if preprocess_count == NULL_COUNT else [],
+        "preprocessListOffset": preprocess_start,
+        "routeMapOffset": preprocess_start + 4,
         "routeMapCount": route_count,
         "routeMap": routes,
         "settings": settings,
         "waveMapOffset": offset,
-        "schemaStatus": "exact-prefix-through-settings-current-route-actions",
+        "schemaStatus": "exact-pooled-prefix-through-settings",
     }
 
 
-def _read_string(data: bytes, offset: int) -> tuple[str | None, int]:
-    if offset + 4 > len(data):
-        raise SpawnerWaveDecodeError("truncated string length")
-    length = struct.unpack_from("<I", data, offset)[0]
-    offset += 4
-    if length == NULL_COUNT:
-        return None, offset
-    if length > MAX_STRING_BYTES or offset + length > len(data):
-        raise SpawnerWaveDecodeError("invalid string length")
+def _read_string(data: bytes, offset: int, *, strings: StringPool | None = None) -> tuple[str | None, int]:
     try:
-        value = data[offset:offset + length].decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise SpawnerWaveDecodeError("invalid UTF-8 string") from exc
-    if any(ord(character) < 0x20 for character in value):
-        raise SpawnerWaveDecodeError("control character in string")
-    return value, offset + length
-
-
-def _read_wave_tail(data: bytes, offset: int) -> tuple[dict[str, Any], int]:
-    """Read fields after the opaque ``groupMap`` in one SpawnerWaveData row."""
-    start = offset
-    if offset + 11 > len(data):
-        raise SpawnerWaveDecodeError("truncated wave tail")
-    flags = data[offset:offset + 3]
-    if any(value not in (0, 1) for value in flags):
-        raise SpawnerWaveDecodeError("invalid wave bool")
-    has_deadline, is_hidden, repeatable = (bool(value) for value in flags)
-    offset += 3
-    timestamp = struct.unpack_from("<f", data, offset)[0]
-    offset += 4
-    wave_id = struct.unpack_from("<i", data, offset)[0]
-    offset += 4
-    wave_key, offset = _read_string(data, offset)
-    if offset + 8 > len(data):
-        raise SpawnerWaveDecodeError("truncated wave mode")
-    wave_mode, kill_count = struct.unpack_from("<ii", data, offset)
-    offset += 8
-    target_key, offset = _read_string(data, offset)
-
-    if (
-        not math.isfinite(timestamp)
-        or not -100_000.0 <= timestamp <= 10_000_000.0
-        or not 0 <= wave_id <= 1_000_000
-        or not wave_key
-        or wave_mode not in (0, 1, 2)
-        or not 0 <= kill_count <= 1_000_000
-    ):
-        raise SpawnerWaveDecodeError("implausible wave tail")
-    return {
-        "tailOffset": start,
-        "hasDeadlineBegin": has_deadline,
-        "isHidden": is_hidden,
-        "repeatable": repeatable,
-        "timestamp": timestamp,
-        "waveId": wave_id,
-        "waveKey": wave_key,
-        "waveMode": wave_mode,
-        "waveModeKillCount": kill_count,
-        "waveModeTargetKey": target_key or "",
-    }, offset
-
-
-def _read_group_tail(data: bytes, offset: int) -> tuple[dict[str, Any], int]:
-    """Read fields after the opaque ``actionMap`` in one SpawnerGroupData row."""
-    start = offset
-    if offset + 12 > len(data):
-        raise SpawnerWaveDecodeError("truncated group tail")
-    deadline_begin_delta_time = struct.unpack_from("<f", data, offset)[0]
-    backup_count, group_id = struct.unpack_from("<ii", data, offset + 4)
-    offset += 12
-    group_key, offset = _read_string(data, offset)
-    if offset + 12 > len(data):
-        raise SpawnerWaveDecodeError("truncated group mode")
-    max_count, group_mode, kill_count = struct.unpack_from("<iii", data, offset)
-    offset += 12
-    target_key, offset = _read_string(data, offset)
-    if offset + 6 > len(data):
-        raise SpawnerWaveDecodeError("truncated group flags")
-    flags = data[offset:offset + 2]
-    if any(value not in (0, 1) for value in flags):
-        raise SpawnerWaveDecodeError("invalid group bool")
-    has_deadline, limit_max_count = (bool(value) for value in flags)
-    timestamp = struct.unpack_from("<f", data, offset + 2)[0]
-    offset += 6
-
-    if (
-        not math.isfinite(deadline_begin_delta_time)
-        or not -100_000.0 <= deadline_begin_delta_time <= 10_000_000.0
-        or not 0 <= backup_count <= 1_000_000
-        or not 0 <= group_id <= 1_000_000
-        or max_count < -1
-        or max_count > 1_000_000
-        or group_mode not in (0, 1, 2)
-        or not 0 <= kill_count <= 1_000_000
-        or not math.isfinite(timestamp)
-        or not -100_000.0 <= timestamp <= 10_000_000.0
-    ):
-        raise SpawnerWaveDecodeError("implausible group tail")
-    return {
-        "tailOffset": start,
-        "deadlineBeginDeltaTime": deadline_begin_delta_time,
-        "groupBackUpCount": backup_count,
-        "groupId": group_id,
-        "groupKey": group_key or "",
-        "groupMaxCount": max_count,
-        "groupMode": group_mode,
-        "groupModeKillCount": kill_count,
-        "groupModeTargetKey": target_key or "",
-        "hasDeadlineBegin": has_deadline,
-        "limitGroupMaxCount": limit_max_count,
-        "timestamp": timestamp,
-    }, offset
-
-
-def _decode_group_map(
-    data: bytes,
-    offset: int,
-    end_offset: int,
-) -> tuple[dict[str, Any], ...]:
-    """Decode one group map whose exact end is the containing wave tail."""
-    if offset + 4 > end_offset:
-        raise SpawnerWaveDecodeError("truncated groupMap count")
-    group_count = struct.unpack_from("<I", data, offset)[0]
-    if group_count > MAX_GROUP_COUNT:
-        raise SpawnerWaveDecodeError("implausible groupMap count")
-
-    tail_candidates: list[tuple[dict[str, Any], int]] = []
-    for candidate_offset in range(offset + 4, max(offset + 4, end_offset - 5)):
-        try:
-            row, row_end = _read_group_tail(data, candidate_offset)
-        except SpawnerWaveDecodeError:
-            continue
-        if row_end > end_offset:
-            continue
-        tail_candidates.append((row, row_end))
-
-    @lru_cache(maxsize=None)
-    def parse_entries(
-        entry_offset: int,
-        remaining: int,
-    ) -> tuple[tuple[dict[str, Any], ...], ...]:
-        if remaining == 0:
-            return ((),) if entry_offset == end_offset else ()
-        if entry_offset + 5 > end_offset:
-            return ()
-        map_key = struct.unpack_from("<i", data, entry_offset)[0]
-        value_start = entry_offset + 4
-        if (
-            not 0 <= map_key <= 1_000_000
-            or data[value_start] != SPAWNER_GROUP_MEMBER_COUNT
-        ):
-            return ()
-
-        solutions: list[tuple[dict[str, Any], ...]] = []
-        for candidate, next_offset in tail_candidates:
-            if candidate["tailOffset"] <= value_start + 4:
-                continue
-            row = {
-                **candidate,
-                "mapKey": map_key,
-                "entryOffset": entry_offset,
-                "valueOffset": value_start,
-            }
-            for suffix in parse_entries(next_offset, remaining - 1):
-                solutions.append((row, *suffix))
-                if len(solutions) > 1:
-                    return tuple(solutions)
-        return tuple(solutions)
-
-    solutions = parse_entries(offset + 4, group_count)
-    if len(solutions) != 1:
-        raise SpawnerWaveDecodeError("no unique complete groupMap")
-    rows = solutions[0]
-    if [row["mapKey"] for row in rows] != list(range(1, group_count + 1)):
-        raise SpawnerWaveDecodeError("changed groupMap index keys")
-    named_keys = [row["groupKey"] for row in rows if row["groupKey"]]
-    if len(set(named_keys)) != len(named_keys):
-        raise SpawnerWaveDecodeError("duplicate groupKey")
-    return rows
-
-
-def decode_spawner_wave_map(
-    data: bytes,
-    *,
-    wave_map_offset: int | None = None,
-) -> dict[str, Any]:
-    """Decode one uniquely delimited current-build SpawnerConfig wave map.
-
-    The MemoryPack dictionary key and the serialized ``waveKey`` are separate
-    fields.  Current authored rows commonly use keys such as ``1``/``2`` with
-    values such as ``w1``/``w2``.  Both are retained, and a frame is accepted
-    only when exactly one complete wave/group parse reaches physical EOF.
-    """
-    if not data or data[0] != SPAWNER_CONFIG_MEMBER_COUNT:
-        raise SpawnerWaveDecodeError("SpawnerConfig member count changed")
-    config_id, config_id_end = _read_string(data, 1)
-    if not config_id:
-        raise SpawnerWaveDecodeError("missing configId")
-
-    tail_candidates: list[tuple[dict[str, Any], int]] = []
-    for offset in range(config_id_end, max(config_id_end, len(data) - 10)):
-        try:
-            row, end = _read_wave_tail(data, offset)
-        except SpawnerWaveDecodeError:
-            continue
-        tail_candidates.append((row, end))
-
-    @lru_cache(maxsize=None)
-    def parse_entries(offset: int, remaining: int) -> tuple[tuple[dict[str, Any], ...], ...]:
-        if remaining == 0:
-            return ((),) if offset == len(data) else ()
-        if offset + 5 > len(data):
-            return ()
-        map_key = struct.unpack_from("<i", data, offset)[0]
-        value_start = offset + 4
-        if (
-            not 0 <= map_key <= 1_000_000
-            or data[value_start] != SPAWNER_WAVE_MEMBER_COUNT
-        ):
-            return ()
-
-        solutions: list[tuple[dict[str, Any], ...]] = []
-        for candidate, next_offset in tail_candidates:
-            if candidate["tailOffset"] <= value_start + 5:
-                continue
-            try:
-                groups = _decode_group_map(
-                    data,
-                    value_start + 5,
-                    candidate["tailOffset"],
-                )
-            except SpawnerWaveDecodeError:
-                continue
-            row = {
-                **candidate,
-                "mapKey": map_key,
-                "entryOffset": offset,
-                "valueOffset": value_start,
-                "groupMapOffset": value_start + 5,
-                "groupCount": len(groups),
-                "groups": list(groups),
-            }
-            if remaining == 1:
-                if next_offset == len(data):
-                    solutions.append((row,))
-                continue
-            for suffix in parse_entries(next_offset, remaining - 1):
-                solutions.append((row, *suffix))
-                if len(solutions) > 1:
-                    return tuple(solutions)
-        return tuple(solutions)
-
-    if wave_map_offset is not None and not config_id_end <= wave_map_offset <= len(data) - 4:
-        raise SpawnerWaveDecodeError("waveMap exact cursor is outside the payload")
-    candidate_offsets = (
-        (wave_map_offset,)
-        if wave_map_offset is not None
-        else range(config_id_end, max(config_id_end, len(data) - 8))
-    )
-    solutions: list[tuple[int, tuple[dict[str, Any], ...]]] = []
-    for offset in candidate_offsets:
-        assert offset is not None
-        wave_count = struct.unpack_from("<I", data, offset)[0]
-        if not 1 <= wave_count <= MAX_WAVE_COUNT:
-            continue
-        rows = parse_entries(offset + 4, wave_count)
-        for row_set in rows:
-            solutions.append((offset, row_set))
-            if len(solutions) > 1:
-                raise SpawnerWaveDecodeError("ambiguous complete waveMap")
-
-    if len(solutions) != 1:
-        raise SpawnerWaveDecodeError("no unique complete waveMap")
-    wave_map_offset, rows = solutions[0]
-    if len({row["mapKey"] for row in rows}) != len(rows):
-        raise SpawnerWaveDecodeError("duplicate wave map key")
-    if len({row["waveKey"] for row in rows}) != len(rows):
-        raise SpawnerWaveDecodeError("duplicate waveKey")
-    return {
-        "configId": config_id,
-        "waveMapOffset": wave_map_offset,
-        "waveCount": len(rows),
-        "waves": list(rows),
-        "schemaMappingId": SPAWNER_WAVE_SCHEMA_MAPPING_ID,
-        "runtimeMappingId": SPAWNER_WAVE_RUNTIME_MAPPING_ID,
-        "waveMapOffsetBoundary": "exact" if wave_map_offset is not None else "searched-unique",
-    }
+        return _enemy_read_string(data, offset, "wave.string", strings=strings, max_bytes=MAX_STRING_BYTES)
+    except SpawnerEnemyLibraryDecodeError as exc:
+        raise SpawnerWaveDecodeError(str(exc)) from exc
 
 
 def _exact_f32(data: bytes, offset: int, field: str) -> tuple[float, int]:
@@ -940,6 +617,9 @@ def _decode_current_spawner_action(
     data: bytes,
     offset: int,
     field: str,
+    *,
+    strings: StringPool | None = None,
+    routes: dict[int, tuple[str, int]] | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode the reviewed ``SpawnerActionData`` routes, resolved by type name."""
 
@@ -948,7 +628,8 @@ def _decode_current_spawner_action(
         raise SpawnerWaveDecodeError(f"{field}: truncated union tag")
     tag = data[offset]
     offset += 1
-    routes = {key[0]: (name, key[1]) for key, name in _spawner_action_routes().items()}
+    if routes is None:
+        routes = {key[0]: (name, key[1]) for key, name in _spawner_action_routes().items()}
     if tag not in routes:
         raise SpawnerWaveDecodeError(
             f"{field}: unsupported union tag {tag}{union_tags.unavailable_note()}"
@@ -960,7 +641,7 @@ def _decode_current_spawner_action(
     if action == "SpawnerActions_SpawnMonsterFromTemplateV2":
         base, offset = _read_action_base(data, offset, field)
         face_main, offset = _exact_bool(data, offset, f"{field}.faceMainCharacter")
-        library_key, offset = _read_string(data, offset)
+        library_key, offset = _read_string(data, offset, strings=strings)
         position, offset = _exact_vector3(data, offset, f"{field}.position")
         random_end, offset = _exact_f32(data, offset, f"{field}.randomizeEndPointRadius")
         random_radius, offset = _exact_f32(data, offset, f"{field}.randomizeRadius")
@@ -989,7 +670,7 @@ def _decode_current_spawner_action(
         }, offset
     if action == "SpawnerActions_Pause":
         base, offset = _read_action_base(data, offset, field)
-        string_value, offset = _read_string(data, offset)
+        string_value, offset = _read_string(data, offset, strings=strings)
         return {
             "sourceOffset": start,
             "endOffset": offset,
@@ -1001,7 +682,7 @@ def _decode_current_spawner_action(
         }, offset
     if action == "SpawnerActions_PlayAudio":
         base, offset = _read_action_base(data, offset, field)
-        audio_id, offset = _read_string(data, offset)
+        audio_id, offset = _read_string(data, offset, strings=strings)
         return {
             "sourceOffset": start,
             "endOffset": offset,
@@ -1033,7 +714,7 @@ def _decode_current_spawner_action(
         }, offset
     if action == "SpawnerActions_RaiseEvent":
         base, offset = _read_action_base(data, offset, field)
-        key, offset = _read_string(data, offset)
+        key, offset = _read_string(data, offset, strings=strings)
         return {
             "sourceOffset": start,
             "endOffset": offset,
@@ -1050,9 +731,12 @@ def decode_spawner_wave_map_sequential(
     data: bytes,
     *,
     wave_map_offset: int,
+    strings: StringPool | None = None,
 ) -> dict[str, Any]:
     """Decode wave/group/action maps sequentially from an exact owner cursor."""
 
+    selected_routes = _spawner_action_routes()
+    routes = {key[0]: (name, key[1]) for key, name in selected_routes.items()}
     offset = wave_map_offset
     raw_wave_count, offset = _exact_u32(data, offset, "waveMap.count")
     if raw_wave_count == NULL_COUNT:
@@ -1072,6 +756,7 @@ def decode_spawner_wave_map_sequential(
         deadline, offset = _exact_f32(
             data, offset, f"waveMap[{wave_index}].deadlineBeginDeltaTime"
         )
+        wave_disabled, offset = _exact_bool(data, offset, "wave.defaultDisable")
         raw_group_count, offset = _exact_u32(data, offset, f"waveMap[{wave_index}].groupMap")
         group_count = 0 if raw_group_count == NULL_COUNT else raw_group_count
         if group_count > MAX_GROUP_COUNT:
@@ -1103,18 +788,19 @@ def decode_spawner_wave_map_sequential(
                 )
                 action, offset = _decode_current_spawner_action(
                     data, offset,
-                    f"waveMap[{wave_index}].groupMap[{group_index}].actionMap[{action_index}]",
+                    f"waveMap[{wave_index}].groupMap[{group_index}].actionMap[{action_index}]", strings=strings, routes=routes
                 )
                 unresolved_union |= action.get("concreteType") is None
                 actions.append({"mapKey": action_map_key, **action})
             group_deadline, offset = _exact_f32(data, offset, "group.deadlineBeginDeltaTime")
+            group_disabled, offset = _exact_bool(data, offset, "group.defaultDisable")
             backup_count, offset = _exact_i32(data, offset, "group.groupBackUpCount")
             group_id, offset = _exact_i32(data, offset, "group.groupId")
-            group_key, offset = _read_string(data, offset)
+            group_key, offset = _read_string(data, offset, strings=strings)
             max_count, offset = _exact_i32(data, offset, "group.groupMaxCount")
             group_mode, offset = _exact_i32(data, offset, "group.groupMode")
             kill_count, offset = _exact_i32(data, offset, "group.groupModeKillCount")
-            target_key, offset = _read_string(data, offset)
+            target_key, offset = _read_string(data, offset, strings=strings)
             has_deadline, offset = _exact_bool(data, offset, "group.hasDeadlineBegin")
             limit_max, offset = _exact_bool(data, offset, "group.limitGroupMaxCount")
             group_timestamp, offset = _exact_f32(data, offset, "group.timestamp")
@@ -1124,6 +810,7 @@ def decode_spawner_wave_map_sequential(
                 "mapKey": group_map_key,
                 "actionMap": actions,
                 "deadlineBeginDeltaTime": group_deadline,
+                "defaultDisable": group_disabled,
                 "groupBackUpCount": backup_count,
                 "groupId": group_id,
                 "groupKey": group_key or "",
@@ -1140,16 +827,17 @@ def decode_spawner_wave_map_sequential(
         repeatable, offset = _exact_bool(data, offset, "wave.repeatable")
         timestamp, offset = _exact_f32(data, offset, "wave.timestamp")
         wave_id, offset = _exact_i32(data, offset, "wave.waveId")
-        wave_key, offset = _read_string(data, offset)
+        wave_key, offset = _read_string(data, offset, strings=strings)
         wave_mode, offset = _exact_i32(data, offset, "wave.waveMode")
         kill_count, offset = _exact_i32(data, offset, "wave.waveModeKillCount")
-        target_key, offset = _read_string(data, offset)
+        target_key, offset = _read_string(data, offset, strings=strings)
         waves.append({
             "sourceOffset": wave_start,
             "endOffset": offset,
             "mapKey": map_key,
             "deadlineBeginDeltaTime": deadline,
             "groupMap": groups,
+            "defaultDisable": wave_disabled,
             "hasDeadlineBegin": has_deadline,
             "isHidden": is_hidden,
             "repeatable": repeatable,
@@ -1164,6 +852,8 @@ def decode_spawner_wave_map_sequential(
         raise SpawnerWaveDecodeError(
             f"waveMap: trailing bytes after sequential decode: {len(data) - offset}"
         )
+    if _spawner_action_routes() != selected_routes:
+        raise SpawnerWaveDecodeError("waveMap: native union routes changed during decode")
     return {
         "waveMapOffset": wave_map_offset,
         "bytesConsumed": offset,
@@ -1177,48 +867,51 @@ def decode_spawner_wave_map_sequential(
     }
 
 
-def frame_spawner_named(data: bytes) -> dict[str, Any]:
+def frame_spawner_named(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
     """Read one named SpawnerConfig cursor, retaining its proved prefix on refusal.
 
     A suffix match cannot close an unknown prefix. The whole-file status is
     admitted only by the sequential wave reader at physical EOF; unsupported
     route or action variants keep the earlier fields and an explicit open range.
     """
+    gate = check_spawner_records_native_inputs()
+    if gate.status != "validated":
+        raise SpawnerEnemyLibraryDecodeError(f"spawnerRecords.native:{gate.status}:{gate.detail}")
     boundary = (
         "exact: stored SpawnerConfig fields and admitted nested routes at their "
         "sequential cursor; authored settings, positions and actions do not "
         "establish runtime spawning, execution, or ownership."
     )
     try:
-        prefix = decode_spawner_named_prefix(data)
+        prefix = decode_spawner_named_prefix(data, strings=strings)
     except SpawnerEnemyLibraryDecodeError as exc:
         # The independent enemy-library reader owns this earlier boundary.
-        prefix = decode_spawner_enemy_library(data)
+        prefix = decode_spawner_enemy_library(data, strings=strings)
         reached = int(prefix["enemyLibraryEndOffset"])
         return {
             **prefix, "schemaStatus": "bounded_partial",
-            "serializedMemberCount": 5,
+            "serializedMemberCount": SPAWNER_CONFIG_MEMBER_COUNT,
             "closedFields": ["configId", "enemyLibrary"],
             "bytesConsumed": reached,
-            "openField": {"name": "routeMap", "startOffset": reached},
+            "openField": {"name": "preprocessList", "startOffset": reached},
             "opaqueRemainder": {"startOffset": reached, "byteLength": len(data) - reached},
             "diagnostic": str(exc), "evidenceBoundary": boundary,
         }
     reached = int(prefix["waveMapOffset"])
-    closed = ["configId", "enemyLibrary", "routeMap", "settings"]
+    closed = ["configId", "enemyLibrary", "preprocessList", "routeMap", "settings"]
     try:
-        waves = decode_spawner_wave_map_sequential(data, wave_map_offset=reached)
+        waves = decode_spawner_wave_map_sequential(data, wave_map_offset=reached, strings=strings)
     except SpawnerWaveDecodeError as exc:
         return {
             **prefix, "schemaStatus": "bounded_partial",
-            "serializedMemberCount": 5, "closedFields": closed,
+            "serializedMemberCount": SPAWNER_CONFIG_MEMBER_COUNT, "closedFields": closed,
             "bytesConsumed": reached,
             "openField": {"name": "waveMap", "startOffset": reached},
             "opaqueRemainder": {"startOffset": reached, "byteLength": len(data) - reached},
             "diagnostic": str(exc), "evidenceBoundary": boundary,
         }
     return {
-        **prefix, **waves, "serializedMemberCount": 5,
+        **prefix, **waves, "serializedMemberCount": SPAWNER_CONFIG_MEMBER_COUNT,
         "schemaStatus": (
             "named_exact" if waves["schemaStatus"] == "named-exact"
             else waves["schemaStatus"]

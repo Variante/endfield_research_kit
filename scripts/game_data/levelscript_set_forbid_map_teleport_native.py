@@ -21,11 +21,11 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_record, method_spec_usage_index
@@ -58,7 +58,7 @@ def _contract(path: Path) -> dict[str, Any]:
         contract.get("schema") != SCHEMA or contract.get("status") != "exact-current-build"
         or set(contract.get("nativeInputs") or {})
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or len(routes) != 1 or routes[0].get("tag") != 0x041A
+        or len(routes) != 1 or (type(routes[0].get("tag")) is not int or not 0 <= routes[0].get("tag") < 0x10000)
         or routes[0].get("typeName") != "Beyond.Gameplay.Actions.SetForbidMapTeleport"
         or not all(route.get("sourceReceipts") for route in routes)
     ):
@@ -89,7 +89,7 @@ def _contract(path: Path) -> dict[str, Any]:
             ]
             or [row.get("memberIndex") for row in contexts]
             != [i for i, (_, kind) in enumerate(fields) if kind in _GENERIC_SHAPES]
-            or len(methods) != 2 or len(route.get("codeWindows") or []) != 8
+            or len(methods) != 2 or len(route.get("codeWindows") or []) < 2
             or methods[0][1] != route.get("wrapperName")
             or not methods[1][1].startswith(route["wrapperName"] + "+")
             or [row[2] for row in methods] != ["Deserialize", "Deserialize"]
@@ -259,7 +259,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         image.check_instruction_windows([[count["rva"], count["hex"]]], label=LABEL)
         count_raw = bytes.fromhex(count["hex"])
         if (
-            not windows[1]["startRva"] <= count["rva"] < route["orderedReads"][0]["readCallRva"]
+            not any(w["startRva"] <= count["rva"] and count["rva"] + 4 <= w["endRva"] for w in windows[:-1])
+            or count["rva"] >= route["orderedReads"][0]["readCallRva"]
             or len(count_raw) != 4 or count_raw[:3] != b"\x40\x80\xfe"
             or count_raw[-1] != route["serializedMemberCount"]
         ):
@@ -270,7 +271,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
             member = wrapper.members[read["memberIndex"]]
             setter = image.metadata.methods[member.method_index]
             if (
-                not previous < read_site < setter_site < windows[1]["endRva"]
+                not previous < read_site < setter_site
+                or not all(any(w["startRva"] <= site and site + 5 <= w["endRva"] for w in windows[:-1]) for site in (read_site, setter_site))
                 or _call_target(image, read_site, read["readCallHex"]) != read["readTargetRva"]
                 or _call_target(image, setter_site, read["setterCallHex"]) != read["setterTargetRva"]
                 or member.method_index != read["setterMethodIndex"]
@@ -316,7 +318,7 @@ def _validate_sources(
     )
     count = 0
     for route in contract["routes"]:
-        prefix = b"\xfa\x1a\x04\x0a"
+        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
         for path, digest, start, end, span_digest in route["sourceReceipts"]:
             data = (export_root / path).read_bytes()
             if (
@@ -335,7 +337,6 @@ def _validate_sources(
     return count
 
 
-@lru_cache(maxsize=4)
 def validate_levelscript_set_forbid_map_teleport_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,

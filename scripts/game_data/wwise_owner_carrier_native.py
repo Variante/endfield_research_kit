@@ -25,7 +25,7 @@ from scripts.game_data.wwise_source_queue_native import (
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "wwise_owner_carrier_native.json"
-SCHEMA = "endfield.wwise-owner-carrier-native.v1"
+SCHEMA = "endfield.wwise-owner-carrier-native.v2"
 ROLE_ARGUMENTS = {
     "ownerCommand4": {"primaryOwnerPointer"},
     "ownerCommandEnqueue": {"commandWord", "primaryOwnerPointer"},
@@ -218,7 +218,7 @@ def validate_owner_carrier_declarations(contract: dict[str, Any]) -> None:
         _rva(row.get("rva"), "data")
         _digest(row.get("sha256"), "data")
     count, selected = table.get("entryCount"), table.get("selectedTag")
-    if type(count) is not int or not 1 <= count <= 256 or type(selected) is not int or not 0 <= selected < count or selected != constants["selectedCommand"]:
+    if type(count) is not int or not 1 <= count <= 128 or type(selected) is not int or not 0 <= selected < count or selected != constants["selectedCommand"]:
         _fail("carrierCommandTable", "dispatchTable", "bounded selected command", table)
     owner = owners.get(table.get("ownerGroup"), {})
     target = _rva(table.get("targetRva"), "dispatchTable")
@@ -229,9 +229,28 @@ def validate_owner_carrier_declarations(contract: dict[str, Any]) -> None:
         _fail("carrierAddressPoint", "addressPoint", "bounded slot selecting owner command4 leaf", point)
     drain_witnesses = witnesses[table["ownerGroup"]]
     table_load = bytes.fromhex(drain_witnesses["loadCommandDispatchTable"]["instructionHex"])
-    expected_table_load = bytes.fromhex("418b8c84") + struct.pack("<I", int(table["rva"], 16))
+    registers=['rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi',*[f'r{i}' for i in range(8,16)]]
+    index_register=table.get('indexRegister')
+    if index_register not in registers or index_register in {'rsp','r12'}:
+        _fail('carrierDispatchIndex','dispatchTable','GP index distinct from RSP and module-base R12',index_register)
+    register=registers.index(index_register)
+    expected_table_load = bytes((0x41|(2 if register>=8 else 0),0x8b,0x8c,0x84|((register&7)<<3))) + struct.pack("<I", int(table["rva"], 16))
     if table_load != expected_table_load:
         _fail("carrierDispatchTableAddress", "dispatchTable", expected_table_load.hex(), table_load.hex())
+    expected_read=(b'\x44' if register>=8 else b'')+bytes((0x0f,0xb6,0xc0|((register&7)<<3)))
+    expected_bound=(b'\x41' if register>=8 else b'')+bytes((0x83,0xf8|(register&7),count-1))
+    sequence=[('readCommandByte',expected_read),('boundCommandTag',expected_bound),
+              ('branchCommandTagOutOfRange',None),('loadCommandDispatchTable',expected_table_load),
+              ('addModuleBaseToTarget',bytes.fromhex('4903cc')),('dispatchSelectedCommand',bytes.fromhex('ffe1'))]
+    end=None
+    for role,expected_bytes in sequence:
+        witness=drain_witnesses.get(role,{})
+        actual=bytes.fromhex(witness.get('instructionHex',''))
+        at=_rva(witness.get('rva'),role)
+        if (end is not None and at!=end or expected_bytes is not None and actual!=expected_bytes
+                or expected_bytes is None and (len(actual)!=2 or actual[0]!=0x77 or actual[1]>=0x80)):
+            _fail('carrierDispatchIndexFlow',role,'contiguous zero-extended command, bound, unsigned exit and matching table index',witness)
+        end=at+len(actual)
     ready_bit = constants["readyBit"]
     if not ready_bit or ready_bit & (ready_bit - 1):
         _fail("carrierReadyBit", "readyBit", "single u32 bit", ready_bit)

@@ -14,9 +14,20 @@ from typing import Any
 
 from scripts.game_data.dependency_snapshot import local_dependency_paths
 from scripts.game_data.il2cpp.native_image import METADATA_HELPER_PATH, NATIVE_MAPPER_PATH
+from scripts.game_data.string_pool import PAGE_RE
 from scripts.repo_paths import REPO_ROOT
 
 SCHEMA = "endfield.levelscript-complete-reader-inputs.v1"
+
+
+def snapshot_string_pool_inputs(json_dir: Path) -> dict[str, Any]:
+    """Bind saved path resolutions to the complete selected exported page set."""
+    root=(Path(json_dir)/'StringPool').resolve();rows=[]
+    for path in sorted(root.glob('StringPool*.byte')):
+        if not PAGE_RE.fullmatch(path.name):continue
+        raw=path.read_bytes()
+        rows.append({'path':path.as_posix(),'length':len(raw),'sha256':hashlib.sha256(raw).hexdigest().upper()})
+    return {'schema':'endfield.levelscript-string-pool-inputs.v1','root':root.as_posix(),'files':rows}
 
 
 def complete_reader_input_paths() -> list[Path]:

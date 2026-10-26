@@ -1,13 +1,13 @@
 {
-  "schema": "endfield.collision-body-mode-native.v1",
+  "schema": "endfield.collision-body-mode-native.v2",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "typeName": {
-    "rva": 25921272,
+    "rva": 27600200,
     "ascii": "PxRigidDynamic"
   },
   "layout": {
@@ -19,47 +19,47 @@
       "setFlagSlot": 408
     },
     "registration": {
-      "nameTableRva": 27663536,
-      "functionTableRva": 27668368,
+      "nameTableRva": 29311072,
+      "functionTableRva": 29306240,
       "count": 603
     }
   },
   "codeWindows": [
     {
       "role": "registration_loop",
-      "rva": 3929952,
+      "rva": 4769024,
       "bytes": 83,
-      "sha256": "ca368aae1b3a8e0e74b47887625fd001c92c64ace7af0541d92e3cfa2f65f9a6"
+      "sha256": "1e2b54f514b1f37e99e8b4c8d7c069fbe9a983dcdb953bbc7fe9dead07aa97c0"
     },
     {
       "role": "registration_forwarder",
-      "rva": 3928688,
-      "bytes": 106,
-      "sha256": "b5eab384da5d794db6d62a17d18789c09fb178e6ba346bb0eb3f12d1a739bcb3"
+      "rva": 4768624,
+      "bytes": 110,
+      "sha256": "16224e8edfb85738b949674e85168f9179b2e6cae3169d3b62b966dfb3ee8af8"
     },
     {
       "role": "setter_wrapper",
-      "rva": 4185712,
-      "bytes": 184,
-      "sha256": "57bbb8695a6803f404839800d7ed78cb643b3e760a3357128904ed08c0c95808"
+      "rva": 2286224,
+      "bytes": 145,
+      "sha256": "de552ac4bb22ede6445ba55734ec2430d0ac9a09c10d4d0b363cda4c6ec52d06"
     },
     {
       "role": "set_kinematic",
-      "rva": 4187824,
-      "bytes": 613,
-      "sha256": "759fc3e357170c8c0cc050c2c162617bb175b719786cc9adc99039f908635142"
+      "rva": 2280864,
+      "bytes": 457,
+      "sha256": "d2043cfaae496527873ba09b3e7c331ca39e5b97575315de2642ce16b9f77c87"
     },
     {
       "role": "typed_dynamic_flags",
-      "rva": 7725392,
+      "rva": 7817360,
       "bytes": 60,
       "sha256": "bc9f868e0914fa7521d26328ede65d047b9ee493a06a8f9fa238190daf4d9e6f"
     },
     {
       "role": "dynamic_type_name",
-      "rva": 7719760,
+      "rva": 7811728,
       "bytes": 8,
-      "sha256": "040b820b5999f82c17203d7ea7da24c27e3827435b9e159400428b641d1071de"
+      "sha256": "72275827e0896a68f3a013686d51f321363f0310b9411d5f5ad624bf9ec0a01b"
     }
   ],
   "probes": [
@@ -86,102 +86,102 @@
     {
       "role": "registration_forwarder",
       "offset": 46,
-      "hex": "488bd6488bcdff1407"
+      "hex": "488bd6488bcd4c8b040741ffd0"
     },
     {
       "role": "registration_forwarder",
-      "offset": 78,
+      "offset": 82,
       "hex": "488bd6488bcd"
     },
     {
       "role": "setter_wrapper",
       "offset": 32,
-      "hex": "0fb6fa"
+      "hex": "0fb6da"
     },
     {
       "role": "setter_wrapper",
-      "offset": 95,
-      "hex": "4084ff488bc80f95c2"
+      "offset": 99,
+      "hex": "84db488bc80f95c2"
     },
     {
       "role": "set_kinematic",
-      "offset": 13,
-      "hex": "440fb6f2488bf1"
+      "offset": 12,
+      "hex": "0fb6f2488bf9"
     },
     {
       "role": "set_kinematic",
-      "offset": 70,
-      "hex": "ffd00fb60880e101413ace"
+      "offset": 57,
+      "hex": "ffd00fb60880e101403ace"
     },
     {
       "role": "set_kinematic",
-      "offset": 311,
-      "hex": "4584f6742b"
+      "offset": 180,
+      "hex": "4084f6742e"
     },
     {
       "role": "set_kinematic",
-      "offset": 338,
-      "hex": "41b001ba01000000488bc84c8b0841ff9198010000"
+      "offset": 207,
+      "hex": "41b001ba01000000488b08488b8198010000488b4f60ffd0"
     },
     {
       "role": "set_kinematic",
-      "offset": 419,
-      "hex": "4584f6752b"
+      "offset": 258,
+      "hex": "4084f67469"
     },
     {
       "role": "set_kinematic",
-      "offset": 424,
-      "hex": "488b46604533c0ba01000000488bc84c8b0841ff9198010000"
+      "offset": 368,
+      "hex": "488b47604533c0ba01000000488b08488b8198010000488b4f60ffd0"
     },
     {
       "role": "set_kinematic",
-      "offset": 508,
+      "offset": 304,
       "hex": "488b82a8010000488d542478ffd0f60001"
     },
     {
       "role": "set_kinematic",
-      "offset": 539,
-      "hex": "c6869800000001"
+      "offset": 330,
+      "hex": "c6879800000001"
     },
     {
       "role": "set_kinematic",
-      "offset": 559,
-      "hex": "488b4e60c6869800000000"
+      "offset": 419,
+      "hex": "488b4f60c6879800000000"
     }
   ],
   "fieldOperands": [
     {
       "role": "set_kinematic",
-      "offset": 8,
+      "offset": 7,
       "prefix": "488379",
       "mode": "u8",
       "field": "mode.actorOffset"
     },
     {
       "role": "set_kinematic",
-      "offset": 20,
+      "offset": 18,
       "prefix": "8891",
       "mode": "u32",
       "field": "mode.cachedOffset"
     },
     {
       "role": "set_kinematic",
-      "offset": 58,
+      "offset": 45,
       "prefix": "488b82",
       "mode": "u32",
       "field": "mode.getFlagsSlot"
     },
     {
       "role": "set_kinematic",
-      "offset": 75,
+      "offset": 62,
       "prefix": "80e1",
       "mode": "u8",
       "field": "mode.mask"
     },
     {
       "role": "set_kinematic",
-      "offset": 352,
-      "prefix": "41ff91",
+      "offset": 218,
+      "prefix": "488b81",
       "mode": "u32",
       "field": "mode.setFlagSlot"
     },
@@ -220,38 +220,38 @@
       "offset": 48,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 3928688
+      "targetRva": 4768624
     },
     {
       "role": "registration_forwarder",
-      "offset": 99,
+      "offset": 103,
       "prefix": "48ff25",
       "mode": "rip32",
-      "targetRva": 30363584
+      "targetRva": 32245744
     },
     {
       "role": "setter_wrapper",
-      "offset": 104,
+      "offset": 107,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 4187824
+      "targetRva": 2280864
     },
     {
       "role": "dynamic_type_name",
       "offset": 0,
       "prefix": "488d05",
       "mode": "rip32",
-      "targetRva": 25921272
+      "targetRva": 27600200
     }
   ],
   "vtableSlots": [
     {
-      "tableRva": 25955928,
+      "tableRva": 27634840,
       "slot": 53,
       "role": "typed_dynamic_flags"
     },
     {
-      "tableRva": 25955928,
+      "tableRva": 27634840,
       "slot": 1,
       "role": "dynamic_type_name"
     }
@@ -259,25 +259,26 @@
   "registration": {
     "slot": 214,
     "name": "UnityEngine.Rigidbody::set_isKinematic",
-    "functionRva": 4185712
+    "functionRva": 2286224,
+    "termination": "compiled-count"
   },
   "managedSetter": {
     "method": [
-      439002,
+      559814,
       "UnityEngine.Rigidbody",
       "set_isKinematic",
-      59369072
+      91702704
     ],
     "parameterType": "System.Boolean",
-    "bodyBytes": 80,
-    "bodySha256": "6a6dddc3c162c59646597bbd422d73249dfeb5aa2c37f5d2fcef2f02a7d8b73f",
-    "lookupRva": 59369119,
-    "literalRva": 176620016,
-    "resolverRva": 127408,
-    "cacheLoadRva": 59369082,
-    "cacheStoreRva": 59369140,
-    "cacheCellRva": 233503952,
-    "tailJumpRva": 59369116
+    "bodyBytes": 77,
+    "bodySha256": "a6e0f572a1fb5dbb68a47c74a49d390ea40aaa14d69972e8720468b2c4332488",
+    "lookupRva": 91702751,
+    "literalRva": 228844040,
+    "resolverRva": 207520,
+    "cacheLoadRva": 91702714,
+    "cacheStoreRva": 91702772,
+    "cacheCellRva": 292757512,
+    "tailJumpRva": 91702748
   },
   "representation": {
     "bodyModeName": "kinematic",

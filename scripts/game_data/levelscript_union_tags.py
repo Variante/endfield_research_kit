@@ -77,23 +77,24 @@ def short_name(wrapper_name: str) -> str:
     return wrapper_name.removesuffix(_WRAPPER_SUFFIX)
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=2)
+def _tables(raw: bytes):
+    contract=json.loads(raw.decode('utf-8-sig'))
+    if contract.get('schema')!=SCHEMA:raise ValueError(f"schema={contract.get('schema')}")
+    families=contract.get('families') or {}
+    return contract,{family:{r['name']:(r['tag'],r['memberCount']) for r in rows} for family,rows in families.items()}, {family:{r['name']:r.get('wrapperName','') for r in rows} for family,rows in families.items()}
+
+
 def _load(contract_path: Path = DEFAULT_CONTRACT) -> tuple[dict[str, dict[str, tuple[int, int]]], dict[str, Any]]:
     try:
-        contract = json.loads(Path(contract_path).read_bytes().decode("utf-8-sig"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        contract,families,_ = _tables(Path(contract_path).read_bytes())
+    except (OSError, UnicodeError, ValueError) as error:
         return {}, {"status": "validation_failed", "detail": str(error)[:400]}
-    if contract.get("schema") != SCHEMA:
-        return {}, {"status": "validation_failed", "detail": f"schema={contract.get('schema')}"}
     inputs = contract.get("nativeInputs") or {}
     native = check_installed_native_inputs(
         str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         return {}, {"status": native.status, "detail": native.detail}
-    families = {
-        family: {row["name"]: (row["tag"], row["memberCount"]) for row in rows}
-        for family, rows in (contract.get("families") or {}).items()
-    }
     return families, {"status": NATIVE_EVIDENCE_VALIDATED, "detail": ""}
 
 
@@ -142,10 +143,14 @@ def routes(family: str, reviewed: dict[str, int]) -> dict[tuple[int, int], str]:
     its current member count differs, so a reader keyed by the result fails
     closed instead of reading a stale field order.
     """
+    families, audit = _load()
+    if audit.get("status") != NATIVE_EVIDENCE_VALIDATED:
+        return {}
+    selected = families.get(family, {})
     found: dict[tuple[int, int], str] = {}
     for name, member_count in reviewed.items():
-        current = pair(family, name)
-        if isinstance(current[0], int) and current[1] == member_count:
+        current = selected.get(name)
+        if current is not None and isinstance(current[0], int) and current[1] == member_count:
             found[current] = name
     return found
 
@@ -220,8 +225,8 @@ def tag_name(family: str, tag: int) -> str:
     contract changes.
     """
     loaded = _load()
-    if _TAG_INDEX[0] is not loaded:
-        _TAG_INDEX[:] = [loaded, {
+    if _TAG_INDEX[0] is not loaded[0]:
+        _TAG_INDEX[:] = [loaded[0], {
             family_name: {value[0]: name for name, value in rows.items()}
             for family_name, rows in loaded[0].items()
         }]
@@ -233,13 +238,12 @@ def wrapper_name(family: str, name: str) -> str:
     return _wrappers().get(family, {}).get(name, "")
 
 
-@lru_cache(maxsize=1)
 def _wrappers() -> dict[str, dict[str, str]]:
-    if _load()[1]["status"] != NATIVE_EVIDENCE_VALIDATED:
+    families,audit=_load()
+    if audit["status"] != NATIVE_EVIDENCE_VALIDATED:
         return {}
-    contract = json.loads(DEFAULT_CONTRACT.read_bytes().decode("utf-8-sig"))
-    return {family: {row["name"]: row.get("wrapperName", "") for row in rows}
-            for family, rows in (contract.get("families") or {}).items()}
+    _,selected,wrappers=_tables(DEFAULT_CONTRACT.read_bytes())
+    return wrappers if selected is families else {}
 
 
 def names(family: str) -> dict[tuple[int, int], str]:

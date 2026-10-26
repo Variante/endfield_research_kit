@@ -22,9 +22,6 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
-from scripts.game_data.codecs.levelscript.environment_volume_ptr import (
-    decode_environment_volume_ptr_param,
-)
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -32,9 +29,14 @@ from scripts.game_data.il2cpp.context import (
     generic_type_carrier, method_spec_record, method_spec_usage_index,
     unresolved_usage_index,
 )
-from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
+from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
+from scripts.game_data.levelscript_bool_param_native import validate_bool_param_native_contract
+from scripts.game_data.levelscript_environment_volume_ptr_param_native import validate_environment_volume_ptr_param_native_contract
+from scripts.game_data.memorypack.pooled_source_helper import validate_on_image
+from scripts.game_data.string_pool import export_string_pool, resolve_string_pool_index
 
 
 SCHEMA = "endfield.levelscript-environment-enable-native-contract.v1"
@@ -62,7 +64,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or data.get("status") != "exact-current-build"
         or data.get("evidenceBoundary") != "exact"
         or route.get("family") != "ActionBase"
-        or route.get("tag") != 0x00AE
+        or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Actions.EnvironmentEnable"
         or route.get("serializedMemberCount") != 10
         or route.get("inheritedMemberCount") != 8
@@ -80,7 +82,7 @@ def _contract(path: Path) -> dict[str, Any]:
         or [row.get("baseTypeName") for row in contexts]
         != [_PARAM_ELEMENTS[kind][3] for _, kind in fields[8:]]
         or len(data.get("methods", [])) != 2
-        or len(data.get("codeWindows", [])) != 8
+        or len(data.get("codeWindows", [])) < 2
         or data.get("pointedStruct", {}).get("wrappedType")
             != "Beyond.Gameplay.Core.EnvironmentVolumePtr"
         or data["pointedStruct"].get("fields") != [["id", "ulong"]]
@@ -91,7 +93,8 @@ def _contract(path: Path) -> dict[str, Any]:
         or len({(row[0], row[2]) for row in data["sourceReceipts"]}) != len(data["sourceReceipts"])
         or bytes.fromhex(data["memberCountInstruction"]["hex"])[-1] != 10
     ):
-        raise ValueError(f"{LABEL}.contract:shape")
+        raise ValueError(f"{LABEL}.contract:shape:expected=ten fields,two contexts,two methods,complete owned windows;"
+                         f"actual=fields:{len(fields)},contexts:{len(contexts)},methods:{len(data.get('methods',[]))},windows:{len(data.get('codeWindows',[]))}")
     return data
 
 
@@ -127,8 +130,8 @@ def _validate_context(image: Any, context: dict[str, Any], kind: str) -> None:
         raise ValueError(f"{LABEL}.native:param-arity={member}")
     argument = instance.arguments[0]
     raw = bytes.fromhex(argument.raw_type_record_hex)
-    if raw.hex().upper() != context["argumentRawHex"].upper() or raw[10] != context["typeKind"] != 0x15:
-        raise ValueError(f"{LABEL}.native:param-argument={member}")
+    if raw.hex().upper() != context["argumentRawHex"].upper() or not raw[10] == context["typeKind"] == 0x15:
+        raise NativeIdentityMismatch(f"{LABEL}.native:param-argument={member}", expected=0x15, recorded=context["typeKind"], actual=raw[10])
     carrier_pointer = struct.unpack_from("<Q", raw)[0]
     carrier_raw = image.pe.bytes_at_va(carrier_pointer, 32)
     base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
@@ -151,13 +154,13 @@ def _validate_context(image: Any, context: dict[str, Any], kind: str) -> None:
     definition = struct.unpack_from("<Q", element)[0] if expected_kind == 0x11 else None
     if (
         element.hex().upper() != context["elementRawHex"].upper()
-        or element[10] != context["elementTypeKind"] != expected_kind
+        or not element[10] == context["elementTypeKind"] == expected_kind
         or context["elementTypeName"] != expected_name
         or protocol.runtime_type_name(image.pe, image.metadata, child.arguments[0].type_pointer_va) != runtime_name
         or definition != context["elementTypeDefinition"]
         or (definition is not None and image.type_name(definition) != expected_name)
     ):
-        raise ValueError(f"{LABEL}.native:param-element={member}")
+        raise NativeIdentityMismatch(f"{LABEL}.native:param-element={member}", expected=expected_kind, recorded=context["elementTypeKind"], actual=element[10])
 
 
 def _validate_native(image: Any, contract: dict[str, Any]) -> None:
@@ -331,10 +334,20 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         ):
             raise ValueError(f"{LABEL}.native:param-context-order={member}")
         _validate_context(image, context, route["fields"][member][1])
+    validate_on_image(image, base + contract['readerHelpers']['string'], contract['nativeInputs'])
+    for validator, kind, width in (
+        (validate_bool_param_native_contract, 'Param<bool>', 1),
+        (validate_environment_volume_ptr_param_native_contract, 'Param<EnvironmentVolumePtr>', 8),
+    ):
+        child = validator(gameassembly=image.gameassembly, metadata=image.metadata_path)
+        expected = {'status': 'validated', 'codecKind': kind, 'rawSize': width, 'pathEncoding': 'int32-pool-index'}
+        if any(child.get(key) != value for key, value in expected.items()):
+            raise ValueError(f"{LABEL}.native:parameter={kind},status={child.get('status')},detail={str(child.get('detail',''))[:350]}")
 
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
 ) -> int:
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
@@ -355,30 +368,25 @@ def _validate_sources(
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
     route = contract["route"]
-    prefix = bytes((route["tag"], route["serializedMemberCount"]))
+    prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
     for path, digest, start, end, span_digest in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (
             not 0 <= start < end <= len(data)
-            or data[start:start+2] != prefix
+            or data[start:start+len(prefix)] != prefix
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
             or ledger.get(path, {}).get("length") != len(data)
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}")
-        cursor = _Cursor(data, start)
-        tag = cursor.byte("environmentEnable.tag")
-        if tag != route["tag"] or cursor.byte("environmentEnable.memberCount") != 10:
-            raise ValueError(f"{LABEL}.source:union-header={path}")
+        cursor = _Cursor(data, start+len(prefix), game_root=game_root, strings=strings)
         for name, kind in route["fields"]:
-            if kind == "Param<EnvironmentVolumePtr>":
-                parsed = decode_environment_volume_ptr_param(data, cursor.offset)
-                if parsed is None:
-                    raise ValueError(f"{LABEL}.source:env-ptr={path}")
-                _value, cursor.offset = parsed
+            field = "environmentEnable." + name
+            if kind == 'string':
+                resolve_string_pool_index(cursor.i32(field), strings, field)
             else:
-                cursor.value(kind, "environmentEnable." + name)
+                cursor.value(kind, field)
         if cursor.offset != end:
             raise ValueError(f"{LABEL}.source:end-offset={path}")
     return len(contract["sourceReceipts"])
@@ -391,6 +399,7 @@ def validate_environment_enable_native_contract(
 ) -> dict[str, Any]:
     """Validate selected native facts and optionally current source receipts."""
     try:
+        declaration=Path(contract_path).read_bytes()
         contract = _contract(Path(contract_path))
         expected = contract["nativeInputs"]
         root = Path(game_root) if game_root is not None else None
@@ -412,21 +421,26 @@ def validate_environment_enable_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent,
+                strings=export_string_pool(Path(export_root)))
+        after = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"],
+            gameassembly=gate.gameassembly, metadata=gate.metadata)
+        if after.status != "validated":
+            return {"status": after.status, "validator": LABEL, "failedCheck": "installed-native-inputs-after",
+                    "detail": "selected native inputs changed during validation: " + after.detail}
+        if not unity.is_file() or sha256_file(unity).upper() != expected["UnityPlayer.dll"].upper():
+            return {"status": "mismatched" if unity.is_file() else "missing", "validator": LABEL,
+                    "failedCheck": "UnityPlayer.dll-after", "detail": "selected UnityPlayer.dll changed during validation"}
+        if Path(contract_path).read_bytes()!=declaration:
+            raise ValueError(f'{LABEL}.contract:declaration-drift')
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],
                           "wrapperName": route["wrapperName"], "fields": route["fields"]},
                 "sourceReceiptsChecked": checked, "nativeInputs": expected}
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
-        failure = str(exc)
-        check = (failure.split(".contract:", 1)[1] if ".contract:" in failure
-                 else failure.split(".native:", 1)[1] if ".native:" in failure
-                 else failure.split(".source:", 1)[1] if ".source:" in failure
-                 else "contract-native-or-source")
-        return {"status": "validation_failed", "validator": LABEL,
-                "failedCheck": check, "detail": failure,
-                "validationFailures": [{"gate": check, "actual": failure[:500]}]}
+        return native_validation_failure(exc, label=LABEL, source_path=contract_path)
 
 
 def main() -> int:

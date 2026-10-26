@@ -1,44 +1,44 @@
 {
-  "schema": "endfield.wwise-provider-storage-native.v1",
+  "schema": "endfield.wwise-provider-storage-native.v2",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
-    "akSoundEngineFileSize": 3586536
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "globalMetadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "akSoundEngineSha256": "3f16948eef310154e6819191f632649fdff83df971b598474f2c0ea425ce4b97",
+    "akSoundEngineFileSize": 3587560
   },
   "nativeGroups": [
     {
       "key": "singletonInitializer",
-      "entryRva": "0xb5db0",
+      "entryRva": "0xb7ea0",
       "windows": [
         {
-          "rva": "0xb5db0",
+          "rva": "0xb7ea0",
           "bodyLength": 32,
-          "bodySha256": "2ba3ba398c3b8d4b6d3484035ea00582dda3ae43fc7b886987a7ae9840ff139d",
-          "unwindRva": "0x2efa30",
+          "bodySha256": "b3484945d8a9d5debe3debe6075fccce58136f8b2fcf7a0661c56932ec25dc3b",
+          "unwindRva": "0x2f03a8",
           "unwindInfoHex": "0104010004420000"
         },
         {
-          "rva": "0xb5dd0",
+          "rva": "0xb7ec0",
           "bodyLength": 69,
-          "bodySha256": "fe7f88ba1e29bf91317030846c8afb7940057462c0387981c252b4e44e208bbd",
-          "unwindRva": "0x2fe3f4",
-          "unwindInfoHex": "2105020005340400b05d0b00d05d0b0030fa2e00"
+          "bodySha256": "5b93aec62d316d012d117468753d5e6b374ad2d9477c976f405d6233cc29294a",
+          "unwindRva": "0x2ff1d0",
+          "unwindInfoHex": "2105020005340400a07e0b00c07e0b00a8032f00"
         },
         {
-          "rva": "0xb5e15",
+          "rva": "0xb7f05",
           "bodyLength": 12,
-          "bodySha256": "afadd351767733a7d0533b05c3e3be26e411ed8147219e7c95b5f18113e3e9a9",
-          "unwindRva": "0x2fe408",
-          "unwindInfoHex": "2100020000340400b05d0b00d05d0b0030fa2e00"
+          "bodySha256": "1205da42225c119ecd4ebbc4afa8ba6bb28984a9852c222244908d4f58d047a0",
+          "unwindRva": "0x2ff1e4",
+          "unwindInfoHex": "2100020000340400a07e0b00c07e0b00a8032f00"
         },
         {
-          "rva": "0xb5e21",
+          "rva": "0xb7f11",
           "bodyLength": 5,
           "bodySha256": "3297a0e4175e5d032a2be5212c1a1980cd3df21251db492413a47fcb4b6187ac",
-          "unwindRva": "0x2fe41c",
-          "unwindInfoHex": "21000000b05d0b00d05d0b0030fa2e00"
+          "unwindRva": "0x2ff1f8",
+          "unwindInfoHex": "21000000a07e0b00c07e0b00a8032f00"
         }
       ],
       "requiredRoles": [
@@ -51,40 +51,40 @@
       "instructionWitnesses": [
         {
           "role": "loadSingleton",
-          "rva": "0xb5dc4",
-          "instructionHex": "488b0525eb2800"
+          "rva": "0xb7eb4",
+          "instructionHex": "488b057dca2800"
         },
         {
           "role": "requestSingletonBytes",
-          "rva": "0xb5dd5",
+          "rva": "0xb7ec5",
           "instructionHex": "ba18000000"
         },
         {
           "role": "addressFactoryTable",
-          "rva": "0xb5df6",
-          "instructionHex": "488d0dc3cc1d00"
+          "rva": "0xb7ee6",
+          "instructionHex": "488d0d73bb1d00"
         },
         {
           "role": "storeFactoryTable",
-          "rva": "0xb5e06",
+          "rva": "0xb7ef6",
           "instructionHex": "488908"
         },
         {
           "role": "storeSingleton",
-          "rva": "0xb5e09",
-          "instructionHex": "488905e0ea2800"
+          "rva": "0xb7ef9",
+          "instructionHex": "48890538ca2800"
         }
       ]
     },
     {
       "key": "ordinaryProviderFactory",
-      "entryRva": "0xb5e30",
+      "entryRva": "0xb7f20",
       "windows": [
         {
-          "rva": "0xb5e30",
+          "rva": "0xb7f20",
           "bodyLength": 195,
-          "bodySha256": "132d82f169dee1a3ff48763c69b967094c993c882d6fc3471c7fd99b2a1c1cd1",
-          "unwindRva": "0x2f2c54",
+          "bodySha256": "5117e7b9fce84ab9f6da35b38cdd1ba37c9ef2cddfe9ed99afb2074d6edcb03c",
+          "unwindRva": "0x2f11b8",
           "unwindInfoHex": "011a0a001a7409001a6408001a5407001a3406001a3216e0"
         }
       ],
@@ -106,80 +106,80 @@
       "instructionWitnesses": [
         {
           "role": "loadOutputArgument",
-          "rva": "0xb5e4a",
+          "rva": "0xb7f3a",
           "instructionHex": "488b742450"
         },
         {
           "role": "retainDescriptor",
-          "rva": "0xb5e4f",
+          "rva": "0xb7f3f",
           "instructionHex": "4c8bf2"
         },
         {
           "role": "requestProviderBytes",
-          "rva": "0xb5e52",
+          "rva": "0xb7f42",
           "instructionHex": "ba10010000"
         },
         {
           "role": "clearOutput",
-          "rva": "0xb5e62",
+          "rva": "0xb7f52",
           "instructionHex": "48c70600000000"
         },
         {
           "role": "callConstructor",
-          "rva": "0xb5e76",
-          "instructionHex": "e8e5520000"
+          "rva": "0xb7f66",
+          "instructionHex": "e815520000"
         },
         {
           "role": "retainProvider",
-          "rva": "0xb5e7b",
+          "rva": "0xb7f6b",
           "instructionHex": "488bd8"
         },
         {
           "role": "forwardDescriptor",
-          "rva": "0xb5ea5",
+          "rva": "0xb7f95",
           "instructionHex": "498bd6"
         },
         {
           "role": "loadPrimaryTable",
-          "rva": "0xb5e9f",
+          "rva": "0xb7f8f",
           "instructionHex": "488b03"
         },
         {
           "role": "callPrimaryOpenSlot",
-          "rva": "0xb5eab",
+          "rva": "0xb7f9b",
           "instructionHex": "ff5008"
         },
         {
           "role": "addressSecondaryInterface",
-          "rva": "0xb5eae",
+          "rva": "0xb7f9e",
           "instructionHex": "4881c390000000"
         },
         {
           "role": "testOpenStatus",
-          "rva": "0xb5eb7",
+          "rva": "0xb7fa7",
           "instructionHex": "83f801"
         },
         {
           "role": "branchSuccessfulOpen",
-          "rva": "0xb5eba",
+          "rva": "0xb7faa",
           "instructionHex": "740d"
         },
         {
           "role": "storeOutputInterface",
-          "rva": "0xb5ec9",
+          "rva": "0xb7fb9",
           "instructionHex": "48891e"
         }
       ]
     },
     {
       "key": "ordinaryProviderConstructor",
-      "entryRva": "0xbb160",
+      "entryRva": "0xbd180",
       "windows": [
         {
-          "rva": "0xbb160",
+          "rva": "0xbd180",
           "bodyLength": 70,
-          "bodySha256": "5b080b9ee613244ddaad43458fb571ccda4726c770f4276bb893607f99dc8b59",
-          "unwindRva": "0x2efabc",
+          "bodySha256": "a51ec098fe0146a738005f0f38c691915d168e0c50f991e3d840c8780e049980",
+          "unwindRva": "0x2f0434",
           "unwindInfoHex": "0106020006320230"
         }
       ],
@@ -194,67 +194,67 @@
       "instructionWitnesses": [
         {
           "role": "retainAllocation",
-          "rva": "0xbb166",
+          "rva": "0xbd186",
           "instructionHex": "488bd9"
         },
         {
           "role": "addressPrimaryTable",
-          "rva": "0xbb185",
-          "instructionHex": "488d055c811d00"
+          "rva": "0xbd1a5",
+          "instructionHex": "488d05dc701d00"
         },
         {
           "role": "storePrimaryTable",
-          "rva": "0xbb18c",
+          "rva": "0xbd1ac",
           "instructionHex": "488903"
         },
         {
           "role": "addressSecondaryTable",
-          "rva": "0xbb18f",
-          "instructionHex": "488d05ca801d00"
+          "rva": "0xbd1af",
+          "instructionHex": "488d054a701d00"
         },
         {
           "role": "storeSecondaryTable",
-          "rva": "0xbb196",
+          "rva": "0xbd1b6",
           "instructionHex": "48898390000000"
         },
         {
           "role": "returnAllocation",
-          "rva": "0xbb19d",
+          "rva": "0xbd1bd",
           "instructionHex": "488bc3"
         }
       ]
     },
     {
       "key": "providerDescriptorStorage",
-      "entryRva": "0xb9530",
+      "entryRva": "0xbb530",
       "windows": [
         {
-          "rva": "0xb9530",
-          "bodyLength": 214,
-          "bodySha256": "a0d43a388ab5f9ae37a447d6020311ca4d9df49576f92e10284ba31296d66aaf",
-          "unwindRva": "0x2fe818",
-          "unwindInfoHex": "0112080012540e0012340d0012720ee00c700b60"
+          "rva": "0xbb530",
+          "bodyLength": 157,
+          "bodySha256": "6b051f7009a921b7100e43fbe27322a1f7928d8faaaaee4be19cd444d0bca0b0",
+          "unwindRva": "0x2ff604",
+          "unwindInfoHex": "0114080014640f0014540e00147210f00ee00cc0"
         },
         {
-          "rva": "0xb9606",
-          "bodyLength": 65,
-          "bodySha256": "f29a1563d5535f210b97f9b75172e977408759cd82e0fcbd64193c5606961d00",
-          "unwindRva": "0x2fe82c",
-          "unwindInfoHex": "2105020005f40c0030950b0006960b0018e82f00"
+          "rva": "0xbb5cd",
+          "bodyLength": 160,
+          "bodySha256": "86debc056f97ab22429fc695e2ffa3220694a5381a495ad051153cf2fdcdbc79",
+          "unwindRva": "0x2ff618",
+          "unwindInfoHex": "2155040055340c0005740d0030b50b00cdb50b0004f62f00"
         },
         {
-          "rva": "0xb9647",
-          "bodyLength": 381,
-          "bodySha256": "ed9dedfc1553889e958f09e7c2361cca6327766abe9267fb44d70051167e7af1",
-          "unwindRva": "0x2fe840",
-          "unwindInfoHex": "2100020000f40c0030950b0006960b0018e82f00"
+          "rva": "0xbb66d",
+          "bodyLength": 296,
+          "bodySha256": "f9219d6917aca401f80a58c6d6db3da39715f83f251791e77400d1c63e43269d",
+          "unwindRva": "0x2ff630",
+          "unwindInfoHex": "2100040000740d0000340c0030b50b00cdb50b0004f62f00"
         },
         {
-          "rva": "0xb97c4",
-          "bodyLength": 28,
-          "bodySha256": "91c8bbd16e684bcc346976c9841673c5e835ae174e1c714f30e092d1725bec8d",
-          "unwindRva": "0x2fe854",
-          "unwindInfoHex": "2100000030950b0006960b0018e82f00"
+          "rva": "0xbb795",
+          "bodyLength": 30,
+          "bodySha256": "2817de1227c7b06e8ea5081adaeda0137e16d1dd0f92660357d023bd14de4a69",
+          "unwindRva": "0x2ff648",
+          "unwindInfoHex": "2100000030b50b00cdb50b0004f62f00"
         }
       ],
       "requiredRoles": [
@@ -278,7 +278,6 @@
         "testInputText",
         "branchNoText",
         "loadInputTextForLength",
-        "callTextLength",
         "includeTerminator",
         "scaleWideBytes",
         "requestTextStorage",
@@ -288,175 +287,206 @@
         "forwardTextCapacity",
         "forwardTextDestination",
         "callTextCopy",
-        "continueAfterText"
+        "continueAfterText",
+        "clearLengthZero",
+        "initializeMinusOne",
+        "retainMinusOne",
+        "incrementTextCursor",
+        "compareTextUnit",
+        "repeatNonzeroTextUnit"
       ],
       "instructionWitnesses": [
         {
           "role": "retainInputDescriptor",
-          "rva": "0xb9542",
-          "instructionHex": "4c8bf2"
+          "rva": "0xbb544",
+          "instructionHex": "488bea"
         },
         {
           "role": "retainProvider",
-          "rva": "0xb9545",
-          "instructionHex": "488bd9"
+          "rva": "0xbb547",
+          "instructionHex": "488bf1"
         },
         {
           "role": "requestDescriptorBytes",
-          "rva": "0xb9548",
+          "rva": "0xbb54a",
           "instructionHex": "ba70000000"
         },
         {
           "role": "storeDescriptorAllocation",
-          "rva": "0xb95a8",
-          "instructionHex": "48894320"
+          "rva": "0xbb5ae",
+          "instructionHex": "48894620"
         },
         {
           "role": "loadInputMode",
-          "rva": "0xb95ac",
-          "instructionHex": "418b4614"
+          "rva": "0xbb5b2",
+          "instructionHex": "8b4514"
         },
         {
           "role": "storeMode",
-          "rva": "0xb95b0",
-          "instructionHex": "894714"
+          "rva": "0xbb5b5",
+          "instructionHex": "41894614"
         },
         {
           "role": "addressOwnedAuxiliary",
-          "rva": "0xb95b3",
-          "instructionHex": "488d4740"
+          "rva": "0xbb5b9",
+          "instructionHex": "498d4640"
         },
         {
           "role": "storeOwnedAuxiliary",
-          "rva": "0xb95b7",
-          "instructionHex": "4889470c"
+          "rva": "0xbb5bd",
+          "instructionHex": "4989460c"
         },
         {
           "role": "loadInputAuxiliary",
-          "rva": "0xb95c2",
-          "instructionHex": "498b4e0c"
+          "rva": "0xbb5c9",
+          "instructionHex": "488b4d0c"
         },
         {
           "role": "copyAuxiliaryFirst",
-          "rva": "0xb95cb",
+          "rva": "0xbb5d7",
           "instructionHex": "0f1001"
         },
         {
           "role": "storeAuxiliaryFirst",
-          "rva": "0xb95ce",
+          "rva": "0xbb5da",
           "instructionHex": "0f1100"
         },
         {
           "role": "copyAuxiliarySecond",
-          "rva": "0xb95d1",
+          "rva": "0xbb5dd",
           "instructionHex": "0f104910"
         },
         {
           "role": "storeAuxiliarySecond",
-          "rva": "0xb95d5",
+          "rva": "0xbb5e1",
           "instructionHex": "0f114810"
         },
         {
           "role": "copyAuxiliaryTail",
-          "rva": "0xb95d9",
+          "rva": "0xbb5e5",
           "instructionHex": "f20f104120"
         },
         {
           "role": "storeAuxiliaryTail",
-          "rva": "0xb95de",
+          "rva": "0xbb5ea",
           "instructionHex": "f20f114020"
         },
         {
           "role": "loadInputWord",
-          "rva": "0xb95e3",
-          "instructionHex": "418b4608"
+          "rva": "0xbb5ef",
+          "instructionHex": "8b4508"
         },
         {
           "role": "storeWord",
-          "rva": "0xb95ed",
-          "instructionHex": "894708"
+          "rva": "0xbb600",
+          "instructionHex": "41894608"
         },
         {
           "role": "testInputText",
-          "rva": "0xb960b",
-          "instructionHex": "493936"
+          "rva": "0xbb622",
+          "instructionHex": "4c397d00"
         },
         {
           "role": "branchNoText",
-          "rva": "0xb960e",
-          "instructionHex": "7445"
+          "rva": "0xbb626",
+          "instructionHex": "7454"
         },
         {
           "role": "loadInputTextForLength",
-          "rva": "0xb9616",
-          "instructionHex": "498b0e"
-        },
-        {
-          "role": "callTextLength",
-          "rva": "0xb9619",
-          "instructionHex": "e8da211b00"
+          "rva": "0xbb632",
+          "instructionHex": "488b4500"
         },
         {
           "role": "includeTerminator",
-          "rva": "0xb9623",
-          "instructionHex": "4c8d7801"
+          "rva": "0xbb640",
+          "instructionHex": "48ffc3"
         },
         {
           "role": "scaleWideBytes",
-          "rva": "0xb9627",
-          "instructionHex": "4b8d143f"
+          "rva": "0xbb648",
+          "instructionHex": "488d141b"
         },
         {
           "role": "requestTextStorage",
-          "rva": "0xb962b",
-          "instructionHex": "e87078ffff"
+          "rva": "0xbb64c",
+          "instructionHex": "e88f78ffff"
         },
         {
           "role": "storeOwnedText",
-          "rva": "0xb9630",
-          "instructionHex": "488907"
+          "rva": "0xbb651",
+          "instructionHex": "498906"
         },
         {
           "role": "branchTextAllocated",
-          "rva": "0xb9636",
-          "instructionHex": "750f"
+          "rva": "0xbb657",
+          "instructionHex": "7514"
         },
         {
           "role": "loadInputTextForCopy",
-          "rva": "0xb9647",
-          "instructionHex": "498b16"
+          "rva": "0xbb66d",
+          "instructionHex": "488b5500"
         },
         {
           "role": "forwardTextCapacity",
-          "rva": "0xb964a",
-          "instructionHex": "4d8bc7"
+          "rva": "0xbb671",
+          "instructionHex": "4c8bc3"
         },
         {
           "role": "forwardTextDestination",
-          "rva": "0xb964d",
+          "rva": "0xbb674",
           "instructionHex": "488bc8"
         },
         {
           "role": "callTextCopy",
-          "rva": "0xb9650",
-          "instructionHex": "e85ba4f4ff"
+          "rva": "0xbb677",
+          "instructionHex": "e84484f4ff"
         },
         {
           "role": "continueAfterText",
-          "rva": "0xb9655",
-          "instructionHex": "488b4320"
+          "rva": "0xbb67c",
+          "instructionHex": "488b4620"
+        },
+        {
+          "role": "clearLengthZero",
+          "rva": "0xbb55d",
+          "instructionHex": "4533ff"
+        },
+        {
+          "role": "initializeMinusOne",
+          "rva": "0xbb5f2",
+          "instructionHex": "48c7c7ffffffff"
+        },
+        {
+          "role": "retainMinusOne",
+          "rva": "0xbb62b",
+          "instructionHex": "488bdf"
+        },
+        {
+          "role": "incrementTextCursor",
+          "rva": "0xbb636",
+          "instructionHex": "48ffc3"
+        },
+        {
+          "role": "compareTextUnit",
+          "rva": "0xbb639",
+          "instructionHex": "6644393c58"
+        },
+        {
+          "role": "repeatNonzeroTextUnit",
+          "rva": "0xbb63e",
+          "instructionHex": "75f6"
         }
       ]
     },
     {
       "key": "wideTextCopy",
-      "entryRva": "0x3ab0",
+      "entryRva": "0x3ac0",
       "windows": [
         {
-          "rva": "0x3ab0",
+          "rva": "0x3ac0",
           "bodyLength": 108,
-          "bodySha256": "f6003d93df2f9ff723e5117e95d032536bb954a6b5fb4cf0f8b29847cad97d73",
-          "unwindRva": "0x2efac4",
+          "bodySha256": "46b136978b9385a1b7d55c288f72ac8f591dfd2fae22b586bedfef7b39238913",
+          "unwindRva": "0x2f043c",
           "unwindInfoHex": "010a04000a3406000a320670"
         }
       ],
@@ -476,70 +506,70 @@
       "instructionWitnesses": [
         {
           "role": "retainCapacity",
-          "rva": "0x3aba",
+          "rva": "0x3aca",
           "instructionHex": "4d8bd0"
         },
         {
           "role": "excludeTerminatorCapacity",
-          "rva": "0x3abd",
+          "rva": "0x3acd",
           "instructionHex": "498d58ff"
         },
         {
           "role": "retainDestination",
-          "rva": "0x3ac1",
+          "rva": "0x3ad1",
           "instructionHex": "488bf9"
         },
         {
           "role": "testFirstTerminator",
-          "rva": "0x3ad3",
+          "rva": "0x3ae3",
           "instructionHex": "66833c4200"
         },
         {
           "role": "testSecondTerminator",
-          "rva": "0x3af3",
+          "rva": "0x3b03",
           "instructionHex": "66833c5a00"
         },
         {
           "role": "forwardCopySource",
-          "rva": "0x3afd",
+          "rva": "0x3b0d",
           "instructionHex": "4c8bc2"
         },
         {
           "role": "forwardCopyCount",
-          "rva": "0x3b00",
+          "rva": "0x3b10",
           "instructionHex": "4c8bcb"
         },
         {
           "role": "forwardCopyCapacity",
-          "rva": "0x3b03",
+          "rva": "0x3b13",
           "instructionHex": "498bd2"
         },
         {
           "role": "callSecureWideCopy",
-          "rva": "0x3b06",
-          "instructionHex": "e8fdfc2500"
+          "rva": "0x3b16",
+          "instructionHex": "e88d082600"
         },
         {
           "role": "clearTerminatorValue",
-          "rva": "0x3b0b",
+          "rva": "0x3b1b",
           "instructionHex": "33c0"
         },
         {
           "role": "storeTerminator",
-          "rva": "0x3b0d",
+          "rva": "0x3b1d",
           "instructionHex": "6689045f"
         }
       ]
     },
     {
       "key": "secureWideTextCopy",
-      "entryRva": "0x263808",
+      "entryRva": "0x2643a8",
       "windows": [
         {
-          "rva": "0x263808",
+          "rva": "0x2643a8",
           "bodyLength": 252,
-          "bodySha256": "56c9d52483149bc380f241de90ced84230444c51f0d3f33d53da174d7f771b2c",
-          "unwindRva": "0x2f0384",
+          "bodySha256": "b73600662830ad6f971c2468ecda7b895561ccc3a13fc9d1b3bb188530229dd4",
+          "unwindRva": "0x2f0fe0",
           "unwindInfoHex": "010f06000f6407000f3406000f320b70"
         }
       ],
@@ -555,50 +585,50 @@
       "instructionWitnesses": [
         {
           "role": "sourceDifference",
-          "rva": "0x263876",
+          "rva": "0x264416",
           "instructionHex": "482bd9"
         },
         {
           "role": "loadWideCharacter",
-          "rva": "0x2638a0",
+          "rva": "0x264440",
           "instructionHex": "0fb70413"
         },
         {
           "role": "storeWideCharacter",
-          "rva": "0x2638a7",
+          "rva": "0x264447",
           "instructionHex": "668902"
         },
         {
           "role": "advanceWideDestination",
-          "rva": "0x2638aa",
+          "rva": "0x26444a",
           "instructionHex": "488d5202"
         },
         {
           "role": "testWideTerminator",
-          "rva": "0x2638ae",
+          "rva": "0x26444e",
           "instructionHex": "6685c0"
         },
         {
           "role": "decrementCapacity",
-          "rva": "0x2638b3",
+          "rva": "0x264453",
           "instructionHex": "4983e801"
         },
         {
           "role": "decrementCopyCount",
-          "rva": "0x2638b9",
+          "rva": "0x264459",
           "instructionHex": "4883ef01"
         }
       ]
     },
     {
       "key": "alternateProviderFactory",
-      "entryRva": "0xb5f00",
+      "entryRva": "0xb7ff0",
       "windows": [
         {
-          "rva": "0xb5f00",
-          "bodyLength": 187,
-          "bodySha256": "d6dc5b530706e6658ec2b940b18d8999378ef14165c895aa1598377f1f348bde",
-          "unwindRva": "0x2f0384",
+          "rva": "0xb7ff0",
+          "bodyLength": 180,
+          "bodySha256": "ac3f3e26995e1f506c105be4c6954ffbbf661101e7d37f7b2869a4b78de0b71e",
+          "unwindRva": "0x2f0fe0",
           "unwindInfoHex": "010f06000f6407000f3406000f320b70"
         }
       ],
@@ -617,52 +647,52 @@
       "instructionWitnesses": [
         {
           "role": "retainOptions",
-          "rva": "0xb5f12",
+          "rva": "0xb8002",
           "instructionHex": "498bf1"
         },
         {
           "role": "retainDataWord",
-          "rva": "0xb5f19",
+          "rva": "0xb8009",
           "instructionHex": "498bd8"
         },
         {
           "role": "retainData",
-          "rva": "0xb5f1c",
+          "rva": "0xb800c",
           "instructionHex": "488bfa"
         },
         {
           "role": "requestProviderBytes",
-          "rva": "0xb5f2c",
+          "rva": "0xb8018",
           "instructionHex": "ba48000000"
         },
         {
           "role": "forwardDataWord",
-          "rva": "0xb5f40",
+          "rva": "0xb802c",
           "instructionHex": "4c8bc3"
         },
         {
           "role": "forwardData",
-          "rva": "0xb5f43",
+          "rva": "0xb802f",
           "instructionHex": "488bd7"
         },
         {
           "role": "callConstructor",
-          "rva": "0xb5f49",
-          "instructionHex": "e892130000"
+          "rva": "0xb8035",
+          "instructionHex": "e8f6120000"
         },
         {
           "role": "retainProvider",
-          "rva": "0xb5f4e",
+          "rva": "0xb803a",
           "instructionHex": "488bd8"
         },
         {
           "role": "loadOutputArgument",
-          "rva": "0xb5f6b",
+          "rva": "0xb8054",
           "instructionHex": "488b4c2450"
         },
         {
           "role": "storeOutputBase",
-          "rva": "0xb5f72",
+          "rva": "0xb805b",
           "instructionHex": "488919"
         }
       ]
@@ -671,10 +701,10 @@
   "leafWindows": [
     {
       "key": "ordinaryProviderOpen",
-      "entryRva": "0xb9460",
+      "entryRva": "0xbb470",
       "bodyLength": 26,
-      "bodySha256": "c4cb84b846a635b472436ccfab47882ac2a3c9cb20812fe665015d150d5b4f32",
-      "boundaryRva": "0xb947a",
+      "bodySha256": "840437e97de2cd8585d0b558e97991c041beff5bb6cdb099320dd8e12606953f",
+      "boundaryRva": "0xbb48a",
       "boundaryHex": "cccccccccccc",
       "requiredRoles": [
         "loadInputAuxiliary",
@@ -683,22 +713,22 @@
       "instructionWitnesses": [
         {
           "role": "loadInputAuxiliary",
-          "rva": "0xb9460",
+          "rva": "0xbb470",
           "instructionHex": "488b420c"
         },
         {
           "role": "tailDescriptorStorage",
-          "rva": "0xb9475",
-          "instructionHex": "e9b6000000"
+          "rva": "0xbb485",
+          "instructionHex": "e9a6000000"
         }
       ]
     },
     {
       "key": "alternateProviderConstructor",
-      "entryRva": "0xb72e0",
+      "entryRva": "0xb9330",
       "bodyLength": 43,
-      "bodySha256": "0c66e2a510115f1dd01aede7cbba2ef16fa27ab69256610ec33cc26213b3f80f",
-      "boundaryRva": "0xb730b",
+      "bodySha256": "cedbafbb54945e952f3c47da6caa1bb604a4e8ae4afe7cff2bca22591f67d162",
+      "boundaryRva": "0xb935b",
       "boundaryHex": "cccccccccc",
       "requiredRoles": [
         "addressAlternateTable",
@@ -710,94 +740,28 @@
       "instructionWitnesses": [
         {
           "role": "addressAlternateTable",
-          "rva": "0xb72e0",
-          "instructionHex": "488d05d9bb1d00"
+          "rva": "0xb9330",
+          "instructionHex": "488d0529ab1d00"
         },
         {
           "role": "storeAlternateTable",
-          "rva": "0xb72ee",
+          "rva": "0xb933e",
           "instructionHex": "488901"
         },
         {
           "role": "returnAllocation",
-          "rva": "0xb72ff",
+          "rva": "0xb934f",
           "instructionHex": "488bc1"
         },
         {
           "role": "storeData",
-          "rva": "0xb7302",
+          "rva": "0xb9352",
           "instructionHex": "48895120"
         },
         {
           "role": "storeDataWord",
-          "rva": "0xb7306",
+          "rva": "0xb9356",
           "instructionHex": "4c894128"
-        }
-      ]
-    },
-    {
-      "key": "wideTextLength",
-      "entryRva": "0x26b7f8",
-      "bodyLength": 297,
-      "bodySha256": "89e8bf3f6c56af4a9631f83751bb3e1cb3d3ace253074298040ef3b6b7bfa514",
-      "boundaryRva": "0x26b921",
-      "boundaryHex": "cccccc",
-      "requiredRoles": [
-        "retainTextBase",
-        "retainTextCursor",
-        "scalarTerminator",
-        "advanceScalarCursor",
-        "subtractTextBase",
-        "countWideCharacters",
-        "returnWideLength",
-        "avxCompareWords",
-        "sseCompareWords"
-      ],
-      "instructionWitnesses": [
-        {
-          "role": "retainTextBase",
-          "rva": "0x26b7fe",
-          "instructionHex": "4c8bc1"
-        },
-        {
-          "role": "retainTextCursor",
-          "rva": "0x26b801",
-          "instructionHex": "488bd1"
-        },
-        {
-          "role": "scalarTerminator",
-          "rva": "0x26b90c",
-          "instructionHex": "66390a"
-        },
-        {
-          "role": "advanceScalarCursor",
-          "rva": "0x26b911",
-          "instructionHex": "4883c202"
-        },
-        {
-          "role": "subtractTextBase",
-          "rva": "0x26b917",
-          "instructionHex": "492bd0"
-        },
-        {
-          "role": "countWideCharacters",
-          "rva": "0x26b91a",
-          "instructionHex": "48d1fa"
-        },
-        {
-          "role": "returnWideLength",
-          "rva": "0x26b91d",
-          "instructionHex": "488bc2"
-        },
-        {
-          "role": "avxCompareWords",
-          "rva": "0x26b86b",
-          "instructionHex": "c5ed750a"
-        },
-        {
-          "role": "sseCompareWords",
-          "rva": "0x26b8ed",
-          "instructionHex": "660f7502"
         }
       ]
     }
@@ -855,7 +819,7 @@
       "witness": "storeDescriptorAllocation",
       "layout": "provider",
       "field": "descriptorAllocation",
-      "prefixHex": "488943",
+      "prefixHex": "488946",
       "displacementBytes": 1
     },
     {
@@ -863,7 +827,7 @@
       "witness": "loadInputMode",
       "layout": "descriptor",
       "field": "modeWord",
-      "prefixHex": "418b46",
+      "prefixHex": "8b45",
       "displacementBytes": 1
     },
     {
@@ -871,7 +835,7 @@
       "witness": "storeMode",
       "layout": "descriptor",
       "field": "modeWord",
-      "prefixHex": "8947",
+      "prefixHex": "418946",
       "displacementBytes": 1
     },
     {
@@ -879,7 +843,7 @@
       "witness": "addressOwnedAuxiliary",
       "layout": "descriptor",
       "field": "ownedAuxiliary",
-      "prefixHex": "488d47",
+      "prefixHex": "498d46",
       "displacementBytes": 1
     },
     {
@@ -887,7 +851,7 @@
       "witness": "storeOwnedAuxiliary",
       "layout": "descriptor",
       "field": "auxiliaryPointer",
-      "prefixHex": "488947",
+      "prefixHex": "498946",
       "displacementBytes": 1
     },
     {
@@ -895,7 +859,7 @@
       "witness": "loadInputAuxiliary",
       "layout": "descriptor",
       "field": "auxiliaryPointer",
-      "prefixHex": "498b4e",
+      "prefixHex": "488b4d",
       "displacementBytes": 1
     },
     {
@@ -903,7 +867,7 @@
       "witness": "loadInputWord",
       "layout": "descriptor",
       "field": "numericWord",
-      "prefixHex": "418b46",
+      "prefixHex": "8b45",
       "displacementBytes": 1
     },
     {
@@ -911,7 +875,7 @@
       "witness": "storeWord",
       "layout": "descriptor",
       "field": "numericWord",
-      "prefixHex": "8947",
+      "prefixHex": "418946",
       "displacementBytes": 1
     },
     {
@@ -919,7 +883,7 @@
       "witness": "storeOwnedText",
       "layout": "descriptor",
       "field": "textPointer",
-      "prefixHex": "488907",
+      "prefixHex": "498906",
       "displacementBytes": 0
     },
     {
@@ -962,12 +926,6 @@
     },
     {
       "owner": "providerDescriptorStorage",
-      "witness": "callTextLength",
-      "targetOwner": "wideTextLength",
-      "opcodeHex": "e8"
-    },
-    {
-      "owner": "providerDescriptorStorage",
       "witness": "callTextCopy",
       "targetOwner": "wideTextCopy",
       "opcodeHex": "e8"
@@ -988,24 +946,24 @@
   "tableSlots": [
     {
       "key": "factoryOrdinarySlot",
-      "addressPointRva": "0x292ac0",
+      "addressPointRva": "0x293a60",
       "slot": 40,
       "targetOwner": "ordinaryProviderFactory",
-      "sha256": "15753a6baa14bb3af49828457853aa4f0d169f024a5a3c81b8d3473fbc44746d"
+      "sha256": "b076682cd047ebfca9d66394cadc96849693a83b69336867b9f65ef552b3f4a6"
     },
     {
       "key": "factoryAlternateSlot",
-      "addressPointRva": "0x292ac0",
+      "addressPointRva": "0x293a60",
       "slot": 32,
       "targetOwner": "alternateProviderFactory",
-      "sha256": "7a6377529c6c4b4201ce99d0cccf285501a0cfc439ce7f18793806bf14ad7640"
+      "sha256": "fcd9a4e53725e0c3dad2f309423ac4e81547cf84482dfca6266c1932301e1c34"
     },
     {
       "key": "providerOpenSlot",
-      "addressPointRva": "0x2932e8",
+      "addressPointRva": "0x294288",
       "slot": 8,
       "targetOwner": "ordinaryProviderOpen",
-      "sha256": "983170e08fe11ac220c78cb1e2c717aefe2e80e82b1ee41f96f79cf3b0dbf348"
+      "sha256": "78a8f7ebfbe76e9ff882c453b98b87a22c3dac7d9f49a55cca04b2f549dc0133"
     }
   ],
   "addressPointBindings": [
@@ -1013,25 +971,25 @@
       "owner": "singletonInitializer",
       "witness": "addressFactoryTable",
       "prefixHex": "488d0d",
-      "targetRva": "0x292ac0"
+      "targetRva": "0x293a60"
     },
     {
       "owner": "ordinaryProviderConstructor",
       "witness": "addressPrimaryTable",
       "prefixHex": "488d05",
-      "targetRva": "0x2932e8"
+      "targetRva": "0x294288"
     },
     {
       "owner": "ordinaryProviderConstructor",
       "witness": "addressSecondaryTable",
       "prefixHex": "488d05",
-      "targetRva": "0x293260"
+      "targetRva": "0x294200"
     },
     {
       "owner": "alternateProviderConstructor",
       "witness": "addressAlternateTable",
       "prefixHex": "488d05",
-      "targetRva": "0x292ec0"
+      "targetRva": "0x293e60"
     }
   ],
   "singletonBindings": [
@@ -1039,13 +997,13 @@
       "owner": "singletonInitializer",
       "witness": "loadSingleton",
       "prefixHex": "488b05",
-      "targetRva": "0x3448f0"
+      "targetRva": "0x344938"
     },
     {
       "owner": "singletonInitializer",
       "witness": "storeSingleton",
       "prefixHex": "488905",
-      "targetRva": "0x3448f0"
+      "targetRva": "0x344938"
     }
   ],
   "allocationBytes": {
@@ -1081,8 +1039,28 @@
     }
   ],
   "evidenceBoundary": {
-    "exact": "Complete selected native unwind groups, complete bounded unwindless leaves, selected table slots and typed fields/calls agree with reviewed bytes.",
+    "exact": "Complete selected native unwind groups, complete bounded unwindless leaves, selected table slots and typed fields/calls agree with reviewed bytes. The source descriptor length helper is inlined; its zero/minus-one producers, unit loop, backedge, terminator count and allocation scaling are declared from current instructions.",
     "conditional": "When the preparation singleton retains the reviewed initialized factory address point, its ordinary slot requests and constructs a provider, copies a non-null UTF-16 descriptor text into owned NUL-terminated storage and returns a secondary interface on the reviewed success-status branch. Its alternate slot constructs a different provider retaining the incoming data pointer and word, and returns the allocation base.",
     "unresolved": "Singleton replacement or indirect aliasing, live invocation, external voice family choice, file handle/read identity, codec meaning of the argument halfword, allocation generation and audibility remain unresolved."
+  },
+  "inlineWideLength": {
+    "owner": "providerDescriptorStorage",
+    "descriptorRegister": "rbp",
+    "textRegister": "rax",
+    "counterRegister": "rbx",
+    "minusOneRegister": "rdi",
+    "zeroRegister": "r15",
+    "roles": {
+      "zero": "clearLengthZero",
+      "minusOne": "initializeMinusOne",
+      "counter": "retainMinusOne",
+      "text": "loadInputTextForLength",
+      "increment": "incrementTextCursor",
+      "compare": "compareTextUnit",
+      "repeat": "repeatNonzeroTextUnit",
+      "terminator": "includeTerminator",
+      "scale": "scaleWideBytes"
+    },
+    "evidenceBoundary": "Current inlined NUL-terminated UTF-16 unit count: start at minus one, preincrement before each unit comparison, repeat on nonzero, then include the terminator and double for allocation. This is native byte framing; it does not establish readable caller memory or allocation success."
   }
 }

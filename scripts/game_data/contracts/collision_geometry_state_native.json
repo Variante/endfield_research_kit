@@ -2,129 +2,129 @@
   "schema": "endfield.collision-geometry-state-native.v1",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "codeWindows": [
     {
       "role": "scene_simulate",
-      "rva": 7902864,
+      "rva": 7994832,
       "bytes": 51,
-      "sha256": "73265efd16a061a9ce74d30398a94f73fd4b64a1ebbffb9a176d6b3143bc303e",
+      "sha256": "757eed5598da077ea41037fe9995457d8725e4f98f7ceea47e944e3559b48cce",
       "runtimeRanges": [
         [
-          7902864,
-          7902915,
-          28541336
+          7994832,
+          7994883,
+          30284232
         ]
       ]
     },
     {
       "role": "scene_simulate_guard",
-      "rva": 7902928,
+      "rva": 7994896,
       "bytes": 589,
-      "sha256": "d8cef800d35a5c4622d9dff562e37b51f77cf815105c552dd2f1aba5305e3e11",
+      "sha256": "5c3d85b5b066f5c7ec4862cb29727cd4f51e12ad0ca269e59cf54249a671d7d0",
       "runtimeRanges": [
         [
-          7902928,
-          7903032,
-          29099976
+          7994896,
+          7995000,
+          30957840
         ],
         [
-          7903032,
-          7903207,
-          29099992
+          7995000,
+          7995175,
+          30957856
         ],
         [
-          7903207,
-          7903255,
-          29100016
+          7995175,
+          7995223,
+          30957880
         ],
         [
-          7903255,
-          7903517,
-          29100036
+          7995223,
+          7995485,
+          30957900
         ]
       ]
     },
     {
       "role": "task_release",
-      "rva": 8557776,
+      "rva": 8649744,
       "bytes": 77,
-      "sha256": "671e6d34f091fad2a6bb9f4506b512b02c121a928e46912f7cd414dcb8d1280a",
+      "sha256": "bd8a1833a4ae2c3c596e71a6d6066bb453fab68cfcc08212a1d12a42741b58e0",
       "runtimeRanges": [
         [
-          8557776,
-          8557853,
-          28540940
+          8649744,
+          8649821,
+          30281412
         ]
       ]
     },
     {
       "role": "atomic_decrement",
-      "rva": 7080256,
+      "rva": 7172160,
       "bytes": 10,
       "sha256": "0fa78c8814f5af645b496fc2f31b05b55fc653360b1d50bebcf49ce3005de3a5",
       "leafHex": "83c8fff00fc101ffc8c3"
     },
     {
       "role": "task_run",
-      "rva": 7894864,
+      "rva": 7986832,
       "bytes": 52,
       "sha256": "3f5f103f8fcf8c5977197524542c95f3e2f9a67805dd3853cc7db5648844181a",
       "runtimeRanges": [
         [
-          7894864,
-          7894916,
-          28545412
+          7986832,
+          7986884,
+          30280420
         ]
       ]
     },
     {
       "role": "update_task",
-      "rva": 8038912,
+      "rva": 8203840,
       "bytes": 13,
       "sha256": "1711f2906730ad7b974ed6c428960635127214520f09d410a60e1b4a6d3bb36f",
       "leafHex": "488b5118488b4928e923300000"
     },
     {
       "role": "actor_pose",
-      "rva": 7862128,
+      "rva": 7954096,
       "bytes": 70,
       "sha256": "80c901396e9c9c71cb5509dfa1a5c18e82608277ba1882888bcd78c5e606f022",
       "leafHex": "f6416840740d488b49704881c1b0000000eb074881c1900000008b0189028b41048942048b41088942088b410c89420c8b41108942108b41148942148b4118894218488bc2c3"
     },
     {
       "role": "shape_pose",
-      "rva": 7924672,
+      "rva": 8089600,
       "bytes": 60,
       "sha256": "2e0289ea487290a777540ca1382972381d87d43b7531e2016beaec99eba5ed62",
       "leafHex": "f64138047406488b4940eb044883c1708b0189028b41048942048b41088942088b410c89420c8b41108942108b41148942148b4118894218488bc2c3"
     },
     {
       "role": "hit_writer",
-      "rva": 2835504,
-      "bytes": 360,
-      "sha256": "8216cd445967da411f6dd49c10a19d555a1077c58547f228e4f118740abcdd34",
+      "rva": 1251072,
+      "bytes": 382,
+      "sha256": "63efb94bad3ee2c40c0cbc356fcfd5c9deddb571ee85ac6ea4f2ff469fbb15d1",
       "runtimeRanges": [
         [
-          2835504,
-          2835864,
-          28635740
+          1251072,
+          1251454,
+          30299112
         ]
       ]
     },
     {
       "role": "task_manager_thunk",
-      "rva": 4300880,
-      "bytes": 20,
-      "sha256": "d681c20e8e198d393c67a979dbcab754dfa0db0b9ab81e21b435ffcf079f10f9",
-      "leafHex": "488b4110488bd1488bc84c8b0049ffa080000000"
+      "rva": 3949856,
+      "bytes": 24,
+      "sha256": "b8944aae0564e5c35f3512566ee22dbe3c6264de103f0ded3f230220619b03e0",
+      "leafHex": "488b4110488b10488b8280000000488bd1488b491048ffe0"
     },
     {
       "role": "task_reference_getter",
-      "rva": 5796400,
+      "rva": 5892512,
       "bytes": 4,
       "sha256": "07ad3a50b1c271e07fb57fb47d2f0e77f3342d41bfa410990cb1320a45035fb2",
       "leafHex": "8b4120c3"
@@ -135,7 +135,7 @@
       "role": "scene_simulate",
       "kind": 72,
       "windowRole": "scene_simulate",
-      "entryHex": "4883ec48488d0575c81301c744243803",
+      "entryHex": "4883ec48488d0575ff2b01c744243803",
       "abi": {
         "arguments": [
           "pointer",
@@ -323,7 +323,7 @@
     },
     {
       "role": "hit_writer",
-      "offset": 321,
+      "offset": 343,
       "prefix": "8b4f",
       "width": 1,
       "field": "hit.face"
@@ -344,18 +344,18 @@
     },
     {
       "role": "hit_writer",
-      "offset": 199,
+      "offset": 203,
       "prefix": "8b47",
       "width": 1,
       "field": "hit.distance"
     }
   ],
   "bindings": {
-    "actorVtable": 25972808,
-    "shapeVtable": 25979232,
-    "sceneVtable": 25970208,
-    "taskVtable": 25981480,
-    "managerVtable": 25994576
+    "actorVtable": 27651720,
+    "shapeVtable": 27659552,
+    "sceneVtable": 27649120,
+    "taskVtable": 27661800,
+    "managerVtable": 27673488
   },
   "vtableSlots": [
     {
@@ -408,7 +408,7 @@
     {
       "role": "task_release",
       "offset": 16,
-      "hex": "488d4a20e85774e9ff85c07525488b4f104885c97413488b01488bd3488b5c24304883c4205f48ff20"
+      "hex": "488d4a20e81774e9ff85c07525488b4f104885c97413488b01488bd3488b5c24304883c4205f48ff20"
     },
     {
       "role": "atomic_decrement",
@@ -424,7 +424,7 @@
   "representation": {
     "idleSimulationStage": 0,
     "acceptedSimulationStage": 3,
-    "atomicReturnRva": 8557801,
+    "atomicReturnRva": 8649769,
     "transformBytes": 28,
     "transformQuaternionOffset": 0,
     "transformPositionOffset": 16,

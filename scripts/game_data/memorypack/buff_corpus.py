@@ -61,7 +61,7 @@ from scripts.game_data.memorypack.buff import (
     decode_buff_pre_id_modifier_prefix,
 )
 from scripts.game_data.memorypack.buff_actions import event_prefix
-from scripts.game_data.memorypack.buff_icon_config import validate_current_native_contract
+from scripts.game_data.memorypack.buff_icon_config import CONTRACT_PATH as ICON_CONFIG_CONTRACT_PATH, validate_current_native_contract
 from scripts.game_data.memorypack import buff_named_schema
 from scripts.game_data.memorypack import buff_attribute_modifier
 from scripts.game_data.memorypack import buff_root_no_positive
@@ -645,7 +645,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     outer,_,files,provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
     _check_stream_cli_build(cli_path, provenance)
     selected=select_rows(files,expected_input=expected)
-    native_validation=validate_current_native_contract()
+    native_validation=vfs.native_validation(validate_current_native_contract,ICON_CONFIG_CONTRACT_PATH)
     residual_validation=validate_residual_native_contract()
     adding_cooldown_validation=validate_adding_cooldown_native_contract()
     dispel_config_validation=validate_dispel_config_native_contract()
@@ -1070,7 +1070,9 @@ def main(argv=None):
             cli_path=args.cli,expected_input_set_sha256=args.expected_input_set_sha256,
             outputs=(args.output_json,args.output_md),selected_native_audit_path=args.selected_native_audit)
     except vfs.CensusGateError as exc:
-        print(json.dumps({'status':'failed','diagnostic':exc.diagnostic}));return 1
+        failure={'status':'failed','diagnostic':exc.diagnostic}
+        vfs._atomic_write_json(args.output_json.with_suffix('.failed.json'),failure)
+        print(json.dumps(failure));return 1
     vfs._atomic_write_json(args.output_json,report)
     args.output_md.parent.mkdir(parents=True,exist_ok=True)
     args.output_md.write_text('# BuffData current VFS corpus\n\n'+report['inputSetSha256']+'\n\n'+

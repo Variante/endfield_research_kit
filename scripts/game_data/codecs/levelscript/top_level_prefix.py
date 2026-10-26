@@ -1,4 +1,4 @@
-"""Sequential prefix codec for the current 27-member ``LevelScriptData``.
+"""Sequential prefix codec for the current 28-member ``LevelScriptData``.
 
 The generated current wrapper fixes the member order.  This codec is narrow:
 it starts immediately after a proved action-map boundary (by default the
@@ -9,17 +9,17 @@ guess its extent.
 
 Order after ``actionMap``: ``activeShapeList``, ``allowStartOnTravelPole``,
 ``allowTick``, ``enablePreload``, ``endType``, ``enemies``, ``exitBuffer``,
-``exitBufferOverride``, ``interactiveLocks``, ``interactives``,
+``exitBufferOverride``, ``interactiveActiveRiskEntityIdList``, ``interactiveLocks``, ``interactives``,
 ``levelScriptType``, ``lstTemplatePath``, ``maxStage``, ``modules``, ``npcs``,
 ``parentLevelScriptId``, ``properties``, ``propertyIdToKeyMap``,
 ``refWorldEntityIdList``, ``resetModeWhenActive``, ``resetModeWhenEnd``; the
 final five (``scriptId`` through ``triggerVolumes``) belong to
 ``top_level_tail``.  Shapes, signed enums (``END_TYPE_NAMES``,
 ``LEVEL_SCRIPT_TYPE_NAMES``, ``RESET_MODE_NAMES``), finite floats, strict
-booleans and UTF-8 strings are validated at the physical cursor.  Positive
+booleans and explicitly pooled strings are validated at the physical cursor.  Positive
 ``enemies``, ``interactiveLocks``, ``interactives``, ``modules`` and ``npcs``
-dictionaries are delegated to their exact codecs; a codec refusal becomes the
-named stop for that field.  ``properties``, ``propertyIdToKeyMap`` and
+dictionaries stop before their count until their pooled child codecs are
+independently migrated; old inline string readers cannot admit current rows.  ``properties``, ``propertyIdToKeyMap`` and
 ``refWorldEntityIdList`` are accepted only null or empty.
 """
 
@@ -28,6 +28,7 @@ from __future__ import annotations
 import math
 import struct
 from typing import Any
+from scripts.game_data.string_pool import StringPool, resolve_string_pool_index
 
 from scripts.game_data.codecs.levelscript import (
     active_shapes,
@@ -105,22 +106,12 @@ def _bool(data: bytes, cursor: int, field: str) -> tuple[bool, int]:
     return bool(raw), cursor + 1
 
 
-def _string(data: bytes, cursor: int, field: str) -> tuple[str | None, int]:
-    length, cursor = _i32(data, cursor, f"{field}.length")
-    if length == -1:
-        return None, cursor
-    if length < 0:
-        raise LevelScriptPrefixCodecError(
-            f"invalid string length {field}: offset={cursor - 4} length={length}"
-        )
-    _require(data, cursor, length, field)
-    raw = data[cursor : cursor + length]
+def _string(data: bytes, cursor: int, field: str, *, strings: StringPool | None = None) -> tuple[str | None, int]:
+    index, cursor = _i32(data, cursor, f"{field}.poolIndex")
     try:
-        return raw.decode("utf-8"), cursor + length
-    except UnicodeDecodeError as error:
-        raise LevelScriptPrefixCodecError(
-            f"invalid UTF-8 {field}: offset={cursor} length={length}"
-        ) from error
+        return resolve_string_pool_index(index, strings, field), cursor
+    except ValueError as error:
+        raise LevelScriptPrefixCodecError(str(error)) from error
 
 
 def _empty_collection(
@@ -159,8 +150,10 @@ def _empty_collection(
 def decode_empty_action_map_owner_prefix(
     data: bytes,
     offset: int = 20,
+    *,
+    strings: StringPool | None = None,
 ) -> dict[str, Any]:
-    """Decode members 2..22 after a complete empty action-map asset.
+    """Decode members 2..23 after a complete empty action-map asset.
 
     ``endOffset`` is always the next unread byte.  When ``stopField`` is set,
     its collection count has been validated but is deliberately not consumed,
@@ -169,6 +162,14 @@ def decode_empty_action_map_owner_prefix(
     cursor = offset
     fields: dict[str, Any] = {}
     ranges: dict[str, dict[str, Any]] = {}
+
+    def unmigrated_child(name):
+        detail, end = _empty_collection(data, cursor, name)
+        if end is not None:
+            return None
+        detail["diagnostic"] = f"{name}: pooled child source/codec migration required"
+        return {"startOffset": offset, "endOffset": cursor, "fields": fields, "ranges": ranges,
+                "stopField": name, "stopDetail": detail}
 
     shape_start = cursor
     shape_list, shape_end = active_shapes.decode_shape_list(data, cursor)
@@ -209,6 +210,8 @@ def decode_empty_action_map_owner_prefix(
     ranges["endType"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
+    if (stop := unmigrated_child("enemies")) is not None:
+        return stop
     try:
         enemy_rows, cursor = enemies.decode_enemy_dictionary(data, cursor)
     except enemies.LevelEnemyCodecError as error:
@@ -240,7 +243,18 @@ def decode_empty_action_map_owner_prefix(
     )
     ranges["exitBufferOverride"] = {"startOffset": start, "endOffset": cursor}
 
+    name = "interactiveActiveRiskEntityIdList"
+    detail, end = _empty_collection(data, cursor, name)
+    if end is None:
+        return {"startOffset": offset, "endOffset": cursor, "fields": fields, "ranges": ranges,
+                "stopField": name, "stopDetail": detail}
+    fields[name] = detail
+    ranges[name] = {"startOffset": cursor, "endOffset": end}
+    cursor = end
+
     start = cursor
+    if (stop := unmigrated_child("interactiveLocks")) is not None:
+        return stop
     try:
         lock_rows, cursor = interactive_locks.decode_interactive_lock_dictionary(
             data, cursor
@@ -266,6 +280,8 @@ def decode_empty_action_map_owner_prefix(
     ranges["interactiveLocks"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
+    if (stop := unmigrated_child("interactives")) is not None:
+        return stop
     try:
         interactive_rows, cursor = interactives.decode_interactive_dictionary(
             data, cursor
@@ -288,7 +304,7 @@ def decode_empty_action_map_owner_prefix(
     ranges["levelScriptType"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
-    fields["lstTemplatePath"], cursor = _string(data, cursor, "lstTemplatePath")
+    fields["lstTemplatePath"], cursor = _string(data, cursor, "lstTemplatePath", strings=strings)
     ranges["lstTemplatePath"] = {"startOffset": start, "endOffset": cursor}
     start = cursor
     fields["maxStage"], cursor = _i32(data, cursor, "maxStage")
@@ -296,6 +312,8 @@ def decode_empty_action_map_owner_prefix(
 
     start = cursor
     module_diagnostics = []
+    if (stop := unmigrated_child("modules")) is not None:
+        return stop
     try:
         module_rows, module_end = modules.decode_module_dictionary(data, cursor, module_diagnostics)
     except modules.LevelScriptModuleCodecError as error:
@@ -321,6 +339,8 @@ def decode_empty_action_map_owner_prefix(
     cursor = module_end
 
     start = cursor
+    if (stop := unmigrated_child("npcs")) is not None:
+        return stop
     try:
         npc_rows, npc_end = npcs.decode_npc_dictionary(data, cursor)
     except npcs.LevelScriptNpcCodecError as error:

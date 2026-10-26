@@ -11,7 +11,6 @@ import gzip
 import hashlib
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +55,7 @@ def _contract(path: Path) -> dict[str, Any]:
         data.get("schema") != SCHEMA or data.get("status") != "exact-current-build"
         or set(data.get("nativeInputs") or {})
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
-        or route.get("family") != "GameCondition" or route.get("tag") != 0xC1
+        or route.get("family") != "GameCondition" or (type(route.get("tag")) is not int or not 0 <= route["tag"] < 0x10000)
         or route.get("typeName") != "Beyond.Gameplay.Conditions.CheckIsInFacLinkingMode"
         or route.get("serializedMemberCount") != 6 or route.get("inheritedMemberCount") != 4
         or fields != _FIELDS
@@ -288,7 +287,6 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
     return 1
 
 
-@lru_cache(maxsize=4)
 def validate_check_fac_linking_mode_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,
@@ -326,7 +324,6 @@ def validate_check_fac_linking_mode_native_contract(
                 "failedGate": detail.split(":",1)[0], "detail": detail[:500]}
 
 
-@lru_cache(maxsize=1)
 def validated_check_fac_linking_mode_route() -> tuple[dict[str, Any], dict[str, Any]] | None:
     audit = validate_check_fac_linking_mode_native_contract()
     if audit["status"] != "validated":

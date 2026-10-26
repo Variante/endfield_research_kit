@@ -60,6 +60,23 @@ def load_native_mapper(path: Path) -> Any:
     return module
 
 
+# Fixed C# keyword spellings only; qualified/user identifiers are exact.
+CSHARP_TYPE_ALIASES = {
+    'bool': 'System.Boolean', 'byte': 'System.Byte', 'sbyte': 'System.SByte',
+    'char': 'System.Char', 'decimal': 'System.Decimal', 'double': 'System.Double',
+    'float': 'System.Single', 'int': 'System.Int32', 'uint': 'System.UInt32',
+    'nint': 'System.IntPtr', 'nuint': 'System.UIntPtr', 'long': 'System.Int64',
+    'ulong': 'System.UInt64', 'short': 'System.Int16', 'ushort': 'System.UInt16',
+    'object': 'System.Object', 'string': 'System.String', 'void': 'System.Void',
+}
+
+
+def canonical_type_name(name: str) -> str:
+    """Normalize keyword aliases without changing generic/array structure."""
+    return re.sub(r'(?<![\w.@])[A-Za-z_][A-Za-z0-9_.]*',
+                  lambda m: CSHARP_TYPE_ALIASES.get(m[0], m[0]), name)
+
+
 RUNTIME_PRIMITIVE_TYPE_NAMES = {
     0x01: "void",
     0x02: "bool",

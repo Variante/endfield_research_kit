@@ -12,6 +12,12 @@ AnimeStudio is the maintained extraction boundary between installed Endfield
 data and the repository's builders. Production users enter through the root
 wrappers; direct CLI commands are for focused recovery and diagnostics.
 
+The `json-data` selection includes the separately cataloged `JsonLip` language
+blocks and packs their `Json/LipSync` payloads into `game/GameFiles.sqlite`.
+The corpus registry joins these identities by block ID, catalog name and language
+path. A language block whose chunks are all absent is explicitly excluded;
+present chunks retain normal integrity checks, including partial absence.
+
 ## Ownership
 
 | Layer | Owner |
@@ -76,6 +82,15 @@ Per-asset Unity cache keys bind both the object's layer and all installed
 fallback layers, in addition to the overlay skip list, object Hash, CLI,
 DummyDll and export options. An unchanged object Hash cannot authenticate its
 parsed dependencies after a fallback-layer update.
+
+Physical asset maps also contain bundle slots absent from both logical VFS
+catalogs. They are not current objects. Convert shard requests intersect the
+effective slot set, and the exporter adds these unreferenced physical slots to
+the export exclusions after map generation, including for broad JSON jobs.
+They remain available for dependency loading. A shared filename or PathID does
+not establish which copy supplied the bytes: mixed live/unreferenced output
+paths need a live-slot re-export, not deletion by filename. Same-path catalog
+replacement must reselect slots; live missing outputs still fail their audit.
 
 Model Convert stages additionally load the selected player's available loose
 Unity built-in resource files. Their paths, sizes and hashes enter model cache
@@ -268,6 +283,11 @@ stale part (`animestudio_index_io.py`). Read
 An `Export <Type>:<Name> error` may be object-local even when the process
 continues; a nonzero subprocess return code fails the wrapper. Metadata-only or
 `$partial` output is useful evidence, not a completeness claim.
+Benchmark retention matches the exact label and timestamp suffix; a shorter
+label must not include other labels such as `export_changed`. The latest
+benchmark and build-step receipts retain the child command's actual exit code.
+PowerShell can separately flag ordinary stderr timing lines as
+`NativeCommandError`; inspect those receipts before repeating a completed export.
 
 ## Scheduling and memory
 
@@ -413,12 +433,12 @@ local coordinates and winding and are not published as render replacements.
 
 ## Remaining gaps
 
-- Export coverage for separately declared language LipSync catalogs. Unknown
-  catalogs with absent payloads remain full-audit failures; optional-language
-  availability needs its own proven contract before changing that gate.
+- Uninstalled language LipSync payloads remain unavailable. Only the reviewed
+  wholly absent language blocks are excluded; unknown catalogs, corrupt chunks
+  and partial absence retain the full-audit failure boundary.
 - Per-object clean/partial/error certification and dependency diagnostics.
-- Rebuild the CLI and re-export so Material/TextAsset/AnimatorOverrideController
-  provenance reaches consumers, then re-run the invalidated corpus gates.
+- Converter changes require re-exported Material/TextAsset/controller provenance
+  and refreshed corpus receipts before consumers can reuse their evidence.
 - More exact MonoBehaviour and managed-reference schemas. The `m_RefTypes`
   upgrade closed every non-empty undecoded managed-reference payload in its
   measured slice; what remains is the hand-written decoders it did not replace

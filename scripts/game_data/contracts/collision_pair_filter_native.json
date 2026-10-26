@@ -2,9 +2,9 @@
   "schema": "endfield.collision-pair-filter-native.v2",
   "status": "reviewed",
   "nativeInputs": {
-    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "metadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "unityPlayerSha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": "direct: complete original compiled selected shader, layer and ignore helpers, scene packet construction, shader-call ABI and upstream body-mode exclusion. Conditional: saved typed scene shader addresses and shape words may select these rules. No pair invocation, coexisting pair, overlap, layer matrix, scene modes, report delivery or solver contact is inferred.",
   "layout": {
@@ -18,7 +18,7 @@
       "notificationSlot": 24
     },
     "manager": {
-      "cell": 30506600,
+      "cell": 32398936,
       "matrix": 120
     },
     "ignoreList": {
@@ -52,195 +52,185 @@
   "codeWindows": [
     {
       "role": "shader",
-      "rva": 4848240,
-      "bytes": 351,
-      "sha256": "5433a893c7b0499853d3cfbdd1459b5e059c4277f098a09227c158c0b88ab880",
-      "boundary": "complete unwind-family member"
+      "rva": 5008688,
+      "bytes": 341,
+      "sha256": "8a4e0fe3875402b0468044efad457074e51ce3a2c89124d99efcbf5b5a86dc06"
     },
     {
       "role": "shader_cold_1",
-      "rva": 15939304,
+      "rva": 16567382,
       "bytes": 7,
-      "sha256": "831fd382c28ff32e5ae8a43877ec09a8d341935b03a48781c1735982f3bafb6a",
-      "boundary": "complete unwind-family member"
+      "sha256": "3dac34eead95dba058c0829fe48d69de157701326ab9040d7b03b7b1c16e4ace"
     },
     {
       "role": "layer_exclusion",
-      "rva": 4848592,
+      "rva": 5009040,
       "bytes": 62,
-      "sha256": "fcff2b706ce159df51c0aefd31af9f6a11085a29f86a861a4f9fdebc14817c81",
-      "boundary": "complete unwind-family member"
+      "sha256": "6aa4f08f6766e492501c62fe705aa0e9adbef9296d234e8b829119e5ef4c7e65"
     },
     {
       "role": "layer_exclusion_cold_1",
-      "rva": 15939312,
+      "rva": 16567390,
       "bytes": 85,
-      "sha256": "0c1b451f08f42d8c5d6fffe5b97b89d490b5cac98e3093ade3300b18cec8fcd7",
-      "boundary": "complete unwind-family member"
+      "sha256": "b8eeccfdbe046d17e309a41832886f4b209a52886c5e44bf0b89a9b1effafdf0"
     },
     {
       "role": "object_exclusion",
-      "rva": 4848656,
+      "rva": 5009104,
       "bytes": 132,
-      "sha256": "a88343218cf2d04eda1f78cdffcbe0be05193d7e225a39422e7f25f36e94a83e",
-      "boundary": "complete unwind-family member"
+      "sha256": "eb78080226b276e18e274027622c5d81109945fa761028b4c50869d003b34caf"
     },
     {
       "role": "object_exclusion_cold_1",
-      "rva": 15939398,
+      "rva": 16567476,
       "bytes": 48,
-      "sha256": "e5a7fe70063f377015dfd8e8cca0fadc43dc23df44728d403ccdd6237bc2614d",
-      "boundary": "complete unwind-family member"
+      "sha256": "7e68a3fddc3eb260d2a40f9932c497655fd094c22e9b0b7d5dee49538a66ea05"
     },
     {
       "role": "pair_prefilter",
-      "rva": 8083632,
+      "rva": 8248560,
       "bytes": 440,
-      "sha256": "aa4a0bebcbb7294276dfe615416edbd5469fb5dfde2e206a67244b6a85f572fd",
-      "boundary": "complete unwind-family member"
+      "sha256": "aa4a0bebcbb7294276dfe615416edbd5469fb5dfde2e206a67244b6a85f572fd"
     },
     {
       "role": "pair_prefilter_cold_1",
-      "rva": 8084072,
+      "rva": 8249000,
       "bytes": 60,
-      "sha256": "3dea234022595b46ebc9456934df0facc279c8e021ac8b2746505e14bdf855da",
-      "boundary": "complete unwind-family member"
+      "sha256": "3dea234022595b46ebc9456934df0facc279c8e021ac8b2746505e14bdf855da"
     },
     {
       "role": "pair_prefilter_cold_2",
-      "rva": 8084132,
+      "rva": 8249060,
       "bytes": 134,
-      "sha256": "4675b8abeb30d1e7b8d0bab4abce05f70b7d8add072cd81544b1a79356a8e508",
-      "boundary": "complete unwind-family member"
+      "sha256": "4675b8abeb30d1e7b8d0bab4abce05f70b7d8add072cd81544b1a79356a8e508"
     },
     {
       "role": "shader_dispatch",
-      "rva": 8104032,
+      "rva": 8268960,
       "bytes": 902,
-      "sha256": "9829587d39d9acf63b45e8824e800fb160a137b2e237c5e27563a2dca69b2efd",
-      "boundary": "complete unwind-family member"
+      "sha256": "da42c3d97af9e3e84f5599bac39dc276e4141c3530869dcd98f8a32d15d46b8a"
     },
     {
       "role": "key_decode",
-      "rva": 4848800,
-      "bytes": 39,
-      "sha256": "9c757ddc0b01701602795a96f26e502d4cad5e47879dd6fb687a36a12c706992",
+      "rva": 5009248,
+      "bytes": 38,
+      "sha256": "019bbafcaeb12b49056cb45201ec8c10d6698f815a7a05cdad2414f5eb3edb4e",
       "boundary": "complete leaf instructions through both returns"
     },
     {
       "role": "scene_packet",
-      "rva": 8092528,
+      "rva": 8257456,
       "bytes": 548,
       "sha256": "a706559c901cfff99f3eb4aca869e4a42fbceeb26ac7e6b57616c3ba6c799349",
       "boundary": "contiguous original packet-construction caller through return"
     },
     {
       "role": "scene_mode_constructor",
-      "rva": 7943744,
+      "rva": 8108672,
       "bytes": 20,
       "sha256": "b18bc5e332ebaaf6394de4e37a1be0f532ce2ef3fffe811a2f30b43f24f9300a",
       "boundary": "reviewed descriptor-to-public-scene mode copy"
     },
     {
       "role": "scene_filter_constructor",
-      "rva": 7951784,
+      "rva": 8116712,
       "bytes": 22,
       "sha256": "a84967b92653820c65648e1d884c0e7edc9750abb57a7d273ed5c83c8d7cc5d0",
       "boundary": "reviewed descriptor-to-public-scene filter slots"
     },
     {
       "role": "dynamic_constructor",
-      "rva": 7701456,
+      "rva": 7793424,
       "bytes": 130,
-      "sha256": "8cd1fad5d4a499456e203c3f558039c4e2ce6de7d40a2ddf5d302f66f0a979e4",
+      "sha256": "20109476641596f05e8b070c1de8208a6ee2c22a4956378a4f0dd20f7b4a9229",
       "boundary": "reviewed embedding/committed-getter route; buffering remains separate"
     },
     {
       "role": "scb_core_constructor",
-      "rva": 7699424,
+      "rva": 7791392,
       "bytes": 34,
-      "sha256": "a4bacc65e1cd4c8a96f0e812af17e4aa0c3244f1fbd709d357ae94fb7113ebf3",
+      "sha256": "65ff2291d9e348588206a2a8f5e731f2d54875d3a76bbc69c47406928dfef414",
       "boundary": "reviewed embedding/committed-getter route; buffering remains separate"
     },
     {
       "role": "public_committed_flags",
-      "rva": 7725430,
+      "rva": 7817398,
       "bytes": 22,
       "sha256": "c56a0d040a1a78370661537d1ea223bed93075cba4cb3ded770266afe17c373f",
       "boundary": "reviewed embedding/committed-getter route; buffering remains separate"
     },
     {
       "role": "body_from_shape",
-      "rva": 7996768,
+      "rva": 8161696,
       "bytes": 38,
       "sha256": "38b21b64556a49a1df1493fdf190a982579f711a32f5b0bdde1e0b3271b5564c",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "shape_core_cleanup",
-      "rva": 7921080,
+      "rva": 8086008,
       "bytes": 9,
       "sha256": "d64d628e8aab355b152d0610d638fb402065f521ccd7724ed688e24942a21590",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "shape_core_kind",
-      "rva": 7997632,
+      "rva": 8162560,
       "bytes": 3,
       "sha256": "14d2e8b3dcd0a2753bc4042ef2a619a16aca125d7b94e01c745b6071a7986c05",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "public_scene_from_internal",
-      "rva": 8141936,
+      "rva": 8306864,
       "bytes": 5,
       "sha256": "a43726813b3f457a15538d4f46aa104980831feb469a3182ef5d974d8c9a25e6",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "notification_guard",
-      "rva": 7993776,
+      "rva": 8158704,
       "bytes": 24,
       "sha256": "9da24fee6c8165fd3674c6aff53909c16f70c09416cebbb1a08eef12377b18e1",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "static_constructor",
-      "rva": 7776912,
+      "rva": 7868880,
       "bytes": 48,
-      "sha256": "9be936afc2c77157b78f58cd6d19e8c912b761e6300f06d025688698664bafac",
+      "sha256": "55c6634784debc3f14bc7f3a2f9913d64d35f7839280a74a8058a41b238b6412",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "static_core_constructor",
-      "rva": 7807616,
+      "rva": 7899584,
       "bytes": 49,
-      "sha256": "54fbb9200e3dc200bd8dcabfc96c4bd2b076e6673dfa0414d7cac7ddff052db8",
+      "sha256": "75da4862fd1ce1ca8de490651bbd0a9281e1cdc07d01c70aabb8d911564b2291",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "public_scene_constructor",
-      "rva": 7807216,
+      "rva": 7899184,
       "bytes": 54,
-      "sha256": "3749e203159eea271b0e3c2c2202543eee8bc4e380e1c966e6b36203adde49d9",
+      "sha256": "d15c02d156bd61d60a746fede413834dfa238e03e90ac0c7ff7591b3a55b9b81",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "internal_scene_constructor",
-      "rva": 8138928,
+      "rva": 8303856,
       "bytes": 32,
       "sha256": "44fa753aff5849285c4d44c2336b72e568af19a2bceb651367a6c8a54724be42",
       "boundary": "reviewed pointer-base, embedding or callback read route"
     },
     {
       "role": "notification_dispatch",
-      "rva": 7993776,
+      "rva": 8158704,
       "bytes": 362,
       "sha256": "f236ebcea7cbecb04975fcfb2a57e88bde3699b3532c497ce4f58b3f592c88ee"
     },
     {
       "role": "fast_pair_dispatch",
-      "rva": 8084272,
+      "rva": 8249200,
       "bytes": 134,
       "sha256": "6d16b1488518f8e5af318d251607176ff9d023bfc9e166f10e66b34e466690b5",
       "boundary": "complete fast caller; ignores native dispatcher RAX and consumes out fields"
@@ -433,102 +423,99 @@
   "targetOperands": [
     {
       "role": "shader",
-      "offset": 72,
+      "offset": 70,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 4848592
+      "targetRva": 5009040
     },
     {
       "role": "shader",
-      "offset": 86,
+      "offset": 85,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 4848656
+      "targetRva": 5009104
     },
     {
       "role": "shader",
-      "offset": 103,
+      "offset": 102,
       "prefix": "0f85",
       "mode": "rel32",
-      "targetRva": 15939304
+      "targetRva": 16567382
     },
     {
       "role": "object_exclusion",
       "offset": 33,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 4848800
+      "targetRva": 5009248
     },
     {
       "role": "object_exclusion",
       "offset": 54,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 4848800
+      "targetRva": 5009248
     },
     {
       "role": "pair_prefilter_cold_1",
       "offset": 46,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8104032
+      "targetRva": 8268960
     },
     {
       "role": "scene_packet",
       "offset": 205,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8083632
+      "targetRva": 8248560
     },
     {
       "role": "dynamic_constructor",
       "offset": 101,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7699424
+      "targetRva": 7791392
     },
     {
       "role": "public_scene_constructor",
       "offset": 49,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8138928
+      "targetRva": 8303856
     },
     {
       "role": "internal_scene_constructor",
       "offset": 27,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 7942832
+      "targetRva": 8107760
     },
     {
       "role": "fast_pair_dispatch",
       "offset": 41,
       "prefix": "e8",
       "mode": "rel32",
-      "targetRva": 8104032
+      "targetRva": 8268960
+    },
+    {
+      "role": "shape_core_cleanup",
+      "offset": 4,
+      "prefix": "e8",
+      "mode": "rel32",
+      "targetRva": 8162560
     }
   ],
   "probes": [
     {
-      "role": "shader",
-      "offset": 32,
-      "hex": "418b30498bf8488b5c24704c8bf1488b0dc3838701458be94c8b7c2478400fb6d6448b23450fb6c4e813010000"
-    },
-    {
-      "role": "shader",
-      "offset": 162,
-      "hex": "c1ee0841c1ec0866410bf4f64424582066418937750bb90104000041f6c5207405b914040000660bf1498bc76689300fb747080fb74b088bd0c1ea0223d1c1e90223c80bd183e2f3f7da661bc06625010866410907f70700020000755132c9f70300020000754b32c084c9754984c0754533c0"
-    },
-    {
       "role": "shader_cold_1",
       "offset": 0,
-      "hex": "b101e9f0c356ff"
+      "hex": "b101e941a14fff"
     },
     {
       "role": "key_decode",
       "offset": 0,
-      "hex": "440fb6c98bc14180e101458808448bc249c1e0204584c97504490bc0c3b9feffffff4823c1ebf2"
+      "hex": "440fb6c98bc14180e1018bca48c1e1204588084584c97504480bc1c3bafeffffff4823c2ebf2"
     },
     {
       "role": "scene_packet",
@@ -563,97 +550,112 @@
     {
       "role": "static_core_constructor",
       "offset": 40,
-      "hex": "4883c120e82fea0300"
+      "hex": "4883c120e82f070500"
     },
     {
       "role": "public_scene_constructor",
       "offset": 45,
-      "hex": "4883c110e88a0f0500"
+      "hex": "4883c110e88a2c0600"
     },
     {
       "role": "internal_scene_constructor",
       "offset": 21,
       "hex": "488bea488bd9e8e001fdff"
+    },
+    {
+      "role": "shader",
+      "offset": 32,
+      "hex": "458b20498bf8488b5c2470488bf1488b0df3f0a101458be94c8b7c24780fb6178b2b440fb6c5e815010000"
+    },
+    {
+      "role": "shader",
+      "offset": 90,
+      "hex": "8b4f080fb6d00b4b08f6c1100f85ba5eb00032c98b430883e020f64708200f85b900000032c04584f6742566c7060200488b5c2450488bc6488b742468488b6c24604883c420415f415e415d415c5fc384d275d784c975d384c075cf"
+    },
+    {
+      "role": "shader",
+      "offset": 182,
+      "hex": "c1ed0841c1ec0866410becf6442458206641892f750641f6c520745eb914040000660be9498bc76689288b57088b43080fb7c00fb7d28bcac1e90223c8c1e80223c20bc883e1f3f7d9661bc06625010866410907f70700020000753432c9f70300020000752e32c084c9752c84c0752833c0668906"
     }
   ],
   "codeFamilies": [
     {
       "role": "shader",
-      "rva": 4848240,
+      "rva": 5008688,
       "runtimeRanges": [
         [
-          4848240,
-          4848591,
-          28965576
+          5008688,
+          5009029,
+          30795140
         ],
         [
-          15939304,
-          15939311,
-          28965604
+          16567382,
+          16567389,
+          30795168
         ]
       ]
     },
     {
       "role": "layer_exclusion",
-      "rva": 4848592,
+      "rva": 5009040,
       "runtimeRanges": [
         [
-          4848592,
-          4848654,
-          28550080
+          5009040,
+          5009102,
+          30296200
         ],
         [
-          15939312,
-          15939397,
-          28965620
+          16567390,
+          16567475,
+          30795184
         ]
       ]
     },
     {
       "role": "object_exclusion",
-      "rva": 4848656,
+      "rva": 5009104,
       "runtimeRanges": [
         [
-          4848656,
-          4848788,
-          28560104
+          5009104,
+          5009236,
+          30284192
         ],
         [
-          15939398,
-          15939446,
-          28965636
+          16567476,
+          16567524,
+          30795200
         ]
       ]
     },
     {
       "role": "pair_prefilter",
-      "rva": 8083632,
+      "rva": 8248560,
       "runtimeRanges": [
         [
-          8083632,
-          8084072,
-          29122408
+          8248560,
+          8249000,
+          30984748
         ],
         [
-          8084072,
-          8084132,
-          29122432
+          8249000,
+          8249060,
+          30984772
         ],
         [
-          8084132,
-          8084266,
-          29122452
+          8249060,
+          8249194,
+          30984792
         ]
       ]
     },
     {
       "role": "shader_dispatch",
-      "rva": 8104032,
+      "rva": 8268960,
       "runtimeRanges": [
         [
-          8104032,
-          8104934,
-          29385604
+          8268960,
+          8269862,
+          31434724
         ]
       ]
     }
@@ -722,7 +724,7 @@
     {
       "field": "forcedExclusionMask",
       "role": "shader",
-      "offset": 100,
+      "offset": 99,
       "prefix": "f6c1",
       "width": 1,
       "signed": false,
@@ -731,7 +733,7 @@
     {
       "field": "bothExclusionMask",
       "role": "shader",
-      "offset": 114,
+      "offset": 113,
       "prefix": "83e0",
       "width": 1,
       "signed": false,
@@ -740,8 +742,8 @@
     {
       "field": "resultExcluded",
       "role": "shader",
-      "offset": 313,
-      "prefix": "6641c706",
+      "offset": 133,
+      "prefix": "66c706",
       "width": 2,
       "signed": false,
       "invert32": false
@@ -749,8 +751,8 @@
     {
       "field": "pairFlagShift",
       "role": "shader",
-      "offset": 162,
-      "prefix": "c1ee",
+      "offset": 182,
+      "prefix": "c1ed",
       "width": 1,
       "signed": false,
       "invert32": false
@@ -758,7 +760,7 @@
     {
       "field": "triggerAttributeMask",
       "role": "shader",
-      "offset": 173,
+      "offset": 193,
       "prefix": "f6442458",
       "width": 1,
       "signed": false,
@@ -767,7 +769,7 @@
     {
       "field": "defaultPairFlags",
       "role": "shader",
-      "offset": 184,
+      "offset": 304,
       "prefix": "b9",
       "width": 4,
       "signed": false,
@@ -776,7 +778,7 @@
     {
       "field": "triggerPairFlags",
       "role": "shader",
-      "offset": 195,
+      "offset": 210,
       "prefix": "b9",
       "width": 4,
       "signed": false,
@@ -785,8 +787,8 @@
     {
       "field": "notificationShift",
       "role": "shader",
-      "offset": 219,
-      "prefix": "c1ea",
+      "offset": 238,
+      "prefix": "c1e9",
       "width": 1,
       "signed": false,
       "invert32": false
@@ -794,8 +796,8 @@
     {
       "field": "notificationClearMask",
       "role": "shader",
-      "offset": 231,
-      "prefix": "83e2",
+      "offset": 250,
+      "prefix": "83e1",
       "width": 1,
       "signed": true,
       "invert32": true
@@ -803,7 +805,7 @@
     {
       "field": "notificationPairFlags",
       "role": "shader",
-      "offset": 239,
+      "offset": 258,
       "prefix": "6625",
       "width": 2,
       "signed": false,
@@ -812,7 +814,7 @@
     {
       "field": "modifierWordMask",
       "role": "shader",
-      "offset": 247,
+      "offset": 266,
       "prefix": "f707",
       "width": 4,
       "signed": false,
@@ -821,7 +823,7 @@
     {
       "field": "modifierPairFlags",
       "role": "shader",
-      "offset": 344,
+      "offset": 334,
       "prefix": "6641830f",
       "width": 1,
       "signed": false,
@@ -870,7 +872,7 @@
       "kind": 79,
       "role": "layer_exclusion",
       "windowRole": "layer_exclusion",
-      "entryHex": "4883ec7885d20f88143ba9004585c00f",
+      "entryHex": "4883ec7885d20f88c25db0004585c00f",
       "abi": {
         "arguments": [
           "pointer",

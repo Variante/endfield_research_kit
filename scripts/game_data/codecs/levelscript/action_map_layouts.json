@@ -4949,7 +4949,8 @@
         "unionOffset": 125,
         "endOffset": 288,
         "boundary": "Selected native Deserialize body and generated read/setter order match the reviewed fields. The source-authenticated current ActionSerializedMap cursor consumes this record sequentially and the owner closes at physical EOF."
-      }
+      },
+      "nativeGate": "levelscript_entity_attach_native"
     },
     {
       "family": "ActionBase",
@@ -29611,7 +29612,8 @@
         "unionOffset": 1899,
         "endOffset": 1982,
         "boundary": "Selected native Deserialize body and generated read/setter order match the reviewed fields. The source-authenticated current ActionSerializedMap cursor consumes this record sequentially and the owner closes at physical EOF."
-      }
+      },
+      "nativeGate": "levelscript_spawner_camera_native"
     },
     {
       "family": "ActionHeader",
@@ -32044,7 +32046,8 @@
         "sourceSha256": "0B01200A0918E320184F529D8316A4115EB3A768BE9EFA6C64623A14FD283583",
         "unionOffset": 430,
         "boundary": "Selected native Deserialize read/setter order and generated declaration match the reviewed fields. The source-authenticated current ActionSerializedMap cursor consumes the node sequentially and the full LevelScriptData file closes at physical EOF."
-      }
+      },
+      "nativeGate": "levelscript_route_deserialize_native"
     },
     {
       "family": "ActionHeader",
@@ -35431,7 +35434,8 @@
         "unionOffset": 1022,
         "endOffset": 1050,
         "boundary": "Selected native Deserialize body and generated read/setter order match the reviewed fields. The source-authenticated current ActionSerializedMap cursor consumes this record sequentially and the owner closes at physical EOF."
-      }
+      },
+      "nativeGate": "levelscript_spawner_camera_native"
     },
     {
       "family": "GetterBase",
@@ -37771,7 +37775,8 @@
         "sourceSha256": "1E6BFE1F3411EA59060F28EC950F18C7527CECC45A3C886B5FD94F530EC40D43",
         "unionOffset": 501,
         "boundary": "Selected native Deserialize read/setter order and generated declaration match the reviewed fields. The source-authenticated current ActionSerializedMap cursor consumes the node sequentially and the full LevelScriptData file closes at physical EOF."
-      }
+      },
+      "nativeGate": "levelscript_route_deserialize_native"
     },
     {
       "family": "GetterBase",

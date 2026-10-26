@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -109,7 +108,11 @@ def _validate_pointers(image: Any, contract: dict[str, Any]) -> None:
             raise ValueError(f"{LABEL}.native:pointer={name}")
 
 
-@lru_cache(maxsize=4)
+def _validate_native(image: Any, contract: dict[str, Any]) -> None:
+    _validate_taskmap_native_routes(image, contract)
+    _validate_pointers(image, contract)
+
+
 def validate_levelscript_taskmap_followon_native_contract(
     *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
     export_root: Path | None = None, ledger_path: Path | None = None,
@@ -132,8 +135,7 @@ def validate_levelscript_taskmap_followon_native_contract(
         if hashlib.sha256(unity.read_bytes()).hexdigest().upper() != expected["UnityPlayer.dll"].upper():
             raise ValueError(f"{LABEL}.native:UnityPlayer.dll-sha256")
         image = open_native_image(gate.gameassembly, gate.metadata)
-        _validate_taskmap_native_routes(image, contract)
-        _validate_pointers(image, contract)
+        _validate_native(image, contract)
         source_count = 0
         if any(value is not None for value in (export_root, ledger_path, summary_path)):
             if not all(value is not None for value in (export_root, ledger_path, summary_path)):
@@ -148,7 +150,6 @@ def validate_levelscript_taskmap_followon_native_contract(
                 "detail": str(error)[:400], "routeCount": 0}
 
 
-@lru_cache(maxsize=1)
 def validated_taskmap_followon_routes() -> dict[tuple[int, int], dict[str, Any]]:
     if validate_levelscript_taskmap_followon_native_contract()["status"] != "validated":
         return {}

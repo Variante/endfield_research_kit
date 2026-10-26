@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import argparse
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +32,6 @@ ENTITY_PARAM_TYPE = "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.Entity
 ENTITY_PTR_TYPE = "Beyond.Gameplay.Core.EntityPtr"
 
 
-@lru_cache(maxsize=1)
 def load_action_entity_field_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[tuple[int, int], dict[str, Any]], dict[str, Any]]:

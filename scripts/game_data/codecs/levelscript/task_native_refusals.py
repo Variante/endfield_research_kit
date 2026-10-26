@@ -1,14 +1,13 @@
 """Reached task-condition native refusals, separate from unknown stored schemas.
 
 This helper does not decode bytes. Current authenticated union identities,
-not an older contract's numeric tags, select which existing cached audit is
+not an older contract's numeric tags, select which owning audit is
 relevant to a failed task-condition read. Unused proof failures are ignored.
 """
 from __future__ import annotations
 
 import importlib
 import json
-from functools import lru_cache
 from typing import Any
 
 from scripts.game_data import levelscript_union_tags as union_tags
@@ -24,7 +23,6 @@ _SOURCES = (
 )
 
 
-@lru_cache(maxsize=1)
 def _declared_owners() -> dict[tuple[int, int], list[tuple[str, str, Any]]]:
     owners = {}
     for name, path_attribute, row_key, audit_attribute in _SOURCES:
