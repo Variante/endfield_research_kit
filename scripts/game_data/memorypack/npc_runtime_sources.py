@@ -57,4 +57,7 @@ def validate_components(image,pins,fact,dependencies):
     declared=dict(fact['profile'],nullOnlyTypes=sorted(fact['profile']['nullOnlyTypes']))
     if profile!=declared:raise ValueError('npcRuntime.reviewed-bounded-profile')
     result=layout([m.row()for m in root.members],records,profile);result['containerKinds']=kinds
+    from scripts.game_data.memorypack import levelscript_positive_string_sources as positive_strings
+    proof['positiveNpcStringList']=positive_strings.derive_npc(image,pins,fact)
+    result=positive_strings.compose_npc_plan(result,proof['positiveNpcStringList'],pins)
     return result,proof

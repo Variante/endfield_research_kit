@@ -43,7 +43,7 @@ def _offset_hex(offset: int | None) -> str:
     return f"0x{offset:x}" if isinstance(offset, int) and offset >= 0 else ""
 
 
-def decode_tail_candidate(data: bytes, script_id_offset: int) -> dict[str, Any]:
+def decode_tail_candidate(data: bytes, script_id_offset: int, *, terminal_prefix_only: bool = False) -> dict[str, Any]:
     """Decode and score one exact top-level tail beginning at ``scriptId``."""
     start_shape_offset = script_id_offset + 8
     start_shape, start_shape_end = active_shapes.decode_shape_list(
@@ -80,12 +80,12 @@ def decode_tail_candidate(data: bytes, script_id_offset: int) -> dict[str, Any]:
     trigger_volume_offset = task_map_end
     trigger_volume: dict[str, Any] = {}
     trigger_volume_end: int | None = None
-    if trigger_volume_offset is not None:
+    if not terminal_prefix_only and trigger_volume_offset is not None:
         trigger_volume, trigger_volume_end = trigger_volumes.decode_trigger_volume_map(
             data,
             trigger_volume_offset,
         )
-    elif task_map_offset is not None and task_map_status == "present":
+    elif not terminal_prefix_only and task_map_offset is not None and task_map_status == "present":
         (
             trigger_volume_offset,
             trigger_volume,

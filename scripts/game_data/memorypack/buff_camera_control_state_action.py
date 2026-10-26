@@ -43,7 +43,7 @@ def validate_current_native_contract(*,children:dict[str,Any],gameassembly:Path|
     if not unity.is_file() or hashlib.sha256(unity.read_bytes()).hexdigest().upper()!=pins['UnityPlayer.dll']:_fail('UnityPlayer.dll',pins['UnityPlayer.dll'],'missing-or-mismatched')
     image=open_native_image(gate.gameassembly,gate.metadata);record=c['records']['cameraControlState']
     source_path=CONTRACTS_DIR/record['sourceContract'];source=json.loads(source_path.read_bytes())
-    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=source_path)
+    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=source_path, native_image=image)
     proved=named.validate_named_records(image,source,c['records'],label=LABEL,fail=_fail)
     curve=curves.formatter_curve_type(image)
     for name in ('blendInCustomCurve','blendOutCustomCurve'):

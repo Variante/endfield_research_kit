@@ -22,10 +22,12 @@ from scripts.common import check_installed_native_inputs, NATIVE_EVIDENCE_VALIDA
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.dynamic_main_native import _checked_dump_path
 from scripts.game_data.dynamic_root_comp_native import validate_native_layout as validate_root_layout
-from scripts.game_data.dynamic_scalar_components_native import _validate_record, _validate_carriers, _decode_record
+from scripts.game_data.dynamic_scalar_components_native import _validate_record, _validate_carriers, _decode_record, instruction_starts
 from scripts.game_data.dynamic_stream_area_corpus import DEFAULT_OUTER, DEFAULT_LEDGER, DEFAULT_CLI, MAIN_NAME_RE, load_current_inputs
 from scripts.game_data.dynamic_streaming import parse_dynamic_file, _root_layout, _table_layout, _bounded_vector, _field_span
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract, NATIVE_MAPPER_PATH, METADATA_HELPER_PATH
+from scripts.game_data.il2cpp.protocol import canonical_type_name
+from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _parser_source_snapshots, _guard_output_path
 from scripts.game_data.corpus_common import atomic_write_text
 from scripts.repo_paths import REPO_ROOT
@@ -88,6 +90,9 @@ def validate_native_layout(gameassembly: Path, metadata: Path):
     if receipt != inputs:
         raise DynamicGroupComponentsError('installed_native_inputs:mismatched:group and root builds differ')
     image = open_native_image(gameassembly, metadata)
+    # Signatures use the scalar contract's canonical names, so shared inline rows
+    # compare under one spelling (generic instances resolve to full names).
+    selected_names = NativeReferenceContext(image)
     # The existing scalar contract owns these shared carrier witnesses.
     carrier_contract, _ = read_reviewed_contract(CONTRACTS_DIR / 'dynamic_scalar_components_native.json',
         schema='endfield.dynamic-scalar-components-native-contract.v3', label='dynamic_group_carriers', status='validated')
@@ -103,7 +108,7 @@ def validate_native_layout(gameassembly: Path, metadata: Path):
     inline_method_indices = {row['builderMethodIndex'] for row in inline_records}
     inline_method_indices.update(field['getterMethodIndex'] for row in inline_records for field in row['fields'])
     method_rows = list(contract['methods']) + [row for row in carrier_contract['methods'] if row['index'] in inline_method_indices]
-    methods, bodies = {}, {}
+    methods, bodies, starts = {}, {}, {}
     for row in method_rows:
         idx = int(row['index'])
         if idx in methods:
@@ -111,9 +116,9 @@ def validate_native_layout(gameassembly: Path, metadata: Path):
         image.validate_method_row([idx, row['type'], row['method'], row['rva']], label='dynamic_groups')
         method = image.metadata.methods[idx]
         params = image.metadata.parameters_for(method)
-        if ([image.metadata.metadata_type_name(p.type_index) for p in params] != row['parameters']
+        if ([canonical_type_name(selected_names.type_name(p.type_index)) for p in params] != row['parameters']
                 or [image.metadata.string(p.name_index) for p in params] != row['parameterNames']
-                or image.metadata.metadata_type_name(method.return_type) != row['returnType']):
+                or canonical_type_name(selected_names.type_name(method.return_type)) != row['returnType']):
             raise DynamicGroupComponentsError(f'{idx}:metadata signature differs')
         length = int(row['bodyExtent'])
         if not 0 < length <= 4096:
@@ -122,16 +127,25 @@ def validate_native_layout(gameassembly: Path, metadata: Path):
         if hashlib.sha256(body).hexdigest().upper() != row['bodySha256']:
             raise DynamicGroupComponentsError(f'{idx}:native body hash differs')
         methods[idx], bodies[idx] = row, body
+    # Group-owned getter witnesses must begin decoded instructions: a pinned
+    # build can place a witness byte pair inside a call displacement. The
+    # scalar-owned inline records keep the scalar validator's own checks.
+    for record in contract['records']:
+        for idx in [record['builderMethodIndex'], *(f['getterMethodIndex'] for f in record['fields'])]:
+            starts[idx] = instruction_starts(bodies[idx], image.pe.image_base + methods[idx]['rva'],
+                                             image.mapper.decode_x64_subset, f'{idx}')
     inline = _inline_types(root, index)
     inline.update({record['type']: record for record in inline_records})
     vectors = {r['name']: r for r in main['vectors']}
     selected, names = set(), set()
+    owned = {id(record) for record in contract['records']}
     for record in contract['records'] + inline_records:
         vector = vectors[record['name']]
         if record['name'] in names or (record['gridFieldIndex'], record['width']) != (vector['fieldIndex'], vector['elementWidth']):
             raise DynamicGroupComponentsError(f"{record['name']}:duplicate or mismatched main vector")
         names.add(record['name'])
-        _validate_record(record, methods, bodies, inline_types=inline, carriers=carriers)
+        _validate_record(record, methods, bodies, inline_types=inline, carriers=carriers,
+                         starts=starts if id(record) in owned else None)
         selected.add(record['builderMethodIndex'])
         selected.update(f['getterMethodIndex'] for f in record['fields'])
     if selected != set(methods):

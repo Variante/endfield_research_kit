@@ -222,8 +222,16 @@ class NativeImage:
     # ---- checks shared by contracts -------------------------------------
 
     def check_windows(self, windows: Sequence[dict[str, Any]], *, gate: str = "code-window", label: str | None = None) -> None:
-        """Every window's bytes must hash to its recorded SHA256."""
+        """Check raw byte hashes; a declared semantic prerequisite needs its owner.
+
+        This primitive never imports a domain validator. Annotated windows must
+        go through the owning composed proof before a stripped byte projection
+        reaches this method; a raw-only consumer cannot silently bypass it.
+        """
         label = label or self.label
+        for window in windows:
+            if "requiredRoleContract" in window:
+                raise ValueError(f"{label}.native:required-role-contract={str(window['requiredRoleContract'])[:200]}")
         for window in windows:
             if hashlib.sha256(self.window_bytes(window)).hexdigest().upper() != window["sha256"].upper():
                 raise ValueError(f"{label}.native:{gate}={window['startRva']:#x}")

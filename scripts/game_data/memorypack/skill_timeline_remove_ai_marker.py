@@ -1,4 +1,4 @@
-"""Selected-build SkillData RemoveAIMarkerAction 0x012D reader.
+"""Selected-build SkillData RemoveAIMarkerAction reader.
 
 The stored marker is a raw GameplayTag DWORD. The owner is a finite
 TargetSettings profile; neither value proves live marker removal.
@@ -14,13 +14,18 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff import (
+    _ability_action_tag, _ability_action_tag_bytes,
+)
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+from scripts.game_data.memorypack.skill_timeline_dependencies import validate_dependencies
 
 
 LABEL = "skillTimelineRemoveAIMarker"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_remove_ai_marker_native.json"
-TAG = 0x012D
+TAG_NAME = "Core_RemoveAIMarkerAction_Data"
 FIELD_NAMES = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "marker", "markerOwner",
@@ -37,7 +42,7 @@ NESTED_NAMES = (
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH,
         schema="endfield.skill-timeline-remove-ai-marker-native-contract.v1",
@@ -47,7 +52,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != TAG
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(READ_KINDS)
         or not isinstance(reads, list)
         or [row.get("memberIndex") for row in reads] != list(range(len(READ_KINDS)))
@@ -57,7 +62,7 @@ def _contract() -> dict[str, Any]:
         or tuple(row.get("memberIndex") for row in contexts) != (1, 4, 5)
         or tuple(row.get("typeName") for row in contexts) != NESTED_NAMES
         or [row.get("path") for row in contract.get("dependencies", [])]
-        != ["buff_fe_native.json", "buff_ec_native.json"]
+        != ["memorypack_gameplay_tag_source_native.json", "buff_ec_native.json"]
         or bytes.fromhex(contract.get("memberCountInstruction", {}).get("hex", ""))
         != b"\x80\x7C\x24\x38\x06"
     ):
@@ -65,12 +70,15 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate selected dispatch, ordered source calls and nested types."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
@@ -84,7 +92,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -126,11 +134,8 @@ def validate_current_native_contract() -> dict[str, Any]:
             or image.type_name(context["typeDefinition"]) != context["typeName"]
         ):
             raise ValueError(f"{LABEL}.native:nested-type")
-    for dependency in contract["dependencies"]:
-        reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
-            raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+    validate_dependencies(image, contract, label=LABEL)
+
     return {
         "status": "validated", "nativeInputs": expected,
         "methodIndices": methods, "sourceReadCount": len(contract["orderedSourceReads"]),
@@ -141,8 +146,9 @@ def validate_current_native_contract() -> dict[str, Any]:
 def decode_remove_ai_marker_action(reader: Reader, depth: int, tag: int, width: int) -> None:
     """Consume one reached six-member action and stop on unsupported children."""
     del depth
-    _contract()
-    if tag != TAG or width != 3:
+    contract = _contract()
+    if (tag != contract["dispatcher"]["unionTag"]
+            or width != len(_ability_action_tag_bytes(TAG_NAME))):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

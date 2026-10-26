@@ -2,47 +2,47 @@
   "schema": "endfield.dynamic-erosion-consumers-native-contract.v3",
   "status": "validated",
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "unityPlayerSha256": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "methods": {
     "collector": {
-      "index": 87370,
+      "index": 92336,
       "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneErosionSystem",
       "method": "_FillPosListFromFB",
       "parameters": [
         "System.UInt64",
-        "<type-index:59240>"
+        "<type-index:55786>"
       ],
       "parameterNames": [
         "compId",
         "posList"
       ],
       "returnType": "System.Void",
-      "rva": 104970264,
-      "bodyExtent": 463,
-      "bodySha256": "B1578F0EEFBFD1175CA9C3356F9E5641EDBC7CDFA31C6BDBA47F7438B8A35177",
+      "rva": 154040780,
+      "bodyExtent": 503,
+      "bodySha256": "C62BA868B9A72FF4D9598798BCCE32A745FAF76C7206176D07CAA8B92905617C",
       "boundary": "primary pdata body"
     },
     "decoder": {
-      "index": 88842,
+      "index": 93798,
       "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneUtil",
       "method": "DecodeFromFbData",
       "parameters": [
-        "<type-index:93980>"
+        "<type-index:87676>"
       ],
       "parameterNames": [
         "vec"
       ],
       "returnType": "UnityEngine.Vector3",
-      "rva": 57988896,
+      "rva": 87813424,
       "bodyExtent": 100,
-      "bodySha256": "2B034DBB386AED1DA680189959FE0E87555652F05C5A858BFC9F2D10DD0042F0",
+      "bodySha256": "84CD1EA11AB5535F03B0D8176D5A3DC405F594C9DA66423EE55BDB88C0CBB286",
       "boundary": "primary pdata body"
     },
     "constructor": {
-      "index": 358727,
+      "index": 476754,
       "type": "UnityEngine.Vector3",
       "method": ".ctor",
       "parameters": [
@@ -56,13 +56,13 @@
         "z"
       ],
       "returnType": "System.Void",
-      "rva": 77894784,
+      "rva": 119758464,
       "bodyExtent": 15,
       "bodySha256": "0C6C1D41E1E0C2FA6F3A09BDCEC14DE0410DFD4889DDDEB969FBF55217B5B0F2",
       "boundary": "closed three MOVSS stores followed by RET"
     },
     "patchCheck": {
-      "index": 102181,
+      "index": 107973,
       "type": "IFix.WrappersManagerImpl",
       "method": "IsPatched",
       "parameters": [
@@ -72,61 +72,61 @@
         "id"
       ],
       "returnType": "System.Boolean",
-      "rva": 46758256,
-      "bodyExtent": 134,
-      "bodySha256": "60B466201792D0ED06291A5CADB56C9910B934D7D7505B8D7D9C570B90A2CF4E",
+      "rva": 154653612,
+      "bodyExtent": 122,
+      "bodySha256": "5E653788CFB9FDC94EFB2122551651CCF94EF39782A1E1AD00157B40323A2863",
       "boundary": "primary pdata body"
     },
     "coreReturn": {
-      "index": 87371,
+      "index": 92337,
       "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneErosionSystem",
       "method": "_GetErosionIdFromFB",
-      "rva": 104970728,
+      "rva": 154041284,
       "parameters": [
         "System.UInt64"
       ],
       "returnType": "System.UInt64",
-      "bodyExtent": 181,
-      "bodySha256": "1E8ED8D355470A9E2AB95E176DB5E5EC584B571D6C3EF04D54A1569E360FBB80"
+      "bodyExtent": 162,
+      "bodySha256": "A8DB8716EADB74B4DD7B35C09B39DC99CFD1E7480D281D5AAA73516E5CC1B358"
     }
   },
   "windows": {
     "collector": {
-      "rva": 104970264,
-      "bodyExtent": 463,
-      "bodySha256": "B1578F0EEFBFD1175CA9C3356F9E5641EDBC7CDFA31C6BDBA47F7438B8A35177"
+      "rva": 154040780,
+      "bodyExtent": 503,
+      "bodySha256": "C62BA868B9A72FF4D9598798BCCE32A745FAF76C7206176D07CAA8B92905617C"
     },
     "decoder": {
-      "rva": 57988896,
+      "rva": 87813424,
       "bodyExtent": 100,
-      "bodySha256": "2B034DBB386AED1DA680189959FE0E87555652F05C5A858BFC9F2D10DD0042F0"
+      "bodySha256": "84CD1EA11AB5535F03B0D8176D5A3DC405F594C9DA66423EE55BDB88C0CBB286"
     },
     "constructor": {
-      "rva": 77894784,
+      "rva": 119758464,
       "bodyExtent": 15,
       "bodySha256": "0C6C1D41E1E0C2FA6F3A09BDCEC14DE0410DFD4889DDDEB969FBF55217B5B0F2"
     },
     "patchCheck": {
-      "rva": 46758256,
-      "bodyExtent": 134,
-      "bodySha256": "60B466201792D0ED06291A5CADB56C9910B934D7D7505B8D7D9C570B90A2CF4E"
+      "rva": 154653612,
+      "bodyExtent": 122,
+      "bodySha256": "5E653788CFB9FDC94EFB2122551651CCF94EF39782A1E1AD00157B40323A2863"
     },
     "vectorClone": {
-      "rva": 57985616,
+      "rva": 87811456,
       "bodyExtent": 146,
-      "bodySha256": "8A72BD94FB5A253BD51609B00D0922B50B42C91C759616985F9C88B3A7F1BAA6",
+      "bodySha256": "185B0D53C94DF5892199C7B3D9F0624ABC9EB6673AE29EB209DD1BE946DC75D9",
       "boundary": "primary pdata helper body"
     },
     "valueForwarder": {
-      "rva": 3181688,
+      "rva": 7239092,
       "bodyExtent": 36,
-      "bodySha256": "573C944EB273A9A7D289BF733E7F3E16FD4048C955B9A306380A123D6FD21B60",
+      "bodySha256": "50F0B9CF2F4C59E203E864290F5DBDB0886F9EB09F1949D050F114F6E053FDC5",
       "boundary": "primary pdata helper body"
     },
     "coreReturn": {
-      "rva": 104970728,
-      "bodyExtent": 181,
-      "bodySha256": "1E8ED8D355470A9E2AB95E176DB5E5EC584B571D6C3EF04D54A1569E360FBB80"
+      "rva": 154041284,
+      "bodyExtent": 162,
+      "bodySha256": "A8DB8716EADB74B4DD7B35C09B39DC99CFD1E7480D281D5AAA73516E5CC1B358"
     }
   },
   "dependencies": [
@@ -209,93 +209,93 @@
     },
     "saveList": {
       "window": "collector",
-      "offset": 33,
+      "offset": 42,
       "bytes": "498BF8"
     },
     "saveComp": {
       "window": "collector",
-      "offset": 42,
+      "offset": 45,
       "bytes": "488BF2"
     },
     "saveThis": {
       "window": "collector",
-      "offset": 45,
+      "offset": 48,
       "bytes": "4C8BF1"
     },
     "selectGridAndRoot": {
       "window": "collector",
-      "offset": 142,
-      "bytes": "4C8D4DC7488BD64C8D4507498BCE"
+      "offset": 222,
+      "bytes": "4C8D4C2430488BD64C8D45B0498BCE"
     },
     "rootGetterArgs": {
       "window": "collector",
-      "offset": 161,
-      "bytes": "448B45C7488D5507488D4D27"
+      "offset": 242,
+      "bytes": "448B442430488D55B0488D4DF0"
     },
     "groupGetterArgs": {
       "window": "collector",
-      "offset": 178,
-      "bytes": "4533C0488D55CF488D4D270F10000F1048100F1145CF0F114DDF"
+      "offset": 260,
+      "bytes": "4533C0488D542470488D4DF00F10000F114424700F1048100F114D80"
     },
     "groupNumArgs": {
       "window": "collector",
-      "offset": 209,
-      "bytes": "33D2488D4DCF0F10000F1048100F1145CF0F114DDF"
+      "offset": 293,
+      "bytes": "33D2488D4C24500F10000F114424500F1048100F114C2460"
     },
     "groupIndexArgs": {
       "window": "collector",
-      "offset": 235,
-      "bytes": "4533C0488D55CF488D4D278BF0"
+      "offset": 322,
+      "bytes": "4533C0488D542450488D4DF0"
     },
     "indexArgs": {
       "window": "collector",
-      "offset": 253,
-      "bytes": "33D2488D4DCF0F10000F1048100F1145CF0F114DDF"
+      "offset": 341,
+      "bytes": "33D2488D4D900F10000F1145900F1048100F114DA0"
     },
     "numCapture": {
       "window": "collector",
-      "offset": 246,
+      "offset": 334,
       "bytes": "8BF0"
     },
     "indexCapture": {
       "window": "collector",
-      "offset": 279,
+      "offset": 367,
       "bytes": "448BF0"
     },
     "numGuard": {
       "window": "collector",
-      "offset": 282,
-      "bytes": "85F60F8E90000000"
+      "offset": 370,
+      "bytes": "85F67E64"
     },
     "loopIndex": {
       "window": "collector",
-      "offset": 290,
-      "bytes": "468D0433488D5507488D4D27"
+      "offset": 374,
+      "bytes": "468D0433488D55B0488D4DF0"
     },
     "decodeArgs": {
       "window": "collector",
-      "offset": 334,
-      "bytes": "488D55CF488D4D47"
+      "offset": 418,
+      "bytes": "488D55D0488D4D10"
     },
     "listArgs": {
       "window": "collector",
-      "offset": 354,
-      "bytes": "488D55F7488BCFF20F10008B4008F20F1145F78945FF"
+      "offset": 438,
+      "bytes": "488D542440488BCFF20F10008B4008F20F1144244089442448"
     },
     "loopControl": {
       "window": "collector",
-      "offset": 381,
-      "bytes": "FFC33BDE7C9F"
+      "offset": 468,
+      "bytes": "FFC33BDE7C9C"
     },
     "returnFrame": {
       "window": "collector",
-      "offset": 434,
-      "bytes": "4C8D9C24C0000000498B5B10498B7318498B7B204D8B7328498BE35DC3"
+      "offset": 474,
+      "bytes": "4C8D9C2420010000498B5B20498B7328498B7B30498BE3415F415E5DC3"
     },
     "patchBranch": {
       "window": "collector",
-      "offset": 119,
-      "bytes": "84C00F8506010000"
+      "offset": 96,
+      "bytes": "488B051D784308488B48704885C97428488B81F07500004885C0741C488B89F87500004C8BCF4C8BC64C897C2420498BD6FFD0E942010000"
     },
     "decoderSaveSource": {
       "window": "decoder",
@@ -375,53 +375,63 @@
     "forwardValue": {
       "window": "valueForwarder",
       "offset": 0,
-      "bytes": "4883EC38F20F10028B4208488D542420F20F1144242089442428E80906C2024883C438C3"
+      "bytes": "4883EC38F20F10028B4208488D542420F20F1144242089442428E84D7E9F044883C438C3"
+    },
+    "frame": {
+      "window": "collector",
+      "offset": 20,
+      "bytes": "488D68C84881EC20010000"
+    },
+    "clearList": {
+      "window": "collector",
+      "offset": 205,
+      "bytes": "4885FF7506E89D6EDFF6CCFF471C895F18"
+    },
+    "listContext": {
+      "window": "collector",
+      "offset": 431,
+      "bytes": "4C8B0576164807"
     }
   },
   "calls": [
     {
       "window": "collector",
-      "offset": 114,
-      "target": "patchCheck"
-    },
-    {
-      "window": "collector",
-      "offset": 173,
+      "offset": 255,
       "target": "gridErosion"
     },
     {
       "window": "collector",
-      "offset": 204,
+      "offset": 288,
       "target": "posList"
     },
     {
       "window": "collector",
-      "offset": 230,
+      "offset": 317,
       "target": "num"
     },
     {
       "window": "collector",
-      "offset": 248,
+      "offset": 336,
       "target": "groupIndex"
     },
     {
       "window": "collector",
-      "offset": 274,
+      "offset": 362,
       "target": "index"
     },
     {
       "window": "collector",
-      "offset": 302,
+      "offset": 386,
       "target": "vectorClone"
     },
     {
       "window": "collector",
-      "offset": 342,
+      "offset": 426,
       "target": "decoder"
     },
     {
       "window": "collector",
-      "offset": 376,
+      "offset": 463,
       "target": "valueForwarder"
     },
     {
@@ -442,52 +452,46 @@
   ],
   "coreIdFlow": {
     "probes": {
-      "saveComp": {
-        "offset": 19,
-        "bytes": "488BDA"
-      },
       "saveThis": {
-        "offset": 22,
-        "bytes": "488BF9"
+        "offset": 21,
+        "bytes": "4C8BD1"
       },
       "lookupArgs": {
-        "offset": 49,
-        "bytes": "4C8D8C2498000000488BD34C8D442430488BCF"
+        "offset": 78,
+        "bytes": "4C8D4D7F4C8D4517498BCA"
       },
       "rootArgs": {
-        "offset": 73,
-        "bytes": "448B842498000000488D542430488D4C2450"
+        "offset": 110,
+        "bytes": "448B457F488D5517488D4D37"
       },
       "coreArgs": {
-        "offset": 96,
-        "bytes": "33D2488D4C24300F10000F1048100F114424300F114C2440"
+        "offset": 127,
+        "bytes": "33D2488D4DF70F10000F1145F70F1048100F114D07"
       },
       "returnFrame": {
-        "offset": 167,
-        "bytes": "488B9C24800000004883C4705FC3"
+        "offset": 153,
+        "bytes": "4881C4900000005DC3"
       },
       "patchBranch": {
-        "offset": 45,
-        "bytes": "84C0754E",
-        "target": 127
+        "offset": 14,
+        "bytes": "488B05777643084C8BD1488B48704885C97420488B81007600004885C07414488B89087600004D8BC84C8BC2498BD2FFD0EB58"
       },
-      "getterReturnBranch": {
-        "offset": 125,
-        "bytes": "EB28",
-        "target": 167
+      "frame": {
+        "offset": 0,
+        "bytes": "4055488D6C24A94881EC90000000"
+      },
+      "lookupInit": {
+        "offset": 89,
+        "bytes": "0F1145170F1145270F114DF70F114D07"
       }
     },
     "calls": [
       {
-        "offset": 40,
-        "target": "patchCheck"
-      },
-      {
-        "offset": 91,
+        "offset": 122,
         "target": "gridErosion"
       },
       {
-        "offset": 120,
+        "offset": 148,
         "target": "coreId"
       }
     ]

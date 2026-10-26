@@ -2,62 +2,68 @@
   "schemaVersion": 1,
   "methods": [
     [
-      124837,
+      266941,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_CompareFloat_DataForMemoryPack",
       "Deserialize",
-      58576976
+      99939312
     ],
     [
-      124838,
+      266942,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_CompareFloat_DataForMemoryPack+Beyond_Gameplay_Core_CompareFloat_DataForMemoryPackFormatter",
       "Deserialize",
-      58576880
+      99939216
     ]
   ],
   "codeWindows": [
     {
-      "startRva": 58576880,
-      "endRva": 58576973,
-      "sha256": "41D90EC42DCA5EDD21D58BEABD4D0857154EC83952F1268AC054442BD1C01E65",
-      "boundary": "formatter forwards reader/output to static reader"
+      "startRva": 99939312,
+      "endRva": 99939908,
+      "sha256": "F4D352185F54DE86EA01CEF17599A95BA5C4F2B9A605376AB6692AF077520BBB",
+      "boundary": "member7 normal/null paths; external cold branches not complete"
     },
     {
-      "startRva": 58576976,
-      "endRva": 58577588,
-      "sha256": "CBBF3CFC7586803C5022D9DABBB40BED41C5B510374CE06C3B799D88651D3311",
+      "startRva": 124015480,
+      "endRva": 124015597,
+      "sha256": "AE1FBC258BA692839A0DC28D5B258780D5AE42EEC77BB00FFABA575893663B45",
       "boundary": "member7 normal/null paths; external cold branches not complete"
+    },
+    {
+      "startRva": 99939216,
+      "endRva": 99939309,
+      "sha256": "F554DCCCABC60217FF3A1C7A0C27DE76AD91CBA51738CB7DB8AB77B17F1577E9",
+      "boundary": "formatter forwards reader/output to static reader"
     }
   ],
   "nestedContexts": [
     {
-      "instructionRva": 58577345,
-      "instructionHex": "488B1558748109",
-      "cellVa": 6660507168,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 99939681,
+      "instructionHex": "488B15803D820A",
+      "cellVa": 6718698216,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble",
       "generic": null
     },
     {
-      "instructionRva": 58577404,
-      "instructionHex": "488B151D748109",
-      "cellVa": 6660507168,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 99939732,
+      "instructionHex": "488B154D3D820A",
+      "cellVa": 6718698216,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble",
       "generic": null
     }

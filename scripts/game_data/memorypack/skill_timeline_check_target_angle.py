@@ -1,4 +1,4 @@
-"""Selected-build finite SkillData CheckTargetAngle 0x007D reader.
+"""Selected-build finite SkillData CheckTargetAngle reader.
 
 The native source pins eight ordered fields. Its BlackboardDouble and two
 TargetSettings children reuse independently reviewed finite profiles.
@@ -11,15 +11,21 @@ import struct
 from functools import lru_cache
 from typing import Any
 
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff import (
+    _ability_action_tag, _ability_action_tag_bytes,
+)
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 
 LABEL = "skillTimelineCheckTargetAngle"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_check_target_angle_native.json"
+TAG_NAME = "Core_Conditions_CheckTargetAngle_Data"
 FIELD_NAMES = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "angle", "angleType", "origin", "target",
@@ -31,7 +37,7 @@ READ_KINDS = (
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH, schema="endfield.skill-timeline-check-target-angle-native-contract.v1",
         label=LABEL, status="exact-current-build",
@@ -39,7 +45,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != 0x007D
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(FIELD_NAMES)
         or not isinstance(reads, list) or len(reads) != len(FIELD_NAMES)
         or [row.get("memberIndex") for row in reads] != list(range(len(reads)))
@@ -57,11 +63,13 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate the selected route, eight source reads and nested types."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
+    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"], gameassembly=gameassembly, metadata=metadata)
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
@@ -93,9 +101,9 @@ def validate_current_native_contract() -> dict[str, Any]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
     for dependency in contract["dependencies"]:
         reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
+        if (reviewed.get("schemaVersion") != 1 and not is_role_projection(reviewed)):
             raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed.get("codeWindows", []), label=f"{LABEL}.{dependency['path']}")
+        check_formatter_windows(image, reviewed, label=f"{LABEL}.{dependency['path']}")
         image.check_windows(reviewed.get("dataWindows", []), gate="data-window", label=f"{LABEL}.{dependency['path']}")
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
@@ -133,7 +141,8 @@ def decode_check_target_angle_action(reader: Reader, depth: int, tag: int, width
     """Consume one finite eight-member CheckTargetAngle action."""
     del depth
     contract = _contract()
-    if tag != contract["dispatcher"]["unionTag"] or width != 1:
+    if (tag != contract["dispatcher"]["unionTag"]
+            or width != len(_ability_action_tag_bytes(TAG_NAME))):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

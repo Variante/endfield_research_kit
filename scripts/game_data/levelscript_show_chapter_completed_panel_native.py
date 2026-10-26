@@ -304,6 +304,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
 ) -> int:
     prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     summary = json.loads(summary_path.read_bytes())
@@ -338,7 +339,7 @@ def _validate_sources(
             or not Path(path).stem.isdecimal() or int(Path(path).stem) != script_id
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}")
-        cursor = _Cursor(data, start + len(prefix))
+        cursor = _Cursor(data, start + len(prefix), game_root=game_root, strings=strings, route=contract["route"])
         enum_values = {row["id"] for row in contract["enumTypes"][0]["members"]}
         for name, kind in contract["route"]["fields"]:
             value = cursor.value("Param<int>" if kind == "Param<ChapterEffectType>" else kind,
@@ -378,7 +379,9 @@ def validate_show_chapter_completed_panel_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

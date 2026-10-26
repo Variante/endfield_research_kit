@@ -19,6 +19,7 @@ from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usa
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineChangeSkill"
@@ -91,7 +92,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -110,9 +111,9 @@ def validate_current_native_contract() -> dict[str, Any]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
     for name in ("buff_ec_native.json", "buff_b2_native.json"):
         child = json.loads((CONTRACTS_DIR / name).read_bytes())
-        if child.get("schemaVersion") != 1:
+        if (child.get("schemaVersion") != 1 and not is_role_projection(child)):
             raise ValueError(f"{LABEL}.native:{name}:schema")
-        image.check_windows(child["codeWindows"], label=f"{LABEL}.{name}")
+        check_formatter_windows(image, child, label=f"{LABEL}.{name}")
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(

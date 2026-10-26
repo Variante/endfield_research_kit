@@ -48,7 +48,7 @@ def validate_current_native_contract(*,children,gameassembly:Path|None=None,meta
     string=children.get('blackboardInt',{}).get('stringSource',{});_string(c,string)
     image=open_native_image(gate.gameassembly,gate.metadata);record=c['records'][RECORD]
     path=CONTRACTS_DIR/record['sourceContract'];source=json.loads(path.read_bytes())
-    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=path)
+    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=path, native_image=image)
     def fail(check,expected,actual,**details):
         raise ValueError(LABEL+'.'+check+':'+json.dumps({'source':str(path),'nativeInputs':pins,'expected':str(expected)[:500],'actual':str(actual)[:500],'details':details}))
     proved=named.validate_named_records(image,source,c['records'],label=LABEL,fail=fail)

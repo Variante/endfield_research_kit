@@ -178,7 +178,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["sourceContract"],
-    )
+     native_image=image)
     if (
         tuple(source_audit["anonymousReadOrder"].get("member5", ())) != SOURCE_READ_ORDER
         or tuple(row["typeName"] for row in source_audit["nestedContexts"]) != NESTED_TYPES

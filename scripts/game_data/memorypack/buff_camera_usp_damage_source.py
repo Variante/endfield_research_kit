@@ -56,7 +56,7 @@ def validate_current_native_contract(*, gameassembly: Path | None = None, metada
         if name not in sources:
             path = CONTRACTS_DIR/name;sources[name] = json.loads(path.read_bytes())
             audits[name] = buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,
-                image.modules,image.owners,source=str(gate.gameassembly),contract_path=path)
+                image.modules,image.owners,source=str(gate.gameassembly),contract_path=path, native_image=image)
         proved.update(named.validate_named_records(image,sources[name],{key:record},label=LABEL,fail=fail))
     registrations = {}
     for key,flow in contract['formatterRegistrations'].items():

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import struct
 from typing import Any
 from scripts.game_data.memorypack.core import memorypack_union_header
 
@@ -24,24 +23,13 @@ _FIELDS = [
 ]
 
 
-def _uint_list_param(cursor: _Cursor, field: str) -> dict[str, Any]:
-    marker = cursor.byte(field + ".memberCount")
-    if marker != 4:
-        raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
-    count = cursor.i32(field + ".value.count")
-    if count == -1:
-        value = None
-    elif not 0 <= count <= 10_000:
-        raise ActionMapCodecError(f"{field}:unsupported-count={count}")
-    else:
-        cursor.need(count * 4, field + ".value")
-        value = list(struct.unpack_from(f"<{count}I", cursor.data, cursor.offset))
-        cursor.offset += count * 4
-    return cursor.param_tail(value, field)
+def _uint_list_param(cursor: _Cursor, field: str) -> Any:
+    return cursor.value('Param<List<uint>>', field)
 
 
 def decode_on_leader_enter_trigger_volume_list_header(
     data: bytes, offset: int, route: dict[str, Any],
+    *, game_root: Any = None, strings: Any = None, numeric_list_params: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Read one selected event header from its authenticated member order."""
     if (
@@ -55,7 +43,7 @@ def decode_on_leader_enter_trigger_volume_list_header(
     header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
     if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onLeaderEnterTriggerVolumeList:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + len(header))
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings, route=route, numeric_list_params=numeric_list_params)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in _FIELDS:

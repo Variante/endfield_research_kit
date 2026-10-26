@@ -10,6 +10,15 @@ module owns only the SkillData selection, framing, and report contract.
 Run as ``python -m scripts.game_data.memorypack.skill_corpus``; the current
 report is ``reports/animestudio/skilldata_current_latest.json``.
 
+Selected current mode. ``--game-root`` plus ``--json-dir`` chooses the separate
+authenticated current sequence operation and its matching exported StringPool.
+That path does not load historical shared-sequence or terminal declarations.
+It reports a complete selected file only when all 49 current root members,
+every reached finite action/child program, the selected native root return and
+physical EOF compose. Unsupported routes retain their first refusal and cannot
+fall back to historical framing. Whole-file closure for a selected input does
+not admit every possible SkillData route or establish runtime formatter choice.
+
 Terminal selection.  The static framer leaves the five terminal members as two
 anonymous EOF-valid candidates (:mod:`skill_terminal`).  A candidate is
 selected only by replaying a live cursor verification from its exact receipt,
@@ -280,6 +289,34 @@ def _timeline_contract_paths() -> list[Path]:
                   expected=f"existing JSON below {root}", actual=str(path))
         fixed.append(path)
     return list(dict.fromkeys(fixed))
+
+
+def _census_reader_inputs(current_operation=None):
+    """Choose current complete raw inputs without parsing historical routes."""
+    if current_operation is None:
+        return dict(parser=_parser_source_snapshots(Path(__file__)),
+            contracts=_timeline_contract_paths(),readerInputs=None,stringPoolInputs=None)
+    from scripts.game_data.skill_timeline_current_sequence_native import (
+        CONTRACT_PATH,prepared_current_sequence)
+    from scripts.game_data.levelscript_reader_inputs import (
+        snapshot_complete_reader_inputs,snapshot_string_pool_inputs)
+    operation=prepared_current_sequence(current_operation)
+    complete=snapshot_complete_reader_inputs()
+    return dict(parser=complete['files'],contracts=[CONTRACT_PATH],readerInputs=complete,
+        stringPoolInputs=snapshot_string_pool_inputs(Path(operation.strings.root).parent))
+
+
+def _require_current_census_inputs(before,after):
+    """Bounded actionable diagnostics for current reader/pool drift."""
+    if before==after:return
+    from scripts.game_data.levelscript_reader_inputs import reader_input_changes
+    error=CensusGateError('code-or-pool-drift',source='current SkillData complete reader and selected pool',
+        expected='unchanged complete raw inputs and selected StringPool',
+        actual=dict(readerChanges=reader_input_changes(before['readerInputs'],after['readerInputs']),
+            stringPoolChanged=before['stringPoolInputs']!=after['stringPoolInputs']))
+    error.diagnostic.update(validator='skill_corpus.current_reader_inputs',check='complete-reader-and-pool-bookend')
+    error.args=(json.dumps(error.diagnostic,ensure_ascii=False,sort_keys=True),)
+    raise error
 
 
 def _skill_rows(file_rows, *, expected_input: str) -> list[dict[str, Any]]:
@@ -1646,6 +1683,7 @@ def _join_and_frame(
     *,
     stderr: str,
     expected_input_set_sha256: str,
+    current_operation=None,
 ) -> tuple[list[dict[str, Any]], dict[str, int], dict[str, int]]:
     ledger_by_path = {str(row["virtualPath"]): row for row in ledger_rows}
     seen: set[str] = set()
@@ -1691,6 +1729,28 @@ def _join_and_frame(
             "physicalOffset": ledger["offset"],
             "encrypted": ledger["encrypted"],
         }
+        if current_operation is not None:
+            from scripts.game_data.memorypack.skill_timeline_current_sequence import decode_current_skill_prefix
+            profile=decode_current_skill_prefix(data,operation=current_operation,source=path)
+            cursor=profile['parserCursor'];whole=profile.get('wholeSkillDataExact')is True
+            if whole and (profile.get('status')!='exact-current-skill'or cursor!=len(data)
+                    or profile.get('hardLimit')!=len(data)or profile.get('stopReason')is not None
+                    or profile.get('wholeActionGroupDataExact')is not True
+                    or [field.get('memberIndex')for field in profile.get('rootFields',[])]!=list(range(49))):
+                _fail('current-whole-root-evidence-inconsistent',source=path,expected='all49 source-owned fields, complete action group and physical EOF',
+                    actual=dict(status=profile.get('status'),parserCursor=cursor,hardLimit=profile.get('hardLimit'),
+                        fieldCount=len(profile.get('rootFields',[])),stopReason=profile.get('stopReason')))
+            framing_status='exact-current-skill'if whole else'unsupported'
+            coverage='current-whole-schema-exact'if whole else'current-root-prefix'
+            status_counts[framing_status]+=1;coverage_counts[coverage]+=1
+            results.append({**identity_result,'boundaryClass':'exact-closed'if whole else'unsupported','parserCursor':cursor,'hardLimit':len(data),
+                'boundaryContext':dict(inputSetSha256=identity_result['inputSetSha256'],logicalFileIdentity=path,
+                    logicalSha256=identity_result['logicalSha256'],startOffset=0,hardLimit=len(data),parserCursor=cursor),
+                'byteRanges':profile['byteRanges'],'opaqueByteRanges':([dict(start=cursor,end=len(data),kind='opaque-current-SkillData-tail')]if cursor<len(data)else[]),
+                'coverageStatus':coverage,'framing':dict(status=framing_status,candidates=[],wholeSchemaExact=whole),
+                'currentSharedSequenceProfile':profile,'timelineSharedSequenceProfile':profile,
+                'timelineSharedSequenceStopReason':profile['stopReason'],'wholeSchemaExact':whole})
+            continue
         common_prefix = None
         framed = None
         try:
@@ -2077,7 +2137,38 @@ def _timeline_refusal_group(reason: str) -> str:
     return f"other:{reason[:120]}"
 
 
-def build_current_census(
+def _current_closure_summary(rows,*,partial):
+    """Summarize selected current records without claiming all type routes."""
+    exact=0
+    for row in rows:
+        whole=row.get('wholeSchemaExact')
+        if type(whole)is not bool or (row.get('coverageStatus')=='current-whole-schema-exact')is not whole:
+            _fail('current-closure-summary-inconsistent',source=row.get('virtualPath','SkillData census summary'),
+                expected='literal wholeSchemaExact matching current-whole-schema-exact coverage',
+                actual=dict(wholeSchemaExact=whole,coverageStatus=row.get('coverageStatus')))
+        exact+=whole
+    return dict(filesWholeSchemaExact=exact,wholeSchemaExact=bool(rows)and not partial and exact==len(rows),
+        evidenceBoundary='Current outer-ledger identities and verified decrypted bytes, selected current native root49/return and finite source-owned action/child programs with the matching exported StringPool. Each exact row reads all49 root fields and reaches physical EOF. Unsupported reached routes remain explicit refusals. A complete selected stored record does not admit every possible type route or establish runtime callback choice; operation native, complete reader, pool and file-identity bookends remain required.')
+
+
+def build_current_census(*,game_root:Path|None=None,json_dir:Path|None=None,**kwargs):
+    """Explicit current root/pool selects root49; no refused-current fallback."""
+    if (game_root is None)!=(json_dir is None):
+        raise ValueError('skillCorpus.current:game-root-and-json-dir-required-together')
+    if game_root is None:return _build_current_census(**kwargs)
+    historical=('cursor_verification_path','capture_target_verification_path','capture_target_set_verification_path',
+        'allow_exporter_rebind','allow_verified_subset_rebind','allow_historical_verifier_rebind',
+        'source_corpus_path','expected_source_corpus_sha256')
+    if any(kwargs.get(name)for name in historical):
+        raise ValueError('skillCorpus.current:historical-terminal-overlay-not-admitted-for-root49')
+    from scripts.game_data.skill_timeline_current_sequence_native import current_sequence
+    from scripts.game_data.string_pool import StringPool
+    strings=StringPool(Path(json_dir)/'StringPool')
+    with current_sequence(game_root=game_root,strings=strings)as operation:
+        return _build_current_census(current_operation=operation,**kwargs)
+
+
+def _build_current_census(
     *,
     outer_path: Path,
     ledger_path: Path,
@@ -2096,6 +2187,7 @@ def build_current_census(
     target_virtual_paths: list[str] | None = None,
     source_corpus_path: Path | None = None,
     expected_source_corpus_sha256: str | None = None,
+    current_operation=None,
 ) -> dict[str, Any]:
     if (source_corpus_path is None) != (expected_source_corpus_sha256 is None):
         _fail("skill-replay-source-pin-required", source="SkillData census",
@@ -2136,22 +2228,24 @@ def build_current_census(
     if cli_key not in authenticated_build_paths:
         _fail("stream-cli-not-in-outer-build-fingerprints", source=str(cli_path.resolve()),
               expected=sorted(authenticated_build_paths), actual=cli_key)
-    parser_start = _parser_source_snapshots(Path(__file__))
+    reader_inputs_start=_census_reader_inputs(current_operation)
+    parser_start = reader_inputs_start['parser']
     gate_start = _fingerprint(Path(__file__))
-    timeline_contract_paths = _timeline_contract_paths()
+    timeline_contract_paths = reader_inputs_start['contracts']
     timeline_contract_start = [_fingerprint(path) for path in timeline_contract_paths]
-    timeline_native_validation = native_validation(validate_timeline_play_animation_native_contract,TIMELINE_PLAY_ANIMATION_CONTRACT_PATH)
-    timeline_play_animation_step_native_validation = (
-        validate_timeline_play_animation_step_native_contract()
-    )
-    timeline_create_buff_native_validation = validate_timeline_create_buff_native_contract()
-    timeline_find_target_native_validation = validate_timeline_find_target_native_contract()
-    timeline_continuous_find_target_native_validation = (
-        validate_timeline_continuous_find_target_native_contract()
-    )
-    timeline_shared_sequence_native_validation = (
-        validate_timeline_shared_sequence_native_contract()
-    )
+    if current_operation is None:
+        timeline_native_validation = native_validation(validate_timeline_play_animation_native_contract,TIMELINE_PLAY_ANIMATION_CONTRACT_PATH)
+        timeline_play_animation_step_native_validation = validate_timeline_play_animation_step_native_contract()
+        timeline_create_buff_native_validation = validate_timeline_create_buff_native_contract()
+        timeline_find_target_native_validation = validate_timeline_find_target_native_contract()
+        timeline_continuous_find_target_native_validation = validate_timeline_continuous_find_target_native_contract()
+        timeline_shared_sequence_native_validation = validate_timeline_shared_sequence_native_contract()
+    else:
+        historical=dict(status='not-selected',detail='explicit current Skill root49 operation selected')
+        timeline_native_validation=timeline_play_animation_step_native_validation=historical
+        timeline_create_buff_native_validation=timeline_find_target_native_validation=historical
+        timeline_continuous_find_target_native_validation=historical
+        timeline_shared_sequence_native_validation=current_operation.proof
     outputs = [path for path in (output_path, output_md_path) if path is not None]
     if outputs:
         protected = [outer_path, ledger_path, Path(__file__),
@@ -2218,6 +2312,7 @@ def build_current_census(
             stream_rows,
             stderr=stderr,
             expected_input_set_sha256=expected_input_set_sha256,
+            current_operation=current_operation,
         )
 
     _outer_end, _header_end, end_file_rows, provenance_end = _read_outer_and_ledger(
@@ -2232,7 +2327,8 @@ def build_current_census(
     stream_tool_end = _stream_tool_snapshot(cli_path)
     selected_chunks_end = _chunk_fingerprints(selected)
     chunk_selection_end = _chunk_selection_snapshot(selected, outer)
-    parser_end = _parser_source_snapshots(Path(__file__))
+    reader_inputs_end=_census_reader_inputs(current_operation)
+    parser_end = reader_inputs_end['parser']
     gate_end = _fingerprint(Path(__file__))
     timeline_contract_end = [_fingerprint(path) for path in timeline_contract_paths]
     if provenance_start != provenance_end:
@@ -2243,6 +2339,7 @@ def build_current_census(
         _fail("selected-chunk-drift", source="SkillData physical chunks", expected=selected_chunks_start, actual=selected_chunks_end)
     if chunk_selection_start != chunk_selection_end:
         _fail("chunk-overlay-selection-drift", source="SkillData chunk selection", expected=chunk_selection_start, actual=chunk_selection_end)
+    if current_operation is not None:_require_current_census_inputs(reader_inputs_start,reader_inputs_end)
     if parser_start != parser_end or gate_start != gate_end:
         _fail("code-drift", source="SkillData census code", expected={"parser": parser_start, "corpusGate": gate_start}, actual={"parser": parser_end, "corpusGate": gate_end})
     if timeline_contract_start != timeline_contract_end:
@@ -2339,8 +2436,10 @@ def build_current_census(
         for output in outputs:
             _guard_output_path(output, protected + [path for path in outputs if path != output])
     coverage_counts = dict(sorted(Counter(row.get("coverageStatus", "failed-framing") for row in rows).items()))
+    current_closure=_current_closure_summary(rows,partial=partial)if current_operation is not None else None
     unique_count = (
         coverage_counts.get("unique-disjoint-independent-ranges", 0)
+        + coverage_counts.get('current-whole-schema-exact',0)
         + coverage_counts.get(VERIFIED_TERMINAL_COVERAGE, 0)
         + coverage_counts.get(VERIFIED_ACTION_GROUP_PREFIX_COVERAGE, 0)
         + coverage_counts.get(VERIFIED_EMPTY_ACTION_GROUP_EXACT, 0)
@@ -2407,6 +2506,8 @@ def build_current_census(
         "inputSetSha256": expected_input_set_sha256.upper(),
         "provenance": {
             **provenance_start,
+            **({key:reader_inputs_start[key]for key in('readerInputs','stringPoolInputs')}
+                if current_operation is not None else {}),
             **({"selectionReplay": replay_provenance} if replay_provenance is not None else {}),
             "combinedOuterFingerprintCount": len(provenance_start["sourceFingerprints"]) + len(provenance_start["buildFingerprints"]),
             "streamToolFingerprints": stream_tool_start,
@@ -2440,6 +2541,7 @@ def build_current_census(
             "filesUnique": unique_count,
             "filesAmbiguous": ambiguous_count,
             "filesUnsupported": unsupported_count,
+            **({'filesWholeSchemaExact':current_closure['filesWholeSchemaExact']}if current_closure is not None else {}),
             "logicalBytes": sum(row["length"] for row in rows),
             "physicalChunkCount": len({row["physicalChunkPath"] for row in rows}),
             "framingStatusCounts": status_counts,
@@ -2450,8 +2552,8 @@ def build_current_census(
         },
         "identitySetSha256": identity_set_sha256,
         **({"targetedVirtualPaths": requested_paths} if requested_paths else {}),
-        "wholeSchemaExact": False,
-        "evidenceBoundary": (
+        "wholeSchemaExact": current_closure['wholeSchemaExact']if current_closure is not None else False,
+        "evidenceBoundary": current_closure['evidenceBoundary']if current_closure is not None else (
             "current outer-ledger identities plus AnimeStudio stream --verify-md5 decrypted bytes; "
             "the maintained framer proves the 48-member envelope and EOF terminal shapes. When cursorVerification "
             "is present, its exact receipt/corpus/native/verifier replay selects the one-member-wrapper terminal "
@@ -2525,6 +2627,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--animestudio-cli", type=Path, default=DEFAULT_CLI)
     parser.add_argument("--expected-input-set-sha256", required=True)
     parser.add_argument("--max-files", type=int)
+    parser.add_argument('--game-root',type=Path,help='explicit selected Endfield_Data for the isolated current root49 reader')
+    parser.add_argument('--json-dir',type=Path,help='explicit exported Json directory containing current StringPool; requires --game-root')
     parser.add_argument(
         "--source-corpus", type=Path,
         help="reuse a complete current all-unselected SkillData basis for selection-only replay without another VFS stream",
@@ -2581,6 +2685,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         result = build_current_census(
+            game_root=args.game_root,json_dir=args.json_dir,
             outer_path=args.outer_summary,
             ledger_path=args.outer_ledger,
             cli_path=args.animestudio_cli,

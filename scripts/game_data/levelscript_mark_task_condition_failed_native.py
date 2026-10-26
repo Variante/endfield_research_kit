@@ -274,7 +274,9 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 
 def _validate_sources(contract: dict[str, Any], export_root: Path,
-                      ledger_path: Path, summary_path: Path) -> int:
+                      ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
+) -> int:
     summary = json.loads(summary_path.read_bytes())
     if (summary.get("status") != "complete"
             or hashlib.sha256(ledger_path.read_bytes()).hexdigest().upper()
@@ -307,7 +309,7 @@ def _validate_sources(contract: dict[str, Any], export_root: Path,
             or ledger.get(path,{}).get("length") != len(data)
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}@{start}")
-        _, actual_end = decode_mark_task_condition_failed_action(data, start, route)
+        _, actual_end = decode_mark_task_condition_failed_action(data, start, route, game_root=game_root, strings=strings)
         if actual_end != end:
             raise ValueError(f"{LABEL}.source:cursor={path}@{start},end={actual_end},expected={end}")
     return len(receipts)
@@ -339,7 +341,9 @@ def validate_levelscript_mark_task_condition_failed_native_contract(
         if any(value is not None for value in (export_root,ledger_path,summary_path)):
             if not all(value is not None for value in (export_root,ledger_path,summary_path)):
                 raise ValueError(f"{LABEL}.source:incomplete-paths")
-            count = _validate_sources(contract,Path(export_root),Path(ledger_path),Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            count = _validate_sources(contract,Path(export_root),Path(ledger_path),Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         return {"status":"validated","evidenceBoundary":"exact","routeCount":1,
                 "route":contract["route"],"sourceReceiptCount":count}
     except (OSError,ValueError,KeyError,TypeError,IndexError) as error:

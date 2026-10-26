@@ -31,7 +31,7 @@ def _empty_collection(data,cursor,field,empty):
     return None if count==-1 else empty,end
 
 
-def _action_map(data,cursor,strings):
+def _action_map(data,cursor,strings,*,game_root=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None):
     start=cursor;_need(data,cursor,1,'actionMap')
     if data[cursor]==255:return None,cursor+1
     if data[cursor]!=2:raise LevelScriptTemplateFramingError(f'actionMap: expected memberCount=2 actual={data[cursor]} offset={cursor}')
@@ -43,17 +43,24 @@ def _action_map(data,cursor,strings):
         for field,family in (('actionList','ActionBase'),('getterList','GetterBase'),('headerList','ActionHeader')):
             count,cursor=_count(data,cursor,'actionMap.dataMap.'+field);values=[]
             for _ in range(max(0,count)):
-                value,cursor=decode_reviewed_node(data,cursor,family,strings=strings);values.append(value)
+                value,cursor=decode_reviewed_node(data,cursor,family,strings=strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params);values.append(value)
             data_map[field]=None if count==-1 else values
-    try:blackboard,cursor=decode_param_blackboard(data,cursor,strings=strings)
+    try:blackboard,cursor=decode_param_blackboard(data,cursor,strings=strings,game_root=game_root)
     except ParamGraphDecodeError as error:raise LevelScriptTemplateFramingError(str(error)) from error
     return {'startOffset':start,'endOffset':cursor,'status':'exact_named_action_map','fields':{'dataMap':data_map,'paramBlackboard':blackboard}},cursor
 
 
-def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None):
+def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None,game_root=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None):
     """Read the current order sequentially; never scan an opaque suffix for an ID."""
-    gate=native.check_root_native_inputs()
+    gate=native.check_root_native_inputs(game_root=game_root)
     if gate.status!='validated':raise LevelScriptTemplateFramingError(f'template.native:{gate.status}:{gate.detail}')
+    from importlib import import_module
+    for owner,operation in (('null_list',null_list_params),('numeric_list',numeric_list_params),('camera_shake',camera_shake_params),('buff_ptr',buff_ptr_params),('entity_list',entity_list_params)):
+        if operation is None:continue
+        component=import_module('scripts.game_data.levelscript_'+owner+'_param_native')
+        keywords={'game_root':game_root,'strings':strings}
+        if owner in ('null_list','numeric_list'):keywords['codec_kind']=None
+        getattr(component,'prepared_'+owner+'_audit')(operation,**keywords)
     records=[r for r in native.read_contract()['records'] if r['typeName']=='Beyond.Gameplay.LevelScriptTemplateData']
     if (len(records)!=1 or tuple(name for name,_ in records[0]['fields'])!=ROOT_FIELDS
             or records[0]['fields'][-1][1]!='string'):
@@ -64,7 +71,7 @@ def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None):
     for field in ROOT_FIELDS:
         start=cursor
         try:
-            if field=='actionMap':value,end=_action_map(data,cursor,strings)
+            if field=='actionMap':value,end=_action_map(data,cursor,strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params)
             elif field=='maxStage':
                 _need(data,cursor,4,field);value=struct.unpack_from('<i',data,cursor)[0];end=cursor+4
             elif field in ('properties','propertyIdToKeyMap','taskMap'):

@@ -291,6 +291,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
 ) -> int:
     prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     summary = json.loads(summary_path.read_bytes())
@@ -320,7 +321,7 @@ def _validate_sources(
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
         ):
             raise ValueError(f"{LABEL}.source:receipt={relative_path}")
-        cursor = action_map._Cursor(data, start)
+        cursor = action_map._Cursor(data, start, game_root=game_root, strings=strings, route=contract["route"])
         tag = cursor.byte("settlementReadyPerformance.tag")
         members = cursor.byte("settlementReadyPerformance.memberCount")
         if tag != route["tag"] or members != route["serializedMemberCount"]:
@@ -361,9 +362,10 @@ def validate_settlement_ready_performance_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
+            from scripts.game_data.string_pool import export_string_pool
             checked = _validate_sources(
                 contract, Path(export_root), Path(ledger_path), Path(summary_path),
-            )
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

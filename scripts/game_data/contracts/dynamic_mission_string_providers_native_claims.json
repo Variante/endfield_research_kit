@@ -147,7 +147,7 @@
   "evidenceBoundary": {
     "direct": "Selected normal lookup passes the typed UInt64 hash request result to a concrete Dictionary<UInt64,Int32>.TryGetValue, returning its Boolean and original referenced output. Counter loads, conditionally resets, increments modulo 2^32 and writes its own Int32 field. GetStrKey original-false-Boolean normal paths return -1 for a zero anonymous carrier Int32 lane, the successful referenced Int32 lookup output on a nonzero-lane hit, or the typed counter candidate on a miss after forwarding it to the same dictionary setter request.",
     "conditional": [
-      "False actual IFix check, valid receiver and referenced output; normal returning Win64 calls preserve saved registers and do not overwrite caller locals.",
+      "Selected original path after a false named IFix check, or reached directly or by null replacement-pointer resume, with valid receiver and referenced output; normal returning Win64 calls preserve saved registers and do not overwrite caller locals.",
       "Lookup input is nonnull and nonempty; null or empty input follows the separate false/-1 path."
     ],
     "unresolved": [

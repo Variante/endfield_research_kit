@@ -205,7 +205,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["nestedProfileContract"],
-    )
+     native_image=image)
     if (
         tuple(nested_audit["anonymousReadOrder"].get("scalar-payload", ()))
         != ("member3", "byte-payload", "byte", "scalar32")

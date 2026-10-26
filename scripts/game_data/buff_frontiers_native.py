@@ -214,6 +214,12 @@ def _validate_exact(contract: dict[str, Any], gameassembly: Path, metadata_path:
     """Prove every action route of one contract; return its union tags in order."""
     label = f"buffFrontier.{contract['schema']}"
     image = NativeImage(gameassembly, metadata_path, label=label)
+    return validate_on_image(image, contract)
+
+
+def validate_on_image(image: NativeImage, contract: dict[str, Any]) -> list[int]:
+    """Check one reviewed frontier on the caller's explicitly selected image."""
+    label = f"buffFrontier.{contract['schema']}"
     validated: list[int] = []
     for action in contract["actions"]:
         image.validate_dispatcher(action, label=label)

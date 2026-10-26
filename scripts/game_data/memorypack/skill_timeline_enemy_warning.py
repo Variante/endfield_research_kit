@@ -13,6 +13,8 @@ import struct
 from functools import lru_cache
 from typing import Any
 
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
@@ -101,9 +103,9 @@ def validate_current_native_contract() -> dict[str, Any]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
     for dependency in contract["dependencies"]:
         reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
+        if (reviewed.get("schemaVersion") != 1 and not is_role_projection(reviewed)):
             raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+        check_formatter_windows(image, reviewed, label=f"{LABEL}.{dependency['path']}")
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(

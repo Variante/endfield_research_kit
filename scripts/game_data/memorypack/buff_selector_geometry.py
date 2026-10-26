@@ -81,7 +81,7 @@ def validate_current_native_contract(*, selector_native: dict[str, Any],
     image = open_native_image(gate.gameassembly, gate.metadata)
     source = json.loads((CONTRACTS_DIR / c["sourceContract"]).read_bytes())
     buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-        image.modules, image.owners, source=str(gate.gameassembly), contract_path=CONTRACTS_DIR / c["sourceContract"])
+        image.modules, image.owners, source=str(gate.gameassembly), contract_path=CONTRACTS_DIR / c["sourceContract"], native_image=image)
     switch = json.loads((CONTRACTS_DIR / c["switchContract"]).read_bytes())
     if switch["nativeInputs"] != expected: _fail("switch-native-inputs", expected, switch["nativeInputs"], "shared")
     routes, route_audit = load_action_routes(gameassembly=gate.gameassembly, metadata=gate.metadata)

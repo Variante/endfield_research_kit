@@ -7,7 +7,6 @@ from typing import Any
 
 from scripts.game_data.codecs.levelscript.condition_params import _decode_string_param
 from scripts.game_data.codecs.levelscript.framing_common import _offset_hex
-from scripts.game_data.codecs.levelscript.modules import LevelScriptModuleCodecError, _lsm_ptr
 from scripts.game_data.codecs.levelscript.params import (
     decode_levelscript_ptr_param, decode_param_tail,
 )
@@ -22,21 +21,23 @@ from scripts.game_data.levelscript_taskmap_archery_native import (
 def _decode_lsm_list_param(
     data: bytes, cursor: int,
 ) -> tuple[dict[str, Any], int] | None:
-    """Advance a constant Param<List<LsmPtr>> through its stored elements."""
+    """Advance a constant Param<List<LsmPtr>> whose list is null or empty.
+
+    The selected contract proves the nested MethodSpec context, not the
+    element framing of a positive list on the installed build: the
+    member-count-prefixed ``LsmPtr`` reader it once borrowed was removed with
+    the pre-current module codecs, and the current scalar ``Param<LsmPtr>``
+    route reads an unprefixed raw8 id.  A positive count is withheld rather
+    than read under either guess.
+    """
     if cursor < 0 or cursor + 5 > len(data) or data[cursor] != 4:
         return None
     count = struct.unpack_from("<i", data, cursor + 1)[0]
     cursor += 5
     if count == -1:
         values = None
-    elif 0 <= count <= 1024:
+    elif count == 0:
         values = []
-        try:
-            for index in range(count):
-                value, cursor = _lsm_ptr(data, cursor, f"lsm[{index}]")
-                values.append(value)
-        except LevelScriptModuleCodecError:
-            return None
     else:
         return None
     tail = decode_param_tail(data, cursor)

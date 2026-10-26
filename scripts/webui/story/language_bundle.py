@@ -151,6 +151,8 @@ from scripts.webui.story.level_bindings import (
     build_entity_tracking_native_event_story_context,
     build_entity_tracking_world_interactive_dialog_contexts,
     level_function_area_radio_trigger_status,
+    leveldata_npc_patrol_radio_story_status,
+    leveldata_npc_patrol_checkpoint_story_status,
     build_level_interactive_narrative_mission_story_contexts,
     build_leveldata_airwall_mission_radio_contexts,
     build_leveldata_authoritative_scope_script_host_index,
@@ -15201,6 +15203,7 @@ def build_language_bundle(
     patrol_radio_contexts = build_leveldata_npc_patrol_radio_story_contexts(
         set(all_story_entry_keys),
     )
+    patrol_radio_audit = leveldata_npc_patrol_radio_story_status()
     for context in patrol_radio_contexts:
         route_story_key = resolve_scene_ref_out_key(
             str(context.get("radioId") or ""),
@@ -15215,13 +15218,15 @@ def build_language_bundle(
             "relation": "npc_patrol_action_radio_playback_context",
             "direction": "context",
             "phase": "npc_patrol_action",
-            "confidence": "native_exact_serialized_patrol_action",
-            "evidenceTier": "direct",
+            "confidence": "exact_serialized_patrol_radio_configuration",
+            "evidenceTier": "structuralOnly",
             "source": (
-                "one typed LevelData NpcPatrolData/9 envelope contains this "
-                "PatrolSubAction/26 radioId; the current installed metadata "
-                "and GameAssembly map the record to the patrol radio consumer"
+                f"one complete typed LevelData NpcPatrolData/{context.get('patrolMemberCount')} "
+                "envelope contains this pooled PatrolSubAction radioId; "
+                "the selected native source proves stored configuration"
             ),
+            "runtimeRadioConsumerProved": False,
+            "patrolMemberCount": context.get("patrolMemberCount"),
             "storyOwnerMission": target_mission,
             "storyBinding": True,
             "ownership": False,
@@ -19925,7 +19930,7 @@ def build_language_bundle(
         "missions": "missions.json",
         "search": "search.json",
         "entries": index_entries,
-        "nativeConsumerGaps": [radio_trigger_zone_audit],
+        "nativeConsumerGaps": [radio_trigger_zone_audit, patrol_radio_audit, leveldata_npc_patrol_checkpoint_story_status()],
         "cutscenePlaybackUse": {
             "status": "validated_complete" if not cutscene_scan_failures else "degraded",
             "summary": playback_use_summary,

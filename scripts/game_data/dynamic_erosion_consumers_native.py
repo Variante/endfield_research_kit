@@ -1,4 +1,10 @@
-"""Authenticate selected non-render Erosion stored-value consumers offline."""
+"""Authenticate selected non-render Erosion stored-value consumers offline.
+
+The selected non-replacement path proves the supplied grid, group count/index,
+axis getters and twelve-byte value argument, plus the unchanged UInt64 return.
+Separate complete shapes cover named patch-check calls and inline nullable
+replacement dispatch. Neither shape proves live grid selection or insertion.
+"""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -162,7 +168,7 @@ def _disjoint_slots(slots):
 def _preserved_interval(rows,start,end,register,allowed_calls,label):
     aliases={'rax':{'rax','eax','ax','al','ah'},'rcx':{'rcx','ecx','cx','cl','ch'},
              'rdx':{'rdx','edx','dx','dl','dh'},'rdi':{'rdi','edi','di','dil'},
-             'rbx':{'rbx','ebx','bx','bl','bh'}}
+             'rbx':{'rbx','ebx','bx','bl','bh'},'rsi':{'rsi','esi','si','sil'}}
     watched=aliases.get(register,{register})
     extended=re.fullmatch(r'r(8|9|1[0-5])(?:d|w|b)?',register)
     if extended:
@@ -174,6 +180,61 @@ def _preserved_interval(rows,start,end,register,allowed_calls,label):
         if row['text'].startswith('call '):
             _require(row['offset'] in allowed_calls and bytes.fromhex(row['bytes'])[:1]==b'\xe8',
                 'interval-call-'+label,'explicit allowed direct call under Win64 nonvolatile ABI',row)
+
+
+def _check_decoder_and_helpers(contract,bodies,probes,partitions,methods,dependency_bodies,carriers,vector_layout,decode):
+    """Shape-independent decoder, Unity constructor, list forwarder and vector-clone checks."""
+    decoder=bodies['decoder']
+    axis_calls=sorted((row['offset'],row['target']) for row in contract['calls'] if row['window']=='decoder')
+    _require([role for _,role in axis_calls]==['x','y','z'],'decoder-getter-order',['x','y','z'],axis_calls)
+    for at,role in axis_calls:
+        _require(decoder[at-5:at]==bytes.fromhex('488BCB33D2') or decoder[at-8:at-3]==bytes.fromhex('33D2488BCB'),
+            'decoder-getter-source-'+role,'saved FB source RBX; zero generated accessor context',decoder[max(0,at-8):at].hex())
+    _require(_mov_register(probes['decoderSaveSource'])==(64,3,2),'decoder-source',(64,3,2),_mov_register(probes['decoderSaveSource']))
+    _require(_mov_register(probes['decoderSaveOutput'])==(64,7,1),'decoder-output',(64,7,1),_mov_register(probes['decoderSaveOutput']))
+    _require(_mov_register(probes['decoderReturn'])==(64,0,7),'decoder-return-pointer',(64,0,7),_mov_register(probes['decoderReturn']))
+    values=[]
+    for axis,constructor_reg in (('X',1),('Y',2),('Z',3)):
+        base,offset,reg=_float_store(probes['decoder'+axis+'Store'])
+        ctor_base,ctor_offset,ctor_value=_float_store(probes['constructor'+axis+'Store'])
+        if axis!='Z':
+            saved,source=_float_move(probes['decoder'+axis+'Save'])
+            _require(source==0 and reg==saved,'axis-return-'+axis,'getter XMM0 retained to same store register',(source,reg,saved))
+        else:_require(reg==0,'axis-return-Z','getter XMM0',reg)
+        _require(base==7 and ctor_base==1 and offset==ctor_offset and ctor_value==constructor_reg,
+            'unity-constructor-axis-'+axis,(7,1,offset,constructor_reg),(base,ctor_base,ctor_offset,ctor_value))
+        values.append({'getter':'get_'+axis,'constructorParameter':axis.lower(),'returnByteOffset':offset})
+    _require(bodies['constructor']==b''.join(probes['constructor'+axis+'Store'] for axis in ('X','Y','Z'))+b'\xc3',
+        'constructor-leaf','three exact float stores; RET',bodies['constructor'].hex())
+    forward=bodies['valueForwarder']
+    _require(forward[:26]==bytes.fromhex('4883EC38F20F10028B4208488D542420F20F1144242089442428') and forward[26]==0xe8
+             and forward[31:]==bytes.fromhex('4883C438C3'),'opaque-forwarding','twelve-byte copy with RCX/R8 unchanged; one call; RET',forward.hex())
+    _require(probes['cloneSlot'][:1]==b'\xba' and struct.unpack_from('<I',probes['cloneSlot'],1)[0]==vector_layout['vtableSlot'],
+        'clone-vector-slot',vector_layout['vtableSlot'],probes['cloneSlot'].hex())
+    _require(probes['cloneIndex']==bytes.fromhex('418BF0') and probes['cloneStride']==bytes.fromhex('8D0C76')
+             and probes['clonePosition']==bytes.fromhex('8D1488') and vector_layout['elementWidth']==3*4,
+        'clone-index-stride','supplied R8D index retained in ESI; index*3*4',probes['cloneStride'].hex())
+    clone_calls=_direct_call_targets(bodies['vectorClone'],contract['windows']['vectorClone']['rva'],decode)
+    original_calls=_direct_call_targets(dependency_bodies['vectorOriginal'],methods['vectorOriginal']['rva'],decode)
+    _require(len(clone_calls)==len(original_calls)==3 and clone_calls[:2]==original_calls[:2],
+        'clone-generated-shared-helpers',original_calls,clone_calls)
+    _require(clone_calls[2]==carriers['initialize']['rva'] and original_calls[2]==carriers['forward']['rva'],
+        'clone-generated-carriers',(carriers['initialize']['rva'],carriers['forward']['rva']),
+        (clone_calls[2],original_calls[2]))
+    decoder_rows=partitions['decoder']
+    def at(name):return contract['probes'][name]['offset']
+    def after(name):return at(name)+len(probes[name])
+    axis_calls={row['target']:row['offset'] for row in contract['calls'] if row['window']=='decoder'}
+    for axis in ('X','Y'):
+        _preserved_interval(decoder_rows,axis_calls[axis.lower()]+5,at('decoder'+axis+'Save'),'xmm0',set(),'getter-'+axis+'-to-save')
+    _preserved_interval(decoder_rows,after('decoderXSave'),at('decoderXStore'),'xmm7',
+        {axis_calls['y'],axis_calls['z']},'saved-X')
+    _preserved_interval(decoder_rows,after('decoderYSave'),at('decoderYStore'),'xmm6',
+        {axis_calls['z']},'saved-Y')
+    _preserved_interval(decoder_rows,axis_calls['z']+5,at('decoderZStore'),'xmm0',set(),'getter-Z-to-store')
+    _preserved_interval(decoder_rows,after('decoderSaveOutput'),after('decoderZStore'),'rdi',set(axis_calls.values()),'unity-output-pointer')
+    _preserved_interval(decoder_rows,after('decoderReturn'),len(bodies['decoder']),'rax',set(),'unity-return-pointer')
+    return values
 
 
 def _check_flow(contract,bodies,methods,dependency_bodies,carriers,vector_layout,decode):
@@ -191,6 +252,9 @@ def _check_flow(contract,bodies,methods,dependency_bodies,carriers,vector_layout
         _direct_call_boundary(partitions[window],at,call['target'])
         actual=_relative_call_target(bodies[window],rva,at,call['target'])
         _require(actual==targets[call['target']],'call-'+call['target'],targets[call['target']],actual)
+    if probes['patchBranch'][:3]==bytes.fromhex('488B05'):
+        return _check_inline_flow(contract,bodies,probes,partitions,methods,dependency_bodies,
+                                  carriers,vector_layout,decode)
     patch=probes['patchBranch'];at=contract['probes']['patchBranch']['offset']
     _require(patch[:4]==bytes.fromhex('84C00F85'),'patch-result-test','TEST AL,AL; JNE alternate route',patch.hex())
     alternate=at+8+struct.unpack_from('<i',patch,4)[0]
@@ -248,58 +312,12 @@ def _check_flow(contract,bodies,methods,dependency_bodies,carriers,vector_layout
     _require(_lea_stack(decode_args[4:])==(1,71),'decoder-output-slot','RCX points to independent Unity result slot',decode_args.hex())
     _disjoint_slots([('fb-carrier',proxy_input[1],32),('unity-return',_lea_stack(decode_args[4:])[1],12),
                      ('list-value',_lea_stack(probes['listArgs'][:4])[1],12)])
-    decoder=bodies['decoder']
-    axis_calls=sorted((row['offset'],row['target']) for row in contract['calls'] if row['window']=='decoder')
-    _require([role for _,role in axis_calls]==['x','y','z'],'decoder-getter-order',['x','y','z'],axis_calls)
-    for at,role in axis_calls:
-        _require(decoder[at-5:at]==bytes.fromhex('488BCB33D2') or decoder[at-8:at-3]==bytes.fromhex('33D2488BCB'),
-            'decoder-getter-source-'+role,'saved FB source RBX; zero generated accessor context',decoder[max(0,at-8):at].hex())
-    _require(_mov_register(probes['decoderSaveSource'])==(64,3,2),'decoder-source',(64,3,2),_mov_register(probes['decoderSaveSource']))
-    _require(_mov_register(probes['decoderSaveOutput'])==(64,7,1),'decoder-output',(64,7,1),_mov_register(probes['decoderSaveOutput']))
-    _require(_mov_register(probes['decoderReturn'])==(64,0,7),'decoder-return-pointer',(64,0,7),_mov_register(probes['decoderReturn']))
-    values=[]
-    for axis,constructor_reg in (('X',1),('Y',2),('Z',3)):
-        base,offset,reg=_float_store(probes['decoder'+axis+'Store'])
-        ctor_base,ctor_offset,ctor_value=_float_store(probes['constructor'+axis+'Store'])
-        if axis!='Z':
-            saved,source=_float_move(probes['decoder'+axis+'Save'])
-            _require(source==0 and reg==saved,'axis-return-'+axis,'getter XMM0 retained to same store register',(source,reg,saved))
-        else:_require(reg==0,'axis-return-Z','getter XMM0',reg)
-        _require(base==7 and ctor_base==1 and offset==ctor_offset and ctor_value==constructor_reg,
-            'unity-constructor-axis-'+axis,(7,1,offset,constructor_reg),(base,ctor_base,ctor_offset,ctor_value))
-        values.append({'getter':'get_'+axis,'constructorParameter':axis.lower(),'returnByteOffset':offset})
-    _require(bodies['constructor']==b''.join(probes['constructor'+axis+'Store'] for axis in ('X','Y','Z'))+b'\xc3',
-        'constructor-leaf','three exact float stores; RET',bodies['constructor'].hex())
     _require(probes['listArgs']==bytes.fromhex('488D55F7488BCFF20F10008B4008F20F1145F78945FF'),
         'vector-call-arguments','same list receiver plus returned first eight and next four bytes',probes['listArgs'].hex())
-    forward=bodies['valueForwarder']
-    _require(forward[:26]==bytes.fromhex('4883EC38F20F10028B4208488D542420F20F1144242089442428') and forward[26]==0xe8
-             and forward[31:]==bytes.fromhex('4883C438C3'),'opaque-forwarding','twelve-byte copy with RCX/R8 unchanged; one call; RET',forward.hex())
-    _require(probes['cloneSlot'][:1]==b'\xba' and struct.unpack_from('<I',probes['cloneSlot'],1)[0]==vector_layout['vtableSlot'],
-        'clone-vector-slot',vector_layout['vtableSlot'],probes['cloneSlot'].hex())
-    _require(probes['cloneIndex']==bytes.fromhex('418BF0') and probes['cloneStride']==bytes.fromhex('8D0C76')
-             and probes['clonePosition']==bytes.fromhex('8D1488') and vector_layout['elementWidth']==3*4,
-        'clone-index-stride','supplied R8D index retained in ESI; index*3*4',probes['cloneStride'].hex())
-    clone_calls=_direct_call_targets(bodies['vectorClone'],contract['windows']['vectorClone']['rva'],decode)
-    original_calls=_direct_call_targets(dependency_bodies['vectorOriginal'],methods['vectorOriginal']['rva'],decode)
-    _require(len(clone_calls)==len(original_calls)==3 and clone_calls[:2]==original_calls[:2],
-        'clone-generated-shared-helpers',original_calls,clone_calls)
-    _require(clone_calls[2]==carriers['initialize']['rva'] and original_calls[2]==carriers['forward']['rva'],
-        'clone-generated-carriers',(carriers['initialize']['rva'],carriers['forward']['rva']),
-        (clone_calls[2],original_calls[2]))
-    decoder_rows=partitions['decoder'];collector_rows=partitions['collector']
+    values=_check_decoder_and_helpers(contract,bodies,probes,partitions,methods,dependency_bodies,carriers,vector_layout,decode)
+    collector_rows=partitions['collector']
     def at(name):return contract['probes'][name]['offset']
     def after(name):return at(name)+len(probes[name])
-    axis_calls={row['target']:row['offset'] for row in contract['calls'] if row['window']=='decoder'}
-    for axis in ('X','Y'):
-        _preserved_interval(decoder_rows,axis_calls[axis.lower()]+5,at('decoder'+axis+'Save'),'xmm0',set(),'getter-'+axis+'-to-save')
-    _preserved_interval(decoder_rows,after('decoderXSave'),at('decoderXStore'),'xmm7',
-        {axis_calls['y'],axis_calls['z']},'saved-X')
-    _preserved_interval(decoder_rows,after('decoderYSave'),at('decoderYStore'),'xmm6',
-        {axis_calls['z']},'saved-Y')
-    _preserved_interval(decoder_rows,axis_calls['z']+5,at('decoderZStore'),'xmm0',set(),'getter-Z-to-store')
-    _preserved_interval(decoder_rows,after('decoderSaveOutput'),after('decoderZStore'),'rdi',set(axis_calls.values()),'unity-output-pointer')
-    _preserved_interval(decoder_rows,after('decoderReturn'),len(bodies['decoder']),'rax',set(),'unity-return-pointer')
     argument_start=at('listArgs');argument_end=argument_start+len(probes['listArgs'])
     collector_calls={row['offset'] for row in collector_rows if row['text'].startswith('call ') and
                      bytes.fromhex(row['bytes'])[:1]==b'\xe8' and row['offset']<argument_start}
@@ -310,6 +328,128 @@ def _check_flow(contract,bodies,methods,dependency_bodies,carriers,vector_layout
     _preserved_interval(collector_rows,argument_start+4,argument_end,'rdx',set(),'vector-argument-address')
     _preserved_interval(collector_rows,argument_start+7,argument_end,'rcx',set(),'restored-list-receiver')
     return values
+
+
+def _inline_guard(raw,at,source_at,return_at,*,collector):
+    """Both null branches enter the source path; a replacement skips it entirely."""
+    guard=raw[at:source_at]
+    # The leading RIP displacement and two wrapper slots are build declarations;
+    # their widths, receiver chain and relation are instruction-level facts.
+    prefix=bytes.fromhex('488B48704885C974') if collector else bytes.fromhex('4C8BD1488B48704885C974')
+    start=7+len(prefix)
+    _require(guard[:3]==bytes.fromhex('488B05') and guard[7:7+len(prefix)]==prefix,
+        'inline-guard-owner','RIP owner; nullable dispatch table; source on null',guard.hex())
+    first=start
+    _require(at+first+1+struct.unpack_from('<b',guard,first)[0]==source_at,
+        'inline-guard-null-table',source_at,guard[first])
+    load=first+1
+    _require(guard[load:load+3]==bytes.fromhex('488B81') and
+             guard[load+7:load+11]==bytes.fromhex('4885C074'),
+        'inline-guard-entry','nullable function pointer read',guard[load:].hex())
+    slot=struct.unpack_from('<i',guard,load+3)[0]
+    second=load+11
+    _require(at+second+1+struct.unpack_from('<b',guard,second)[0]==source_at,
+        'inline-guard-null-entry',source_at,guard[second])
+    context=second+1
+    _require(guard[context:context+3]==bytes.fromhex('488B89') and
+             struct.unpack_from('<i',guard,context+3)[0]==slot+8,
+        'inline-guard-context','adjacent wrapper context',guard[context:].hex())
+    args=bytes.fromhex('4C8BCF4C8BC64C897C2420498BD6FFD0') if collector else bytes.fromhex('4D8BC84C8BC2498BD2FFD0')
+    tail=context+7
+    _require(guard[tail:tail+len(args)]==args,'inline-guard-arguments','original inputs forwarded to replacement',guard[tail:].hex())
+    jump=tail+len(args)
+    if collector:
+        _require(guard[jump:jump+1]==b'\xe9' and jump+5==len(guard),
+            'inline-guard-jump','closed near jump to return frame',guard[jump:].hex())
+        target=at+jump+5+struct.unpack_from('<i',guard,jump+1)[0]
+    else:
+        _require(guard[jump:jump+1]==b'\xeb' and jump+2==len(guard),
+            'inline-guard-jump','closed short jump to return frame',guard[jump:].hex())
+        target=at+jump+2+struct.unpack_from('<b',guard,jump+1)[0]
+    _require(target==return_at,'inline-guard-replacement-exit',return_at,target)
+
+
+def _check_inline_flow(contract,bodies,probes,partitions,methods,dependency_bodies,carriers,vector_layout,decode):
+    """Complete split-stack collector shape; all selected stores/calls are bounded."""
+    raw=bodies['collector'];rows=partitions['collector']
+    def at(name):return contract['probes'][name]['offset']
+    def after(name):return at(name)+len(probes[name])
+    calls={row['target']:row['offset'] for row in contract['calls'] if row['window']=='collector'}
+    expected_roles={'gridErosion','posList','num','groupIndex','index','vectorClone','decoder','valueForwarder'}
+    _require(set(calls)==expected_roles,'inline-call-roster',sorted(expected_roles),sorted(calls))
+    expected={
+        'frame':'488D68C84881EC20010000',
+        'initialCounter':'33DB','saveList':'498BF8','saveComp':'488BF2','saveThis':'4C8BF1',
+        'selectGridAndRoot':'4C8D4C2430488BD64C8D45B0498BCE',
+        'rootGetterArgs':'448B442430488D55B0488D4DF0',
+        'groupGetterArgs':'4533C0488D542470488D4DF00F10000F114424700F1048100F114D80',
+        'groupNumArgs':'33D2488D4C24500F10000F114424500F1048100F114C2460',
+        'groupIndexArgs':'4533C0488D542450488D4DF0',
+        'indexArgs':'33D2488D4D900F10000F1145900F1048100F114DA0',
+        'numCapture':'8BF0','indexCapture':'448BF0','numGuard':'85F67E64',
+        'loopIndex':'468D0433488D55B0488D4DF0',
+        'decodeArgs':'488D55D0488D4D10',
+        'listArgs':'488D542440488BCFF20F10008B4008F20F1144244089442448',
+        'loopControl':'FFC33BDE7C9C',
+        'returnFrame':'4C8D9C2420010000498B5B20498B7328498B7B30498BE3415F415E5DC3',
+    }
+    for name,value in expected.items():
+        _require(probes[name]==bytes.fromhex(value),'inline-'+name,value,probes[name].hex())
+    _require(at('frame')==20 and at('initialCounter')==after('frame') and at('saveList')==42 and
+             at('saveComp')==after('saveList') and at('saveThis')==after('saveComp'),
+        'inline-entry-shape','frame then original input saves',[(k,at(k)) for k in ('frame','initialCounter','saveList','saveComp','saveThis')])
+    _require(raw[:at('frame')]==bytes.fromhex('488BC44889580848897010488978185541564157'),
+        'inline-frame-origin','RAX is entry RSP; three pushes before fixed-frame allocation',raw[:at('frame')].hex())
+    guard_at=at('patchBranch');source_at=after('patchBranch');return_at=at('returnFrame')
+    _require(guard_at==96,'inline-guard-position',96,guard_at)
+    _inline_guard(raw,guard_at,source_at,return_at,collector=True)
+    # Initialize only the local slots, then clear the supplied list before lookup.
+    initialize=bytes.fromhex('895C24300F57C00F57C90F1145B00F1145C00F114C24500F114C24600F114424700F1145800F114D900F114DA00F1145D00F1145E0')
+    _require(raw[source_at:at('clearList')]==initialize,'inline-local-initialization','zeroed lookup outputs and carrier slots',raw[source_at:at('clearList')].hex())
+    clear=probes['clearList']
+    _require(clear[:5]==bytes.fromhex('4885FF7506') and clear[5]==0xe8 and
+             clear[10:]==bytes.fromhex('CCFF471C895F18') and after('clearList')==at('selectGridAndRoot'),
+        'inline-list-clear','null exception; version increment; zero count on original list',clear.hex())
+    for name,target in (('rootGetterArgs','gridErosion'),('groupGetterArgs','posList'),
+                        ('groupNumArgs','num'),('indexArgs','index'),('loopIndex','vectorClone'),
+                        ('decodeArgs','decoder'),('listArgs','valueForwarder')):
+        _require(after(name)==calls[target],'inline-adjacent-'+name,calls[target],after(name))
+    lookup=after('selectGridAndRoot')
+    _direct_call_boundary(rows,lookup,'supplied-grid-and-index-lookup')
+    _require(lookup+5==at('rootGetterArgs') and calls['gridErosion']+5==at('groupGetterArgs') and
+        calls['posList']+5==at('groupNumArgs') and calls['num']+5==at('groupIndexArgs') and
+        after('groupIndexArgs')==at('numCapture') and after('numCapture')==calls['groupIndex'] and
+        calls['groupIndex']+5==at('indexArgs') and calls['index']+5==at('indexCapture') and
+        after('indexCapture')==at('numGuard') and after('numGuard')==at('loopIndex'),
+        'inline-carrier-chain','no intervening source or count/index writes',calls)
+    # The selected grid occupies RBP-80, RSP+112 == RBP-144, and scalar carriers
+    # occupy RSP+80 == RBP-176. RBP == RSP+256 follows from the proved prologue.
+    _disjoint_slots([('grid',-80,32),('proxy-output',-16,32),('root-source',-144,32),
+                     ('group-source',-176,32),('index-source',-112,32),
+                     ('vector-source',-48,32),('unity-output',16,12),('list-value',-192,12),('root-index',-208,4)])
+    cloned=raw[calls['vectorClone']+5:at('decodeArgs')]
+    _require(len(cloned)==27 and cloned[:3]==bytes.fromhex('488B0D') and
+        cloned[7:22]==bytes.fromhex('0F10000F1145D00F1048100F114DE0') and cloned[22]==0xe8,
+        'inline-cloned-carrier','complete returned proxy copied before static initialization call',cloned.hex())
+    context=probes['listContext']
+    _require(context[:3]==bytes.fromhex('4C8B05') and len(context)==7 and
+             calls['decoder']+5==at('listContext') and after('listContext')==at('listArgs') and
+             calls['valueForwarder']+5==at('loopControl') and after('loopControl')==return_at,
+        'inline-list-context','one RIP context load then exact value argument/call/loop/return',context.hex())
+    _require(after('numGuard')+struct.unpack_from('<b',probes['numGuard'],3)[0]==return_at and
+             after('loopControl')+struct.unpack_from('<b',probes['loopControl'],5)[0]==at('loopIndex') and
+             after('returnFrame')==len(raw),'inline-loop-edges','count exit and index+counter back edge; closed return',len(raw))
+    allowed={r['offset'] for r in rows if r['text'].startswith('call ') and bytes.fromhex(r['bytes'])[:1]==b'\xe8'}
+    for register,name,end in (('rdi','saveList',at('listArgs')+8),('rsi','saveComp',at('selectGridAndRoot')+8),
+                              ('r14','saveThis',after('selectGridAndRoot'))):
+        _preserved_interval(rows,after(name),guard_at,register,allowed,'inline-original-prefix-'+register)
+        _preserved_interval(rows,source_at,end,register,allowed,'inline-original-'+register)
+    _preserved_interval(rows,after('initialCounter'),guard_at,'rbx',allowed,'inline-counter-prefix')
+    _preserved_interval(rows,source_at,at('loopControl'),'rbx',allowed,'inline-counter')
+    _preserved_interval(rows,after('numCapture'),at('loopControl'),'rsi',allowed,'inline-count')
+    _preserved_interval(rows,after('indexCapture'),at('loopControl'),'r14',allowed,'inline-index')
+    _preserved_interval(rows,calls['decoder']+5,at('listArgs')+12,'rax',set(),'inline-vector-pointer')
+    return _check_decoder_and_helpers(contract,bodies,probes,partitions,methods,dependency_bodies,carriers,vector_layout,decode)
 
 
 def _lea_rsp(raw):
@@ -328,6 +468,8 @@ def check_core_id_flow(raw,method_rva,probes,calls,methods,decode):
         at=probe['offset'];value=bytes.fromhex(probe['bytes'])
         _require(raw[at:at+len(value)]==value,'core-id-witness-'+name,value.hex(),raw[at:at+len(value)].hex())
         values[name]=value
+    if values['patchBranch'][:3]==bytes.fromhex('488B05'):
+        return _check_inline_core_flow(raw,method_rva,probes,values,calls,methods,rows)
     for role in ('patchCheck','gridErosion','coreId'):
         call=calls[role]
         _direct_call_boundary(rows,call,'core-'+role)
@@ -368,6 +510,41 @@ def check_core_id_flow(raw,method_rva,probes,calls,methods,decode):
     _preserved_interval(rows,at('coreArgs')+7,calls['coreId'],'rcx',set(),'core-source-address')
     _preserved_interval(rows,at('coreArgs')+2,calls['coreId'],'rdx',set(),'core-zero-context')
     _disjoint_slots([('root-return',output[1],32),('core-source',input_slot[1],32)])
+    return {'storedField':'ErosionRootComp.ErosionCoreId','returnType':'System.UInt64',
+            'selectedGetterReturnUnchanged':True,'runtimeObserved':False,'coreIdTargetResolved':False}
+
+
+def _check_inline_core_flow(raw,method_rva,probes,values,calls,methods,rows):
+    """The source branch keeps original RDX and returns its named getter directly."""
+    def at(name):return probes[name]['offset']
+    def after(name):return at(name)+len(values[name])
+    expected={'frame':'4055488D6C24A94881EC90000000','saveThis':'4C8BD1',
+        'lookupArgs':'4C8D4D7F4C8D4517498BCA',
+        'lookupInit':'0F1145170F1145270F114DF70F114D07',
+        'rootArgs':'448B457F488D5517488D4D37',
+        'coreArgs':'33D2488D4DF70F10000F1145F70F1048100F114D07',
+        'returnFrame':'4881C4900000005DC3'}
+    for name,value in expected.items():
+        _require(values[name]==bytes.fromhex(value),'inline-core-'+name,value,values[name].hex())
+    _require(set(calls)=={'gridErosion','coreId'},'inline-core-call-roster',['gridErosion','coreId'],sorted(calls))
+    for role,call in calls.items():
+        _direct_call_boundary(rows,call,'inline-core-'+role)
+        actual=_relative_call_target(raw,method_rva,call,role)
+        _require(actual==methods[role]['rva'],'core-id-call-'+role,methods[role]['rva'],actual)
+    source_at=after('patchBranch')
+    _require(at('frame')==0 and after('frame')==at('patchBranch') and
+             raw[source_at:at('lookupArgs')]==bytes.fromhex('0F57C0C7457F000000000F57C9'),
+        'inline-core-entry','proved RBP frame and zeroed lookup index',source_at)
+    _inline_guard(raw,at('patchBranch'),source_at,at('returnFrame'),collector=False)
+    _require(after('lookupArgs')==at('lookupInit') and after('lookupInit')+5==at('rootArgs') and
+             after('rootArgs')==calls['gridErosion'] and calls['gridErosion']+5==at('coreArgs') and
+             after('coreArgs')==calls['coreId'] and calls['coreId']+5==at('returnFrame') and
+             after('returnFrame')==len(raw),
+        'inline-core-chain','adjacent original lookup, root getter, copied carrier, UInt64 getter and return',calls)
+    _direct_call_boundary(rows,after('lookupInit'),'inline-core-supplied-grid-lookup')
+    _preserved_interval(rows,source_at,after('lookupInit'),'rdx',set(),'inline-core-original-component')
+    _preserved_interval(rows,source_at,after('lookupArgs'),'r10',set(),'inline-core-original-system')
+    _disjoint_slots([('grid',23,32),('root-return',55,32),('core-source',-9,32),('root-index',127,4)])
     return {'storedField':'ErosionRootComp.ErosionCoreId','returnType':'System.UInt64',
             'selectedGetterReturnUnchanged':True,'runtimeObserved':False,'coreIdTargetResolved':False}
 

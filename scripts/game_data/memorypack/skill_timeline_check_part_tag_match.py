@@ -20,6 +20,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.derived_schema import resolve_routes
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows
 
 LABEL = "skillTimelineCheckPartTagMatch"
 TAG = 0x006C
@@ -68,7 +69,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     image.validate_dispatcher(route, label=LABEL)
     for method in route["methods"]:
         image.validate_method_row(method, label=LABEL)
-    image.check_windows(route["codeWindows"], label=LABEL)
+    check_formatter_windows(image, route, label=LABEL)
     for context, type_name, type_kind in zip(route["nestedContextUsage"], CHILD_TYPES, (0x12, 0x11)):
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(usage, image.registration["methodSpecsCount"], source=LABEL, offset=cell)
@@ -84,7 +85,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     for name in ("buff_ec_native.json", "buff_b4_native.json"):
         buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
                                image.modules, image.owners, source=str(gate.gameassembly),
-                               contract_path=CONTRACTS_DIR / name)
+                               contract_path=CONTRACTS_DIR / name, native_image=image)
     routes, resolver, audit = resolve_routes(gameassembly=gate.gameassembly, metadata=gate.metadata)
     selected = routes.get(TAG, {})
     definition = selected.get("wrapperTypeDefinition")

@@ -20,6 +20,7 @@ from scripts.game_data.il2cpp.generic_creation_instructions import decode_implic
 from scripts.game_data.il2cpp.scalar_double_memory import decode_scalar_double_memory_move
 from scripts.game_data.il2cpp.scalar_single_memory import decode_scalar_single_memory_move
 from scripts.game_data.il2cpp.type_data_initialization_instructions import decode_initialization_memory_update
+from scripts.game_data.il2cpp.prefetch_instruction import memory_prefetch_address
 
 LABEL='consumerReferenceOrigins'
 UNKNOWN=frozenset({'unknown'})
@@ -44,15 +45,6 @@ def _literal_register_origins(rows,selected):
         if not matched:raise ValueError(LABEL+'.literal-register-bytes')
         result[at]=(register,'constant:'+hex(value))
     return result
-
-
-def _memory_prefetch(raw):
-    at,rex=_prefix(raw,0)
-    if rex&4 or raw[at:at+2]!=b'\x0f\x0d' or at+2>=len(raw):return False
-    modrm=raw[at+2];at+=3
-    if modrm>>6==3 or (modrm>>3)&7 not in (0,1):return False
-    _,end=_address(raw,at,modrm,rex,0,'consumer-prefetch')
-    return end==len(raw)
 
 
 def _condition_register_write(raw,text):
@@ -91,7 +83,7 @@ def check_reference_origins(rows, *, entry, owned_ranges, incoming_registers,
         update=decode_initialization_memory_update(raw,0,at)
         effect=({'kind':'initializationMemoryUpdateOperation','facts':update[0]['initializationMemoryUpdateOperation']}
             if update and update[1]==len(raw) else None)
-        effect=None if _memory_prefetch(raw) else effect or ({'kind':'implicitMemoryExchangeOperation','facts':dict(implicit,memoryBytes=implicit['memoryWriteBytes'])} if implicit else memory_effect(annotated))
+        effect=None if memory_prefetch_address(raw)is not None else effect or ({'kind':'implicitMemoryExchangeOperation','facts':dict(implicit,memoryBytes=implicit['memoryWriteBytes'])} if implicit else memory_effect(annotated))
         if effect:
             fact=effect['facts'];address=fact.get('address',fact.get('destinationAddress',{}))
             width=fact.get('memoryBytes',fact.get('memoryWriteBytes'))
@@ -123,7 +115,7 @@ def check_reference_origins(rows, *, entry, owned_ranges, incoming_registers,
             affected=implicit.get('register') or (locked.get('sourceRegister') if locked.get('operation')=='xadd' else locked.get('accumulatorRegister'))
             if affected is None:raise ValueError(LABEL+'.exchange-register-effect')
             values[_PARENTS.index(_ALIASES[affected])]=UNKNOWN
-        elif _memory_prefetch(raw):pass
+        elif memory_prefetch_address(raw)is not None:pass
         elif head.startswith('set'):
             destination=_condition_register_write(raw,row['text'])
             if destination is None:raise ValueError(LABEL+'.condition-register-bytes')

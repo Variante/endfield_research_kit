@@ -117,7 +117,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["readerContract"],
-    )
+     native_image=image)
     context_contract = contract["assignmentListContext"]
     contexts = [row for row in audit["nestedContexts"]
                 if row["instructionRva"] == context_contract["instructionRva"]]

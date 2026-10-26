@@ -1,0 +1,67 @@
+{
+  "schema": "endfield.enum-optin-domains.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "domains": {
+    "animation-enemy-hurt-lists": {
+      "nominalEnums": [
+        "Beyond.Gameplay.Core.EnemyHurtAnim"
+      ],
+      "collectionEnums": [
+        "Beyond.Gameplay.Core.EnemyHurtAnim"
+      ],
+      "countLimit": 4096
+    },
+    "animation-extra-int32-keys": {
+      "nominalEnums": [
+        "Beyond.Gameplay.Core.CharHurtAnim",
+        "Beyond.Gameplay.Core.EnemyHurtAnim"
+      ],
+      "collectionEnums": [],
+      "countLimit": 4096
+    },
+    "char-interact-interrupt-reasons": {
+      "nominalEnums": [
+        "Beyond.Gameplay.CharInteractPerformEnums+InterruptReason"
+      ],
+      "collectionEnums": [
+        "Beyond.Gameplay.CharInteractPerformEnums+InterruptReason"
+      ],
+      "countLimit": 4096
+    },
+    "story-kickable": {
+      "nominalEnums": [
+        "Beyond.Gameplay.KickableObjectType"
+      ],
+      "collectionEnums": [
+        "Beyond.Gameplay.KickableObjectType"
+      ],
+      "countLimit": 4096
+    },
+    "story-module-enum-lists": {
+      "nominalEnums": [
+        "Beyond.Gameplay.Core.SuperPressureBoardState",
+        "Beyond.Gameplay.TyphoeaArcheryStageType"
+      ],
+      "collectionEnums": [
+        "Beyond.Gameplay.Core.SuperPressureBoardState",
+        "Beyond.Gameplay.TyphoeaArcheryStageType"
+      ],
+      "countLimit": 4096
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Finite independently derived nominal formatter/constructor/register requests, own closed contexts and conditional selected callback source; selected list domains retain their own formatter registration, signed count and Add source.",
+    "conditional": "Re-prove the existing reviewed callback helper declarations against the selected native inputs. Original nominal contexts and the independently selected canonical interner/method-key/registry state must be coherent and initialized; helpers return normally and no intervening formatter replacement occurs.",
+    "structuralOnly": "Raw exact nominal enum bits; declared enum-value membership is not inferred. Default Skill enum declarations are unchanged.",
+    "unresolved": [
+      "actual runtime provider/cache/MethodInfo selection and replacements",
+      "nonselected allocation/growth/refill/error paths",
+      "enclosing record/union/host or physical EOF"
+    ]
+  }
+}

@@ -14,6 +14,11 @@ queries, standalone Mission Pipeline investigation, and validation reports;
 the Story page consumes those results but does not define their truth
 conditions.
 
+Patrol radio associations are stored configuration context. Publication requires
+a current complete LevelData owner and unchanged selected native, StringPool
+and source receipts; unproved owner prefixes remain explicit gaps. The serialized
+radio ID alone proves neither playback nor the checkpoint-to-mission host join.
+
 Lua playback admission replays the complete selected source census with current
 cinematic facts and native/source exit guards. A saved Lua audit is never its
 own admission proof; Mission Pipeline requires its current replay to agree.

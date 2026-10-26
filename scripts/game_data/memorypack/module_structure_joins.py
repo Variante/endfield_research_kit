@@ -10,9 +10,23 @@ from scripts.game_data.il2cpp.formatter_value_paths import deserialize_slot
 from scripts.game_data.il2cpp.initializer_control import control_transfer
 from scripts.game_data.il2cpp.zero_wrapper_programs import prove_zero_wrapper_forwarder
 from scripts.game_data.memorypack import reference_adapter_sources as reference, scalar_param_native as scalar, pooled_source_helper
-from scripts.game_data.levelscript_entity_ptr_param_native import validate_entity_ptr_param_native_contract
 from scripts.game_data.levelscript_family_regenerate import Build
 from scripts.game_data.memorypack.module_structure_models import bridge_packable_return as packable_return, bridge_list_callback as list_callback
+
+
+def _entity_ptr_component(image,pins):
+    """Reprove this dependency on the supplied image; no nested opener/cache."""
+    from scripts.game_data import levelscript_entity_ptr_param_native as native
+    from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
+    _publication_gate(image,pins)
+    path=native.DEFAULT_CONTRACT;raw=path.read_bytes();fact=native._contract(path)
+    if fact['nativeInputs']!=pins:raise ValueError('moduleWire.EntityPtr.selected-inputs')
+    pool_path=pooled_source_helper.CONTRACT_PATH;pool=pool_path.read_bytes()
+    native._validate_native(image,fact)
+    _publication_gate(image,pins)
+    if path.read_bytes()!=raw or pool_path.read_bytes()!=pool:raise ValueError('moduleWire.EntityPtr.declaration-drift')
+    return dict(status='validated',codecKind=native.KIND,memberCount=4,rawSize=40,
+        pathEncoding='int32-pool-index',nativeInputs=pins,evidenceBoundary=fact['proof']['evidenceBoundary'])
 
 def validate_wire_joins(image, pins, components):
     base = image.pe.image_base
@@ -210,7 +224,7 @@ def validate_wire_joins(image, pins, components):
     forward = prove_zero_wrapper_forwarder(fwrows, dict(metadataInit=calls[0], classInit=calls[1]), image.method_pointer_va(target))
     _vtable(image, fw.declaring_type, 5, fw.index, 'moduleWire.RollingWrapperSlot5')
     rolling_dispatch = deserialize_slot(dregions, s['dispatch'], prepare=s['prepare'], callback=image.method_pointer_va(fw))
-    entity = validate_entity_ptr_param_native_contract(gameassembly=image.gameassembly, metadata=image.metadata_path)
+    entity = _entity_ptr_component(image,pins)
     if not entity['status'] == 'validated':
         raise ValueError("moduleWire.entity['status'] == 'validated'")
     return dict(referenceRoutes=ref, referenceCore=launcher_core, entityPtr=entity)

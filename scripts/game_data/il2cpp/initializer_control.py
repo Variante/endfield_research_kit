@@ -3,6 +3,11 @@
 All owned bytes are decoded and every local edge is checked. Frame/home
 geometry and address provenance are conditional on normal Win64 callees and
 stable disjoint storage. Unknown aliases and callee effects remain open.
+The optional RIP-relative QWORD register-ADD fact is independently redecoded
+from the entire instruction, retaining its arithmetic flags, read/write width
+and unchanged registers; other addressing and width profiles remain closed.
+Complete memory prefetch hints use the neutral instruction parser and provide
+no architectural memory-value result, memory write, register or flag change.
 """
 from __future__ import annotations
 from collections import deque
@@ -39,6 +44,39 @@ def control_transfer(row):
     return transfer(row)
 
 def memory_effect(row):
+    from .prefetch_instruction import memory_prefetch_address
+    from .memory_moves import _finish_address
+    raw=bytes.fromhex(row['bytes'])
+    try:prefetch=memory_prefetch_address(raw)
+    except (ValueError,IndexError):prefetch=None
+    if prefetch is not None or row['text'].startswith('prefetch '):
+        at=int(row['va'],16)
+        expected=None if prefetch is None else 'prefetch ['+_finish_address(prefetch,len(raw),at)+']'
+        if expected!=row['text'] or row.get('write')is not None:
+            raise ValueError(LABEL+'.memory-prefetch: va='+hex(at)+' bytes='+raw.hex().upper()
+                +' expected='+str(expected)+' actual='+str(row['text'])[:192])
+        return None
+    if 'memoryRegisterAddOperation' in row:
+        # This opt-in fact is emitted by the existing optional string-source
+        # decoder. Re-decode the complete bytes rather than trusting an attached
+        # operation dictionary, and admit only its selected RIP-relative QWORD
+        # form. Other widths/addressing/opcodes retain their strict refusal.
+        from .string_source_instructions import decode_memory_register_add
+        at=int(row['va'],16)
+        try:decoded=decode_memory_register_add(raw,0,at)
+        except (ValueError,IndexError):decoded=None
+        actual=row['memoryRegisterAddOperation'];expected=None
+        if decoded is not None and decoded[1]==len(raw):
+            selected=decoded[0];expected=selected['memoryRegisterAddOperation'];address=expected['destinationAddress']
+            valid=(expected['bits']==64 and expected['memoryReadBytes']==8 and expected['memoryWriteBytes']==8
+                and address['ripRelative'] and address['addressBits']==64
+                and address['base'] is None and address['index'] is None
+                and selected['text']==row['text'] and row.get('write')is None and expected==actual)
+        else:valid=False
+        if not valid:
+            raise ValueError(LABEL+'.rip-qword-memory-register-add: va='+hex(at)+' bytes='+raw.hex().upper()
+                +' expected='+str(expected)[:384]+' actual='+str(actual)[:384])
+        return {'kind':'memoryRegisterAddOperation','facts':expected}
     if row.get('memoryOperation',{}).get('direction')=='store':
         return {'kind':'memoryOperation','facts':row['memoryOperation']}
     if 'byteMemoryLogicalOperation' in row:

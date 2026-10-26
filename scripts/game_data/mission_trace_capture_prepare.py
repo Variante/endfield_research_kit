@@ -43,18 +43,33 @@ BUNDLE_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v11"
 RECEIVER_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v12"
 IMAGE_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v13"
 CALLER_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v14"
+BOUNDED_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v15"
 BUILD_SCHEMA = "endfieldCapture.missionTraceBuild.v1"
+BOUNDED_BUILD_SCHEMA = "endfieldCapture.missionTraceBuild.v2"
 ABI_ID = "win64.transparent_entry_snapshot.v1"
 NO_CHAIN = 4097
 MAX_HOOKS = 96
 MAX_BODY_BYTES = 1024 * 1024
 _NAME = re.compile(r"[A-Za-z0-9_.$<>+`-]{1,127}\Z")
-_WIDTH = {"bool": 8, "int": 32, "uint": 32, "long": 64, "ulong": 64, "float": 32, "double": 64}
-_VALUE_KIND = {"bool": 5, "int": 2, "uint": 2, "long": 1, "ulong": 1, "string": 3, "float": 2, "double": 1}
+_WIDTH = {"bool": 8, "byte": 8, "int": 32, "uint": 32, "long": 64, "ulong": 64, "float": 32, "double": 64}
+_VALUE_KIND = {"bool": 5, "byte": 5, "int": 2, "uint": 2, "long": 1, "ulong": 1, "string": 3, "float": 2, "double": 1}
 
 
 class PreparationError(ValueError):
     """A selected method or field no longer matches the reviewed observer."""
+
+
+def read_words(field):
+    row=[field[k]for k in ('arg','kind','offset','chain0','chain1')]
+    if field['kind']==6:return row+[field['byteCount']]
+    if field['kind']==7:return row+[field[k]for k in ('countOffset','versionOffset','storageOffset','arrayLengthOffset','arrayDataOffset','elementStride','maxCount')]
+    if field['kind']==8:return row+[field[k]for k in ('parentFieldIndex','itemIndex','byteCount')]
+    return row
+
+
+def validate_provider_selection(recipe):
+    if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA and recipe.get('observerProviders',['mission-trace'])!=['mission-trace']:
+        raise PreparationError('mission_trace.providers: only mission-trace/128 is currently stageable; combined audio requires reviewed host and parent association')
 
 
 def read_recipe(path: Path = RECIPE_PATH, *, _ancestors: tuple[Path, ...] = ()) -> dict[str, Any]:
@@ -62,17 +77,17 @@ def read_recipe(path: Path = RECIPE_PATH, *, _ancestors: tuple[Path, ...] = ()) 
     if path in _ancestors or len(_ancestors) >= 4:
         raise PreparationError('mission_trace.recipe: inheritance cycle or depth limit')
     value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
         raise PreparationError("mission_trace.recipe: unsupported schema")
     base_name = value.get('inheritsRecipe')
     if base_name is not None:
-        if value['schema'] not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or not isinstance(base_name, str) or not re.fullmatch(r'[A-Za-z0-9_-]+\.json', base_name):
+        if value['schema'] not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or not isinstance(base_name, str) or not re.fullmatch(r'[A-Za-z0-9_-]+\.json', base_name):
             raise PreparationError('mission_trace.recipe: v9 requires a bounded sibling base filename')
         base_path = path.resolve().parent / base_name
         if base_path.parent != CONTRACTS_DIR.resolve() or base_path == path.resolve():
             raise PreparationError('mission_trace.recipe: base must be another reviewed sibling contract')
         base = json.loads(base_path.read_bytes())
-        if not isinstance(base, dict) or 'inheritsRecipe' in base and value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+        if not isinstance(base, dict) or 'inheritsRecipe' in base and value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
             raise PreparationError('mission_trace.recipe: nested inheritance is unsupported')
         base = read_recipe(base_path, _ancestors=(*_ancestors, path))
         if not isinstance(value.get('hooks'), list):
@@ -81,7 +96,7 @@ def read_recipe(path: Path = RECIPE_PATH, *, _ancestors: tuple[Path, ...] = ()) 
                  'coverageGaps': base.get('coverageGaps', []) + value.get('coverageGaps', [])}
     updates = value.pop('hookUpdates', [])
     if updates:
-        if value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or base_name is None or not isinstance(updates, list):
+        if value['schema'] not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or base_name is None or not isinstance(updates, list):
             raise PreparationError('mission_trace.recipe: hook updates require v10 inheritance')
         targets = {h['name']: h for h in value['hooks']}
         seen = set()
@@ -193,10 +208,8 @@ class SelectedMethods:
         if td is None or td.generic_container_index >= 0 or not self.is_value_type(name):
             raise PreparationError('mission_trace.paired: concrete indirect aggregate required')
         size = self.value_size(name)
-        if size in {1, 2, 4, 8}:
-            raise PreparationError('mission_trace.paired: integer-sized aggregate needs its own ABI')
         witness = {'mode': 'indirectValue', 'bytes': size}
-        if not any(f.get('argument') == parameter['name'] and f.get('path')
+        if not any(f.get('argument') == parameter['name'] and (f.get('path') or f.get('readMode')=='rawBytes')
                    and f.get('argumentRepresentation') == witness for f in hook['fields']):
             raise PreparationError('mission_trace.paired: explicit indirect aggregate field witness required')
         method, _, _ = self.resolve(hook)
@@ -209,6 +222,8 @@ class SelectedMethods:
         raw = self.image.pe.bytes_at_va(pointer, 16) if pointer else b''
         if len(raw) != 16 or raw[10] != 0x11 or raw[11] & 0x7f not in {0, 0x20}:
             raise PreparationError('mission_trace.paired: selected aggregate type or decoration differs')
+        if int.from_bytes(raw[:8],'little')!=td.index or size in {1,2,4,8} and not raw[11]&0x20:
+            raise PreparationError('mission_trace.paired: actual value definition/byref ABI differs')
         return {'type': name, 'unboxedBytes': size, 'mode': 'indirectValue',
                 'nativeTypeRecordHex': raw.hex(), 'nativeTypeIndex': index,
                 'byref': bool(raw[11] & 0x20),
@@ -275,8 +290,17 @@ class SelectedMethods:
     def enum_members(self, name: str) -> dict[str, Any]:
         """Read selected Int32 or fixed Int64 enum defaults without truncation."""
         _owner, underlying, _offset = self.field(f"{name}::value__")
-        if underlying not in {"int", "uint", "long", "ulong"} or not self.is_enum(name):
+        if underlying not in {"byte", "int", "uint", "long", "ulong"} or not self.is_enum(name):
             raise PreparationError(f"mission_trace.enum: unsupported enum backing: {name}:{underlying}")
+        if underlying=='byte':
+            from scripts.game_data.il2cpp.protocol import native_enum_members
+            defaults=field_defaults(self.image.metadata)
+            members=native_enum_members(self.image.metadata,defaults,self.image.pe,self.image.registration,name)
+            expected=[f for f in self.image.metadata.fields_for(self.index.types[name])if self.image.metadata.string(f.name_index)!='value__']
+            if len(members)!=len(expected):raise PreparationError('mission_trace.enum: missing byte enum default: '+name)
+            return dict(type=name,storageType='byte',valueBits=8,signed=False,
+                members=[{**{k:v for k,v in row.items()if k!='id'},'value':row['id']}for row in members],
+                source='selected metadata one-byte defaults and native declared byte backing; raw byte is not Boolean')
         if underlying in {'long', 'ulong'}:
             from .il2cpp.enum64_defaults import native_enum64_members
             defaults = field_defaults(self.image.metadata)
@@ -543,14 +567,16 @@ class SelectedMethods:
     def scalar_register_argument(self, hook, name):
         method, _, _ = self.resolve(hook)
         arg, t = self.argument(hook, name)
-        if (hook['static'] or arg != 2 or t != 'double' or hook['returnType'] != 'void'
+        single=(not hook['static'] and arg==1 and t=='float' and hook['returnType'] in {'void','bool'}
+                and len(hook['parameters'])==1)
+        if not single and (hook['static'] or arg != 2 or t != 'double' or hook['returnType'] != 'void'
                 or len(hook['parameters']) != 2 or hook['parameters'][0]['type'] != 'string'):
-            raise PreparationError('mission_trace.argument: only selected Double input at slot two of an instance void entry is supported')
+            raise PreparationError('mission_trace.argument: selected instance Single slot1 void/bool or Double slot2 void required')
         parameters=[p for p in self.image.metadata.parameters_for(method) if self.image.metadata.string(p.name_index)==name]
         if len(parameters)!=1:raise PreparationError('mission_trace.argument: scalar input parameter ambiguous')
-        proof=self.scalar_return_abi(parameters[0].type_index,'double')
-        return {**proof,'mode':'scalarRegister','argument':name,'slot':2,'register':'xmm2','bytes':8,
-                'evidence':'selected undecorated R8 value input; Win64 positional XMM2 argument forwarded by a typed mixed caller'}
+        proof=self.scalar_return_abi(parameters[0].type_index,t)
+        return {**proof,'mode':'scalarRegister','argument':name,'slot':arg,'register':'xmm'+str(arg),'bytes':_WIDTH[t]//8,
+                'evidence':'selected undecorated floating input; exact Win64 positional XMM value forwarded by a typed caller'}
 
     def argument(self, hook: dict[str, Any], name: str) -> tuple[int, str]:
         if name == "this":
@@ -566,6 +592,200 @@ class SelectedMethods:
             raise PreparationError(f"{hook['name']}: argument beyond bounded ABI slots: {name}")
         return slot, parameter_type
 
+    def storage_bytes(self, name: str) -> int:
+        if name in _WIDTH: return _WIDTH[name]//8
+        if self.is_enum(name): return self.storage_bytes(self.field(name+'::value__')[1])
+        if self.is_value_type(name): return self.value_size(name)
+        if name=='string' or name in self.index.types and not self.is_value_type(name): return 8
+        raise PreparationError('mission_trace.raw: storage of unresolved/constructed type requires a selected source witness: '+name)
+
+    def field_storage(self,qualified,typename):
+        try:return self.storage_bytes(typename),None
+        except PreparationError:
+            if '<'not in typename:raise
+        # A closed managed reference has pointer storage only after its actual
+        # declared native carrier/definition/formal arguments are proved. This
+        # grants no instantiated field offsets, collection layout or wire type.
+        from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext,closed_generic_reference_extent
+        owner,_,name=qualified.partition('::');td=self.index.types.get(owner)
+        if td is None:raise PreparationError('mission_trace.raw: concrete field owner required for closed reference width')
+        matches=[f for f in self.image.metadata.fields_for(td)if self.image.metadata.string(f.name_index)==name]
+        if len(matches)!=1:raise PreparationError('mission_trace.raw: unique actual field declaration required')
+        try:proof=closed_generic_reference_extent(NativeReferenceContext(self.image,index=self.index),matches[0].type_index)
+        except(ValueError,RuntimeError)as exc:raise PreparationError('mission_trace.raw: closed reference field proof failed: '+str(exc))from exc
+        if proof.get('type')!=typename or proof.get('bytes')!=8:raise PreparationError('mission_trace.raw: exact closed reference field identity differs')
+        return 8,proof
+
+    def source_read_layouts(self,*,families=None):
+        from scripts.game_data.patrol_runtime_capture_sources import SCHEMA,FAMILIES,derive_read_layouts
+        requested=FAMILIES if families is None else families
+        if (type(requested)not in(tuple,list)or not requested
+                or any(type(v)is not str or v not in FAMILIES for v in requested)or len(set(requested))!=len(requested)):
+            raise PreparationError('mission_trace.raw: finite selected source families required')
+        previous=getattr(self,'_source_read_layouts',None)
+        existing=set(previous.get('sourceFamilies',[]))if isinstance(previous,dict)else set()
+        missing=set(requested)-existing
+        if missing:
+            value=derive_read_layouts(self,families=tuple(sorted(missing)))
+            if not isinstance(value,dict)or value.get('schema')!=SCHEMA or not isinstance(value.get('nativeInputs'),dict):
+                raise PreparationError('mission_trace.raw: fresh selected Patrol source-layout gate failed')
+            if value.get('sourceFamilies')!=sorted(missing):
+                raise PreparationError('mission_trace.raw: selected source-family result differs')
+            if previous is not None:
+                for key,item in previous.items():
+                    if key=='sourceFamilies':continue
+                    if key in('containers','values','callbacks','proof'):
+                        current=value.setdefault(key,{})
+                        if any(k in current and current[k]!=v for k,v in item.items()):
+                            raise PreparationError('mission_trace.raw: conflicting selected family '+key)
+                        value[key]={**item,**current}
+                    elif key in value and value[key]!=item:
+                        raise PreparationError('mission_trace.raw: selected family epoch differs: '+key)
+                    else:value[key]=item
+                value['sourceFamilies']=sorted(existing|missing)
+            self._source_read_layouts=value
+        return self._source_read_layouts
+
+    def raw_span(self, name, spec):
+        """Resolve a full concrete value or an explicit span of named fields.
+
+        Padding inside a declared span is opaque. Neither byte count nor a
+        nominal type name substitutes for instantiated generic field layout.
+        """
+        count=spec.get('byteCount');members=spec.get('fieldSpan')
+        if type(count)is not int or not 1<=count<=256:
+            raise PreparationError('mission_trace.raw: byteCount must be an exact integer in 1..256')
+        if spec.get('sourceWitness')is not None:
+            if spec['sourceWitness']!='patrol':raise PreparationError('mission_trace.raw: unsupported selected source witness')
+            layouts=self.source_read_layouts(families=('values',));proof=layouts.get('values',{}).get(name)
+            if members is None and isinstance(proof,dict):
+                if proof.get('byteCount')!=count:raise PreparationError('mission_trace.raw: selected source value byteCount differs')
+                return dict(type=name,offset=0,byteCount=count,fields=[],sourceWitness=dict(schema=layouts['schema'],type=name,byteCount=count),evidence='fresh selected source-owned complete value storage; opaque bytes')
+        if members is None:
+            size=self.value_size(name)
+            if size!=count:raise PreparationError(f'mission_trace.raw: whole selected value bytes expected={size} actual={count}')
+            return dict(type=name,offset=0,byteCount=count,unboxedBytes=size,fields=[],evidence='selected complete unboxed value size; opaque raw bytes')
+        if not isinstance(members,list)or not 1<=len(members)<=16 or len(set(members))!=len(members):
+            raise PreparationError('mission_trace.raw: bounded unique named fieldSpan required')
+        cells=[];unboxed=self.is_value_type(name)
+        for field in members:
+            if not isinstance(field,str):raise PreparationError('mission_trace.raw: fieldSpan requires qualified field names')
+            owner,typename,offset=self.field(field)
+            if not self.is_owner(name,owner):raise PreparationError('mission_trace.raw: fieldSpan owner differs: '+field)
+            representation_proof=None
+            if spec.get('sourceWitness')=='patrol'and typename in self.source_read_layouts(families=('values',)).get('values',{}):
+                width=self.source_read_layouts(families=('values',))['values'][typename]['byteCount']
+            else:width,representation_proof=self.field_storage(field,typename)
+            offset-=16 if unboxed else 0
+            if offset<0 or offset+width>4096:raise PreparationError('mission_trace.raw: fieldSpan outside bounded selected owner')
+            cell=dict(field=field,type=typename,offset=offset,byteCount=width)
+            if representation_proof is not None:cell['representationProof']=representation_proof
+            if spec.get('sourceWitness')=='patrol'and typename in self.source_read_layouts(families=('values',)).get('values',{}):
+                cell['sourceWitness']=dict(schema=self.source_read_layouts(families=('values',))['schema'],type=typename,byteCount=width)
+            cells.append(cell)
+        start=min(x['offset']for x in cells);end=max(x['offset']+x['byteCount']for x in cells)
+        if end-start!=count:raise PreparationError(f'mission_trace.raw: fieldSpan bytes expected={end-start} actual={count}')
+        if unboxed and end>self.value_size(name):raise PreparationError('mission_trace.raw: fieldSpan exceeds selected value')
+        return dict(type=name,offset=start,byteCount=count,fields=cells,evidence='selected named field offsets and physical extents; intervening bytes opaque')
+
+    def compile_bounded_field(self,hook,spec,fields):
+        mode=spec.get('readMode')
+        if mode=='virtualCallbackPair':
+            if spec.get('sourceWitness')!='patrol':raise PreparationError('mission_trace.callback: selected source witness required')
+            layouts=self.source_read_layouts(families=('callbacks',));role=spec.get('callbackRole');proof=layouts.get('callbacks',{}).get(role)
+            if not isinstance(proof,dict)or proof.get('receiverType')!=spec.get('type')or proof.get('byteCount')!=16:
+                raise PreparationError('mission_trace.callback: exact selected receiver/role required')
+            offset=proof.get('callbackOffset')
+            if type(offset)is not int or not 0<offset<=4096 or proof.get('methodInfoOffset')!=offset+8:
+                raise PreparationError('mission_trace.callback: selected adjacent callback/MethodInfo source pair differs')
+            base=self.compile_field(hook,{**spec,'readMode':None,'valueRepresentation':'referenceIdentity'})
+            chains=[n for n in (base['chain0'],base['chain1'])if n!=NO_CHAIN]
+            if base['fieldPath']:chains.append(base['offset'])
+            chains.append(0)
+            if len(chains)>2:raise PreparationError('mission_trace.callback: receiver/class path exceeds two dereferences')
+            c0,c1=(chains+[NO_CHAIN,NO_CHAIN])[:2]
+            witness=dict(schema=layouts['schema'],callbackRole=role,type=spec['type'])
+            return dict(label=spec['label'],type=spec['type'],valueBits=None,arg=base['arg'],kind=6,offset=offset,chain0=c0,chain1=c1,
+                byteCount=16,fieldPath=base['fieldPath'],argumentName=base['argumentName'],readMode=mode,role=spec.get('role','observation'),
+                callbackRole=role,rawProof=dict(type=spec['type'],offset=offset,byteCount=16,fields=[],sourceWitness=witness),
+                observation='observed-live-virtual-callback-pair; callback effects remain unproved')
+        if mode=='dependentReferenceBytes':
+            hits=[(i,f)for i,f in enumerate(fields)if f.get('label')==spec.get('parentField')]
+            if len(hits)!=1:raise PreparationError('mission_trace.dependent: unique earlier parent field required')
+            index,parent=hits[0];item=spec.get('itemIndex');typename=spec.get('type')
+            if spec.get('argument',parent['argumentName'])!=parent['argumentName']:
+                raise PreparationError('mission_trace.dependent: argument must match captured parent argument')
+            if parent['kind']!=7 or parent['elementStride']!=8 or type(item)is not int or not 0<=item<parent['maxCount']or typename!=parent['containerProof']['elementType']:
+                raise PreparationError('mission_trace.dependent: selected reference element/count differs')
+            proof=self.raw_span(typename,spec)
+            if proof['byteCount']>32 or self.is_value_type(typename):raise PreparationError('mission_trace.dependent: concrete reference raw span<=32 required')
+            return dict(label=spec['label'],type=typename,valueBits=None,arg=parent['arg'],kind=8,offset=proof['offset'],chain0=NO_CHAIN,chain1=NO_CHAIN,
+                byteCount=proof['byteCount'],parentFieldIndex=index,parentField=parent['label'],itemIndex=item,fieldPath=[],rawProof=proof,
+                argumentName=parent['argumentName'],readMode=mode,role=spec.get('role','observation'),observation='captured-parent-reference-item')
+        if mode!='boundedContainer'or spec.get('sourceWitness')!='patrol':
+            raise PreparationError('mission_trace.container: fresh selected Patrol source witness required')
+        layouts=self.source_read_layouts(families=('points',));typename=spec['type'];proof=layouts.get('containers',{}).get(typename)
+        if not isinstance(proof,dict):raise PreparationError('mission_trace.container: closed type lacks selected source proof: '+typename)
+        for key in ('countField','versionField','itemsField','elementStride'):
+            if spec.get(key)!=proof.get(key):raise PreparationError('mission_trace.container: selected '+key+' differs')
+        limit=spec.get('maxCount');stride=proof['elementStride']
+        if type(limit)is not int or not 1<=limit<=8 or type(stride)is not int or not 1<=stride<=256//limit:
+            raise PreparationError('mission_trace.container: maxCount/stride exceeds raw capacity')
+        # Resolve the containing reference path using the same metadata walker.
+        # A container reference is admitted only by the fresh exact source key.
+        base=self.compile_field(hook,{**spec,'readMode':None,'valueRepresentation':'referenceIdentity'})
+        chains=[n for n in (base['chain0'],base['chain1'])if n!=NO_CHAIN]
+        if base['fieldPath']:chains.append(base['offset'])
+        if len(chains)>2:raise PreparationError('mission_trace.container: bounded path exceeded')
+        c0,c1=(chains+[NO_CHAIN,NO_CHAIN])[:2]
+        retained={k:v for k,v in proof.items()if k!='evidence'}
+        retained['sourceWitness']=dict(schema=layouts['schema'],type=typename)
+        return dict(label=spec['label'],type=typename,valueBits=None,arg=base['arg'],kind=7,offset=0,chain0=c0,chain1=c1,
+            fieldPath=base['fieldPath'],argumentName=base['argumentName'],readMode=mode,role=spec.get('role','observation'),
+            observation='opaque-selected-container-slots',containerProof={**retained,'type':typename},maxCount=limit,
+            **{k:proof[k]for k in ('countOffset','versionOffset','storageOffset','arrayLengthOffset','arrayDataOffset')},elementStride=stride)
+
+    def reference_byref_argument(self,hook,name):
+        method,_,_=self.resolve(hook)
+        hits=[p for p in self.image.metadata.parameters_for(method)if self.image.metadata.string(p.name_index)==name]
+        if len(hits)!=1:raise PreparationError('mission_trace.raw: unique reference byref parameter required')
+        p=hits[0];typename=self.type_name(p.type_index)
+        pointer=self.image.pe.u64_at_va(int(self.image.registration['types'],16)+p.type_index*8)
+        raw=self.image.pe.bytes_at_va(pointer,16)if pointer else b''
+        td=self.index.types.get(typename)
+        if len(raw)!=16 or raw[10]!=18 or raw[11]&0x7f!=0x20 or td is None or self.is_value_type(typename) or int.from_bytes(raw[:8],'little')!=td.index:
+            raise PreparationError('mission_trace.raw: actual named CLASS byref bit0x20 required')
+        return dict(mode='referenceByRef',type=typename,bytes=8,nativeTypeIndex=p.type_index,
+                    typeDefinitionIndex=td.index,nativeTypeRecordHex=raw.hex(),byref=True,
+                    evidence='actual selected CLASS byref; pointer-sized out slot, not a hidden aggregate return')
+
+    def ordinary_argument_proof(self,hook,name):
+        method,_,_=self.resolve(hook)
+        matches=[p for p in self.image.metadata.parameters_for(method)if self.image.metadata.string(p.name_index)==name]
+        if len(matches)!=1:raise PreparationError('mission_trace.argument: unique selected ordinary parameter required')
+        p=matches[0]
+        if not 0<=p.type_index<self.image.registration['typesCount']:raise PreparationError('mission_trace.argument: selected parameter outside native type table')
+        pointer=self.image.pe.u64_at_va(int(self.image.registration['types'],16)+p.type_index*8)
+        raw=self.image.pe.bytes_at_va(pointer,16)if pointer else b''
+        if len(raw)!=16 or raw[11]&0x7f:
+            raise PreparationError('mission_trace.argument: ordinary argument requires non-byref undecorated native record; use an explicit proved representation')
+        slot,typename=self.argument(hook,name)
+        return dict(argument=name,type=typename,slot=slot,nativeTypeIndex=p.type_index,nativeTypeRecordHex=raw.hex(),
+            byref=False,evidence='selected named parameter native decoration; display type names do not erase byref/ABI flags')
+
+    def ordinary_return_proof(self,method,typename):
+        kind={'void':1,'bool':2}.get(typename)
+        if kind is None:raise PreparationError('mission_trace.return: exact Void/Boolean primitive required')
+        index=method.return_type
+        if not 0<=index<self.image.registration['typesCount']:raise PreparationError('mission_trace.return: selected type index outside table')
+        pointer=self.image.pe.u64_at_va(int(self.image.registration['types'],16)+index*8)
+        raw=self.image.pe.bytes_at_va(pointer,16)if pointer else b''
+        if len(raw)!=16 or raw[10]!=kind or raw[11]&0x7f:
+            raise PreparationError('mission_trace.return: ordinary undecorated Void/Boolean return required; byref cannot use scalar paired ABI')
+        return dict(type=typename,register='none'if typename=='void'else'al',bits=0 if typename=='void'else 8,
+            nativeTypeIndex=index,nativeTypeRecordHex=raw.hex(),byref=False,
+            evidence='selected actual primitive return record; no hidden/reference return substituted')
+
     def compile_field(self, hook: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
         arg, current_type = self.argument(hook, spec["argument"])
         path = spec.get("path") or []
@@ -573,12 +793,13 @@ class SelectedMethods:
         offset = 0
         inline = False
         representation = spec.get("argumentRepresentation")
+        raw_mode=spec.get('readMode')=='rawBytes'
         native_argument_proof = None
         scalar_byref = isinstance(representation, dict) and representation.get('mode') == 'scalarByRef'
         scalar_register = isinstance(representation, dict) and representation.get('mode') == 'scalarRegister'
         if scalar_register:
-            if path or representation != {'mode':'scalarRegister','type':'double'}:
-                raise PreparationError('mission_trace.argument: sole Double register parameter required')
+            if path or representation != {'mode':'scalarRegister','type':current_type} or current_type not in {'float','double'}:
+                raise PreparationError('mission_trace.argument: sole selected floating register parameter required')
             native_argument_proof = self.scalar_register_argument(hook,spec['argument'])
         if scalar_byref:
             if path or spec['argument'] == 'this' or representation != {'mode': 'scalarByRef', 'type': current_type}:
@@ -586,6 +807,14 @@ class SelectedMethods:
             native_argument_proof = self.scalar_byref_argument(hook, spec['argument'])
         if representation is None and path and self.is_value_type(current_type):
             raise PreparationError(f"{hook['name']}.{spec['label']}: value-type argument path requires explicit argumentRepresentation")
+        reference_byref=isinstance(representation,dict)and representation.get('mode')=='referenceByRef'
+        if reference_byref:
+            if not raw_mode or path or representation!={'mode':'referenceByRef','bytes':8}or spec.get('byteCount')!=8:
+                raise PreparationError('mission_trace.raw: referenceByRef requires exact sole raw8 output slot')
+            proof=self.reference_byref_argument(hook,spec['argument'])
+            return dict(label=spec['label'],type=current_type,valueBits=None,arg=arg,kind=6,offset=0,chain0=NO_CHAIN,chain1=NO_CHAIN,
+                byteCount=8,fieldPath=[],argumentName=spec['argument'],role=spec.get('role','observation'),readMode='rawBytes',
+                rawProof=dict(type=current_type,offset=0,byteCount=8,fields=[],evidence=proof['evidence']),argumentRepresentation={**representation,'nativeArgumentProof':proof},observation='argument-pointee')
         if representation is not None and not scalar_byref and not scalar_register:
             if not isinstance(representation, dict) or representation.get("mode") not in {"indirectValue", "inlineValue"}:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: unsupported argument representation")
@@ -600,7 +829,10 @@ class SelectedMethods:
                 if current_type.startswith('Beyond.EventData`2<'):
                     from .mission_trace_state_observers import event_argument_proof
                     native_argument_proof = event_argument_proof(self, hook, arg)
-                if actual_size in {1, 2, 4, 8}:
+                if raw_mode and spec['argument']!='this':
+                    parameter,=[p for p in hook['parameters']if p['name']==spec['argument']]
+                    native_argument_proof=self.paired_indirect_value_argument(hook,parameter)
+                if actual_size in {1, 2, 4, 8} and not raw_mode:
                     if (actual_size != 8 or not current_type.endswith("<string>")
                             or spec["type"] != "string" or len(path) != 1
                             or representation.get("nativeProof") != "stringEqualityArgument"):
@@ -612,7 +844,7 @@ class SelectedMethods:
                 if representation.get("nativeProof") != "stringEqualityArgument":
                     raise PreparationError(f"{hook['name']}.{spec['label']}: generic string wrapper requires native argument proof; layout does not establish passing mode")
                 native_argument_proof = self.string_argument_proof(hook, arg, "inlineValue")
-            if not path:
+            if not path and not raw_mode:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: value argument requires a reviewed field path")
             inline = True
         resolved_path: list[dict[str, Any]] = []
@@ -693,6 +925,23 @@ class SelectedMethods:
                     offset = 0
         if current_type != spec["type"]:
             raise PreparationError(f"{hook['name']}.{spec['label']}: expected {spec['type']}, actual {current_type}")
+        if raw_mode:
+            proof=self.raw_span(current_type,spec)
+            if not self.is_value_type(current_type) and path:
+                chains.append(offset);offset=0
+            if not path and self.is_value_type(current_type) and representation is None:
+                raise PreparationError('mission_trace.raw: raw value argument needs proved indirect representation')
+            if representation is not None and representation.get('mode')!='indirectValue':
+                raise PreparationError('mission_trace.raw: raw spans require actual memory, not GP bit reinterpretation')
+            offset+=proof['offset']
+            if offset>4096 or len(chains)>2:raise PreparationError('mission_trace.raw: bounded path exceeded')
+            chain0,chain1=(chains+[NO_CHAIN,NO_CHAIN])[:2]
+            result=dict(label=spec['label'],type=current_type,valueBits=None,arg=arg,kind=6,offset=offset,chain0=chain0,chain1=chain1,
+                byteCount=proof['byteCount'],fieldPath=resolved_path,argumentName=spec['argument'],role=spec.get('role','observation'),
+                readMode='rawBytes',rawProof=proof,observation='opaque-selected-storage')
+            if representation is not None:
+                result['argumentRepresentation']={**representation,'nativeArgumentProof':native_argument_proof}
+            return result
         value_representation = spec.get("valueRepresentation")
         if value_representation not in {None, "referenceIdentity"}:
             raise PreparationError(f"{hook['name']}.{spec['label']}: unsupported value representation")
@@ -704,14 +953,17 @@ class SelectedMethods:
             if current_type != layout['instanceField'][1] or not path:
                 raise PreparationError('state Param identity: receiver path differs')
             param_identity = True
-        if reference_identity and (representation is not None or (current_type not in self.index.types and not param_identity)
+        source_reference=(reference_identity and current_type not in self.index.types and not param_identity
+            and spec.get('sourceWitness')=='patrol'
+            and current_type in self.source_read_layouts(families=('points',)).get('containers',{}))
+        if reference_identity and (representation is not None or (current_type not in self.index.types and not param_identity and not source_reference)
                                    or self.is_value_type(current_type)):
             raise PreparationError(f"{hook['name']}.{spec['label']}: reference identity requires a named managed reference type, not a value layout")
         enum = self.is_enum(current_type)
         underlying = "ulong" if reference_identity else current_type
         if enum:
             _owner, underlying, _offset = self.field(f"{current_type}::value__")
-            if underlying not in {"int", "uint", "long", "ulong"}:
+            if underlying not in {"byte", "int", "uint", "long", "ulong"}:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: unsupported enum storage: {current_type}:{underlying}")
         width = 64 if reference_identity else _WIDTH.get(underlying, 32 if enum else None)
         if scalar_register:
@@ -750,7 +1002,7 @@ class SelectedMethods:
             result["valueRepresentation"] = "referenceIdentity"
         if representation is not None:
             result["argumentRepresentation"] = {**representation,
-                "evidence": "selected Double XMM2 input forwarded through typed caller" if scalar_register else
+                "evidence": "selected positional XMM input forwarded through typed caller" if scalar_register else
                     "selected scalar byref parameter and bounded pointee read" if scalar_byref else
                     "selected generic layout and separately checked native argument proof" if native_argument_proof else "selected Il2CppTypeDefinitionSizes.instance_size minus object header; Win64 aggregate ABI"}
             if native_argument_proof:
@@ -838,27 +1090,30 @@ def leaf_entry_extent(body) -> int:
 
 
 def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dict[str, Any]]:
+    validate_provider_selection(recipe)
     if not 1 <= len(recipe["hooks"]) <= MAX_HOOKS:
         raise PreparationError(f"mission_trace.recipe: expected 1..{MAX_HOOKS} hooks")
     hooks = []
     seen_rvas: set[int] = set()
     for spec in recipe["hooks"]:
-        if spec.get("genericEntry") is not None and recipe.get("schema") not in {GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+        if any(f.get('readMode') is not None for f in spec['fields']) and recipe.get('schema')!=BOUNDED_RECIPE_SCHEMA:
+            raise PreparationError('mission_trace.recipe: bounded raw/container reads require recipe v15')
+        if spec.get("genericEntry") is not None and recipe.get("schema") not in {GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: generic entries require recipe v5")
-        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") not in {REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") not in {REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: reference identities require recipe v4")
-        if spec.get("anonymousEntry") is not None and recipe.get("schema") not in {ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+        if spec.get("anonymousEntry") is not None and recipe.get("schema") not in {ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: anonymous assignment entries require recipe v6")
-        if any("layoutWitness" in step for field in spec["fields"] for step in field.get("path", [])) and recipe.get("schema") not in {LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+        if any("layoutWitness" in step for field in spec["fields"] for step in field.get("path", [])) and recipe.get("schema") not in {LAYOUT_RECIPE_SCHEMA, STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: closed reference layout witnesses require recipe v7")
         if (spec.get('observationMode') is not None or any(f.get('paramIdentityWitness') or
                 any('paramWitness' in s for s in f.get('path', [])) or
                 f.get('argumentRepresentation', {}).get('nativeProof') == 'stateEventCallback'
-                for f in spec['fields'])) and recipe.get('schema') not in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+                for f in spec['fields'])) and recipe.get('schema') not in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
             raise PreparationError('mission_trace.recipe: paired state witnesses require recipe v8')
         if spec.get('declaringImage') is not None:
             scalar_types={'bool','int','uint','long','ulong'}
-            if (recipe.get('schema') not in {IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or not isinstance(spec['declaringImage'],str)
+            if (recipe.get('schema') not in {IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or not isinstance(spec['declaringImage'],str)
                     or not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}\.dll',spec['declaringImage'])
                     or not spec['static'] or spec['returnType'] not in scalar_types|{'void','float','double'}
                     or any(p['type'] not in scalar_types for p in spec['parameters'])
@@ -869,7 +1124,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
         value_receiver = not spec['static'] and selected.is_value_type(spec['type'])
         receiver_reads = [f for f in spec['fields'] if f['argument']=='this' and f.get('path')]
         if value_receiver and receiver_reads:
-            if recipe.get('schema') not in {RECEIVER_RECIPE_SCHEMA,IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or spec.get('observationMode') != 'paired':
+            if recipe.get('schema') not in {RECEIVER_RECIPE_SCHEMA,IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or spec.get('observationMode') != 'paired':
                 raise PreparationError('mission_trace.receiver: value receiver field reads require recipe v12 paired ABI')
             receiver_proof = selected.normal_value_receiver(spec)
             if any(f.get('argumentRepresentation') != {'mode':'indirectValue','bytes':receiver_proof['unboxedBytes']}
@@ -879,14 +1134,14 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
             enum_return=selected.is_enum(spec['returnType'])
             reference_return=spec['name'] in getattr(selected,'_return_abi_proofs',{})
             if (spec['observationMode'] != 'paired' or spec.get('genericEntry') or spec.get('anonymousEntry')
-                    or spec['returnType'] not in {'void','bool','float','double'} and not ((enum_return or reference_return) and recipe.get('schema') in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA})):
+                    or spec['returnType'] not in {'void','bool','float','double'} and not ((enum_return or reference_return) and recipe.get('schema') in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA})):
                 raise PreparationError(f"{spec['name']}: paired observer requires a unique nongeneric proved scalar/reference return")
-            if spec['returnType'] in {'float', 'double'} and recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+            if spec['returnType'] in {'float', 'double'} and recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
                 raise PreparationError(f"{spec['name']}: floating returns require recipe v9")
             count = len(spec['parameters']) + int(not spec['static']) + 1  # trailing IL2CPP MethodInfo
             if not 1 <= count <= 5:
                 raise PreparationError(f"{spec['name']}: paired observer supports one to five GP ABI slots")
-            if count == 5 and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+            if count == 5 and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
                 raise PreparationError('mission_trace.recipe: fifth GP slot requires recipe v10')
             aggregate_arguments = []
             scalar_inputs = []
@@ -897,20 +1152,21 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
             for p in spec['parameters']:
                 t = p['type']
                 if p['name'] in opaque:
-                    if recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or any(f['argument']==p['name'] for f in spec['fields']):
+                    if recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or any(f['argument']==p['name'] for f in spec['fields']):
                         raise PreparationError('mission_trace.recipe: opaque byref requires v11 and no reads')
                     opaque_arguments.append(selected.opaque_byref_value_argument(spec,p));continue
                 if t in {'float', 'double'}:
                     register_fields = [f for f in spec['fields'] if f.get('argument') == p['name']
-                                       and f.get('argumentRepresentation') == {'mode':'scalarRegister','type':'double'}]
+                                       and f.get('argumentRepresentation') == {'mode':'scalarRegister','type':t}]
                     if register_fields:
-                        if recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or count != 4 or t != 'double':
+                        single=(recipe.get('schema')==BOUNDED_RECIPE_SCHEMA and count==3 and t=='float')
+                        if not single and (recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or count != 4 or t != 'double'):
                             raise PreparationError('mission_trace.recipe: selected mixed Double input requires v10/four slots')
                         scalar_inputs.append(selected.scalar_register_argument(spec,p['name']))
                         continue
                     witnesses = [f for f in spec['fields'] if f.get('argument') == p['name']
                                  and f.get('argumentRepresentation') == {'mode': 'scalarByRef', 'type': t}]
-                    if recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or not witnesses:
+                    if recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or not witnesses:
                         raise PreparationError(f"{spec['name']}: paired observer refuses XMM arguments without a selected scalar byref witness")
                     selected.scalar_byref_argument(spec, p['name'])
                     continue
@@ -927,7 +1183,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                         indirect = any(f.get('argument') == p['name'] and
                             f.get('argumentRepresentation', {}).get('mode') == 'indirectValue'
                             for f in spec['fields'])
-                        if indirect and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
+                        if indirect and recipe.get('schema') not in {RESOLUTION_RECIPE_SCHEMA,BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA}:
                             raise PreparationError('mission_trace.recipe: paired indirect aggregate requires v10')
                         aggregate_arguments.append({"argument": p['name'],
                             **(selected.paired_indirect_value_argument(spec, p) if indirect else
@@ -935,11 +1191,11 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
             storage_return="int" if enum_return else 'pointer' if reference_return else spec['returnType']
             abi = f"win64.paired_gp_{storage_return}_{count}.v1"
             if scalar_inputs:
-                if len(scalar_inputs)!=1:raise PreparationError('mission_trace.recipe: sole mixed Double input required')
-                abi='win64.paired_double_slot2_void_4.v1'
+                if len(scalar_inputs)!=1:raise PreparationError('mission_trace.recipe: sole positional floating input required')
+                abi=f'win64.paired_float_slot1_{storage_return}_3.v1'if scalar_inputs[0]['type']=='float'else'win64.paired_double_slot2_void_4.v1'
         if spec.get('captureScope') is not None:
-            if (recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} or spec['captureScope'] != 'paired-ancestor'
-                    or not abi.startswith('win64.paired_gp_')):
+            if (recipe.get('schema') not in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} or spec['captureScope'] != 'paired-ancestor'
+                    or not (abi.startswith('win64.paired_gp_')or abi.startswith('win64.paired_float_slot1_'))):
                 raise PreparationError('mission_trace.recipe: paired-ancestor scope requires v11 GP paired observer')
             abi=abi.replace('win64.paired_', 'win64.scoped_paired_',1)
         entry = None
@@ -971,9 +1227,19 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
         body_size = end - pointer
         window_size = min(body_size, 64)
         body = selected.image.pe.bytes_at_va(pointer, body_size)
-        fields = [selected.compile_field(field_abi, field) for field in spec["fields"]]
+        fields = []
+        for field in spec['fields']:
+            if field.get('readMode') in {'boundedContainer','dependentReferenceBytes','virtualCallbackPair'}:
+                fields.append(selected.compile_bounded_field(field_abi,field,fields))
+            elif field.get('readMode') not in {None,'rawBytes'}:
+                raise PreparationError('mission_trace.recipe: unknown bounded readMode')
+            else:fields.append(selected.compile_field(field_abi,field))
+        if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA:
+            for field in fields:
+                if field.get('argumentName')!='this'and not field.get('argumentRepresentation'):
+                    field['argumentAbi']=selected.ordinary_argument_proof(field_abi,field['argumentName'])
         labels = [f["label"] for f in fields]
-        limit = 24 if recipe.get('schema') in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA} else 8
+        limit = 24 if recipe.get('schema') in {STATE_RECIPE_SCHEMA, NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA, BOUNDED_RECIPE_SCHEMA} else 8
         if len(fields) > limit or len(set(labels)) != len(labels):
             raise PreparationError(f"{spec['name']}: more than {limit} fields or duplicate field labels")
         rva = pointer - selected.image.pe.image_base
@@ -982,7 +1248,8 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
         seen_rvas.add(rva)
         hooks.append({"name": spec["name"], "module": "GameAssembly.dll", "rva": f"0x{rva:x}", "abiId": abi,
                       "expectedBytes": body[:window_size].hex(),
-                      "readProgram": "".join(f"{f['arg']},{f['kind']},{f['offset']},{f['chain0']},{f['chain1']};" for f in fields),
+                      "readProgram": ("v2:"if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA else "")+"".join(
+                          ','.join(map(str,read_words(f)))+';'for f in fields),
                       "fields": fields, "symbol": f"{spec['type']}.{spec['method']}",
                       "methodIndex": method.index, "returnType": spec["returnType"], "parameters": spec["parameters"],
                       "bodyFraming": framing, "bodyBytes": body_size, "bodySha256": hashlib.sha256(body).hexdigest(),
@@ -998,6 +1265,8 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
             hooks[-1]['pairedAbiProof'] = {'argumentSlots': count, 'includesMethodInfo': True,
                 'returnType': spec['returnType'], 'phaseFieldPolicy': 'same typed paths at entry and return',
                 'boundary': 'synchronous selected GP caller only; exception or stop during invocation rejects completeness'}
+            if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA and spec['returnType']in{'void','bool'}:
+                hooks[-1]['pairedAbiProof']['ordinaryReturn']=selected.ordinary_return_proof(method,spec['returnType'])
             if scalar_inputs:hooks[-1]['pairedAbiProof']['scalarInputs']=scalar_inputs
             if opaque_arguments:hooks[-1]['pairedAbiProof']['opaqueByRefArguments']=opaque_arguments
             if enum_return:
@@ -1045,6 +1314,7 @@ def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | No
     if not gate.validated:
         raise PreparationError(f"mission_trace.native: {gate.status}: {gate.detail}")
     recipe = read_recipe(PROFILE_RECIPES[profile]) if recipe is None else recipe
+    validate_provider_selection(recipe)
     pins = {}
     for role, (relative, path) in files.items():
         if not path.is_file():
@@ -1061,16 +1331,58 @@ def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | No
                                               gameassembly=gate.gameassembly, metadata=gate.metadata)
     if not final_gate.validated or sha256_file(files["executable"][1]) != pins["executable"]["sha256"]:
         raise PreparationError("mission_trace.native: selected inputs changed during preparation")
-    return {"schema": BUILD_SCHEMA, "gameBuild": f"endfield-gameassembly-{gate.gameassembly_sha256[:12]}",
+    return {"schema": BOUNDED_BUILD_SCHEMA if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA else BUILD_SCHEMA, "gameBuild": f"endfield-gameassembly-{gate.gameassembly_sha256[:12]}",
             "profile": "mission-trace", "processName": "Endfield.exe", "files": pins,
             "preparedAt": datetime.now(timezone.utc).isoformat(),
             "focusMission": mission, "recordingScope": "buff-runtime-unfiltered" if profile == "buff" else "all-named-context-unfiltered",
             "missionSelection": {"mode": "not-selected" if profile == "buff" else "all-missions" if mission == "all" else "named-analysis-focus", "nativeFilter": False},
             "recipeSchema": recipe["schema"], "missionTraceHooks": hooks,
+            **({'observerProviders':['mission-trace'],'providerMask':128}if recipe.get('schema')==BOUNDED_RECIPE_SCHEMA else{}),
+            **({'readLayouts':selected._source_read_layouts}if hasattr(selected,'_source_read_layouts')else{}),
             "enumDefinitions": enum_definitions,
             "coverageGaps": recipe.get("coverageGaps", []),
             "observerPolicy": {'pairedDepthLimit': 64, 'fieldCapacity': 24, 'callbacksCallGameGetters': False},
             "evidenceBoundary": recipe["evidenceBoundary"]}
+
+
+def _caller_scope_family(selected, caller):
+    """Read only ranges joined to this exact primary by complete unwind triples."""
+    from scripts.game_data.memorypack.pointer_param import owned
+    base=selected.image.pe.image_base;entry=int(caller['rva'],16);method_index=caller.get('methodIndex')
+    methods=selected.image.metadata.methods
+    if (type(method_index)is not int or not 0<=method_index<len(methods)
+            or selected.image.method_pointer_va(methods[method_index])!=base+entry):
+        raise PreparationError('mission_trace.caller_scope: selected caller metadata/entry differs: '+caller['name'])
+    try:
+        ownership=selected.image.unwind_index.family(entry)
+        source=owned(selected.image,base+entry)
+    except (ValueError,KeyError,IndexError,RuntimeError)as exc:
+        raise PreparationError('mission_trace.caller_scope: complete caller unwind family: '+caller['name']+': '+str(exc))from exc
+    if (ownership.get('schema')!='endfield.amd64-unwind-chain-family.v1'
+            or ownership.get('selectedPrimaryRva')!=entry
+            or any(ownership.get(k)is not True for k in('completeParentTriplesChecked','allParentChainsTerminated','chainFrameBytesMatched'))):
+        raise PreparationError('mission_trace.caller_scope: exact primary family required: '+caller['name'])
+    expected=[tuple(part['runtimeTriple'][:2])for part in ownership['ranges']]
+    regions=source['regions'];coordinates=[(at-base,at-base+len(raw))for at,raw in regions]
+    if (source.get('pointer')!=base+entry or coordinates!=expected or not 1<=len(regions)<=256
+            or sum(len(raw)for _,raw in regions)>1024*1024 or not any(a==entry for a,_ in coordinates)
+            or any(type(a)is not int or type(b)is not int or not 0<a<b for a,b in coordinates)
+            or any(left[1]>right[0]for left,right in zip(coordinates,coordinates[1:]))):
+        raise PreparationError('mission_trace.caller_scope: bounded disjoint complete family required: '+caller['name'])
+    windows=[dict(startRva=at-base,endRva=at-base+len(raw),sha256=hashlib.sha256(raw).hexdigest(),rawHex=raw.hex())
+             for at,raw in regions]
+    rows=[];seen=set()
+    for row in source['rows']:
+        va=int(row['va'],16);encoded=bytes.fromhex(row['bytes'])
+        matches=[(index,raw,at)for index,(at,raw)in enumerate(regions)if at<=va and va+len(encoded)<=at+len(raw)]
+        if len(matches)!=1 or not encoded or va in seen:
+            raise PreparationError('mission_trace.caller_scope: ambiguous/outside family instruction: '+caller['name'])
+        index,raw,at=matches[0];seen.add(va)
+        if raw[va-at:va-at+len(encoded)]!=encoded:
+            raise PreparationError('mission_trace.caller_scope: family instruction bytes differ: '+caller['name'])
+        rows.append((row,windows[index]))
+    return dict(callerHook=caller['name'],callerMethodIndex=method_index,callerEntryRva=entry,
+                ownership=ownership,windows=windows),rows
 
 
 def compile_caller_scopes(selected, hooks, recipe):
@@ -1079,11 +1391,11 @@ def compile_caller_scopes(selected, hooks, recipe):
     for spec in recipe['hooks']:
         callers=spec.get('captureCallerHooks')
         if callers is None:continue
-        if (recipe['schema']!=CALLER_RECIPE_SCHEMA or spec.get('captureScope')!='paired-ancestor'
+        if (recipe['schema'] not in {CALLER_RECIPE_SCHEMA,BOUNDED_RECIPE_SCHEMA} or spec.get('captureScope')!='paired-ancestor'
                 or not isinstance(callers,list) or not 1<=len(callers)<=16
                 or any(not isinstance(n,str) for n in callers) or len(set(callers))!=len(callers)):
             raise PreparationError('mission_trace.caller_scope: v14 requires bounded unique scoped caller hooks')
-        target=by_name[spec['name']];target_rva=int(target['rva'],16);proofs=[];checked=[]
+        target=by_name[spec['name']];target_rva=int(target['rva'],16);proofs=[];checked=[];families=[]
         for name in callers:
             caller=by_name.get(name)
             if not caller or caller is target or caller.get('observationMode')!='paired':
@@ -1092,16 +1404,23 @@ def compile_caller_scopes(selected, hooks, recipe):
             raw=selected.image.pe.bytes_at_va(pointer,caller['bodyBytes'])
             if hashlib.sha256(raw).hexdigest()!=caller['bodySha256']:
                 raise PreparationError('mission_trace.caller_scope: caller body changed: '+name)
+            family_mode=recipe['schema']==BOUNDED_RECIPE_SCHEMA
+            if family_mode:
+                family,rows=_caller_scope_family(selected,caller);family_index=len(families);families.append(family)
+            else:rows=[(row,None)for row in selected.index._decode(pointer,len(raw))]
             direct=[]
-            for row in selected.index._decode(pointer,len(raw)):
+            for row,window in rows:
                 encoded=bytes.fromhex(row['bytes']);va=int(row['va'],16)
                 if len(encoded)==5 and encoded[0]==0xe8:
                     direct.append(va+5+int.from_bytes(encoded[1:],'little',signed=True)-selected.image.pe.image_base)
                 if (len(encoded)==5 and encoded[0]==0xe8 and
                         va+5+int.from_bytes(encoded[1:],'little',signed=True)==selected.image.pe.image_base+target_rva):
-                    proofs.append({'callerHook':name,'callerMethodIndex':caller['methodIndex'],
+                    proof={'callerHook':name,'callerMethodIndex':caller['methodIndex'],
                         'callerBodySha256':caller['bodySha256'],'callRva':va-selected.image.pe.image_base,
-                        'returnRva':va+5-selected.image.pe.image_base,'callBytes':encoded.hex(),'targetRva':target_rva})
+                        'returnRva':va+5-selected.image.pe.image_base,'callBytes':encoded.hex(),'targetRva':target_rva}
+                    if family_mode:proof.update(callerSourceFamilyIndex=family_index,
+                        callerWindowStartRva=window['startRva'],callerWindowEndRva=window['endRva'],callerWindowSha256=window['sha256'])
+                    proofs.append(proof)
             checked.append({'hook':name,'rva':caller['rva'],'bodySha256':caller['bodySha256'],
                             'directCalls':len(direct),'firstTargets':[hex(r) for r in direct[:8]]})
         proofs.sort(key=lambda r:r['returnRva'])
@@ -1114,6 +1433,7 @@ def compile_caller_scopes(selected, hooks, recipe):
                 'actual':{'matchingCalls':len(proofs),'uniqueReturns':len(set(returns)),'checkedCallers':checked}},sort_keys=True))
         target['captureCallerReturnRvas']=','.join(f'{r:x}' for r in returns)
         target['captureCallerProofs']=proofs
+        if recipe['schema']==BOUNDED_RECIPE_SCHEMA:target['captureCallerSourceWindows']=families
 
 
 def checked_output(path: Path) -> Path:
@@ -1167,4 +1487,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # Source witnesses require this module's canonical SelectedMethods class.
+    # Running with -m also defines a __main__ copy; dispatch through the
+    # canonical module so CLI preparation uses the same exact owner boundary.
+    from scripts.game_data.mission_trace_capture_prepare import main as _canonical_main
+    raise SystemExit(_canonical_main())

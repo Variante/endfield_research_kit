@@ -5,7 +5,23 @@ from scripts.game_data.il2cpp.type_data_initialization_instructions import decod
 from scripts.game_data.il2cpp.integer_source_operands import is_unknown_instruction
 
 
-def partition_consumer_rva_switches(mapper,raw,*,entry,image_base):
+def partition_consumer_rva_switches(mapper,raw,*,entry,image_base,
+        old_base_registers=('r15',),local_base_registers=('r15','rdx'),
+        destination_registers=('rax','rdx'),padding_forms=(b'\x90',b'\xcc',b'\x0f\x1f\x00'),
+        return_padding=False):
+    """Partition exact guarded tables; alternate register roles are explicit.
+
+    A caller selecting an older base register must independently prove its
+    literal image-base provenance and guard dominance. Defaults stay narrow.
+    """
+    gprs={'rax','rcx','rdx','rbx','rbp','rsi','rdi',*[f'r{i}'for i in range(8,16)]}
+    if type(return_padding)is not bool:raise ValueError('consumerRvaSwitches.explicit-return-padding')
+    for values,allowed in((old_base_registers,gprs),(local_base_registers,gprs),
+            (destination_registers,{'rax','rcx','rdx','rbx','rbp','rsi','rdi'})):
+        if type(values)is not tuple or not values or len(set(values))!=len(values)or any(type(r)is not str or r not in allowed for r in values):
+            raise ValueError('consumerRvaSwitches.explicit-register-domains')
+    if type(padding_forms)is not tuple or not padding_forms or any(type(p)is not bytes or p not in(b'\x90',b'\xcc',b'\x66\x90',b'\x0f\x1f\x00')for p in padding_forms):
+        raise ValueError('consumerRvaSwitches.explicit-supported-padding-forms')
     found=[]
     for offset in range(len(raw)-3):
         if raw[offset:offset+2]!=b'\x83\xf8':continue
@@ -24,24 +40,27 @@ def partition_consumer_rva_switches(mapper,raw,*,entry,image_base):
         if raw[at:at+2]==b'\x48\x98':index_register='rax';at+=2
         elif raw[at:at+3]==b'\x48\x63\xc8':index_register='rcx';at+=3
         else:continue
-        base_load=None;base_register="r15"
+        base_load=None;base_register=None
         lea=decode_lea_address(raw,at,entry)
         if lea and lea[0]['addressOperation'].get('absoluteAddress')==image_base:
             base_register=lea[0]['addressOperation'].get('destination')
-            if base_register not in ('r15','rdx'):continue
+            if base_register not in local_base_registers:continue
             base_load=entry+at;at=lea[1]
         load=decode_memory_move(raw,at,entry)
         if load is None:continue
         row,end=load;op=row['memoryOperation'];address=op['address']
+        if base_load is None:
+            base_register=address.get('base')
+            if base_register not in old_base_registers:continue
         if (op['direction'],op['registerBits'],op['memoryBytes'],address.get('base'),address.get('index'),address.get('scale'),address.get('ripRelative'))!=('load',32,4,base_register,index_register,4,False):continue
         destination=op['backingRegister']
-        if destination not in ('rax','rdx') or destination==base_register:continue
+        if destination not in destination_registers or destination==base_register:continue
         table_start=image_base+address['displacement']-entry;table_end=table_start+4*(maximum+1)
         add=decode_register_arithmetic(raw,end,entry)
         if add is None:continue
         fact=add[0]['integerOperation'];jump=add[1]
         if (fact['operation'],fact['bits'],fact['destination'],fact['source'])!=('add',64,destination,base_register):continue
-        if raw[jump:jump+2]!=(b'\xff\xe0' if destination=='rax' else b'\xff\xe2'):continue
+        if raw[jump:jump+2]!=bytes((0xff,0xe0+('rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi').index(destination))):continue
         if not jump+2<=table_start<table_end<=len(raw) or entry+offset<=exit_at<entry+jump+2:continue
         targets=[image_base+int.from_bytes(raw[n:n+4],'little') for n in range(table_start,table_end,4)]
         found.append(dict(guard=entry+offset,guardExit=exit_at,load=entry+at,jump=entry+jump,maximum=maximum,
@@ -57,9 +76,9 @@ def partition_consumer_rva_switches(mapper,raw,*,entry,image_base):
     if any(is_unknown_instruction(row) for row in rows):raise ValueError('consumerRvaSwitches.unknown-code-instruction')
     if b''.join(bytes.fromhex(row['bytes']) for row in rows)!=raw[:start-entry]:raise ValueError('consumerRvaSwitches.code-byte-partition')
     padding=[]
-    while len(rows)>1 and bytes.fromhex(rows[-1]['bytes']) in (b'\x90',b'\xcc',b'\x0f\x1f\x00'):
+    while len(rows)>1 and bytes.fromhex(rows[-1]['bytes']) in padding_forms:
         previous=rows[-2]
-        if bytes.fromhex(previous['bytes'])!=b'\xcc':break
+        if bytes.fromhex(previous['bytes'])!=b'\xcc'and not(return_padding and bytes.fromhex(previous['bytes'])==b'\xc3'):break
         padding.insert(0,rows.pop())
     if sum(len(bytes.fromhex(row['bytes'])) for row in padding)>3 or (start-image_base)%4:
         raise ValueError('consumerRvaSwitches.unproved-table-alignment')

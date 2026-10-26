@@ -18,6 +18,7 @@ from scripts.game_data.il2cpp.context_audit_memorypack import buff_action_read_o
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import is_role_projection
 
 
 LABEL = "skillTimelineForceHideHeadBar"
@@ -74,7 +75,7 @@ def _contract() -> dict[str, Any]:
     route = catalog.get("families", {}).get("AbilityActionData", [])[TAG]
     switch = catalog.get("switches", {}).get("AbilityActionData", {})
     if (
-        source.get("schemaVersion") != 1
+        (source.get("schemaVersion") != 1 and not is_role_projection(source))
         or tuple(source.get("anonymousReadOrder", {}).get("member6", ())) != SOURCE_READ_ORDER
         or source.get("methods", [None, None])[1][1] != WRAPPER_NAME
         or tuple(row.get("typeName") for row in source.get("nestedContexts", ()))
@@ -82,7 +83,7 @@ def _contract() -> dict[str, Any]:
             "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
             "Beyond.Gameplay.Core.TargetSettings",
         )
-        or target.get("schemaVersion") != 1
+        or (target.get("schemaVersion") != 1 and not is_role_projection(target))
         or tuple(target.get("anonymousReadOrder", {}).get("member13", ()))
         != TARGET_READ_ORDER
         or catalog.get("schema") != "endfield.levelscript-union-tags.v1"
@@ -137,7 +138,7 @@ def validate_current_native_contract() -> dict[str, Any]:
             image.pe, image.metadata, image.registration, image.instantiations,
             image.modules, image.owners, source=str(gate.gameassembly),
             contract_path=CONTRACTS_DIR / name,
-        )
+         native_image=image)
         sources[name] = audit["anonymousReadOrder"]
     if tuple(sources[contract["sourceContract"]].get("member6", ())) != SOURCE_READ_ORDER:
         raise ValueError(f"{LABEL}.native:source-order")

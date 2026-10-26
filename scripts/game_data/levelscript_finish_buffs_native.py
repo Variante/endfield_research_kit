@@ -289,7 +289,9 @@ def _validate_native(image: Any, data: dict[str, Any]) -> None:
 
 
 def _validate_sources(data: dict[str, Any], export_root: Path, ledger_path: Path,
-                      summary_path: Path) -> int:
+                      summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
+) -> int:
     from scripts.game_data.codecs.levelscript.finish_buffs import decode_finish_buffs_action
 
     summary = json.loads(summary_path.read_bytes())
@@ -321,7 +323,7 @@ def _validate_sources(data: dict[str, Any], export_root: Path, ledger_path: Path
             or ledger.get(path, {}).get("length") != len(payload)
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}@{start}")
-        decoded, cursor = decode_finish_buffs_action(payload, start, data["route"])
+        decoded, cursor = decode_finish_buffs_action(payload, start, data["route"], game_root=game_root, strings=strings)
         if cursor != end or decoded["endOffset"] != end:
             raise ValueError(f"{LABEL}.source:cursor={path}@{start}")
     return len(data["sourceReceipts"])
@@ -355,7 +357,9 @@ def validate_finish_buffs_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-summary-and-ledger-required")
-            checked = _validate_sources(data, Path(export_root), Path(ledger_path), Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            checked = _validate_sources(data, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         route = data["route"]
         return {"status": "validated", "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

@@ -394,7 +394,7 @@ BUFF_ABILITY_ACTION_TAG_SOURCE_NOTE = (
 )
 
 
-def _ability_action_tag(name: str) -> Any:
+def _ability_action_tag(name: str, *, gameassembly=None, metadata=None) -> Any:
     """The selected build's AbilityActionData union tag for one reviewed type.
 
     Tags are ordinals that shift whenever a client update inserts a wrapper,
@@ -404,7 +404,8 @@ def _ability_action_tag(name: str) -> Any:
     equals a scanned integer tag, so every tag-keyed table stays
     collision-free and simply never matches, and the codec fails closed.
     """
-    found = union_tags.pair("AbilityActionData", name)
+    selected = {} if gameassembly is None and metadata is None else dict(gameassembly=gameassembly, metadata=metadata)
+    found = union_tags.pair("AbilityActionData", name, **selected)
     return found[0] if isinstance(found[0], int) else found
 
 
@@ -417,9 +418,10 @@ def _ability_action_tag_text(name: str) -> str:
     return f"0x{tag:04X}" if isinstance(tag, int) else f"unresolved:{name}"
 
 
-def _ability_action_tag_bytes(name: str) -> bytes | None:
+def _ability_action_tag_bytes(name: str, *, gameassembly=None, metadata=None) -> bytes | None:
     """The selected build's encoded MemoryPack union tag bytes, or ``None``."""
-    tag = _ability_action_tag(name)
+    selected = {} if gameassembly is None and metadata is None else dict(gameassembly=gameassembly, metadata=metadata)
+    tag = _ability_action_tag(name, **selected)
     if not isinstance(tag, int):
         return None
     return bytes((tag,)) if tag < 0xFA else b"\xFA" + tag.to_bytes(2, "little")

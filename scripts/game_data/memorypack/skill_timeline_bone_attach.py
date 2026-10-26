@@ -17,6 +17,7 @@ from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usa
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineBoneAttach"
@@ -99,7 +100,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -149,7 +150,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.native:nested-type")
     vector = json.loads((CONTRACTS_DIR / "buff_16a_native.json").read_bytes())
     target = json.loads((CONTRACTS_DIR / "buff_ec_native.json").read_bytes())
-    if vector.get("schemaVersion") != 1 or target.get("schemaVersion") != 1:
+    if (vector.get("schemaVersion") != 1 and not is_role_projection(vector)) or (target.get("schemaVersion") != 1 and not is_role_projection(target)):
         raise ValueError(f"{LABEL}.native:child-schema")
     vector_window = next(
         (row for row in vector["codeWindows"]
@@ -159,7 +160,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     if vector_window is None or "Vector3 source length" not in vector_window["boundary"]:
         raise ValueError(f"{LABEL}.native:vector-helper")
     image.check_windows([vector_window], label=f"{LABEL}.vector")
-    image.check_windows(target["codeWindows"], label=f"{LABEL}.target")
+    check_formatter_windows(image, target, label=f"{LABEL}.target")
     return {
         "status": "validated", "nativeInputs": expected, "methodIndices": methods,
         "sourceReadCount": len(READ_KINDS), "nestedContextCount": 1,

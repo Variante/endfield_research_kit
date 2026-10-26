@@ -20,6 +20,7 @@ from scripts.game_data.il2cpp.context import (
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineUltimateTime"
@@ -102,7 +103,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -185,9 +186,9 @@ def validate_current_native_contract() -> dict[str, Any]:
             raise ValueError(f"{LABEL}.native:generic-name={index}")
     for dependency in contract["dependencies"]:
         reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
+        if (reviewed.get("schemaVersion") != 1 and not is_role_projection(reviewed)):
             raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+        check_formatter_windows(image, reviewed, label=f"{LABEL}.{dependency['path']}")
     existing_list = json.loads((CONTRACTS_DIR / "buff_ea_native.json").read_bytes())
     previous_list = next(row for row in existing_list["nestedContexts"] if row["typeName"] == "System.Collections.Generic.List`1")
     selected_list = contract["genericContexts"][1]

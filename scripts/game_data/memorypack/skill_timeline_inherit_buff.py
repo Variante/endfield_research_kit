@@ -1,4 +1,4 @@
-"""Selected-build SkillData InheritBuffAction 0x00D2 reader.
+"""Selected-build SkillData InheritBuffAction reader.
 
 The native wrapper fixes nine ordered reads and two generic child contexts.
 The nested TargetSettings and List<string> retain their separately reviewed
@@ -16,13 +16,17 @@ from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inp
 from scripts.game_data import buff_frontiers_native
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff import (
+    _ability_action_tag, _ability_action_tag_bytes,
+)
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineInheritBuff"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_inherit_buff_native.json"
-TAG = 0x00D2
+TAG_NAME = "Core_InheritBuffAction_Data"
 FIELD_NAMES = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "buffOwner", "finishByAction", "finishWithNextSkillIfNotInherited",
@@ -37,8 +41,16 @@ NESTED_TYPES = (
 )
 
 
+def _string_list_route(frontier: dict[str, Any]) -> dict[str, Any]:
+    name = "Beyond.MemoryPack.Beyond_Gameplay_Core_AddDynamicNavmeshObstacle_DataForMemoryPack"
+    rows = [row for row in frontier.get("actions", ()) if row.get("wrapperName") == name]
+    if len(rows) != 1:
+        raise ValueError(f"{LABEL}.contract:string-list-owner")
+    return rows[0]
+
+
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH,
         schema="endfield.skill-timeline-inherit-buff-native-contract.v1",
@@ -48,7 +60,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != TAG
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(READ_KINDS)
         or not isinstance(reads, list)
         or [row.get("memberIndex") for row in reads] != list(range(len(READ_KINDS)))
@@ -60,7 +72,7 @@ def _contract() -> dict[str, Any]:
     ):
         raise ValueError(f"{LABEL}.contract:source-shape")
     frontier = buff_frontiers_native.reviewed_contract("frontier8")
-    list_route = next((row for row in frontier.get("actions", ()) if row.get("unionTag") == 9), None)
+    list_route = _string_list_route(frontier)
     list_context = next(
         (row for row in (list_route or {}).get("nestedContextUsage", ())
          if row.get("typeName") == NESTED_TYPES[1]), None
@@ -80,12 +92,15 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate route, all reads, nested types, and dependent profiles."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
@@ -99,7 +114,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -117,11 +132,13 @@ def validate_current_native_contract() -> dict[str, Any]:
         if rva + 5 + struct.unpack_from("<i", raw, 1)[0] != read["sourceTargetRva"]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
     ec = json.loads((CONTRACTS_DIR / "buff_ec_native.json").read_bytes())
-    if ec.get("schemaVersion") != 1:
+    if (ec.get("schemaVersion") != 1 and not is_role_projection(ec)):
         raise ValueError(f"{LABEL}.native:target-profile-schema")
-    image.check_windows(ec["codeWindows"], label=f"{LABEL}.buff_ec_native")
-    frontier_rows, frontier_audit = buff_frontiers_native.load_rows("frontier8")
-    if frontier_audit.get("status") != "validated" or 9 not in frontier_rows:
+    check_formatter_windows(image, ec, label=f"{LABEL}.buff_ec_native")
+    frontier_rows, frontier_audit = buff_frontiers_native.load_rows("frontier8", game_root=gate.metadata.parents[2])
+    list_route = _string_list_route(buff_frontiers_native.reviewed_contract("frontier8"))
+    if (frontier_audit.get("status") != "validated"
+            or frontier_rows.get(list_route["unionTag"]) != list_route):
         raise ValueError(f"{LABEL}.native:string-list-profile")
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
@@ -162,8 +179,9 @@ def validate_current_native_contract() -> dict[str, Any]:
 def decode_inherit_buff_action(reader: Reader, depth: int, tag: int, width: int) -> None:
     """Consume one finite nine-member action, preserving child stop behavior."""
     del depth
-    _contract()
-    if tag != TAG or width != 1:
+    contract = _contract()
+    if (tag != contract["dispatcher"]["unionTag"]
+            or width != len(_ability_action_tag_bytes(TAG_NAME))):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

@@ -64,7 +64,13 @@ Shapes worth knowing, beyond what the rows state:
   source `200` properties instead; others store nonzero constants.
 * The `FinishBuff` `Param<BuffPtr>` value follows the generated 4/1/2 member
   chain, a cached unsigned identity and a null object marker before the
-  ordinary Param tail.
+  pooled Param tail. Its hidden sixteen-byte value has an independent native
+  gate; positive nested Buff objects remain refused. CameraShake's managed
+  eight-byte value has its own pooled key/source and owned-transfer proof.
+* Int32/UInt32 list Params require their independent current collection and
+  parent-source proof before consuming even a null marker. Their codecs
+  preserve signed binding words and pooled paths without assigning gameplay
+  meaning. Float lists receive no grammar from these component proofs.
 * `PlayFmvAction` stores `moviePath`, a `CommonMaskBlendData` `param`,
   `shouldWaitForFinish`, the `afterMask` mask, then `beforeMask` and
   `overrideAfterMaskConfig` as booleans. Field names do not decide wire
@@ -79,9 +85,9 @@ Shapes worth knowing, beyond what the rows state:
 * Enum backings differ by route. A Param needs its own selected wrapper,
   source and store proof before decoding; backing width alone does not
   select a primitive formatter.
-* Positive `Param<List<GameplayTag>>` elements and
-  non-null `CameraControllerBase` constants remain unsupported and fail
-  closed (see the contract's `supportedBoundary`).
+* `Param<List<GameplayTag>>` has its own pooled parent and generated MC1/FF
+  element source; its positive elements do not reuse raw4 tag-array framing.
+  Non-null `CameraControllerBase` constants remain unsupported and fail closed.
 """
 
 from __future__ import annotations
@@ -95,6 +101,7 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.operation_native_validation import validate_native as _validate_native
 from . import params
 from . import send_lua_event
 from .pos_rot import decode_pos_rot_param
@@ -370,28 +377,31 @@ def _on_spawner_start_native_audit() -> dict[str, Any]:
     return validate_levelscript_on_spawner_start_native_contract()
 
 
-def _on_spell_abnormal_start_native_audit() -> dict[str, Any]:
+def _on_spell_abnormal_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spell_abnormal_start_native import (
         validate_levelscript_on_spell_abnormal_start_native_contract,
     )
 
-    return validate_levelscript_on_spell_abnormal_start_native_contract()
+    if game_root is None:return validate_levelscript_on_spell_abnormal_start_native_contract()
+    return _validate_native(validate_levelscript_on_spell_abnormal_start_native_contract,game_root=game_root)
 
 
-def _on_physical_infliction_native_audit() -> dict[str, Any]:
+def _on_physical_infliction_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_physical_infliction_native import (
         validate_levelscript_on_physical_infliction_native_contract,
     )
 
-    return validate_levelscript_on_physical_infliction_native_contract()
+    if game_root is None:return validate_levelscript_on_physical_infliction_native_contract()
+    return _validate_native(validate_levelscript_on_physical_infliction_native_contract,game_root=game_root)
 
 
-def _on_bb_variable_changed_native_audit() -> dict[str, Any]:
+def _on_bb_variable_changed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_bb_variable_changed_native import (
         validate_levelscript_on_bb_variable_changed_native_contract,
     )
 
-    return validate_levelscript_on_bb_variable_changed_native_contract()
+    if game_root is None:return validate_levelscript_on_bb_variable_changed_native_contract()
+    return _validate_native(validate_levelscript_on_bb_variable_changed_native_contract,game_root=game_root)
 
 
 def _on_physical_no_guard_native_audit() -> dict[str, Any]:
@@ -1098,12 +1108,13 @@ def _npc_get_pack_anim_has_clean_native_audit() -> dict[str, Any]:
     return validate_npc_get_pack_anim_has_clean_native_contract()
 
 
-def _on_encounter_intro_part_end_native_audit() -> dict[str, Any]:
+def _on_encounter_intro_part_end_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_encounter_intro_part_end_native import (
         validate_levelscript_on_encounter_intro_part_end_native_contract,
     )
 
-    return validate_levelscript_on_encounter_intro_part_end_native_contract()
+    if game_root is None:return validate_levelscript_on_encounter_intro_part_end_native_contract()
+    return _validate_native(validate_levelscript_on_encounter_intro_part_end_native_contract,game_root=game_root)
 
 
 def _on_npc_dirty_block_cleaned_native_audit() -> dict[str, Any]:
@@ -1362,12 +1373,13 @@ def _on_cutscene_exit_native_audit() -> dict[str, Any]:
     return validate_levelscript_on_cutscene_exit_native_contract()
 
 
-def _on_entity_die_native_audit() -> dict[str, Any]:
+def _on_entity_die_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_entity_die_native import (
         validate_levelscript_on_entity_die_native_contract,
     )
 
-    return validate_levelscript_on_entity_die_native_contract()
+    if game_root is None:return validate_levelscript_on_entity_die_native_contract()
+    return _validate_native(validate_levelscript_on_entity_die_native_contract,game_root=game_root)
 
 
 def _on_blight_miasma_weak_guide_native_audit() -> dict[str, Any]:
@@ -1700,7 +1712,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
         if reader is None:
             from scripts.game_data.levelscript_route_deserialize_native import validate
             root = Path(game_root) if game_root is not None else None
-            audit = validate(contract_path=CONTRACTS_DIR/(native_gate+'.json'),
+            audit = _validate_native(validate,contract_path=CONTRACTS_DIR/(native_gate+'.json'),
                 selected_route=(family,tag),
                 gameassembly=root.parent/'GameAssembly.dll' if root else None,
                 metadata=root/'il2cpp_data/Metadata/global-metadata.dat' if root else None)
@@ -2608,7 +2620,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
         "levelscript_set_forbid_map_teleport_native",
         "levelscript_resume_spawner_native",
     }:
-        audit = {
+        audit_reader = {
             "levelscript_on_map_var_changed_native": _on_map_var_changed_native_audit,
             "levelscript_on_enemy_in_fight_native": _on_enemy_in_fight_native_audit,
             "levelscript_on_enemy_take_last_attack_damage_native": _on_enemy_take_last_attack_damage_native_audit,
@@ -2643,7 +2655,12 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             "levelscript_add_tracking_point_native": _add_tracking_point_native_audit,
             "levelscript_set_forbid_map_teleport_native": _set_forbid_map_teleport_native_audit,
             "levelscript_resume_spawner_native": _resume_spawner_native_audit,
-        }[native_gate]()
+        }[native_gate]
+        audit = (audit_reader(game_root=game_root) if game_root is not None and native_gate in {
+            "levelscript_on_spell_abnormal_start_native", "levelscript_on_physical_infliction_native",
+            "levelscript_on_bb_variable_changed_native", "levelscript_on_entity_die_native",
+            "levelscript_on_encounter_intro_part_end_native",
+        } else audit_reader())
         selected = next(
             (route for route in audit.get("routes", [])
              if route.get("family") == family and route.get("tag") == tag),
@@ -3001,6 +3018,8 @@ class _Cursor:
         strings: Any = None,
         route: dict[str, Any] | None = None,
         null_list_params: Any = None,
+        numeric_list_params: Any = None, camera_shake_params: Any = None, buff_ptr_params: Any = None, entity_list_params: Any = None,
+        current_owner: Any = None,
     ):
         self.data = data
         self.offset = offset
@@ -3008,6 +3027,11 @@ class _Cursor:
         self.game_root = game_root
         self.strings = strings
         self.null_list_params = null_list_params
+        self.numeric_list_params = numeric_list_params
+        self.camera_shake_params = camera_shake_params
+        self.buff_ptr_params = buff_ptr_params
+        self.entity_list_params = entity_list_params
+        self.current_owner = current_owner
         self.route = {**route, 'fields': [field[:2] for field in route['fields']], 'nativeGate': _required_native_gates().get((route.get('family'), route.get('tag')))} if route is not None else None
 
     def need(self, size: int, field: str) -> None:
@@ -3030,6 +3054,15 @@ class _Cursor:
         raise ActionMapCodecError(f"{field}:current-pooled-child-source-unproved,offset={self.offset}")
 
     def node_string(self, field: str, layout: dict[str, Any], member: str) -> str | None:
+        if layout.get('family') == 'GameCondition' and self.current_owner is not None:
+            from .current_actionmap_children import decode_game_condition_string
+            try:
+                value, end = decode_game_condition_string(self.data, self.offset, layout,
+                    field=member, current_owner=self.current_owner, strings=self.strings)
+            except (OSError, KeyError, TypeError, ValueError) as error:
+                raise ActionMapCodecError(f'{field}:{error}') from error
+            self.offset = end
+            return value
         from .node_strings import decode_node_string
         try:
             value,end=decode_node_string(self.data,self.offset,layout,_NATIVE_GATE_CONTRACTS,field=member,game_root=self.game_root,strings=self.strings)
@@ -3049,20 +3082,85 @@ class _Cursor:
         from importlib import import_module
         owner,width,extra=component
         module=import_module('scripts.game_data.levelscript_'+owner+'_native')
-        audit=getattr(module,'validate_'+owner+'_native_contract')(game_root=self.game_root)
+        audit=_validate_native(getattr(module,'validate_'+owner+'_native_contract'),game_root=self.game_root)
         expected={'status':'validated','codecKind':kind,'rawSize':width,'pathEncoding':'int32-pool-index',**extra}
         if any(audit.get(k)!=v for k,v in expected.items()):
             raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_{owner}_native,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
 
-    def value(self, kind: str, field: str) -> Any:
+    def value(self, kind: str, field: str, *, parent_layout=None, member=None) -> Any:
+        if kind in ('Param<List<BuffPtr>>', 'Param<ModelVisibleType>', 'Param<CommonMaskBlendData>',
+                'Param<EntityPtr>[]', 'Param<ObjectPtr<GlobalBuff>>',
+                'Param<Vector3>[]', 'Param<List<GameplayTag>>'):
+            from .current_action_params import decode
+            try:
+                value, self.offset = decode(self.data, self.offset, codec_kind=kind,
+                    strings=self.strings, game_root=self.game_root)
+            except (OSError, KeyError, TypeError, ValueError) as error:
+                raise ActionMapCodecError(f'{field}:{error}') from error
+            return value
+        if kind in ('Param<CameraShakeConfigPtr>', 'Param<BuffPtr>'):
+            from importlib import import_module
+            owner = 'camera_shake' if kind == 'Param<CameraShakeConfigPtr>' else 'buff_ptr'
+            component = import_module('scripts.game_data.codecs.levelscript.' + owner + '_param')
+            operation = self.camera_shake_params if owner == 'camera_shake' else self.buff_ptr_params
+            try:
+                decoded = getattr(component, 'decode_' + owner + '_param')(
+                    self.data, self.offset, strings=self.strings,
+                    game_root=self.game_root, operation=operation)
+                if decoded is None:
+                    raise ValueError('invalid-' + owner + '-param')
+                value, self.offset = decoded
+                return value
+            except (ValueError, TypeError, KeyError, OSError) as error:
+                raise ActionMapCodecError(f'{field}:{error},offset={self.offset}') from error
+        if kind in ('Param<List<int>>', 'Param<List<uint>>', 'Param<List<float>>'):
+            from scripts.game_data.levelscript_numeric_list_param_native import (
+                validate_numeric_list_param_native_contract, prepared_numeric_list_audit,
+            )
+            from .numeric_list_param import decode_numeric_list_param
+            try:
+                audit = (_validate_native(validate_numeric_list_param_native_contract,codec_kind=kind, game_root=self.game_root)
+                         if self.numeric_list_params is None else
+                         prepared_numeric_list_audit(self.numeric_list_params, codec_kind=kind,
+                                                     game_root=self.game_root, strings=self.strings))
+                expected = dict(status='validated', codecKinds=[kind], memberCount=4, rawSize=8,
+                    pathEncoding='int32-pool-index', collectionCountEncoding='int32', constantNullCount=-1,
+                    elementEncodings={kind: {'Param<List<int>>': 'int32', 'Param<List<uint>>': 'uint32',
+                                             'Param<List<float>>': 'float32-bits'}[kind]},
+                    wholeParamNullAdmitted=True, positiveConstantsAdmitted=True)
+                if any(audit.get(key) != value for key, value in expected.items()):
+                    raise ValueError('numeric-list-native-unavailable:status=' + str(audit.get('status'))
+                                     + ',detail=' + str(audit.get('detail', ''))[:500])
+                decoded = decode_numeric_list_param(self.data, self.offset, kind=kind, strings=self.strings)
+                if decoded is None:
+                    raise ValueError('invalid-numeric-list-param')
+                value, self.offset = decoded
+                return value
+            except (ValueError, TypeError, KeyError, OSError) as error:
+                raise ActionMapCodecError(f'{field}:{error},offset={self.offset}') from error
         if kind == 'List<string>':
-            from .pooled_string_list import decode_pooled_string_list
-            try:value,self.offset=decode_pooled_string_list(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            from .positive_string_list import decode_literal
+            try:value,self.offset=decode_literal(self.data,self.offset,strings=self.strings,game_root=self.game_root)
             except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
             return value
         if kind == 'Param<List<LangKey>>':
-            from .lang_key_list_param import decode_lang_key_list_param
-            try:value,self.offset=decode_lang_key_list_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            from .positive_lang_key_list import decode_param
+            try:value,self.offset=decode_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
+            return value
+        if kind == 'Param<List<string>>':
+            from .positive_string_list import decode_param
+            try:value,self.offset=decode_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
+            return value
+        if kind == 'Param<List<Vector3>>':
+            from .positive_vector3_list import decode_param
+            try:value,self.offset=decode_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
+            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
+            return value
+        if kind == 'Param<List<ulong>>':
+            from .positive_ulong_list import decode_param
+            try:value,self.offset=decode_param(self.data,self.offset,strings=self.strings,game_root=self.game_root)
             except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
             return value
         if kind in('Param<LangKey>','Param<GlobalBuffId>'):
@@ -3082,7 +3180,7 @@ class _Cursor:
         if kind in ('Param<List<NpcAtmosphericOverrideEnvTalk.EnvTalkStruct>>','Param<List<NpcOverrideEnvTalk.EnvTalkStruct>>','Param<List<NpcProxyOverrideEnvTalk.EnvTalkStruct>>'):
             from scripts.game_data.levelscript_envtalk_native import validate as validate_envtalk
             from .envtalk import decode_envtalk_param
-            audit=validate_envtalk(game_root=self.game_root)
+            audit=_validate_native(validate_envtalk,game_root=self.game_root)
             if audit.get('status')!='validated' or kind not in audit.get('codecKinds',[]):
                 raise ActionMapCodecError(f"{field}:validator=levelscriptEnvTalkNative,check=selected-stored-grammar,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
             try:parsed=decode_envtalk_param(self.data,self.offset,strings=self.strings)
@@ -3090,11 +3188,24 @@ class _Cursor:
             if parsed is None:raise ActionMapCodecError(f'{field}:invalid-{kind},offset={self.offset}')
             value,self.offset=parsed
             return value
-        if kind in ('Param<List<Vector3>>','Param<List<EntityPtr>>','Param<List<ulong>>','Param<List<string>>'):
+        if kind == 'Param<List<EntityPtr>>' and (self.entity_list_params is not None or
+                self.offset + 5 <= len(self.data) and self.data[self.offset] == 4 and
+                struct.unpack_from('<i', self.data, self.offset + 1)[0] > 0):
+            from .entity_list_param import decode_entity_list_param
+            try:
+                decoded = decode_entity_list_param(self.data, self.offset, strings=self.strings,
+                    game_root=self.game_root, operation=self.entity_list_params)
+                if decoded is None:
+                    raise ValueError('invalid-entity-list-param')
+                value, self.offset = decoded
+                return value
+            except (ValueError, TypeError, KeyError, OSError) as error:
+                raise ActionMapCodecError(f'{field}:{error},offset={self.offset}') from error
+        if kind == 'Param<List<EntityPtr>>':
             from scripts.game_data.levelscript_null_list_param_native import validate_null_list_param_native_contract,prepared_null_list_audit
             from .null_list_param import decode_null_list_param
-            audit=(validate_null_list_param_native_contract(codec_kind=kind,game_root=self.game_root) if self.null_list_params is None else prepared_null_list_audit(self.null_list_params,codec_kind=kind,game_root=self.game_root,strings=self.strings))
-            counts=[-1] if kind=='Param<List<Vector3>>' else [-1,0]
+            audit=(_validate_native(validate_null_list_param_native_contract,codec_kind=kind,game_root=self.game_root) if self.null_list_params is None else prepared_null_list_audit(self.null_list_params,codec_kind=kind,game_root=self.game_root,strings=self.strings))
+            counts=[-1,0]
             expected=dict(status='validated',codecKinds=[kind],memberCount=4,rawSize=8,pathEncoding='int32-pool-index',collectionCounts={kind:counts})
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:null-list-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3108,7 +3219,7 @@ class _Cursor:
         if kind == 'Param<AirWallPtr>':
             from scripts.game_data.levelscript_airwall_ptr_param_native import validate as validate_airwall
             from .airwall_ptr_param import decode_airwall_ptr_param
-            audit=validate_airwall(game_root=self.game_root)
+            audit=_validate_native(validate_airwall,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=24,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:airwall-ptr-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3120,7 +3231,7 @@ class _Cursor:
         if kind == 'Param<EntityPtr>':
             from scripts.game_data.levelscript_entity_ptr_param_native import validate_entity_ptr_param_native_contract
             from .entity_ptr_param import decode_entity_ptr_param
-            audit=validate_entity_ptr_param_native_contract(game_root=self.game_root)
+            audit=_validate_native(validate_entity_ptr_param_native_contract,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=40,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:entity-ptr-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3132,7 +3243,7 @@ class _Cursor:
         if kind == 'Param<EventArgsPtr>':
             from scripts.game_data.levelscript_event_args_param_native import validate_event_args_param_native_contract
             from .event_args_param import decode_event_args_param
-            audit=validate_event_args_param_native_contract(game_root=self.game_root)
+            audit=_validate_native(validate_event_args_param_native_contract,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=8,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:event-args-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3141,22 +3252,10 @@ class _Cursor:
             if decoded is None:raise ActionMapCodecError(f'{field}:invalid-or-unproved-{kind},offset={self.offset}')
             value,self.offset=decoded
             return value
-        if kind == 'Param<CommonMaskBlendData>':
-            from scripts.game_data.levelscript_mask_param_native import validate_mask_param_native_contract
-            from .mask_param import decode_mask_param
-            audit=validate_mask_param_native_contract(game_root=self.game_root)
-            expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=8,pathEncoding='int32-pool-index',constantNullMarker=255,constantWireBytes=1,positiveConstantAdmitted=True,positiveConstantWireBytes=31,curveNullOnly=True,audioRawBytes=16)
-            if any(audit.get(k)!=v for k,v in expected.items()):
-                raise ActionMapCodecError(f"{field}:mask-param-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
-            try:decoded=decode_mask_param(self.data,self.offset,strings=self.strings,audio_fields=audit['audioFields'])
-            except ValueError as error:raise ActionMapCodecError(f'{field}:{error}') from error
-            if decoded is None:raise ActionMapCodecError(f'{field}:invalid-or-positive-{kind},offset={self.offset}')
-            value,self.offset=decoded
-            return value
         if kind == 'Param<CameraControlState>':
             from scripts.game_data.levelscript_camera_state_param_native import validate_camera_state_param_native_contract
             from .camera_state_param import decode_camera_state_param
-            audit=validate_camera_state_param_native_contract(game_root=self.game_root)
+            audit=_validate_native(validate_camera_state_param_native_contract,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=8,pathEncoding='int32-pool-index',constantNullMarker=255,constantWireBytes=1,positiveConstantAdmitted=False)
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:camera-state-param-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3168,7 +3267,7 @@ class _Cursor:
         if kind == 'Param<CameraControlStateInitialParam>':
             from scripts.game_data.levelscript_camera_initial_param_native import validate_camera_initial_param_native_contract
             from .camera_initial_param import decode_camera_initial_param
-            audit=validate_camera_initial_param_native_contract(game_root=self.game_root)
+            audit=_validate_native(validate_camera_initial_param_native_contract,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=24,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()) or not audit.get('fields'):
                 raise ActionMapCodecError(f"{field}:camera-initial-param-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3185,7 +3284,7 @@ class _Cursor:
         if kind=='Param<ETrackCameraTargetType>':
             from scripts.game_data.levelscript_camera_target_param_native import validate_camera_target_param_native_contract
             from scripts.game_data.codecs.levelscript.int_param import decode_int_param
-            audit=validate_camera_target_param_native_contract(game_root=self.game_root)
+            audit=_validate_native(validate_camera_target_param_native_contract,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=4,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:camera-target-param-composition-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3197,7 +3296,7 @@ class _Cursor:
         if kind=='Param<EnterDollyTrackCamera.TrackCameraMoveState>':
             from scripts.game_data.levelscript_enum_param_native import validate_enum_param_native_contract
             from scripts.game_data.codecs.levelscript.track_camera import decode_move_state_param
-            audit=validate_enum_param_native_contract(codec_kind=kind,game_root=self.game_root)
+            audit=_validate_native(validate_enum_param_native_contract,codec_kind=kind,game_root=self.game_root)
             expected=dict(status='validated',codecKinds=[kind],memberCount=4,rawSize=4,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:enum-param-composition-unproved={kind},status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3210,7 +3309,7 @@ class _Cursor:
         if kind in ('Param<LsmPtr>','Param<SpawnerPtr>','Param<FunctionAreaPtr>'):
             from scripts.game_data.levelscript_pod_id_param_native import validate
             from .pod_id_param import decode_pod_id_param
-            audit=validate(kind,game_root=self.game_root)
+            audit=_validate_native(validate,kind,game_root=self.game_root)
             if any(audit.get(k)!=v for k,v in dict(status='validated',codecKind=kind,memberCount=4,rawSize=8,pathEncoding='int32-pool-index').items()):
                 raise ActionMapCodecError(f"{field}:{kind}-pointer-param-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
             parsed=decode_pod_id_param(self.data,self.offset,strings=self.strings)
@@ -3220,7 +3319,7 @@ class _Cursor:
         if kind=='Param<LevelScriptPtr>':
             from scripts.game_data.levelscript_script_ptr_param_native import validate_script_ptr_param_native_contract
             from .levelscript_ptr_param import decode_levelscript_ptr_param
-            audit=validate_script_ptr_param_native_contract(game_root=self.game_root)
+            audit=_validate_native(validate_script_ptr_param_native_contract,game_root=self.game_root)
             expected=dict(status='validated',codecKind=kind,memberCount=4,rawSize=16,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:script-pointer-param-unproved,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3234,7 +3333,7 @@ class _Cursor:
         if kind in ('Param<AudioBlackScreenBehaviour.ERetainFlag>','Param<AudioBlackScreenBehaviour.EPresetBehaviour>','Param<Deco_MountPoint>'):
             from scripts.game_data.levelscript_byte_enum_param_native import validate_byte_enum_param_native_contract
             from .byte_enum_param import decode_byte_enum_param
-            audit=validate_byte_enum_param_native_contract(codec_kind=kind,game_root=self.game_root)
+            audit=_validate_native(validate_byte_enum_param_native_contract,codec_kind=kind,game_root=self.game_root)
             if any(audit.get(k)!=v for k,v in dict(status='validated',codecKinds=[kind],memberCount=4,rawSize=1,pathEncoding='int32-pool-index',valueEncoding='uint8').items()):
                 raise ActionMapCodecError(f"{field}:byte-enum-param-composition-unproved={kind},status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
             try:decoded=decode_byte_enum_param(self.data,self.offset,strings=self.strings)
@@ -3308,7 +3407,7 @@ class _Cursor:
         ):
             from scripts.game_data.levelscript_enum_param_native import validate_enum_param_native_contract
             from .int_param import decode_int_param
-            audit=validate_enum_param_native_contract(codec_kind=kind,game_root=self.game_root)
+            audit=_validate_native(validate_enum_param_native_contract,codec_kind=kind,game_root=self.game_root)
             if ((audit.get('status'),audit.get('codecKinds'),audit.get('memberCount'),audit.get('rawSize'),audit.get('pathEncoding'))
                     !=('validated',[kind],4,4,'int32-pool-index')):
                 raise ActionMapCodecError(f"{field}:enum-param-composition-unproved={kind},status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3317,17 +3416,34 @@ class _Cursor:
             if decoded is None:raise ActionMapCodecError(f'{field}:invalid-{kind},offset={self.offset}')
             value,end=decoded;self.offset=end
             if isinstance(value,dict) and value.get('paramSource')==0:
+                # The formatter proves an Int32 read, not an enum whitelist.
+                # Preserve unnamed constants and label only unique declarations.
                 names=[r['name'] for r in audit.get('enumValues',[]) if r['id']==value['value']]
                 if len(names)==1:value['enumName']=names[0]
             return value
-        if kind == "Param<EntityPtr>[]":
-            raise ActionMapCodecError(f'{field}:current-entity-ptr-array-component-unproved,offset={self.offset}')
         if kind == "Param<ScriptTaskPtr>":
+            if self.current_owner is not None:
+                from .current_actionmap_children import decode_script_task_ptr_param
+                try:
+                    detail, self.offset = decode_script_task_ptr_param(self.data, self.offset,
+                        field=field, current_owner=self.current_owner, strings=self.strings)
+                except (OSError, KeyError, TypeError, ValueError) as error:
+                    raise ActionMapCodecError(f'{field}:{error}') from error
+                return detail
             from .mark_task_condition_failed import decode_script_task_ptr_param
 
             detail, self.offset = decode_script_task_ptr_param(self.data, self.offset)
             return detail
         if kind == "GameCondition":
+            if self.current_owner is not None and parent_layout is not None:
+                from .current_actionmap_condition_gateway import decode_condition
+                try:
+                    value, self.offset = decode_condition(self.data, self.offset, field=field,
+                        parent_layout=parent_layout, member=member,
+                        current_owner=self.current_owner, strings=self.strings)
+                except (OSError, KeyError, TypeError, ValueError) as error:
+                    raise ActionMapCodecError(f'{field}:{error}') from error
+                return value
             return self.condition(field)
         if kind == "List<GameCondition>":
             count = self.i32(field + ".count")
@@ -3376,7 +3492,7 @@ class _Cursor:
         if kind.startswith('ParamOutput<'):
             from scripts.game_data.levelscript_param_output_native import validate_param_output_native_contract
             from .param_output import decode_param_output
-            audit=validate_param_output_native_contract(codec_kind=kind,game_root=self.game_root)
+            audit=_validate_native(validate_param_output_native_contract,codec_kind=kind,game_root=self.game_root)
             if ((audit.get('status'),audit.get('codecKinds'),audit.get('memberCount'),audit.get('integerField'),audit.get('pathEncoding'))
                     !=('validated',[kind],2,'paramTarget','int32-pool-index')):
                 raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_param_output_native,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3446,7 +3562,7 @@ class _Cursor:
                 'float':(validate_float_param_native_contract,decode_float_param,4),'uint':(validate_uint_param_native_contract,decode_int_param,4),
                 'ulong':(validate_ulong_param_native_contract,decode_int_param,8),'vector3':(validate_vector3_param_native_contract,decode_vector_param,12),
                 'vector2':(validate_vector2_param_native_contract,decode_vector_param,8)}[owner]
-            audit=validate(game_root=self.game_root)
+            audit=_validate_native(validate,game_root=self.game_root)
             if ((audit.get('status'),audit.get('codecKind'),audit.get('rawSize'),audit.get('pathEncoding'))!=('validated',kind,width,'int32-pool-index')
                     or (owner=='string' and audit.get('valueEncoding')!='int32-pool-index')):
                 raise ActionMapCodecError(f"{field}.nativeContract:owner=levelscript_{owner}_param_native,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
@@ -3460,7 +3576,7 @@ class _Cursor:
             if self.strings is None:
                 raise ActionMapCodecError(f"{field}:matching-StringPool-required,offset={self.offset}")
             from scripts.game_data.levelscript_camera_controller_param_native import validate
-            audit = validate(game_root=self.game_root)
+            audit = _validate_native(validate,game_root=self.game_root)
             if audit.get("status") != "validated" or (audit.get("layout") or {}).get("codecKind") != kind:
                 raise ActionMapCodecError(f"{field}:camera-controller-param-native-unavailable,status={audit.get('status')},detail={str(audit.get('detail',''))[:500]},offset={self.offset}")
             if self.data[self.offset:self.offset+2] != b"\x04\xff":
@@ -3479,51 +3595,6 @@ class _Cursor:
                 raise ActionMapCodecError(f"{field}:invalid-environment-volume-ptr,offset={self.offset}")
             value, self.offset = decoded
             return value
-        if kind == "Param<ModelVisibleType>":
-            from .visibility_action import decode_visible_source_param
-
-            audit = _entities_visibility_native_audit()
-            if audit.get("status") != "validated":
-                raise ActionMapCodecError(
-                    "actionMap.entitiesVisibilityEnumNative: "
-                    f"status={audit.get('status')},detail={audit.get('detail')}"
-                )
-            enum_values = {value: name for name, value in audit["enumMembers"]}
-            decoded, self.offset = decode_visible_source_param(
-                self.data, self.offset, enum_values,
-            )
-            return decoded
-        if kind == "Param<List<GameplayTag>>":
-            marker = self.byte(field + ".memberCount")
-            if marker != 4:
-                raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
-            count = self.i32(field + ".value.count")
-            if count == -1:
-                return self.param_tail(None, field)
-            if count == 0:
-                return self.param_tail([], field)
-            # This element layout is still unreviewed; no positive elements are read.
-            raise ActionMapCodecError(f"{field}:unsupported-GameplayTag-count={count}")
-        if kind == "Param<List<uint>>":
-            marker = self.byte(field + ".memberCount")
-            if marker != 4:
-                raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
-            count = self.i32(field + ".value.count")
-            if count == -1:
-                values = None
-            elif not 0 <= count <= 10_000:
-                raise ActionMapCodecError(f"{field}:unsupported-count={count}")
-            else:
-                self.need(count * 4, field + ".value")
-                values = list(struct.unpack_from(f"<{count}I", self.data, self.offset))
-                self.offset += count * 4
-            return self.param_tail(values, field)
-        if kind in ("Param<List<int>>", "Param<List<float>>"):
-            marker = self.byte(field + ".memberCount")
-            if marker != 4:
-                raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
-            value = self.value(kind[6:-1], field + ".value")
-            return self.param_tail(value, field)
         if kind == "Param<GameplayTag>":
             marker = self.byte(field + ".memberCount")
             if marker != 4:
@@ -3563,60 +3634,11 @@ class _Cursor:
             value = struct.unpack_from("<Q", self.data, self.offset)[0]
             self.offset += 8
             return self.param_tail({"id": value}, field,pooled=kind=='Param<WaterVolumePtr>')
-        if kind == "Param<CameraShakeConfigPtr>":
-            marker = self.byte(field + ".memberCount")
-            value_marker = self.byte(field + ".value.memberCount")
-            if marker != 4 or value_marker != 1:
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-wrapped-string-members={marker}/{value_marker}"
-                )
-            return self.param_tail({"key": self.string(field + ".value.key")}, field)
-        if kind == "Param<ObjectPtr<GlobalBuff>>":
-            marker = self.byte(field + ".memberCount")
-            value_marker = self.byte(field + ".value.memberCount")
-            if marker != 4 or value_marker != 2:
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-global-buff-pointer-members="
-                    f"{marker}/{value_marker}"
-                )
-            self.need(4, field + ".value.cachedUid")
-            cached_uid = struct.unpack_from("<I", self.data, self.offset)[0]
-            self.offset += 4
-            obj_marker = self.byte(field + ".value.obj")
-            if obj_marker != 0xFF:
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-nonnull-global-buff=0x{obj_marker:02x}"
-                )
-            return self.param_tail({"cachedUid": cached_uid, "obj": None}, field)
-        if kind == "Param<BuffPtr>":
-            marker = self.byte(field + ".memberCount")
-            buff_ptr_marker = self.byte(field + ".value.memberCount")
-            object_ptr_marker = self.byte(field + ".value.ptr.memberCount")
-            if (marker, buff_ptr_marker, object_ptr_marker) != (4, 1, 2):
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-buff-pointer-members="
-                    f"{marker}/{buff_ptr_marker}/{object_ptr_marker}"
-                )
-            self.need(4, field + ".value.ptr.cachedUid")
-            cached_uid = struct.unpack_from("<I", self.data, self.offset)[0]
-            self.offset += 4
-            obj_marker = self.byte(field + ".value.ptr.obj")
-            if obj_marker != 0xFF:
-                raise ActionMapCodecError(
-                    f"{field}:unsupported-nonnull-buff=0x{obj_marker:02x}"
-                )
-            return self.param_tail(
-                {"ptr": {"cachedUid": cached_uid, "obj": None}}, field
-            )
-        if kind == "Param<List<BuffPtr>>":
-            from .finish_buffs import decode_null_buff_list_param
-
-            detail, self.offset = decode_null_buff_list_param(self.data, self.offset)
-            return detail
         if kind == "SendLuaEvent1" and field.endswith(".manualValue"):
             try:
                 value, self.offset = send_lua_event.decode_nested_send_lua_event(
                     self.data, self.offset, field, 1,
+                    strings=self.strings, game_root=self.game_root,
                 )
             except send_lua_event.SendLuaEventDecodeError as exc:
                 raise ActionMapCodecError(str(exc)) from exc
@@ -3725,6 +3747,8 @@ class _Cursor:
                     self.offset,
                     field,
                     send_lua_event.json_param_count(declared),
+                    strings=self.strings,
+                    game_root=self.game_root,
                 )
             except send_lua_event.SendLuaEventDecodeError as exc:
                 raise ActionMapCodecError(str(exc)) from exc
@@ -4083,6 +4107,19 @@ class _Cursor:
         else:
             # No reviewed row: name the union-tag gate when it emptied them.
             _require_layout_build()
+        # Restored legacy residual rows retain their standalone gate. An
+        # active Current/Existing operation keeps the generated source bridge
+        # used before those independent legacy rows were restored.
+        legacy_residual = (layout is not None and
+            layout.get("nativeGate") == "levelscript_residual_routes_native")
+        if self.current_owner is not None and (layout is None or legacy_residual):
+            from .current_actionmap_route_gateway import decode
+            try:
+                decoded, self.offset = decode(self.data, start, family=family, tag=tag,
+                    field=field, current_owner=self.current_owner, strings=self.strings)
+            except (OSError, KeyError, TypeError, ValueError) as error:
+                raise ActionMapCodecError(f'{field}:{error}') from error
+            return decoded
         if layout is None or members != layout["memberCount"]:
             raise ActionMapCodecError(
                 f"{field}:unsupported-union=0x{tag:04x},memberCount={members},offset={start}"
@@ -4091,7 +4128,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_spell_abnormal_start_native":
             from .on_spell_abnormal_start import decode_on_spell_abnormal_start_header
 
-            audit = _on_spell_abnormal_start_native_audit()
+            audit = _on_spell_abnormal_start_native_audit(game_root=self.game_root) if self.game_root is not None else _on_spell_abnormal_start_native_audit()
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4108,7 +4145,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_physical_infliction_native":
             from .on_physical_infliction import decode_on_physical_infliction_header
 
-            audit = _on_physical_infliction_native_audit()
+            audit = _on_physical_infliction_native_audit(game_root=self.game_root) if self.game_root is not None else _on_physical_infliction_native_audit()
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4125,7 +4162,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_bb_variable_changed_native":
             from .on_bb_variable_changed import decode_on_bb_variable_changed_header
 
-            audit = _on_bb_variable_changed_native_audit()
+            audit = _on_bb_variable_changed_native_audit(game_root=self.game_root) if self.game_root is not None else _on_bb_variable_changed_native_audit()
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4141,7 +4178,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_entity_die_native":
             from .on_entity_die import decode_on_entity_die_header
 
-            audit = _on_entity_die_native_audit()
+            audit = _on_entity_die_native_audit(game_root=self.game_root) if self.game_root is not None else _on_entity_die_native_audit()
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4157,7 +4194,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_encounter_intro_part_end_native":
             from .on_encounter_intro_part_end import decode_on_encounter_intro_part_end_header
 
-            audit = _on_encounter_intro_part_end_native_audit()
+            audit = _on_encounter_intro_part_end_native_audit(game_root=self.game_root) if self.game_root is not None else _on_encounter_intro_part_end_native_audit()
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4173,7 +4210,8 @@ class _Cursor:
         values = {}; ranges = {}
         for name, kind in layout['fields']:
             at = self.offset
-            values[name] = self.node_string(field+'.'+name,layout,name) if kind=='string' else self.value(kind,field+'.'+name)
+            values[name] = self.node_string(field+'.'+name,layout,name) if kind=='string' else self.value(
+                kind,field+'.'+name,parent_layout=layout,member=name)
             ranges[name] = [at,self.offset]
         return {
             "sourceOffset": start, "endOffset": self.offset,
@@ -4300,7 +4338,8 @@ def decode_declared_root(
 
 
 def decode_reviewed_node(
-    data: bytes, offset: int, family: str, *, game_root: Path | None = None, strings: Any = None, null_list_params: Any = None,
+    data: bytes, offset: int, family: str, *, game_root: Path | None = None, strings: Any = None, null_list_params: Any = None, numeric_list_params: Any = None, camera_shake_params: Any = None, buff_ptr_params: Any = None, entity_list_params: Any = None,
+    current_owner: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode one reviewed union at a declared cursor, with a selected-build gate."""
     if game_root is not None:
@@ -4318,6 +4357,6 @@ def decode_reviewed_node(
     _require_layout_build()
     if family not in ("ActionBase", "GetterBase", "ActionHeader"):
         raise ActionMapCodecError(f"actionMap:unsupported-family={family}")
-    cursor = _Cursor(data, offset, game_root=game_root, strings=strings, null_list_params=null_list_params)
+    cursor = _Cursor(data, offset, game_root=game_root, strings=strings, null_list_params=null_list_params, numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params,current_owner=current_owner)
     result = cursor.node(family, f"actionMap.{family}")
     return result, cursor.offset

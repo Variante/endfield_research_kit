@@ -67,11 +67,11 @@ PARAM_ENUM_UNDERLYING = {'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralA
     'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.ServerGameVarEnum>': ('Beyond.GEnums.ServerGameVarEnum', 'int'),
     'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementSettingName>': ('Beyond.Gameplay.Core.MovementSettingName', 'int'),
     'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.ScriptEndReason>': ('Beyond.Gameplay.Core.ScriptEndReason', 'int'),
-    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.TeleportUIType>': ('Beyond.Gameplay.TeleportUIType', 'int'),
-    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+ERetainFlag>':
-        ('Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+ERetainFlag', 'byte'),
-    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+EPresetBehaviour>':
-        ('Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+EPresetBehaviour', 'byte')}
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.TeleportUIType>': ('Beyond.Gameplay.TeleportUIType', 'int')}
+PARAM_ENUM_UNDERLYING.update({
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+'+name+'>':
+        ('Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+'+name,'byte')
+    for name in ('ERetainFlag','EPresetBehaviour')})
 HEADER_ENUM_UNDERLYING = {
     name: (name, "int") for name in (
         "Beyond.Gameplay.Actions.FilterLevel",
@@ -182,8 +182,10 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralAbilityType>': 'Param<GeneralAbilityType>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Actions.ShowUIToast+ShowToastType>': 'Param<ShowUIToast.ShowToastType>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.CommonMaskBlendData>': 'Param<CommonMaskBlendData>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.AirWallPtr>': 'Param<AirWallPtr>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>': 'Param<EntityPtr>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.ScriptEndReason>': 'Param<ScriptEndReason>',
+ 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.TeleportUIType>': 'Param<TeleportUIType>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.GameplayTag>': 'Param<GameplayTag>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.GlobalBuffId>': 'Param<GlobalBuffId>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>': 'Param<LevelScriptPtr>',
@@ -230,14 +232,10 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
         'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.ObjectPtr`1<Beyond.Gameplay.Core.GlobalBuff>>': 'ParamOutput<ObjectPtr<GlobalBuff>>',
     })
     aliases.update({'Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.PosRot>>': 'Param<List<PosRot>>', 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.CommonBlendCamResetType>': 'Param<CommonBlendCamResetType>'})
-    # Enum Params whose child formatter is proved by its own gate
-    # (levelscript_enum_param_native / levelscript_byte_enum_param_native);
-    # the alias only names the parent member's codec kind.
     aliases.update({
-        'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.TeleportUIType>': 'Param<TeleportUIType>',
-        'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+ERetainFlag>': 'Param<AudioBlackScreenBehaviour.ERetainFlag>',
-        'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+EPresetBehaviour>': 'Param<AudioBlackScreenBehaviour.EPresetBehaviour>',
-    })
+        'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Audio.Utils.AudioBlackScreenBehaviour+'+name+'>':
+            'Param<AudioBlackScreenBehaviour.'+name+'>'
+        for name in ('ERetainFlag','EPresetBehaviour')})
     actual_fields = [[member.name.lstrip("_"), aliases.get(member.declared_type)] for member in members]
     if actual_fields != row["fields"]:
         differences = [(i,expected,actual) for i,(expected,actual) in enumerate(zip(row['fields'],actual_fields)) if expected != actual]

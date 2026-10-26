@@ -98,7 +98,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=source_path,
-    )
+     native_image=image)
     if audited.get("anonymousReadOrder") != {key: kinds}:
         raise ValueError(f"{LABEL}.native:audited-read-order")
     routes, resolver, audit = resolve_routes(

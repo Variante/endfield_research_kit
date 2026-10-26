@@ -1,6 +1,6 @@
 """Selected-build named wrapper receipt for BuffData ModifyDynamicBlackboard spans.
 
-The existing reader frames physical tag 0x00EC. Its reviewed native source
+The reader resolves its logical wrapper through the selected union catalog. Its reviewed native source
 contract supplies the ten-member read order; the action dispatcher supplies
 generated field names and declared member types. Nested target and blackboard
 values remain structural, as does the enclosing BuffData.
@@ -26,10 +26,12 @@ from scripts.game_data.il2cpp.context import method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.action_dispatcher import load_action_routes
 from scripts.game_data.memorypack.buff_actions import Reader
+from scripts.game_data.memorypack.core import memorypack_union_header
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "buffModifyDynamicBlackboardActionReceipt"
-TAG = 0x00EC
+WRAPPER_NAME = "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack"
 SCHEMA = "endfield.buff-modify-dynamic-blackboard-action-receipt.v1"
 SOURCE_CONTRACT = CONTRACTS_DIR / "buff_ec_native.json"
 CATALOG_CONTRACT = CONTRACTS_DIR / "levelscript_union_tags.json"
@@ -44,14 +46,28 @@ _KIND_COMPATIBILITY = {
 _NESTED_PROFILE_KINDS = {"member13", "scalar-payload"}
 
 
+def _catalog_route(catalog: dict[str, Any]) -> dict[str, Any]:
+    rows = [row for row in catalog["families"]["AbilityActionData"]
+            if row.get("wrapperName") == WRAPPER_NAME]
+    if (len(rows) != 1 or type(rows[0].get("tag")) is not int
+            or not 0 <= rows[0]["tag"] <= 0xFFFF):
+        raise ValueError(f"{LABEL}:logical-wrapper-route")
+    return rows[0]
+
+
+# A declaration lookup only: native admission below authenticates the selected
+# pair and actual dispatcher. Importing this module never selects another root.
+TAG = _catalog_route(json.loads(CATALOG_CONTRACT.read_bytes()))["tag"]
+
+
 @lru_cache(maxsize=1)
 def _contracts() -> tuple[dict[str, Any], dict[str, Any]]:
     source = json.loads(SOURCE_CONTRACT.read_text(encoding="utf-8"))
     catalog = json.loads(CATALOG_CONTRACT.read_text(encoding="utf-8"))
-    route = catalog["families"]["AbilityActionData"][TAG]
+    route = _catalog_route(catalog)
     kinds = source["anonymousReadOrder"]["member10"]
     if (
-        source.get("schemaVersion") != 1
+        (source.get("schemaVersion") != 1 and not is_role_projection(source))
         or catalog.get("schema") != "endfield.levelscript-union-tags.v1"
         or route.get("tag") != TAG
         or route.get("memberCount") != len(kinds)
@@ -108,6 +124,8 @@ def validate_current_native_contract(
     *, gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> dict[str, Any]:
     """Recheck the selected dispatcher, source bytes and generated member order."""
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
     source, catalog = _contracts()
     inputs = catalog["nativeInputs"]
     gate = check_installed_native_inputs(
@@ -120,7 +138,7 @@ def validate_current_native_contract(
         gameassembly=gate.gameassembly, metadata=gate.metadata
     )
     route = routes.get(TAG)
-    reviewed = catalog["families"]["AbilityActionData"][TAG]
+    reviewed = _catalog_route(catalog)
     read_kinds = source["anonymousReadOrder"]["member10"]
     if (
         route_audit.get("status") != "validated"
@@ -155,7 +173,7 @@ def validate_current_native_contract(
     image = open_native_image(gate.gameassembly, gate.metadata)
     for method in source["methods"]:
         image.validate_method_row(method, label=LABEL)
-    image.check_windows(source["codeWindows"], label=LABEL)
+    check_formatter_windows(image, source, label=LABEL)
     for context in source["nestedContexts"]:
         instruction = image.pe.bytes_at_va(
             image.pe.image_base + context["instructionRva"], 7
@@ -220,7 +238,7 @@ def decode_modify_dynamic_blackboard_action_receipt(
     """Name one authenticated, bounded ModifyDynamicBlackboard wrapper."""
     source_contract, catalog = _contracts()
     native_inputs = catalog["nativeInputs"]
-    reviewed = catalog["families"]["AbilityActionData"][TAG]
+    reviewed = _catalog_route(catalog)
     if (
         native_validation.get("status") != "validated"
         or native_validation.get("unionTag") != TAG
@@ -245,7 +263,8 @@ def decode_modify_dynamic_blackboard_action_receipt(
 
     reader = Reader(data, source, end)
     reader.pos = start
-    if reader.take(1, "union-tag")[0] != TAG:
+    encoded_tag = memorypack_union_header(TAG, 0)[:-1]
+    if reader.take(len(encoded_tag), "union-tag") != encoded_tag:
         raise ValueError(f"{LABEL}:union-tag")
     reader.header(native_validation["memberCount"])
     callbacks = {
@@ -269,7 +288,7 @@ def decode_modify_dynamic_blackboard_action_receipt(
             "start": field_start,
             "end": reader.pos,
         })
-    if reader.pos != end or fields[0]["start"] != start + 2 or any(
+    if reader.pos != end or fields[0]["start"] != start + len(encoded_tag) + 1 or any(
         left["end"] != right["start"] for left, right in zip(fields, fields[1:])
     ):
         raise ValueError(f"{LABEL}:action-end={reader.pos}; expected={end}")

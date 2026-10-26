@@ -30,6 +30,7 @@ def decode_null_buff_list_param(data: bytes, offset: int) -> tuple[dict[str, Any
 
 def decode_finish_buffs_action(
     data: bytes, offset: int, route: dict[str, Any],
+    *, game_root: Any = None, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     fields = route["fields"]
     header = memorypack_union_header(route["tag"], route["memberCount"])
@@ -42,7 +43,7 @@ def decode_finish_buffs_action(
         or offset < 0 or data[offset:offset+len(header)] != header
     ):
         raise ActionMapCodecError(f"finishBuffs:invalid-route-or-header,offset={offset}")
-    cursor = _Cursor(data, offset + len(header))
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings, route=route)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind, *_ in fields:

@@ -1,9 +1,9 @@
 """Field order for the MemoryPack schemas used by maintained workflows."""
 
 BUFF_MEMBER_COUNT = 30
-# Current selected Endfield build serializes SkillData with 48 members.
-# ``canCastInWater`` was added between ``canCastInAir`` and
-# ``rootMotionCliffCheck``; the old 47-member table silently omitted it.
+# Historical Skill framing owns this 48-member table. The isolated current
+# root49 reader derives its own ordered declaration and never uses this count.
+# In this historical schema ``canCastInWater`` was added to the older table.
 SKILL_MEMBER_COUNT = 48
 
 MEMORYPACK_FIELD_SCHEMAS = {'BuffData': ['abilityEventAction',

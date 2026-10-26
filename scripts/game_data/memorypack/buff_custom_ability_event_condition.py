@@ -86,7 +86,7 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
     record = contract['records'][RECORD]; path = CONTRACTS_DIR/record['sourceContract']
     source = json.loads(path.read_bytes())
     buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,
-        image.modules,image.owners,source=str(gate.gameassembly),contract_path=path)
+        image.modules,image.owners,source=str(gate.gameassembly),contract_path=path, native_image=image)
     proved = named.validate_named_records(image,source,contract['records'],label=LABEL,fail=_fail)
     helper = record['members'][-1]['sourceCall']['targetRva']
     if helper not in string_native['sourceHelpers']:

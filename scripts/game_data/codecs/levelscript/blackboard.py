@@ -1,12 +1,13 @@
 """Current pooled Blackboard class/list/Param; stored inputs, no runtime values."""
 import struct
 from scripts.game_data.levelscript_blackboard_native import validate
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 from scripts.game_data.string_pool import resolve_string_pool_index
 
 class BlackboardDecodeError(ValueError):pass
 
 def decode_blackboard_param(data,offset,*,strings=None,game_root=None):
- audit=validate(game_root=game_root)
+ audit=validate_native(validate,game_root=game_root)
  if audit['status']!='validated':raise BlackboardDecodeError(f"blackboard.native:status={audit['status']},detail={audit.get('detail','')}")
  def number(fmt,field):
   nonlocal offset

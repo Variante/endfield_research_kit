@@ -9,7 +9,12 @@ import struct
 from collections import Counter, defaultdict
 from functools import lru_cache, partial
 from pathlib import Path
-from scripts.game_data.string_pool import StringPool, export_string_pool
+from scripts.game_data.string_pool import (
+    StringPool,
+    StringPoolDecodeError,
+    export_string_pool,
+    resolve_string_pool_index,
+)
 from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs, snapshot_complete_reader_inputs
 from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
@@ -137,6 +142,9 @@ from scripts.common import EXPORT_LAYOUT
 _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
 _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE: list[dict] | None = None
+_LEVELDATA_NPC_PATROL_RADIO_AUDIT: dict = {}
+_LEVELSCRIPT_CURRENT_NARRATIVE_AUDIT: dict = {}
+_NPC_PATROL_CHECKPOINT_SOURCE_AUDIT: dict = {}
 _LEVELSCRIPT_NATIVE_STORY_PLAYBACK_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE: dict[
     frozenset[str],
@@ -1331,6 +1339,8 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
         return {}
 
     out: dict[str, list[dict]] = defaultdict(list)
+    pool_inputs = snapshot_string_pool_inputs(levelscript_root.parent)
+    strings = export_string_pool(levelscript_root.parent)
     registry_by_script = _load_world_entity_registry_global_script_index()
     for level_dir in sorted(path for path in levelscript_root.iterdir() if path.is_dir()):
         info = (
@@ -1350,6 +1360,7 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
             registered_entities = _parse_levelscript_registered_script_entity_list(
                 data,
                 registry_by_script.get(int(script_id)) or [],
+                strings=strings,
             )
             records = file_info.get("records")
             if records is None:
@@ -1510,6 +1521,8 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
                         )
                     ),
                 })
+    if pool_inputs != snapshot_string_pool_inputs(levelscript_root.parent):
+        return {}
     return {
         story_key: sorted(
             rows,
@@ -4507,6 +4520,8 @@ def _resolve_exact_npc_proxy_spatial_target(
 def _parse_levelscript_registered_script_entity_list(
     data: bytes,
     registry_rows: list[dict],
+    *,
+    strings: StringPool | None,
 ) -> list[dict]:
     """Decode one exact WorldEntityRegistry-backed script-entity list.
 
@@ -4515,7 +4530,10 @@ def _parse_levelscript_registered_script_entity_list(
     starts from the exact registry slot sequence, then requires every complete
     interactive record to agree with the aligned registry detail, entity type,
     position, and rotation.  This is intentionally fail-closed: a partial
-    string hit or a duplicate candidate is not a runtime entity host.
+    string hit or a duplicate candidate is not a runtime entity host. The
+    interactive records' string members are StringPool indices in
+    LevelScriptData too (corpus correspondence + maintained pooled codecs,
+    not a native formatter proof); without the matching pool nothing decodes.
     """
     # WorldEntityRegistry JSON prints transforms at a precision that differs
     # slightly from the authored float32 values retained in LevelScriptData.
@@ -4565,6 +4583,7 @@ def _parse_levelscript_registered_script_entity_list(
                 record_offset,
                 len(data),
                 allow_non_narrative_component_shape=True,
+                strings=strings,
             )
             if parsed is None:
                 valid = False
@@ -4572,6 +4591,7 @@ def _parse_levelscript_registered_script_entity_list(
             detail_decoded = _read_leveldata_memorypack_string(
                 data,
                 record_offset + 1 + (3 * 8),
+                strings=strings,
                 max_length=256,
             )
             if detail_decoded is None:
@@ -5148,6 +5168,7 @@ def build_levelscript_registered_action_target_index(
         return {ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY: [{"state": "unresolved", "failedCheck": "selected_native_inputs", "nativeStatus": selected_native.status, "detail": selected_native.detail}]}
     reader_before = snapshot_complete_reader_inputs()
     pool_before = snapshot_string_pool_inputs(levelscript_root.parent)
+    strings = export_string_pool(levelscript_root.parent)
     def source_inputs():
         paths = {Path(selected_ga), Path(selected_md), Path(selected_ga).parent / "UnityPlayer.dll", Path(__file__), GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json", NPC_PROXY_TABLE_PATH}
         for folder in (levelscript_root / level_id, LEVELDATA_DIR / level_id):
@@ -5232,6 +5253,7 @@ def build_levelscript_registered_action_target_index(
         registered = _parse_levelscript_registered_script_entity_list(
             data,
             raw_registry_rows,
+            strings=strings,
         )
         registered_by_slot: dict[int, list[dict]] = defaultdict(list)
         for entity in registered:
@@ -5886,10 +5908,33 @@ def _read_required_memorypack_string(
     return value, cursor + length
 
 
-def _parse_interactive_object_template_index(data: bytes) -> dict:
-    """Decode the exact two-member native InteractiveTable layout."""
-    if not data or data[0] != 2:
+def _parse_interactive_object_template_index(
+    data: bytes,
+    *,
+    strings: StringPool | None,
+) -> dict:
+    """Decode the exact two-member native InteractiveTable layout.
+
+    Every string member is a signed ``i32`` index into the export's
+    StringPool on the current build: the core ``templateId -> path`` map and
+    the ``objectId -> {templateId}`` map. Under that reading the installed
+    table is consumed exactly to EOF with every object template present in
+    the core map, while no inline UTF-8 string occurs (corpus correspondence
+    with the maintained pooled reader, not a native formatter proof). Without
+    the matching ``strings`` no index resolves and the index is empty; an
+    out-of-range index refuses the whole table.
+    """
+    if not data or data[0] != 2 or strings is None:
         return {}
+
+    def pooled(cursor: int) -> tuple[str, int] | None:
+        decoded = _read_leveldata_memorypack_string(
+            data, cursor, strings=strings, max_length=2_048,
+        )
+        if decoded is None or not decoded[0]:
+            return None
+        return decoded
+
     cursor = 1
     core_count_decoded = _read_leveldata_count(
         data,
@@ -5901,19 +5946,11 @@ def _parse_interactive_object_template_index(data: bytes) -> dict:
     core_count, cursor = core_count_decoded
     core_paths: dict[str, str] = {}
     for _ in range(core_count):
-        key_decoded = _read_required_memorypack_string(
-            data,
-            cursor,
-            max_length=512,
-        )
+        key_decoded = pooled(cursor)
         if key_decoded is None:
             return {}
         template_id, cursor = key_decoded
-        path_decoded = _read_required_memorypack_string(
-            data,
-            cursor,
-            max_length=2_048,
-        )
+        path_decoded = pooled(cursor)
         if path_decoded is None or template_id in core_paths:
             return {}
         template_path, cursor = path_decoded
@@ -5929,22 +5966,14 @@ def _parse_interactive_object_template_index(data: bytes) -> dict:
     interactive_count, cursor = interactive_count_decoded
     object_to_template: dict[str, str] = {}
     for _ in range(interactive_count):
-        object_decoded = _read_required_memorypack_string(
-            data,
-            cursor,
-            max_length=512,
-        )
+        object_decoded = pooled(cursor)
         if object_decoded is None:
             return {}
         object_id, cursor = object_decoded
         if cursor >= len(data) or data[cursor] != 1:
             return {}
         cursor += 1
-        template_decoded = _read_required_memorypack_string(
-            data,
-            cursor,
-            max_length=512,
-        )
+        template_decoded = pooled(cursor)
         if template_decoded is None or object_id in object_to_template:
             return {}
         template_id, cursor = template_decoded
@@ -5959,6 +5988,7 @@ def _parse_interactive_object_template_index(data: bytes) -> dict:
         "interactiveDataCount": interactive_count,
         "coreTemplatePaths": core_paths,
         "objectToTemplate": object_to_template,
+        "stringEncoding": "string_pool_index",
     }
 
 
@@ -5979,7 +6009,14 @@ def _load_interactive_object_template_index() -> dict:
     except OSError:
         _INTERACTIVE_OBJECT_TEMPLATE_CACHE = {}
         return {}
-    parsed = _parse_interactive_object_template_index(data)
+    # The table's strings are StringPool indices; the pool beside the
+    # selected JsonData families must also be unchanged once it is read.
+    pool_inputs = snapshot_string_pool_inputs(source_path.parents[1])
+    parsed = _parse_interactive_object_template_index(
+        data, strings=export_string_pool(source_path.parents[1]),
+    )
+    if pool_inputs != snapshot_string_pool_inputs(source_path.parents[1]):
+        parsed = {}
     if parsed:
         parsed["sourceFile"] = repo_rel(source_path)
         if mirror_path.is_file():
@@ -7503,34 +7540,49 @@ def level_function_area_radio_trigger_status() -> dict:
     }
 
 
-def _read_level_interactive_param_atom_string(
+class LevelInteractiveStringPoolError(ValueError):
+    """A framed LevelInteractiveData string member holds an unresolvable pool index."""
+
+
+def _read_level_interactive_pooled_string(
     data: bytes,
     offset: int,
     end_offset: int,
+    field: str,
     *,
-    max_length: int = 512,
+    strings: StringPool | None,
 ) -> tuple[str | None, int] | None:
+    """Resolve one pooled string member; refuse an unresolved index with its offset.
+
+    ``None`` means the four index bytes do not fit the bounded record. A
+    missing pool or an out-of-range index raises
+    :class:`LevelInteractiveStringPoolError` naming the field and offset; an
+    inline length-prefixed string is never read in its place. ``-2`` resolves
+    to ``None`` (null) and ``-1`` to ``""``.
+    """
     decoded = _read_leveldata_i32(data, offset)
-    if decoded is None:
+    if decoded is None or decoded[1] > end_offset:
         return None
-    length, cursor = decoded
-    if length == -1:
-        return None, cursor
-    if length < 0 or length > max_length or cursor + length > end_offset:
-        return None
+    index, cursor = decoded
     try:
-        value = data[cursor : cursor + length].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    return value, cursor + length
+        value = resolve_string_pool_index(index, strings, field)
+    except StringPoolDecodeError as error:
+        raise LevelInteractiveStringPoolError(f"{error}: offset={offset}") from error
+    return value, cursor
 
 
 def _parse_level_interactive_param_value(
     data: bytes,
     offset: int,
     end_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
-    """Decode one exact two-member ``ParamValue`` and all of its atoms."""
+    """Decode one exact two-member ``ParamValue`` and all of its pooled atoms.
+
+    Atom ``valueString`` is a StringPool index on the current build (corpus
+    correspondence + maintained pooled codecs, not a native formatter proof).
+    """
     if offset >= end_offset or data[offset] != 2:
         return None
     type_decoded = _read_leveldata_i32(data, offset + 1)
@@ -7544,7 +7596,7 @@ def _parse_level_interactive_param_value(
         return None
     atom_count, cursor = count_decoded
     atoms: list[dict] = []
-    for _ in range(atom_count):
+    for index in range(atom_count):
         if cursor >= end_offset or data[cursor] != 2:
             return None
         atom_offset = cursor
@@ -7552,10 +7604,12 @@ def _parse_level_interactive_param_value(
         if bits_decoded is None:
             return None
         value_bits, cursor = bits_decoded
-        string_decoded = _read_level_interactive_param_atom_string(
+        string_decoded = _read_level_interactive_pooled_string(
             data,
             cursor,
             end_offset,
+            f"paramValue[{index}].valueString",
+            strings=strings,
         )
         if string_decoded is None:
             return None
@@ -7581,8 +7635,14 @@ def _parse_level_interactive_param_map(
     data: bytes,
     offset: int,
     end_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
-    """Decode a complete PropertyKey-to-ParamValue map without string scans."""
+    """Decode a complete pooled PropertyKey-to-ParamValue map without string scans.
+
+    Keys and atom strings are StringPool indices (corpus correspondence +
+    maintained pooled codecs, not a native formatter proof).
+    """
     count_decoded = _read_leveldata_count(data, offset, max_count=256)
     if count_decoded is None or count_decoded[0] < 0:
         return None
@@ -7593,17 +7653,24 @@ def _parse_level_interactive_param_map(
         entry_offset = cursor
         if cursor >= end_offset or data[cursor] != 2:
             return None
-        key_decoded = _read_required_memorypack_string(
+        key_decoded = _read_level_interactive_pooled_string(
             data,
             cursor + 1,
-            max_length=256,
+            end_offset,
+            "propertyMap.key",
+            strings=strings,
         )
         if key_decoded is None:
             return None
         key, cursor = key_decoded
         if not key or key in entries:
             return None
-        value = _parse_level_interactive_param_value(data, cursor, end_offset)
+        value = _parse_level_interactive_param_value(
+            data,
+            cursor,
+            end_offset,
+            strings=strings,
+        )
         if value is None:
             return None
         cursor = int(value["endOffset"])
@@ -7615,6 +7682,7 @@ def _parse_level_interactive_param_map(
         "entryCount": entry_count,
         "entries": entries,
         "entryOffsets": entry_offsets,
+        "stringEncoding": "string_pool_index",
     }
 
 
@@ -7622,6 +7690,8 @@ def parse_level_interactive_world_dialog_context(
     data: bytes,
     offset: int,
     end_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
     """Decode component 94's exact mission/Dialog configuration.
 
@@ -7629,8 +7699,13 @@ def parse_level_interactive_world_dialog_context(
     after the authored detail-id string; the first derived member is
     ``componentProperties``. The accepted narrative component is key 94 and
     must contain exactly the heterogeneous PropertyKey map used by the current
-    build: mission and Story strings plus integer ``TYPE=Dialog(1)``.
+    build: mission and Story strings plus integer ``TYPE=Dialog(1)``. The
+    detail id, property keys and atom strings are StringPool indices (corpus
+    correspondence + maintained pooled codecs, not a native formatter proof);
+    without the matching pool nothing is decoded.
     """
+    if strings is None:
+        return None
     if (
         offset < 0
         or end_offset <= offset + 29
@@ -7638,12 +7713,14 @@ def parse_level_interactive_world_dialog_context(
         or data[offset] != 25
     ):
         return None
-    entity_decoded = _read_leveldata_memorypack_string(
+    entity_decoded = _read_level_interactive_pooled_string(
         data,
         offset + 1 + (3 * 8),
-        max_length=256,
+        end_offset,
+        "entityDataIdKey",
+        strings=strings,
     )
-    if entity_decoded is None:
+    if entity_decoded is None or not entity_decoded[0]:
         return None
     entity_detail_id, prefix_end = entity_decoded
     component_offset = prefix_end + 52
@@ -7679,7 +7756,12 @@ def parse_level_interactive_world_dialog_context(
         component_key, cursor = key_decoded
         if component_key < 0 or component_key in components:
             return None
-        prop_map = _parse_level_interactive_param_map(data, cursor, end_offset)
+        prop_map = _parse_level_interactive_param_map(
+            data,
+            cursor,
+            end_offset,
+            strings=strings,
+        )
         if prop_map is None:
             return None
         cursor = int(prop_map["endOffset"])
@@ -7771,14 +7853,27 @@ def build_entity_tracking_world_interactive_dialog_contexts(
     LevelInteractiveData record, byte-identical source mirrors, and the exact
     ``int_narrative_common`` template. It is configuration/navigation context,
     never quest playback, completion, ownership, or a server exchange.
+
+    Every LevelInteractiveData and InteractiveTable string member is a
+    StringPool index on the current build (corpus correspondence + maintained
+    pooled codecs, not a native formatter proof). Records are framed and
+    decoded only through the export pool, which must stay unchanged for the
+    whole run; without it the route returns nothing.
     """
+    pool_inputs = snapshot_string_pool_inputs(leveldata_root.parent)
+    strings = export_string_pool(leveldata_root.parent)
+    if strings is None:
+        return []
     try:
         table_bytes = read_bytes_cached(interactive_table_path)
         if read_bytes_cached(interactive_table_mirror_path) != table_bytes:
             return []
     except OSError:
         return []
-    interactive_index = _parse_interactive_object_template_index(table_bytes)
+    interactive_index = _parse_interactive_object_template_index(
+        table_bytes,
+        strings=strings,
+    )
     expected_template_id = "int_narrative_common"
     expected_template_rel = (
         "Data/Json/Interactive/InteractiveData/"
@@ -7934,12 +8029,16 @@ def build_entity_tracking_world_interactive_dialog_contexts(
                 continue
             if not data or data[0] != 0x2B:
                 continue
-            for frame in interactive_layout.level_interactive_data_list_frames(data):
+            for frame in interactive_layout.level_interactive_data_list_frames(
+                data,
+                strings=strings,
+            ):
                 for record in frame.get("records") or []:
                     context = parse_level_interactive_world_dialog_context(
                         data,
                         int(record["recordOffset"]),
                         int(record["recordEndOffset"]),
+                        strings=strings,
                     )
                     if (
                         context is None
@@ -8008,6 +8107,8 @@ def build_entity_tracking_world_interactive_dialog_contexts(
             "questCompletion": False,
             "serverExchange": False,
         })
+    if pool_inputs != snapshot_string_pool_inputs(leveldata_root.parent):
+        return []
     rows.sort(key=lambda row: (
         str(row.get("missionId") or ""),
         str(row.get("questId") or ""),
@@ -8026,6 +8127,8 @@ def _parse_level_interactive_param_string_map(
     data: bytes,
     offset: int,
     end_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
     """Parse the exact current string-to-string ParamValue map encoding.
 
@@ -8034,7 +8137,9 @@ def _parse_level_interactive_param_string_map(
     ParamValue whose current string discriminator is 7 and whose scalar
     payload prefix is the fixed installed-build sequence below. Keeping this
     parser deliberately narrow prevents arbitrary nearby strings from being
-    treated as entity properties.
+    treated as entity properties. Keys and values are StringPool indices
+    (corpus correspondence + maintained pooled codecs, not a native formatter
+    proof).
     """
     count_decoded = _read_leveldata_count(data, offset, max_count=64)
     if count_decoded is None or count_decoded[0] <= 0:
@@ -8047,10 +8152,12 @@ def _parse_level_interactive_param_string_map(
         if cursor >= end_offset or data[cursor] != 2:
             return None
         cursor += 1
-        key_decoded = _read_leveldata_memorypack_string(
+        key_decoded = _read_level_interactive_pooled_string(
             data,
             cursor,
-            max_length=256,
+            end_offset,
+            "propertyMap.key",
+            strings=strings,
         )
         if key_decoded is None:
             return None
@@ -8065,12 +8172,14 @@ def _parse_level_interactive_param_string_map(
         ):
             return None
         cursor += len(_LEVEL_INTERACTIVE_PARAM_STRING_PREFIX)
-        value_decoded = _read_leveldata_memorypack_string(
+        value_decoded = _read_level_interactive_pooled_string(
             data,
             cursor,
-            max_length=512,
+            end_offset,
+            "propertyMap.value.valueString",
+            strings=strings,
         )
-        if value_decoded is None:
+        if value_decoded is None or value_decoded[0] is None:
             return None
         value, cursor = value_decoded
         if cursor > end_offset:
@@ -8083,6 +8192,7 @@ def _parse_level_interactive_param_string_map(
         "entryCount": count,
         "entries": entries,
         "entryOffsets": entry_offsets,
+        "stringEncoding": "string_pool_index",
     }
 
 
@@ -8090,6 +8200,8 @@ def parse_level_interactive_narrative_mission_context(
     data: bytes,
     offset: int,
     end_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
     """Decode one exact LevelInteractiveData narrative mission co-carrier.
 
@@ -8097,8 +8209,13 @@ def parse_level_interactive_narrative_mission_context(
     prefix contains three 64-bit ids followed by the authored interactive
     object id. The record boundary is supplied by the enclosing typed list,
     and the accepted ParamValue map must uniquely co-carry the canonical
-    ``FX_CHANGE_MISSION_ID`` and ``TYPE_ID`` PropertyKeys.
+    ``FX_CHANGE_MISSION_ID`` and ``TYPE_ID`` PropertyKeys. Every string
+    member is a StringPool index (corpus correspondence + maintained pooled
+    codecs, not a native formatter proof), so the key is anchored on its pool
+    indices and nothing is decoded without the matching pool.
     """
+    if strings is None:
+        return None
     if (
         offset < 0
         or end_offset <= offset + 29
@@ -8106,32 +8223,41 @@ def parse_level_interactive_narrative_mission_context(
         or data[offset] != 25
     ):
         return None
-    entity_decoded = _read_leveldata_memorypack_string(
+    entity_decoded = _read_level_interactive_pooled_string(
         data,
         offset + 1 + (3 * 8),
-        max_length=256,
+        end_offset,
+        "entityDataIdKey",
+        strings=strings,
     )
-    if entity_decoded is None:
+    if entity_decoded is None or not entity_decoded[0]:
         return None
     entity_detail_id, prefix_end = entity_decoded
     if not entity_detail_id.startswith("int_"):
         return None
 
-    fx_key = b"fx_change_mission_id"
-    fx_marker = b"\x02" + len(fx_key).to_bytes(4, "little") + fx_key
+    fx_markers = [
+        b"\x02" + index.to_bytes(4, "little", signed=True)
+        for index in strings.indices_of("fx_change_mission_id")
+    ]
+    key_offsets: set[int] = set()
+    for fx_marker in fx_markers:
+        search_offset = prefix_end
+        while True:
+            key_offset = data.find(fx_marker, search_offset, end_offset)
+            if key_offset < 0:
+                break
+            search_offset = key_offset + 1
+            key_offsets.add(key_offset)
     map_candidates: list[dict] = []
-    search_offset = prefix_end
-    while True:
-        key_offset = data.find(fx_marker, search_offset, end_offset)
-        if key_offset < 0:
-            break
-        search_offset = key_offset + 1
+    for key_offset in sorted(key_offsets):
         if key_offset < prefix_end + 4:
             continue
         parsed = _parse_level_interactive_param_string_map(
             data,
             key_offset - 4,
             end_offset,
+            strings=strings,
         )
         if parsed is None:
             continue
@@ -8169,6 +8295,7 @@ def _parse_levelscript_interactive_narrative_record(
     *,
     allow_progress_lock: bool = False,
     allow_non_narrative_component_shape: bool = False,
+    strings: StringPool | None,
 ) -> dict | None:
     """Decode one bounded ``LevelInteractiveData`` narrative row.
 
@@ -8180,8 +8307,14 @@ def _parse_levelscript_interactive_narrative_record(
     and combined conditions, tags resolved by type name per build). Its final
     ``properties`` ParamValue map must be consumed completely. This deliberately
     narrow shape covers authored narrative interactives without turning nearby
-    strings into Story evidence.
+    strings into Story evidence. In both LevelData and LevelScriptData every
+    string member (detail id, property keys, atom strings, progress-lock
+    owner ids) is a StringPool index on the current build (corpus
+    correspondence + maintained pooled codecs, not a native formatter proof);
+    without the matching ``strings`` pool nothing is decoded.
     """
+    if strings is None:
+        return None
     if (
         offset < 0
         or end_limit <= offset + 29
@@ -8189,12 +8322,14 @@ def _parse_levelscript_interactive_narrative_record(
         or data[offset] != 25
     ):
         return None
-    entity_decoded = _read_leveldata_memorypack_string(
+    entity_decoded = _read_level_interactive_pooled_string(
         data,
         offset + 1 + (3 * 8),
-        max_length=256,
+        end_limit,
+        "entityDataIdKey",
+        strings=strings,
     )
-    if entity_decoded is None:
+    if entity_decoded is None or not entity_decoded[0]:
         return None
     entity_detail_id, prefix_end = entity_decoded
     component_offset = prefix_end + 52
@@ -8222,7 +8357,12 @@ def _parse_levelscript_interactive_narrative_record(
         component_key, cursor = key_decoded
         if component_key < 0 or component_key in components:
             return None
-        prop_map = _parse_level_interactive_param_map(data, cursor, end_limit)
+        prop_map = _parse_level_interactive_param_map(
+            data,
+            cursor,
+            end_limit,
+            strings=strings,
+        )
         if prop_map is None:
             return None
         components[component_key] = prop_map
@@ -8269,6 +8409,7 @@ def _parse_levelscript_interactive_narrative_record(
                 data,
                 cursor,
                 end_limit,
+                strings=strings,
             )
         )
         if progress_lock_decoded is None:
@@ -8277,7 +8418,12 @@ def _parse_levelscript_interactive_narrative_record(
         cursor = int(progress_lock_decoded["endOffset"])
     else:
         return None
-    properties = _parse_level_interactive_param_map(data, cursor, end_limit)
+    properties = _parse_level_interactive_param_map(
+        data,
+        cursor,
+        end_limit,
+        strings=strings,
+    )
     if properties is None:
         return None
     cursor = int(properties["endOffset"])
@@ -8374,14 +8520,16 @@ def _parse_leveldata_horn_dialog_record(
     end_limit: int,
     *,
     require_end_limit: bool = True,
+    strings: StringPool | None,
 ) -> dict | None:
-    """Decode one exact ``int_horn`` record and its dialog-id property."""
+    """Decode one exact pooled ``int_horn`` record and its dialog-id property."""
     parsed = _parse_levelscript_interactive_narrative_record(
         data,
         offset,
         end_limit,
         allow_progress_lock=True,
         allow_non_narrative_component_shape=True,
+        strings=strings,
     )
     if (
         parsed is None
@@ -8514,9 +8662,20 @@ def _parse_level_interactive_progress_lock_condition(
     data: bytes,
     offset: int,
     end_limit: int,
+    *,
+    strings: StringPool | None,
 ) -> dict | None:
-    """Decode an exact current-build narrative progress-lock condition."""
-    decoded = _decode_bounded_progress_lock(data, offset, end_limit)
+    """Decode an exact current-build narrative progress-lock condition.
+
+    Owner ids are pooled, as in the quest-lock route.
+    """
+    decoded = _decode_bounded_progress_lock(
+        data,
+        offset,
+        end_limit,
+        pooled=True,
+        strings=strings,
+    )
     if decoded is None:
         return None
     root = _story_progress_lock_node(decoded)
@@ -8548,6 +8707,8 @@ def _parse_level_interactive_progress_lock_condition(
 def parse_levelscript_interactive_narrative_maps(
     data: bytes,
     script_id_offset: int,
+    *,
+    strings: StringPool | None,
 ) -> list[dict]:
     """Recover exact counted narrative-interactive maps before top-level scriptId.
 
@@ -8556,10 +8717,14 @@ def parse_levelscript_interactive_narrative_maps(
     count. Every non-final record must consume exactly to the next key, and the
     final record is decoded completely before the separately verified
     top-level ``scriptId`` field. These guards distinguish the map from
-    unrelated action/header strings.
+    unrelated action/header strings. ``entityDataIdKey`` and every record
+    string are StringPool indices in LevelScriptData too (corpus
+    correspondence + maintained pooled codecs, not a native formatter proof);
+    without the matching ``strings`` pool no map is recovered.
     """
     if (
-        not data
+        strings is None
+        or not data
         or script_id_offset <= 0
         or script_id_offset > len(data) - 8
     ):
@@ -8571,6 +8736,7 @@ def parse_levelscript_interactive_narrative_maps(
         decoded = _read_leveldata_memorypack_string(
             data,
             offset + 1 + (3 * 8),
+            strings=strings,
             max_length=256,
         )
         if decoded is not None and decoded[0].startswith("int_"):
@@ -8612,6 +8778,7 @@ def parse_levelscript_interactive_narrative_maps(
                 data,
                 record_offset,
                 end_limit,
+                strings=strings,
             )
             if parsed is None or (
                 record_index + 1 < len(record_candidates)
@@ -8638,7 +8805,7 @@ def parse_levelscript_interactive_narrative_maps(
     return maps
 
 
-def build_levelscript_interactive_narrative_story_contexts(
+def _build_historical_levelscript_interactive_narrative_story_contexts(
     available_story_keys: set[str],
     *,
     levelscript_root: Path = LEVELSCRIPT_DIR,
@@ -8648,7 +8815,10 @@ def build_levelscript_interactive_narrative_story_contexts(
 
     This recovers source/configuration ownership only. Interactive availability,
     mission activation, quest causality, and relative Story order remain
-    unresolved unless another typed source supplies them.
+    unresolved unless another typed source supplies them. Interactive records
+    are decoded only through the export StringPool beside ``levelscript_root``
+    (corpus correspondence + maintained pooled codecs, not a native formatter
+    proof); without it, or if it changes during the run, nothing is admitted.
     """
     use_default_cache = (
         levelscript_root == LEVELSCRIPT_DIR
@@ -8661,6 +8831,10 @@ def build_levelscript_interactive_narrative_story_contexts(
         and cache_key in _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE
     ):
         return list(_LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE[cache_key])
+    pool_inputs = snapshot_string_pool_inputs(levelscript_root.parent)
+    strings = export_string_pool(levelscript_root.parent)
+    if strings is None:
+        return []
     try:
         reading_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
@@ -8679,7 +8853,10 @@ def build_levelscript_interactive_narrative_story_contexts(
                     data = read_bytes_cached(path)
                 except (OSError, ValueError):
                     continue
-                if b"type_id" not in data or b"int_narrative" not in data:
+                # This route still owns only its historical 27-member root
+                # selection. Reject other roots before unrelated active-shape
+                # and ActionMap work in the general summary decoder.
+                if not data or data[0] != 27:
                     continue
                 summary = decode_levelscript_binary_file(path, script_id)
                 script_id_offset = summary.get("probableScriptIdOffset")
@@ -8697,6 +8874,7 @@ def build_levelscript_interactive_narrative_story_contexts(
                 for interactive_map in parse_levelscript_interactive_narrative_maps(
                     data,
                     script_id_offset,
+                    strings=strings,
                 ):
                     for record in interactive_map.get("records") or []:
                         raw_type_id = str(record.get("typeId") or "")
@@ -8770,6 +8948,8 @@ def build_levelscript_interactive_narrative_story_contexts(
         int(row.get("localInteractiveId") or 0),
         str(row.get("storyKey") or ""),
     ))
+    if pool_inputs != snapshot_string_pool_inputs(levelscript_root.parent):
+        return []
     if use_default_cache:
         _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE[cache_key] = rows
     return [
@@ -8777,6 +8957,45 @@ def build_levelscript_interactive_narrative_story_contexts(
     ]
 
 
+
+
+def build_levelscript_interactive_narrative_story_contexts(
+    available_story_keys: set[str],
+    *,
+    levelscript_root: Path = LEVELSCRIPT_DIR,
+    reading_popup_path: Path = TABLE_DIR / "ReadingPopUpTable.json",
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
+    source_summary_path: Path | None = None,
+    source_ledger_path: Path | None = None,
+) -> list[dict]:
+    """Project Narrative configuration only after current typed owner EOF.
+
+    Historical root27 maps are independent and never provide a current tail
+    boundary. Every invocation owns fresh native/source/StringPool guards.
+    """
+    global _LEVELSCRIPT_CURRENT_NARRATIVE_AUDIT
+    from scripts.webui.story.levelscript_narrative import build
+    try:
+        if (gameassembly is None) != (metadata is None):
+            raise ValueError("storyCurrentNarrative.both-selected-native-paths-required")
+        if gameassembly is None:
+            gameassembly, metadata = resolve_installed_native_inputs()
+        rows,audit=build(available_story_keys=available_story_keys,levelscript_root=levelscript_root,
+            reading_popup_path=reading_popup_path,interactive_table_parser=_parse_interactive_object_template_index,
+            gameassembly=gameassembly,metadata=metadata,
+            source_summary_path=source_summary_path or ROOT/"reports/animestudio/jsondata_current_latest.json",
+            source_ledger_path=source_ledger_path or ROOT/"reports/animestudio/jsondata_current_files_latest.jsonl.gz")
+    except (OSError,ValueError,KeyError,TypeError) as error:
+        rows=[];audit=dict(status="validation_failed",narrativeConfigurationRows=0,
+            runtimeNarrativeConsumerProved=False,playbackProved=False,absenceProved=False,
+            failures=[dict(validator="storyCurrentNarrative",gate="current-owner-source",actual=str(error)[:1400])])
+    _LEVELSCRIPT_CURRENT_NARRATIVE_AUDIT=audit
+    return rows
+
+
+def levelscript_interactive_narrative_story_status() -> dict:
+    return copy.deepcopy(_LEVELSCRIPT_CURRENT_NARRATIVE_AUDIT)
 
 
 def _validated_leveldata_horn_template(
@@ -8869,6 +9088,13 @@ def build_leveldata_interactive_narrative_story_contexts(
         and cache_key in _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE
     ):
         return list(_LEVELDATA_INTERACTIVE_NARRATIVE_CACHE[cache_key])
+    # Every LevelInteractiveData string member is a StringPool index on the
+    # current build (corpus correspondence + maintained pooled codecs, not a
+    # native formatter proof): records are framed only through the export pool.
+    pool_inputs = snapshot_string_pool_inputs(leveldata_root.parent)
+    strings = export_string_pool(leveldata_root.parent)
+    if strings is None:
+        return []
     try:
         reading_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
@@ -8902,17 +9128,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                 mirror_data = read_bytes_cached(mirror_path)
             except (OSError, ValueError):
                 continue
-            if (
-                data != mirror_data
-                or not (
-                    (b"type_id" in data and b"int_narrative" in data)
-                    or (
-                        horn_template_evidence is not None
-                        and b"dialog_id" in data
-                        and b"int_horn" in data
-                    )
-                )
-            ):
+            if data != mirror_data:
                 continue
             final_boundary = (
                 interactive_layout.leveldata_interactive_final_record_boundary(
@@ -8921,6 +9137,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                         path.parent.name,
                         set(),
                     ),
+                    strings=strings,
                     expected_level_id=path.parent.name,
                     brief_dictionary_parser=(
                         parse_leveldata_levelscript_brief_dictionary
@@ -8941,6 +9158,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                 for record in (
                     interactive_layout.parse_leveldata_interactive_narrative_records(
                         data,
+                        strings=strings,
                         final_record_end_offset=final_record_end_offset,
                         record_parser=(
                             _parse_levelscript_interactive_narrative_record
@@ -8955,6 +9173,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                     in (
                         interactive_layout.parse_leveldata_interactive_horn_dialog_records(
                             data,
+                            strings=strings,
                             final_record_end_offset=final_record_end_offset,
                             record_parser=_parse_leveldata_horn_dialog_record,
                         )
@@ -9072,6 +9291,8 @@ def build_leveldata_interactive_narrative_story_contexts(
         int(row.get("recordIndex") or 0),
         str(row.get("storyKey") or ""),
     ))
+    if pool_inputs != snapshot_string_pool_inputs(leveldata_root.parent):
+        return []
     if use_default_cache:
         _LEVELDATA_INTERACTIVE_NARRATIVE_CACHE[cache_key] = rows
     return [
@@ -9736,7 +9957,16 @@ def build_level_interactive_narrative_mission_story_contexts(
     and NarrativeComponent's installed native paths read mission state and
     invoke radio/dialog playback. This is local dependency context, never
     Story ownership, quest causality, or chronology.
+
+    Records are framed and decoded only through the export StringPool
+    (corpus correspondence + maintained pooled codecs, not a native formatter
+    proof); without the pool, or if it changes during the run, nothing is
+    admitted.
     """
+    pool_inputs = snapshot_string_pool_inputs(leveldata_root.parent)
+    strings = export_string_pool(leveldata_root.parent)
+    if strings is None:
+        return []
     try:
         reading_popup_rows = read_json_cached(reading_popup_path)
     except (OSError, json.JSONDecodeError):
@@ -9755,12 +9985,16 @@ def build_level_interactive_narrative_mission_story_contexts(
             continue
         if not data or data[0] != 0x2B:
             continue
-        for frame in interactive_layout.level_interactive_data_list_frames(data):
+        for frame in interactive_layout.level_interactive_data_list_frames(
+            data,
+            strings=strings,
+        ):
             for record in frame["records"]:
                 context = parse_level_interactive_narrative_mission_context(
                     data,
                     record["recordOffset"],
                     record["recordEndOffset"],
+                    strings=strings,
                 )
                 if context is None:
                     continue
@@ -9816,6 +10050,8 @@ def build_level_interactive_narrative_mission_story_contexts(
                         "StartDialogFromInteractive"
                     ),
                 })
+    if pool_inputs != snapshot_string_pool_inputs(leveldata_root.parent):
+        return []
     rows.sort(key=lambda row: (
         str(row.get("storyKey") or ""),
         str(row.get("missionStateId") or ""),
@@ -10241,10 +10477,10 @@ class LevelDataNpcPatrolDecodeError(ValueError):
     """The current LevelData patrol collection could not be framed exactly."""
 
 
-def decode_leveldata_npc_patrol_list(data: bytes) -> dict:
-    """Decode the unique non-empty current ``LevelData.npcPatrolData`` frame.
+def _decode_historical_inline_npc_patrol_list(data: bytes) -> dict:
+    """Historical MC9 inline locator; never current owner admission.
 
-    Member 31 is a counted collection of typed ``NpcPatrolData/9`` rows. The
+    Member 31 was a counted collection of typed ``NpcPatrolData/9`` rows. The
     members before it are variable-size, so the locator admits only a unique
     positive count immediately followed by exactly that many fully consumed
     typed rows. An absent non-empty frame remains explicit; ambiguity or drift
@@ -10318,13 +10554,27 @@ def decode_leveldata_npc_patrol_list(data: bytes) -> dict:
     }
 
 
+def decode_leveldata_npc_patrol_list(data: bytes) -> dict:
+    """Refuse the legacy locator without a current complete-owner operation.
+
+    Current pooled MC10 patrols are read by ``CurrentNpcPatrolSource.frame``;
+    raw bytes and a possible list tail do not supply that capability. Map
+    and other old callers retain an explicit failure until they adopt it.
+    """
+    raise LevelDataNpcPatrolDecodeError(
+        "current-pooled-complete-owner-required: use the authenticated current "
+        "MC10 Patrol source with sequential LevelData EOF; the historical MC9 "
+        "inline locator cannot admit current data"
+    )
+
+
 def parse_leveldata_npc_patrol_data_entry(
     data: bytes,
     offset: int,
     *,
     expected_patrol_id: int | None = None,
 ) -> dict | None:
-    """Parse one current ``NpcPatrolData/9`` row and its typed points.
+    """Historical inline ``NpcPatrolData/9`` row; not current admission.
 
     Every accepted point, variable-size action, event-blackboard pair, typed
     sub-action union, gait, and position is consumed before the returned end
@@ -10429,102 +10679,175 @@ def build_leveldata_npc_patrol_radio_story_contexts(
     available_story_keys: set[str],
     *,
     leveldata_root: Path = LEVELDATA_DIR,
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
+    source_summary_path: Path | None = None,
+    source_ledger_path: Path | None = None,
 ) -> list[dict]:
-    """Recover exact radio-bearing actions inside typed NPC patrol records.
+    """Project stored radio configuration from current complete pooled owners.
 
-    This is playback context only.  The patrol record does not serialize a
-    mission or quest id, so its location in a mission-named file is never used
-    as ownership or chronology evidence.
+    The fresh patrol source owns native/reader/pool/logical-source bookends
+    and sequential LevelData EOF. The old MC9 inline locator is not a current
+    owner proof: current NpcPatrolData has ten members, including an inserted
+    pause Boolean. A rejected prefix never falls back to a tail search.
+    Radio case/name association is stored configuration only; the current
+    runtime radio consumer, playback, mission ownership and order are open.
     """
+    global _LEVELDATA_NPC_PATROL_RADIO_AUDIT
+    from scripts.game_data.memorypack.npc_patrol import CurrentNpcPatrolSource
+
     rows: list[dict] = []
-    if not leveldata_root.exists():
-        return rows
-    for path in sorted(leveldata_root.rglob("*.json")):
-        try:
-            data = read_bytes_cached(path)
-            decoded = decode_leveldata_npc_patrol_list(data)
-        except (OSError, LevelDataNpcPatrolDecodeError):
-            continue
-        patrols = decoded.get("patrols") or []
-        for patrol_index, patrol in enumerate(patrols):
-            next_patrol_offset = (
-                int(patrols[patrol_index + 1]["recordOffset"])
-                if patrol_index + 1 < len(patrols)
-                else int(decoded.get("listEndOffset") or patrol["recordEndOffset"])
-            )
-            for point in patrol.get("points") or []:
-                for action_index, action in enumerate(point.get("actions") or []):
-                    if (
-                        action.get("radioId") not in available_story_keys
-                        or action.get("type") != 9
-                    ):
-                        continue
-                    rows.append({
-                        **action,
-                        "recordOffset": patrol["recordOffset"],
-                        "recordEndOffset": patrol["recordEndOffset"],
-                        "serializedMemberCount": patrol["serializedMemberCount"],
-                        "leadConfigSoName": patrol["leadConfigSoName"],
-                        "loopType": patrol["loopType"],
-                        "patrolId": patrol["patrolId"],
-                        "pointCount": patrol["pointCount"],
-                        "radioActionSerializedMemberCount": action[
-                            "serializedMemberCount"
-                        ],
-                        "radioActionRecordOffset": action["recordOffset"],
-                        "radioActionRecordEndOffset": action["recordEndOffset"],
-                        "nextPatrolRecordOffset": next_patrol_offset,
-                        "pointIndex": point["pointIndex"],
-                        "pointActionIndex": action_index,
-                        "patrolEnvelopeStatus": "exact_full_patrol_list_consume",
-                        "levelId": path.parent.name,
-                        "sourceFile": path.name,
-                        "sourcePath": str(path),
-                        "nativeMappingId": (
-                            "leveldata-43-patrol-sub-action-26-memorypack-v1"
-                        ),
-                        "nativeConsumer": (
-                            "NewNpcAIPatrolController._PlayRadioSubAction "
-                            "(token 0x0600aed9); "
-                            "NpcAIPatrolController._ProcessRadioInRange "
-                            "(token 0x0600a961)"
-                        ),
-                    })
+    leveldata_root = Path(leveldata_root)
+    paths = sorted(leveldata_root.rglob("*.json")) if leveldata_root.is_dir() else []
+    audit = dict(status="unavailable" if not leveldata_root.is_dir() else "unresolved",
+                 sourceFiles=len(paths), ownersClosed=0, failedFiles=0,
+                 radioConfigurationRows=0, runtimeRadioConsumerProved=False,
+                 playbackProved=False, failures=[])
+
+    def failure(error, path=None, data=None):
+        detail = dict(getattr(error, "diagnostic", None) or {
+            "validator": "storyNpcPatrol", "gate": "current-owner-source",
+            "actual": str(error)[:1200],
+        })
+        if path is not None:
+            detail["source"] = str(path)
+        if data is not None:
+            detail["sourceSha256"] = hashlib.sha256(data).hexdigest().upper()
+        return detail
+
+    if not leveldata_root.is_dir() or not paths:
+        _LEVELDATA_NPC_PATROL_RADIO_AUDIT = audit
+        return []
+    try:
+        if (gameassembly is None) != (metadata is None):
+            raise ValueError("storyNpcPatrol.explicit-native-pair:both paths required")
+        if gameassembly is None:
+            gameassembly, metadata = resolve_installed_native_inputs()
+        summary = Path(source_summary_path or ROOT / "reports/animestudio/jsondata_current_latest.json")
+        ledger = Path(source_ledger_path or ROOT / "reports/animestudio/jsondata_current_files_latest.jsonl.gz")
+        if not summary.is_file() or not ledger.is_file():
+            raise ValueError("storyNpcPatrol.authenticated-jsondata-receipt-required:" + str(summary) + ":" + str(ledger))
+        with CurrentNpcPatrolSource(leveldata_root.parent, gameassembly=gameassembly,
+                                   metadata=metadata, summary_path=summary,
+                                   ledger_path=ledger) as source:
+            for path in paths:
+                data = None
+                try:
+                    data = read_bytes_cached(path)
+                    frame = source.frame(path, data)
+                except (OSError, ValueError) as error:
+                    audit["failedFiles"] += 1
+                    if len(audit["failures"]) < 16:
+                        audit["failures"].append(failure(error, path, data))
+                    continue
+                if frame.get("schemaStatus") != "named_exact" or frame.get("bytesConsumed") != len(data):
+                    raise ValueError("storyNpcPatrol.complete-owner-eof-required")
+                audit["ownersClosed"] += 1
+                decoded = frame["fields"]["npcPatrol"]
+                rows.extend(_current_patrol_radio_configuration_rows(decoded, path, data, available_story_keys))
+            audit["sourceAudit"] = source.audit()
+        audit["radioConfigurationRows"] = len(rows)
+        audit["status"] = "partial" if audit["failedFiles"] else "stored_configuration_complete"
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        rows = []
+        audit.update(status="validation_failed", radioConfigurationRows=0,
+                     failedFiles=len(paths), failures=[failure(error)])
+        audit.pop("sourceAudit", None)
+    _LEVELDATA_NPC_PATROL_RADIO_AUDIT = audit
     rows.sort(key=lambda row: (
-        str(row.get("radioId") or ""),
-        str(row.get("levelId") or ""),
-        str(row.get("sourceFile") or ""),
-        int(row.get("radioActionRecordOffset") or 0),
+        str(row.get("radioId") or ""), str(row.get("levelId") or ""),
+        str(row.get("sourceFile") or ""), int(row.get("radioActionRecordOffset") or 0),
     ))
+    return rows
+
+
+def leveldata_npc_patrol_radio_story_status() -> dict:
+    return copy.deepcopy(_LEVELDATA_NPC_PATROL_RADIO_AUDIT)
+
+
+def _current_patrol_radio_configuration_rows(decoded, path, data, available_story_keys):
+    """Projection only; the caller must hold the current complete-owner scope."""
+    rows = []
+    patrols = decoded.get("rows") or []
+    for patrol_index, patrol in enumerate(patrols):
+        if patrol is None:
+            continue
+        if patrol.get("memberCount") != 10 or patrol.get("recordType") != "Beyond.Gameplay.AI.Config.NpcPatrolData":
+            raise ValueError("storyNpcPatrol.current-ten-member-owner-required")
+        next_rows = [p for p in patrols[patrol_index + 1:] if p is not None]
+        next_patrol_offset = next_rows[0]["startOffset"] if next_rows else decoded["endOffset"]
+        for point in patrol["points"]["rows"]:
+            if point is None:
+                continue
+            if point.get("memberCount") != 3 or point.get("recordType") != "Beyond.Gameplay.AI.Config.NpcPatrolPoint":
+                raise ValueError("storyNpcPatrol.current-typed-point-required")
+            for action in point["actions"]["rows"]:
+                if action is None or action.get("radioId") not in available_story_keys:
+                    continue
+                if action.get("enumNames", {}).get("type") != "PlayRadioInRange":
+                    continue
+                if action.get("memberCount") != 26 or action.get("recordType") != "Beyond.Gameplay.Core.PatrolSubAction":
+                    raise ValueError("storyNpcPatrol.current-26-member-action-required")
+                rows.append({
+                    **action,
+                    "recordOffset": patrol["startOffset"],
+                    "recordEndOffset": patrol["endOffset"],
+                    "serializedMemberCount": patrol["memberCount"],
+                    "patrolMemberCount": patrol["memberCount"],
+                    "leadConfigSoName": patrol["leadConfigSoName"],
+                    "loopType": patrol["loop"],
+                    "patrolId": patrol["patrolId"],
+                    "pointCount": max(0, patrol["points"]["count"]),
+                    "pauseActionWhenPatrolDisabled": patrol["pauseActionWhenPatrolDisabled"],
+                    "radioActionSerializedMemberCount": action["memberCount"],
+                    "radioActionRecordOffset": action["startOffset"],
+                    "radioActionRecordEndOffset": action["endOffset"],
+                    "nextPatrolRecordOffset": next_patrol_offset,
+                    "pointIndex": point["indexInCollection"],
+                    "pointActionIndex": action["indexInCollection"],
+                    "patrolEnvelopeStatus": "authenticated_current_leveldata_eof",
+                    "levelId": path.parent.name, "sourceFile": path.name,
+                    "sourcePath": str(path),
+                    "sourceSha256": hashlib.sha256(data).hexdigest().upper(),
+                    "nativeMappingId": "leveldata-current-pooled-patrol-owner-v1",
+                    "runtimeRadioConsumerProved": False, "playbackProved": False,
+                    "evidenceTier": "structuralOnly", "ownership": False,
+                    "questActivation": False, "questPlayback": False,
+                    "questCompletion": False,
+                })
     return rows
 
 
 def _find_leveldata_npc_patrol_entries(
     data: bytes,
     patrol_id: int,
+    *,
+    source_path: Path | None = None,
 ) -> list[dict]:
+    """Hold checkpoint hosts until the current pooled owning source joins.
+
+    An ID hit followed by MC9 inline data supplies neither the current MC10
+    list nor the complete Brief/property host and sequential LevelData EOF.
+    """
+    global _NPC_PATROL_CHECKPOINT_SOURCE_AUDIT
     if patrol_id <= 0:
         return []
-    needle = patrol_id.to_bytes(4, "little", signed=True)
-    out: list[dict] = []
-    for id_offset in _find_exact_bytes_offsets(data, needle):
-        entry = parse_leveldata_npc_patrol_data_entry(
-            data,
-            id_offset - 20,
-            expected_patrol_id=patrol_id,
-        )
-        if entry is None:
-            continue
-        # Every currently promoted row is followed immediately by another
-        # typed NpcPatrolData/9 row.  This proves the returned end is the list
-        # boundary, instead of accepting a naked i32 occurrence.
-        if not _looks_like_npc_patrol_data_start(
-            data,
-            int(entry["recordEndOffset"]),
-        ):
-            continue
-        out.append(entry)
-    return out
+    diagnostic = dict(validator="storyNpcPatrolCheckpoint",
+        gate="current-pooled-complete-owner-required", patrolId=patrol_id,
+        source=str(source_path) if source_path is not None else "<payload>",
+        sourceSha256=hashlib.sha256(data).hexdigest().upper(),
+        expected="authenticated sequential LevelData EOF and current pooled MC10 Patrol/Brief/property host join",
+        actual="legacy MC9 inline locator is not an owning source proof")
+    _NPC_PATROL_CHECKPOINT_SOURCE_AUDIT.update(status="pendingReview",
+        runtimeCheckpointConsumerProved=False, playbackProved=False)
+    failures = _NPC_PATROL_CHECKPOINT_SOURCE_AUDIT.setdefault("failures", [])
+    if len(failures) < 16:
+        failures.append(diagnostic)
+    return []
+
+
+def leveldata_npc_patrol_checkpoint_story_status() -> dict:
+    return copy.deepcopy(_NPC_PATROL_CHECKPOINT_SOURCE_AUDIT)
 
 
 def _npc_patrol_checkpoint_owner_detail(owner: dict) -> dict:
@@ -10574,13 +10897,20 @@ def build_npc_patrol_checkpoint_mission_contexts(
     leveldata_root: Path = LEVELDATA_DIR,
     registry_path: Path = GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json",
 ) -> list[dict]:
-    """Join patrol checkpoint playback to one tracked mission shell.
+    """Candidate checkpoint context; the current owning host join is held.
 
     The relation is deliberately mission-level and non-owning.  A unique
     LevelData property/entity and unique MissionRuntime mission union are
     required, while multiple candidate quests and multiple same-script patrol
     producers remain visible as evidence rather than activation claims.
+    A complete pooled Patrol/Brief/property host source is required before
+    admission; the old MC9 locator never supplies that proof.
     """
+    global _NPC_PATROL_CHECKPOINT_SOURCE_AUDIT
+    _NPC_PATROL_CHECKPOINT_SOURCE_AUDIT = dict(status="pendingReview",
+        failedGate="current-pooled-complete-owner-required",
+        detail="Checkpoint hosts need the authenticated current pooled MC10 Patrol and Brief/property owner join; the legacy inline locator supplies neither.",
+        runtimeCheckpointConsumerProved=False, playbackProved=False, failures=[])
     try:
         registry_raw = read_json_cached(registry_path)
     except (OSError, json.JSONDecodeError):
@@ -10835,6 +11165,7 @@ def build_npc_patrol_checkpoint_mission_contexts(
             patrol_rows = _find_leveldata_npc_patrol_entries(
                 host["data"],
                 patrol_id,
+                source_path=host["path"],
             )
             if len(patrol_rows) != 1:
                 failed = True

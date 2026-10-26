@@ -379,7 +379,7 @@ class GameTreeEntry:
         return self._load()
 
 
-def iter_game_tree(export_root: Path | None, folder: str) -> Iterator[GameTreeEntry]:
+def iter_game_tree(export_root: Path | None, folder: str, *, _store: GameFileStore | None = None) -> Iterator[GameTreeEntry]:
     """Every file under a game/-relative folder, loose and packed, sorted by path (casefolded).
 
     Loose files under a packed folder are not yielded: a packed folder is read
@@ -403,7 +403,7 @@ def iter_game_tree(export_root: Path | None, folder: str) -> Iterator[GameTreeEn
                 entries.append(GameTreeEntry(
                     full.relative_to(layout.game).as_posix(), full.stat().st_size, False, full.read_bytes,
                 ))
-    store = open_game_files_if_present(layout.root) if packed_here else None
+    store = (_store if _store is not None else open_game_files_if_present(layout.root)) if packed_here else None
     if store is not None:
         for packed in packed_here:
             for row in store.iter_rows(packed):

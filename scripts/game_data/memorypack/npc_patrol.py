@@ -1,13 +1,12 @@
 """One freshly proved current pooled NPC Patrol decode operation."""
-import gzip,hashlib,json,sys
+import hashlib
 from pathlib import Path
 from contextlib import contextmanager
 from scripts.game_data import leveldata_npc_patrol_native as native
 from scripts.game_data.codecs.leveldata.patrol import _decode_npc_patrol_list,NpcPatrolFramingError
 from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs,snapshot_string_pool_inputs,reader_input_changes
 from scripts.game_data.string_pool import StringPool
-from scripts.game_data.string_pool import export_string_pool
-from scripts.game_data.jsondata_source_provenance import authenticate_current_jsondata_receipt
+from scripts.game_data.memorypack.levelscript_current_source import CurrentLevelScriptSource
 
 
 @contextmanager
@@ -35,49 +34,34 @@ def npc_patrol_decoder(*,strings,game_root=None,gameassembly=None,metadata=None)
 
 
 class CurrentNpcPatrolSource:
- """Selected complete LevelData owners in one lexical native/source/pool scope."""
+ """Current pooled Patrol projection of the shared whole LevelData operation."""
  def __init__(self,json_root,*,gameassembly,metadata,summary_path=Path('reports/animestudio/jsondata_current_latest.json'),ledger_path=Path('reports/animestudio/jsondata_current_files_latest.jsonl.gz')):
   self.root=Path(json_root).resolve();self.gameassembly=gameassembly;self.metadata=metadata;self.summary=Path(summary_path);self.ledger=Path(ledger_path);self.active=False
- def receipt(self):
-  return authenticate_current_jsondata_receipt(summary_path=self.summary,ledger_path=self.ledger,expected_summary_sha256=self.summary_sha,native_sources=self.decode.native_sources,native_inputs=self.decode.native_inputs)
  def __enter__(self):
   if self.active:raise NpcPatrolFramingError('operation-active','npcPatrol',None)
   if self.gameassembly is None or self.metadata is None:raise NpcPatrolFramingError('explicit-native-pair-required','npcPatrol',None)
-  self.strings=export_string_pool(self.root);self.scope=npc_patrol_decoder(strings=self.strings,gameassembly=self.gameassembly,metadata=self.metadata);self.decode=self.scope.__enter__()
-  try:
-   self.summary_raw=self.summary.read_bytes();self.summary_sha=hashlib.sha256(self.summary_raw).hexdigest().upper();self.before=self.receipt();self.files={};self.closed=set();self.rows={}
-   with gzip.open(self.ledger,'rt',encoding='utf-8')as stream:
-    for line in stream:
-     row=json.loads(line);key=row.get('exportRelativePath','')
-     if key.startswith(('LevelData/','StringPool/')):
-      if key in self.rows:raise NpcPatrolFramingError('duplicate-logical-source',key,None)
-      self.rows[key]=row
-   pool=snapshot_string_pool_inputs(self.root)
-   for row in pool['files']:
-    path=Path(row['path']);self._join(path,path.read_bytes())
-   self.game_root=Path(self.decode.native_sources['global-metadata.dat']).parents[2];self.universe={key for key in self.rows if key.startswith('LevelData/')};self.active=True;return self
-  except BaseException:
-   self.scope.__exit__(*sys.exc_info());raise
- def _join(self,path,data):
-  key=Path(path).resolve().relative_to(self.root).as_posix();row=self.rows.get(key);actual=[len(data),hashlib.sha256(data).hexdigest().upper()]
-  if row is None or actual!=[row['length'],row['logicalSha256'].upper()]:raise NpcPatrolFramingError('logical-source-byte-join',key,None,None if row is None else[row['length'],row['logicalSha256']],actual)
-  return key
+  self.scope=CurrentLevelScriptSource(self.root,gameassembly=self.gameassembly,metadata=self.metadata,
+   summary_path=self.summary,ledger_path=self.ledger)
+  self.owner=self.scope.__enter__();self.strings=self.owner.strings;self.game_root=self.owner.game_root
+  self.active=True;return self
  def frame(self,path,data):
   if not self.active:raise NpcPatrolFramingError('operation-closed','npcPatrol',None)
-  path=Path(path).resolve();key=self._join(path,data)
-  if key not in self.universe:raise NpcPatrolFramingError('owner-family',key,None,'LevelData')
-  if self.files.setdefault(path,data)!=data:raise NpcPatrolFramingError('mixed-source-versions',key,None)
-  from scripts.game_data.leveldata_binary import frame_leveldata_named_prefix
-  frame=frame_leveldata_named_prefix(data,strings=self.strings,game_root=self.game_root,patrol_decoder=self.decode)
-  if(frame.get('schemaStatus'),frame.get('bytesConsumed'))!=('named_exact',len(data)):raise NpcPatrolFramingError('owning-eof-required',key,frame.get('bytesConsumed'),dict(schemaStatus='named_exact',bytesConsumed=len(data)),{k:frame.get(k)for k in('schemaStatus','bytesConsumed','openField')})
-  self.closed.add(key);return frame
+  framed=self.owner.frame_leveldata(path,data)
+  if(framed.get('schemaStatus'),framed.get('serializedMemberCount'),framed.get('bytesConsumed'))!=('named_exact',43,len(data)):
+   raise NpcPatrolFramingError('owning-eof-required',str(path),framed.get('bytesConsumed'),
+    dict(schemaStatus='named_exact',serializedMemberCount=43,bytesConsumed=len(data)),
+    {k:framed.get(k)for k in('schemaStatus','serializedMemberCount','bytesConsumed')})
+  # Preserve the Patrol consumer's named field view while keeping all ranges
+  # from the one authenticated 43-field source cursor.
+  return dict(framed,fields={name:row['value']for name,row in framed['fields'].items()},
+   fieldRanges={name:dict(startOffset=row['startOffset'],endOffset=row['endOffset'])for name,row in framed['fields'].items()})
  def audit(self):
   if not self.active:raise NpcPatrolFramingError('operation-closed','npcPatrol',None)
-  return dict(status='conditional-current-patrol-source',sourceUniverse=len(self.universe),sourcesAttempted=len(self.files),ownersClosed=len(self.closed),allSourcesAttempted=len(self.files)==len(self.universe),allOwnersClosed=len(self.closed)==len(self.universe),audioActionAbsenceProved=False,eventRequestsProved=False,summary=dict(path=str(self.summary),sha256=self.summary_sha))
+  audit=self.owner.audit()
+  return dict(audit['leveldata'],status='conditional-current-patrol-source',
+   audioActionAbsenceProved=False,eventRequestsProved=False,summary=audit['summary'])
  def __exit__(self,*error):
   try:
-   if self.summary.read_bytes()!=self.summary_raw or self.before!=self.receipt():raise NpcPatrolFramingError('source-receipt-drift','npcPatrol',None)
-   for path,raw in self.files.items():
-    if path.read_bytes()!=raw:raise NpcPatrolFramingError('owner-source-drift',str(path),None)
+   return self.scope.__exit__(*error)
   finally:
-   self.active=False;self.scope.__exit__(*error)
+   self.active=False

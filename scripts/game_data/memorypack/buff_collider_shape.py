@@ -66,7 +66,7 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
     path = CONTRACTS_DIR / contract["records"]["colliderShape"]["sourceContract"]
     source = json.loads(path.read_bytes())
     buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-        image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+        image.modules, image.owners, source=str(gate.gameassembly), contract_path=path, native_image=image)
     proved = named.validate_named_records(image, source, contract["records"], label=LABEL, fail=_fail)
     after = check_installed_native_inputs(pins["GameAssembly.dll"], pins["global-metadata.dat"],
         gameassembly=gate.gameassembly, metadata=gate.metadata)

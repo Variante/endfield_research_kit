@@ -58,7 +58,7 @@ def validate_current_native_contract(*,gameassembly: Path|None=None,metadata: Pa
     if c['records']['animatorParam']['sourceContract']!=source_path.name:
         _fail('source-family',source_path.name,c['records']['animatorParam']['sourceContract'])
     buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,
-        source=str(gate.gameassembly),contract_path=source_path)
+        source=str(gate.gameassembly),contract_path=source_path, native_image=image)
     proved=named.validate_named_records(image,source,c['records'],label=LABEL,fail=_fail)
     routes,audit=load_action_routes(gameassembly=gate.gameassembly,metadata=gate.metadata)
     record=c['records']['setAnimatorParam'];route=routes.get(next(iter(supported_tags())))

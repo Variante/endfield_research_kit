@@ -24,10 +24,12 @@ resolved closure. The module has no command-line entry point.
 from __future__ import annotations
 
 import ast
+from collections import OrderedDict
 import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import sys
 from typing import Any, Iterable
 
 from scripts.repo_paths import REPO_ROOT
@@ -35,6 +37,134 @@ from scripts.repo_paths import REPO_ROOT
 
 class DependencySnapshotError(ValueError):
     """A declared dependency cannot be resolved without guessing."""
+
+
+class _ParseFactsCache:
+    """Bounded immutable syntax facts, never paths, manifests or proof results.
+
+    Each caller still reads current bytes. Full bytes form the key; timestamps
+    and saved digests confer no freshness. Filesystem-dependent resolution and
+    every ambiguity/existence/escape check remain outside this cache.
+    """
+    def __init__(self, *, max_bytes=128 * 1024 * 1024, max_entries=4096,
+                 max_entry_bytes=8 * 1024 * 1024):
+        self.max_bytes = max_bytes
+        self.max_entries = max_entries
+        self.max_entry_bytes = max_entry_bytes
+        self.entries = OrderedDict()
+        self.bytes = 0
+
+    def get(self, kind, raw, build):
+        key = (kind, raw)
+        if key in self.entries:
+            value, size = self.entries.pop(key)
+            self.entries[key] = (value, size)
+            return value
+        value = build()
+        pending, seen, size = [key, value], set(), 0
+        while pending:
+            item = pending.pop()
+            if id(item) in seen:
+                continue
+            seen.add(id(item))
+            size += sys.getsizeof(item)
+            if isinstance(item, tuple):
+                pending.extend(item)
+        # Large reviewed contracts must not evict the whole Python syntax
+        # working set merely to cache an empty dependency declaration.
+        if size <= min(self.max_bytes, self.max_entry_bytes):
+            while self.entries and (len(self.entries) >= self.max_entries
+                                    or self.bytes + size > self.max_bytes):
+                _, (_, removed) = self.entries.popitem(last=False)
+                self.bytes -= removed
+            if self.max_entries > 0:
+                self.entries[key] = (value, size)
+                self.bytes += size
+        return value
+
+    def clear(self):
+        self.entries.clear()
+        self.bytes = 0
+
+
+_PARSE_FACTS = _ParseFactsCache()
+
+
+def _freeze_ast(value):
+    if isinstance(value, ast.AST):
+        return ('node', type(value).__name__, tuple(
+            (name, _freeze_ast(item)) for name, item in ast.iter_fields(value)))
+    if isinstance(value, list):
+        return ('list', tuple(_freeze_ast(item) for item in value))
+    return ('value', value)
+
+
+def _thaw_ast(value):
+    kind, *parts = value
+    if kind == 'node':
+        name, fields = parts
+        return getattr(ast, name)(**{key: _thaw_ast(item) for key, item in fields})
+    if kind == 'list':
+        return [_thaw_ast(item) for item in parts[0]]
+    return parts[0]
+
+
+def _python_facts(raw, source):
+    def build():
+        tree = ast.parse(raw.decode('utf-8-sig'), filename=str(source))
+        imports, resources = [], set()
+        has_loader = False
+        for node in ast.walk(tree):
+            if (imported := _import_fact(node)) is not None:
+                imports.append(imported)
+            elif (resource := _literal_json_name(node)) is not None:
+                resources.add(resource)
+            elif (isinstance(node, ast.Call) and len(node.args) >= 2
+                  and _call_name(node).endswith('spec_from_file_location')):
+                has_loader = True
+        # Store immutable syntax only. Path-loaded helper expressions are
+        # evaluated against the current filesystem using a new private AST.
+        helper_syntax = None
+        if has_loader:
+            try:
+                helper_syntax = _freeze_ast(tree)
+            except RecursionError:
+                # ast.walk accepts some trees deeper than recursive freezing.
+                # Reparse those rare sources instead of adding a new refusal.
+                helper_syntax = ('reparse',)
+        return tuple(imports), tuple(sorted(resources)), helper_syntax
+    return _PARSE_FACTS.get('python', raw, build)
+
+
+def _fresh_helper_tree(syntax, raw, source):
+    if syntax != ('reparse',):
+        try:
+            return _thaw_ast(syntax)
+        except RecursionError:
+            pass
+    return ast.parse(raw.decode('utf-8-sig'), filename=str(source))
+
+
+def _json_dependency_declarations(raw, path):
+    def build():
+        try:
+            value = json.loads(raw)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise DependencySnapshotError(f"cannot parse JSON dependency source {path}: {exc}") from exc
+        if not isinstance(value, dict) or 'dependencies' not in value:
+            return ()
+        dependencies = value['dependencies']
+        if not isinstance(dependencies, list):
+            raise DependencySnapshotError(f"{path}: dependencies must be an array")
+        result = []
+        for index, dependency in enumerate(dependencies):
+            declared = dependency if isinstance(dependency, str) else (
+                dependency.get('path') if isinstance(dependency, dict) else None)
+            # Keep invalid declarations in order, so an earlier path escape
+            # still refuses before a later invalid declaration as before.
+            result.append(declared if isinstance(declared, str) and declared else None)
+        return tuple(result)
+    return _PARSE_FACTS.get('json', raw, build)
 
 
 def _inside_repo(path: Path) -> bool:
@@ -57,27 +187,38 @@ def _module_source(module_name: str) -> Path | None:
 
 
 def _resolve_imports(module_name: str, tree: ast.AST) -> set[str]:
+    return _imports_from_facts(module_name,
+        tuple(fact for node in ast.walk(tree) if (fact := _import_fact(node)) is not None),
+        selected_source=_module_source(module_name))
+
+
+def _import_fact(node):
+    if isinstance(node, ast.Import):
+        return 'import', tuple(alias.name for alias in node.names)
+    if isinstance(node, ast.ImportFrom):
+        return 'from', node.level, node.module, tuple(alias.name for alias in node.names)
+    return None
+
+
+def _imports_from_facts(module_name, facts, *, selected_source):
     result: set[str] = set()
-    package = module_name if Path(_module_source(module_name) or "").name == "__init__.py" else module_name.rpartition(".")[0]
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            result.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            if node.level:
-                relative = "." * node.level + (node.module or "")
-                try:
-                    base = importlib.util.resolve_name(relative, package)
-                except (ImportError, ValueError):
-                    continue
-            else:
-                base = node.module or ""
-            if base:
-                result.add(base)
-            # ``from package import module`` may name a submodule.  Adding it
-            # is harmless when the imported name is actually an attribute.
-            for alias in node.names:
-                if alias.name != "*" and base:
-                    result.add(base + "." + alias.name)
+    package = module_name if Path(selected_source or "").name == "__init__.py" else module_name.rpartition(".")[0]
+    for row in facts:
+        if row[0] == 'import':
+            result.update(row[1])
+            continue
+        _, level, module, names = row
+        if level:
+            try:
+                base = importlib.util.resolve_name('.' * level + (module or ''), package)
+            except (ImportError, ValueError):
+                continue
+        else:
+            base = module or ''
+        if base:
+            result.add(base)
+            # An imported attribute may also be a real submodule.
+            result.update(base + '.' + name for name in names if name != '*')
     return result
 
 
@@ -85,14 +226,18 @@ def _literal_json_resources(
     tree: ast.AST,
     resources_by_name: dict[str, list[Path]],
 ) -> set[Path]:
-    names = {
-        value
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Constant)
-        and isinstance((value := node.value), str)
-        and value.lower().endswith(".json")
-        and Path(value).name == value
-    }
+    names = {name for node in ast.walk(tree) if (name := _literal_json_name(node)) is not None}
+    return _json_resources_from_names(names, resources_by_name)
+
+
+def _literal_json_name(node):
+    if (isinstance(node, ast.Constant) and isinstance(node.value, str)
+            and node.value.lower().endswith('.json') and Path(node.value).name == node.value):
+        return node.value
+    return None
+
+
+def _json_resources_from_names(names, resources_by_name):
     result: set[Path] = set()
     for name in names:
         matches = resources_by_name.get(name, [])
@@ -109,21 +254,14 @@ def _literal_json_resources(
 def _declared_dependency_paths(path: Path, *, allowed_root: Path) -> set[Path]:
     """Resolve one contract's explicit JSON/Python dependency edges exactly."""
     try:
-        value = json.loads(path.read_bytes())
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raw = path.read_bytes()
+    except OSError as exc:
         raise DependencySnapshotError(f"cannot parse JSON dependency source {path}: {exc}") from exc
-    if not isinstance(value, dict) or "dependencies" not in value:
-        return set()
-    dependencies = value["dependencies"]
-    if not isinstance(dependencies, list):
-        raise DependencySnapshotError(f"{path}: dependencies must be an array")
     result: set[Path] = set()
-    for index, dependency in enumerate(dependencies):
-        if not isinstance(dependency, dict) or not isinstance(dependency.get("path"), str):
+    for index, declared in enumerate(_json_dependency_declarations(raw, path)):
+        if declared is None:
             raise DependencySnapshotError(
-                f"{path}: dependencies[{index}] must declare one string path"
-            )
-        declared = dependency["path"]
+                f"{path}: dependencies[{index}] must be a path string or declare one string path")
         candidate = Path(declared)
         if candidate.is_absolute() or candidate.suffix.lower() not in {".json", ".py"}:
             raise DependencySnapshotError(
@@ -303,6 +441,16 @@ def local_dependency_paths(
     pending_sources: list[tuple[Path, str]] = []
     visited_modules: set[str] = set()
     visited_sources: set[Path] = set()
+    visited_json: set[Path] = set()
+    module_sources: dict[str, Path | None] = {}
+
+    def module_source(name):
+        # Resolution is invocation-local. A newly added/importable module or
+        # changed search path must be resolved again by the next snapshot.
+        if name not in module_sources:
+            module_sources[name] = _module_source(name)
+        return module_sources[name]
+
     paths: set[Path] = set()
     resource_root = (resource_search_root or (REPO_ROOT / "scripts/game_data")).resolve()
     resources_by_name: dict[str, list[Path]] = {}
@@ -317,18 +465,18 @@ def local_dependency_paths(
             if module_name in visited_modules:
                 continue
             visited_modules.add(module_name)
-            source = _module_source(module_name)
+            source = module_source(module_name)
             if source is None:
                 continue
         if source in visited_sources:
             continue
         visited_sources.add(source)
         paths.add(source)
-        tree = ast.parse(source.read_text(encoding="utf-8-sig"), filename=str(source))
-        json_resources = _literal_json_resources(tree, resources_by_name)
+        raw = source.read_bytes()
+        imports, resource_names, helper_tree = _python_facts(raw, source)
+        json_resources = _json_resources_from_names(resource_names, resources_by_name)
         paths.update(json_resources)
         pending_json = list(json_resources)
-        visited_json: set[Path] = set()
         while pending_json:
             resource = pending_json.pop().resolve()
             if resource in visited_json:
@@ -340,12 +488,13 @@ def local_dependency_paths(
             for dependency in dependencies:
                 if dependency.suffix.lower() == ".py" and dependency not in visited_sources:
                     pending_sources.append((dependency, _module_name_for_path(dependency)))
-        for helper in _literal_python_helpers(tree, source):
+        helpers = _literal_python_helpers(_fresh_helper_tree(helper_tree, raw, source), source) if helper_tree is not None else ()
+        for helper in helpers:
             paths.add(helper)
             if helper not in visited_sources:
                 pending_sources.append((helper, _module_name_for_path(helper)))
-        for imported in _resolve_imports(module_name, tree):
-            if imported not in visited_modules and _module_source(imported) is not None:
+        for imported in _imports_from_facts(module_name, imports, selected_source=module_source(module_name)):
+            if imported not in visited_modules and module_source(imported) is not None:
                 pending_modules.append(imported)
     return sorted(paths, key=lambda path: path.as_posix().lower())
 

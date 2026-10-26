@@ -315,6 +315,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
 ) -> int:
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
@@ -349,7 +350,7 @@ def _validate_sources(
         actual_span_digest = hashlib.sha256(data[start:end]).hexdigest().upper()
         if actual_span_digest != span_digest.upper():
             raise ValueError(f"{LABEL}.source:span-hash={path}@{start}:expected={span_digest}:actual={actual_span_digest}")
-        cursor = _Cursor(data, start + len(prefix))
+        cursor = _Cursor(data, start + len(prefix), game_root=game_root, strings=strings, route=contract["route"])
         for name, kind in route["fields"]:
             try:
                 cursor.value("Param<int>" if kind == "Param<NodeLookAtType>" else kind,
@@ -389,7 +390,9 @@ def validate_is_look_at_point_in_screen_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

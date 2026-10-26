@@ -8,6 +8,7 @@ comparisons into one searchable interface.
 <p>
   <img src="res/story_screenshot.jpg" alt="Story browser with recovered reading image, dialogue, and mission rewards" height="100">
   <img src="res/gameplay_screenshot.jpg" alt="Gameplay browser with character skills, dataset tabs, and shared filters" height="100">
+  <img src="res/activities_screenshot.jpg" alt="Activities browser with configured schedules, prerequisites, targets, and rewards" height="100">
   <img src="res/map_screenshot.jpg" alt="Map browser with recovered Wuling terrain and regional layers" height="100">
   <img src="res/assets_screenshot.jpg" alt="Assets browser with exported media and linked metadata" height="100">
 </p>

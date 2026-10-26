@@ -86,13 +86,69 @@ def _conversion(image,pins,profile):
 
 
 def derive(image,pins,profile):
+ return _derive(image,pins,profile,include_parent=True)
+
+def derive_value(image,pins,profile):
+ """Own only EntityPtr's stored value/adapter; never derive its Param parent."""
+ return _derive(image,pins,profile,include_parent=False)
+
+
+def _value_replay(image,wrapper,registrations,adapter_proof,conversion,selected_formatter,profile):
+ """Capture only the new independent-value path; legacy Param output is unchanged."""
+ from scripts.game_data.memorypack.pointer_param import owned
+ base=image.pe.image_base;md=image.metadata
+ methods={md.string(m.name_index):m for m in md.methods_for(md.types[wrapper.type_definition])}
+ def packet(at):
+  body=owned(image,at)
+  return dict(entryRva=at-base,windows=body['windows'],regions=[[a-base,b.hex().upper()]for a,b in body['regions']],rows=body['rows'],boundary='complete-native-owned-family')
+ def selected(rows):
+  start=int(rows[0]['va'],16);raw=b''.join(bytes.fromhex(r['bytes'])for r in rows)
+  _require(all(int(r['va'],16)==start+sum(len(bytes.fromhex(p['bytes']))for p in rows[:i])for i,r in enumerate(rows)),'valueReplay.contiguous-selected-span')
+  _require(image.pe.bytes_at_va(start,len(raw))==raw,'valueReplay.actual-selected-bytes')
+  return dict(entryRva=start-base,windows=[dict(startRva=start-base,endRva=start-base+len(raw),sha256=hashlib.sha256(raw).hexdigest().upper())],
+   regions=[[start-base,raw.hex().upper()]],rows=rows,boundary='declared-closed-leaf-span-no-unwind-extent-claim')
+ actual=[p for p in adapter_proof['paths']if p['profile']=='actual-slot-match']
+ symbols=adapter_proof['symbols'];result={role:packet(at)for role,at in dict(leaf=image.method_pointer_va(methods['Deserialize']),
+  adapter=symbols['adapter'],dispatch=actual[0]['selectedInstructions'][0],peek=symbols['peek'],readNull=symbols['readNull'],
+  conversion=int(conversion['instructions'][0]['va'],16),slot=conversion['symbols']['slotDispatch'],forwarder=selected_formatter).items()}
+ result['conversion']['rows']=conversion['instructions']
+ for role,record in [('adapter',next(r for r in profile['actualAdapter']['records']if r['role']=='compared-adapter')),
+  ('dispatch',next(r for r in profile['actualAdapter']['records']if r['role']=='actual-dispatch')),
+  ('peek',next(r for r in profile['wrapperRegistration']['records']if r['role']=='peekIsNull')),
+  ('readNull',next(r for r in profile['wrapperRegistration']['records']if r['role']=='readNullByte'))]:
+  # _adapter has authenticated these exact decoder rows against the current
+  # bytes. Retain its complete instruction vocabulary rather than re-splitting
+  # uncommon opcodes with the general body index.
+  result[role]['rows']=[r for part in record['parts']for r in part['rows']]
+  covered={a+i:b for a,h in result[role]['regions']for i,b in enumerate(bytes.fromhex(h))}
+  for row in result[role]['rows']:
+   at=int(row['va'],16)-base
+   for i,b in enumerate(bytes.fromhex(row['bytes'])):
+    _require(covered.pop(at+i,None)==b,'valueReplay.authenticated-decoder-coverage')
+  _require(not covered,'valueReplay.complete-decoder-coverage')
+ for role,name,maximum in [('getter','GetValue',256),('set_logicId','set___logicId__',128),('set_slotId','set___slotId__',128),('set_useSlotId','set___useSlotId__',128)]:
+  at=image.method_pointer_va(methods[name]);result[role]=selected(decode_closed_leaf_entry(image.mapper,image.pe.bytes_at_va(at,maximum),at)['rows'])
+ for i,flow in enumerate(registrations):
+  w=flow['window'];at=base+w['startRva'];raw=image.window_bytes(w)
+  result['registration'+str(i)]=dict(entryRva=w['startRva'],windows=[w],regions=[[w['startRva'],raw.hex().upper()]],
+   rows=image.body_index._decode(at,len(raw)),boundary='declared-selected-registration-span')
+  thunk=flow['constructorThunk'];w=thunk['window'];raw=image.window_bytes(w)
+  result['registrationThunk'+str(i)]=dict(entryRva=w['startRva'],windows=[w],regions=[[w['startRva'],raw.hex().upper()]],
+   rows=image.body_index._decode(base+w['startRva'],len(raw)),boundary='declared-selected-constructor-thunk-span')
+ return dict(sources=result,readerOffsets=scalar.reader_offsets(image,'entityValueReplay'))
+
+def _derive(image,pins,profile,*,include_parent):
  base=image.pe.image_base;md=image.metadata;ctx=NativeReferenceContext(image)
- scalar.need('entityParam','registeredPairs',{'Beyond.Gameplay.Core.EntityPtr','Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>'},{row['originalType'] for row in profile['registrations']})
- for row in profile['registrations']:validate_eager_wrap_registration(image,row,label='entityParam.registration')
- for row in profile['compositions']:validate_registered_formatter_composition(image,row,label='entityParam.composition')
- leaf=_leaf(image,pins,profile);outer=_outer(image,pins,profile);adapter_proof=_adapter(image,pins,profile);conversion=_conversion(image,pins,profile)
+ value='Beyond.Gameplay.Core.EntityPtr'
+ registrations=profile['registrations']if include_parent else[r for r in profile['registrations']if r['originalType']==value]
+ compositions=profile['compositions']if include_parent else[r for r in profile['compositions']if r['registrations'][0]['originalType']==value]
+ expected={value,'Beyond.Gameplay.Actions.Param`1<'+value+'>'}if include_parent else{value}
+ scalar.need('entityParam','registeredPairs',expected,{row['originalType'] for row in registrations})
+ for row in registrations:validate_eager_wrap_registration(image,row,label='entityParam.registration')
+ for row in compositions:validate_registered_formatter_composition(image,row,label='entityParam.composition')
+ leaf=_leaf(image,pins,profile);outer=_outer(image,pins,profile)if include_parent else None;adapter_proof=_adapter(image,pins,profile);conversion=_conversion(image,pins,profile)
  forwarders=[]
- for fact in profile['compositions']:
+ for fact in compositions:
   original=fact['registrations'][0]['originalType'];getter,formatter=fact['methods'];wrapper=ctx.index.types[getter[1]]
   scalar.need('entityParam','nonabstractWrapper',0,wrapper.flags&0x80)
   target,=[m for m in md.methods_for(wrapper) if md.string(m.name_index)=='Deserialize'];pointer=base+formatter[3];rows=[];regions=[]
@@ -102,7 +158,7 @@ def derive(image,pins,profile):
   proof=prove_zero_wrapper_forwarder(rows,dict(metadataInit=calls[0],classInit=calls[1]),image.method_pointer_va(target),label='entityParam.forward')
   forwarders.append(dict(originalType=original,proof=proof))
   if original=='Beyond.Gameplay.Core.EntityPtr':selected_formatter=pointer
- scalar.need('entityParam','compositionPairSet',{'Beyond.Gameplay.Core.EntityPtr','Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>'},{r['originalType'] for r in forwarders})
+ scalar.need('entityParam','compositionPairSet',expected,{r['originalType'] for r in forwarders})
  symbols=conversion['symbols'];invoke=symbols['slotDispatch'];regions=[]
  for item in image.unwind_index.family(invoke-base)['ranges']:
   a,b=item['runtimeTriple'][:2];regions.append((base+a,image.pe.bytes_at_va(base+a,b-a)))
@@ -110,7 +166,14 @@ def derive(image,pins,profile):
  td=ctx.index.types['Beyond.MemoryPack.GenericMemoryPackFormatter`2'];method,=[m for m in md.methods_for(td) if md.string(m.name_index)=='Deserialize']
  observed=GenericEntries(image).observe(method.index,['Beyond.Gameplay.Core.EntityPtr','object'],[])
  scalar.need('entityParam','canonicalSharedEntry',True,any(r['pointer']==adapter_proof['symbols']['adapter'] for r in observed))
- return json.loads(json.dumps(dict(leaf=leaf,outer=outer,adapter=adapter_proof,conversion=conversion,forwarders=forwarders,slotTransfer=transfer,adapterRegistration=observed,evidenceBoundary=dict(direct='Current three-field EntityPtr wire source, exact hidden40 getter, typed null/existing/allocating four-member Param and both bindings, clone equivalence, actual selected dispatch/conversion/forwarders and static concrete registration.',conditional='Coherent initialized closed contexts and ready classes, sufficient contiguous input, disjoint storage and normal helper/allocation/barrier ABI; matching generated adapter/wrapper/conversion route selected.',unresolved=['live provider default/cache/override selection','runtime entity resolution','unserialized EntityPtr state','cold refill and malformed paths','enclosing owner execution']))))
+ result=dict(leaf=leaf,outer=outer,adapter=adapter_proof,conversion=conversion,forwarders=forwarders,slotTransfer=transfer,adapterRegistration=observed,evidenceBoundary=dict(direct='Current three-field EntityPtr wire source, exact hidden40 getter, typed null/existing/allocating four-member Param and both bindings, clone equivalence, actual selected dispatch/conversion/forwarders and static concrete registration.',conditional='Coherent initialized closed contexts and ready classes, sufficient contiguous input, disjoint storage and normal helper/allocation/barrier ABI; matching generated adapter/wrapper/conversion route selected.',unresolved=['live provider default/cache/override selection','runtime entity resolution','unserialized EntityPtr state','cold refill and malformed paths','enclosing owner execution']))
+ if not include_parent:
+  del result['outer'];result.update(schema='endfield.entity-ptr-independent-value-source.v2',nativeInputs=pins,
+   registrations=registrations,compositions=compositions,parentDerived=False,parentFieldAdmitted=False,wholeOwnerAdmitted=False)
+  wrapper,=[w for w in image.memorypack_wrappers.values()if w.wrapped_type==value]
+  result['replay']=_value_replay(image,wrapper,registrations,adapter_proof,conversion,selected_formatter,profile)
+  result['evidenceBoundary']['direct']='Only current EntityPtr MC3/FF/default40, exact hidden40 getter, own static registration and canonical adapter/conversion/slot/forwarder source. No Param parent is derived or admitted.'
+ return json.loads(json.dumps(result))
 
 def _require(condition,check):
  if not condition:raise ValueError("entityParam."+check)

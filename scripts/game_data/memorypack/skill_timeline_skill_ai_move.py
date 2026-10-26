@@ -21,6 +21,7 @@ from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usa
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineSkillAIMove"
@@ -97,7 +98,7 @@ def _contract() -> dict[str, Any]:
 def _validate_section(image: Any, key: str, section: dict[str, Any]) -> list[int]:
     label = f"{LABEL}.{key}"
     methods = [image.validate_method_row(row, label=label) for row in section["methods"]]
-    image.check_windows(section["codeWindows"], label=label)
+    check_formatter_windows(image, section, label=label)
     instruction = section["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=label)
     owner = image.metadata.types[section["wrapperTypeDefinition"]]
@@ -174,9 +175,9 @@ def validate_current_native_contract() -> dict[str, Any]:
         label=f"{LABEL}.unmanagedCopy",
     )
     dependency = json.loads((CONTRACTS_DIR / contract["dependencies"][0]["path"]).read_bytes())
-    if dependency.get("schemaVersion") != 1:
+    if (dependency.get("schemaVersion") != 1 and not is_role_projection(dependency)):
         raise ValueError(f"{LABEL}.native:target-dependency-schema")
-    image.check_windows(dependency["codeWindows"], label=f"{LABEL}.buff_ec_native")
+    check_formatter_windows(image, dependency, label=f"{LABEL}.buff_ec_native")
     return {
         "status": "validated", "nativeInputs": expected,
         "methodIndices": methods,

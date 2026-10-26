@@ -1,4 +1,4 @@
-"""Selected-build SkillData MoveToDirectionAction 0x00F7 source reader.
+"""Selected-build SkillData MoveToDirectionAction source reader.
 
 The source fixes nineteen ordered reads and five nested generic contexts.
 Stored motion fields are structural evidence, not runtime movement proof.
@@ -17,13 +17,18 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff import (
+    _ability_action_tag, _ability_action_tag_bytes,
+)
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+from scripts.game_data.memorypack.skill_timeline_dependencies import validate_dependencies
 
 
 LABEL = "skillTimelineMoveToDirection"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_move_to_direction_native.json"
-TAG = 0x00F7
+TAG_NAME = "Core_MoveToDirectionAction_Data"
 FIELD_NAMES = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "directionType", "ignoreAllCollision", "ignoreCollisionLayer",
@@ -49,7 +54,7 @@ _READERS = {
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH, schema="endfield.skill-timeline-move-to-direction-native-contract.v1",
         label=LABEL, status="exact-current-build",
@@ -57,7 +62,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != TAG
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(FIELD_NAMES)
         or not isinstance(reads, list)
         or len(reads) != len(FIELD_NAMES)
@@ -73,7 +78,7 @@ def _contract() -> dict[str, Any]:
             "UnityEngine.AnimationCurve",
         ]
         or [row.get("path") for row in contract.get("dependencies", ())]
-        != ["buff_1f_native.json", "buff_ec_native.json", "buff_98_native.json"]
+        != ["memorypack_layer_mask_source_native.json", "buff_ec_native.json", "buff_98_native.json"]
         or bytes.fromhex(contract.get("memberCountInstruction", {}).get("hex", ""))
         != b"\x80\x7c\x24\x38" + bytes([len(FIELD_NAMES)])
     ):
@@ -81,11 +86,13 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate selected route, nineteen reads and five generic types."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
+    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"], gameassembly=gameassembly, metadata=metadata)
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
@@ -97,7 +104,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -115,11 +122,8 @@ def validate_current_native_contract() -> dict[str, Any]:
         target = rva + 5 + struct.unpack_from("<i", raw, 1)[0]
         if target != read["sourceTargetRva"]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
-    for dependency in contract["dependencies"]:
-        reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
-            raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+    validate_dependencies(image, contract, label=LABEL)
+
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(
@@ -156,7 +160,8 @@ def decode_move_to_direction_action(reader: Reader, depth: int, tag: int, width:
     """Consume one nineteen-member action with reviewed finite nested profiles."""
     del depth
     contract = _contract()
-    if tag != contract["dispatcher"]["unionTag"] or width != 1:
+    if (tag != contract["dispatcher"]["unionTag"]
+            or width != len(_ability_action_tag_bytes(TAG_NAME))):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

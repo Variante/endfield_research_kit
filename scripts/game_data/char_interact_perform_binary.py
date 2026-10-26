@@ -15,3 +15,9 @@ def _frame(data,game_root,prefix,gameassembly,metadata,strings):
 def decode_char_interact_complete_frame(data,*,game_root=None,gameassembly=None,metadata=None,strings=None):return _frame(data,game_root,False,gameassembly,metadata,strings)
 def frame_char_interact_prefix(data,*,game_root=None,gameassembly=None,metadata=None,strings=None):return _frame(data,game_root,True,gameassembly,metadata,strings)
 def decode_char_interact_audio_actions(data,*,game_root=None,gameassembly=None,metadata=None,strings=None):return decode_char_interact_complete_frame(data,game_root=game_root,gameassembly=gameassembly,metadata=metadata,strings=strings)['audioActions']
+
+
+def decode_char_interact_current_animation(data,*,operation):
+ """Explicit whole-current opt-in; the caller must finish the native operation."""
+ from scripts.game_data.animation_current_native import prepared_current_animation
+ return prepared_current_animation(operation).char_interact(data)

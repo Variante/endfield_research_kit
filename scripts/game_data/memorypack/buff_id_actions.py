@@ -77,7 +77,7 @@ def validate_current_native_contract():
         # Existing reviewed owner verifies native methods/windows, every generic
         # carrier/element and the shared list source proof without inventing widths.
         buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,
-                               source=str(gate.gameassembly),contract_path=CONTRACTS_DIR/spec['sourceContract'])
+                               source=str(gate.gameassembly),contract_path=CONTRACTS_DIR/spec['sourceContract'], native_image=image)
         route=routes[tag];kinds=_source_kinds(spec,source)
         reviewed=catalog['families']['AbilityActionData'][tag]
         if reviewed['wrappedType']!=spec['wrappedType'] or route.wrapper_name!=reviewed['wrapperName']:

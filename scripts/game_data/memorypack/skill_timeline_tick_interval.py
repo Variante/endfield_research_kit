@@ -1,4 +1,4 @@
-"""Selected-build SkillData TickIntervalAction 0x0181 source reader.
+"""Selected-build SkillData TickIntervalAction source reader.
 
 The reviewed native body fixes nine ordered reads and identifies the nested
 SequenceActionData generic context. Child action routes retain the caller's
@@ -15,12 +15,13 @@ from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inp
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
+from scripts.game_data.memorypack.buff import _ability_action_tag, _ability_action_tag_bytes
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 
 LABEL = "skillTimelineTickInterval"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_tick_interval_native.json"
-TAG = 0x0181
+TAG_NAME = "Core_TickIntervalAction_Data"
 READ_KINDS = (
     "bool-byte", "scalar32", "scalar32", "scalar32", "sequence-profile",
     "bool-byte", "float32-bits", "byte-payload", "bool-byte",
@@ -33,7 +34,7 @@ FIELD_NAMES = (
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH,
         schema="endfield.skill-timeline-tick-interval-native-contract.v1",
@@ -43,7 +44,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != TAG
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or not isinstance(reads, list)
         or [row.get("memberIndex") for row in reads] != list(range(len(READ_KINDS)))
         or tuple(row.get("fieldName") for row in reads) != FIELD_NAMES
@@ -57,12 +58,15 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate the selected union route, ordered reads, and child type."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
@@ -131,7 +135,7 @@ def validate_current_native_contract() -> dict[str, Any]:
 def decode_tick_interval_action(reader: Reader, depth: int, tag: int, width: int) -> None:
     """Consume one nine-member action, stopping on unsupported child routes."""
     _contract()
-    if tag != TAG or width != 3:
+    if tag != _ability_action_tag(TAG_NAME) or width != len(_ability_action_tag_bytes(TAG_NAME)):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

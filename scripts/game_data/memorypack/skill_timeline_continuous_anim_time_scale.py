@@ -18,6 +18,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.derived_schema import resolve_routes
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineContinuousAnimTimeScale"
@@ -83,22 +84,28 @@ def _dependency_windows(image: Any, contract: Mapping[str, Any]) -> None:
     targets.add(contract["memberHeaderSourceCall"]["sourceTargetRva"])
     windows = [row for row in primitive.get("codeWindows", [])
                if row.get("startRva") in targets]
-    if (primitive.get("schemaVersion") != 1
+    if ((primitive.get("schemaVersion") != 1 and not is_role_projection(primitive))
             or targets != {row["startRva"] for row in windows}
             or len(windows) != 3):
         raise ValueError(f"{LABEL}.native:primitive-source-drift")
-    image.check_windows(windows, label=LABEL)
+    if is_role_projection(primitive):
+        check_formatter_windows(image, primitive, label=LABEL)
+    else:
+        image.check_windows(windows, label=LABEL)
     blackboard = json.loads((CONTRACTS_DIR / contract["blackboardReadContract"]).read_bytes())
     methods = [row for row in blackboard.get("methods", [])
                if "Beyond_Blackboard_BlackboardDoubleForMemoryPack" in row[1]
                and row[2] == "Deserialize"]
     windows = [row for row in blackboard.get("codeWindows", [])
                if any(row.get("startRva") == method[3] for method in methods)]
-    if blackboard.get("schemaVersion") != 1 or len(methods) != 2 or len(windows) != 2:
+    if (blackboard.get("schemaVersion") != 1 and not is_role_projection(blackboard)) or len(methods) != 2 or len(windows) != 2:
         raise ValueError(f"{LABEL}.native:blackboard-source-drift")
     for method in methods:
         image.validate_method_row(method, label=LABEL)
-    image.check_windows(windows, label=LABEL)
+    if is_role_projection(blackboard):
+        check_formatter_windows(image, blackboard, label=LABEL)
+    else:
+        image.check_windows(windows, label=LABEL)
 
 
 def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> dict[str, Any]:
@@ -119,7 +126,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     _dependency_windows(image, contract)

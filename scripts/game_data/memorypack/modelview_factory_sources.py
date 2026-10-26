@@ -19,8 +19,9 @@ def create_instance(regions,entry,s,*,cache=None,constructor=False):
     return dict(selectedBytes=g.seen,allocationInstruction=allocation,originalClassCell=cell,baseSlot=16,cacheSlot=cache,originalConstructor=constructor,normalReturnViaBarrier=True,condition='Initialized exact typed wrapper reset, normal nonnull original allocation and optional original ctor preserving nonvolatiles; matching owned setter and compatible cast return same full original. Exact reference writes and restored caller frame precede disabled barrier tail. Other inherited caches are not assumed coherent; runtime constructor/allocation/predicate/storage effects conditional.')
 
 
-def dual_setter(regions,entry,barrier,*,cache):
-    if cache not in(24,32):raise ValueError('modelViewFactory.setter-cache')
+def dual_setter(regions,entry,barrier,*,cache,owned_cache=False):
+    if type(owned_cache)is not bool or(cache not in(24,32)and not(owned_cache and type(cache)is int and 16<cache<128 and cache%8==0)):
+        raise ValueError('modelViewFactory.setter-cache')
     c=bytes((cache,)).hex();g=BytesPath(regions,entry);g.take('4883ec28','4c8bd1','488951'+c,'4883c1'+c,'4c8bca');g.call(barrier);g.take('498d4a10','4d894a10','4883c428')
     if g.relative('e9')!=barrier:raise ValueError('modelViewFactory.setter-tail')
     return dict(selectedBytes=g.seen,baseSlot=16,cacheSlot=cache,sameFullReferenceStored=True,normalReturnViaBarrier=True,condition='Current owned typed wrapper fields and RDX full original reference, disjoint stable storage; separately proved disabled collector preserves live R9 value/R10 receiver across first barrier, normal tail effects. Other inherited caches remain separate.')

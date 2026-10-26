@@ -84,7 +84,7 @@ def validate_current_native_contract(*, children: dict[str, Any],
     image = open_native_image(gate.gameassembly, gate.metadata)
     source = json.loads(source_path.read_bytes())
     buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-        image.modules, image.owners, source=str(gate.gameassembly), contract_path=source_path)
+        image.modules, image.owners, source=str(gate.gameassembly), contract_path=source_path, native_image=image)
     proved = named.validate_named_records(image, source, c['records'], label=LABEL, fail=_fail)
     routes, audit = load_action_routes(gameassembly=gate.gameassembly, metadata=gate.metadata)
     tag = next(iter(supported_tags())); route = routes.get(tag); record = c['records'][RECORD]

@@ -44,7 +44,7 @@ def npc_runtime_decoder(*,strings,game_root=None,gameassembly=None,metadata=None
                 entries.append(dict(key=key,keyOffset=key_at,valueOffset=row['startOffset'],value=row))
         except LevelNpcCodecError as error:error.partial_entries=entries;error.entry_count=n;raise
         return dict(startOffset=start,endOffset=offset,count=n,entries=None if n==-1 else entries,status='null'if n==-1 else'present'),offset
-    decode.collection=collection;decode.dictionary=dictionary;decode.pool_root=Path(strings.root).resolve();decode.native_inputs=proof['nativeInputs'];decode.native_sources=proof['nativeSources']
+    decode.collection=collection;decode.dictionary=dictionary;decode.pool_root=Path(strings.root).resolve();decode.native_inputs=proof['nativeInputs'];decode.native_sources=proof['nativeSources'];decode.native_layout=proof['layout']
     try:yield decode
     finally:
         active=False;selected=proof['nativeSources'];after=native.validate(gameassembly=Path(selected['GameAssembly.dll']),metadata=Path(selected['global-metadata.dat']))

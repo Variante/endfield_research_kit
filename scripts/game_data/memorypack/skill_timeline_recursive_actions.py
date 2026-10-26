@@ -26,6 +26,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.il2cpp.protocol import runtime_type_name
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows
 
 LABEL = "skillTimelineRecursiveActions"
 SCHEMA = "endfield.skill-timeline-recursive-actions-native-contract.v1"
@@ -151,11 +152,11 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
             or catalog["nativeInputs"]["gameAssemblySha256"] != expected["GameAssembly.dll"]
             or catalog["nativeInputs"]["metadataSha256"] != expected["global-metadata.dat"]):
         raise ValueError(f"{LABEL}.native:dependency-inputs")
-    image.check_windows(primitive["codeWindows"], label=LABEL)
-    image.check_windows(strings["codeWindows"], label=LABEL)
+    check_formatter_windows(image, primitive, label=LABEL)
+    check_formatter_windows(image, strings, label=LABEL)
     for name in contract["childContracts"]:
         buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-            image.modules, image.owners, source=str(gate.gameassembly), contract_path=CONTRACTS_DIR / name)
+            image.modules, image.owners, source=str(gate.gameassembly), contract_path=CONTRACTS_DIR / name, native_image=image)
     sequence = buff_sequence_read_order(image.pe, image.metadata, image.modules, image.owners,
                                        source=str(gate.gameassembly))
     image.check_windows([sequence["rootCodeWindow"]], label=LABEL)
@@ -177,7 +178,7 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
         image.validate_dispatcher(route["dispatcher"], label=LABEL)
         for method in route["methods"]:
             image.validate_method_row(method, label=LABEL)
-        image.check_windows(route["codeWindows"], label=LABEL)
+        check_formatter_windows(image, route, label=LABEL)
         count = route["memberCountInstruction"]
         image.check_instruction_windows([[count["rva"], count["hex"]]], label=LABEL)
         owner = image.metadata.types[route["dispatcher"]["wrapperTypeDefinition"]]

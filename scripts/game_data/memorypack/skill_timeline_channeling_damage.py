@@ -197,7 +197,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / "buff_9a_native.json",
-    )
+     native_image=image)
     if tuple(parent_audit["anonymousReadOrder"].get("member11", ())) != PARENT_READ_ORDER:
         raise ValueError(f"{LABEL}.native:parent-profile")
     image.check_windows(lists["codeWindows"], label=f"{LABEL}.damage-lists")

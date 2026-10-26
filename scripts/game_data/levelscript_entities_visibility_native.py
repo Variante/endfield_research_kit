@@ -292,7 +292,9 @@ def _validate_native(image: Any, data: dict[str, Any]) -> None:
 
 
 def _validate_sources(data: dict[str, Any], export_root: Path, ledger_path: Path,
-                      summary_path: Path) -> None:
+                      summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
+) -> None:
     from scripts.game_data.codecs.levelscript.visibility_action import decode_visibility_action
 
     summary = json.loads(summary_path.read_bytes())
@@ -323,7 +325,7 @@ def _validate_sources(data: dict[str, Any], export_root: Path, ledger_path: Path
             or ledger.get(path, {}).get("length") != len(payload)
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}@{start}")
-        decoded, cursor = decode_visibility_action(payload, start, data["route"], enum_values)
+        decoded, cursor = decode_visibility_action(payload, start, data["route"], enum_values, game_root=game_root, strings=strings)
         if cursor != end or decoded["endOffset"] != end:
             raise ValueError(f"{LABEL}.source:cursor={path}@{start}")
 
@@ -358,7 +360,9 @@ def validate_entities_visibility_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            _validate_sources(data, Path(export_root), Path(ledger_path), Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            _validate_sources(data, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         return {"status": "validated", "evidenceBoundary": "exact",
                 "route": {"family": data["route"]["family"], "tag": data["route"]["tag"],
                           "wrapperName": data["route"]["wrapperName"],

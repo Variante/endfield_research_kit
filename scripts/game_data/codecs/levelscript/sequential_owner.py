@@ -57,7 +57,7 @@ def _frame_levelscript_sequential_owner(
     action_map_boundary: str,
     partial_status: str,
     strings: Any = None,
-    game_root=None, npc_decoder=None,
+    game_root=None, npc_decoder=None,current_owner=None,
 ) -> dict[str, Any]:
     """Advance members 2..28 after an independently exact action-map boundary."""
     gate = check_root_native_inputs(game_root=game_root)
@@ -65,7 +65,7 @@ def _frame_levelscript_sequential_owner(
         raise LevelScriptTopLevelFramingError(f"levelscriptRoot.native:{gate.status}:{gate.detail}")
     try:
         owner = levelscript_top_level_prefix.decode_empty_action_map_owner_prefix(
-            data, owner_offset, strings=strings, gameassembly=gate.gameassembly, metadata=gate.metadata, npc_decoder=npc_decoder
+            data, owner_offset, strings=strings, gameassembly=gate.gameassembly, metadata=gate.metadata, npc_decoder=npc_decoder,current_owner=current_owner
         )
     except levelscript_top_level_prefix.LevelScriptPrefixCodecError as error:
         raise LevelScriptTopLevelFramingError(str(error)) from error
@@ -109,7 +109,8 @@ def _frame_levelscript_sequential_owner(
         raise LevelScriptTopLevelFramingError(
             f"invalid positional scriptId: offset={cursor} value={script_id}"
         )
-    tail = levelscript_top_level_tail.decode_tail_candidate(data, cursor)
+    tail = levelscript_top_level_tail.decode_tail_candidate(data, cursor,
+        terminal_prefix_only=current_owner is not None)
     start_shapes = tail.get("startShapeList") or {}
     start_shape_rows = start_shapes.get("shapes") or []
     if (
@@ -154,6 +155,20 @@ def _frame_levelscript_sequential_owner(
         "startTypeOffset": tail.get("startTypeOffset"),
         "taskMapOffset": task_map_offset,
     }
+
+    if current_owner is not None:
+        # The current pooled Task source owns its dictionary and child states;
+        # historical task locators and receipts do not provide this boundary.
+        task_map,task_map_end=current_owner.task_map(data,task_map_offset,strings=strings)
+        trigger_volumes,terminal_end=current_owner.trigger_map(data,task_map_end,strings=strings)
+        if terminal_end!=len(data):
+            raise LevelScriptTopLevelFramingError(f'current sequential owner physical EOF: offset={terminal_end} bytes={len(data)}')
+        fields['taskMap']=task_map;fields['triggerVolumes']=trigger_volumes
+        ranges['terminalPrefix']['endOffset']=task_map_end
+        ranges['triggerVolumes']=dict(startOffset=task_map_end,endOffset=terminal_end)
+        return dict(status='exact_named_levelscript_data',schemaStatus='named_exact',
+            serializedMemberCount=28,bytesConsumed=terminal_end,fields=fields,ranges=ranges,
+            evidenceBoundary='Conditional current typed pooled Task and selected Trigger dictionary profiles close the one generated-order cursor at physical EOF. Complete selected child/callback gates precede the cursor; no historical receipt or suffix locator supplies a boundary.')
 
     if task_map_count not in {None, 0}:
         task_diagnostics = [{"validator": "levelscript-task-owner", "gate": "pooled-child-source",

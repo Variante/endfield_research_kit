@@ -1,214 +1,313 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "methods": [
     [
-      118865,
+      260533,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPack+Beyond_Gameplay_Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPackFormatter",
       "Deserialize",
-      66678992
+      104965168
     ],
     [
-      118864,
+      260532,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPack",
       "Deserialize",
-      66679088
+      104965264
     ],
     [
-      162718,
+      305330,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAlertDataForMemoryPack+Beyond_Gameplay_Core_SkillAlertDataForMemoryPackFormatter",
       "Deserialize",
-      67967520
+      106644864
     ],
     [
-      162717,
+      305329,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAlertDataForMemoryPack",
       "Deserialize",
-      67967616
+      106644960
     ]
   ],
   "codeWindows": [
     {
-      "startRva": 66678992,
-      "endRva": 66679085,
-      "sha256": "D9610E2A8B1A660279B500B8A6D00370DC430F65B0121E71931A302FD2B67AA5",
-      "boundary": "outer formatter initialization and forwarding"
+      "startRva": 104965168,
+      "endRva": 104965261,
+      "sha256": "3CF759F3CBBF866D50DE9A3914DADF8C55C3AC3C605C13FC7B2BD11C168340AD",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 66679088,
-      "endRva": 66679772,
-      "sha256": "CD1DE2872D6ACFF964A73C66BE20BEBFCC35CA49D575BF064C1FC421C36B460B",
-      "boundary": "outer header11 normal and initialization through rejoin"
+      "startRva": 104965264,
+      "endRva": 104965331,
+      "sha256": "E88969E87EC599FAEDC6CD67F17C99CD4715CE8319955B750E3E77606FC9406C",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 67967520,
-      "endRva": 67967613,
-      "sha256": "1E93491F28005CD6357B8C69BE3D34CF4D494BEE6115E169BA55CCAD14F52303",
-      "boundary": "alert formatter initialization and forwarding"
+      "startRva": 104965331,
+      "endRva": 104965805,
+      "sha256": "B4FA279533D1A93B265CDF20C85568DD05B7E1B0A21F09ACD7E18B0E30359583",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 67967616,
-      "endRva": 67968103,
-      "sha256": "EBEA9C9E4AB3B2D5EA876C203119DE44B65494ACED19CDFF4D5AECCD2D22BC67",
-      "boundary": "alert header9 normal and initialization through rejoin"
+      "startRva": 104965805,
+      "endRva": 104965816,
+      "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 83196208,
-      "endRva": 83196221,
-      "sha256": "764DA353D4031CF83C393B65227C9732AFE8F4413592315F9743B7765F6745B4",
-      "boundary": "outer existing output rejoin"
+      "startRva": 104965816,
+      "endRva": 104965822,
+      "sha256": "A6AF1E751F157488F029DCDBBFADD90A4400B542F3BE965425F39548ED8B25D3",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 83196277,
-      "endRva": 83196298,
-      "sha256": "3DAB2BDB818A9FC02E35FB6FD95FF865CAAEE3039FD6BAD1175C365CBF0FE874",
-      "boundary": "outer FF clear and epilogue rejoin"
+      "startRva": 104965822,
+      "endRva": 104965942,
+      "sha256": "5C6012C5B9423A8ED43640C1DAF4B5C0CC9DABCA96C233F904E54C050B3C6A6E",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 83327328,
-      "endRva": 83327379,
-      "sha256": "AB8646A978ACFBFCD09EEFF668ED976DA33BF1A6733DFD33706B0272A5511CC3",
-      "boundary": "alert allocate new output after header and rejoin"
+      "startRva": 124634670,
+      "endRva": 124634683,
+      "sha256": "89E98F85D5B9C692D3027DCC969D2A5ECCA1AAC0DBD47A334458720A3C96E0A4",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     },
     {
-      "startRva": 83327435,
-      "endRva": 83327456,
-      "sha256": "AF2E79B08252E83BC2A8B63B818C6094B5D9D0302FF87B22748400C27376F137",
-      "boundary": "alert FF clear and epilogue rejoin"
+      "startRva": 124634683,
+      "endRva": 124634739,
+      "sha256": "465DD04F241B8C5739AFC1D6FD66B2562245D9E29B48DBC128380BDF097B71DE",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 124634739,
+      "endRva": 124634760,
+      "sha256": "ECF13143200F05A0EBC27011A889CE97BFDCF57D10875A1F0BC18447909FB4DD",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 106644864,
+      "endRva": 106644957,
+      "sha256": "8A4985627F57D33F67AAF81781A41E73720D57567B2655C26DB8CC66CDE54F89",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 106644960,
+      "endRva": 106645015,
+      "sha256": "9F8E6328314D945B4DC54D3E66ED4DB6967061AA020B095D502E48D0F8105F23",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 106645015,
+      "endRva": 106645352,
+      "sha256": "95942279FBF1649B6D4DF11CBF13164B696D2F33032FB5016E65155BD561DE31",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 106645352,
+      "endRva": 106645363,
+      "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 106645363,
+      "endRva": 106645369,
+      "sha256": "739CDF88E474F78B992E38C7E744969F29B5507AA688F6FCDE1A4A743C753553",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 106645369,
+      "endRva": 106645441,
+      "sha256": "9BF971533391A03348654BFD60CDDBE1F22954C4C871C2AC3F604B6A64ED194D",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 124791866,
+      "endRva": 124791973,
+      "sha256": "C92F63E8E3140B4506B7A901CC4429684DDBF9C184E750097003FCB58C136BDE",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 124791973,
+      "endRva": 124791994,
+      "sha256": "AE5867E048029BA869F59BC24C30A1D5AFA3F8766D2E39B0990D0527968CB34E",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 83754352,
+      "endRva": 83754439,
+      "sha256": "F5D54185CAD8DFD22FDB3C92312594556C9ADB3126526D28898ECD14CC96159E",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 120410862,
+      "endRva": 120410907,
+      "sha256": "ABFE56BA791497AF8176F8B0188567201629E2F468137ACA102AE2980BD50CF9",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 83753904,
+      "endRva": 83753987,
+      "sha256": "F832E2DB7220B63F1AE2353C082A4E9593FB9FB88519CC683CCEE1DAE870CC4E",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
+    },
+    {
+      "startRva": 121754712,
+      "endRva": 121754757,
+      "sha256": "C6D65C0A5EF8CB10E1FCB60FF9D8C0BFE7DE925ACC7BE778EDA10BF221B35B41",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_23_roles_native.json"
     }
   ],
   "nestedContexts": [
     {
-      "instructionRva": 66679260,
-      "instructionHex": "488B15452C0F09",
-      "cellVa": 6661119528,
-      "usageRawHex": "81E812C000000000",
-      "methodSpecIndex": 619584,
+      "instructionRva": 104965436,
+      "instructionHex": "488B1565202C0A",
+      "cellVa": 6718080424,
+      "usageRawHex": "EBB613C000000000",
+      "methodSpecIndex": 646005,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42547
+        42893
       ],
-      "argumentRawHex": "EA230000000000000000118000000000",
-      "typeDefinition": 9194,
+      "argumentRawHex": "64250000000000000000118000000000",
+      "typeDefinition": 9572,
       "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
       "generic": null,
       "typeKind": 17
     },
     {
-      "instructionRva": 66679366,
-      "instructionHex": "488B159BA40F09",
-      "cellVa": 6661150440,
-      "usageRawHex": "7BEB12C000000000",
-      "methodSpecIndex": 619965,
+      "instructionRva": 104965542,
+      "instructionHex": "488B1503A22C0A",
+      "cellVa": 6718113712,
+      "usageRawHex": "0FBA13C000000000",
+      "methodSpecIndex": 646407,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16654
+        15839
       ],
-      "argumentRawHex": "34240000000000000000120000000000",
-      "typeDefinition": 9268,
+      "argumentRawHex": "B0250000000000000000120000000000",
+      "typeDefinition": 9648,
       "typeName": "Beyond.Gameplay.Core.SkillAlertData",
       "generic": null,
       "typeKind": 18
     },
     {
-      "instructionRva": 66679407,
-      "instructionHex": "488B152AB80F09",
-      "cellVa": 6661155488,
-      "usageRawHex": "CBE412C000000000",
-      "methodSpecIndex": 619109,
+      "instructionRva": 104965583,
+      "instructionHex": "488B157A0F2C0A",
+      "cellVa": 6718076240,
+      "usageRawHex": "07B313C000000000",
+      "methodSpecIndex": 645507,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42208
+        42548
       ],
-      "argumentRawHex": "7E050000000000000000118000000000",
-      "typeDefinition": 1406,
+      "argumentRawHex": "EC050000000000000000118000000000",
+      "typeDefinition": 1516,
       "typeName": "Beyond.Gameplay.ActionTargetType",
       "generic": null,
       "typeKind": 17
     },
     {
-      "instructionRva": 66679447,
-      "instructionHex": "488B15FAA30F09",
-      "cellVa": 6661150360,
-      "usageRawHex": "8BE812C000000000",
-      "methodSpecIndex": 619589,
+      "instructionRva": 104965623,
+      "instructionHex": "488B15AAA12C0A",
+      "cellVa": 6718113704,
+      "usageRawHex": "F5B613C000000000",
+      "methodSpecIndex": 646010,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42552
+        42898
       ],
-      "argumentRawHex": "37240000000000000000118000000000",
-      "typeDefinition": 9271,
+      "argumentRawHex": "B3250000000000000000118000000000",
+      "typeDefinition": 9651,
       "typeName": "Beyond.Gameplay.Core.BroadcastAlertToCharactersAction+BroadcastAlertToCharactersActionData+BroadcastTarget",
       "generic": null,
       "typeKind": 17
     },
     {
-      "instructionRva": 66679521,
-      "instructionHex": "488B15C0A30F09",
-      "cellVa": 6661150376,
-      "usageRawHex": "53E512C000000000",
-      "methodSpecIndex": 619177,
+      "instructionRva": 104965697,
+      "instructionHex": "488B1558A12C0A",
+      "cellVa": 6718113696,
+      "usageRawHex": "95B313C000000000",
+      "methodSpecIndex": 645578,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42254
+        42595
       ],
-      "argumentRawHex": "7D050000000000000000118000000000",
-      "typeDefinition": 1405,
+      "argumentRawHex": "EB050000000000000000118000000000",
+      "typeDefinition": 1515,
       "typeName": "Beyond.Gameplay.DirectionType",
       "generic": null,
       "typeKind": 17
     },
     {
-      "instructionRva": 66679595,
-      "instructionHex": "488B15D6A30C09",
-      "cellVa": 6660953864,
-      "usageRawHex": "93EB12C000000000",
-      "methodSpecIndex": 619977,
+      "instructionRva": 104965763,
+      "instructionHex": "488B157690320A",
+      "cellVa": 6718502656,
+      "usageRawHex": "27BA13C000000000",
+      "methodSpecIndex": 646419,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16792
+        15972
       ],
-      "argumentRawHex": "28280000000000000000120000000000",
-      "typeDefinition": 10280,
+      "argumentRawHex": "EF290000000000000000120000000000",
+      "typeDefinition": 10735,
       "typeName": "Beyond.Gameplay.Core.TargetSettings",
       "generic": null,
       "typeKind": 18
     },
     {
-      "instructionRva": 67967803,
-      "instructionHex": "488B15A68AF008",
-      "cellVa": 6660400616,
-      "usageRawHex": "D5E412C000000000",
-      "methodSpecIndex": 619114,
+      "instructionRva": 106645147,
+      "instructionHex": "488B1516C71B0A",
+      "cellVa": 6718688696,
+      "usageRawHex": "11B313C000000000",
+      "methodSpecIndex": 645512,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42212
+        42552
       ],
-      "argumentRawHex": "33240000000000000000118000000000",
-      "typeDefinition": 9267,
+      "argumentRawHex": "AF250000000000000000118000000000",
+      "typeDefinition": 9647,
       "typeName": "Beyond.Gameplay.Core.AlertMoveType",
       "generic": null,
       "typeKind": 17
     },
     {
-      "instructionRva": 67967979,
-      "instructionHex": "488B15068AF008",
-      "cellVa": 6660400632,
-      "usageRawHex": "D7E412C000000000",
-      "methodSpecIndex": 619115,
+      "instructionRva": 106645311,
+      "instructionHex": "488B156AC61B0A",
+      "cellVa": 6718688688,
+      "usageRawHex": "13B313C000000000",
+      "methodSpecIndex": 645513,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42213
+        42553
       ],
-      "argumentRawHex": "32240000000000000000118000000000",
-      "typeDefinition": 9266,
+      "argumentRawHex": "AE250000000000000000118000000000",
+      "typeDefinition": 9646,
       "typeName": "Beyond.Gameplay.Core.AlertShape",
       "generic": null,
       "typeKind": 17
@@ -240,5 +339,6 @@
       "scalar32"
     ]
   },
-  "boundary": "Exact union35 dispatch and registered type/module/token joins identify BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPack. Header11 reads common BYTE/three DWORD, SkillAlertData, two DWORDs, bounded signed-length byte payload, DWORD, raw4 and TargetSettings. SkillAlertData is FF or header9 followed by three raw4 reads, DWORD, four raw4 reads and DWORD: one or37 source bytes. Its AlertMoveType and AlertShape contexts select DWORD reads; the seven floating source spans preserve arbitrary bits without numeric interpretation. The new-output allocation branch occurs after the child header and consumes no extra fields. Null alert, null or empty payload and null target remain independent; post-alert DWORDs, payload length, DWORD and raw4 stay required. Short23 and FA2300 identify union35 with nonnull minimum lengths37/39 using null alert and target; a nonnull alert raises them to73/75. TargetSettings reuses the separately pinned finite profile and extensions. Complete formatter/reader/init/allocation/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Alert behavior, geometry, numeric units, payload encoding, target ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+  "boundary": "Exact current named source roles establish member11 and SkillAlert member9 reads, actual FF/object-header behavior, typed contexts and each named setter transfer. Raw4 members are native four-byte Single reads into XMM0; contextKey is one Int32 StringPool index (-1 empty, -2 null). TargetSettings uses the independently re-proved EC role scope on the same selected image. Complete current method and selected helper unwind families replace historical cold-owner attribution. Live formatter selection, refill/error parity, target/alert behavior and whole-BuffData EOF remain unresolved.",
+  "roleContract": "buff_23_roles_native.json"
 }

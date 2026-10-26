@@ -1,24 +1,373 @@
 {
-  "schema": "endfield.memorypack-animation-curve-native-contract.v1",
+  "schema": "endfield.memorypack-animation-curve-native-contract.v2",
   "status": "exact-current-build",
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
-  "reviewedDependencies": [
-    "buff_24_native.json"
-  ],
-  "sourceContract": "buff_24_native.json",
   "sourceMethod": [
-    428704,
+    550588,
     "MemoryPack.AnimationCurveFormatter",
     "Deserialize",
-    54723024
+    87458304
+  ],
+  "sourceFamily": {
+    "schema": "endfield.amd64-unwind-chain-family.v1",
+    "selectedPrimaryRva": 87458304,
+    "tableRva": 313733120,
+    "tableBytes": 9860400,
+    "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+    "tableRowsChecked": 821700,
+    "unwindVersionRows": {
+      "1": 821697,
+      "2": 3
+    },
+    "completeParentTriplesChecked": true,
+    "allParentChainsTerminated": true,
+    "chainFrameBytesMatched": true,
+    "ranges": [
+      {
+        "runtimeTriple": [
+          87458304,
+          87458385,
+          267741184
+        ],
+        "tableRowRva": 316264604,
+        "runtimeTripleRawHex": "00823605518236050068F50F",
+        "codeBytes": 81,
+        "unwindRawHex": "010D06000D01150006E0047003600230",
+        "unwindVersion": 1,
+        "unwindFlags": 0,
+        "frameByte": 0,
+        "parentChain": []
+      },
+      {
+        "runtimeTriple": [
+          87458385,
+          87458855,
+          267741200
+        ],
+        "tableRowRva": 316264616,
+        "runtimeTripleRawHex": "51823605278436051068F50F",
+        "codeBytes": 470,
+        "unwindRawHex": "21B71400B7B80400B1A80500AB980600A58807009F7808009768090020F4140018D41D0010C41C0008541A0000823605518236050068F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              87458385,
+              87458855,
+              267741200
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          87458855,
+          87459068,
+          267741256
+        ],
+        "tableRowRva": 316264628,
+        "runtimeTripleRawHex": "27843605FC8436054868F50F",
+        "codeBytes": 213,
+        "unwindRawHex": "2100140000B8040000A805000098060000880700007808000068090000F4140000D41D0000C41C0000541A0000823605518236050068F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              87458855,
+              87459068,
+              267741256
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          87459068,
+          87459093,
+          267741312
+        ],
+        "tableRowRva": 316264640,
+        "runtimeTripleRawHex": "FC843605158536058068F50F",
+        "codeBytes": 25,
+        "unwindRawHex": "2100000000823605518236050068F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              87459068,
+              87459093,
+              267741312
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          87459093,
+          87459177,
+          267741328
+        ],
+        "tableRowRva": 316264652,
+        "runtimeTripleRawHex": "15853605698536059068F50F",
+        "codeBytes": 84,
+        "unwindRawHex": "2100140000B8040000A805000098060000880700007808000068090000F4140000D41D0000C41C0000541A0000823605518236050068F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              87459093,
+              87459177,
+              267741328
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          122340534,
+          122340582,
+          267741384
+        ],
+        "tableRowRva": 318188444,
+        "runtimeTripleRawHex": "B6C44A07E6C44A07C868F50F",
+        "codeBytes": 48,
+        "unwindRawHex": "2100000000823605518236050068F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              122340534,
+              122340582,
+              267741384
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          122340582,
+          122340678,
+          267741400
+        ],
+        "tableRowRva": 318188456,
+        "runtimeTripleRawHex": "E6C44A0746C54A07D868F50F",
+        "codeBytes": 96,
+        "unwindRawHex": "2100080000F4140000D41D0000C41C0000541A00B6C44A07E6C44A07C868F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              122340582,
+              122340678,
+              267741400
+            ],
+            "parent": [
+              122340534,
+              122340582,
+              267741384
+            ]
+          },
+          {
+            "child": [
+              122340534,
+              122340582,
+              267741384
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          122340678,
+          122340789,
+          267741432
+        ],
+        "tableRowRva": 318188468,
+        "runtimeTripleRawHex": "46C54A07B5C54A07F868F50F",
+        "codeBytes": 111,
+        "unwindRawHex": "2100140000B8040000A805000098060000880700007808000068090000F4140000D41D0000C41C0000541A00B6C44A07E6C44A07C868F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              122340678,
+              122340789,
+              267741432
+            ],
+            "parent": [
+              122340534,
+              122340582,
+              267741384
+            ]
+          },
+          {
+            "child": [
+              122340534,
+              122340582,
+              267741384
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      },
+      {
+        "runtimeTriple": [
+          122340789,
+          122340804,
+          267741488
+        ],
+        "tableRowRva": 318188480,
+        "runtimeTripleRawHex": "B5C54A07C4C54A073069F50F",
+        "codeBytes": 15,
+        "unwindRawHex": "21000000B6C44A07E6C44A07C868F50F",
+        "unwindVersion": 1,
+        "unwindFlags": 4,
+        "frameByte": 0,
+        "parentChain": [
+          {
+            "child": [
+              122340789,
+              122340804,
+              267741488
+            ],
+            "parent": [
+              122340534,
+              122340582,
+              267741384
+            ]
+          },
+          {
+            "child": [
+              122340534,
+              122340582,
+              267741384
+            ],
+            "parent": [
+              87458304,
+              87458385,
+              267741184
+            ]
+          }
+        ]
+      }
+    ],
+    "unwindOperationsOrFixedAllocationSemanticsProved": false,
+    "handlerLanguageDataProved": false,
+    "wholeManagedMethodProgramProved": false,
+    "runtimeExecutionKnown": false,
+    "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+  },
+  "codeWindows": [
+    {
+      "startRva": 87458304,
+      "endRva": 87458385,
+      "sha256": "17D5F15DE16FA39163CB9C3BD782547B32426F1E3F48FB3FD75CFAF515C5521B",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 87458385,
+      "endRva": 87458855,
+      "sha256": "329A19A66EF74F29A98706EE9BD9AB40B3E054A542AFF2878698F83E6D8907CC",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 87458855,
+      "endRva": 87459068,
+      "sha256": "408D9216B06F997191F7869F73862C8885483F2FF1118B05F51726988C980D12",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 87459068,
+      "endRva": 87459093,
+      "sha256": "CD4C3DC1041D37093A381532606AB3F24A4CE972408718774BD23686D744576D",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 87459093,
+      "endRva": 87459177,
+      "sha256": "AA87FFF838B47EA73FF77F7154C93AFDCEAEF2C011C561C5B675A03359EF93AC",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 122340534,
+      "endRva": 122340582,
+      "sha256": "8A5AE0DF9E8C65DD207AE42A6F61249F7C00E73F99670BDF1A2BE4B64CC720E4",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 122340582,
+      "endRva": 122340678,
+      "sha256": "F3B1F9A503A52922CB06B3497A34E9A90E0AB324FA9BBFE6D40B6E646F65B031",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 122340678,
+      "endRva": 122340789,
+      "sha256": "A9AA2769FF92FCE1796DD2C4EC164109528785929B5FEFD66ADEB23E711CD9A0",
+      "boundary": "complete current role unwind range"
+    },
+    {
+      "startRva": 122340789,
+      "endRva": 122340804,
+      "sha256": "C7C4199DD15E717465D827ADE0F8FA2417912357CFBAD62928EE37C05BEEE593",
+      "boundary": "complete current role unwind range"
+    }
   ],
   "storedMemberCount": 3,
   "keyframeBytes": 28,
-  "keyframeTypeDefinition": 43512,
+  "keyframeTypeDefinition": 75337,
   "keyframeTypeName": "UnityEngine.Keyframe",
   "keyframeFields": [
     {
@@ -28,12 +377,12 @@
       "bytes": 4,
       "runtimeFieldOffset": 16,
       "sourceInstruction": [
-        54723615,
+        87458909,
         "F30F1030"
       ],
       "destinationInstruction": [
-        54723704,
-        "F30F11743E20"
+        87459008,
+        "F30F1177F8"
       ]
     },
     {
@@ -43,12 +392,12 @@
       "bytes": 4,
       "runtimeFieldOffset": 20,
       "sourceInstruction": [
-        54723619,
+        87458913,
         "F30F107804"
       ],
       "destinationInstruction": [
-        54723710,
-        "F30F117C3E24"
+        87459013,
+        "F30F117FFC"
       ]
     },
     {
@@ -58,12 +407,12 @@
       "bytes": 4,
       "runtimeFieldOffset": 24,
       "sourceInstruction": [
-        54723624,
+        87458918,
         "F3440F104008"
       ],
       "destinationInstruction": [
-        54723716,
-        "F3440F11443E28"
+        87458999,
+        "F3450F1107"
       ]
     },
     {
@@ -73,12 +422,12 @@
       "bytes": 4,
       "runtimeFieldOffset": 28,
       "sourceInstruction": [
-        54723630,
+        87458924,
         "F3440F10480C"
       ],
       "destinationInstruction": [
-        54723723,
-        "F3440F114C3E2C"
+        87459018,
+        "F3440F114F04"
       ]
     },
     {
@@ -88,12 +437,12 @@
       "bytes": 4,
       "runtimeFieldOffset": 32,
       "sourceInstruction": [
-        54723612,
+        87458906,
         "8B4810"
       ],
       "destinationInstruction": [
-        54723744,
-        "894C3E30"
+        87459036,
+        "894F08"
       ]
     },
     {
@@ -103,12 +452,12 @@
       "bytes": 4,
       "runtimeFieldOffset": 36,
       "sourceInstruction": [
-        54723636,
+        87458930,
         "F3440F105014"
       ],
       "destinationInstruction": [
-        54723730,
-        "F3440F11543E34"
+        87459024,
+        "F3440F11570C"
       ]
     },
     {
@@ -118,564 +467,894 @@
       "bytes": 4,
       "runtimeFieldOffset": 40,
       "sourceInstruction": [
-        54723642,
+        87458936,
         "F3440F105818"
       ],
       "destinationInstruction": [
-        54723737,
-        "F3440F115C3E38"
+        87459030,
+        "F3440F115F10"
       ]
     }
   ],
   "readerOffsets": {
-    "bufferPointer": 80,
-    "remaining": 48,
-    "consumed": [
-      64,
-      68
-    ]
+    "currentPtr": 80,
+    "bufferLength": 48,
+    "advancedCount": 64,
+    "consumed": 68
   },
   "arrayPayloadOffset": 32,
-  "headerInstructions": [
-    [
-      54723041,
-      "4D8BF0"
-    ],
-    [
-      54723044,
-      "488BDA"
-    ],
-    [
-      54723053,
-      "488B4350"
-    ],
-    [
-      54723057,
-      "0FB630"
-    ],
-    [
-      54723060,
-      "8B7B30"
-    ],
-    [
-      54723063,
-      "83EF01"
-    ],
-    [
-      54723072,
-      "48FF4350"
-    ],
-    [
-      54723076,
-      "FF4340"
-    ],
-    [
-      54723079,
-      "FF4344"
-    ],
-    [
-      54723082,
-      "897B30"
-    ],
-    [
-      54723093,
-      "4080FEFF"
-    ],
-    [
-      54723103,
-      "4080FE03"
-    ]
-  ],
-  "raw8Program": {
-    "window": {
-      "startRva": 54723147,
-      "endRva": 54723196,
-      "sha256": "F624EA248D0EF987F9D2A8928FB3965B9EA66E864E854D17EA9CA8D003BE4684",
-      "boundary": "Two wire DWORDs, preserved wrap arguments and exact advance(8)."
+  "formatterCurveType": {
+    "typeDefinition": 75339,
+    "typeName": "UnityEngine.AnimationCurve",
+    "formatterTypeDefinition": 87189,
+    "baseCarrier": {
+      "typePointerVa": 6704605960,
+      "typeRawHex": "205B9090010000000000150000000000",
+      "carrierPointerVa": 6720346912,
+      "carrierRawHex": "605E85900100000020E4218E0100000000000000000000000000000000000000",
+      "basePointerVa": 6719626848,
+      "baseRawHex": "82540100000000000000120000000000",
+      "baseDefinitionIndex": 87170,
+      "classInstantiationPointerVa": 6679553056,
+      "opaqueCarrierTailHex": "00000000000000000000000000000000"
     },
-    "instructions": [
-      [
-        54723147,
-        "488B4350"
-      ],
-      [
-        54723151,
-        "448B20"
-      ],
-      [
-        54723154,
-        "448B6804"
-      ],
-      [
-        54723158,
-        "4489642420"
-      ],
-      [
-        54723163,
-        "44896C2424"
-      ],
-      [
-        54723168,
-        "8B7B30"
-      ],
-      [
-        54723171,
-        "83EF08"
-      ],
-      [
-        54723174,
-        "0F881CA79601"
-      ],
-      [
-        54723180,
-        "4883435008"
-      ],
-      [
-        54723185,
-        "83434008"
-      ],
-      [
-        54723189,
-        "83434408"
-      ],
-      [
-        54723193,
-        "897B30"
+    "classInstantiation": {
+      "index": 1891,
+      "table_slot_va": 6679696984,
+      "record_va": 6679553056,
+      "argument_vector_va": 6727711288,
+      "padding_hex": "00000000",
+      "arguments": [
+        {
+          "index": 0,
+          "type_pointer_va": 6719201904,
+          "raw_type_record_hex": "4B260100000000000000120000000000"
+        }
       ]
-    ]
-  },
-  "countProgram": {
-    "window": {
-      "startRva": 54723210,
-      "endRva": 54723245,
-      "sha256": "2A39453CD1C134C998FE2B3EB7F7FF94DEB06FDE6DBF38E88C1008E8888249B3",
-      "boundary": "Signed array count and exact advance(4)."
-    },
-    "instructions": [
-      [
-        54723210,
-        "488B4350"
-      ],
-      [
-        54723214,
-        "448B38"
-      ],
-      [
-        54723217,
-        "8B7330"
-      ],
-      [
-        54723220,
-        "83EE04"
-      ],
-      [
-        54723223,
-        "0F881BA79601"
-      ],
-      [
-        54723229,
-        "4883435004"
-      ],
-      [
-        54723234,
-        "83434004"
-      ],
-      [
-        54723238,
-        "83434404"
-      ],
-      [
-        54723242,
-        "897330"
-      ]
-    ]
+    }
   },
   "arrayAllocation": {
     "typeLoad": [
-      54723288,
-      "488B0D09F5C209"
+      87458573,
+      "488B0DACC2340B"
     ],
-    "cellRva": 218494952,
+    "cellRva": 275465664,
     "typeName": "UnityEngine.Keyframe[]",
-    "instructions": [
-      [
-        54723288,
-        "488B0D09F5C209"
-      ],
-      [
-        54723295,
-        "498BD7"
-      ],
-      [
-        54723298,
-        "E8795BBFFC"
-      ],
-      [
-        54723303,
-        "488BF8"
-      ]
-    ],
-    "allocationCall": {
-      "rva": 54723298,
-      "targetRva": 155232
-    }
-  },
-  "keyframeProgram": {
-    "window": {
-      "startRva": 54723569,
-      "endRva": 54723767,
-      "sha256": "FDA79B44CEFB9754C6D22130A95D93A1212CEBBCACB3427E45D75EEC69A7ABF8",
-      "boundary": "Selected index-times-28, bounded source loads, named destination stores, cursor update and field restore."
-    },
-    "instructions": [
-      [
-        54723569,
-        "448BE5"
-      ],
-      [
-        54723572,
-        "4885FF"
-      ],
-      [
-        54723575,
-        "0F841F010000"
-      ],
-      [
-        54723581,
-        "443B6718"
-      ],
-      [
-        54723585,
-        "0F830F010000"
-      ],
-      [
-        54723591,
-        "4963C4"
-      ],
-      [
-        54723594,
-        "48"
-      ],
-      [
-        54723595,
-        "6B"
-      ],
-      [
-        54723596,
-        "F0"
-      ],
-      [
-        54723597,
-        "1C"
-      ],
-      [
-        54723598,
-        "837B301C"
-      ],
-      [
-        54723602,
-        "0F8CBAA59601"
-      ],
-      [
-        54723608,
-        "488B4350"
-      ],
-      [
-        54723612,
-        "8B4810"
-      ],
-      [
-        54723615,
-        "F30F1030"
-      ],
-      [
-        54723619,
-        "F30F107804"
-      ],
-      [
-        54723624,
-        "F3440F104008"
-      ],
-      [
-        54723630,
-        "F3440F10480C"
-      ],
-      [
-        54723636,
-        "F3440F105014"
-      ],
-      [
-        54723642,
-        "F3440F105818"
-      ],
-      [
-        54723648,
-        "898C24C8000000"
-      ],
-      [
-        54723655,
-        "448B6B30"
-      ],
-      [
-        54723659,
-        "4183ED1C"
-      ],
-      [
-        54723663,
-        "0F8893A59601"
-      ],
-      [
-        54723669,
-        "488343501C"
-      ],
-      [
-        54723674,
-        "8343401C"
-      ],
-      [
-        54723678,
-        "8343441C"
-      ],
-      [
-        54723682,
-        "44896B30"
-      ],
-      [
-        54723686,
-        "48896C3E24"
-      ],
-      [
-        54723691,
-        "41FFC4"
-      ],
-      [
-        54723694,
-        "48896C3E2C"
-      ],
-      [
-        54723699,
-        "48896C3E34"
-      ],
-      [
-        54723704,
-        "F30F11743E20"
-      ],
-      [
-        54723710,
-        "F30F117C3E24"
-      ],
-      [
-        54723716,
-        "F3440F11443E28"
-      ],
-      [
-        54723723,
-        "F3440F114C3E2C"
-      ],
-      [
-        54723730,
-        "F3440F11543E34"
-      ],
-      [
-        54723737,
-        "F3440F115C3E38"
-      ],
-      [
-        54723744,
-        "894C3E30"
-      ],
-      [
-        54723748,
-        "453BE7"
-      ],
-      [
-        54723751,
-        "0F8C50FFFFFF"
-      ],
-      [
-        54723757,
-        "448B642420"
-      ],
-      [
-        54723762,
-        "448B6C2424"
-      ]
+    "call": [
+      87458582,
+      "E8F5D7CAFA"
     ]
   },
-  "wrapRestores": [
-    [
-      54723757,
-      "448B642420"
-    ],
-    [
-      54723762,
-      "448B6C2424"
-    ]
-  ],
   "icallBindings": [
     {
       "fieldName": "preWrapMode",
       "literal": "UnityEngine.AnimationCurve::set_preWrapMode(UnityEngine.WrapMode)",
-      "literalRva": 176605088,
-      "cacheCellRva": 233496048,
+      "literalVa": 6671279776,
+      "cacheCellVa": 6735200344,
+      "resolverTargetVa": 6442659392,
+      "cacheLoad": 6529909618,
+      "cacheBranch": 6529909628,
+      "argumentStart": 6529909634,
+      "transferMode": "call",
       "fallbackInstructions": [
         [
-          54723790,
-          "488D0DCBC24307"
+          87459099,
+          "488D0D7E216D08"
         ],
         [
-          54723797,
-          "E856EBBEFC"
+          87459106,
+          "E819A9CCFA"
         ],
         [
-          54723802,
-          "4889050FD9A70A"
+          87459111,
+          "4889052A7B3C0C"
         ],
         [
-          54723809,
-          "E969FEFFFF"
-        ]
-      ],
-      "cacheLoad": [
-        54723391,
-        "488B05AADAA70A"
-      ],
-      "cacheTest": [
-        54723398,
-        "4885C0"
-      ],
-      "cacheBranch": [
-        54723401,
-        "0F847F010000"
-      ],
-      "argumentInstructions": [
-        [
-          54723407,
-          "418BD4"
-        ],
-        [
-          54723410,
-          "488BCB"
-        ],
-        [
-          54723413,
-          "FFD0"
+          87459118,
+          "E94FFEFFFF"
         ]
       ]
     },
     {
       "fieldName": "postWrapMode",
       "literal": "UnityEngine.AnimationCurve::set_postWrapMode(UnityEngine.WrapMode)",
-      "literalRva": 176605008,
-      "cacheCellRva": 233496064,
+      "literalVa": 6671279696,
+      "cacheCellVa": 6735200360,
+      "resolverTargetVa": 6442659392,
+      "cacheLoad": 6529909654,
+      "cacheBranch": 6529909664,
+      "argumentStart": 6529909670,
+      "transferMode": "call",
       "fallbackInstructions": [
         [
-          54723814,
-          "488D0D63C24307"
+          87459123,
+          "488D0D16216D08"
         ],
         [
-          54723821,
-          "E83EEBBEFC"
+          87459130,
+          "E801A9CCFA"
         ],
         [
-          54723826,
-          "48890507D9A70A"
+          87459135,
+          "488905227B3C0C"
         ],
         [
-          54723833,
-          "E975FEFFFF"
-        ]
-      ],
-      "cacheLoad": [
-        54723427,
-        "488B0596DAA70A"
-      ],
-      "cacheTest": [
-        54723434,
-        "4885C0"
-      ],
-      "cacheBranch": [
-        54723437,
-        "0F8473010000"
-      ],
-      "argumentInstructions": [
-        [
-          54723443,
-          "418BD5"
-        ],
-        [
-          54723446,
-          "488BCB"
-        ],
-        [
-          54723449,
-          "FFD0"
+          87459142,
+          "E95BFEFFFF"
         ]
       ]
     },
     {
       "fieldName": "keys",
       "literal": "UnityEngine.AnimationCurve::SetKeys(UnityEngine.Keyframe[])",
-      "literalRva": 176397928,
-      "cacheCellRva": 233496024,
+      "literalVa": 6671073632,
+      "cacheCellVa": 6735200320,
+      "resolverTargetVa": 6442659392,
+      "cacheLoad": 6529909690,
+      "cacheBranch": 6529909700,
+      "argumentStart": 6529909706,
+      "transferMode": "tail",
       "fallbackInstructions": [
         [
-          54723838,
-          "488D0D63994007"
+          87459147,
+          "488D0D0EFC6908"
         ],
         [
-          54723845,
-          "E826EBBEFC"
+          87459154,
+          "E8E9A8CCFA"
         ],
         [
-          54723850,
-          "488905C7D8A70A"
+          87459159,
+          "488905E27A3C0C"
         ],
         [
-          54723857,
-          "E981FEFFFF"
-        ]
-      ],
-      "cacheLoad": [
-        54723463,
-        "488B054ADAA70A"
-      ],
-      "cacheTest": [
-        54723470,
-        "4885C0"
-      ],
-      "cacheBranch": [
-        54723473,
-        "0F8467010000"
-      ],
-      "argumentInstructions": [
-        [
-          54723479,
-          "488BD7"
-        ],
-        [
-          54723482,
-          "488BCB"
-        ],
-        [
-          54723485,
-          "FFD0"
+          87459166,
+          "E967FEFFFF"
         ]
       ]
     }
   ],
-  "codeWindows": [
-    {
-      "startRva": 54723024,
-      "endRva": 54723874,
-      "sha256": "FABD4BD728E24F052D78B9EFB6A97B54CEB5E5F4D968663FA7BFFA05BD00FD94",
-      "boundary": "Complete selected formatter normal, null and ICALL fallback body."
-    }
-  ],
+  "sourcePrograms": {
+    "prefix": [
+      [
+        87458304,
+        "4053"
+      ],
+      [
+        87458306,
+        "56"
+      ],
+      [
+        87458307,
+        "57"
+      ],
+      [
+        87458308,
+        "4156"
+      ],
+      [
+        87458310,
+        "4881ECA8000000"
+      ],
+      [
+        87458317,
+        "837A3001"
+      ],
+      [
+        87458321,
+        "4D8BF0"
+      ],
+      [
+        87458324,
+        "488BDA"
+      ],
+      [
+        87458327,
+        "0F8C99421402"
+      ],
+      [
+        87458333,
+        "488B4350"
+      ],
+      [
+        87458337,
+        "0FB630"
+      ],
+      [
+        87458340,
+        "8B7B30"
+      ],
+      [
+        87458343,
+        "83EF01"
+      ],
+      [
+        87458346,
+        "0F889C421402"
+      ],
+      [
+        87458352,
+        "48FF4350"
+      ],
+      [
+        87458356,
+        "FF4340"
+      ],
+      [
+        87458359,
+        "FF4344"
+      ],
+      [
+        87458362,
+        "897B30"
+      ],
+      [
+        87458365,
+        "4080FEFF"
+      ],
+      [
+        87458369,
+        "0F84B5020000"
+      ],
+      [
+        87458375,
+        "4080FE03"
+      ],
+      [
+        87458379,
+        "0F8564431402"
+      ],
+      [
+        87458385,
+        "4889AC24D0000000"
+      ],
+      [
+        87458393,
+        "4C89A424E0000000"
+      ],
+      [
+        87458401,
+        "4C89AC24E8000000"
+      ],
+      [
+        87458409,
+        "4C89BC24A0000000"
+      ],
+      [
+        87458417,
+        "837B3008"
+      ],
+      [
+        87458421,
+        "0F8C6B421402"
+      ],
+      [
+        87458427,
+        "488B4350"
+      ],
+      [
+        87458431,
+        "448B20"
+      ],
+      [
+        87458434,
+        "448B6804"
+      ],
+      [
+        87458438,
+        "4489642424"
+      ],
+      [
+        87458443,
+        "44896C2428"
+      ],
+      [
+        87458448,
+        "8B7B30"
+      ],
+      [
+        87458451,
+        "83C7F8"
+      ],
+      [
+        87458454,
+        "0F8860421402"
+      ],
+      [
+        87458460,
+        "4883435008"
+      ],
+      [
+        87458465,
+        "83434008"
+      ],
+      [
+        87458469,
+        "83434408"
+      ],
+      [
+        87458473,
+        "897B30"
+      ],
+      [
+        87458476,
+        "33F6"
+      ],
+      [
+        87458478,
+        "837B3004"
+      ],
+      [
+        87458482,
+        "8BEE"
+      ],
+      [
+        87458484,
+        "0F8C5C421402"
+      ],
+      [
+        87458490,
+        "488B4350"
+      ],
+      [
+        87458494,
+        "486338"
+      ],
+      [
+        87458497,
+        "448B7B30"
+      ],
+      [
+        87458501,
+        "4183C7FC"
+      ],
+      [
+        87458505,
+        "0F885D421402"
+      ],
+      [
+        87458511,
+        "4883435004"
+      ],
+      [
+        87458516,
+        "83434004"
+      ],
+      [
+        87458520,
+        "83434404"
+      ],
+      [
+        87458524,
+        "44897B30"
+      ],
+      [
+        87458528,
+        "0F29B42490000000"
+      ],
+      [
+        87458536,
+        "0F29BC2480000000"
+      ],
+      [
+        87458544,
+        "440F29442470"
+      ],
+      [
+        87458550,
+        "440F294C2460"
+      ],
+      [
+        87458556,
+        "440F29542450"
+      ],
+      [
+        87458562,
+        "440F295C2440"
+      ]
+    ],
+    "arrays": [
+      {
+        "mode": "null",
+        "instructions": [
+          [
+            87458568,
+            "83FFFF"
+          ],
+          [
+            87458571,
+            "7419"
+          ]
+        ]
+      },
+      {
+        "mode": "empty",
+        "instructions": [
+          [
+            87458568,
+            "83FFFF"
+          ],
+          [
+            87458571,
+            "7419"
+          ],
+          [
+            87458573,
+            "488B0DACC2340B"
+          ],
+          [
+            87458580,
+            "8BD7"
+          ],
+          [
+            87458582,
+            "E8F5D7CAFA"
+          ],
+          [
+            87458587,
+            "488BE8"
+          ],
+          [
+            87458590,
+            "85FF"
+          ],
+          [
+            87458592,
+            "0F8F01010000"
+          ]
+        ]
+      },
+      {
+        "mode": "positive",
+        "instructions": [
+          [
+            87458568,
+            "83FFFF"
+          ],
+          [
+            87458571,
+            "7419"
+          ],
+          [
+            87458573,
+            "488B0DACC2340B"
+          ],
+          [
+            87458580,
+            "8BD7"
+          ],
+          [
+            87458582,
+            "E8F5D7CAFA"
+          ],
+          [
+            87458587,
+            "488BE8"
+          ],
+          [
+            87458590,
+            "85FF"
+          ],
+          [
+            87458592,
+            "0F8F01010000"
+          ]
+        ]
+      }
+    ],
+    "keyLoop": [
+      [
+        87458855,
+        "48897C2430"
+      ],
+      [
+        87458860,
+        "488D7828"
+      ],
+      [
+        87458864,
+        "4C8BFF"
+      ],
+      [
+        87458867,
+        "448BE6"
+      ],
+      [
+        87458870,
+        "4C8BEE"
+      ],
+      [
+        87458873,
+        "4885ED"
+      ],
+      [
+        87458876,
+        "0F84D3000000"
+      ],
+      [
+        87458882,
+        "443B6518"
+      ],
+      [
+        87458886,
+        "0F8317010000"
+      ],
+      [
+        87458892,
+        "837B301C"
+      ],
+      [
+        87458896,
+        "0F8CF0401402"
+      ],
+      [
+        87458902,
+        "488B4350"
+      ],
+      [
+        87458906,
+        "8B4810"
+      ],
+      [
+        87458909,
+        "F30F1030"
+      ],
+      [
+        87458913,
+        "F30F107804"
+      ],
+      [
+        87458918,
+        "F3440F104008"
+      ],
+      [
+        87458924,
+        "F3440F10480C"
+      ],
+      [
+        87458930,
+        "F3440F105014"
+      ],
+      [
+        87458936,
+        "F3440F105818"
+      ],
+      [
+        87458942,
+        "898C24D8000000"
+      ],
+      [
+        87458949,
+        "8B4330"
+      ],
+      [
+        87458952,
+        "83C0E4"
+      ],
+      [
+        87458955,
+        "89442420"
+      ],
+      [
+        87458959,
+        "0F88C7401402"
+      ],
+      [
+        87458965,
+        "488343501C"
+      ],
+      [
+        87458970,
+        "8343401C"
+      ],
+      [
+        87458974,
+        "8343441C"
+      ],
+      [
+        87458978,
+        "894330"
+      ],
+      [
+        87458981,
+        "498977F8"
+      ],
+      [
+        87458985,
+        "41FFC4"
+      ],
+      [
+        87458988,
+        "49897704"
+      ],
+      [
+        87458992,
+        "49FFC5"
+      ],
+      [
+        87458995,
+        "4989770C"
+      ],
+      [
+        87458999,
+        "F3450F1107"
+      ],
+      [
+        87459004,
+        "4983C71C"
+      ],
+      [
+        87459008,
+        "F30F1177F8"
+      ],
+      [
+        87459013,
+        "F30F117FFC"
+      ],
+      [
+        87459018,
+        "F3440F114F04"
+      ],
+      [
+        87459024,
+        "F3440F11570C"
+      ],
+      [
+        87459030,
+        "F3440F115F10"
+      ],
+      [
+        87459036,
+        "894F08"
+      ],
+      [
+        87459039,
+        "498BFF"
+      ],
+      [
+        87459042,
+        "4C3B6C2430"
+      ],
+      [
+        87459047,
+        "0F8C55FFFFFF"
+      ],
+      [
+        87459053,
+        "448B642424"
+      ],
+      [
+        87459058,
+        "448B6C2428"
+      ],
+      [
+        87459063,
+        "E92AFEFFFF"
+      ]
+    ],
+    "normalOutput": [
+      [
+        87458598,
+        "493936"
+      ],
+      [
+        87458601,
+        "753B"
+      ],
+      [
+        87458662,
+        "498B1E"
+      ],
+      [
+        87458665,
+        "4885DB"
+      ],
+      [
+        87458668,
+        "0F84A3010000"
+      ],
+      [
+        87458674,
+        "488B05DF7C3C0C"
+      ],
+      [
+        87458681,
+        "4885C0"
+      ],
+      [
+        87458684,
+        "0F8499010000"
+      ],
+      [
+        87458690,
+        "418BD4"
+      ],
+      [
+        87458693,
+        "488BCB"
+      ],
+      [
+        87458696,
+        "FFD0"
+      ],
+      [
+        87458698,
+        "498B1E"
+      ],
+      [
+        87458701,
+        "4885DB"
+      ],
+      [
+        87458704,
+        "0F847F010000"
+      ],
+      [
+        87458710,
+        "488B05CB7C3C0C"
+      ],
+      [
+        87458717,
+        "4885C0"
+      ],
+      [
+        87458720,
+        "0F848D010000"
+      ],
+      [
+        87458726,
+        "418BD5"
+      ],
+      [
+        87458729,
+        "488BCB"
+      ],
+      [
+        87458732,
+        "FFD0"
+      ],
+      [
+        87458734,
+        "498B1E"
+      ],
+      [
+        87458737,
+        "4885DB"
+      ],
+      [
+        87458740,
+        "0F845B010000"
+      ],
+      [
+        87458746,
+        "488B057F7C3C0C"
+      ],
+      [
+        87458753,
+        "4885C0"
+      ],
+      [
+        87458756,
+        "0F8481010000"
+      ],
+      [
+        87458762,
+        "488BD5"
+      ],
+      [
+        87458765,
+        "488BCB"
+      ],
+      [
+        87458768,
+        "440F28542450"
+      ],
+      [
+        87458774,
+        "440F284C2460"
+      ],
+      [
+        87458780,
+        "440F28442470"
+      ],
+      [
+        87458786,
+        "0F28BC2480000000"
+      ],
+      [
+        87458794,
+        "0F28B42490000000"
+      ],
+      [
+        87458802,
+        "440F285C2440"
+      ],
+      [
+        87458808,
+        "4C8BAC24E8000000"
+      ],
+      [
+        87458816,
+        "4C8BA424E0000000"
+      ],
+      [
+        87458824,
+        "488BAC24D0000000"
+      ],
+      [
+        87458832,
+        "4C8BBC24A0000000"
+      ],
+      [
+        87458840,
+        "4881C4A8000000"
+      ],
+      [
+        87458847,
+        "415E"
+      ],
+      [
+        87458849,
+        "5F"
+      ],
+      [
+        87458850,
+        "5E"
+      ],
+      [
+        87458851,
+        "5B"
+      ],
+      [
+        87458852,
+        "48FFE0"
+      ]
+    ],
+    "nullOutput": [
+      [
+        87459068,
+        "33F6"
+      ],
+      [
+        87459070,
+        "498BCE"
+      ],
+      [
+        87459073,
+        "498936"
+      ],
+      [
+        87459076,
+        "4881C4A8000000"
+      ],
+      [
+        87459083,
+        "415E"
+      ],
+      [
+        87459085,
+        "5F"
+      ],
+      [
+        87459086,
+        "5E"
+      ],
+      [
+        87459087,
+        "5B"
+      ],
+      [
+        87459088,
+        "E94BBED9FA"
+      ]
+    ]
+  },
+  "loopInduction": "RDI=R15=array+40+28*i, R12d=i, R13=i; each source read/copy advances28; i<count and i<arrayLength",
+  "nullBarrierTargetRva": 1065824,
   "evidenceBoundary": {
-    "exact": "Selected header/nullable-array framing, source strides and full original spans.",
-    "direct": "Two stored wrap arguments reach separately named resolution caches; closed Keyframe[] allocation and per-field native source/destination copies name each keyframe word.",
-    "conditional": "Selected compiled formatter normal path and declared callback-resolution names. Independent parent typed joins remain required.",
-    "unresolved": "Live formatter/callback selection, native callback execution, invalid/refill parity, evaluated curve, interpolation or gameplay effects."
+    "exact": "Selected one-byte FF/member3 header, two wire DWORDs, signed nullable count, source and destination widths, seven typed Keyframe words and complete current formatter unwind family.",
+    "direct": "Closed Keyframe[] type argument and bounded pointer-induction stores; wrap words and array argument reach separately named callback-resolution caches.",
+    "conditional": "Buffered source, count -1 or nonnegative, compatible output storage, existing nonnull curve for the nonnull output program, resolved caches and ordinary native ABI. The FF clear path is proved separately.",
+    "unresolved": "Live formatter or callback selection, new curve construction, callback execution, invalid/refill parity, interpolation, evaluation or gameplay effects."
   }
 }

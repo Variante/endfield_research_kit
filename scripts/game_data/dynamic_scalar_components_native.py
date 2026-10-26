@@ -52,14 +52,43 @@ def _unique_immediate(raw: bytes, prefix: bytes, label: str) -> int:
     return hits[0][1][0]
 
 
-def _getter_offset(raw: bytes, label: str) -> int:
-    if raw.count(b"\x8b\x1b") + raw.count(b"\x8b\x19") != 1:  # mov ebx,[rbx]: inline carrier's position
+def instruction_starts(raw: bytes, va: int, decode: Any, label: str) -> frozenset[int]:
+    """Offsets of a complete decoded partition of ``raw``; unknown or truncated bytes fail."""
+    cursor, starts = 0, set()
+    for row in decode(raw, va, stop_offset=len(raw)):
+        encoded = bytes.fromhex(row.get("bytes", ""))
+        text = str(row.get("text", ""))
+        if (row.get("offset") != cursor or not encoded or raw[cursor:cursor + len(encoded)] != encoded
+                or not text or text.startswith(("db", "ff/", "unknown")) or row.get("truncatedTerminal")):
+            raise DynamicScalarComponentsError(f"{label}: incomplete instruction partition at offset={cursor}")
+        starts.add(cursor)
+        cursor += len(encoded)
+    if cursor != len(raw):
+        raise DynamicScalarComponentsError(f"{label}: instruction partition ends at {cursor} of {len(raw)}")
+    return frozenset(starts)
+
+
+def _witnesses(raw: bytes, prefix: bytes, starts: frozenset[int] | None) -> list[int]:
+    hits = [hit.start() for hit in re.finditer(re.escape(prefix), raw)]
+    return hits if starts is None else [at for at in hits if at in starts]
+
+
+def _getter_offset(raw: bytes, label: str, starts: frozenset[int] | None = None) -> int:
+    """Read the field offset of a scalar getter.
+
+    Without ``starts`` the witnesses are byte matches, as before. With a decoded
+    instruction partition only matches that begin an instruction count, so a
+    witness byte pair inside a call displacement cannot add a second base read.
+    """
+    if len(_witnesses(raw, b"\x8b\x1b", starts)) + len(_witnesses(raw, b"\x8b\x19", starts)) != 1:  # mov ebx,[rbx]: inline carrier's position
         raise DynamicScalarComponentsError(f"{label}: inline base read differs")
-    if b"\x8d\x53" in raw:  # lea edx,[rbx+field offset]
-        return _unique_immediate(raw, b"\x8d\x53", label)
-    if b"\x83\xc3" in raw:  # inlined span read retains the base in EBX
-        return _unique_immediate(raw, b"\x83\xc3", label)
-    if b"\x8b\xd3" not in raw:  # mov edx,ebx: field at base; patched fallback may also move rdx
+    for prefix in (b"\x8d\x53", b"\x83\xc3"):  # lea edx,[rbx+off]; inlined span read retains the base in EBX
+        hits = _witnesses(raw, prefix, starts)
+        if hits:
+            if len(hits) != 1 or hits[0] + 2 >= len(raw):
+                raise DynamicScalarComponentsError(f"{label}: expected one selected instruction, actual={len(hits)}")
+            return raw[hits[0] + 2]
+    if not _witnesses(raw, b"\x8b\xd3", starts):  # mov edx,ebx: field at base; patched fallback may also move rdx
         raise DynamicScalarComponentsError(f"{label}: zero-offset read differs")
     return 0
 
@@ -134,7 +163,7 @@ def _builder_struct_declarations(raw: bytes) -> list[tuple[int, int, int]]:
     return sorted(direct + retained + shared)
 
 
-def _validate_record(record: dict[str, Any], methods: dict[int, dict[str, Any]], raw: dict[int, bytes], *, inline_types: dict[str, dict[str, Any]] | None = None, carriers: dict[str, dict[str, Any]] | None = None) -> None:
+def _validate_record(record: dict[str, Any], methods: dict[int, dict[str, Any]], raw: dict[int, bytes], *, inline_types: dict[str, dict[str, Any]] | None = None, carriers: dict[str, dict[str, Any]] | None = None, starts: dict[int, frozenset[int]] | None = None) -> None:
     inline_types, carriers = inline_types or {}, carriers or {}
     fields = record["fields"]
     if not fields or len({f["name"] for f in fields}) != len(fields):
@@ -158,7 +187,7 @@ def _validate_record(record: dict[str, Any], methods: dict[int, dict[str, Any]],
                 raise DynamicScalarComponentsError(f"{label}: inline float32 getter type differs")
             actual = _float32_getter_offset(raw[index], label)
         else:
-            actual = _getter_offset(raw[index], label)
+            actual = _getter_offset(raw[index], label, None if starts is None else starts[index])
         if actual != int(field["offset"]):
             raise DynamicScalarComponentsError(f"{record['name']}.{field['name']}: offset expected={field['offset']} actual={actual}")
     index = int(record["builderMethodIndex"])

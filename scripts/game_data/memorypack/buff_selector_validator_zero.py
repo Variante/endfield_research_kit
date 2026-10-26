@@ -162,7 +162,7 @@ def validate_current_native_contract(*, selector_native: dict[str, Any],
         if tag==10:
             buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,
                 image.modules,image.owners,source=str(gate.gameassembly),
-                contract_path=CONTRACTS_DIR/row['sourceContract'])
+                contract_path=CONTRACTS_DIR/row['sourceContract'], native_image=image)
         if tag in (5,10):
             rva, raw_hex, target = row["readOrder"]["headerCall"]
             raw = bytes.fromhex(raw_hex)

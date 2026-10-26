@@ -145,7 +145,7 @@ def validate_current_native_contract():
                     or list(route.member_declared_types) != [m['declaredType'] for m in record['members']]):
                 fail('named-dispatcher-members', record['runtimeTypeName'], list(route.member_order))
             buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-                image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+                image.modules, image.owners, source=str(gate.gameassembly), contract_path=path, native_image=image)
             def named_fail(check, wanted, actual, *, record='', field=''):
                 _fail(check, tag=tag, source=path.as_posix(), expected=str(wanted)[:1024],
                     actual=str(actual)[:1024], record=record, field=field)

@@ -106,7 +106,7 @@ def _map_start(data,offset):
  if type(offset) is not int or not 0<=offset<len(data):raise LevelScriptUidDecodeError('mapOffset',offset=offset,bytes=len(data))
  return offset
 
-def extract_levelscript_uid_records(data,*,strings=None,source_path=None,game_root=None,map_offset=None,null_list_params=None):
+def extract_levelscript_uid_records(data,*,strings=None,source_path=None,game_root=None,map_offset=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None):
  """Refuse an unknown child instead of guessing its end or returning an empty graph."""
  if source_path is not None and strings is None:
   parents=[p for p in Path(source_path).parents if p.name=='Json']
@@ -125,7 +125,7 @@ def extract_levelscript_uid_records(data,*,strings=None,source_path=None,game_ro
   if not 0<=count<=10000:raise LevelScriptUidDecodeError('listCount',family=family,offset=count_at,expected='0..10000',actual=count)
   for index in range(count):
    start=cursor
-   try:node,cursor=decode_reviewed_node(data,cursor,family,strings=strings,game_root=game_root,null_list_params=null_list_params)
+   try:node,cursor=decode_reviewed_node(data,cursor,family,strings=strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params)
    except (ActionMapCodecError,ValueError) as error:
     raise LevelScriptUidDecodeError('typedNode',family=family,index=index,offset=start,detail=str(error)[:1000]) from error
    if node.get('sourceOffset')!=start or node.get('endOffset')!=cursor or not start<cursor<=len(data):

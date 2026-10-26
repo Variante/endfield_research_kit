@@ -1010,16 +1010,21 @@ runtime question may improve understanding without decoding another file.
    source joins need no duplicate framing capture. Shared action grammars enter
    through independently authenticated dispatcher, wrapper and child-context
    contracts, including reuse of Buff-owned readers.
-   Their ActionGroup closure still requires a source-bound terminal selection
-   for complete stored framing. This does not prove recursive field naming:
-   anonymous children and missing naming receipts remain explicit even at EOF.
-   A complete family report owns framing promotion; a sparse report or a closed
-   first ActionGroup does not classify the remaining corpus or top-level
-   continuation. On the current StringPool build the pinned Skill line is
-   dead (49-member root, pooled strings, stale pins); the derived line plus
-   `memorypack.wrapper_body_audit` (header count and write order per reached
-   wrapper) checks every file, so the next step is native proof of per-member
-   read kinds, not re-pinning `skill_timeline_*` contracts.
+   The separate maintained current line uses
+   `skill_timeline_current_sequence_native.current_sequence` and its reviewed
+   v4 contract, with the exported StringPool and the matching current decoder.
+   Its finite source graph composes the complete existing-root caller and
+   return, typed action and selector routes, passive maps and independently
+   proved child collections. Whole stored-record admission still requires every
+   reached child, all root fields and physical EOF under the same operation's
+   native, reader and pool exit checks, plus the owning file-identity gate.
+   The historical pinned line remains
+   refused on the current build; neither its terminal selections nor the
+   derived declaration/order audit can substitute for this current source graph.
+   Existing-export diagnostics are distinct from a complete current VFS corpus
+   receipt and registry publication. Unreviewed domains, anonymous interiors
+   outside the admitted graph, live provider selection and gameplay effects
+   retain their separate boundaries.
 4. **Gameplay formulas.** Selected damage/Poise evaluators and callers are
    proven statically ([`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md));
    receiver identity, live invocation, subtype selection, patch state,

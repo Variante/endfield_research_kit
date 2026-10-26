@@ -2254,7 +2254,7 @@ def _run_reader(
 
 
 def _classify_binary(
-    relative: str, family: str, data: bytes, strings: StringPool | None = None, *, native_game_root=None, montage_reader=None, null_list_params=None, model_view_reader=None, npc_decoder=None
+    relative: str, family: str, data: bytes, strings: StringPool | None = None, *, native_game_root=None, montage_reader=None, null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None, model_view_reader=None, npc_decoder=None
 ) -> dict[str, Any]:
     if family == "StringPool":
         page = STRING_POOL_PAGE_RE.fullmatch(PurePosixPath(relative).name)
@@ -2352,7 +2352,7 @@ def _classify_binary(
         }
     if family == "LevelScriptData":
         try:
-            detail = frame_levelscript_named(data, source=relative, strings=strings, game_root=native_game_root, null_list_params=null_list_params, npc_decoder=npc_decoder)
+            detail = frame_levelscript_named(data, source=relative, strings=strings, game_root=native_game_root, null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params, npc_decoder=npc_decoder)
         except (LevelScriptTopLevelFramingError, ValueError) as exc:
             return {
                 "status": "unclassified_binary", "reader": None,
@@ -2419,7 +2419,7 @@ def _classify_binary(
         }
     if family == "LevelScriptTemplateData":
         ok, detail, diagnostic = _run_reader(
-            lambda payload: frame_levelscript_template(payload, strings=strings),
+            lambda payload: frame_levelscript_template(payload, strings=strings,game_root=native_game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params),
             data,
             (LevelScriptTemplateFramingError, ValueError),
         )
@@ -2826,8 +2826,18 @@ def _build_report(
     results: list[dict[str, Any]] = []
     progress_at=0.0
     from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
+    from scripts.game_data.levelscript_numeric_list_param_native import current_numeric_list_params
+    from scripts.game_data.levelscript_camera_shake_param_native import current_camera_shake_params
+    from scripts.game_data.levelscript_buff_ptr_param_native import current_buff_ptr_params
+    has_levelscript_sources=any(str(row["virtualPath"]).startswith(("Data/Json/LevelScriptData/","Data/Json/LevelScriptTemplateData/")) for row in selected)
     null_list_params=(_stack.enter_context(current_null_list_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
-                      if any(str(row["virtualPath"]).startswith("Data/Json/LevelScriptData/") for row in selected) else None)
+                      if has_levelscript_sources else None)
+    numeric_list_params=(_stack.enter_context(current_numeric_list_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
+                         if has_levelscript_sources else None)
+    camera_shake_params=(_stack.enter_context(current_camera_shake_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
+        if has_levelscript_sources else None)
+    buff_ptr_params=(_stack.enter_context(current_buff_ptr_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
+        if has_levelscript_sources else None)
     from scripts.game_data.memorypack.npc_runtime import npc_runtime_decoder
     npc_decoder=(_stack.enter_context(npc_runtime_decoder(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
                  if any(str(row["virtualPath"]).startswith(("Data/Json/AtmosphericNpcData/","Data/Json/LevelData/"))for row in selected)else None)
@@ -3012,7 +3022,7 @@ def _build_report(
                 "diagnostic": None,
             }
             if is_json
-            else _classify_binary(relative, family, data, strings, native_game_root=Path(outer["primaryAssets"]).parent, montage_reader=montage_reader, null_list_params=null_list_params, npc_decoder=npc_decoder, model_view_reader=model_view_reader)
+            else _classify_binary(relative, family, data, strings, native_game_root=Path(outer["primaryAssets"]).parent, montage_reader=montage_reader, null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params, npc_decoder=npc_decoder, model_view_reader=model_view_reader)
             )
         if not is_json and family in family_evidence and family not in unavailable_families:
             evidence = family_evidence[family][virtual_path]

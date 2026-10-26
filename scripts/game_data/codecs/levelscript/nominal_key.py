@@ -1,6 +1,7 @@
 """Stored pooled nominal Params; each managed ABI has its own native proof."""
 import struct
 from scripts.game_data.levelscript_nominal_key_param_native import validate
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 from scripts.game_data.string_pool import resolve_string_pool_index
 
 class NominalKeyDecodeError(ValueError):pass
@@ -8,7 +9,7 @@ class NominalKeyDecodeError(ValueError):pass
 def decode_nominal_key_param(data,offset,*,kind,strings=None,game_root=None):
  if kind not in('Param<LangKey>','Param<GlobalBuffId>'):raise NominalKeyDecodeError('nominalKey:unsupported-kind')
  global_id=kind=='Param<GlobalBuffId>';label='globalBuffId'if global_id else'langKey';key='id'if global_id else'key'
- audit=validate(kind=kind,game_root=game_root)
+ audit=validate_native(validate,kind=kind,game_root=game_root)
  if audit['status']!='validated':raise NominalKeyDecodeError(f"{label}.native:status={audit['status']},detail={audit.get('detail','')}")
  def number(fmt,field):
   nonlocal offset

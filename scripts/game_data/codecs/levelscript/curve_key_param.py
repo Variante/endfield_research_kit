@@ -2,6 +2,7 @@
 import struct
 from scripts.game_data.string_pool import resolve_string_pool_index
 from scripts.game_data.levelscript_curve_key_param_native import load_curve_key_param_contract
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 
 class CurveKeyParamDecodeError(ValueError):pass
 
@@ -23,6 +24,6 @@ def decode_wire(data,offset,*,strings=None):
  return dict(value=dict(key=key),idRef=id_ref,paramSource=source,path=string(index,'CurveKey.path')),offset+12
 
 def decode_curve_key_param(data,offset,*,strings=None,game_root=None):
- _,audit=load_curve_key_param_contract(game_root=game_root)
+ _,audit=validate_native(load_curve_key_param_contract,game_root=game_root)
  if audit.get('status')!='validated' or audit.get('parentProofStatus')!='selected-generated-route':raise CurveKeyParamDecodeError(f"CurveKey.native:{audit.get('status')},check={audit.get('failedCheck')},detail={audit.get('detail','')}")
  return decode_wire(data,offset,strings=strings)

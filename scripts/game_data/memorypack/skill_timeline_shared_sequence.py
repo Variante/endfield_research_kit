@@ -1,4 +1,7 @@
-"""Authenticated exact SkillData timeline records using current action readers.
+"""Historical v2 SkillData timeline records under their own native contract.
+
+The isolated current reader lives in ``skill_timeline_current_sequence``. Its
+tags, pooled sources and current root header do not retag or refresh this path.
 
 This is deliberately narrower than the general BuffData action reader. It
 admits only reached routes in its reviewed composite contract, including
@@ -70,6 +73,16 @@ nested actions, the non-applicable ModifyDynamicBlackboard shape, other
 CreateBuff or camera variants) stay bounded at their own selector instead of
 inheriting an admitted layout.  A closed action is stored framing only; it
 never shows that an action, condition, selector or branch ran.
+
+Build skew is fail-closed, not repaired.  When a route's source check fails
+and the check cites a dependency contract whose ``nativeInputs`` pin a build
+other than this contract's, the route is withheld as ``pendingReviewRoutes``
+(dropped from ``allowedReachedRoutes``) and the reader refuses it with
+``route:pendingReview:<route>:source-build-skew``; the native validator
+refuses while any route is pending.  A failed check citing only same-build
+sources still raises.  The literal tags above are the pinned build's; they
+are re-derived only when this contract and its sub-contracts are repinned
+together, never renumbered from a name match.
 """
 from __future__ import annotations
 
@@ -584,6 +597,7 @@ from scripts.game_data.memorypack.skill_timeline_change_specific_layer import (
     decode_change_specific_layer_action,
     validate_current_native_contract as validate_change_specific_layer_native_contract,
 )
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 _ADDITIONAL_SOURCE_MODULES = (check_skill_has_hit, set_ignore_global_time_scale, dispel)
 
@@ -793,6 +807,7 @@ class SharedSequenceReader(Reader):
     """Skill-only extensions to the shared finite action grammar."""
 
     def selector_finder_profile(self) -> None:
+        _refuse_pending_review(f"SelectorFinder:{self.peek():#x}")
         if self.peek() == 0x06:
             decode_zero_member_selector(self, "SelectorFinder", 6)
             return
@@ -808,6 +823,7 @@ class SharedSequenceReader(Reader):
         super().selector_finder_profile()
 
     def selector_validator_profile(self) -> None:
+        _refuse_pending_review(f"SelectorValidator:{self.peek():#x}")
         if self.peek() == 0x06:
             decode_zero_member_selector(self, "SelectorValidator", 6)
             return
@@ -823,6 +839,7 @@ class SharedSequenceReader(Reader):
         super().selector_validator_profile()
 
     def selector_postprocessor_profile(self) -> None:
+        _refuse_pending_review(f"SelectorPostProcessor:{self.peek():#x}")
         if self.peek() == 0x02:
             decode_zero_member_selector(self, "SelectorPostProcessor", 2)
             return
@@ -873,6 +890,7 @@ class SharedSequenceReader(Reader):
         return read_positive_member_ten_list(self)
 
     def _action(self, depth: int, tag: int, width: int) -> None:
+        _refuse_pending_review(f"0x{tag:04X}")
         if tag in recursive_actions.READ_KINDS:
             recursive_actions.decode_recursive_action(self, depth, tag, width)
             return
@@ -1292,6 +1310,44 @@ class SharedSequenceReader(Reader):
         super()._action(depth, tag, width)
 
 
+def _build_pair(inputs: Any) -> tuple[str, str] | None:
+    """Return the GameAssembly/metadata SHA256 pair a contract pins, if any."""
+    if not isinstance(inputs, dict):
+        return None
+    gameassembly = next((inputs[key] for key in (
+        "GameAssembly.dll", "gameassemblySha256", "gameAssemblySha256",
+    ) if inputs.get(key)), None)
+    metadata = next((inputs[key] for key in (
+        "global-metadata.dat", "globalMetadataSha256", "metadataSha256",
+    ) if inputs.get(key)), None)
+    if not gameassembly or not metadata:
+        return None
+    return str(gameassembly).upper(), str(metadata).upper()
+
+
+def _skewed_dependencies(
+    value: dict[str, Any], dependency_values: dict[str, dict[str, Any]]
+) -> frozenset[str]:
+    """Name the dependency contracts that pin a build other than this one."""
+    pinned = _build_pair(value.get("nativeInputs"))
+    return frozenset(
+        path for path, dependency in dependency_values.items()
+        if isinstance(dependency, dict)
+        and (pair := _build_pair(dependency.get("nativeInputs"))) is not None
+        and pair != pinned
+    )
+
+
+@lru_cache(maxsize=1)
+def _pending_review_routes() -> frozenset[str]:
+    return frozenset(row["route"] for row in _contract()["pendingReviewRoutes"])
+
+
+def _refuse_pending_review(route: str) -> None:
+    if route in _pending_review_routes():
+        raise ValueError(f"{LABEL}.route:pendingReview:{route}:source-build-skew")
+
+
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
     raw = CONTRACT_PATH.read_bytes()
@@ -1306,6 +1362,16 @@ def _contract() -> dict[str, Any]:
     routes = value.get("allowedReachedRoutes")
     if not isinstance(routes, list):
         raise ValueError("skillTimelineSharedSequence.contract:routes")
+    skewed = _skewed_dependencies(value, dependency_values)
+    withheld: dict[str, dict[str, Any]] = {}
+
+    def skew_drift(check: str, key: str, *paths: str) -> None:
+        """Raise a failed source check unless it cites a different-build source."""
+        cited = sorted(path for path in paths if path in skewed)
+        if not cited:
+            raise ValueError(f"{LABEL}.contract:{check}")
+        withheld[key] = {"check": check, "skewedDependencies": cited}
+
     part_contract, part_source = check_part_tag_match._contract()
     part_route = next((row for row in routes if row.get("tag") == f"0x{check_part_tag_match.TAG:04X}"), {})
     if (dependency_values.get(check_part_tag_match.CONTRACT_PATH.name) != part_contract
@@ -1449,7 +1515,7 @@ def _contract() -> dict[str, Any]:
             "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member11",
         }
-        or alert_contract.get("schemaVersion") != 1
+        or (alert_contract.get("schemaVersion") != 1 and not is_role_projection(alert_contract))
         or tuple(alert_contract.get("anonymousReadOrder", {}).get("member11", ()))
         != BROADCAST_ALERT_MEMBER_READ_KINDS
         or not any(
@@ -1478,7 +1544,7 @@ def _contract() -> dict[str, Any]:
         or not isinstance(motion_reads, list)
         or len(motion_reads) != 25
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:custom-root-motion-source-drift")
+        skew_drift("custom-root-motion-source-drift", "0x0099", "skill_custom_root_motion_native.json")
     building_route = next(
         (row for row in routes if row.get("tag") == "0x00B0"), None
     )
@@ -1501,7 +1567,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_159_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member7",
         }
-        or armor_contract.get("schemaVersion") != 1
+        or (armor_contract.get("schemaVersion") != 1 and not is_role_projection(armor_contract))
         or tuple(armor_contract.get("anonymousReadOrder", {}).get("member7", ()))
         != SET_SUPER_ARMOR_MEMBER_READ_KINDS
         or not any(
@@ -1522,7 +1588,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_142_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member11",
         }
-        or blackboard_contract.get("schemaVersion") != 1
+        or (blackboard_contract.get("schemaVersion") != 1 and not is_role_projection(blackboard_contract))
         or tuple(blackboard_contract.get("anonymousReadOrder", {}).get("member11", ()))
         != SAVE_VALUE_FROM_AI_BLACKBOARD_READ_KINDS
         or not any(
@@ -1544,7 +1610,7 @@ def _contract() -> dict[str, Any]:
                 "path": path, "schemaVersion": 1,
                 "orderedReadRef": f"anonymousReadOrder.{read_key}",
             }
-            or source.get("schemaVersion") != 1
+            or (source.get("schemaVersion") != 1 and not is_role_projection(source))
             or tuple(source.get("anonymousReadOrder", {}).get(read_key, ())) != read_kinds
             or not any(
                 row[2] == "Deserialize" and type_name.split(".")[-1].split("+")[0] in row[1]
@@ -1586,7 +1652,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_e0_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.memberSourceCalls",
         }
-        or camera_contract.get("schemaVersion") != 1
+        or (camera_contract.get("schemaVersion") != 1 and not is_role_projection(camera_contract))
         or camera_contract.get("anonymousReadOrder", {}).get("memberCount") != 54
         or not isinstance(camera_reads, list)
         or [row.get("memberIndex") for row in camera_reads] != list(range(1, 55))
@@ -1598,7 +1664,7 @@ def _contract() -> dict[str, Any]:
         raise ValueError("skillTimelineSharedSequence.contract:lock-camera-source-drift")
     action_map_contract = dependency_values.get("buff_ad_native.json", {})
     if (
-        action_map_contract.get("schemaVersion") != 1
+        (action_map_contract.get("schemaVersion") != 1 and not is_role_projection(action_map_contract))
         or action_map_contract.get("anonymousReadOrder", {}).get("mapMember2")
         != ["scalar32", "nullable-sequence-array"]
         or not any(
@@ -1633,7 +1699,7 @@ def _contract() -> dict[str, Any]:
         or tuple(direction_source.get("readOrder", ()))
         != CHECK_TWO_DIRECTION_ANGLE_READ_KINDS
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:two-direction-source-drift")
+        skew_drift("two-direction-source-drift", "0x0082", "buff_frontier9.json")
     step_route = next((row for row in routes if row.get("tag") == "0x0116"), None)
     step_source = dependency_values.get("skill_timeline_play_animation_step_native.json", {})
     step_wrapper = step_source.get("wrapper", {})
@@ -1680,7 +1746,7 @@ def _contract() -> dict[str, Any]:
         or crush_source.get("serializedMemberCount") != len(CRUSH_READ_ORDER)
         or tuple(crush_source.get("readOrder", ())) != CRUSH_READ_ORDER
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:crush-source-drift")
+        skew_drift("crush-source-drift", "0x0097", "buff_frontier9.json")
     blow_route = next((row for row in routes if row.get("tag") == "0x001D"), None)
     blow_source = next(
         (row for row in frontier.get("actions", []) if row.get("unionTag") == 0x001D), None
@@ -1701,7 +1767,7 @@ def _contract() -> dict[str, Any]:
         or blow_source.get("serializedMemberCount") != len(BLOW_OFF_ENEMY_READ_ORDER)
         or tuple(blow_source.get("readOrder", ())) != BLOW_OFF_ENEMY_READ_ORDER
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:blow-off-enemy-source-drift")
+        skew_drift("blow-off-enemy-source-drift", "0x001D", "buff_frontier9.json")
     for tag, type_name, path, schema, count, read_ref in (
         (
             "0x006D", "Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType+Data",
@@ -1894,7 +1960,7 @@ def _contract() -> dict[str, Any]:
             != source.get("dispatcher", {}).get("wrapperName")
             or catalog_route.get("memberCount") != count
         ):
-            raise ValueError(f"skillTimelineSharedSequence.contract:nested-source-drift:{family}:{tag:#x}")
+            skew_drift(f"nested-source-drift:{family}:{tag:#x}", f"{family}:{tag:#x}", path, "levelscript_union_tags.json")
     usp_route = next((row for row in routes if row.get("tag") == "0x00FF"), None)
     usp_frontier = dependency_values.get("buff_frontier7.json", {})
     usp_source = next(
@@ -1916,7 +1982,7 @@ def _contract() -> dict[str, Any]:
         or usp_source.get("serializedMemberCount") != len(OBTAIN_USP_NORMAL_READ_ORDER)
         or tuple(usp_source.get("readOrder", ())) != OBTAIN_USP_NORMAL_READ_ORDER
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:obtain-usp-source-drift")
+        skew_drift("obtain-usp-source-drift", "0x00FF", "buff_frontier7.json")
     combo_route = next((row for row in routes if row.get("tag") == "0x004E"), None)
     combo_contract = dependency_values.get("buff_4e_native.json", {})
     if (
@@ -1927,7 +1993,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_4e_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member5",
         }
-        or combo_contract.get("schemaVersion") != 1
+        or (combo_contract.get("schemaVersion") != 1 and not is_role_projection(combo_contract))
         or tuple(combo_contract.get("anonymousReadOrder", {}).get("member5", ()))
         != COMBO_CACHE_READ_KINDS
         or not any(
@@ -1946,7 +2012,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_07_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member8",
         }
-        or marker_contract.get("schemaVersion") != 1
+        or (marker_contract.get("schemaVersion") != 1 and not is_role_projection(marker_contract))
         or tuple(marker_contract.get("anonymousReadOrder", {}).get("member8", ()))
         != ADD_AI_MARKER_READ_KINDS
         or not any(
@@ -1990,7 +2056,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_135_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member7",
         }
-        or stack_source.get("schemaVersion") != 1
+        or (stack_source.get("schemaVersion") != 1 and not is_role_projection(stack_source))
         or stack_source.get("anonymousReadOrder", {}).get("member7") != [
             "byte", "scalar32", "scalar32", "scalar32",
             "single-payload", "target-profile", "byte-payload",
@@ -2034,7 +2100,7 @@ def _contract() -> dict[str, Any]:
             "target-settings", "enum32",
         )
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:teleport-pos-select-source-drift")
+        skew_drift("teleport-pos-select-source-drift", "0x017D", "buff_frontier9.json")
     save_angle_route = next(
         (row for row in routes if row.get("tag") == "0x0141"), None
     )
@@ -2060,7 +2126,7 @@ def _contract() -> dict[str, Any]:
             "target-settings", "target-settings", "string",
         )
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:save-two-direction-source-drift")
+        skew_drift("save-two-direction-source-drift", "0x0141", "buff_frontier9.json")
     navmesh_route = next((row for row in routes if row.get("tag") == "0x0009"), None)
     frontier8 = dependency_values.get("buff_frontier8.json", {})
     navmesh_source = next(
@@ -2107,7 +2173,7 @@ def _contract() -> dict[str, Any]:
             "target-settings", "buff-find-settings",
         )
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:extend-buff-source-drift")
+        skew_drift("extend-buff-source-drift", "0x00AF", "buff_frontier8.json")
     patrol_route = next((row for row in routes if row.get("tag") == "0x00C2"), None)
     patrol_source = next(
         (row for row in frontier8.get("actions", []) if row.get("unionTag") == 0x00C2), None
@@ -2128,7 +2194,7 @@ def _contract() -> dict[str, Any]:
             "byte", "scalar32", "scalar32", "scalar32", "string", "float32",
         )
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:patrol-teleport-source-drift")
+        skew_drift("patrol-teleport-source-drift", "0x00C2", "buff_frontier8.json")
     for tag, name, source_path, read_order in (
         (
             "0x000C", "Beyond.Gameplay.Core.AddTagToEntities+Data",
@@ -2157,7 +2223,7 @@ def _contract() -> dict[str, Any]:
                 "schemaVersion": 1,
                 "orderedReadRef": "anonymousReadOrder.member8",
             }
-            or source.get("schemaVersion") != 1
+            or (source.get("schemaVersion") != 1 and not is_role_projection(source))
             or tuple(source.get("anonymousReadOrder", {}).get("member8", ())) != read_order
         ):
             raise ValueError(f"skillTimelineSharedSequence.contract:buff-reuse-source-drift:{tag}")
@@ -2271,7 +2337,7 @@ def _contract() -> dict[str, Any]:
         or override_source.get("serializedMemberCount") != 12
         or len(override_source.get("readOrder", ())) != 12
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:override-camera-follow-source-drift")
+        skew_drift("override-camera-follow-source-drift", "0x0104", "buff_frontier9.json")
     not_next_route = next((row for row in routes if row.get("tag") == "0x00FD"), None)
     not_next_source = dependency_values.get("buff_fd_native.json", {})
     if (
@@ -2282,7 +2348,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_fd_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member4",
         }
-        or not_next_source.get("schemaVersion") != 1
+        or (not_next_source.get("schemaVersion") != 1 and not is_role_projection(not_next_source))
         or tuple(not_next_source.get("anonymousReadOrder", {}).get("member4", ()))
         != ("byte", "scalar32", "scalar32", "scalar32")
     ):
@@ -2302,7 +2368,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_98_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member9",
         }
-        or curve_source.get("schemaVersion") != 1
+        or (curve_source.get("schemaVersion") != 1 and not is_role_projection(curve_source))
         or tuple(curve_source.get("anonymousReadOrder", {}).get("member9", ())) != curve_reads
         or curve_selected.get("schema")
         != "endfield.skill-timeline-curve-evaluate-float-native-contract.v1"
@@ -2390,7 +2456,7 @@ def _contract() -> dict[str, Any]:
         or unlock_source.get("serializedMemberCount") != 8
         or len(unlock_source.get("readOrder", ())) != 8
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:temporary-unlock-source-drift")
+        skew_drift("temporary-unlock-source-drift", "0x017E", "buff_frontier9.json")
     move_check_route = next((row for row in routes if row.get("tag") == "0x0045"), None)
     move_check_source = dependency_values.get("skill_timeline_check_has_move_input_native.json", {})
     if (
@@ -2426,7 +2492,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_184_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member6",
         }
-        or togglable_source.get("schemaVersion") != 1
+        or (togglable_source.get("schemaVersion") != 1 and not is_role_projection(togglable_source))
         or tuple(togglable_source.get("anonymousReadOrder", {}).get("member6", ()))
         != ("byte", "scalar32", "scalar32", "scalar32", "sequence", "sequence")
         or togglable_catalog.get("schema") != "endfield.levelscript-union-tags.v1"
@@ -2435,7 +2501,7 @@ def _contract() -> dict[str, Any]:
         or togglable_entry.get("wrappedType") != togglable_route["typeName"]
         or togglable_entry.get("memberCount") != 6
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:togglable-source-drift")
+        skew_drift("togglable-source-drift", "0x0184", "buff_184_native.json", "levelscript_union_tags.json")
     squad_route = next((row for row in routes if row.get("tag") == "0x0052"), None)
     squad_source = dependency_values.get("buff_52_native.json", {})
     squad_entry = (
@@ -2450,7 +2516,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_52_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member5",
         }
-        or squad_source.get("schemaVersion") != 1
+        or (squad_source.get("schemaVersion") != 1 and not is_role_projection(squad_source))
         or tuple(squad_source.get("anonymousReadOrder", {}).get("member5", ()))
         != ("byte", "scalar32", "scalar32", "scalar32", "byte")
         or not isinstance(squad_entry, dict)
@@ -2458,7 +2524,7 @@ def _contract() -> dict[str, Any]:
         or squad_entry.get("wrappedType") != squad_route["typeName"]
         or squad_entry.get("memberCount") != 5
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:check-squad-in-fight-source-drift")
+        skew_drift("check-squad-in-fight-source-drift", "0x0052", "buff_52_native.json", "levelscript_union_tags.json")
     break_route = next((row for row in routes if row.get("tag") == "0x0001"), None)
     break_source = dependency_values.get("skill_timeline_break_interactive_native.json", {})
     if (
@@ -2652,7 +2718,7 @@ def _contract() -> dict[str, Any]:
             "blackboard-double", "float32",
         )
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:fracture-source-drift")
+        skew_drift("fracture-source-drift", "0x00BE", "buff_frontier9.json")
     combo_ui_route = next((row for row in routes if row.get("tag") == "0x015F"), None)
     residual_frontier = dependency_values.get("buff_residual_frontier.json", {})
     combo_ui_source = next(
@@ -2677,7 +2743,7 @@ def _contract() -> dict[str, Any]:
         or tuple(combo_ui_source.get("readOrder", ()))
         != ("byte", "scalar32", "scalar32", "scalar32")
     ):
-        raise ValueError("skillTimelineSharedSequence.contract:show-combo-skill-ui-source-drift")
+        skew_drift("show-combo-skill-ui-source-drift", "0x015F", "buff_residual_frontier.json")
     teleport_squad_route = next((row for row in routes if row.get("tag") == "0x018C"), None)
     teleport_squad_source = dependency_values.get("skill_timeline_try_teleport_squad_native.json", {})
     if (
@@ -3199,7 +3265,7 @@ def _contract() -> dict[str, Any]:
                 "path": source_path, "schemaVersion": 1,
                 "orderedReadRef": f"anonymousReadOrder.member{member_count}",
             }
-            or source.get("schemaVersion") != 1
+            or (source.get("schemaVersion") != 1 and not is_role_projection(source))
             or tuple(source.get("anonymousReadOrder", {}).get(f"member{member_count}", ()))
             != read_order
             or not source.get("methods")
@@ -3219,7 +3285,7 @@ def _contract() -> dict[str, Any]:
             "path": "buff_19e_native.json", "schemaVersion": 1,
             "orderedReadRef": "anonymousReadOrder.member23",
         }
-        or camera_state_contract.get("schemaVersion") != 1
+        or (camera_state_contract.get("schemaVersion") != 1 and not is_role_projection(camera_state_contract))
         or not isinstance(camera_state_contract.get("anonymousReadOrder", {}).get("member23"), list)
         or len(camera_state_contract["anonymousReadOrder"]["member23"]) != 23
     ):
@@ -3338,6 +3404,10 @@ def _contract() -> dict[str, Any]:
                         "CheckSkillHasHit+Data" if module is check_skill_has_hit
                         else "SetIgnoreGlobalTimeScaleAction+Data"))):
             raise ValueError(f"{LABEL}.contract:source-reader-drift:{module.LABEL}")
+    value["allowedReachedRoutes"] = [row for row in routes if row.get("tag") not in withheld]
+    value["pendingReviewRoutes"] = [
+        {"route": key, **withheld[key]} for key in sorted(withheld)
+    ]
     return value
 
 
@@ -3366,6 +3436,14 @@ def _validate_additional_source_readers(*, gameassembly, metadata) -> dict[str, 
 
 def validate_current_native_contract() -> dict[str, Any]:
     contract = _contract()
+    expected = contract["nativeInputs"]
+    gate = check_installed_native_inputs(
+        expected["gameassemblySha256"], expected["globalMetadataSha256"]
+    )
+    if gate.status != NATIVE_EVIDENCE_VALIDATED:
+        raise ValueError(
+            f"skillTimelineSharedSequence.native:{gate.status}:{gate.detail}"
+        )
     damage_tag_list_validation = validate_damage_unit_tag_list_native_contract()
     frontier_rows, frontier_audit = buff_frontiers_native.load_rows("frontier9")
     if frontier_audit.get("status") != "validated" or 0x0082 not in frontier_rows:
@@ -3487,13 +3565,10 @@ def validate_current_native_contract() -> dict[str, Any]:
     warning_validation = validate_enemy_warning_native_contract()
     angry_validation = validate_finish_angry_native_contract()
     two_action_validation = validate_two_action_routes_native_contract()
-    expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(
-        expected["gameassemblySha256"], expected["globalMetadataSha256"]
-    )
-    if gate.status != NATIVE_EVIDENCE_VALIDATED:
+    if contract["pendingReviewRoutes"]:
         raise ValueError(
-            f"skillTimelineSharedSequence.native:{gate.status}:{gate.detail}"
+            f"{LABEL}.native:pendingReview-routes:"
+            + ",".join(row["route"] for row in contract["pendingReviewRoutes"])
         )
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
     if not unityplayer.is_file():
@@ -3610,7 +3685,7 @@ def validate_current_native_contract() -> dict[str, Any]:
             image.pe, image.metadata, image.registration, image.instantiations,
             image.modules, image.owners, source=str(gate.gameassembly),
             contract_path=CONTRACT_PATH.parent / source_name,
-        )
+         native_image=image)
     source_window_dependencies = sorted({
         ref["path"]
         for route in contract["allowedReachedRoutes"]
@@ -3627,7 +3702,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         source = json.loads(path.read_bytes())
         for method in source["methods"]:
             image.validate_method_row(method, label=f"{LABEL}.{name}")
-        image.check_windows(source["codeWindows"], label=f"{LABEL}.{name}")
+        check_formatter_windows(image, source, label=f"{LABEL}.{name}")
     return {
         "status": "validated",
         "nativeInputs": expected,

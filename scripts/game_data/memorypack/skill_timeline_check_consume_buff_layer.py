@@ -162,12 +162,12 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["sourceContract"],
-    )
+     native_image=image)
     scalar_audit = buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["scalarPayloadContract"],
-    )
+     native_image=image)
     if (
         source_audit["anonymousReadOrder"].get("member7") != list(SOURCE_READ_ORDER)
         or scalar_audit["anonymousReadOrder"].get("scalar-payload")

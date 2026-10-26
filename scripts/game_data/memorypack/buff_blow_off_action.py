@@ -66,7 +66,7 @@ def validate_current_native_contract(*, children, gameassembly: Path | None = No
     record = c['records']['blowOffAction']; source_path = CONTRACTS_DIR/record['sourceContract']
     source = json.loads(source_path.read_bytes())
     buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-        image.modules, image.owners, source=str(gate.gameassembly), contract_path=source_path)
+        image.modules, image.owners, source=str(gate.gameassembly), contract_path=source_path, native_image=image)
     source['codeWindows'].extend(c['sourceWindows'])
     def fail(check, expected, actual, **details):
         raise ValueError(LABEL+'.'+check+':'+json.dumps({'source': str(source_path), 'expected': str(expected)[:700], 'actual': str(actual)[:700]}))

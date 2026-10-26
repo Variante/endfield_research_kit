@@ -240,11 +240,19 @@ def buff_tag76_read_order(pe,md,reg,table,modules,image_owners,*,source):
         'boundary':'Tag 76 routes to the current wrapper in selectedBuffUnionRoutes. Its member-five path reads one nonzero-normalized byte and three DWORDs before ReadPackable with List<BlackboardString>. The independently joined element reader takes member three, length-prefixed bytes, one normalized byte, then length-prefixed bytes. The length helper reads a signed DWORD: -1 returns null, zero takes an empty path, and positive length is forwarded unchanged to the byte consumer, which advances source/counters by that length after its decoder call. Payload bytes remain anonymous: encoding/cache contents, complete decoder parity, negative values below -1, live list formatter, concrete source carrier and final cursor/EOF are not proven. The maintained finite list profile is structural-only; neither managed names nor output-slot widths establish serialized order or gameplay meaning.'}
 
 
-def buff_action_read_order(pe,md,reg,table,modules,image_owners,*,source,contract_path):
+def buff_action_read_order(pe,md,reg,table,modules,image_owners,*,source,contract_path,native_image=None):
     """Selected action profile under audit()'s explicit native hash gate."""
     path=Path(contract_path)
     contract=json.loads(path.read_bytes())
-    require(contract['schemaVersion'],1,path)
+    role_validation=None
+    if (contract.get('schemaVersion')==2 or contract.get('roleContract') is not None
+            or any('requiredRoleContract' in row for row in contract.get('codeWindows',[]))):
+        require(native_image is not None,True,path)
+        require(native_image.pe.buf==pe.buf and native_image.metadata.buf==md.buf,True,path)
+        from scripts.game_data.memorypack.formatter_native import check_formatter_windows
+        role_validation=check_formatter_windows(native_image,contract,label='buffActionReadOrder.'+path.stem)
+    else:
+        require(contract['schemaVersion'],1,path)
     methods=module_methods(pe,md,modules,image_owners,contract['methods'],
         source=source,expected_image='MemoryPack.Beyond.dll')
     for group in contract.get('methodGroups',[]):
@@ -298,6 +306,7 @@ def buff_action_read_order(pe,md,reg,table,modules,image_owners,*,source,contrac
         'codeWindows':contract['codeWindows'],'dataWindows':contract.get('dataWindows',[]),'nestedContexts':contract['nestedContexts'],
         'anonymousReadOrder':contract['anonymousReadOrder'],
         'verifiedSourceReadCallSites':verified_source_read_calls,
+        'requiredRoleValidation':role_validation,
         'level':'direct selected consumer order; exact static nested type joins; structural-only parser profile',
         'boundary':contract['boundary']}
 

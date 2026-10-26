@@ -1,11 +1,12 @@
 """Bounded current LangKey list Param; rawText is not serialized or projected."""
 import struct
 from scripts.game_data.levelscript_lang_key_list_param_native import validate
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 from scripts.game_data.string_pool import resolve_string_pool_index
 
 
 def decode_lang_key_list_param(data,offset,*,strings=None,game_root=None):
- audit=validate(game_root=game_root);expected=dict(status='validated',codecKind='Param<List<LangKey>>',memberCount=4,collectionCounts=[-1,0,1],elementRuntimeBytes=16,elementEncoding='MC1/int32-pool-index-or-default',pathEncoding='int32-pool-index')
+ audit=validate_native(validate,game_root=game_root);expected=dict(status='validated',codecKind='Param<List<LangKey>>',memberCount=4,collectionCounts=[-1,0,1],elementRuntimeBytes=16,elementEncoding='MC1/int32-pool-index-or-default',pathEncoding='int32-pool-index')
  if any(audit.get(k)!=v for k,v in expected.items()):raise ValueError(f"langKeyList.native:status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
  def number(fmt,field):
   nonlocal offset

@@ -21,6 +21,7 @@ def _native_validation() -> dict[str, Any]:
 
 def decode_route_at(
     data: bytes, offset: int, family: str, tag: int, *, limit: int | None = None,
+    game_root: Any = None, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Decode one selected union, bounded by ``limit`` when supplied."""
     _native_validation()
@@ -32,7 +33,7 @@ def decode_route_at(
     # circular import. Its Cursor owns all primitive/Param failure behavior.
     from . import action_map
 
-    cursor = action_map._Cursor(data[:hard_limit], offset)
+    cursor = action_map._Cursor(data[:hard_limit], offset, game_root=game_root, strings=strings, route=route)
     tag_field = f"levelscriptTwoRoutes.{family}.tag"
     tag_width = 2 if tag > 0xFF else 1
     if tag_width == 2:

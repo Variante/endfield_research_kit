@@ -346,7 +346,7 @@ def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
     }
 
 
-def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any = None, game_root=None, npc_decoder=None) -> dict[str, Any]:
+def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any = None, game_root=None, npc_decoder=None,current_owner=None) -> dict[str, Any]:
     """Advance the current owner from an exact empty action map.
 
     The generated 28-member wrapper supplies the names and order.  Complex
@@ -365,12 +365,12 @@ def frame_levelscript_empty_action_map_sequential(data: bytes, *, strings: Any =
         action_map=action_map["actionMap"],
         owner_offset=int(action_map["bytesConsumed"]),
         action_map_boundary="complete empty action map",
-        strings=strings,game_root=game_root,npc_decoder=npc_decoder,
+        strings=strings,game_root=game_root,npc_decoder=npc_decoder,current_owner=current_owner,
         partial_status="exact_named_empty_action_map_owner_prefix",
     )
 
 
-def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = None, game_root=None, npc_decoder=None) -> dict[str, Any]:
+def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = None, game_root=None, npc_decoder=None,current_owner=None) -> dict[str, Any]:
     """Advance the current owner from an exact null ``actionMap`` union.
 
     The generated 28-member wrapper permits a null reference for its first
@@ -400,7 +400,7 @@ def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = 
         },
         owner_offset=2,
         action_map_boundary="null action map",
-        strings=strings,game_root=game_root,npc_decoder=npc_decoder,
+        strings=strings,game_root=game_root,npc_decoder=npc_decoder,current_owner=current_owner,
         partial_status="exact_named_null_action_map_owner_prefix",
     )
 
@@ -1862,7 +1862,7 @@ class LevelScriptNamedFramingError(LevelScriptTopLevelFramingError):
         )
 
 
-def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: Any = None, game_root=None, null_list_params=None, npc_decoder=None) -> dict[str, Any]:
+def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: Any = None, game_root=None, null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None, npc_decoder=None,current_owner=None) -> dict[str, Any]:
     """Return the first maintained exact or bounded LevelScript owner frame.
 
     This is the shared route order used by the JsonData registry and Data page.
@@ -1875,6 +1875,18 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: 
     if null_list_params is not None:
         from scripts.game_data.levelscript_null_list_param_native import prepared_null_list_audit
         prepared_null_list_audit(null_list_params,codec_kind=None,game_root=game_root,strings=strings)
+    if camera_shake_params is not None:
+        from scripts.game_data.levelscript_camera_shake_param_native import prepared_camera_shake_audit
+        prepared_camera_shake_audit(camera_shake_params,game_root=game_root,strings=strings)
+    if buff_ptr_params is not None:
+        from scripts.game_data.levelscript_buff_ptr_param_native import prepared_buff_ptr_audit
+        prepared_buff_ptr_audit(buff_ptr_params,game_root=game_root,strings=strings)
+    if entity_list_params is not None:
+        from scripts.game_data.levelscript_entity_list_param_native import prepared_entity_list_audit
+        prepared_entity_list_audit(entity_list_params,game_root=game_root,strings=strings)
+    if numeric_list_params is not None:
+        from scripts.game_data.levelscript_numeric_list_param_native import prepared_numeric_list_audit
+        prepared_numeric_list_audit(numeric_list_params,codec_kind=None,game_root=game_root,strings=strings)
     if game_root is not None:
         from scripts.game_data.serialization_roots_native import check_root_native_inputs
         gate=check_root_native_inputs(game_root=game_root)
@@ -1892,9 +1904,9 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: 
     ):
         try:
             if reader is frame_levelscript_current_action_sequence_leader_enter:
-                result = reader(data,strings=strings,game_root=game_root,null_list_params=null_list_params,npc_decoder=npc_decoder)
+                result = reader(data,strings=strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params,npc_decoder=npc_decoder,current_owner=current_owner)
             else:
-                result = reader(data,strings=strings,game_root=game_root,npc_decoder=npc_decoder) if reader in (frame_levelscript_empty_action_map_sequential,frame_levelscript_null_action_map_sequential) else reader(data)
+                result = reader(data,strings=strings,game_root=game_root,npc_decoder=npc_decoder,current_owner=current_owner) if reader in (frame_levelscript_empty_action_map_sequential,frame_levelscript_null_action_map_sequential) else reader(data)
         except (LevelScriptTopLevelFramingError, ValueError) as exc:
             refusals.append({
                 "validator": reader.__name__, "check": "stored-profile",

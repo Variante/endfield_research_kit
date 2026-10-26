@@ -147,6 +147,23 @@ the bullets below are the routing facts and the boundaries this file owns.
   (`memorypack.npc_montage`); NPC PrefabInfo and the two NPC catalogs have
   exact JSON schema readers (`schemas.npc_prefab_info`, `schemas.npc_catalog`).
   Available TypeTrees do not cover MemoryPack JsonData.
+  Source freshness can be authenticated independently with
+  `jsondata_source_inventory`: it joins the complete available JsonData and
+  JsonLip path set to the current audited chunks and exported loose/packed
+  bytes, with source, build, catalog, storage and producer entry/exit checks.
+  Optional-download exclusions remain current only while both installed-layer
+  chunk candidates remain absent; an appearing chunk requires a fresh audit.
+  Its distinct receipt carries no named-schema or native authority. It cannot
+  replace the family registry, revive a mismatched contract, or establish
+  runtime activation or playback. `CurrentLevelScriptSource.from_source_inventory`
+  explicitly accepts that receipt and still performs its own fresh native,
+  matching string-pool, complete-owner and physical-EOF checks. The default
+  constructor continues to require the named registry receipt.
+  Retain prior owner receipts with their original reader epoch. A separate
+  audit may reference their EOF results after joining exact current source,
+  file, pool and native bytes and reviewing a bounded change outside the
+  grammar. That does not make an old reader snapshot current or reissue its
+  native result; a new public operation still requires fresh entry/exit checks.
 - **SkillData** is a 48-member MemoryPack object (`memorypack.skill`).
   Exact-build native evidence resolves the resource type as `Core.SkillData`,
   field 0 as `actionGroupData` (nested `passiveEventActions` then

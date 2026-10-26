@@ -33,9 +33,10 @@ def _validate_native(image,fact):
   actual=entries.resolve(row['definition'],row['classArguments'],row['methodArguments'])
   if actual['pointer']-image.pe.image_base!=row['pointerRva']:raise ValueError(LABEL+'.registered-entry:'+str(row['definition']))
 
-def load_pos_rot_contract(*,game_root=None,contract_path=DEFAULT_CONTRACT):
+def load_pos_rot_contract(*,game_root=None,contract_path=DEFAULT_CONTRACT,include_fact=True):
  audit=dict(validator=LABEL,source=str(contract_path),parentProofStatus='unresolved')
  try:
+  if type(include_fact)is not bool:raise ValueError(LABEL+'.include-fact:bool-required')
   path=Path(contract_path);raw=path.read_bytes();fact=json.loads(raw);pins=fact['nativeInputs'];audit['nativeInputs']=pins
   if (fact['schema'],fact['status'],fact['layout']['stringEncoding'])!=(SCHEMA,'exact-current-build','int32-pool-index') or set(pins)!={'GameAssembly.dll','global-metadata.dat','UnityPlayer.dll'}:raise ValueError(LABEL+'.contract:schema-or-inputs')
   root=Path(game_root) if game_root is not None else None
@@ -49,7 +50,7 @@ def load_pos_rot_contract(*,game_root=None,contract_path=DEFAULT_CONTRACT):
   failed=pooled_source_helper.check_unity_input(gate.gameassembly,pins)
   if failed:return {},dict(audit,**failed)
   if path.read_bytes()!=raw:raise ValueError(LABEL+'.contract:changed-during-validation')
-  return fact,dict(audit,status='validated',parentProofStatus='selected-generated-route',evidenceBoundary=fact['evidenceBoundary'])
+  return fact if include_fact else {},dict(audit,status='validated',parentProofStatus='selected-generated-route',evidenceBoundary=fact['evidenceBoundary'])
  except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:return {},dict(audit,**native_validation_failure(error,label=LABEL,source_path=contract_path))
 
 if __name__=='__main__':

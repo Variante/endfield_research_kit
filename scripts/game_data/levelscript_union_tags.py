@@ -85,14 +85,17 @@ def _tables(raw: bytes):
     return contract,{family:{r['name']:(r['tag'],r['memberCount']) for r in rows} for family,rows in families.items()}, {family:{r['name']:r.get('wrapperName','') for r in rows} for family,rows in families.items()}
 
 
-def _load(contract_path: Path = DEFAULT_CONTRACT) -> tuple[dict[str, dict[str, tuple[int, int]]], dict[str, Any]]:
+def _load(contract_path: Path = DEFAULT_CONTRACT, *, gameassembly=None, metadata=None) -> tuple[dict[str, dict[str, tuple[int, int]]], dict[str, Any]]:
+    if (gameassembly is None) != (metadata is None):
+        return {}, {"status": "validation_failed", "detail": "both-selected-paths-required"}
     try:
         contract,families,_ = _tables(Path(contract_path).read_bytes())
     except (OSError, UnicodeError, ValueError) as error:
         return {}, {"status": "validation_failed", "detail": str(error)[:400]}
     inputs = contract.get("nativeInputs") or {}
+    selected = {} if gameassembly is None else dict(gameassembly=gameassembly, metadata=metadata)
     native = check_installed_native_inputs(
-        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
+        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""), **selected)
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         return {}, {"status": native.status, "detail": native.detail}
     return families, {"status": NATIVE_EVIDENCE_VALIDATED, "detail": ""}
@@ -124,14 +127,15 @@ def contract_native_inputs(contract_path: Path = DEFAULT_CONTRACT) -> dict[str, 
     return {key: str(inputs.get(key) or "").upper() for key in ("gameAssemblySha256", "metadataSha256")}
 
 
-def pair(family: str, name: str) -> tuple[Any, ...]:
+def pair(family: str, name: str, *, gameassembly=None, metadata=None) -> tuple[Any, ...]:
     """The current ``(tag, member count)`` of one named type.
 
     An unknown name or an unvalidated build yields a placeholder tuple that is
     unique per name and can never equal a scanned integer pair, so a dict keyed
     by these stays collision-free and simply never matches.
     """
-    found = _load()[0].get(family, {}).get(name)
+    selected = {} if gameassembly is None and metadata is None else dict(gameassembly=gameassembly, metadata=metadata)
+    found = _load(**selected)[0].get(family, {}).get(name)
     return found if found is not None else ("unavailable", family, name)
 
 

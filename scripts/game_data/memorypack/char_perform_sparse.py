@@ -1,10 +1,16 @@
 """Current CharInteract bounded sparse owner framing after native admission."""
 import struct
+from collections import Counter
 from scripts.game_data.string_pool import resolve_string_pool_index
 
 class SparsePerformDecodeError(ValueError):pass
 
-def frame(data,fields,*,prefix=False,actor_fields=None,action_fields=None,strings=None):
+def frame(data,fields,*,prefix=False,actor_fields=None,action_fields=None,strings=None,
+          selected_action_decoder=None,selected_action_count_limit=None):
+ if selected_action_decoder is not None:
+  if not callable(selected_action_decoder)or type(selected_action_count_limit)is not int or not 1<=selected_action_count_limit<=10000:
+   raise SparsePerformDecodeError('loopActions: explicit callable selected decoder and bounded count required')
+ elif selected_action_count_limit is not None:raise SparsePerformDecodeError('loopActions: count extension requires selected decoder')
  offset=0;values={};ranges=[];actions=[]
  def take(n,name):
   nonlocal offset
@@ -39,9 +45,18 @@ def frame(data,fields,*,prefix=False,actor_fields=None,action_fields=None,string
   if n!=1:return []
   if take(1,name+'.tag.memberCount')!=b'\1':raise SparsePerformDecodeError(f'{name}: tag member count outside reviewed MC1 source profile at 0x{offset-1:x}')
   return [struct.unpack('<i',take(4,name+'.tagId'))[0]]
- def action_value(name):
+ def action_value(name,*,action_index=0,legacy_allowed=True):
+  nonlocal offset
   start=offset;tag=take(1,name+'.unionTag')[0]
   if tag==255:return None
+  if tag!=1 and selected_action_decoder is not None:
+   result=selected_action_decoder(data,start,name,action_index)
+   if not isinstance(result,dict)or type(result.get('endOffset'))is not int or not offset<result['endOffset']<=len(data)or not isinstance(result.get('action'),dict)or not isinstance(result['action'].get('typeName'),str)or not result['action']['typeName']:
+    raise SparsePerformDecodeError(f'{name}: selected action decoder returned an invalid bounded cursor')
+   offset=result['endOffset'];action=dict(result['action'],sourceOffset=start,endOffset=offset,byteLength=offset-start,
+    placement='loopActions',actionIndex=action_index)
+   actions.append(action);return action
+  if not legacy_allowed:raise SparsePerformDecodeError(f'{name}: tag {tag} outside selected multi-element action profile at 0x{start:x}')
   if tag!=1 or action_fields is None or len(action_fields)!=18:raise SparsePerformDecodeError(f'{name}: action tag {tag} outside reviewed tag1 source profile at 0x{start:x}')
   marker=take(1,name+'.memberCount')[0]
   if marker!=18:raise SparsePerformDecodeError(f'{name}: action member count {marker}, expected18 at 0x{offset-1:x}')
@@ -56,7 +71,7 @@ def frame(data,fields,*,prefix=False,actor_fields=None,action_fields=None,string
    elif kind=='bool':result[f['name']]=bool(take(1,key)[0])
    else:result[f['name']]=struct.unpack('<ff'if kind=='object'else'<f'if kind=='float32'else'<I',take(8 if kind=='object'else 4,key))
    if kind not in('object','list','string','bool')and f['name']!='bodyType':result[f['name']]=result[f['name']][0]
-  action=dict(sourceOffset=start,endOffset=offset,byteLength=offset-start,unionTag=tag,unionTagHex='0x0001',typeName='AddMultiTagsActData',memberCount=18,placement='loopActions',actionIndex=0,**result);actions.append(action);return action
+  action=dict(sourceOffset=start,endOffset=offset,byteLength=offset-start,unionTag=tag,unionTagHex='0x0001',typeName='AddMultiTagsActData',memberCount=18,placement='loopActions',actionIndex=action_index,**result);actions.append(action);return action
  marker=take(1,'CharInteractPerformRuntimeCfg.memberCount')[0]
  if marker!=len(fields):raise SparsePerformDecodeError(f'CharInteractPerformRuntimeCfg: member count {marker}, expected {len(fields)}')
  for f in fields[:2]if prefix else fields:
@@ -83,12 +98,13 @@ def frame(data,fields,*,prefix=False,actor_fields=None,action_fields=None,string
    value=[actor_value(name+'[0]')]if n==1 else []
   elif mode=='reference'and name=='loopActions':
    n=struct.unpack('<i',take(4,name+'.count'))[0]
-   if n not in(-1,0,1):raise SparsePerformDecodeError(f'{name}: count {n} outside reviewed null/zero/one action source profile at 0x{start:x}')
-   value=[action_value(name+'[0]')]if n==1 else []
+   limit=selected_action_count_limit if selected_action_decoder is not None else 1
+   if n< -1 or n>limit:raise SparsePerformDecodeError(f'{name}: count {n} outside reviewed action source profile[-1,{limit}] at 0x{start:x}')
+   value=[action_value(name+'['+str(i)+']',action_index=i,legacy_allowed=n<=1)for i in range(max(0,n))]
   elif mode=='reference'and f['type'].startswith('System.Collections.Generic.List`1<'):value=empty(name)
   else:raise SparsePerformDecodeError(f'{name}: unreviewed current child at 0x{start:x}')
   values[name]=value;ranges.append(dict(name=name,startOffset=start,endOffset=offset))
  if prefix:return dict(status='bounded_prefix',schemaStatus='named_prefix_opaque_remainder',serializedMemberCount=len(fields),bytesConsumed=offset,activeTagCount=len(values['activeTags'])if isinstance(values['activeTags'],list)else 0,activeTags=values['activeTags']if isinstance(values['activeTags'],list)else [],allowInheritPerform=values['allowInheritPerform'],opaqueRemainderOffset=offset,opaqueRemainderLength=len(data)-offset)
  if offset!=len(data):raise SparsePerformDecodeError(f'CharInteractPerformRuntimeCfg: trailing {len(data)-offset} bytes at 0x{offset:x}')
  actors={f['name']:values[f['name']]for f in fields if f['type']=='System.Collections.Generic.List`1<Beyond.Gameplay.Core.CharInteractPerform.CharInteractPerformActor>'}
- return dict(status='exact_current_char_interact_frame',schemaStatus='named_exact',wholeSchemaExact=True,schemaMappingId='endfield.char-interact-perform-runtime-cfg.sparse.v4',unionMappingId=None,serializedMemberCount=len(fields),bytesConsumed=offset,actionCount=len(actions),actionTypeCounts={'AddMultiTagsActData':len(actions)}if actions else{},actions=actions,actorCollections=actors,audioActionCount=0,audioActions=[],fieldRanges=ranges)
+ return dict(status='exact_current_char_interact_frame',schemaStatus='named_exact',wholeSchemaExact=True,schemaMappingId='endfield.char-interact-perform-runtime-cfg.sparse.v4',unionMappingId=None,serializedMemberCount=len(fields),bytesConsumed=offset,actionCount=len(actions),actionTypeCounts=dict(Counter(a['typeName']for a in actions)),actions=actions,actorCollections=actors,audioActionCount=0,audioActions=[],fieldRanges=ranges)

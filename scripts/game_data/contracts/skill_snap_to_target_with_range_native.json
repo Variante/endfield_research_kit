@@ -3,9 +3,9 @@
   "status": "exact-current-build",
   "serializedMemberCount": 18,
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "dependencies": [
     {
@@ -18,200 +18,242 @@
     }
   ],
   "dispatcher": {
-    "switchTableRva": 59855640,
-    "switchEntryCount": 416,
-    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
-    "unionTag": 360,
-    "switchTargetRva": 59829328,
+    "switchTableRva": 97297608,
+    "switchEntryCount": 447,
+    "switchTableSha256": "C2B6638C2D868D3944EBF702339849BB86B2C63C75B29920DEA604A21C3097F9",
+    "unionTag": 389,
+    "switchTargetRva": 97293057,
     "routeWindow": {
-      "startRva": 59829328,
-      "endRva": 59829378,
-      "sha256": "205465AD924806A6DF9814931582D57A494F031B15AAC0E46741D86CBC6F7FC4"
+      "startRva": 97293057,
+      "endRva": 97293107,
+      "sha256": "7CEEB822C7CE6D9DB74E1685E02843A197332DFE8019B68A207121890EEBD04D"
     },
-    "usageCellRva": 218268504,
-    "usageRawHex": "EF44032000000000",
-    "registeredTypeIndex": 107127,
-    "wrapperTypeDefinition": 16483,
+    "usageCellRva": 275117296,
+    "usageRawHex": "8717032000000000",
+    "registeredTypeIndex": 101315,
+    "wrapperTypeDefinition": 50436,
     "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SnapToTargetWithRangeAction_DataForMemoryPack"
   },
   "methods": [
     [
-      123125,
+      265181,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_SnapToTargetWithRangeAction_DataForMemoryPack",
       "Deserialize",
-      63760896
+      83588064
     ],
     [
-      123126,
+      265182,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_SnapToTargetWithRangeAction_DataForMemoryPack+Beyond_Gameplay_Core_SnapToTargetWithRangeAction_DataForMemoryPackFormatter",
       "Deserialize",
-      63760800
+      83587968
     ]
   ],
   "memberCountInstruction": {
-    "rva": 63761024,
+    "rva": 83588192,
     "hex": "4080FE12"
   },
   "codeWindows": [
     {
-      "startRva": 63760896,
-      "endRva": 63761713,
-      "sha256": "9AA8A6A10ECF7B918198DE3356E3B954C9528D5AFDF276AAC1CEAAD8271D4409",
-      "boundary": "whole normal 18-source-read body through RET"
+      "startRva": 83588064,
+      "endRva": 83588131,
+      "sha256": "CB19D3637ADEACE4531BE847708AE8504E2CEA72E6D64D74CEDB552BD716447B",
+      "boundary": "complete pdata function extent"
     },
     {
-      "startRva": 63760800,
-      "endRva": 63760896,
-      "sha256": "8C97AF1249C99F3A544FBC4E7D161E263BD066AEDE7B7A9A597126FE722C9357",
-      "boundary": "formatter and forwarding"
+      "startRva": 83588131,
+      "endRva": 83588854,
+      "sha256": "D30B8E0DA0D8A1F2B26F5A490830527F28799F5BD11AC7B5521232F8F24EA8C4",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 83588854,
+      "endRva": 83588865,
+      "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 83588865,
+      "endRva": 83588871,
+      "sha256": "3B665BA11C1FEE290B98DF40CE1FA6899F6C2D4F7F0E33233BA6BE9A079DE28E",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 83588871,
+      "endRva": 83588991,
+      "sha256": "EBACF4C38D1D559616EA5635AF4B0ABC644D90FF4B32CC03D9F83DD5E7451CB5",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 121735972,
+      "endRva": 121735985,
+      "sha256": "9DFDB16234528F5D6B83F5E596D49796D4AAF7EAAC4602C8C2DAABCB61C643E7",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 121735985,
+      "endRva": 121736041,
+      "sha256": "FADE82050959BF719B0B758850D9D0816FCDD4BF991C58C53C4C258F74AD325A",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 121736041,
+      "endRva": 121736062,
+      "sha256": "C741577506F0C0432EE3D54A3670594C79BBAAF9732462400C8776A5D8A2FBC7",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 83587968,
+      "endRva": 83588061,
+      "sha256": "EE4A63E68B653B75DAAE623530606FCE92AFF3336365080A4895C2ECA4476AF4",
+      "boundary": "complete pdata function extent"
     }
   ],
   "setterMethods": [
     [
-      123109,
+      265165,
       "set___chargePriority__",
       "Beyond.Gameplay.Core.ChargePriority"
     ],
     [
-      123110,
+      265166,
       "set___fixedSpeedCurveKey__",
       "System.String"
     ],
     [
-      123111,
+      265167,
       "set___fixPositionWhenStart__",
       "System.Boolean"
     ],
     [
-      123112,
+      265168,
       "set___moveTo__",
       "Beyond.Gameplay.Core.TargetSettings"
     ],
     [
-      123113,
+      265169,
       "set___moveType__",
       "Beyond.Gameplay.Core.SnapToTargetWithRangeAction+MoveType"
     ],
     [
-      123114,
+      265170,
       "set___needRotate__",
       "System.Boolean"
     ],
     [
-      123115,
+      265171,
       "set___positionCurve__",
       "UnityEngine.AnimationCurve"
     ],
     [
-      123116,
+      265172,
       "set___radius__",
       "Beyond.Blackboard+BlackboardDouble"
     ],
     [
-      123117,
+      265173,
       "set___rootMotionAnimKey__",
       "System.String"
     ],
     [
-      123118,
+      265174,
       "set___rootMotionMaxDistance__",
       "System.Single"
     ],
     [
-      123119,
+      265175,
       "set___speed__",
       "Beyond.Blackboard+BlackboardDouble"
     ],
     [
-      123120,
+      265176,
       "set___speedCurve__",
       "UnityEngine.AnimationCurve"
     ],
     [
-      123121,
+      265177,
       "set___totalTime__",
       "System.Single"
     ],
     [
-      123122,
+      265178,
       "set___useFixSpeed__",
       "System.Boolean"
     ]
   ],
   "nestedContexts": [
     {
-      "instructionRva": 63761282,
-      "instructionHex": "488B157F2B3909",
-      "cellRva": 218502920,
-      "usageRawHex": "93EB12C000000000",
-      "methodSpecIndex": 619977,
+      "instructionRva": 83588450,
+      "instructionHex": "488B1597C1780B",
+      "cellRva": 276051712,
+      "usageRawHex": "27BA13C000000000",
+      "methodSpecIndex": 646419,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16792
+        15972
       ],
-      "argumentRawHex": "28280000000000000000120000000000",
-      "typeDefinition": 10280,
+      "argumentRawHex": "EF290000000000000000120000000000",
+      "typeDefinition": 10735,
       "typeName": "Beyond.Gameplay.Core.TargetSettings"
     },
     {
-      "instructionRva": 63761397,
-      "instructionHex": "488B154CE84109",
-      "cellRva": 219075656,
-      "usageRawHex": "8DEA12C000000000",
-      "methodSpecIndex": 619846,
+      "instructionRva": 83588565,
+      "instructionHex": "488B15F400790B",
+      "cellRva": 276068048,
+      "usageRawHex": "13B913C000000000",
+      "methodSpecIndex": 646281,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        1832
+        1891
       ],
-      "argumentRawHex": "FAA90000000000000000120000000000",
-      "typeDefinition": 43514,
+      "argumentRawHex": "4B260100000000000000120000000000",
+      "typeDefinition": 75339,
       "typeName": "UnityEngine.AnimationCurve"
     },
     {
-      "instructionRva": 63761438,
-      "instructionHex": "488B15FB593209",
-      "cellRva": 218056224,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 83588606,
+      "instructionHex": "488B15E3BC7B0B",
+      "cellRva": 276247272,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble"
     },
     {
-      "instructionRva": 63761547,
-      "instructionHex": "488B158E593209",
-      "cellRva": 218056224,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 83588715,
+      "instructionHex": "488B1576BC7B0B",
+      "cellRva": 276247272,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble"
     },
     {
-      "instructionRva": 63761588,
-      "instructionHex": "488B158DE74109",
-      "cellRva": 219075656,
-      "usageRawHex": "8DEA12C000000000",
-      "methodSpecIndex": 619846,
+      "instructionRva": 83588752,
+      "instructionHex": "488B153900790B",
+      "cellRva": 276068048,
+      "usageRawHex": "13B913C000000000",
+      "methodSpecIndex": 646281,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        1832
+        1891
       ],
-      "argumentRawHex": "FAA90000000000000000120000000000",
-      "typeDefinition": 43514,
+      "argumentRawHex": "4B260100000000000000120000000000",
+      "typeDefinition": 75339,
       "typeName": "UnityEngine.AnimationCurve"
     }
   ],
@@ -220,149 +262,149 @@
       "memberIndex": 0,
       "fieldName": "isEnable",
       "kind": "bool-byte",
-      "sourceCallsiteRva": 63761040,
-      "sourceCallHex": "E82B9EFDFE",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 83588208,
+      "sourceCallHex": "E85B890200",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 1,
       "fieldName": "priorityLevel",
       "kind": "enum-int32",
-      "sourceCallsiteRva": 63761081,
-      "sourceCallHex": "E8F29BFDFE",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 83588249,
+      "sourceCallHex": "E8B2810200",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 2,
       "fieldName": "priorityOffset",
       "kind": "int32",
-      "sourceCallsiteRva": 63761114,
-      "sourceCallHex": "E8D19BFDFE",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 83588282,
+      "sourceCallHex": "E891810200",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 3,
       "fieldName": "serverActionIndex",
       "kind": "int32",
-      "sourceCallsiteRva": 63761147,
-      "sourceCallHex": "E8B09BFDFE",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 83588315,
+      "sourceCallHex": "E870810200",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 4,
       "fieldName": "chargePriority",
       "kind": "enum-int32",
-      "sourceCallsiteRva": 63761187,
-      "sourceCallHex": "E8889BFDFE",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 83588355,
+      "sourceCallHex": "E848810200",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 5,
       "fieldName": "fixedSpeedCurveKey",
       "kind": "byte-payload",
-      "sourceCallsiteRva": 63761220,
-      "sourceCallHex": "E8B79BFDFE",
-      "sourceTargetRva": 46827264
+      "sourceCallsiteRva": 83588388,
+      "sourceCallHex": "E897B82300",
+      "sourceTargetRva": 85929408
     },
     {
       "memberIndex": 6,
       "fieldName": "fixPositionWhenStart",
       "kind": "bool-byte",
-      "sourceCallsiteRva": 63761254,
-      "sourceCallHex": "E8559DFDFE",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 83588422,
+      "sourceCallHex": "E885880200",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 7,
       "fieldName": "moveTo",
       "kind": "target-profile",
-      "sourceCallsiteRva": 63761295,
-      "sourceCallHex": "E8FC700DFF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 83588463,
+      "sourceCallHex": "E84CC30400",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 8,
       "fieldName": "moveType",
       "kind": "enum-int32",
-      "sourceCallsiteRva": 63761336,
-      "sourceCallHex": "E8F39AFDFE",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 83588504,
+      "sourceCallHex": "E8B3800200",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 9,
       "fieldName": "needRotate",
       "kind": "bool-byte",
-      "sourceCallsiteRva": 63761369,
-      "sourceCallHex": "E8E29CFDFE",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 83588537,
+      "sourceCallHex": "E812880200",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 10,
       "fieldName": "positionCurve",
       "kind": "curve-profile",
-      "sourceCallsiteRva": 63761410,
-      "sourceCallHex": "E889700DFF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 83588578,
+      "sourceCallHex": "E8D9C20400",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 11,
       "fieldName": "radius",
       "kind": "scalar-payload",
-      "sourceCallsiteRva": 63761451,
-      "sourceCallHex": "E860700DFF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 83588619,
+      "sourceCallHex": "E8B0C20400",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 12,
       "fieldName": "rootMotionAnimKey",
       "kind": "byte-payload",
-      "sourceCallsiteRva": 63761485,
-      "sourceCallHex": "E8AE9AFDFE",
-      "sourceTargetRva": 46827264
+      "sourceCallsiteRva": 83588653,
+      "sourceCallHex": "E88EB72300",
+      "sourceTargetRva": 85929408
     },
     {
       "memberIndex": 13,
       "fieldName": "rootMotionMaxDistance",
       "kind": "float32-bits",
-      "sourceCallsiteRva": 63761519,
-      "sourceCallHex": "E83C9FFDFE",
-      "sourceTargetRva": 46828464
+      "sourceCallsiteRva": 83588687,
+      "sourceCallHex": "E85C850200",
+      "sourceTargetRva": 83753904
     },
     {
       "memberIndex": 14,
       "fieldName": "speed",
       "kind": "scalar-payload",
-      "sourceCallsiteRva": 63761560,
-      "sourceCallHex": "E8F36F0DFF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 83588728,
+      "sourceCallHex": "E843C20400",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 15,
       "fieldName": "speedCurve",
       "kind": "curve-profile",
-      "sourceCallsiteRva": 63761601,
-      "sourceCallHex": "E8CA6F0DFF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 83588765,
+      "sourceCallHex": "E81EC20400",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 16,
       "fieldName": "totalTime",
       "kind": "float32-bits",
-      "sourceCallsiteRva": 63761635,
-      "sourceCallHex": "E8C89EFDFE",
-      "sourceTargetRva": 46828464
+      "sourceCallsiteRva": 83588795,
+      "sourceCallHex": "E8F0840200",
+      "sourceTargetRva": 83753904
     },
     {
       "memberIndex": 17,
       "fieldName": "useFixSpeed",
       "kind": "bool-byte",
-      "sourceCallsiteRva": 63761669,
-      "sourceCallHex": "E8B69BFDFE",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 83588825,
+      "sourceCallHex": "E8F2860200",
+      "sourceTargetRva": 83754448
     }
   ],
   "evidenceBoundary": {
-    "exact": "Selected native inputs pin union route 0x0168, wrapper and method identity, normal Deserialize body, member-count comparison, 18 ordered source reads and five nested generic type joins.",
+    "exact": "Selected native inputs pin union route 0x0185, wrapper and method identity, normal Deserialize body, member-count comparison, 18 ordered source reads and five nested generic type joins.",
     "direct": "The selected reader consumes inherited primitive members and named own members with TargetSettings, BlackboardDouble and AnimationCurve finite profiles at their native read positions.",
     "structuralOnly": "Stored scalar bits and profile extents do not prove runtime snap motion or placement; whole-file SkillData ownership requires independent enclosing timeline and top-level continuation."
   }

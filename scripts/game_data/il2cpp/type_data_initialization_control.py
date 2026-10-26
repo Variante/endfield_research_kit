@@ -2,6 +2,10 @@
 
 The initialized record pointer is a conditional result of the actual entry
 program, not evidence that the client executed it or loaded the selected file.
+The optional callable memory-effect decoder belongs to a source owner, which
+must independently re-decode its complete extra instructions and delegate all
+ordinary effects; it supplies no runtime or wire admission. The default path
+and its refusals remain unchanged.
 """
 from __future__ import annotations
 from collections import deque
@@ -32,24 +36,40 @@ def _flow(row,table_targets,no_return_calls):
         return {'kind':'opaqueCall'}
     return control_transfer(row)
 
-def _complete(rows,entry,*,table_targets=None,no_return_calls=None):
+def _complete(rows,entry,*,table_targets=None,no_return_calls=None,recursive_calls=None,memory_effect_decoder=None):
+    if memory_effect_decoder is not None and not callable(memory_effect_decoder):raise ValueError(LABEL+'.memory-effect-decoder-callable')
     table_targets=table_targets or {};no_return_calls=no_return_calls or {};by={int(r['va'],16):r for r in rows};edges={};calls=[];stores=[];returns=[];traps=[]
     unknown=[{'va':r['va'],'bytes':r['bytes']} for r in rows if is_unknown_instruction(r)]
     if len(by)!=len(rows) or entry not in by or unknown:raise ValueError(LABEL+'.instruction-entry-or-unknown: entry='+hex(entry)+' rows='+str(len(rows))+' unique='+str(len(by))+' missingEntry='+str(entry not in by)+' unknown='+str(unknown[:4]))
+    # An explicit self-call witness never supplies callee termination/effects.
+    # It permits only the current function's exact owned E8-to-entry, retaining
+    # the ordinary normal-return ABI/frame condition. All other calls into an
+    # owned byte interval keep the default refusal.
+    recursive_calls={} if recursive_calls is None else recursive_calls
+    if type(recursive_calls)is not dict:raise ValueError(LABEL+'.recursive-call-witness-shape')
+    for site,target in recursive_calls.items():
+        if type(site)is not int or type(target)is not int or site not in by or target!=entry or site in no_return_calls:
+            raise ValueError(LABEL+'.recursive-call-site-entry-ownership')
+        raw=bytes.fromhex(by[site]['bytes'])
+        if len(raw)!=5 or raw[0]!=0xe8 or site+5+int.from_bytes(raw[1:],'little',signed=True)!=entry:
+            raise ValueError(LABEL+'.recursive-call-exact-e8-to-entry')
     for at,row in by.items():
         f=_flow(row,table_targets,no_return_calls);kind=f['kind'];targets=set()
         if kind in ('next','call','opaqueCall','indirectCall','registerCall','conditional'):targets.add(at+len(bytes.fromhex(row['bytes'])))
         if kind in ('conditional','jump'):targets.add(f['target'])
         if kind=='table':targets.update(f['targets'])
         if kind in ('call','opaqueCall','indirectCall','registerCall','conditionalNoReturnCall'):
-            if kind=='call' and f['target'] in by:raise ValueError(LABEL+'.call-into-owned-code')
-            calls.append({'siteVa':at,**f})
+            if kind=='call' and f['target'] in by and recursive_calls.get(at)!=f['target']:raise ValueError(LABEL+'.call-into-owned-code')
+            calls.append({'siteVa':at,**f,**({'recursiveNormalReturnRequired':True,'recursiveTerminationProved':False}if at in recursive_calls else{})})
         elif kind=='return':returns.append(at)
         elif kind=='trap':traps.append(at)
         elif kind not in ('next','conditional','jump','table'):raise ValueError(LABEL+'.control-kind')
         if not targets<=by.keys():raise ValueError(LABEL+'.local-boundary:'+hex(at))
         raw=bytes.fromhex(row['bytes']);parsed=decode_initialization_memory_update(raw,0,at)
-        effect={'kind':'initializationMemoryUpdateOperation','facts':parsed[0]['initializationMemoryUpdateOperation']} if parsed and parsed[1]==len(raw) else memory_effect(row)
+        effect={'kind':'initializationMemoryUpdateOperation','facts':parsed[0]['initializationMemoryUpdateOperation']} if parsed and parsed[1]==len(raw) else(
+            memory_effect(row)if memory_effect_decoder is None else memory_effect_decoder(row))
+        if effect is not None and(type(effect)is not dict or set(effect)!={'kind','facts'}or type(effect['kind'])is not str or type(effect['facts'])is not dict):
+            raise ValueError(LABEL+'.memory-effect-decoder-result')
         if effect:stores.append({'siteVa':at,**effect})
         edges[at]=targets
     reached=set();pending=[entry]
@@ -86,8 +106,11 @@ def _complete(rows,entry,*,table_targets=None,no_return_calls=None):
                 if old[0]!=value[0]:raise ValueError(LABEL+'.stack-join')
                 value=tuple(a if a==b else None for a,b in zip(old,value))
             if old!=value:states[target]=value;pending.append(target)
-    return {'instructions':len(rows),'edges':edges,'calls':calls,'stores':stores,'returns':returns,'traps':traps,
+    result={'instructions':len(rows),'edges':edges,'calls':calls,'stores':stores,'returns':returns,'traps':traps,
         'states':states,'normalFramesProved':True}
+    if recursive_calls:result.update(recursiveCalls=[{'siteVa':site,'targetVa':target}for site,target in sorted(recursive_calls.items())],
+        recursiveNormalReturnRequired=True,recursiveTerminationProved=False,recursiveCalleeEffectsProved=False)
+    return result
 
 def _slice(rows,base,window):
     selected=[r for r in rows if base+window['startRva']<=int(r['va'],16)<base+window['endRva']]

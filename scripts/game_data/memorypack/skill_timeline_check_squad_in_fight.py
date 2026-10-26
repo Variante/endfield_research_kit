@@ -92,7 +92,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / SOURCE_CONTRACT,
-    )
+     native_image=image)
     if audit["anonymousReadOrder"].get("member5") != list(READ_ORDER):
         raise ValueError(f"{LABEL}.native:source-read-order")
     return {

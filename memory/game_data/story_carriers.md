@@ -30,6 +30,16 @@ covers the carriers Story reads, not the whole LevelScript family.
 - Native evidence is locked to exact `GameAssembly.dll` and metadata hashes.
   Registration order and code addresses never imply Story order.
 
+`levelscript_node_strings_native --add-wrapper` adds a missing UID prefix only
+after its maintained wire plan, selected native declarations and pooled setter
+transfer pass an existing complete proof profile. Existing records are reused
+only on the same reviewed build; the cutscene control/hide-scene wrappers now
+have that prefix proof. Their later fields and whole-owner closure stay separate.
+
+Source replay retains each Param's declared enum kind and its current typed
+component gate. A matching integer or byte width does not authorize replacing
+that enum with a generic primitive Param.
+
 Protocol-registry listener coverage uses complete typed action-map lists only.
 A refused map retains its source hash, failed gate and cursor and contributes no
 candidate records. Reported listener counts therefore establish no absence in
@@ -1146,10 +1156,647 @@ Numerically equal ids in unrelated domains are different identities:
   `typeId`. e0m0's four tombs use that direct binding, **not numeric order or
   spatial proximity.**
 - every `LevelInteractiveData` string member (`entityDataIdKey`, component
-  `ParamKeyValue` strings, progress-lock `ownerId`) is a StringPool index on
-  the current build; the quest-lock route frames and decodes records only
-  through the export pool. Interactive routes still reading inline frame
-  nothing until they thread the same pool.
+  `ParamKeyValue` keys and atom strings, progress-lock `ownerId`, the final
+  record's `sceneId`) and every `InteractiveTable` id/path is a StringPool
+  index on the current build, in LevelData and LevelScript alike (corpus
+  correspondence + maintained pooled codecs, not a native formatter proof).
+  Every interactive Story route (quest lock, world dialog, narrative mission,
+  LevelData/LevelScript narrative, registered script entities) frames and
+  decodes only through the export pool: no pool, or a pool that changes
+  mid-run, admits nothing, and an unresolvable index in a framed record
+  raises with its offset. The horn route stays closed because
+  `data_int_horn.json` no longer matches its pinned template.
+  Historical 27-member Narrative evidence remains separate from the current
+  28-member route in
+  [`levelscript_narrative.py`](../../scripts/webui/story/levelscript_narrative.py).
+  The current route requires a fresh
+  [`CurrentLevelScriptSource`](../../scripts/game_data/memorypack/levelscript_current_source.py)
+  operation: reviewed selected-native source facts, authenticated logical owner
+  and StringPool bytes, every reached child capability, generated field order
+  and sequential physical EOF. A missing contract, refused child or late source
+  change withholds its rows. A zero result is not evidence of absent Narrative
+  configuration. The component and scalar-string kind come from their actual
+  native enum declarations; a historical numeric key cannot grant either
+  meaning. The projection records stored configuration only. Runtime consumption,
+  activation, playback and mission ownership remain separate joins.
+  The separate
+  [`ExistingLevelScriptSource`](../../scripts/game_data/memorypack/levelscript_existing_source.py)
+  operation accepts an explicit export root and native pair for existing-file
+  diagnostics. It freshly validates the same native grammar, binds the selected
+  owner files, StringPool and any InteractiveTable reads, and rechecks their
+  full path set and bytes with reader/native bookends. It grants no current
+  census, VFS, source-receipt, absence or publication authority. A stale census
+  must still fail in `CurrentLevelScriptSource`; existing-file EOF cannot repair
+  producer or installed-VFS fingerprint drift, and Story projections never
+  fall back to this diagnostic operation. Historical receipts keep their
+  original provenance.
+  A fresh lexical source operation may reuse successful pure native validators
+  for the same function and complete arguments. Reuse begins after all native
+  and child entry gates, ends before every exit gate, and stays suspended across
+  nested entry and exit. Results are copied; failures and payload decoding are
+  never cached. Complete reader, native, pool and selected-file bookends still
+  decide the operation. Outside that scope validators run freshly, and saved
+  reports never seed the private cache.
+  A direct selected validator call may also borrow that pending operation's
+  complete fresh entry reader identity. Delegation requires its exact live
+  call frame and callable code; helper, direct, default, foreign and recursive
+  calls cannot inherit it. Returned snapshots are copied, and closing the
+  scope clears the identity. Every outer and independent child exit still
+  performs fresh checks; changed source bytes, imports, contracts or negative
+  dependencies withhold the completed operation receipt. Native, contract,
+  pool and payload reads retain their own gates.
+  Dependency discovery may reuse immutable syntax extracted from identical
+  freshly read bytes. Every fresh scan still enumerates current paths, resolves
+  imports and resources, checks ambiguity and escape boundaries, and hashes the
+  complete source set. Cached syntax cannot supply a saved manifest or proof.
+  The current owner contract's second schema stores structurally interned
+  provenance through
+  [`levelscript_contract_provenance.py`](../../scripts/game_data/memorypack/levelscript_contract_provenance.py).
+  Semantic child scopes, typed requests, actual targets and callback conditions
+  remain lossless. Native windows and metadata methods have separate catalogs;
+  literal native constant data retain their bytes and native hash without
+  becoming code windows. Decoded rows and copied instruction regions remain
+  report-only traces. The normal validator still derives the complete graph
+  freshly and compares both directions before exposing semantic capabilities;
+  expanding a compact graph alone grants no source or owner admission.
+  One validation may keep its strictly expanded semantic tree locally for
+  comparison and capability extraction; it never shares that tree with another
+  operation or skips a fresh native derivation.
+- NPC patrols have a separate current pooled source contract in
+  [`leveldata_npc_patrol_native.py`](../../scripts/game_data/leveldata_npc_patrol_native.py).
+  The current generated `NpcPatrolData` has ten members, including
+  `pauseActionWhenPatrolDisabled`; the historical nine-member inline locator
+  is not a current owner proof. Its strings are pooled under the contract's
+  selected typed helper/provider conditions. Positive Blackboard pairs and
+  list states outside that standalone profile's reviewed bounds remain closed.
+  The separate whole-host extension re-proves the repeated reference-list
+  source and applies its own finite resource bound. Its exact
+  `PatrolSubAction.eventBBDataPairs` parent composes the independently owned
+  managed-value DataPair list, callback and child source; it does not borrow
+  SkillData's parent field. A DataPair FF produces the default managed value,
+  rather than a null reference, and its positive pooled record has a different
+  wire extent. This extension still requires the complete current owner gate
+  before any source receipt or Story projection can publish it.
+  Story's radio projection now reuses `CurrentNpcPatrolSource`, which delegates
+  to the same current whole-LevelData source operation as the pooled host
+  cursor: selected
+  native inputs, authenticated logical source/pool bytes, reader and exit
+  bookends, and sequential physical LevelData EOF are required together.
+  A proved radio field and enum case supply stored configuration only;
+  runtime radio consumption, playback, mission ownership and chronology are
+  unresolved. Earlier unsupported children, including positive Brief
+  properties/reference lists or interactives, withhold that owner rather
+  than causing a patrol tail search or proving absence.
+  The checkpoint-to-mission join remains explicitly `pendingReview` until
+  its complete current pooled Patrol/Brief/property host is authenticated.
+  Its old ID/MC9 locator cannot admit rows; the Story patrol audits expose
+  the failed join and affected source instead of treating pooling itself
+  as unproved.
+  `AI.Config.NpcPatrolData` and `Core.PatrolData` are separate stored identity
+  and grammar domains. A controller's `patrolData` field, matching point index
+  or matching numeric id cannot substitute for an authenticated lookup and
+  conversion between them. The complete LevelData host, Brief/property graph,
+  controller conversion, checkpoint event producer/filter and radio request
+  transfer each require their own current source proof. Even a proved request
+  path does not establish an observed callback or playback.
+  The current Core stored graph has its own
+  [source composition](../../scripts/game_data/memorypack/leveldata_core_patrol_sources.py)
+  and [pooled cursor](../../scripts/game_data/codecs/leveldata/current_core_patrol.py).
+  Its root and action records independently join their generated readers,
+  ordinary adapters, nominal enum backings, raw Vector3 lists and actual
+  `LevelData.patrols` call. The shared SubAction and its finite union/DataPair
+  children are freshly proved separately; the child evaluator reads the
+  actual source span without inventing a collection header. The host requires
+  this whole finite profile before null or empty input and retains its
+  initially-null list, matching callback and resource conditions. This closes
+  a stored Core grammar; it supplies none of the controller conversion,
+  checkpoint or runtime joins described above.
+  The [selected checkpoint request program](../../scripts/game_data/memorypack/leveldata_patrol_checkpoint_sources.py)
+  separately proves the actual sender/id/index/position literal loads and
+  typed blackboard call arguments. It copies the controller's entity through
+  the complete EntityPtr local, passes the same entity to SetReceiver, and
+  transfers a compatible Core lookup's id, incoming checkpoint index and
+  actual named position getter result to their typed calls. The final request
+  carries the event-key literal independently joined to the header getter.
+  Lookup, conversion, blackboard write and disposal effects, the final callee's
+  event-dispatch identity and filter semantics remain separate obligations.
+  This complete request source neither proves a produced live event nor
+  promotes the still-open checkpoint-to-mission join.
+  A separate [checkpoint filter caller proof](../../scripts/game_data/memorypack/leveldata_patrol_checkpoint_filter_sources.py)
+  authenticates the receiver/id/index/position keys, the inherited mode field,
+  all optional-filter combinations, failed-read and mismatch returns, complete
+  EntityPtr/position copies and the base Process call. Its typed helpers join
+  their exact current registered targets. The producer's sender key and the
+  filter's receiver key remain distinct: SetReceiver and blackboard storage
+  effects must establish that relationship. The independent helper, value,
+  storage and output owners below supply selected source effects; the caller
+  graph alone supplies none of them. Actual bound output-property effects,
+  event invocation and the checkpoint-to-mission relationship still require
+  their own ownership and live selection evidence.
+  The [selected helper paths](../../scripts/game_data/memorypack/leveldata_patrol_helper_sources.py)
+  now independently bind the producer's virtual-slot thunk to the controller's
+  named `get_patrolData` slot. The thunk restores its frame and tail-jumps with
+  the same receiver and selected MethodInfo; the getter's complete bounded
+  leaf returns the Core patrol backing reference unchanged. The actual class
+  slot must still match that getter. This does not identify an authored NPC
+  configuration or prove its conversion. The base `ActionHeader.Process`
+  source separately returns true without a blackboard read or write on both
+  selected absent-replacement paths. Runtime replacement absence, the remaining
+  typed helper effects and controller conversion are supplied by separate
+  owners; actual controller selection and live dispatch remain unobserved.
+  A separate [Config-to-Core prefix proof](../../scripts/game_data/memorypack/leveldata_patrol_config_prefix_sources.py)
+  selects the New controller's own conversion method and exact Config/Core
+  byref ABI. It proves the initial authored scalar copies and literal
+  new-patrol/born-checkpoint flags before the asset/config lookup tail. The
+  same-named base controller method is not substituted. The own Core
+  constructor target and typed allocation request are authenticated, while
+  normal constructor/heap/barrier effects come from independent selected-path
+  owners rather than from this prefix. Later asset lookup, optional settings,
+  action-list conversion and installation likewise require their separate
+  source joins. The prefix neither establishes actual initializer/controller
+  selection nor produces a checkpoint event or observes playback.
+  Closed List arguments and the generic declaration establish ownership, not
+  instantiated field offsets. The selected complete GetItem/Add programs must
+  independently prove the actual storage displacements. A SafeCount interface
+  tail supplies only its selected Count result until the inflated receiver,
+  interface, MethodInfo and callback sources are joined. Likewise, an Add proof
+  conditional on spare capacity does not cover conversion from the actual
+  empty no-argument List constructor; the selected positive growth and copy
+  owner must supply that path independently. These boundaries are enforced by the
+  [Patrol helper](../../scripts/game_data/memorypack/leveldata_patrol_helper_sources.py)
+  and [Count-selection](../../scripts/game_data/memorypack/leveldata_patrol_count_selection_sources.py)
+  owners rather than inferred from a closed type name.
+  The [offline source composition](../../scripts/game_data/memorypack/leveldata_patrol_offline_sources.py)
+  joins the Config prefix, lead/gait/point seams, named Core and Action defaults,
+  typed list constructors, controller-loader publication and Count-selection
+  normalization, lookup, projection and fallback. Independent growth and copy
+  sources cover the selected positive list path; the initializer passes its
+  unchanged Core output to the canonical installed field. File-backed startup publication
+  and a selected interner or table path do not observe live cell, table or
+  MethodInfo values. Complete helper effects remain separate from caller
+  control; activation, checkpoint delivery and playback still need runtime
+  ownership. The [normal supplement](../../scripts/game_data/memorypack/leveldata_patrol_normal_sources.py)
+  freshly joins the complete selected finite normal source path, including the
+  atomic event/executor supplement, without a remaining selected native-source
+  frontier. Its exhaustion flag applies only to that recorded path. Cold setup,
+  growth, misses, other input/resource states, different callback or action
+  schedules and fresh factory invocation remain nonselected native alternatives;
+  live identities, mutable state, callback effects, activation and playback
+  remain capture requirements. A source-derived target inventory is not a
+  sufficient observation recipe: the selected ABI, fields and entry/return
+  phases must cover the actual question, and the offline consumer must compare
+  the same references, state and property effects. Unsupported value returns,
+  container/callback identity or missing effects withhold the corresponding
+  join. Review recorder support, bounded fixtures and affected saved evidence
+  before requesting another run; a named target or loss-free event count alone
+  supplies none of those missing operands. The complete Patrol observer recipe
+  and `patrol_runtime_capture_sources` require finite source-owned raw spans,
+  independently derived closed container roles and live callback-pair reads;
+  an unavailable closed consumer keeps that preparation refused. The separate
+  discovery recipe selects ordinary reference/scalar callers and callback pairs
+  without demanding unrelated container proofs. Its unfiltered converter keeps
+  the actual recorded return address and parent; it supplies no causal Init
+  enclosure or complete conversion claim. Current caller scopes may include
+  noncontiguous code only through the exact primary's complete unwind-parent
+  family, with independently retained window bytes and direct call bindings.
+  A contiguous range is never widened across unrelated code to find a call.
+  `patrol_runtime_inspect` checks original retained packages and explicit
+  invocation pairs. Padding stays opaque, and null, unreadable, bounded-out and
+  changed snapshots remain distinct. These profiles do not close resource
+  activation, complete event/queue state, authored callback effects or downstream
+  audio ownership. Authored `npcPatrol` configuration is distinct from enemy
+  and character patrol data. A useful observation must identify the selected
+  NPC configuration and controller, and recording must encompass its relevant
+  initialization or event lifecycle; an already visible ambient patrol does not
+  establish that selection. A healthy session with no selected hook entries
+  provides no activation or absence proof.
+  Recorder builds and synthetic fixtures do not establish those runtime joins.
+  The optional Mission/Audio bridge records synchronous enclosure using the
+  original Mission invocation and Audio capture identities. Its bounded queue,
+  sampled calls outside a Mission scope, losses and unfinished scopes remain
+  explicit. The importer admits only the exact declared provider composition
+  and reconciles its sidecar with both original journals; a matching thread or
+  nearby timestamp supplies no ownership. Even a valid synchronous link does
+  not establish asynchronous callbacks, completion or audible playback.
+  The path owners independently prove the managed
+  UTF16 fold and the finite byte-hash arithmetic; neither a CRC-like name nor a
+  shared width supplies another hash algorithm. The
+  [concat owner](../../scripts/game_data/memorypack/leveldata_patrol_concat_sources.py)
+  joins the actual closed three-string caller, own empty-string field and
+  independently replayed builder creation, append, string construction, cached
+  allocation, current copy family and disposal. It preserves the exact ordered
+  UTF16 payload for a total length of at most 128 code units. Type/provider/TLS/cache
+  and allocation identities remain conditions. The selected ASCII encoding and
+  cached byte-pool owners establish output mapping and same-thread buffer
+  ownership, without assuming allocator zero-state or general Unicode behavior.
+  The [handle Get owner](../../scripts/game_data/memorypack/leveldata_patrol_get_sources.py)
+  independently proves each generic handle hop, actual interface invocation,
+  warm MethodInfo-cache hit and selected named proxy getter. An absent closed
+  native registration does not become a canonical pointer alias. Requested
+  asset-class compatibility, the actual cache/callback pair and valid handle
+  state remain conditions. Monitor source covers the selected existing lock's
+  acquisition, query and release, while OS/import and live ownership remain
+  explicit runtime requirements.
+  The [canonical installation source](../../scripts/game_data/memorypack/leveldata_patrol_install_sources.py)
+  separately proves the New controller helper's own named-setter branch. It
+  compares the selected class slot with the authenticated setter, stores the
+  supplied Core reference unchanged into the exact patrol backing field, and
+  passes that field's address to the independently proved disabled barrier.
+  The successful initializer fragment passes a Config reference and distinct
+  Core output local to conversion, then passes that same output reference to
+  installation. Independent selected conversion and lookup sources do not
+  grant the dynamic setter alternative, other initializer branches or actual
+  callback selection. This source join does not establish a running controller, checkpoint
+  delivery or playback.
+  The [Init helper source](../../scripts/game_data/memorypack/leveldata_patrol_init_helper_sources.py)
+  additionally joins the actual Boolean setter/getter to the same owned backing
+  byte and the Core getter to the installed reference field. Its entity-key
+  lookup reaches the exact GameLevel `levelData` reference and that LevelData's
+  cached patrol dictionary. Default Int32/reference search has independent
+  hash/key collision, hit/miss, null-bucket and full-output programs with a
+  bounded mixed-chain induction; a shared body never substitutes for its closed
+  caller contexts. The [preparation owner](../../scripts/game_data/memorypack/leveldata_patrol_class_preparation_sources.py)
+  checks only the actual short wrapper span and the separately owned inner
+  normal returns: the selected descriptor-bit paths make no nonframe writes
+  or opaque calls. The bit predicates do not observe initialization or assign
+  meanings to unproved descriptor fields. Stable valid hash chains, selected
+  comparer/callback pairs and coherent storage remain conditions; lazy index
+  construction, miss logging, custom-comparer and cold/replacement paths remain
+  separate source obligations. None of these sources observes a live lookup,
+  controller activation or playback.
+  The [checkpoint typed helper owner](../../scripts/game_data/memorypack/leveldata_patrol_checkpoint_helper_sources.py)
+  preserves the full EntityPtr, Vector3 or integer through the own closed
+  GetOrCreate request and actual virtual/invoker argument transfer. Its read
+  helpers use their own typed string/ParamVariable dictionary requests and
+  complete returned-value transfers; absent canonical native rows do not
+  authorize an erased-body alias. Receiver construction preserves its whole
+  value through the invalid/null, server/parent-script and selected slot paths.
+  Direct integer output and constant Entity/integer Param reads are distinct
+  conditional source domains. The
+  [output supplement](../../scripts/game_data/memorypack/leveldata_patrol_checkpoint_output_sources.py)
+  joins the output predicate, bound/inert setter caller and ordinary delegate
+  forwarding source, including the exact reciprocal context. Actual delegate
+  target and property/storage effects remain runtime identity obligations;
+  other Param modes, optimized delegate alternatives and logging are not
+  admitted by these selected programs.
+  The [checkpoint value helper owner](../../scripts/game_data/memorypack/leveldata_patrol_checkpoint_value_sources.py)
+  independently replays the receiver's whole EntityPtr forwarding copy, the
+  named Entity/RootComponent position copy, ObjectPtr conversion, cached UID,
+  validity, `Equals` and `Lock` paths, and EntityPtr's selected normal comparison
+  paths. Its slot-parent resolver returns the Entity's parent-script UInt64;
+  it is not an Entity-reference lookup. The UID dispatcher requires its actual
+  literal class-discriminator branch, which is not equated with a metadata
+  type index. Exact closed caller contexts and complete actual call bodies
+  establish these source effects without a canonical-registration alias.
+  Ready contexts, stable compatible storage, absent selected replacements and
+  the selected cached-object state remain conditions. Cold setup, uncached
+  resolver alternatives, live liveness/selection and event delivery remain
+  separate; this helper proof does not grant whole checkpoint or playback
+  evidence.
+  The [checkpoint callee composition](../../scripts/game_data/memorypack/leveldata_patrol_checkpoint_pool_sources.py)
+  joins the actual typed GetOrCreate, value property and virtual getter/setter
+  programs to their own string-key table lookup and mode-one mutation. Hash
+  and ordinal equality source is independently replayed for the exact owned
+  literal domain; an erased comparer body is not a closed nominal pointer
+  alias. Table insertion requires the selected no-free-entry path and spare
+  capacity. Pool reuse and fresh-allocation paths both invoke the independently
+  proved OnAllocate resets before use: key, observers, counters and every value
+  byte are established by that reset, never by assuming allocator zero-state.
+  The actual allocator source is retained, while allocation success, adequate
+  writable capacity and live pool/callback/table identity remain conditions.
+  Cold setup, resizing, free-list reuse, observer alternatives and event
+  activation remain separate; these source effects do not observe checkpoint
+  delivery or playback.
+  The [EventParams scope source](../../scripts/game_data/memorypack/leveldata_patrol_event_params_sources.py)
+  keeps the returned Event reference identical through allocation, Scope value
+  insertion and last-scope removal. Disposal invokes Clear before pool recycle;
+  clearing the Scope stack reference makes a later Dispose a no-op without
+  clearing its stored Event value. The [cleanup source](../../scripts/game_data/memorypack/leveldata_patrol_event_cleanup_sources.py)
+  independently proves the ordinary variable enumeration, both dictionary
+  clear calls and the actual byte-fill body against this caller's own bounded
+  array extents. The variable dictionary is held stable until enumeration
+  finishes; selected ordinary values exclude the separate global/map-variable
+  subclasses. Base variable recycling clears its serial, key and observer
+  state but leaves its constant payload for the next typed OnAllocate reset.
+  Event OnAllocate resets debug/serial fields and leaves both dictionaries
+  untouched. A prior Clear can establish empty dictionary state for reuse;
+  a fresh dictionary constructor that only sets comparer state cannot itself
+  prove zero count, buckets or entries. Actual allocator initialization and
+  selected pool/callback identity must therefore stay explicit, with no
+  allocator zero-state assumption or runtime event-delivery grant.
+  The [Event pool callback composition](../../scripts/game_data/memorypack/leveldata_patrol_event_pool_sources.py)
+  closes the selected ordinary cleanup through its own type-keyed pool
+  registry, typed recycle methods and base reset callbacks. RuntimeType hash
+  and reference equality are proved independently from the string lane. An
+  absent closed comparer registration leaves the actual selected comparer
+  body/MethodInfo compatibility conditional; it does not authorize a pointer
+  alias. The pool's declared backing container is `Stack<object>`, whose
+  independently checked append stores the same Event reference. It is not a
+  nominal `Stack<EventParams>` substitution. Interface dispatch uses the actual
+  class discriminator interval and matching table entry, without equating that
+  discriminator to a metadata type index. Clear precedes recycling, which
+  either retains the Event in the pool or updates the count when it is dropped.
+  These selected disposal effects do not close the separate fresh-allocation
+  dictionary initialization boundary or observe live callback selection.
+  The separate [constructor initialization owner](../../scripts/game_data/memorypack/leveldata_patrol_event_initialization_sources.py)
+  proves a selected object-allocation branch that writes the class/monitor
+  header and explicitly fills the complete payload before the independently
+  named constructors store the two dictionary references. The raw allocator is
+  required to return adequate writable storage; it is never assumed to return
+  zeroed storage. Exact class-flag predicates, ready initialization and the
+  finite aligned instance extent remain conditions. The other class-flag
+  allocation branches and the actual pool factory/Activator invocation of
+  these constructors remain separate native-source joins, alongside live
+  allocator/capacity and callback selection. A constructor proof must not
+  silently discharge those caller obligations.
+  The [executor copy supplement](../../scripts/game_data/memorypack/leveldata_patrol_executor_copy_sources.py)
+  proves that AssignEventParams maintains a separate cached Event container:
+  it obtains one through NewEmpty when missing, clears it, then deep-copies
+  the incoming ordinary variables. It does not store the incoming Event
+  reference in that field. Complete enumeration forwards each key/value pair
+  into the actual typed Copy, pool allocation/reset, value getter and property
+  setter source, followed by the dictionary's own mode-one setter. Whole
+  Int32, Vector3 and opaque EntityPtr stored bits are preserved in distinct
+  variables. The enumerated key replaces the clone's initially copied key.
+  The selected destination already has sufficient bucket/entry capacity after
+  Clear; source and destination storage, variables and pool ownership must be
+  distinct and stable. NewEmpty uses the proved nonempty Event pool reuse
+  path, without borrowing fresh factory/Activator effects. The actual
+  GetEnumerator call and reciprocal value return are independently proved
+  when its exact closed registration is absent; absence never supplies a
+  canonical pointer alias. The machine-readable postcondition admits only
+  the producer key/type subset and independently supplied receiver key, with
+  no other entries. Its absence of `@event_key` is conditional source state,
+  not an observed live dictionary; a subsequent insert needs another spare
+  slot and no intervening key writer. Cold initialization, resizing, aliased
+  input, foreign variable types and actual action execution remain separate.
+  The [cached-string lifecycle supplement](../../scripts/game_data/memorypack/leveldata_patrol_cached_string_lifecycle_sources.py)
+  closes the selected later Clear of a cached Event containing the ordinary
+  producer keys and its string event key. The executor reloads that cached
+  container before writing the key. Its generic interface recycler arm, own
+  String Type registry lookup, typed pool, base OnRecycle and spare Stack.Push
+  are independently replayed. OnRecycle leaves the constant string reference
+  in the pooled variable; the separately proved next OnAllocate clears it.
+  Empty or mixed ordinary/string dictionaries use the same complete Clear
+  enumeration and final byte fill under their exact key/type and ownership
+  conditions. The original three-family owner remains unchanged. Absent closed
+  string registrations require compatible selected reference-body callbacks
+  and closed String MethodInfos, without a canonical pointer alias.
+  The [warm RuntimeType cache owner](../../scripts/game_data/memorypack/leveldata_patrol_runtime_type_cache_sources.py)
+  additionally proves GetTypeFromHandle's selected cache-hit frame, actual
+  primitive and value-class resolution, raw type-key hash/equality and unchanged
+  indexed cached return. A direct leaf without an unwind primary has an exact
+  authenticated source span and no invented physical extent. Named class and
+  Type identities, initialized handles and caches, the occupied matching probe,
+  valid indexed storage and normal exclusive mutex imports remain conditions.
+  Cold creation, collision, allocation and insertion are separate alternatives;
+  neither this source return nor a corresponding Type key observes live pool,
+  registry, callback or executor identity.
+  The [resource validity source owner](../../scripts/game_data/memorypack/leveldata_patrol_resource_validity_sources.py)
+  independently joins both handle-validity callers, the actual ObjectHandle and
+  proxy getters, the closed Int32/reference table search, and the selected
+  interface-compatibility and preparation returns. Handle ID offsets come from
+  the nested nominal value fields; proxy class discriminators remain literal
+  runtime predicates. Membership covers both the inline ID set and its actual
+  closed Int32 HashSet tail, including hash/key collisions, empty results and
+  the native slot-index and chain-counter guards. Disposal covers the selected
+  state field and finite recursive wrapper path. Complete owned helpers and
+  explicitly bounded no-unwind spans are hashed and replayed without claiming
+  physical extents for those spans or canonical pointer aliases. Stable typed
+  storage, coherent ready contexts, the selected callback pairs, absent
+  replacements and disabled collection remain conditions. Cold/exceptional
+  alternatives, live table contents, asset lifetime, successful loading and
+  playback are not observed by this source proof.
+  The [Radio dispatcher source owner](../../scripts/game_data/memorypack/leveldata_patrol_radio_dispatch_sources.py)
+  keeps its plain `CombineKey` value distinct from an enum or primitive key.
+  Its own dictionary source proves the masked hash, complete raw-key equality,
+  both bucket-division paths and finite collision-chain lookup. The actual
+  context-indexed default-comparer body and its separately registered closed
+  provider are independently replayed against the same nominal static slot;
+  unequal physical pointers do not become aliases. Play calls a separate typed
+  Dispatcher body, while Stop inlines that lookup and needs its enclosing
+  SendGlobal frame and EventData local proved independently. Both EventBinding
+  listener loops preserve the original EventData address, capture their bound
+  before iteration and skip disabled entries. Selected callback class/context
+  equality, normal callback return, stable remaining list entries and empty
+  pending operations at outermost cleanup remain conditions. The selected
+  Stop delegate tail excludes its explicit inline callback alternatives.
+  These caller and lookup effects neither identify installed listeners nor
+  prove arbitrary listener mutation, callback effects, Lua dispatch or audio
+  playback.
+  The [resource ID source owner](../../scripts/game_data/memorypack/leveldata_patrol_resource_id_sources.py)
+  joins the zeroed handle-construction local to the actual untracked-handle
+  constructor and both concrete `RetainHandle` methods. The constructor copies
+  the log-channel enum byte unchanged; it does not normalize a Bool. Its
+  padding stays caller-zero, while the optional main-version value comes from
+  the named resource-manager static field. The ID utility returns the old
+  counter bits and increments modulo the stored integer width; this is neither
+  atomic nor proof of uniqueness. Independent byte programs cover compact
+  inline packing, duplicates, the existing integer set, free slots and collision
+  chains, and promotion of four inline IDs into a spare pooled set. Promotion
+  requires an empty set with sufficient existing capacity; ready metadata,
+  compatible selected comparer contexts, stable storage, absent replacements
+  and disabled collection remain conditions. Pool construction, capacity
+  allocation, optional diagnostics, live proxy state and asset lifetime are
+  outside these selected normal effects.
+  The [resource value-hash owner](../../scripts/game_data/memorypack/leveldata_patrol_value_hash_sources.py)
+  independently follows the actual native `InternalGetHashCode` field walk.
+  A handle contains a nested value, so the wrapper's null-object-array witness
+  cannot discharge its hash: the outer walk boxes the untracked handle, whose
+  walk boxes the two ID values and two byte-backed enums while XORing its stored
+  integer fields. The owning metadata image's token/adjustor rows independently
+  select boxed-aware ID hash bodies; an unboxed method address is never reused
+  as a boxed callback. The ordinary enum body reads the same boxed byte. Exact
+  source programs also cover ready class/type resolution, the primitive Object
+  array-class cache, spare plain/reference allocation, payload copy and zeroing,
+  and the named thread-storage and balanced cache-lock imports. These are finite
+  normal effects under exact live callback/MethodInfo selection, ready coherent
+  metadata/cache state, valid committed storage, sufficient spare blocks and
+  disabled collection/profiling. Cold allocation and initialization, exhausted
+  storage, replacements, live hash values and successful retention remain
+  outside the source proof. The class-pointer seed is retained, not replaced by
+  a presumed stable or deterministic asset identifier.
+  The [Bundle proxy cache source](../../scripts/game_data/memorypack/leveldata_patrol_bundle_cache_sources.py)
+  separately owns the selected cached `GetOrCreateAssetProxy` path. Its key
+  starts at `AssetInfoPack.assetData.pathHashHead`, combines the stored integer
+  bits with the selected RuntimeType hash and the actual HashCode seed, then
+  preserves the resulting Int64 through default-comparer lookup. The ordinary
+  Type hash and underlying-type self getter have independent named source
+  proofs; the inherited `_impl` field supplies the selected hash bits. Hash and
+  full-key collisions follow the actual bounded entry chain, and a hit writes
+  the same cached proxy to the original output address with its complete frame
+  restored. The own Int64 comparer registration and actual closed dictionary
+  request stay distinct from live MethodInfo selection. Ready contexts, a
+  stable seed and cache, compatible callback pairs, an existing hit, disabled
+  collection and the selected diagnostics flag remain conditions. This does
+  not prove cache creation/miss effects, loading, a stable asset identifier or
+  a live proxy reference.
+  The [cached request composition](../../scripts/game_data/memorypack/leveldata_patrol_request_sources.py)
+  joins the exact successful manifest lookup, nominal byref asset-info value,
+  seeded RuntimeType/key cache lookup and loader return. Its proxy-state tests
+  remain literal numeric predicates; they do not assign a ready/loading name
+  or prove scheduling and completion. The operation counter's bounded source
+  arithmetic is distinct from the priority enum's unsigned backing and from
+  uniqueness or atomicity. The
+  [temporary string-block owner](../../scripts/game_data/memorypack/leveldata_patrol_string_scope_sources.py)
+  balances the selected existing empty block through spare-pool removal,
+  active-stack insertion and the actual IDisposable cleanup. This domain creates
+  no temporary string and covers no cold pool construction. The
+  [retention composition](../../scripts/game_data/memorypack/leveldata_patrol_retention_sources.py)
+  binds the exact outer hash wrapper to its independent nested field-walk,
+  boxed callbacks and same whole-value spare-slot insertion, including padding.
+  Actual manifest/cache hits, RuntimeType/hash seeds, callback/MethodInfo pairs,
+  valid tables and spare storage remain conditions; no asset or retained set is
+  observed live.
+  The [SendGlobal owner](../../scripts/game_data/memorypack/leveldata_patrol_radio_send_sources.py)
+  supplies the enclosing Play and Stop frames required by the independent radio
+  dispatcher. It preserves the whole value payload or same string reference in
+  distinct EventData locals and authenticates the own cached EventManager
+  singleton/context. Its finite no-Lua path uses the actual Contains body on
+  null key-set storage; open generic definition offsets do not establish a
+  closed HashSet layout. Nonempty Lua-key search and Lua dispatch remain outside
+  that grant. Ready contexts, the current singleton/dispatcher, ordinary bound
+  listeners and normal callback return remain conditions. Source transport does
+  not identify a live listener target, prove its arbitrary effects or observe
+  downstream audio playback.
+  The [ASCII Encoding source owner](../../scripts/game_data/memorypack/leveldata_patrol_encoding_sources.py)
+  joins the data-path caller's actual getter call to Encoding's named cached
+  UTF8 field, and independently owns the string and internal UTF8 callbacks.
+  It replays every length in the finite small-buffer domain at both UTF16
+  alignments, including the scalar loop, alignment peel, packed four-character
+  loop and scalar tail. Each output byte maps to the same input ASCII code
+  unit; the returned count equals the input length. Named string fields and
+  the packed path's little-endian flag have independent metadata joins. The
+  live cached object's callback and MethodInfo identities for both virtual
+  slots remain explicit selection conditions; nominal method declarations
+  do not establish a live vtable alias. Ready contexts, disjoint valid storage,
+  adequate capacity, null encoder state and ASCII input remain conditions.
+  Unicode fallback, cold cache creation, live buffers and loading/playback
+  are outside this finite source grant.
+  The [event collection source owner](../../scripts/game_data/memorypack/leveldata_patrol_event_collection_sources.py)
+  joins the actual manager callers to default-comparer lookup, cached Values,
+  spare pooled-list allocation and an opaque listener snapshot. It preserves
+  every payload bit across active dictionary entries, skips free slots, and
+  independently replays clearing, disposal, pool recycling and the selected
+  release callback. Zeroing includes the selected vector and repeat-store
+  paths, with native jump-table bytes checked alongside code. Canonical
+  generic registrations keep their original arguments: closed EventListener
+  callback and MethodInfo selection, compatible storage, stable dictionaries,
+  spare capacity, ready state and disabled collection remain explicit
+  conditions. This does not admit a closed generic registration or establish
+  a live callback alias, listener invocation, event execution or playback.
+  The [checkpoint event-manager source](../../scripts/game_data/memorypack/leveldata_patrol_event_sources.py)
+  consults the current enum-key cache and listener tables, transports the same
+  EventParams through the own optional `DoSecondFilter` and `OnEventAction`
+  delegate requests, or reads the selected EventActionTrigger, header and
+  action-map entry before requesting its executor. These are the manager's
+  own typed delegate declarations, not nominal Action/Func substitutes. The
+  independently authenticated virtual header getter returns the producer's
+  same event key; actual class-slot/MethodInfo selection stays conditional.
+  Collection/snapshot and EventParams owners supply separate lifetime effects.
+  The [atomic event owner](../../scripts/game_data/memorypack/leveldata_patrol_event_atomic_sources.py)
+  joins those lifetime effects to the selected executor, cached-container copy,
+  event-key storage and first-tick manager programs. It compares complete
+  source packets and parent/pool facts, then checks the actual false-force
+  transfer, tracked UID requirements, success-to-tick state and extra dictionary
+  capacity together. The cached destination stays distinct from the incoming
+  producer; its event-key write does not modify the producer's dictionary.
+  Mixed cached-string cleanup and warm Type resolution have separate source
+  proofs. These joins cover the recorded finite conditions, without granting
+  every executor branch or a whole repeated event cycle. Current registration,
+  concrete callback and action-map identities, authored effects, actual dispatch
+  and playback require live evidence.
+  The [executor event-key source](../../scripts/game_data/memorypack/leveldata_patrol_executor_key_sources.py)
+  resolves the actual request as `SetValue<string>` under the literal
+  `@event_key`. A shared reference body does not make that request nominally
+  `object`. Its selected missing-key path joins the exact string dictionary
+  lookup and mode-one insertion to nonempty typed-pool reuse, base and value
+  reset, and the property/value setters. Its separate actual-key source replays
+  the literal's UTF16 hash and inline hash invocation, then joins the same
+  dictionary mask, bucket and entry probes. The copied five-key domain remains
+  unchanged. Every existing key has a different UTF16 length, so the proved
+  ordinal length-mismatch path rejects even a hash collision; no same-length
+  content comparison is assumed for this missing-key insertion. The atomic
+  composition requires that exact collision domain to equal all copied keys.
+  The closed string registrations may
+  be absent; independently authenticated canonical reference callbacks keep
+  their original arguments and require compatible closed string storage and
+  actual callback/MethodInfo selection. No pointer equivalence is inferred.
+  Reset establishes the no-observer state before both the null initializer
+  and the incoming string reference are stored. A distinct pool-owned variable,
+  the absent key, an extra spare entry beyond the copied keys, stable storage
+  and disabled collection remain conditions, rather than live observations.
+  The [executor source owner](../../scripts/game_data/memorypack/leveldata_patrol_executor_sources.py)
+  joins the actual manager's first direct invocation call to a selected
+  header-hit path, the distinct header array, named setup and cleanup,
+  ObjectPtr conversion and comparison, scoped context entry and disposal,
+  constant Boolean validation and complete frame restoration. Node IDs,
+  header IDs and the action-map node, header and action arrays remain
+  separate declarations. Assignment and the string event-key write require
+  their independent full source supplements; caller transfers alone do not
+  discharge them. The selected success state clears the current action,
+  timer and execution timestamp, installs the header's next ID in the cursor
+  stack and records a true previous result. A later timer-wait cannot assume
+  a positive timestamp from this path.
+  These finite paths use the actual false force flag and require a valid
+  coherent context, a header hit, a true constant validation value, spare arrays,
+  an empty iterated-node table, a null pre-clean node context and scopes
+  without a pop delegate. Actual header virtual callbacks and MethodInfos,
+  the UID discriminator branch, stable storage, ready contexts, absent
+  replacements and disabled collection remain explicit conditions. The
+  discriminator is not equated with a nominal metadata index. Positive
+  start-node IDs additionally join the distinct node array and the node UID
+  string: a null or empty UID needs no link, and a nonempty UID with null
+  wait-dictionary buckets returns the exact missing-entry result without
+  hashing or a callback. It does not reinterpret the string length as an
+  action-list count. Other validation, existing wait-map links and
+  scope-delegate branches are not promoted by
+  this selected source proof, and no running executor, live binding or
+  action playback is observed.
+  The [manager postamble source](../../scripts/game_data/memorypack/leveldata_patrol_manager_sources.py)
+  checks that successful false-force state against the first tick's actual
+  input. It separately joins empty child-list snapshotting and pool release,
+  the time singleton's own logic-delta field, scoped context transfer, the
+  empty Int32 iteration table's spare insertion, ordinary action entry and
+  execution requests, the positive-delay return and the unchanged complete
+  ObjectPtr queue value. The selected domain uses a tracked nonzero executor
+  UID, one initial cursor/action and a zero logic delta. Action callbacks must
+  preserve the recorded executor and scope state and publish the stated
+  result, next-node and positive-delay fields; their identity and authored
+  effects are not inferred. The action execution declaration is abstract:
+  its wrapper is not a substitute callback body. Pool reference payloads and
+  ObjectPtr elements retain their distinct sizes and exact closed contexts.
+  This is a coherent finite source path, rather than independent predicates
+  that contradict the invocation's stores. Other tick schedules, recursive
+  child executors, actual activation and playback remain separate.
+  The simple radio request, delayed scheduling and due-timer request now have
+  separate complete selected source programs. The delayed path copies the
+  authored radio identifier and wait value into nominal controller fields,
+  accumulates the timer, makes the exact playback request when due and clears
+  the pending state. The range handler's scheduling transfer is separate from
+  its distance trigger. These facts remain conditional on initialized source
+  state, absent replacement callbacks and compatible helper selection; they
+  establish neither controller ticking nor observed playback.
+  The first range request has a separate source composition: it joins the
+  actual player-controller/entity position fields, complete position getter,
+  and the ordered Vector3 subtraction and squared-length programs before
+  passing the authored radio identifier to PlayRadio. Finite ordered geometry
+  and absent replacement callbacks remain conditions. Repeated-state string
+  comparisons, action selection and actual audio playback remain separate;
+  the request source does not observe any of them running.
+  The authored Character/Enemy patrol subtrees have a separate
+  [finite record composition](../../scripts/game_data/memorypack/leveldata_authored_patrol_sources.py)
+  and [stored-field cursor](../../scripts/game_data/codecs/leveldata/current_authored_patrol.py).
+  Their distinct action, point and root records keep their own current
+  ordinary adapters, nominal enums, pooled strings and nested list callbacks;
+  Character's montage GameplayTag is independently typed. Both LevelData host
+  fields bind their actual list request and call, including null and empty
+  lists. The cursor preserves the initially null list and matching-callback
+  conditions and shares a finite subtree budget. Neither this authored graph
+  nor its exact field boundaries supplies the NpcPatrol-to-Core conversion,
+  controller activation, action dispatch, checkpoint ownership or observed
+  radio playback. Whole-owner source/pool/physical-EOF gates still precede any
+  publication.
 
 ## Registered shells and slot action bindings
 

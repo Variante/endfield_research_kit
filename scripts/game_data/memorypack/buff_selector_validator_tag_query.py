@@ -199,7 +199,7 @@ def validate_current_native_contract(*, selector_native: dict[str, Any]) -> dict
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["queryProfileContract"],
-    )
+     native_image=image)
     if tuple(query_audit["anonymousReadOrder"].get("query-profile", ())) != (
         "scalar32", "counted-scalar32",
     ):

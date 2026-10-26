@@ -297,8 +297,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 
 def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: Path,
-    *, game_root: Path | None = None,
-                      summary_path: Path) -> int:
+                      summary_path: Path, *, game_root: Path | None = None) -> int:
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
     summary = json.loads(summary_path.read_bytes())

@@ -1,14 +1,14 @@
 {
-  "schema": "endfield.dynamic-mission-condition-consumers-native-contract.v3",
+  "schema": "endfield.dynamic-mission-condition-consumers-native-contract.v4",
   "status": "validated",
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "metadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "unityPlayerSha256": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "methods": {
     "update": {
-      "index": 87701,
+      "index": 92670,
       "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
       "method": "_UpdateConditionValue",
       "parameters": [
@@ -18,12 +18,12 @@
         "compId"
       ],
       "returnType": "System.Boolean",
-      "rva": 57537712,
-      "bodyExtent": 591,
-      "bodySha256": "7DE58F5BED259EC9F396DE0B1C01CB105A299F2620CAE676A4F56D06A03082CC"
+      "rva": 92284656,
+      "bodyExtent": 49,
+      "bodySha256": "7DBA6C135002601219F13B884AE101A1F47BC090BC4B571EDCD19DDF4B80ED30"
     },
     "query": {
-      "index": 87697,
+      "index": 92666,
       "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneMissionControlSystem",
       "method": "_GetCurrentConditionValue",
       "parameters": [
@@ -35,9 +35,9 @@
         "conditionIndex"
       ],
       "returnType": "System.Int32",
-      "rva": 57538656,
-      "bodyExtent": 187,
-      "bodySha256": "4A4C8FBDE96954F3B82115F02F534A1B8BCF08E12F5EFA2084A952DDC7595A20"
+      "rva": 92285552,
+      "bodyExtent": 200,
+      "bodySha256": "38E0010C3587050D38CB0C3686611CDBC6507219C893271813B0C9B4986A6E99"
     }
   },
   "dependencies": [
@@ -64,182 +64,35 @@
           "method": "MissionCondition"
         }
       }
-    },
-    {
-      "path": "dynamic_erosion_consumers_native.json",
-      "schema": "endfield.dynamic-erosion-consumers-native-contract.v3",
-      "methodRoles": {
-        "patchCheck": {
-          "type": "IFix.WrappersManagerImpl",
-          "method": "IsPatched"
-        }
-      }
     }
   ],
-  "probes": {
-    "saveComp": {
-      "offset": 42,
-      "bytes": "488BDA"
-    },
-    "saveThis": {
-      "offset": 45,
-      "bytes": "4C8BF1"
-    },
-    "hotSlot": {
-      "offset": 88,
-      "bytes": "488BFB48C1EF20"
-    },
-    "count": {
-      "offset": 151,
-      "bytes": "448B630C"
-    },
-    "counter": {
-      "offset": 155,
-      "bytes": "4533ED"
-    },
-    "firstIndex": {
-      "offset": 171,
-      "bytes": "448B7B08"
-    },
-    "addCounter": {
-      "offset": 178,
-      "bytes": "4503FD"
-    },
-    "queryArgs": {
-      "offset": 181,
-      "bytes": "0FB7D7458BC7498BCE"
-    },
-    "queryReturn": {
-      "offset": 200,
-      "bytes": "89457F"
-    },
-    "tableSlot": {
-      "offset": 195,
-      "bytes": "BA24000000"
-    },
-    "vectorStride": {
-      "offset": 246,
-      "bytes": "41C1E704"
-    },
-    "vectorPosition": {
-      "offset": 267,
-      "bytes": "418D1407"
-    },
-    "carrierOut": {
-      "offset": 254,
-      "bytes": "488D4DB7"
-    },
-    "carrierCopies": {
-      "offset": 281,
-      "bytes": "0F1045B70F105DC733D2B963F600000F115DD70F1145970F115DA7"
-    },
-    "stateBuffer": {
-      "offset": 321,
-      "bytes": "0F1045BF"
-    },
-    "stateTail": {
-      "offset": 343,
-      "bytes": "F20F1045DF"
-    },
-    "stateArgs": {
-      "offset": 359,
-      "bytes": "8B55B7488D4DF783C208"
-    },
-    "stateReturn": {
-      "offset": 381,
-      "bytes": "448BF8"
-    },
-    "sameBuffer": {
-      "offset": 404,
-      "bytes": "0F10459F"
-    },
-    "sameTail": {
-      "offset": 408,
-      "bytes": "F20F104DAF"
-    },
-    "sameArgs": {
-      "offset": 435,
-      "bytes": "8B5597488D4DF783C20C"
-    },
-    "sameEqualsOne": {
-      "offset": 450,
-      "bytes": "83F8017553"
-    },
-    "equalPredicate": {
-      "offset": 455,
-      "bytes": "443B7D7F0F94C1"
-    },
-    "unequalPredicate": {
-      "offset": 538,
-      "bytes": "443B7D7F0F95C1"
-    },
-    "cacheChanged": {
-      "offset": 478,
-      "bytes": "0FB64306403AC6408873060F95C0"
-    },
-    "returnFrame": {
-      "offset": 492,
-      "bytes": "4C8D9C24D0000000498B5B30498B7338498B7B40498BE3415F415E415D415C5DC3"
-    },
-    "patchBranch": {
-      "offset": 76,
-      "bytes": "84C00F8514647301"
-    },
-    "statePatchBranch": {
-      "offset": 313,
-      "bytes": "84C00F85D3627301"
-    },
-    "samePatchBranch": {
-      "offset": 389,
-      "bytes": "84C00F85B1627301"
-    }
-  },
   "methodCallAbi": {
     "update": "instance",
     "query": "instance",
     "state": "instance",
     "same": "instance",
-    "vector": "instance",
-    "patchCheck": "static"
-  },
-  "calls": {
-    "query": 190,
-    "table": 207,
-    "vector": 237,
-    "initialize": 276,
-    "stateRead": 369,
-    "sameRead": 445,
-    "updatePatch": 71,
-    "statePatch": 308,
-    "samePatch": 384,
-    "sameAuxiliary": 575
-  },
-  "ownedAccessorCalls": {
-    "vectorTable": 35,
-    "vectorVector": 62,
-    "vectorForward": 109,
-    "stateRead": 75,
-    "sameRead": 75,
-    "sameAuxiliary": 86
+    "vector": "instance"
   },
   "evidenceBoundary": {
-    "exact": "Selected native identities, ordinary primitive ABI records, source getter/vector declarations and primary windows.",
+    "exact": "Selected native identities, ordinary primitive ABI records, source getter/vector declarations and complete selected unwind families with individually hashed, fully partitioned code ranges and owned sparse control-flow joins.",
     "direct": "Same selected MissionCondition record supplies State and IsSame. Literal IsSame==1 chooses equality to the same-ordinal provider Int32 return; every other Int32 chooses inequality. Anonymous cache byte update returns a changed flag. On the selected nonnull query route, the opaque lookup object supplies an Int32 key to the explicitly bound Dictionary<Int32,Int32>.TryGetValue request. A true result returns its Int32 output; a false result returns zero.",
-    "conditional": "Selected non-replacement update and generated State/IsSame fast paths, nonzero admitted vector slot and supplied cache/grid data. The 32-bit index left shift and position addition must not wrap, and the selected record must be valid; equal raw index bits alone do not prove a valid ordinal. Valid pointers/normal returns and normal Win64 nonvolatile-register preservation are required. Direct fixed-frame stores along admitted CFG paths do not overlap the saved provider Int32 local; callees and indirect writes must not modify that local or its frame bases. Query metadata initialization and patch checks follow the non-replacement path, both dictionary receivers and opaque lookup result are valid nonnull pointers, and callees honor the explicit Int32 output ABI.",
+    "conditional": "Selected non-replacement update, query and generated State/IsSame paths, valid cache/grid pointers and normal callee returns. Nonzero vector slot and a valid selected record are required for stored-record semantics; the absent-vector path is authenticated as a zero carrier, without claiming its getter reads are valid. Int32 index shifting and position addition must not wrap. Win64 nonvolatile-register preservation, normal stack isolation and stable source storage are required. Direct fixed-frame stores on admitted paths do not overlap the saved provider Int32 local; indirect stores and called bodies are not a global memory-isolation proof.",
     "unresolved": "Id/IsQuest target meaning, provider value origin, authored Conditions-to-live cache join, aggregation byte source, hotSlot-to-file/grid ownership, runtime invocation and condition truth remain unresolved."
   },
   "queryContext": {
-    "callOffset": 112,
-    "callTargetRva": 57493296,
-    "contextLoadOffset": 97,
-    "contextLoadRawHex": "4C8B0D50399D09",
-    "usageCellRva": 218837528,
-    "usageRawHex": "ABAB01C000000000",
-    "methodSpecIndex": 54741,
-    "methodSpecRawHex": "DB5E04001D040000FFFFFFFF",
-    "definition": 286427,
+    "callOffset": 120,
+    "callTargetRva": 93970112,
+    "contextLoadOffset": 105,
+    "contextLoadRawHex": "4C8B0D00C5F10A",
+    "usageCellRva": 275902432,
+    "usageRawHex": "49C001C000000000",
+    "methodSpecIndex": 57380,
+    "methodSpecRawHex": "172A060035040000FFFFFFFF",
+    "definition": 403991,
     "type": "System.Collections.Generic.Dictionary`2",
     "method": "TryGetValue",
+    "classInstantiationIndex": 1077,
+    "methodPointerIndex": 51785,
     "signature": {
       "returnType": "System.Boolean",
       "returnRawBits": "80020000",
@@ -247,41 +100,868 @@
       "parameters": [
         {
           "name": "key",
-          "type": "<type-index:3984>",
+          "type": "<type-index:4193>",
           "rawBits": "00130000",
-          "rawTypeRecordHex": "0A3D0000000000000000130000000000",
+          "rawTypeRecordHex": "C13E0000000000000000130000000000",
           "genericOwner": {
-            "parameterIndex": 15626,
-            "parameterOffset": 42809940,
-            "parameterRawHex": "77130000D1D101000000000000000000",
-            "containerIndex": 4983,
-            "containerOffset": 43046480,
-            "containerRawHex": "7E92000002000000000000000A3D0000",
-            "typeIndex": 37502,
+            "parameterIndex": 16065,
+            "parameterOffset": 54100744,
+            "parameterRawHex": "F513000094F801000000000000000000",
+            "containerIndex": 5109,
+            "containerOffset": 54344652,
+            "containerRawHex": "3A0D01000200000000000000C13E0000",
+            "typeIndex": 68922,
             "ordinal": 0,
             "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted."
           }
         },
         {
           "name": "value",
-          "type": "<type-index:85460>",
+          "type": "<type-index:78792>",
           "rawBits": "20130002",
-          "rawTypeRecordHex": "0B3D0000000000000200132000000000",
+          "rawTypeRecordHex": "C23E0000000000000200132000000000",
           "genericOwner": {
-            "parameterIndex": 15627,
-            "parameterOffset": 42809956,
-            "parameterRawHex": "77130000D6D101000000000001000000",
-            "containerIndex": 4983,
-            "containerOffset": 43046480,
-            "containerRawHex": "7E92000002000000000000000A3D0000",
-            "typeIndex": 37502,
+            "parameterIndex": 16066,
+            "parameterOffset": 54100760,
+            "parameterRawHex": "F513000099F801000000000001000000",
+            "containerIndex": 5109,
+            "containerOffset": 54344652,
+            "containerRawHex": "3A0D01000200000000000000C13E0000",
+            "typeIndex": 68922,
             "ordinal": 1,
             "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted."
           }
         }
       ]
+    }
+  },
+  "families": {
+    "update": {
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 92284656,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              92284656,
+              92284705,
+              268348444
+            ],
+            "tableRowRva": 316520768,
+            "runtimeTripleRawHex": "F0268005212780051CACFE0F",
+            "codeBytes": 49,
+            "unwindRawHex": "011004001001190004E00250",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              92284705,
+              92284849,
+              268348456
+            ],
+            "tableRowRva": 316520780,
+            "runtimeTripleRawHex": "21278005B127800528ACFE0F",
+            "codeBytes": 144,
+            "unwindRawHex": "21770A0077D4170068C418005C741E0010641D0008341C00F0268005212780051CACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92284705,
+                  92284849,
+                  268348456
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92284849,
+              92285046,
+              268348492
+            ],
+            "tableRowRva": 316520792,
+            "runtimeTripleRawHex": "B1278005762880054CACFE0F",
+            "codeBytes": 197,
+            "unwindRawHex": "2108020008F4160021278005B127800528ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92284849,
+                  92285046,
+                  268348492
+                ],
+                "parent": [
+                  92284705,
+                  92284849,
+                  268348456
+                ]
+              },
+              {
+                "child": [
+                  92284705,
+                  92284849,
+                  268348456
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285046,
+              92285100,
+              268348512
+            ],
+            "tableRowRva": 316520804,
+            "runtimeTripleRawHex": "76288005AC28800560ACFE0F",
+            "codeBytes": 54,
+            "unwindRawHex": "2100000021278005B127800528ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285046,
+                  92285100,
+                  268348512
+                ],
+                "parent": [
+                  92284705,
+                  92284849,
+                  268348456
+                ]
+              },
+              {
+                "child": [
+                  92284705,
+                  92284849,
+                  268348456
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285100,
+              92285111,
+              268348528
+            ],
+            "tableRowRva": 316520816,
+            "runtimeTripleRawHex": "AC288005B728800570ACFE0F",
+            "codeBytes": 11,
+            "unwindRawHex": "21000000F0268005212780051CACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285100,
+                  92285111,
+                  268348528
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285111,
+              92285148,
+              268348544
+            ],
+            "tableRowRva": 316520828,
+            "runtimeTripleRawHex": "B7288005DC28800580ACFE0F",
+            "codeBytes": 37,
+            "unwindRawHex": "21000C0000F4160000D4170000C4180000741E0000641D0000341C00F0268005212780051CACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285111,
+                  92285148,
+                  268348544
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285148,
+              92285154,
+              268348584
+            ],
+            "tableRowRva": 316520840,
+            "runtimeTripleRawHex": "DC288005E2288005A8ACFE0F",
+            "codeBytes": 6,
+            "unwindRawHex": "2100040000641D0000341C00F0268005212780051CACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285148,
+                  92285154,
+                  268348584
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              123149458,
+              123149498,
+              268348608
+            ],
+            "tableRowRva": 318277748,
+            "runtimeTripleRawHex": "921C5707BA1C5707C0ACFE0F",
+            "codeBytes": 40,
+            "unwindRawHex": "21000000F0268005212780051CACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  123149458,
+                  123149498,
+                  268348608
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              123149498,
+              123149509,
+              268348624
+            ],
+            "tableRowRva": 318277760,
+            "runtimeTripleRawHex": "BA1C5707C51C5707D0ACFE0F",
+            "codeBytes": 11,
+            "unwindRawHex": "21000C0000F4160000D4170000C4180000741E0000641D0000341C00921C5707BA1C5707C0ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  123149498,
+                  123149509,
+                  268348624
+                ],
+                "parent": [
+                  123149458,
+                  123149498,
+                  268348608
+                ]
+              },
+              {
+                "child": [
+                  123149458,
+                  123149498,
+                  268348608
+                ],
+                "parent": [
+                  92284656,
+                  92284705,
+                  268348444
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeRanges": [
+        {
+          "startRva": 92284656,
+          "endRva": 92284705,
+          "sha256": "7DBA6C135002601219F13B884AE101A1F47BC090BC4B571EDCD19DDF4B80ED30"
+        },
+        {
+          "startRva": 92284705,
+          "endRva": 92284849,
+          "sha256": "E6A19E2981DAD2BBF19F9F772CD8D141D93154784F46BDAFC9D4373997EFFD4C"
+        },
+        {
+          "startRva": 92284849,
+          "endRva": 92285046,
+          "sha256": "0C75024E0B08C0A363B8C310434553E7F244B6CFA27DF8885541B67008C60DD7"
+        },
+        {
+          "startRva": 92285046,
+          "endRva": 92285100,
+          "sha256": "BFDBBC4ED1190F91959246FA54504ED7A42E615DFA2490AF1B55292203FB1E04"
+        },
+        {
+          "startRva": 92285100,
+          "endRva": 92285111,
+          "sha256": "DFFB283A469AE0850D92496EBACBAE5854EC56AA6DE7F0BADD95B216A7458C0C"
+        },
+        {
+          "startRva": 92285111,
+          "endRva": 92285148,
+          "sha256": "FB92933A1AB8CE2E978D3A83E58D76C8C99E37C8D91AFD09564C2AD0FD870637"
+        },
+        {
+          "startRva": 92285148,
+          "endRva": 92285154,
+          "sha256": "F2C97723A46E69FAE540438ED9FABD423996ADBDDED330D7D18E674DF9E599EE"
+        },
+        {
+          "startRva": 123149458,
+          "endRva": 123149498,
+          "sha256": "2ADB83ACDDE40532A875FAFFD48550A02AFCEE19BE1BBE985D0D4FDD2F5355F0"
+        },
+        {
+          "startRva": 123149498,
+          "endRva": 123149509,
+          "sha256": "71B6F316E07A1C3D4FCE79E70A36C481C9F30E639AC88EF6940A25F7E33EDD5F"
+        }
+      ]
     },
-    "classInstantiationIndex": 1053,
-    "methodPointerIndex": 49312
+    "query": {
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 92285552,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              92285552,
+              92285752,
+              267289232
+            ],
+            "tableRowRva": 316520960,
+            "runtimeTripleRawHex": "702A8005382B80059082EE0F",
+            "codeBytes": 200,
+            "unwindRawHex": "0114080014640C0014540B0014340A0014721070",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              123149586,
+              123149632,
+              268348824
+            ],
+            "tableRowRva": 318277796,
+            "runtimeTripleRawHex": "121D5707401D570798ADFE0F",
+            "codeBytes": 46,
+            "unwindRawHex": "21000000702A8005382B80059082EE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  123149586,
+                  123149632,
+                  268348824
+                ],
+                "parent": [
+                  92285552,
+                  92285752,
+                  267289232
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeRanges": [
+        {
+          "startRva": 92285552,
+          "endRva": 92285752,
+          "sha256": "38E0010C3587050D38CB0C3686611CDBC6507219C893271813B0C9B4986A6E99"
+        },
+        {
+          "startRva": 123149586,
+          "endRva": 123149632,
+          "sha256": "E870756D808B1D0C51D445F50EFA7B56E0321D566E63CDB5817834460BF094D8"
+        }
+      ]
+    },
+    "state": {
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 92285328,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              92285328,
+              92285356,
+              268348664
+            ],
+            "tableRowRva": 316520864,
+            "runtimeTripleRawHex": "90298005AC298005F8ACFE0F",
+            "codeBytes": 28,
+            "unwindRawHex": "0104010004820000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              92285356,
+              92285413,
+              268348672
+            ],
+            "tableRowRva": 316520876,
+            "runtimeTripleRawHex": "AC298005E529800500ADFE0F",
+            "codeBytes": 57,
+            "unwindRawHex": "210502000534080090298005AC298005F8ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285356,
+                  92285413,
+                  268348672
+                ],
+                "parent": [
+                  92285328,
+                  92285356,
+                  268348664
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285413,
+              92285418,
+              268348692
+            ],
+            "tableRowRva": 316520888,
+            "runtimeTripleRawHex": "E5298005EA29800514ADFE0F",
+            "codeBytes": 5,
+            "unwindRawHex": "2100000090298005AC298005F8ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285413,
+                  92285418,
+                  268348692
+                ],
+                "parent": [
+                  92285328,
+                  92285356,
+                  268348664
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285418,
+              92285425,
+              268348708
+            ],
+            "tableRowRva": 316520900,
+            "runtimeTripleRawHex": "EA298005F129800524ADFE0F",
+            "codeBytes": 7,
+            "unwindRawHex": "210002000034080090298005AC298005F8ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285418,
+                  92285425,
+                  268348708
+                ],
+                "parent": [
+                  92285328,
+                  92285356,
+                  268348664
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              123149510,
+              123149547,
+              268348728
+            ],
+            "tableRowRva": 318277772,
+            "runtimeTripleRawHex": "C61C5707EB1C570738ADFE0F",
+            "codeBytes": 37,
+            "unwindRawHex": "2100000090298005AC298005F8ACFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  123149510,
+                  123149547,
+                  268348728
+                ],
+                "parent": [
+                  92285328,
+                  92285356,
+                  268348664
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeRanges": [
+        {
+          "startRva": 92285328,
+          "endRva": 92285356,
+          "sha256": "DD4B51569DC45EFA98DFF6D23BCC565A41D3851E1158DE2165F34EEEE740E3DE"
+        },
+        {
+          "startRva": 92285356,
+          "endRva": 92285413,
+          "sha256": "58EF48F13A1B83701412E9A2CA02B185035DE2A3D733A9E58DCA423A981BC0AD"
+        },
+        {
+          "startRva": 92285413,
+          "endRva": 92285418,
+          "sha256": "E82318BF41A1CB18F327AED40B6207DAE253296C559E44603CFFDECED33E3CCB"
+        },
+        {
+          "startRva": 92285418,
+          "endRva": 92285425,
+          "sha256": "128162C30F42A2668742D56CCEF19CA9A31C6D13A96915B450BFF72A1EEE462F"
+        },
+        {
+          "startRva": 123149510,
+          "endRva": 123149547,
+          "sha256": "78035264D5A1A2DEA326A2EBB7071F277D486213A142B346972C8339F3DB3E0A"
+        }
+      ]
+    },
+    "same": {
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 92285440,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              92285440,
+              92285468,
+              268348744
+            ],
+            "tableRowRva": 316520912,
+            "runtimeTripleRawHex": "002A80051C2A800548ADFE0F",
+            "codeBytes": 28,
+            "unwindRawHex": "0104010004820000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              92285468,
+              92285525,
+              268348752
+            ],
+            "tableRowRva": 316520924,
+            "runtimeTripleRawHex": "1C2A8005552A800550ADFE0F",
+            "codeBytes": 57,
+            "unwindRawHex": "2105020005340800002A80051C2A800548ADFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285468,
+                  92285525,
+                  268348752
+                ],
+                "parent": [
+                  92285440,
+                  92285468,
+                  268348744
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285525,
+              92285530,
+              268348772
+            ],
+            "tableRowRva": 316520936,
+            "runtimeTripleRawHex": "552A80055A2A800564ADFE0F",
+            "codeBytes": 5,
+            "unwindRawHex": "21000000002A80051C2A800548ADFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285525,
+                  92285530,
+                  268348772
+                ],
+                "parent": [
+                  92285440,
+                  92285468,
+                  268348744
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              92285530,
+              92285537,
+              268348788
+            ],
+            "tableRowRva": 316520948,
+            "runtimeTripleRawHex": "5A2A8005612A800574ADFE0F",
+            "codeBytes": 7,
+            "unwindRawHex": "2100020000340800002A80051C2A800548ADFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  92285530,
+                  92285537,
+                  268348788
+                ],
+                "parent": [
+                  92285440,
+                  92285468,
+                  268348744
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              123149548,
+              123149585,
+              268348808
+            ],
+            "tableRowRva": 318277784,
+            "runtimeTripleRawHex": "EC1C5707111D570788ADFE0F",
+            "codeBytes": 37,
+            "unwindRawHex": "21000000002A80051C2A800548ADFE0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  123149548,
+                  123149585,
+                  268348808
+                ],
+                "parent": [
+                  92285440,
+                  92285468,
+                  268348744
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeRanges": [
+        {
+          "startRva": 92285440,
+          "endRva": 92285468,
+          "sha256": "64C7FDEBEB3C8726981226F3B39D1DE6905EE928B4985C16872C26263C138495"
+        },
+        {
+          "startRva": 92285468,
+          "endRva": 92285525,
+          "sha256": "9D57BF58E44AE27D1DE37DF084F2561BAD31760F5F56BE7D0353D1F6CECA62C6"
+        },
+        {
+          "startRva": 92285525,
+          "endRva": 92285530,
+          "sha256": "E82318BF41A1CB18F327AED40B6207DAE253296C559E44603CFFDECED33E3CCB"
+        },
+        {
+          "startRva": 92285530,
+          "endRva": 92285537,
+          "sha256": "79AF5DDF97AD17BE7E79741A47E9441707D53C8CCF183F828EE5483EA4843C31"
+        },
+        {
+          "startRva": 123149548,
+          "endRva": 123149585,
+          "sha256": "33D21487991FF9DD47E890266A59BA07975E9A1FB3AA8D061E0E12F7E879F68E"
+        }
+      ]
+    },
+    "vector": {
+      "unwindFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 154379392,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              154379392,
+              154379553,
+              267806500
+            ],
+            "tableRowRva": 320010848,
+            "runtimeTripleRawHex": "80A4330921A533092467F60F",
+            "codeBytes": 161,
+            "unwindRawHex": "011207001264150012341400120112000B700000",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "codeRanges": [
+        {
+          "startRva": 154379392,
+          "endRva": 154379553,
+          "sha256": "4C249205F4848F3B2F12A89671F66BE2D67D8BB4F2A68E7B159B8805E2C10E50"
+        }
+      ]
+    }
   }
 }

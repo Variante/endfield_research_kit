@@ -27,6 +27,7 @@ from scripts.game_data.memorypack.corpus_gate import (
     _fingerprint, _guard_partial_output, verify_current_report_inputs,
 )
 from scripts.game_data.memorypack.derived_schema import resolve_routes
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineDiceFloat"
@@ -104,8 +105,8 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
         or contract["dispatcher"]["switchTableRva"] != primitive["dispatcher"]["switchTableRva"]
         or [row["sourceTargetRva"] for row in reads[:4]]
         != [row["sourceTargetRva"] for row in primitive["orderedSourceReads"][:4]]
-        or byte_reader.get("schemaVersion") != 1 or byte_window is None
-        or double_reader.get("schemaVersion") != 1 or len(double_methods) != 2
+        or (byte_reader.get("schemaVersion") != 1 and not is_role_projection(byte_reader)) or byte_window is None
+        or (double_reader.get("schemaVersion") != 1 and not is_role_projection(double_reader)) or len(double_methods) != 2
         or len(double_windows) != 2
         or reads[5]["sourceTargetRva"] != reads[6]["sourceTargetRva"]
     ):
@@ -114,9 +115,13 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     for row in contract["methods"] + double_methods:
         image.validate_method_row(row, label=LABEL)
-    image.check_windows(contract["codeWindows"], label=LABEL)
-    image.check_windows(primitive["codeWindows"], label=LABEL)
-    image.check_windows([byte_window] + double_windows, label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
+    check_formatter_windows(image, primitive, label=LABEL)
+    for dependency, windows in ((byte_reader, [byte_window]), (double_reader, double_windows)):
+        if is_role_projection(dependency):
+            check_formatter_windows(image, dependency, label=LABEL)
+        else:
+            image.check_windows(windows, label=LABEL)
     count = contract["memberCountInstruction"]
     image.check_instruction_windows([[count["rva"], count["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]

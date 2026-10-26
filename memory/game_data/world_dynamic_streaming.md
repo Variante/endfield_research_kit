@@ -2125,9 +2125,15 @@ authenticates their native build and method windows, and proves an
 independent bounded writer block. It does not re-decode the source corpus or
 claim the complete registration entry or lifecycle.
 
+The bounded validator admits separate complete query and writer codegen
+shapes, and checks the pooled byte-span overload through raw native type
+structure instead of metadata display aliases. These local checks do not
+substitute for the string-provider dependency: a refused provider proof
+leaves the complete key-source claim unpublished.
+
 The selected `RegisterEntityCaredCondition` request receives an Int32 from
-`GetStrKey`, preserves those bits in `R14D`, and writes them into the
-returned slot's anonymous Int32 lane at `+8`. The query uses the same actual
+`GetStrKey`, preserves those bits in a checked nonvolatile register, and writes
+them into the returned slot's anonymous Int32 lane at `+8`. The query uses the same actual
 helper and context cell and reads that lane for its dictionary key. This
 extends the previously authenticated authored Id to string-span request
 with **direct conditional returned-value flow**. It does not prove
@@ -2173,10 +2179,12 @@ for the span and managed-string conversion paths.
 ### Mission string-provider requests
 
 `dynamic_mission_string_providers_native` owns names-based claims for
-`TryGetStrKey` and `_GetUniqueKey`. Qualified metadata owners and ordinary
+`TryGetStrKey`, `_GetUniqueKey` and `GetStrKey`. Qualified metadata owners and ordinary
 primitive/reference or explicit Int32-reference ABI records select the actual
-calls. Complete primary instruction grammars close the entry, false IFix route,
-initialization return, owned branch boundaries and balanced normal frames.
+calls. Separate exact named-check and nullable-inline grammars authenticate
+complete selected families, sparse branch joins, initialization returns and
+balanced normal frames. Direct original entry and null replacement-pointer
+resume stay distinct from unproved replacement behavior.
 
 The nonnull string's concrete `System.String._stringLength` Int32 field joins
 the caller's length read. Null or zero length returns false and writes -1 to
@@ -2546,6 +2554,10 @@ replacement behavior remain unresolved.
 consumer in `contracts/dynamic_mission_condition_consumers_native.json`.
 It reuses the selected main-vector, scalar accessors and primitive ABI checks;
 it does not re-decode the source corpus or copy the field catalogs.
+The contract authenticates complete unwind families and each disjoint code
+range. Sparse instruction and branch joins cover nullable replacement
+null-resume paths and the zero-vector carrier path without filling gaps with
+invented bytes or interpreting replacement invocation as original behavior.
 
 On the admitted non-replacement route, `_UpdateConditionValue` requests an
 Int32 value from `_GetCurrentConditionValue` using the original component
@@ -2581,7 +2593,8 @@ primitive ABI records, exact helper agreement with the source-owned vector
 and getters, disjoint carrier spans, and complete instruction boundaries.
 Its getter-to-predicate CFG follows both admitted comparison branches,
 rejects unknown bytes, escapes, cycles and watched-register alias writes,
-and excludes only the explicit patch-replacement edge. Strict ADD32 and
+and keeps replacement invocation outside the original comparison claim.
+Strict ADD32 and
 byte logical instruction composition preserves physical register writes;
 normal Win64 nonvolatile preservation, valid pointers and normal returns
 remain explicit conditions. The main table fast route must provide a nonzero
@@ -2599,6 +2612,9 @@ and native inputs before and after, with atomic output and alias protection.
 consumers in `contracts/dynamic_erosion_consumers_native.json`. It reuses
 the reviewed group, main-vector, scalar, root and index methods instead of
 copying their catalogs or re-decoding the source corpus.
+The validator admits named-check and inline nullable-replacement codegen as
+separate complete shapes, including their branch destinations and stack
+carrier copies; an inline dispatch is not evidence of an `IsPatched` call.
 
 The selected `_FillPosListFromFB` path preserves its original typed
 `List<UnityEngine.Vector3>` receiver. `PosList.Num` bounds the loop and

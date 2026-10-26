@@ -74,7 +74,7 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
     for source_name in dict.fromkeys(r["sourceContract"] for r in c["records"].values()):
         path = CONTRACTS_DIR / source_name; source = json.loads(path.read_bytes())
         buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-            image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+            image.modules, image.owners, source=str(gate.gameassembly), contract_path=path, native_image=image)
         proved.update(named.validate_named_records(image, source,
             {k: r for k, r in c["records"].items() if r["sourceContract"] == source_name}, label=LABEL, fail=_fail))
     routes, audit = load_action_routes(gameassembly=gate.gameassembly, metadata=gate.metadata)

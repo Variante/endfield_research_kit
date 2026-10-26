@@ -1,99 +1,146 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "methods": [
     [
-      119797,
+      261531,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack+Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPackFormatter",
       "Deserialize",
-      68106912
+      106805856
     ],
     [
-      119796,
+      261530,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack",
       "Deserialize",
-      68107008
+      106805952
     ]
   ],
   "codeWindows": [
     {
-      "startRva": 68106912,
-      "endRva": 68107005,
-      "sha256": "D13F2EA74DAE8CCD638BBFF5263C95420D717CE73B0BBDCDCFD595E81D83208B",
-      "boundary": "formatter forwarding with complete initialization"
+      "startRva": 106805856,
+      "endRva": 106805949,
+      "sha256": "F8ED9433F016A668FA60E9395E94B1FC1BAE73201F9D920BD297A78092C6647C",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
     },
     {
-      "startRva": 68107008,
-      "endRva": 68107482,
-      "sha256": "FB45E5598370C6116E9D5540D6A5BADB793A727A2D3B5D1567C8A51047490D3E",
-      "boundary": "member9 source reads through normal RET"
+      "startRva": 106805952,
+      "endRva": 106806019,
+      "sha256": "B587C89C67B6074088BF19716EFD9FF0867EA3BB470E3CAAE61F7D4FFE59D5C6",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
     },
     {
-      "startRva": 68107482,
-      "endRva": 68107566,
-      "sha256": "71900386F94C99899B9F07D4B67F39C266EBEAB0A77CCE936EEA9C1AB837BC3C",
-      "boundary": "reader lazy initialization and complete rejoin"
+      "startRva": 106806019,
+      "endRva": 106806403,
+      "sha256": "B0876E9EECEA56855A558F2BC4E3C84B2C3836687408ED1F1297E603D85027B7",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
     },
     {
-      "startRva": 83340366,
-      "endRva": 83340379,
-      "sha256": "BFCBE338E805198871B24A75DCEF464B6D0AA84808ABE6ABC0291B4310673568",
-      "boundary": "existing-output preparation and header rejoin"
+      "startRva": 106806403,
+      "endRva": 106806414,
+      "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
     },
     {
-      "startRva": 83340435,
-      "endRva": 83340456,
-      "sha256": "77B1890DCE48700EEAFC04F3ADFEC1501A33EF77905D1B177D8FB320CA9A0A54",
-      "boundary": "FF clear and complete epilogue rejoin"
+      "startRva": 106806414,
+      "endRva": 106806420,
+      "sha256": "E36DAD07C15CCAA5D2065A929D3E0319D6DEC8B950A72312FB1A45F181374ABC",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
+    },
+    {
+      "startRva": 106806420,
+      "endRva": 106806504,
+      "sha256": "6FC6D99FB626257EFFE86684B90975AF62B1D37EF17D40146777E32EB35B17C0",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
+    },
+    {
+      "startRva": 124812072,
+      "endRva": 124812085,
+      "sha256": "06D8C8492164A08B33B322F510A21B5A392F38CF5CD889A6E2878E25D0BEE0B6",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
+    },
+    {
+      "startRva": 124812085,
+      "endRva": 124812141,
+      "sha256": "B3C3910F7A44AFA2CAC360813843F7E9C400CB720FDD5507BAD38877EA5A2B89",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
+    },
+    {
+      "startRva": 124812141,
+      "endRva": 124812162,
+      "sha256": "1273C810631B6433D52787D3B394DF266AB5999D14328F937A8A1DED890931CC",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
+    },
+    {
+      "startRva": 83754352,
+      "endRva": 83754439,
+      "sha256": "F5D54185CAD8DFD22FDB3C92312594556C9ADB3126526D28898ECD14CC96159E",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
+    },
+    {
+      "startRva": 120410862,
+      "endRva": 120410907,
+      "sha256": "ABFE56BA791497AF8176F8B0188567201629E2F468137ACA102AE2980BD50CF9",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_98_roles_native.json"
     }
   ],
   "nestedContexts": [
     {
-      "instructionRva": 68107180,
-      "instructionHex": "488B157562F908",
-      "cellVa": 6661119528,
-      "usageRawHex": "81E812C000000000",
-      "methodSpecIndex": 619584,
+      "instructionRva": 106806124,
+      "instructionHex": "488B15350A100A",
+      "cellVa": 6718080424,
+      "usageRawHex": "EBB613C000000000",
+      "methodSpecIndex": 646005,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42547
+        42893
       ],
-      "argumentRawHex": "EA230000000000000000118000000000",
-      "typeDefinition": 9194,
+      "argumentRawHex": "64250000000000000000118000000000",
+      "typeDefinition": 9572,
       "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
       "generic": null,
       "typeKind": 17
     },
     {
-      "instructionRva": 68107320,
-      "instructionHex": "488B150998FF08",
-      "cellVa": 6661526600,
-      "usageRawHex": "8DEA12C000000000",
-      "methodSpecIndex": 619846,
+      "instructionRva": 106806264,
+      "instructionHex": "488B15D1BA160A",
+      "cellVa": 6718518992,
+      "usageRawHex": "13B913C000000000",
+      "methodSpecIndex": 646281,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        1832
+        1891
       ],
-      "argumentRawHex": "FAA90000000000000000120000000000",
-      "typeDefinition": 43514,
+      "argumentRawHex": "4B260100000000000000120000000000",
+      "typeDefinition": 75339,
       "typeName": "UnityEngine.AnimationCurve",
       "generic": null,
       "typeKind": 18
     },
     {
-      "instructionRva": 68107361,
-      "instructionHex": "488B15B809F008",
-      "cellVa": 6660507168,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 106806301,
+      "instructionHex": "488B15C476190A",
+      "cellVa": 6718698216,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble",
       "generic": null,
       "typeKind": 18
@@ -112,5 +159,6 @@
       "byte"
     ]
   },
-  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member9 action consumes common byte/three DWORDs, signed-length payload, AnimationCurve, BlackboardDouble profile, second signed-length payload and final byte. Curve MethodSpec619846 joins typedef43514 and the independently pinned FF or member3 raw8/nullable-count/raw28-key grammar. Scalar MethodSpec620004 joins typedef173 and its separately pinned FF or member3 payload/byte/four-byte value grammar. Shared provider selection remains conditional. Null curve, null key list, null scalar profile and null payloads remain distinct. Key counts are bounded before multiplication or iteration; later payload and final byte remain mandatory after completed nested profiles. Formatter initialization, reader initialization, normal RET, existing-output and FF paths retain complete instructions. Curve-evaluation meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+  "boundary": "Exact current method-role proof establishes member9 source widths, order, typed child contexts and named setter transfers, with complete current unwind families and the actual object-header helper's FF clear behavior. The two byte-payload roles are Int32 StringPool indices (-1 empty, -2 null). AnimationCurve and BlackboardDouble source programs are independently authenticated on the same selected image; parent typed contexts join their full names. Shared provider and live formatter selection, refill/error parity, curve evaluation, blackboard semantics and whole-BuffData EOF remain unresolved.",
+  "roleContract": "buff_98_roles_native.json"
 }

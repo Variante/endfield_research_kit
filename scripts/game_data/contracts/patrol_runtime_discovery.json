@@ -1,0 +1,787 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v15",
+  "status": "reviewed-bounded-callback-discovery",
+  "observerProviders": [
+    "mission-trace"
+  ],
+  "hooks": [
+    {
+      "name": "patrol.init",
+      "type": "Beyond.Gameplay.AI.NewNpcAIPatrolController",
+      "method": "_InitLevelData",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "levelNpcData",
+          "type": "Beyond.Gameplay.LevelNpcData"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "controller",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AI.NewNpcAIPatrolController",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "entity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Entity",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.NewNpcAIPatrolController::m_entity",
+              "type": "Beyond.Gameplay.Core.Entity"
+            }
+          ]
+        },
+        {
+          "label": "installedCore",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.PatrolData",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.NewNpcAIPatrolController::<patrolData>k__BackingField",
+              "type": "Beyond.Gameplay.Core.PatrolData"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      }
+    },
+    {
+      "name": "patrol.convert",
+      "type": "Beyond.Gameplay.AI.NewNpcAIPatrolController",
+      "method": "_ConvertNpcPatrolData",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "npcPatrolData",
+          "type": "Beyond.Gameplay.AI.Config.NpcPatrolData"
+        },
+        {
+          "name": "oldData",
+          "type": "Beyond.Gameplay.Core.PatrolData"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "controller",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AI.NewNpcAIPatrolController",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "config",
+          "argument": "npcPatrolData",
+          "type": "Beyond.Gameplay.AI.Config.NpcPatrolData",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "coreOutput",
+          "argument": "oldData",
+          "type": "Beyond.Gameplay.Core.PatrolData",
+          "readMode": "rawBytes",
+          "byteCount": 8,
+          "argumentRepresentation": {
+            "mode": "referenceByRef",
+            "bytes": 8
+          },
+          "role": "byrefOutput"
+        }
+      ],
+      "semanticRole": "unfiltered ordinary converter discovery; capture actual return address and recorded paired parent without a causal grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "The actual Init-to-converter caller-family join is unproved here. Unfiltered entry/return observation does not establish installation, conversion-loop completeness or caller identity."
+      }
+    },
+    {
+      "name": "patrol.checkpoint",
+      "type": "Beyond.Gameplay.AI.NewNpcAIPatrolController",
+      "method": "_RaiseCheckpointReachEvent",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "checkpointIndex",
+          "type": "int"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "controller",
+          "argument": "this",
+          "type": "Beyond.Gameplay.AI.NewNpcAIPatrolController",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "checkpointIndex",
+          "argument": "checkpointIndex",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "installedCore",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.PatrolData",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.AI.NewNpcAIPatrolController::<patrolData>k__BackingField",
+              "type": "Beyond.Gameplay.Core.PatrolData"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      }
+    },
+    {
+      "name": "patrol.checkpointFilter",
+      "type": "Beyond.Gameplay.Actions.LevelEvent.OnNpcPatrolCheckpointReach",
+      "method": "Process",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.ParamBlackboard"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "header",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.LevelEvent.OnNpcPatrolCheckpointReach",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "eventContext",
+          "argument": "eventContext",
+          "type": "Beyond.Gameplay.ParamBlackboard",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      },
+      "captureScope": "paired-ancestor"
+    },
+    {
+      "name": "patrol.tryInvoke",
+      "type": "Beyond.Gameplay.Actions.ActionExecutor",
+      "method": "TryToInvoke",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "inputEventParams",
+          "type": "Beyond.Gameplay.Core.EventParams"
+        },
+        {
+          "name": "ignoreBreakPoint",
+          "type": "bool"
+        },
+        {
+          "name": "delayToInvoke",
+          "type": "bool"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "executor",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionExecutor",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "executorUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.ReusableObject::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "cachedEvent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.EventParams",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::<eventParams>k__BackingField",
+              "type": "Beyond.Gameplay.Core.EventParams"
+            }
+          ]
+        },
+        {
+          "label": "currentAction",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::currentAction",
+              "type": "Beyond.Gameplay.Actions.ActionBase"
+            }
+          ]
+        },
+        {
+          "label": "isStarted",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::isStarted",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "isFinished",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::isFinished",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "timer",
+          "argument": "this",
+          "type": "float",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::timer",
+              "type": "float"
+            }
+          ]
+        },
+        {
+          "label": "executeTimeStamp",
+          "argument": "this",
+          "type": "float",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::executeTimeStamp",
+              "type": "float"
+            }
+          ]
+        },
+        {
+          "label": "delayToNextTick",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::delayToNextTick",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "delayToNextTickAllowDeltaTimeZero",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::delayToNextTickAllowDeltaTimeZero",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "ticking",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::<ticking>k__BackingField",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "ticked",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::<ticked>k__BackingField",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "incomingEvent",
+          "argument": "inputEventParams",
+          "type": "Beyond.Gameplay.Core.EventParams",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "force",
+          "argument": "ignoreBreakPoint",
+          "type": "bool",
+          "role": "state"
+        },
+        {
+          "label": "outputDelay",
+          "argument": "delayToInvoke",
+          "type": "bool",
+          "role": "state",
+          "argumentRepresentation": {
+            "mode": "scalarByRef",
+            "type": "bool"
+          }
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      },
+      "captureScope": "paired-ancestor"
+    },
+    {
+      "name": "patrol.logicTick",
+      "type": "Beyond.Gameplay.Actions.ActionExecutor",
+      "method": "_DoLogicTick",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "deltaTime",
+          "type": "float"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "executor",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionExecutor",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "executorUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.ReusableObject::<instanceUid>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "cachedEvent",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.EventParams",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::<eventParams>k__BackingField",
+              "type": "Beyond.Gameplay.Core.EventParams"
+            }
+          ]
+        },
+        {
+          "label": "currentAction",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::currentAction",
+              "type": "Beyond.Gameplay.Actions.ActionBase"
+            }
+          ]
+        },
+        {
+          "label": "isStarted",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::isStarted",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "isFinished",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::isFinished",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "timer",
+          "argument": "this",
+          "type": "float",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::timer",
+              "type": "float"
+            }
+          ]
+        },
+        {
+          "label": "executeTimeStamp",
+          "argument": "this",
+          "type": "float",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::executeTimeStamp",
+              "type": "float"
+            }
+          ]
+        },
+        {
+          "label": "delayToNextTick",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::delayToNextTick",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "delayToNextTickAllowDeltaTimeZero",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::delayToNextTickAllowDeltaTimeZero",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "ticking",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::<ticking>k__BackingField",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "ticked",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionExecutor::<ticked>k__BackingField",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "deltaTime",
+          "argument": "deltaTime",
+          "type": "float",
+          "role": "state",
+          "argumentRepresentation": {
+            "mode": "scalarRegister",
+            "type": "float"
+          }
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      },
+      "captureScope": "paired-ancestor"
+    },
+    {
+      "name": "patrol.actionEnter",
+      "type": "Beyond.Gameplay.Actions.ActionBase",
+      "method": "Enter",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "action",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "callback",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "readMode": "virtualCallbackPair",
+          "sourceWitness": "patrol",
+          "callbackRole": "actionEnter",
+          "role": "callbackIdentity"
+        },
+        {
+          "label": "actionResultStorage",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "readMode": "rawBytes",
+          "byteCount": 36,
+          "fieldSpan": [
+            "Beyond.Gameplay.Actions.ActionBase::m_executeResult",
+            "Beyond.Gameplay.Actions.ActionBase::m_finishThread",
+            "Beyond.Gameplay.Actions.ActionBase::m_nextID",
+            "Beyond.Gameplay.Actions.ActionBase::m_reservedID",
+            "Beyond.Gameplay.Actions.ActionBase::m_delayToNext",
+            "Beyond.Gameplay.Actions.ActionBase::m_delayToNextTick",
+            "Beyond.Gameplay.Actions.ActionBase::m_delayToNextTickAllowDeltaTimeZero",
+            "Beyond.Gameplay.Actions.ActionBase::m_extraThreadIDList",
+            "Beyond.Gameplay.Actions.ActionBase::m_waitForExtraUidList"
+          ],
+          "role": "physicalStorage"
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      },
+      "captureScope": "paired-ancestor",
+      "captureCallerHooks": [
+        "patrol.logicTick"
+      ]
+    },
+    {
+      "name": "patrol.actionExecute",
+      "type": "Beyond.Gameplay.Actions.ActionBase",
+      "method": "DoExecute",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "deltaTime",
+          "type": "float"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "action",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "valueRepresentation": "referenceIdentity",
+          "role": "identity"
+        },
+        {
+          "label": "callback",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "readMode": "virtualCallbackPair",
+          "sourceWitness": "patrol",
+          "callbackRole": "actionExecute",
+          "role": "callbackIdentity"
+        },
+        {
+          "label": "actionResultStorage",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Actions.ActionBase",
+          "readMode": "rawBytes",
+          "byteCount": 36,
+          "fieldSpan": [
+            "Beyond.Gameplay.Actions.ActionBase::m_executeResult",
+            "Beyond.Gameplay.Actions.ActionBase::m_finishThread",
+            "Beyond.Gameplay.Actions.ActionBase::m_nextID",
+            "Beyond.Gameplay.Actions.ActionBase::m_reservedID",
+            "Beyond.Gameplay.Actions.ActionBase::m_delayToNext",
+            "Beyond.Gameplay.Actions.ActionBase::m_delayToNextTick",
+            "Beyond.Gameplay.Actions.ActionBase::m_delayToNextTickAllowDeltaTimeZero",
+            "Beyond.Gameplay.Actions.ActionBase::m_extraThreadIDList",
+            "Beyond.Gameplay.Actions.ActionBase::m_waitForExtraUidList"
+          ],
+          "role": "physicalStorage"
+        },
+        {
+          "label": "deltaTime",
+          "argument": "deltaTime",
+          "type": "float",
+          "role": "state",
+          "argumentRepresentation": {
+            "mode": "scalarRegister",
+            "type": "float"
+          }
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      },
+      "captureScope": "paired-ancestor",
+      "captureCallerHooks": [
+        "patrol.logicTick"
+      ]
+    },
+    {
+      "name": "patrol.playRadio",
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "PlayRadio",
+      "returnType": "void",
+      "static": true,
+      "parameters": [
+        {
+          "name": "radioId",
+          "type": "string"
+        },
+        {
+          "name": "fromBegin",
+          "type": "bool"
+        },
+        {
+          "name": "index",
+          "type": "int"
+        },
+        {
+          "name": "noFlushAfterLoading",
+          "type": "bool"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "radioId",
+          "argument": "radioId",
+          "type": "string",
+          "role": "state"
+        },
+        {
+          "label": "fromBegin",
+          "argument": "fromBegin",
+          "type": "bool",
+          "role": "state"
+        },
+        {
+          "label": "index",
+          "argument": "index",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "noFlushAfterLoading",
+          "argument": "noFlushAfterLoading",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      }
+    },
+    {
+      "name": "patrol.stopRadio",
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "StopRadio",
+      "returnType": "void",
+      "static": true,
+      "parameters": [
+        {
+          "name": "radioId",
+          "type": "string"
+        }
+      ],
+      "observationMode": "paired",
+      "fields": [
+        {
+          "label": "radioId",
+          "argument": "radioId",
+          "type": "string",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "bounded Patrol discovery; no full consumer or playback grant",
+      "evidenceBoundary": {
+        "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+        "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+      }
+    }
+  ],
+  "coverageGaps": [
+    "Discovery observes ordinary caller references/scalars/byref outputs and live source-bound callback pairs only. It supplies no Config point-list, conversion-loop or container proof.",
+    "The complete patrol_runtime_capture.json profile remains required after independent Config-list version source closure.",
+    "This phase records selected ordinary named callers; it does not yet cover resource handle/cache/retention operands.",
+    "Complete checkpoint typed values, event tables/registrations, cursor/result/iteration containers and queue source descriptors remain required.",
+    "Virtual callback pairs identify selected targets; their actual authored bodies and normal-return effects need independently reviewed paired targets.",
+    "Radio requests need a separate exact typed-audio bridge, playingID lifecycle and stop/completion coverage; this recipe does not infer playback from timestamps.",
+    "Converter discovery is intentionally unfiltered because the selected named Init body has no direct E8 to this converter target. Actual return address and paired parent must establish the caller join; the complete recipe and semantic evaluator retain their strict Init-to-converter requirement."
+  ],
+  "evidenceBoundary": {
+    "direct": "Paired normal return and bounded guarded stored bytes from selected metadata/source declarations.",
+    "unresolved": "No engine getter, async ownership, unobserved callback effect, controller activation or audible playback is inferred."
+  },
+  "discoveryOnly": true
+}

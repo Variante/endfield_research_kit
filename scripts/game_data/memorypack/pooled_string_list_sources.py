@@ -1,7 +1,8 @@
 """Current selected reference-list wire loop; no concrete provider selection claim."""
 from scripts.game_data.il2cpp.formatter_value_paths import BytesPath
 def flag(g,prefix='803d'):
- cell=g.relative(prefix);g.take('00');return cell
+ # RIP-relative CMP resolves from the complete instruction, including imm8.
+ cell=g.relative(prefix)+1;g.take('00');return cell
 
 
 def list_source(regions,entry,offsets,symbols,*,count=1,new=True,grow=False,count_limit=3):

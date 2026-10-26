@@ -1,303 +1,511 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "methods": [
     [
-      121186,
+      263074,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack",
       "Deserialize",
-      63628000
+      101306096
     ],
     [
-      121187,
+      263075,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack+Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPackFormatter",
       "Deserialize",
-      63627904
+      101306000
     ],
     [
-      107680,
+      248375,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack",
       "Deserialize",
-      53293360
+      85927488
     ],
     [
-      107681,
+      248376,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack+Beyond_Gameplay_Core_TargetSettingsForMemoryPackFormatter",
       "Deserialize",
-      53287776
+      85920784
     ],
     [
-      124921,
+      267025,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack",
       "Deserialize",
-      53279424
+      93456656
     ],
     [
-      124922,
+      267026,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack+Beyond_Gameplay_Core_DirectionSettingsForMemoryPackFormatter",
       "Deserialize",
-      53279328
+      93456560
     ],
     [
-      124934,
+      267038,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack",
       "Deserialize",
-      58692960
+      95689056
     ],
     [
-      124935,
+      267039,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack+Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPackFormatter",
       "Deserialize",
-      58692048
+      95688144
     ],
     [
-      104456,
+      244907,
       "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack",
       "Deserialize",
-      53289456
+      85924928
     ],
     [
-      104457,
+      244908,
       "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack+Beyond_Blackboard_BlackboardDoubleForMemoryPackFormatter",
       "Deserialize",
-      53288512
+      85923808
     ],
     [
-      163271,
+      305884,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPackFormatter",
       "Deserialize",
-      59819504
+      102470176
     ]
   ],
   "codeWindows": [
     {
-      "startRva": 63627904,
-      "endRva": 63627997,
-      "sha256": "DBD20529043DA37C0232DE55D24D78C2920CA224C1B427F85DA677B8DD1D9186",
-      "boundary": "formatter forwarding"
+      "startRva": 101306096,
+      "endRva": 101306815,
+      "sha256": "6C8D16DBD5BE2CFEEB056CDBD6A65DB83AF985997B9281A4F2D14ABE446667C4",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 63628000,
-      "endRva": 63628731,
-      "sha256": "F9EB9BCF9634164FCB1DA542A373D00A70D57BD504EE7C2A6C50574B5E6CAB1A",
-      "boundary": "member10 reader"
+      "startRva": 124206862,
+      "endRva": 124206979,
+      "sha256": "84B9DB9F3C677F5378450E84016566A3E597A73E33BC446392F886E3D5C1A4FB",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 53287776,
-      "endRva": 53287869,
-      "sha256": "850549E309D732C154CB0F40C321A5EEEA9F7BA65BD7038827F34F9E48325252",
-      "boundary": "member13 formatter forwarding"
+      "startRva": 101306000,
+      "endRva": 101306093,
+      "sha256": "150DE9328F0F74A38E03655062C4529B24F75C9891460AD41C49D82AB4F080B8",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 53293360,
-      "endRva": 53295188,
-      "sha256": "C0AA0DB837E00EB2298D8600ABC3F23904479CE37630CA60A71C4D7EF06AB42B",
-      "boundary": "member13 normal and null paths; includes chained unwind regions"
+      "startRva": 85927488,
+      "endRva": 85927902,
+      "sha256": "EFB6D56DAC0587432601EACBDADEE680A6A2E8E898987F074362FBA45CBBB9C4",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 53279328,
-      "endRva": 53279421,
-      "sha256": "428C3E1EB17350899D91303A0900DBF02E2359DDFA6D07F572661D884D436492",
-      "boundary": "member8 formatter forwarding"
+      "startRva": 85927902,
+      "endRva": 85929289,
+      "sha256": "0599C4B93A3996651F5FFC414528A4D25C8A6B6A3F8F401F3CD2329421F0960D",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 53279424,
-      "endRva": 53280676,
-      "sha256": "0029D1B2192C25893775BDF87EE45D19EE147A2442EF38756B62CEEB8394AE7C",
-      "boundary": "member8 normal and null paths; includes chained unwind regions"
+      "startRva": 85929289,
+      "endRva": 85929328,
+      "sha256": "97F67EB18353AC424333B7D0D6BBEEA2B21BE98A05055832EB5FC01A1D75B0BB",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 58692048,
-      "endRva": 58692947,
-      "sha256": "82BF1369521E47CE7574A62F696D7D19337C2836187F5EBCE831A6F338F40D6B",
-      "boundary": "member3 formatter with inlined reader"
+      "startRva": 85929328,
+      "endRva": 85929334,
+      "sha256": "4D3550E31CE1875F6ED94AA72F6AC449E9E4451A843B0870EF9A54D73C7597C8",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 58692960,
-      "endRva": 58693823,
-      "sha256": "120CC0DC531C387CD52859001D1129B34A781DC0583F4ACC58CD15470FEC9674",
-      "boundary": "member3 nested reader"
+      "startRva": 85929334,
+      "endRva": 85929396,
+      "sha256": "A9D06DBF3A2FCA048617E089BE789B7510D1CFF437BB00F1512800C452509E6F",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 53288512,
-      "endRva": 53289443,
-      "sha256": "F1954695170F9BB0B3081EC3497193A3953437902DAEE6D8AA640A7241A02152",
-      "boundary": "scalar-payload formatter with inlined reader"
+      "startRva": 85920784,
+      "endRva": 85920877,
+      "sha256": "5B0566057A7821EBC6A9CC3E6B6BC02BAECAA1FC21FD8C6D45B3C6F1E2A44102",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 53289456,
-      "endRva": 53290276,
-      "sha256": "174683D4F43FBC148CF3F8DE22FB03CFC13B98A33880F63B450ACBFB29C5A154",
-      "boundary": "scalar-payload normal and null paths; includes chained unwind regions"
+      "startRva": 93456656,
+      "endRva": 93456900,
+      "sha256": "8062F90117FDDEAD9D79A99E6E8D7669FFC3893CC8E1B6FE19B42D9C6B713E64",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 59819504,
-      "endRva": 59821652,
-      "sha256": "0ACBFF4AEC2A4CEBAAC2927817FF8D07D7196974911186539E5F64DC984C9850",
-      "boundary": "finder union reader code, before its separate switch table"
+      "startRva": 93456900,
+      "endRva": 93457462,
+      "sha256": "46467D495F051A8C3DE0542801AD310C9930F3974CEC760F76CFA3AC7231AF2B",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     },
     {
-      "startRva": 82204242,
-      "endRva": 82204254,
-      "sha256": "7612728629BCABB7042655F9B9F594214BE2857AC641FD364B50F1589BC88779",
-      "boundary": "finder high non-FA byte branch clears output; FF is one accepted case"
+      "startRva": 93457462,
+      "endRva": 93457881,
+      "sha256": "A772501A1B2E7716ACA73097E61162DB8681CEF743042F710D69DD5B6DFC6E3E",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 93457881,
+      "endRva": 93457914,
+      "sha256": "34AC55327E08079A6540526F6B2FDD65CD6BC98CD093DFEFF2C07B301110C4E5",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 93457914,
+      "endRva": 93457968,
+      "sha256": "8BCFDB1B9A3EC6AF93BBB2B6C5A0C6DB72ADB478DE65F5163946D1DACEC6F9EB",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 93457968,
+      "endRva": 93457974,
+      "sha256": "EE49E5E0287A8073F27E3EC45709885B080BBB38FDD2EA20E91B30A7FF226B88",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 93457974,
+      "endRva": 93457980,
+      "sha256": "8F4ABB9DF7EF84460B682E470CED6FF7044680042053AB8A188A96644A0F9642",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 93457980,
+      "endRva": 93458036,
+      "sha256": "3751232EB593BAE1DEDBCBEB53E671CAFBF151FDF59F40CF9A5589F237429E4A",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 93456560,
+      "endRva": 93456653,
+      "sha256": "A2F33B949F2169063B783D66CBFA88AC644E5BF9FF19FA3C1452B2CF20C9DABF",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 95689056,
+      "endRva": 95689919,
+      "sha256": "291FA539E524601171CB0EBFBF698522CC90BCF262BB959D9A14910E86752FBD",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 95688144,
+      "endRva": 95689043,
+      "sha256": "C82932EB9D7C0A212333EB41283BAE65CD222BDBD9C2DB0063EDA88EA48170B6",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85924928,
+      "endRva": 85925233,
+      "sha256": "092AC4D26B1BB10D7B302C5598F54F3B58E26DC94BBBA8A5F19F4EC774609335",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925233,
+      "endRva": 85925626,
+      "sha256": "B7E09FE0E0CCC33756358E4A3BB2698BCF87763B1CF23CCF6233F20ED9BC9A87",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925626,
+      "endRva": 85925778,
+      "sha256": "00ED89B38405E02233E863D9E9B4299AF91F24FF063153335E6D9C37531751D6",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925778,
+      "endRva": 85925809,
+      "sha256": "005044CA7B5DD6C60CC6DA4B328820F0C4BB1B6D0BA6089A719BCA13B03AA5E5",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925809,
+      "endRva": 85925821,
+      "sha256": "B17011F639ED08EA7452E8018399A2D565D4D2885BD8D12771E865695CF9619D",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925821,
+      "endRva": 85925827,
+      "sha256": "F07568FC3D09F9916F8A0EFF8BCA83AA89129C4A974445A5BFC4388688763868",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925827,
+      "endRva": 85925833,
+      "sha256": "AA5901B4BE6E9B58EC795A2750A13C40C02B17FF4D12D563CBE34285368A2759",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85925833,
+      "endRva": 85925889,
+      "sha256": "3697245632E26F389C097DA01BC9183E81BDDBF010DB92A6A4CF310FCF56C1F7",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85923808,
+      "endRva": 85924101,
+      "sha256": "E769F0ED902D6B825F5DEBDA446889E11DC49CCB0009C6BC4AF991551DFF8035",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85924101,
+      "endRva": 85924554,
+      "sha256": "49A5984FA7A1BAD8221AD4CB7CCFA670FEFD8F8CD24B475D97588FA6F7077168",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85924554,
+      "endRva": 85924706,
+      "sha256": "A0901FC8E265B6458BF0A9AE8BB707108F7540DAC99051D605FCD75E4BA320FE",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85924706,
+      "endRva": 85924731,
+      "sha256": "42798B72C3D8831787159548A19D19A6559487EE750DFA381348EBFA4400F044",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85924731,
+      "endRva": 85924737,
+      "sha256": "06610520DF3B1D2273D091DD8EE6DA40FBCB73F5A4EA415115383BE515BFE1F8",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 85924737,
+      "endRva": 85924799,
+      "sha256": "6941B54C1ACF12233258C2360B1DE843F8FB9DC0D1750E0B5DFE1B33A7ADD43C",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 102470176,
+      "endRva": 102470226,
+      "sha256": "904C4F7A56DDB1DE6E75491557FD2357A268DF850C5DCA1BA54F24462E1A5342",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 102470226,
+      "endRva": 102472852,
+      "sha256": "30AE8553CEDAF673925F83EE6795696468FE362543F315FF2222AFBBFE3929DE",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 102472852,
+      "endRva": 102473253,
+      "sha256": "1C26AFEB54A2670324B9E14A267023B2D570AED7B4E2D0968A21DC064D91DD71",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 102473253,
+      "endRva": 102483936,
+      "sha256": "61F71B041D7533E11E13D0677FBFF7E882BA67B4B0884095FCC6A1383E388195",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 97246672,
+      "endRva": 97246873,
+      "sha256": "5B5A5208FF92C430FD7CBB83FE72D39CDC638B66952892352D5FB912A97CA20F",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
+    },
+    {
+      "startRva": 123746022,
+      "endRva": 123746118,
+      "sha256": "8F0511CD0CCF90D6AF04B3F81D73FA3190245ED14AED628CE3668E45AE4215C9",
+      "boundary": "complete current role unwind range",
+      "requiredRoleContract": "buff_ec_profiles_native.json"
     }
   ],
   "nestedContexts": [
     {
-      "instructionRva": 63628369,
-      "instructionHex": "488B15B0323B09",
-      "cellVa": 6660953864,
-      "usageRawHex": "93EB12C000000000",
-      "methodSpecIndex": 619977,
+      "instructionRva": 101306465,
+      "instructionHex": "488B1598666A0A",
+      "cellVa": 6718502656,
+      "usageRawHex": "27BA13C000000000",
+      "methodSpecIndex": 646419,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16792
+        15972
       ],
-      "argumentRawHex": "28280000000000000000120000000000",
-      "typeDefinition": 10280,
+      "argumentRawHex": "EF290000000000000000120000000000",
+      "typeDefinition": 10735,
       "typeName": "Beyond.Gameplay.Core.TargetSettings",
       "generic": null
     },
     {
-      "instructionRva": 63628541,
-      "instructionHex": "488B151C613409",
-      "cellVa": 6660507168,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 101306629,
+      "instructionHex": "488B15DC616D0A",
+      "cellVa": 6718698216,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble",
       "generic": null
     },
     {
-      "instructionRva": 53293628,
-      "instructionHex": "488B35A569DB09",
-      "cellVa": 6661118952,
-      "usageRawHex": "D1EA12C000000000",
-      "methodSpecIndex": 619880,
+      "instructionRva": 85927756,
+      "instructionHex": "488B35DD904E0B",
+      "cellVa": 6718076976,
+      "usageRawHex": "59B913C000000000",
+      "methodSpecIndex": 646316,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        14417
+        13538
       ],
-      "argumentRawHex": "2A280000000000000000120000000000",
-      "typeDefinition": 10282,
+      "argumentRawHex": "F1290000000000000000120000000000",
+      "typeDefinition": 10737,
       "typeName": "Beyond.Gameplay.Core.DirectionSettings",
       "generic": null
     },
     {
-      "instructionRva": 53294393,
-      "instructionHex": "488B159865DC09",
-      "cellVa": 6661184216,
-      "usageRawHex": "07EC12C000000000",
-      "methodSpecIndex": 620035,
+      "instructionRva": 85928521,
+      "instructionHex": "488B15A0F14E0B",
+      "cellVa": 6718102512,
+      "usageRawHex": "9DBA13C000000000",
+      "methodSpecIndex": 646478,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17124
+        16303
       ],
-      "argumentRawHex": "00280000000000000000120000000000",
-      "typeDefinition": 10240,
+      "argumentRawHex": "C4290000000000000000120000000000",
+      "typeDefinition": 10692,
       "typeName": "Beyond.Gameplay.Core.Selector+SelectorData",
       "generic": null
     },
     {
-      "instructionRva": 53280084,
-      "instructionHex": "488B35AD19D909",
-      "cellVa": 6660953864,
-      "usageRawHex": "93EB12C000000000",
-      "methodSpecIndex": 619977,
+      "instructionRva": 93457316,
+      "instructionHex": "488B35552BE20A",
+      "cellVa": 6718502656,
+      "usageRawHex": "27BA13C000000000",
+      "methodSpecIndex": 646419,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16792
+        15972
       ],
-      "argumentRawHex": "28280000000000000000120000000000",
-      "typeDefinition": 10280,
+      "argumentRawHex": "EF290000000000000000120000000000",
+      "typeDefinition": 10735,
       "typeName": "Beyond.Gameplay.Core.TargetSettings",
       "generic": null
     },
     {
-      "instructionRva": 53280415,
-      "instructionHex": "488B156218D909",
-      "cellVa": 6660953864,
-      "usageRawHex": "93EB12C000000000",
-      "methodSpecIndex": 619977,
+      "instructionRva": 93457647,
+      "instructionHex": "488B150A2AE20A",
+      "cellVa": 6718502656,
+      "usageRawHex": "27BA13C000000000",
+      "methodSpecIndex": 646419,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16792
+        15972
       ],
-      "argumentRawHex": "28280000000000000000120000000000",
-      "typeDefinition": 10280,
+      "argumentRawHex": "EF290000000000000000120000000000",
+      "typeDefinition": 10735,
       "typeName": "Beyond.Gameplay.Core.TargetSettings",
       "generic": null
     },
     {
-      "instructionRva": 58693212,
-      "instructionHex": "488B350D718409",
-      "cellVa": 6660818800,
-      "usageRawHex": "13EC12C000000000",
-      "methodSpecIndex": 620041,
+      "instructionRva": 95689308,
+      "instructionHex": "488B35A54BB40A",
+      "cellVa": 6717728264,
+      "usageRawHex": "A9BA13C000000000",
+      "methodSpecIndex": 646484,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17164
+        16352
       ],
-      "argumentRawHex": "B1270000000000000000120000000000",
-      "typeDefinition": 10161,
+      "argumentRawHex": "6C290000000000000000120000000000",
+      "typeDefinition": 10604,
       "typeName": "Beyond.Gameplay.Core.Selector+Finder+Data",
       "generic": null
     },
     {
-      "instructionRva": 58693449,
-      "instructionHex": "488B1548D68209",
-      "cellVa": 6660713880,
-      "usageRawHex": "D5A412C000000000",
-      "methodSpecIndex": 610922,
+      "instructionRva": 95689545,
+      "instructionHex": "488B1580C3B10A",
+      "cellVa": 6717562576,
+      "usageRawHex": "E57013C000000000",
+      "methodSpecIndex": 637042,
       "methodSpec": [
-        428462,
+        550346,
         -1,
-        62702
+        64841
       ],
-      "argumentRawHex": "5802258D010000000000150000000000",
-      "typeDefinition": 37521,
+      "argumentRawHex": "E0859090010000000000150000000000",
+      "typeDefinition": 68941,
       "typeName": "System.Collections.Generic.List`1",
       "generic": {
-        "carrierRawHex": "3878288D01000000903CF08A0100000000000000000000000000000000000000",
-        "baseRawHex": "91920000000000000000120000000000",
-        "elementInstantiationIndex": 17184,
+        "carrierRawHex": "C0AD859001000000A8C42F8E0100000000000000000000000000000000000000",
+        "baseRawHex": "4D0D0100000000000000120000000000",
+        "elementInstantiationIndex": 16375,
         "elementArguments": [
-          "F8270000000000000000120000000000"
+          "BA290000000000000000120000000000"
         ]
       }
     },
     {
-      "instructionRva": 58693577,
-      "instructionHex": "488B15B8D58209",
-      "cellVa": 6660713864,
-      "usageRawHex": "D7A412C000000000",
-      "methodSpecIndex": 610923,
+      "instructionRva": 95689673,
+      "instructionHex": "488B1518C3B10A",
+      "cellVa": 6717562600,
+      "usageRawHex": "E77013C000000000",
+      "methodSpecIndex": 637043,
       "methodSpec": [
-        428462,
+        550346,
         -1,
-        62703
+        64842
       ],
-      "argumentRawHex": "B802258D010000000000150000000000",
-      "typeDefinition": 37521,
+      "argumentRawHex": "10869090010000000000150000000000",
+      "typeDefinition": 68941,
       "typeName": "System.Collections.Generic.List`1",
       "generic": {
-        "carrierRawHex": "3878288D01000000903BF08A0100000000000000000000000000000000000000",
-        "baseRawHex": "91920000000000000000120000000000",
-        "elementInstantiationIndex": 17200,
+        "carrierRawHex": "C0AD85900100000048C42F8E0100000000000000000000000000000000000000",
+        "baseRawHex": "4D0D0100000000000000120000000000",
+        "elementInstantiationIndex": 16392,
         "elementArguments": [
-          "01280000000000000000120000000000"
+          "C5290000000000000000120000000000"
         ]
       }
     }
@@ -351,5 +559,6 @@
       "scalar32"
     ]
   },
-  "boundary": "Selected normal consumer paths and exact static type joins only. Chained unwind regions are retained as reviewed code windows, not independent complete functions. Delegated formatter selection, source carrier/segment replacement, decoder parity, field meaning and runtime EOF are unresolved. The maintained finite selector extensions and target/direction recursion are separately bounded. Direction retains both exact TargetSettings callsites; target nesting is limited before consuming a non-null header. Null direction-target ranges remain unchanged. Runtime direction/target meaning remains unresolved."
+  "boundary": "Selected normal consumer paths and exact static type joins only. Chained unwind regions are retained as reviewed code windows, not independent complete functions. Delegated formatter selection, source carrier/segment replacement, decoder parity, field meaning and runtime EOF are unresolved. The maintained finite selector extensions and target/direction recursion are separately bounded. Direction retains both exact TargetSettings callsites; target nesting is limited before consuming a non-null header. Null direction-target ranges remain unchanged. Runtime direction/target meaning remains unresolved.",
+  "roleContract": "buff_ec_profiles_native.json"
 }

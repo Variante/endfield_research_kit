@@ -155,7 +155,7 @@ def validate_current_native_contract(*, children: dict[str, Any], gameassembly: 
     for key, record in contract['records'].items():
         path = CONTRACTS_DIR / record['sourceContract']; source = json.loads(path.read_bytes())
         audits[key] = buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-                                           image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+                                           image.modules, image.owners, source=str(gate.gameassembly), contract_path=path, native_image=image)
         proved.update(named.validate_named_records(image, source, {key: record}, label=LABEL, fail=fail))
     bindings = _bindings(contract, runtime)
     routes, audit = load_action_routes(gameassembly=gate.gameassembly, metadata=gate.metadata)

@@ -21,6 +21,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.derived_schema import resolve_routes
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineFiveMember"
@@ -194,7 +195,7 @@ def validate_current_native_contract(
         raise ValueError(f"{LABEL}.native:switch-table={tag:#x}")
     image.validate_dispatcher(dispatcher, label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     if contract.get("primitiveReadContract"):
         primitive, _ = read_reviewed_contract(
             CONTRACTS_DIR / contract["primitiveReadContract"],
@@ -205,7 +206,7 @@ def validate_current_native_contract(
                 or [row["sourceTargetRva"] for row in contract["orderedSourceReads"][:4]]
                 != [row["sourceTargetRva"] for row in primitive["orderedSourceReads"][:4]]):
             raise ValueError(f"{LABEL}.native:primitive-source-join={tag:#x}")
-        image.check_windows(primitive["codeWindows"], label=LABEL)
+        check_formatter_windows(image, primitive, label=LABEL)
     image.check_instruction_windows([
         [contract["memberCountInstruction"]["rva"], contract["memberCountInstruction"]["hex"]]
     ], label=LABEL)
@@ -294,9 +295,9 @@ def validate_current_native_contract(
         ):
             raise ValueError(f"{LABEL}.native:target-generic-type")
         target_profile = json.loads((CONTRACTS_DIR / contract["targetProfileContract"]).read_bytes())
-        if target_profile.get("schemaVersion") != 1:
+        if (target_profile.get("schemaVersion") != 1 and not is_role_projection(target_profile)):
             raise ValueError(f"{LABEL}.native:target-profile-schema")
-        image.check_windows(target_profile["codeWindows"], label=f"{LABEL}.targetProfile")
+        check_formatter_windows(image, target_profile, label=f"{LABEL}.targetProfile")
     routes, resolver, audit = resolve_routes(
         gameassembly=gate.gameassembly, metadata=gate.metadata,
     )

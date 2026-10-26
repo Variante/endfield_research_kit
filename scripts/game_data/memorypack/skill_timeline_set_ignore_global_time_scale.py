@@ -26,6 +26,7 @@ from scripts.game_data.memorypack.corpus_gate import (
     _atomic_write_json,
     _guard_output_path,
 )
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineSetIgnoreGlobalTimeScale"
@@ -167,7 +168,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
         raise ValueError(f"{LABEL}.native:switch-table")
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     count = contract["memberCountInstruction"]
     image.check_instruction_windows([[count["rva"], count["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -180,18 +181,18 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     targets.add(contract["memberHeaderSourceCall"]["sourceTargetRva"])
     windows = [row for row in primitive.get("codeWindows", ())
                if row.get("startRva") in targets]
-    if primitive.get("schemaVersion") != 1 or {row["startRva"] for row in windows} != targets:
+    if (primitive.get("schemaVersion") != 1 and not is_role_projection(primitive)) or {row["startRva"] for row in windows} != targets:
         raise ValueError(f"{LABEL}.native:primitive-source-drift")
     image.check_windows(windows, label=LABEL)
     target = json.loads((CONTRACTS_DIR / contract["nestedProfileContract"]).read_bytes())
-    if (target.get("schemaVersion") != 1
+    if ((target.get("schemaVersion") != 1 and not is_role_projection(target))
             or len(target.get("anonymousReadOrder", {}).get("member13", ())) != 13):
         raise ValueError(f"{LABEL}.native:target-profile-drift")
     buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["nestedProfileContract"],
-    )
+     native_image=image)
     reader_window = contract["codeWindows"][0]
     previous = -1
     for call in (contract["memberHeaderSourceCall"], *contract["orderedSourceReads"]):

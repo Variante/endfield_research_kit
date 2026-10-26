@@ -2,6 +2,7 @@
 import math,struct
 from scripts.game_data.string_pool import resolve_string_pool_index
 from scripts.game_data.levelscript_pos_rot_native import load_pos_rot_contract
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 
 class PosRotDecodeError(ValueError):pass
 
@@ -37,7 +38,7 @@ def parameter(data,offset,*,strings=None):
  return dict(value=value,idRef=id_ref,paramSource=source,path=path),offset+12
 
 def _gate(game_root):
- _,audit=load_pos_rot_contract(game_root=game_root)
+ _,audit=validate_native(load_pos_rot_contract,game_root=game_root,include_fact=False)
  if audit.get('status')!='validated' or audit.get('parentProofStatus')!='selected-generated-route':raise PosRotDecodeError(f"PosRot.native:{audit.get('status')},check={audit.get('failedCheck',audit.get('failedGate'))},detail={audit.get('detail','')}")
 
 def decode_pos_rot(data,offset,*,game_root=None):

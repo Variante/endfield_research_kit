@@ -4,6 +4,9 @@ from scripts.game_data.codecs.levelscript.param_graph import Reader as GraphRead
 from scripts.game_data.levelscript_interactive_native import validate
 class LevelInteractiveCodecError(ValueError):pass
 class Reader(GraphReader):
+ def key_value(self,field):
+  start=self.offset;value=super().key_value(field)
+  return dict(value,startOffset=start,endOffset=self.offset)if value is not None else None
  def boolean(self,field):
   start=self.offset;value=self.number('<B',field)
   if value not in(0,1):raise ParamGraphDecodeError(f'{field}:invalid-bool,offset={start},actual={value}')
@@ -26,6 +29,11 @@ class Reader(GraphReader):
    if key in seen:raise ParamGraphDecodeError(f'{child}:duplicate-component-key,offset={self.offset-4},actual={key}')
    seen.add(key);entries.append(dict(componentTypeRaw=key,properties=self.items(child+'.properties',self.key_value)))
   return dict(status='present',count=count,entries=entries,startOffset=start,endOffset=self.offset)
+ def condition(self,field):
+  """Historical/sparse profile stays FF-only; current owners override this."""
+  at=self.offset;marker=self.number('<B',field)
+  if marker!=255:raise ParamGraphDecodeError(f'{field}:current-positive-condition-source-unproved,offset={at},actual={marker},expected=255')
+  return None
  def record(self,field):
   start=self.offset
   if not self.member(field,25):return None
@@ -36,9 +44,8 @@ class Reader(GraphReader):
   for name in('position','rotation','scale'):row[name]={axis:self.single(field+'.'+name+'.'+axis)for axis in'xyz'}
   row['sendDieEvent']=self.boolean(field+'.sendDieEvent');row['componentProperties']=self.components(field+'.componentProperties');row['globalIntKeyList']=self.null_ints(field+'.globalIntKeyList');row['globalProperties']=self.items(field+'.globalProperties',self.key_value)
   for name in('hideInDialog','isClientOnly','isLocked'):row[name]=self.boolean(field+'.'+name)
-  row['mapIntKeyList']=self.null_ints(field+'.mapIntKeyList');row['mapProperties']=self.items(field+'.mapProperties',self.key_value);row['modelScale']=self.single(field+'.modelScale');at=self.offset;marker=self.number('<B',field+'.progressLockCondition')
-  if marker!=255:raise ParamGraphDecodeError(f'{field}.progressLockCondition:current-positive-condition-source-unproved,offset={at},actual={marker},expected=255')
-  row['progressLockCondition']=None;row['properties']=self.items(field+'.properties',self.key_value);row['endOffset']=self.offset;return row
+  row['mapIntKeyList']=self.null_ints(field+'.mapIntKeyList');row['mapProperties']=self.items(field+'.mapProperties',self.key_value);row['modelScale']=self.single(field+'.modelScale')
+  row['progressLockCondition']=self.condition(field+'.progressLockCondition');row['properties']=self.items(field+'.properties',self.key_value);row['endOffset']=self.offset;return row
 
 def decode_interactive_dictionary(data,cursor,*,strings=None,game_root=None,gameassembly=None,metadata=None):
  reader=Reader(data,cursor,strings,'interactives');start=cursor

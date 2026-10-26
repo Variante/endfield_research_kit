@@ -197,7 +197,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / names[2],
-    )
+     native_image=image)
     if source_audit.get("anonymousReadOrder") != or_source["anonymousReadOrder"]:
         raise ValueError(f"{LABEL}.native:or-source-order")
     origin_plan = [

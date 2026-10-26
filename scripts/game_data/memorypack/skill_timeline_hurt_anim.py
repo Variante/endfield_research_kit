@@ -18,7 +18,9 @@ from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usa
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows
 from scripts.game_data.memorypack.derived_schema import resolve_routes
+from scripts.game_data.memorypack.formatter_native import is_role_projection
 
 
 LABEL = "skillTimelineHurtAnim"
@@ -81,7 +83,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     primitive_windows = [row for row in primitive.get("codeWindows", [])
                          if row.get("startRva") in targets]
     if (
-        primitive.get("schemaVersion") != 1 or target.get("schemaVersion") != 1
+        (primitive.get("schemaVersion") != 1 and not is_role_projection(primitive)) or (target.get("schemaVersion") != 1 and not is_role_projection(target))
         or targets != {row["startRva"] for row in primitive_windows}
         or len(primitive_windows) != 3
         or not target.get("codeWindows")
@@ -91,9 +93,8 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(
-        contract["codeWindows"] + primitive_windows + target["codeWindows"], label=LABEL,
-    )
+    check_formatter_windows(image, target, label=LABEL + '.target')
+    image.check_windows(contract["codeWindows"] + primitive_windows, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]

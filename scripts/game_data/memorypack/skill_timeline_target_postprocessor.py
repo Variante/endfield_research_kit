@@ -1,4 +1,4 @@
-"""Selected-build SkillData TargetPostProcessorAction 0x017B framing.
+"""Selected-build SkillData TargetPostProcessorAction framing.
 
 The selected eleven-member reader stores bounded center, direction, source and
 target selectors plus lists of postprocessor and validator data.  Native
@@ -20,12 +20,15 @@ from scripts.game_data.il2cpp.context import (
 )
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
+from scripts.game_data.memorypack.buff import _ability_action_tag, _ability_action_tag_bytes
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+from scripts.game_data.memorypack.skill_timeline_dependencies import validate_dependencies, read_null_empty_selector_list
 
 
 LABEL = "skillTimelineTargetPostprocessor"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_target_postprocessor_native.json"
-TAG = 0x017B
+TAG_NAME = "Core_TargetPostProcessorAction_Data"
 FIELDS = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "centerPos", "direction", "postProcessorData", "source", "target",
@@ -48,7 +51,7 @@ NESTED = {
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _ = read_reviewed_contract(
         CONTRACT_PATH, schema="endfield.skill-timeline-target-postprocessor-native-contract.v1",
         label=LABEL, status="exact-current-build",
@@ -56,7 +59,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != TAG
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(FIELDS)
         or not isinstance(reads, list) or len(reads) != len(FIELDS)
         or [row.get("memberIndex") for row in reads] != list(range(len(FIELDS)))
@@ -66,7 +69,7 @@ def _contract() -> dict[str, Any]:
         or [row.get("memberIndex") for row in contexts] != list(NESTED)
         or [row.get("elementTypeName", row.get("typeName")) for row in contexts] != list(NESTED.values())
         or [row.get("path") for row in contract.get("dependencies", ())]
-        != ["buff_b2_native.json", "buff_ec_native.json"]
+        != ["skill_selector_list_sources_native.json", "buff_ec_native.json"]
         or bytes.fromhex(contract.get("memberCountInstruction", {}).get("hex", ""))
         != b"\x40\x80\xFE\x0B"
     ):
@@ -74,11 +77,13 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate selected dispatch, eleven calls, and generic arguments."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
+    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"], gameassembly=gameassembly, metadata=metadata)
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
@@ -87,7 +92,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -149,11 +154,8 @@ def validate_current_native_contract() -> dict[str, Any]:
                 raise ValueError(f"{LABEL}.native:generic-list-element")
         else:
             raise ValueError(f"{LABEL}.native:generic-kind")
-    for dependency in contract["dependencies"]:
-        reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
-            raise ValueError(f"{LABEL}.native:dependency-schema")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+    validate_dependencies(image, contract, label=LABEL)
+
     return {"status": "validated", "nativeInputs": expected, "methodIndices": methods,
             "sourceReadCount": len(FIELDS), "nestedContextCount": len(NESTED)}
 
@@ -162,7 +164,7 @@ def decode_target_postprocessor_action(reader: Reader, depth: int, tag: int, wid
     """Consume one finite eleven-member action with bounded selector lists."""
     del depth
     _contract()
-    if tag != TAG or width != 3:
+    if tag != _ability_action_tag(TAG_NAME) or width != len(_ability_action_tag_bytes(TAG_NAME)):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:
@@ -174,10 +176,8 @@ def decode_target_postprocessor_action(reader: Reader, depth: int, tag: int, wid
         reader.take(4, f"TargetPostProcessorAction.{field}.raw4")
     reader.target_profile()
     reader.direction_profile()
-    for _ in range(max(0, reader.count(1, nullable=True))):
-        reader.selector_postprocessor_profile()
+    read_null_empty_selector_list(reader)
     reader.target_profile()
     reader.target_profile()
     reader.byte_payload()
-    for _ in range(max(0, reader.count(1, nullable=True))):
-        reader.selector_validator_profile()
+    read_null_empty_selector_list(reader)

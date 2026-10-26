@@ -7,6 +7,15 @@ from scripts.game_data.il2cpp.integer_source_operands import is_unknown_instruct
 
 LABEL='consumerControl'
 
+def _register_jump(row,*,label,rex_forms,allow_rsp):
+    raw=bytes.fromhex(row['bytes']);rex=raw[0]if len(raw)==3 and raw[0]in rex_forms else 0
+    opcode=raw[1:]if rex else raw
+    if len(opcode)!=2 or opcode[0]!=0xff or not 0xe0<=opcode[1]<=0xe7:raise ValueError(LABEL+'.'+label+'-bytes')
+    register=('rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi','r8','r9','r10','r11','r12','r13','r14','r15')[(opcode[1]&7)+(8 if rex&1 else 0)]
+    if (register=='rsp'and not allow_rsp)or row['text']!='jmp '+register:raise ValueError(LABEL+'.'+label+'-value')
+    return register
+
+
 def consumer_transfer(row,*,computed_jump_targets=None,tail_exits=None):
     at=int(row['va'],16);computed_jump_targets=computed_jump_targets or {};tail_exits=tail_exits or {}
     if at in computed_jump_targets and at in tail_exits:raise ValueError(LABEL+'.computed-tail-overlap')
@@ -14,11 +23,8 @@ def consumer_transfer(row,*,computed_jump_targets=None,tail_exits=None):
         raw=bytes.fromhex(row['bytes']);spec=tail_exits[at]
         if not isinstance(spec,dict):raise ValueError(LABEL+'.tail-exit-shape')
         if set(spec)=={'register'}:
-            opcode=raw[1:] if len(raw)==3 and raw[0] in (0x40,0x41,0x48,0x49) else raw
-            rex=raw[0] if len(raw)==3 else 0
-            if len(opcode)!=2 or opcode[0]!=0xff or not 0xe0<=opcode[1]<=0xe7:raise ValueError(LABEL+'.tail-register-bytes')
-            register=('rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi','r8','r9','r10','r11','r12','r13','r14','r15')[(opcode[1]&7)+(8 if rex&1 else 0)]
-            if register=='rsp' or spec['register']!=register or row['text']!='jmp '+register:raise ValueError(LABEL+'.tail-register-value')
+            register=_register_jump(row,label='tail-register',rex_forms=(0x40,0x41,0x48,0x49),allow_rsp=False)
+            if spec['register']!=register:raise ValueError(LABEL+'.tail-register-value')
             return dict(kind='tailExit',register=register)
         if set(spec)=={'target'}:
             flow=control_transfer(row)
@@ -26,10 +32,7 @@ def consumer_transfer(row,*,computed_jump_targets=None,tail_exits=None):
             return dict(flow,kind='tailExit')
         raise ValueError(LABEL+'.tail-exit-shape')
     if at in computed_jump_targets:
-        raw=bytes.fromhex(row['bytes'])
-        if len(raw)!=2 or raw[0]!=0xff or not 0xe0<=raw[1]<=0xe7:raise ValueError(LABEL+'.computed-register-jump')
-        register=('rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi')[raw[1]-0xe0]
-        if row['text']!='jmp '+register:raise ValueError(LABEL+'.computed-register-jump-text')
+        register=_register_jump(row,label='computed-register-jump',rex_forms=(0x41,0x49),allow_rsp=True)
         return dict(kind='computedJump',register=register)
     return control_transfer(row)
 

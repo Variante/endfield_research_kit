@@ -1,4 +1,11 @@
-"""Authenticate the selected stored MissionCondition comparison offline."""
+"""Authenticate the selected stored MissionCondition comparison offline.
+
+Complete declared unwind families and sparse instruction/branch joins bind the
+query, vector carrier, State/IsSame getters, equality selector and changed flag.
+Replacement null-resume and zero-vector carrier paths have explicit checks.
+The proof is conditional on normal returns and the selected stored-reader
+paths; provider/cache ownership, live values and runtime truth remain unresolved.
+"""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -27,7 +34,7 @@ from scripts.game_data.corpus_common import atomic_write_text
 from scripts.repo_paths import REPO_ROOT
 
 CONTRACT=CONTRACTS_DIR / 'dynamic_mission_condition_consumers_native.json'
-SCHEMA='endfield.dynamic-mission-condition-consumers-native-contract.v3'
+SCHEMA='endfield.dynamic-mission-condition-consumers-native-contract.v4'
 
 
 def _require(condition,check,expected,actual):
@@ -105,6 +112,16 @@ def _composed_decoder(mapper):
     class ByteSubset:
         def decode_one_x64(self,raw,offset,start_va):
             at=offset;rex=0
+            if raw[offset:offset+1]==b'\x34':
+                _require(offset+2<=len(raw),'byte-xor-truncated','XOR AL,imm8',raw[offset:].hex())
+                immediate=raw[offset+1];stop=offset+2
+                return {'offset':offset,'va':hex(start_va+offset),'bytes':raw[offset:stop].hex(' '),
+                    'text':f'xor al, 0x{immediate:x}',
+                    'byteLogicalOperation':{'operation':'xor','destinationRegister':'al','parentRegister':'rax',
+                        'bits':8,'bitOffset':0,'preservesOtherParentBits':True,'zeroExtendsTo64':False,
+                        'sourceRegister':None,'immediateWord':immediate,'memoryReadBytes':0,'memoryWriteBytes':0,
+                        'clearsFlags':['CF','OF'],'undefinedFlags':['AF'],'writesResultFlags':['SF','ZF','PF']},
+                    'write':{'register':'al','value':'modified low byte; other parent bits preserved'}},stop
             if 0<=at<len(raw) and 0x40<=raw[at]<=0x4f:rex=raw[at];at+=1
             if not rex&0x0a and raw[at:at+1]==b'\x22':
                 _require(at+2<=len(raw),'byte-and-truncated','complete register ModRM',raw[offset:].hex())
@@ -183,118 +200,260 @@ def _provider_local_store_check(row):
     _require(offset+width<=127 or offset>=131,'provider-local-overlap','store disjoint from RBP+127..130',row)
 
 
-def _check_query_flow(raw,rva,pins,decode):
-    rows=_instruction_partition(raw,rva,decode)
-    _require(pins['callOffset']==112 and pins['contextLoadOffset']==97,
-             'query-context-call-slots','same adjacent selected dictionary request slots',
-             (pins['callOffset'],pins['contextLoadOffset']))
-    probes={22:'418BF80FB7F2488BD9',61:'488B4B284885C9746F',77:'448BC70FB7D6',
-        88:'488B4B384885C97454',104:'4C8D4424308B5008',117:'84C074388B442430',
-        125:'488B5C2450488B7424584883C4405FC3',177:'33C0EBC8',186:'CC'}
-    for at,expected in probes.items():
-        value=bytes.fromhex(expected)
-        _require(raw[at:at+len(value)]==value,'query-flow-'+str(at),expected,raw[at:at+len(value)].hex())
-    _require(len(raw)==187,'query-primary-extent',187,len(raw))
-    for at in (48,83,112,148,160,181):_direct_call_boundary(rows,at,'query-call-'+str(at))
-    for register in ('rbx','rdi'):
-        _cfg_preserved(rows,rva,61,{121,177},register,{83,112},{68,95})
-    for start,end,register,label in ((125,140,'rax','return-frame'),(88,109,'rax','opaque-key-carrier'),
-        (65,83,'rcx','lookup-receiver'),(92,112,'rcx','dictionary-receiver'),(109,112,'r8','output-pointer')):
-        _preserved_interval(rows,start,end,register,set(),'query-'+label)
-    _require(pins['contextLoadRawHex']==raw[97:104].hex().upper(),'query-call-context',pins['contextLoadRawHex'],raw[97:104].hex())
-    return {'dictionary':'System.Collections.Generic.Dictionary<System.Int32,System.Int32>',
+def _program_from_fragments(base,fragments,decode):
+    """Decode each owned range separately; never fill sparse gaps with bytes."""
+    _require(bool(fragments),'family-empty','nonempty complete family',fragments)
+    rows=[];chunks={};contiguous=bytearray();cursor=base;previous_end=None
+    for fragment in fragments:
+        start=fragment['startRva'];raw=bytes.fromhex(fragment['rawHex'])
+        _require(start not in chunks and raw,'family-range','unique nonempty fragment',start)
+        _require(previous_end is None or previous_end<=start,'family-range-overlap','sorted disjoint byte ranges',(previous_end,start))
+        previous_end=start+len(raw)
+        chunks[start]=raw
+        for instruction in _instruction_partition(raw,start,decode):
+            row=dict(instruction);row['offset']+=start-base;rows.append(row)
+        if start==cursor:contiguous.extend(raw);cursor+=len(raw)
+    rows.sort(key=lambda row:row['offset']);by={row['offset']:row for row in rows}
+    _require(len(by)==len(rows),'family-overlap','one owner per instruction',base)
+    for row in rows:
+        at=row['offset'];raw=bytes.fromhex(row['bytes']);mnemonic=row['text'].split()[0]
+        if mnemonic.startswith('j'):
+            target=_branch_target(row,base)
+            _require(target in by,'family-branch-escape','owned instruction start',(at,target))
+        if mnemonic not in ('jmp','ret','int3'):
+            _require(at+len(raw) in by,'family-fallthrough-escape','owned instruction start',row)
+    return {'base':base,'raw':bytes(contiguous),'rows':rows,'by':by,'fragments':fragments}
+
+
+def _branch_target(row,base):
+    match=re.fullmatch(r'j[a-z]+ 0x([0-9a-f]+)',row['text'])
+    _require(match is not None,'direct-branch','decoded direct jump',row)
+    return int(match.group(1),16)-base
+
+
+def _family_program(image,method,pins,decode):
+    family=json.loads(json.dumps(image.unwind_index.family(method['rva'])))
+    def same(expected,actual,path):
+        if isinstance(expected,dict) and isinstance(actual,dict):
+            _require(set(expected)==set(actual),path+'-keys',sorted(expected),sorted(actual))
+            for key in sorted(expected):same(expected[key],actual[key],path+'.'+key)
+        elif isinstance(expected,list) and isinstance(actual,list):
+            _require(len(expected)==len(actual),path+'-length',len(expected),len(actual))
+            for index,(left,right) in enumerate(zip(expected,actual)):same(left,right,path+'.'+str(index))
+        else:_require(type(expected) is type(actual) and expected==actual,path,expected,actual)
+    same(pins['unwindFamily'],family,'complete-unwind-family-'+method['method'])
+    declared=pins['codeRanges'];ranges=family['ranges']
+    _require(len(declared)==len(ranges),'family-range-roster',len(ranges),len(declared))
+    fragments=[]
+    for claim,record in zip(declared,ranges):
+        start,end,_=record['runtimeTriple']
+        _require((claim['startRva'],claim['endRva'])==(start,end),'family-code-range',(start,end),claim)
+        raw=image.pe.bytes_at_va(image.pe.image_base+start,end-start)
+        digest=hashlib.sha256(raw).hexdigest().upper()
+        _require(digest==claim['sha256'],'family-code-bytes',claim['sha256'],digest)
+        fragments.append({'startRva':start,'rawHex':raw.hex()})
+    return _program_from_fragments(method['rva'],fragments,decode)
+
+
+def _expect_at(program,at,hex_bytes,label):
+    raw=bytes.fromhex(hex_bytes);by=program['by'];cursor=at
+    while cursor<at+len(raw):
+        _require(cursor in by,'semantic-instruction-start-'+label,'owned complete instruction',cursor)
+        cursor+=len(bytes.fromhex(by[cursor]['bytes']))
+    _require(cursor==at+len(raw),'semantic-instruction-end-'+label,cursor,at+len(raw))
+    actual=b''.join(bytes.fromhex(row['bytes']) for row in program['rows'] if at<=row['offset']<cursor)
+    _require(actual==raw,'semantic-'+label,raw.hex(),actual.hex())
+
+
+def _branch_at(program,at,opcode,target,label):
+    row=program['by'].get(at);prefix=bytes.fromhex(opcode)
+    _require(row is not None and bytes.fromhex(row['bytes']).startswith(prefix) and
+        _branch_target(row,program['base'])==target,'semantic-branch-'+label,(opcode,target),row)
+
+
+def _call_at(program,at,target,label):
+    row=_direct_call_boundary(program['rows'],at,label)
+    raw=bytes.fromhex(row['bytes']);actual=program['base']+at+5+struct.unpack_from('<i',raw,1)[0]
+    _require(actual==target,'semantic-call-'+label,target,actual)
+
+
+def _call_target(program,at,label):
+    row=_direct_call_boundary(program['rows'],at,label);raw=bytes.fromhex(row['bytes'])
+    return program['base']+at+5+struct.unpack_from('<i',raw,1)[0]
+
+
+def _rip_load_cell(program,at,prefix,label):
+    row=program['by'].get(at);raw=bytes.fromhex(row['bytes']) if row else b''
+    _require(len(raw)==7 and raw[:3]==bytes.fromhex(prefix),'rip-load-'+label,prefix,row)
+    return program['base']+at+7+struct.unpack_from('<i',raw,3)[0]
+
+
+def _replacement(program,branch,resume,epilogue,kind):
+    """Authenticate the nullable replacement route, excluding invocation semantics."""
+    entry=_branch_target(program['by'][branch],program['base'])
+    _branch_at(program,branch,'0F85',entry,kind+'-replacement-selection')
+    source='498B81' if kind in ('state','same') else '488B81'
+    row=program['by'].get(entry);raw=bytes.fromhex(row['bytes']) if row else b''
+    _require(len(raw)==7 and raw[:3]==bytes.fromhex(source),'replacement-function-load-'+kind,source,row)
+    slot=struct.unpack_from('<I',raw,3)[0]
+    _expect_at(program,entry+7,'4885C0',kind+'-replacement-null-test')
+    _branch_at(program,entry+10,'0F84',resume,kind+'-replacement-null-resume')
+    if kind in ('state','same'):
+        _expect_at(program,entry+16,'4C8BC2488BD1',kind+'-replacement-arguments')
+        load=program['by'][entry+22];raw=bytes.fromhex(load['bytes'])
+        _require(raw[:3]==bytes.fromhex('498B89') and len(raw)==7 and struct.unpack_from('<I',raw,3)[0]==slot+8,
+                 'replacement-context-'+kind,'same replacement slot plus8',load)
+        call=entry+29
+    else:
+        load=program['by'][entry+16];raw=bytes.fromhex(load['bytes'])
+        _require(raw[:3]==bytes.fromhex('488B89') and len(raw)==7 and struct.unpack_from('<I',raw,3)[0]==slot+8,
+                 'replacement-context-'+kind,'same replacement slot plus8',load)
+        args='4D8BC84C8BC2498BD6' if kind=='update' else '448BCF440FB7C648896C2420488BD3'
+        _expect_at(program,entry+23,args,kind+'-replacement-arguments');call=entry+23+len(bytes.fromhex(args))
+    _expect_at(program,call,'FFD090',kind+'-replacement-call')
+    _branch_at(program,call+3,'E9',epilogue,kind+'-replacement-return')
+    return entry
+
+
+def _check_current_getter(program,field,kind):
+    _expect_at(program,0,'4883EC48',kind+'-frame')
+    root=_rip_load_cell(program,4,'488B05',kind+'-replacement-root')
+    _expect_at(program,11,'4C8B48704D85C9',kind+'-replacement-receiver')
+    _replacement(program,18,24,85,kind)
+    _expect_at(program,24,'0F10410848895C2440F20F1049188B19',kind+'-source-carrier')
+    _rip_load_cell(program,40,'488B0D',kind+'-reader-class')
+    _expect_at(program,47,'0F11442420F20F114C243083B9E000000000',kind+'-source-buffer')
+    _branch_at(program,65,'74',90,kind+'-class-initialization')
+    _expect_at(program,67,'8D53'+bytes([field['offset']]).hex()+'488D4C2420',kind+'-field-address')
+    reader=_call_target(program,75,kind+'-stored-read')
+    _expect_at(program,80,'488B5C24404883C448C3',kind+'-return')
+    auxiliary=_call_target(program,90,kind+'-class-initializer')
+    _branch_at(program,95,'EB',67,kind+'-initialized-reader')
+    return root,reader,auxiliary
+
+
+def _check_current_query(program,pins):
+    _expect_at(program,0,'48895C240848896C24104889742418574883EC40', 'query-frame')
+    _expect_at(program,27,'498BE9418BF80FB7F2488BD9','query-preserved-inputs')
+    _branch_at(program,39,'74',160,'query-context-initialization')
+    root=_rip_load_cell(program,41,'488B05','query-replacement-root')
+    _expect_at(program,48,'488B48704885C9','query-replacement-receiver')
+    _replacement(program,55,61,133,'query')
+    _expect_at(program,61,'488B4B28C7442430000000004885C9','query-lookup-receiver')
+    _branch_at(program,76,'74',154,'query-null-lookup')
+    _rip_load_cell(program,78,'4C8B0D','query-lookup-context')
+    _expect_at(program,85,'448BC70FB7D6','query-same-lookup-arguments')
+    _call_target(program,91,'query-lookup')
+    _expect_at(program,96,'488B4B384885C9','query-dictionary-receiver')
+    _branch_at(program,103,'74',154,'query-null-dictionary')
+    _require(pins['contextLoadOffset']==105 and pins['callOffset']==120,'current-query-context-slots',(105,120),pins)
+    _expect_at(program,112,'4C8D4424308B5008','query-key-and-output')
+    _expect_at(program,125,'84C0','query-success-test')
+    _branch_at(program,127,'74',196,'query-miss')
+    _expect_at(program,129,'8B442430','query-success-output')
+    _expect_at(program,133,'488B5C2450488B6C2458488B7424604883C4405FC3','query-return-frame')
+    _call_target(program,154,'query-null-exception')
+    _expect_at(program,159,'CC','query-exception-terminal')
+    for at in (160,172):
+        _rip_load_cell(program,at,'488D0D','query-initialization-context')
+    _require(_call_target(program,167,'query-init-dictionary')==_call_target(program,179,'query-init-lookup'),
+             'query-shared-context-initializer','same initializer',pins)
+    flag=bytes.fromhex(program['by'][20]['bytes']);written=bytes.fromhex(program['by'][184]['bytes'])
+    _require(len(flag)==7 and flag[:2]==bytes.fromhex('803D') and flag[-1]==0 and
+             len(written)==7 and written[:2]==bytes.fromhex('C605') and written[-1]==1 and
+             20+7+struct.unpack_from('<i',flag,2)[0]==184+7+struct.unpack_from('<i',written,2)[0],
+             'query-context-ready-flag','same RIP-relative byte tested zero and assigned one',(flag.hex(),written.hex()))
+    _branch_at(program,191,'E9',41,'query-initialization-resume')
+    _expect_at(program,196,'33C0','query-miss-zero')
+    _branch_at(program,198,'EB',133,'query-miss-return')
+    for register in ('rbx','rdi','rsi'):
+        _cfg_preserved(program['rows'],program['base'],61,{129,196},register,{91,120},{76,103})
+    for start,end,register,label in ((65,91,'rcx','lookup-receiver'),(100,120,'rcx','dictionary-receiver'),
+        (117,120,'r8','dictionary-output-pointer')):
+        _preserved_interval(program['rows'],start,end,register,set(),'current-query-'+label)
+    _preserved_interval(program['rows'],133,154,'rax',set(),'query-output-return')
+    _preserved_interval(program['rows'],96,117,'rax',set(),'query-key-carrier')
+    return root,{'dictionary':'System.Collections.Generic.Dictionary<System.Int32,System.Int32>',
         'key':'opaque lookup object Int32 at offset8','successReturn':'Int32 output at RSP+48',
-        'missReturn':0,'nullReceiver':'exception helper then int3',
-        'runtimeObserved':False,'keyOwnershipResolved':False}
+        'missReturn':0,'nullReceiver':'exception helper then int3','runtimeObserved':False,'keyOwnershipResolved':False}
 
 
-def _check_comparison_flow(contract,raw,bodies,methods,vector,fields,carriers,decode):
-    partitions={role:_instruction_partition(body,methods[role]['rva'],decode) for role,body in bodies.items()}
-    probes={}
-    for name,row in contract['probes'].items():
-        at=row['offset'];value=bytes.fromhex(row['bytes'])
-        _require(0<=at and value and at+len(value)<=len(raw) and raw[at:at+len(value)]==value,
-            'witness-'+name,value.hex(),raw[at:at+len(value)].hex())
-        probes[name]=value
-    rva=methods['update']['rva'];calls=contract['calls'];owned=contract['ownedAccessorCalls']
-    def target(body,base,at,label):return _relative_call_target(body,base,at,label)
-    for label,at in calls.items():_direct_call_boundary(partitions['update'],at,label)
-    for label,at in owned.items():
-        role='vector' if label.startswith('vector') else 'state' if label.startswith('state') else 'same'
-        _direct_call_boundary(partitions[role],at,'owned-'+label)
-    _require(target(raw,rva,calls['query'],'query')==methods['query']['rva'],'named-value-provider',methods['query']['rva'],target(raw,rva,calls['query'],'query'))
-    for role in ('updatePatch','statePatch','samePatch'):
-        _require(target(raw,rva,calls[role],role)==methods['patchCheck']['rva'],'patch-method-'+role,methods['patchCheck']['rva'],target(raw,rva,calls[role],role))
-    for role,main_call in (('table','vectorTable'),('vector','vectorVector')):
-        _require(target(raw,rva,calls[role],role)==target(bodies['vector'],methods['vector']['rva'],owned[main_call],main_call),
-            'same-generated-helper-'+role,'source-owned main accessor helper',target(raw,rva,calls[role],role))
-    _require(target(raw,rva,calls['initialize'],'initialize')==carriers['initialize']['rva'] and
-        target(bodies['vector'],methods['vector']['rva'],owned['vectorForward'],'vectorForward')==carriers['forward']['rva'],
-        'same-carrier-helpers','authenticated source-owned initialize/forward helpers',calls['initialize'])
-    for role in ('state','same'):
-        _require(target(raw,rva,calls[role+'Read'],role)==target(bodies[role],methods[role]['rva'],owned[role+'Read'],role),
-            'same-stored-reader-'+role,'source-owned named Int32 getter helper',target(raw,rva,calls[role+'Read'],role))
-    _require(target(raw,rva,calls['sameAuxiliary'],'sameAuxiliary')==
-             target(bodies['same'],methods['same']['rva'],owned['sameAuxiliary'],'sameAuxiliary'),
-        'same-owned-auxiliary','source-owned getter auxiliary helper',target(raw,rva,calls['sameAuxiliary'],'sameAuxiliary'))
-    _require(_mov_register(probes['saveComp'])==(64,3,2) and _mov_register(probes['saveThis'])==(64,14,1),
-        'original-inputs','original UInt64 and system receiver preserved',(probes['saveComp'].hex(),probes['saveThis'].hex()))
-    _require(probes['hotSlot']==bytes.fromhex('488BFB48C1EF20'),'hot-slot-selection','original UInt64 shifted right 32',probes['hotSlot'].hex())
-    _require(probes['firstIndex']==bytes.fromhex('448B7B08') and probes['counter']==bytes.fromhex('4533ED') and probes['addCounter']==bytes.fromhex('4503FD'),
-        'record-index','anonymous cache Int32 at8 plus zero-initialized loop counter',probes['firstIndex'].hex())
-    _require(probes['queryArgs']==bytes.fromhex('0FB7D7458BC7498BCE') and contract['probes']['queryArgs']['offset']+len(probes['queryArgs'])==calls['query'],
-        'provider-same-index','zero-extended UInt16 hotSlot and same R15D conditionIndex immediately supplied',probes['queryArgs'].hex())
-    _require(probes['queryReturn']==bytes.fromhex('89457F') and _mov_register(probes['stateReturn'])==(32,15,0),
-        'comparison-values','provider EAX saved locally; stored State EAX saved in R15D',probes['queryReturn'].hex())
-    _require(probes['tableSlot'][:1]==b'\xba' and struct.unpack_from('<I',probes['tableSlot'],1)[0]==vector['vtableSlot'],
-        'selected-main-slot',vector['vtableSlot'],probes['tableSlot'].hex())
-    stride=probes['vectorStride']
-    _require(stride[:3]==bytes.fromhex('41C1E7') and 1<<stride[3]==vector['elementWidth'] and probes['vectorPosition']==bytes.fromhex('418D1407'),
-        'selected-main-stride','same conditionIndex scaled by owned record width',stride.hex())
-    _require(_lea_stack(probes['carrierOut'])==(1,-73) and probes['carrierCopies']==bytes.fromhex('0F1045B70F105DC733D2B963F600000F115DD70F1145970F115DA7'),
-        'same-source-carriers','one returned32-byte source carrier duplicated to two getter slots',probes['carrierCopies'].hex())
-    for role,position,buffer,tail in (('state',-73,-65,-33),('same',-105,-97,-81)):
-        args=probes[role+'Args']
-        _require(args[:2]==bytes.fromhex('8B55') and struct.unpack_from('<b',args,2)[0]==position and
-                 _lea_stack(args[3:7])==(1,-9) and args[7:9]==bytes.fromhex('83C2') and args[9]==fields[role]['offset'],
-            'stored-field-address-'+role,fields[role]['offset'],args.hex())
-        source=probes[role+'Buffer'];last=probes[role+'Tail']
-        _require(source[:3]==bytes.fromhex('0F1045') and struct.unpack_from('<b',source,3)[0]==buffer and
-                 last[:3]==bytes.fromhex('F20F10') and last[3] in (0x45,0x4d) and struct.unpack_from('<b',last,4)[0]==tail,
-            'same-byte-buffer-'+role,'ByteBuffer bytes from matching duplicated carrier',(source.hex(),last.hex()))
-    branch=probes['sameEqualsOne'];at=contract['probes']['sameEqualsOne']['offset']
-    _require(branch[:4]==bytes.fromhex('83F80175') and at+5+struct.unpack_from('<b',branch,4)[0]==contract['probes']['unequalPredicate']['offset'],
-        'literal-selector','only IsSame==1 takes equality; all other Int32 take inequality',branch.hex())
-    _require(probes['equalPredicate']==bytes.fromhex('443B7D7F0F94C1') and probes['unequalPredicate']==bytes.fromhex('443B7D7F0F95C1'),
-        'stored-state-predicate','CMP stored State to provider value; SETE or SETNE',(probes['equalPredicate'].hex(),probes['unequalPredicate'].hex()))
-    for name,role in (('patchBranch','updatePatch'),('statePatchBranch','statePatch'),('samePatchBranch','samePatch')):
-        branch=probes[name];at=contract['probes'][name]['offset']
-        _require(branch[:4]==bytes.fromhex('84C00F85') and calls[role]+5==at and at+8+struct.unpack_from('<i',branch,4)[0]>=len(raw),
-            'conditional-fast-route-'+role,'named check AL immediately selects external alternative',branch.hex())
-    _require(probes['cacheChanged']==bytes.fromhex('0FB64306403AC6408873060F95C0') and
-             contract['probes']['cacheChanged']['offset']+len(probes['cacheChanged'])==contract['probes']['returnFrame']['offset'],
-        'return-is-change-flag','old anonymous cache byte6 compared with SIL, rewritten; SETNE AL',probes['cacheChanged'].hex())
-    _require(probes['returnFrame']==bytes.fromhex('4C8D9C24D0000000498B5B30498B7338498B7B40498BE3415F415E415D415C5DC3'),
-        'change-flag-return','selected epilogue does not overwrite AL',probes['returnFrame'].hex())
-    state_start=contract['probes']['stateReturn']['offset']+len(probes['stateReturn'])
-    state_ends={contract['probes'][name]['offset'] for name in ('equalPredicate','unequalPredicate')}
-    _direct_call_boundary(partitions['update'],565,'state-auxiliary-local-preservation')
-    _cfg_preserved(partitions['update'],rva,
-        contract['probes']['queryReturn']['offset']+len(probes['queryReturn']),state_ends,'rbp',
-        set(calls.values())|{565},
-        {221,contract['probes']['statePatchBranch']['offset']+2,
-         contract['probes']['samePatchBranch']['offset']+2},_provider_local_store_check)
-    _cfg_preserved(partitions['update'],rva,state_start,state_ends,'r15d',
-        {calls['samePatch'],calls['sameRead'],calls['sameAuxiliary']},
-        {contract['probes']['samePatchBranch']['offset']+2})
-    _preserved_interval(partitions['update'],calls['sameRead']+5,contract['probes']['sameEqualsOne']['offset'],
-        'rax',set(),'IsSame-return-to-selector')
-    frame_start=contract['probes']['returnFrame']['offset']
-    _preserved_interval(partitions['update'],frame_start,frame_start+len(probes['returnFrame']),
-        'rax',set(),'changed-flag-return')
-    return {'record':'MissionCondition','storedStateField':'State','selectorField':'IsSame','selectorLiteral':1,
+def _check_current_comparison(programs,methods,vector,fields,carriers):
+    p=programs['update'];rows=p['rows'];base=p['base'];raw=p['raw']
+    _expect_at(p,0,'40554156488D6C24B14881ECC8000000','update-frame')
+    root=_rip_load_cell(p,16,'488B05','update-replacement-root')
+    _expect_at(p,23,'4C8BF1488B48704885C9','update-original-system')
+    _replacement(p,33,39,444,'update')
+    _expect_at(p,39,'498B4E200F57C00F57C948899C24E00000004889B424E8000000488BF248C1EE20',
+               'update-hot-slot-and-lookup')
+    _expect_at(p,72,'0F1145D70F1145E70F114D170F114D270F1145F70F1145074885C9','update-initial-carriers')
+    _branch_at(p,99,'0F84',492,'update-null-cache-pool')
+    _rip_load_cell(p,105,'4C8B05','update-cache-context')
+    _call_target(p,112,'update-cache-lookup')
+    _expect_at(p,117,'498B4E10488BD84885C9','update-cache-receiver')
+    _branch_at(p,127,'0F84',492,'update-null-grid-pool')
+    _expect_at(p,133,'4889BC24F00000004C8D4DD74C89A424C00000004C8D45170FB7D64C89AC24B8000000',
+               'update-grid-lookup-arguments')
+    _call_target(p,168,'update-grid-lookup')
+    _expect_at(p,173,'448B6B0C4533E40FB67B044585ED','update-count-counter-and-aggregate')
+    _branch_at(p,187,'0F8E',390,'update-empty-count')
+    _expect_at(p,193,'4C89BC24B0000000448B7B084533C94503FC0FB7D6458BC7498BCE','update-record-index-and-query-arguments')
+    _call_at(p,220,methods['query']['rva'],'update-selected-query')
+    _expect_at(p,225,'BA'+struct.pack('<I',vector['vtableSlot']).hex()+'89457F488D4DD7','update-provider-local-and-table')
+    source=programs['vector']
+    _expect_at(source,24,'488BCFBA'+struct.pack('<I',vector['vtableSlot']).hex()+'418BF0',
+               'source-owned-vector-slot-and-index')
+    _call_at(p,237,_call_target(source,35,'owned-vector-table'),'update-source-owned-table')
+    _expect_at(p,242,'85C0','update-vector-present')
+    zero=_branch_target(p['by'][244],base);_branch_at(p,244,'0F84',zero,'update-null-vector')
+    _expect_at(p,zero,'0F57DB0F57E4','update-null-vector-zero-carrier')
+    _branch_at(p,zero+6,'E9',319,'update-null-vector-join')
+    _expect_at(p,250,'0F57C0488D4DD70F1145178BD00F1145270F1045DF0F2945B7F20F1045EFF20F1145C7',
+               'update-source-buffer-and-carrier')
+    _call_at(p,285,_call_target(source,62,'owned-vector-offset'),'update-source-owned-vector')
+    _require(vector['elementWidth']==16,'update-record-width',16,vector['elementWidth'])
+    _expect_at(p,290,'41C1E7044C8D45B7488D4D17418D1407','update-record-stride-and-position')
+    _call_at(p,306,carriers['initialize']['rva'],'update-record-carrier-initializer')
+    _call_at(source,109,carriers['forward']['rva'],'source-owned-vector-forwarder')
+    _expect_at(p,311,'0F105D270F10651733D2488D4DF70F1165F70F115D07','update-shared-record-carriers')
+    _call_at(p,333,methods['state']['rva'],'update-source-owned-state')
+    _expect_at(p,338,'33D2488D4DF7448BF8','update-shared-record-same-and-saved-state')
+    _call_at(p,347,methods['same']['rva'],'update-source-owned-is-same')
+    getters=[_check_current_getter(programs[role],fields[role],role) for role in ('state','same')]
+    _require(all(row[0]==root for row in getters) and getters[0][1:]==getters[1][1:],
+             'shared-getter-replacement-root-and-stored-read','same root and source-owned reader/initializer',getters)
+    _expect_at(p,352,'83F801','update-only-literal-one')
+    _branch_at(p,355,'75',468,'update-inequality-selector')
+    _expect_at(p,357,'443B7D7F0F94C1','update-equality-predicate')
+    _expect_at(p,468,'443B7D7F0F95C1','update-inequality-predicate')
+    _branch_at(p,475,'EB',364,'update-predicate-join')
+    _expect_at(p,364,'807B04000FB6C1','update-aggregation-selector')
+    _branch_at(p,371,'74',477,'update-or-aggregation')
+    _expect_at(p,373,'34014022F984C0','update-and-aggregation')
+    _branch_at(p,380,'74',455,'update-and-loop')
+    _expect_at(p,382,'4C8BBC24B00000000FB643064C8BAC24B8000000403AC74C8BA424C0000000488BB424E80000000F95C040887B06488BBC24F0000000488B9C24E0000000',
+               'update-cache-changed-flag')
+    _expect_at(p,444,'4881C4C8000000415E5DC3','update-return-frame')
+    _expect_at(p,455,'41FFC4453BE5','update-loop-counter')
+    _branch_at(p,461,'7D',382,'update-loop-done')
+    _branch_at(p,463,'E9',201,'update-loop-next')
+    _expect_at(p,477,'400ACF','update-or-predicate')
+    _branch_at(p,480,'75',487,'update-or-one')
+    _expect_at(p,482,'4032FF','update-or-zero')
+    _branch_at(p,485,'EB',378,'update-or-zero-join')
+    _expect_at(p,487,'40B701','update-or-true')
+    _branch_at(p,490,'EB',378,'update-or-true-join')
+    _call_target(p,492,'update-null-exception');_expect_at(p,497,'CC','update-exception-terminal')
+    # Both vector routes reach both predicates without overwriting the provider
+    # local. R15 is nonvolatile across the selected typed getter calls.
+    _cfg_preserved(rows,base,233,{357,468},'rbp',{237,285,306,333,347},set(),_provider_local_store_check)
+    _cfg_preserved(rows,base,347,{357,468},'r15d',{347},set())
+    _preserved_interval(rows,352,357,'rax',set(),'current-IsSame-to-selector')
+    _preserved_interval(rows,424,455,'rax',set(),'current-changed-flag-return')
+    return root,{'record':'MissionCondition','storedStateField':'State','selectorField':'IsSame','selectorLiteral':1,
         'selectedRelation':'equal','fallbackRelation':'not_equal','provider':methods['query']['type']+'.'+methods['query']['method'],
         'providerParameterNames':methods['query']['parameterNames'],'updateReturnsChangedFlag':True,
+        'completeUnwindFamiliesAuthenticated':True,'zeroVectorCarrierPathAuthenticated':True,
         'runtimeObserved':False,'authoredGroupToLiveCacheResolved':False,'providerValueOriginResolved':False}
 
 
@@ -325,7 +484,7 @@ def validate(gameassembly,metadata):
         row=methods[role]
         _require(extents.get(image.pe.image_base+row['rva'])==image.pe.image_base+row['rva']+row['bodyExtent'],
             'primary-body-'+role,row['bodyExtent'],extents.get(image.pe.image_base+row['rva']))
-    for role in ('state','same','vector','patchCheck'):
+    for role in ('vector',):
         row=methods[role];end=extents.get(image.pe.image_base+row['rva'])
         _require(end is not None and 0<end-(image.pe.image_base+row['rva'])<=len(bodies[role]),
             'owned-primary-body-'+role,'primary body inside source-owned pinned window',end)
@@ -335,18 +494,25 @@ def validate(gameassembly,metadata):
         'query-signature','named UInt16 hotSlot and Int32 conditionIndex',methods['query']['parameters'])
     _ordinary_primitive_abi(image,params[0].type_index,0x07,'condition-query-hotSlot')
     scalar=catalogs['dynamic_scalar_components_native.json'];main=catalogs['dynamic_main_vector_native.json']
+    decode=_composed_decoder(image.mapper)
+    _require(set(contract['families'])=={'update','query','state','same','vector'},
+             'complete-family-role-roster',['update','query','state','same','vector'],sorted(contract['families']))
+    programs={role:_family_program(image,methods[role],pins,decode) for role,pins in contract['families'].items()}
     record=next(row for row in scalar['layout']['records'] if row['name']=='MissionCondition')
     fields={role:next(field for field in record['fields'] if field['getterMethodIndex']==methods[role]['index']) for role in ('state','same')}
     for role,field in fields.items():
-        _require(field['type']=='System.Int32' and _getter_offset(bodies[role],role)==field['offset'],
-            'source-owned-field-'+role,field['offset'],_getter_offset(bodies[role],role))
+        starts=frozenset(row['offset'] for row in programs[role]['rows'])
+        offset=_getter_offset(programs[role]['raw'],role,starts)
+        _require(field['type']=='System.Int32' and offset==field['offset'],
+            'source-owned-field-'+role,field['offset'],offset)
     vector=next(row for row in main['layout']['vectors'] if row['name']=='MissionCondition')
     _require(vector['elementWidth']==record['width'],'owned-record-width',record['width'],vector['elementWidth'])
     carriers=_validate_carriers(scalar['layout'],image)
-    flow=_check_comparison_flow(contract,bodies['update'],bodies,methods,vector,fields,carriers,_composed_decoder(image.mapper))
+    root,flow=_check_current_comparison(programs,methods,vector,fields,carriers)
+    query_root,query_flow=_check_current_query(programs['query'],contract['queryContext'])
+    _require(query_root==root,'query-same-replacement-root',root,query_root)
     query_context=_query_context(image,bodies['query'],methods['query'],contract['queryContext'])
-    query_flow=_check_query_flow(bodies['query'],methods['query']['rva'],contract['queryContext'],_composed_decoder(image.mapper))
-    return {'format':'endfield.dynamic-mission-condition-consumers-native-audit.v2','status':'validated',
+    return {'format':'endfield.dynamic-mission-condition-consumers-native-audit.v3','status':'validated',
         'nativeInputs':inputs,'flow':flow,'providerQuery':query_flow,'queryContext':query_context,
         'evidenceBoundary':contract['evidenceBoundary']}
 

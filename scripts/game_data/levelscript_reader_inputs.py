@@ -47,6 +47,18 @@ def complete_reader_input_paths() -> list[Path]:
 
 
 def snapshot_complete_reader_inputs() -> dict[str, Any]:
+    """Hash current paths, or delegate an owned pending operation's identity.
+
+    Only a direct selected validator call may use the enclosing operation's
+    fresh entry identity. Independent/direct/nested validators, path discovery
+    and every outer entry/exit retain full fresh enumeration and byte hashing.
+    Delegated results confer no completed receipt before those outer checks.
+    """
+    from scripts.game_data.memorypack.operation_native_validation import _owned_reader_snapshot
+    return _owned_reader_snapshot(_snapshot_complete_reader_inputs_fresh)
+
+
+def _snapshot_complete_reader_inputs_fresh() -> dict[str, Any]:
     """Hash the entire current path set; saved path lists never define scope."""
     rows = []
     for path in complete_reader_input_paths():

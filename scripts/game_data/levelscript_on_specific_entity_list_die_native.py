@@ -1,10 +1,13 @@
 """Authenticate the stored OnSpecificEntityListDie ActionHeader route.
 
-This proves the selected native reader, typed parameter contexts and current
-source cursors. It does not prove event execution or entity resolution.
+This proves the selected native reader and typed parameter contexts. Historical
+source receipts remain separately hash-gated. It proves neither event execution
+nor entity resolution.
 
-The reached header stores a positive entity list, local entity output path
-and a bool validation parameter.
+The native signature requests an entity-list Param, a local entity output and
+a bool validation Param. The current shared list codec admits only null/empty
+constants: a historical populated-list receipt supplies no current element
+grammar and cannot widen that codec's boundary.
 
 Run as: python -m scripts.game_data.levelscript_on_specific_entity_list_die_native
 """
@@ -351,7 +354,7 @@ def validate_on_specific_entity_list_die_native_contract(
     export_root: Path | None = None, ledger_path: Path | None = None,
     summary_path: Path | None = None,
 ) -> dict[str, Any]:
-    """Validate selected native facts and optionally current source receipts."""
+    """Validate selected native facts and optionally hash-gated historical receipts."""
     try:
         contract = _contract(Path(contract_path))
         expected = contract["nativeInputs"]

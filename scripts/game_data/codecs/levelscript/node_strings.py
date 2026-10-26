@@ -1,5 +1,6 @@
 """Decode node string fields through their owning route and proved source helper."""
 from __future__ import annotations
+import hashlib
 import json
 import struct
 from functools import lru_cache
@@ -8,6 +9,7 @@ from pathlib import Path
 from scripts.common import resolve_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack import pooled_source_helper
+from scripts.game_data.memorypack.operation_native_validation import validate_native,_owned_reader_source_inputs
 from scripts.game_data.string_pool import resolve_string_pool_index
 from scripts.game_data.il2cpp.protocol import canonical_type_name
 from scripts.game_data.levelscript_node_strings_native import CONTRACT as SOURCE_CONTRACT, SCHEMA as SOURCE_SCHEMA
@@ -91,27 +93,54 @@ def _profiles(raw, schema):
     return tuple(profiles)
 
 
-def decode_node_string(data, offset, layout, contracts, *, field, game_root=None, strings=None):
-    """The caller first validates the route's native gate and exact field list."""
+def _select_source_profile(layout, contracts, *, field, gameassembly, metadata, source_inputs=None):
+    """Fresh exact route/profile and native helper proof; no payload is cached.
+
+    The enclosing operation owns complete source entry/exit bookends. Outside
+    that lexical scope validate_native always executes this function afresh.
+    """
     if [field,'string'] not in layout['fields']:raise ValueError(f'nodeString.source:unproved-string-field={field}')
-    matches=[]
+    matches=[];captures=[]
+    expected=None if source_inputs is None else{row[0]:(row[1],row[2])for row in source_inputs}
+    def profiles(path,schema):
+        raw=path.read_bytes();captures.append((path,raw))
+        if expected is not None and expected.get(path.resolve().as_posix())!=(len(raw),hashlib.sha256(raw).hexdigest().upper()):
+            raise ValueError('nodeString.source:operation-entry-contract-mismatch:'+str(path))
+        return _profiles(raw,schema)
     for filename,schema,gate in contracts:
         if gate!=layout.get('nativeGate'):continue
         path=CONTRACTS_DIR/filename
-        for wrapper,fields,target,pins,proved_fields in _profiles(path.read_bytes(),schema):
+        for wrapper,fields,target,pins,proved_fields in profiles(path,schema):
             if wrapper==layout['wrapperName'] and fields==tuple(map(tuple,layout['fields'])) and field in proved_fields:matches.append((target,pins))
     if not matches:
-        for wrapper,fields,target,pins,proved_fields in _profiles(SOURCE_CONTRACT.read_bytes(),SOURCE_SCHEMA):
+        for wrapper,fields,target,pins,proved_fields in profiles(SOURCE_CONTRACT,SOURCE_SCHEMA):
             if wrapper==layout['wrapperName'] and fields==tuple(map(tuple,layout['fields'])) and field in proved_fields:
                 matches.append((target,pins))
     if len(matches)!=1:raise ValueError(f"nodeString.source:unproved-or-ambiguous-wrapper={layout['wrapperName']},matches={len(matches)}")
-    root=Path(game_root) if game_root is not None else None
-    ga,md=(root.parent/'GameAssembly.dll',root/'il2cpp_data/Metadata/global-metadata.dat') if root else resolve_installed_native_inputs()
-    audit=pooled_source_helper.validate_current_native_contract(gameassembly=ga,metadata=md)
+    audit=validate_native(pooled_source_helper.validate_current_native_contract,gameassembly=gameassembly,metadata=metadata)
     target,pins=matches[0]
     if (audit.get('status')!='validated' or audit.get('wireEncoding')!='int32-pool-index'
             or target not in audit.get('sourceHelpers',[]) or any(audit.get('nativeInputs',{}).get(k,'').upper()!=v.upper() for k,v in pins)):
         raise ValueError(f"nodeString.source:expected=proved-current-pooled-helper,actual={audit.get('status')},detail={str(audit.get('detail',''))[:300]}")
+    if any(path.read_bytes()!=raw for path,raw in captures):raise ValueError('nodeString.source:contract-changed-during-validation')
+    return dict(status='validated',sourceTargetRva=target,nativeInputs=audit['nativeInputs'],
+                nativeSources={'GameAssembly.dll':str(Path(gameassembly).resolve()),'global-metadata.dat':str(Path(metadata).resolve())},
+                wrapperName=layout['wrapperName'],fields=layout['fields'],field=field,pathEncoding='int32-pool-index')
+
+
+def decode_node_string(data, offset, layout, contracts, *, field, game_root=None, strings=None):
+    """The caller first validates the route's native gate and exact field list."""
+    if [field,'string'] not in layout['fields']:raise ValueError(f'nodeString.source:unproved-string-field={field}')
+    root=Path(game_root) if game_root is not None else None
+    ga,md=(root.parent/'GameAssembly.dll',root/'il2cpp_data/Metadata/global-metadata.dat') if root else resolve_installed_native_inputs()
+    paths=[CONTRACTS_DIR/filename for filename,schema,gate in contracts if gate==layout.get('nativeGate')]
+    paths=list(dict.fromkeys([*paths,SOURCE_CONTRACT]))
+    inputs=_owned_reader_source_inputs(paths)
+    invoke=validate_native if inputs is not None else lambda function,*args,**kwargs:function(*args,**kwargs)
+    profile=invoke(_select_source_profile,layout,contracts,field=field,gameassembly=ga,metadata=md,source_inputs=inputs)
+    if(profile.get('status')!='validated'or profile.get('pathEncoding')!='int32-pool-index'
+            or(profile.get('wrapperName'),profile.get('fields'),profile.get('field'))!=(layout['wrapperName'],layout['fields'],field)):
+        raise ValueError('nodeString.source:unproved-selected-profile')
     if type(offset) is not int or not 0<=offset<=len(data)-4:raise ValueError(f'nodeString.source:truncated-index,offset={offset}')
     index=struct.unpack_from('<i',data,offset)[0]
     return resolve_string_pool_index(index,strings,field),offset+4

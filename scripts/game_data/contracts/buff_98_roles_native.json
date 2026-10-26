@@ -1,0 +1,1340 @@
+{
+  "schema": "endfield.buff-98-profile-roles-native.v1",
+  "status": "exact-current-build",
+  "projection": "buff_98_native.json",
+  "methodRoles": [
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack+Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPackFormatter",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack",
+      "Deserialize"
+    ]
+  ],
+  "claims": [
+    {
+      "profile": "member9",
+      "ownerType": "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack",
+      "methodName": "Deserialize",
+      "anonymousReadOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "byte-payload",
+        "curve",
+        "scalar-payload",
+        "byte-payload",
+        "byte"
+      ],
+      "members": [
+        {
+          "name": "isEnable",
+          "declaredType": "bool"
+        },
+        {
+          "name": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+        },
+        {
+          "name": "priorityOffset",
+          "declaredType": "int"
+        },
+        {
+          "name": "serverActionIndex",
+          "declaredType": "int"
+        },
+        {
+          "name": "curveTemplate",
+          "declaredType": "string"
+        },
+        {
+          "name": "customCurve",
+          "declaredType": "UnityEngine.AnimationCurve"
+        },
+        {
+          "name": "inputValue",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble"
+        },
+        {
+          "name": "key",
+          "declaredType": "string"
+        },
+        {
+          "name": "useCustomCurve",
+          "declaredType": "bool"
+        }
+      ]
+    }
+  ],
+  "projectionBoundary": "Exact current method-role proof establishes member9 source widths, order, typed child contexts and named setter transfers, with complete current unwind families and the actual object-header helper's FF clear behavior. The two byte-payload roles are Int32 StringPool indices (-1 empty, -2 null). AnimationCurve and BlackboardDouble source programs are independently authenticated on the same selected image; parent typed contexts join their full names. Shared provider and live formatter selection, refill/error parity, curve evaluation, blackboard semantics and whole-BuffData EOF remain unresolved.",
+  "evidenceBoundary": {
+    "exact": "Named member9 wrapper declarations, source read count/order/widths, enum and reference MethodSpecs, actual object-header helper, FF output clear and complete current method families.",
+    "direct": "Each selected source return reaches its corresponding named wrapper setter with an exact unchanged argument transfer.",
+    "conditional": "Buffered current reader paths, initialized contexts, nonnull wrappers, compatible output storage, ordinary native ABI and the separately stated AnimationCurve/BlackboardDouble child conditions.",
+    "unresolved": "Live formatter/provider selection, refill/error parity, pool selection, curve evaluation, blackboard behavior, action execution or whole-BuffData EOF."
+  },
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "proof": {
+    "profiles": [
+      {
+        "profile": "member9",
+        "method": [
+          261530,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack",
+          "Deserialize",
+          106805952
+        ],
+        "family": {
+          "schema": "endfield.amd64-unwind-chain-family.v1",
+          "selectedPrimaryRva": 106805952,
+          "tableRva": 313733120,
+          "tableBytes": 9860400,
+          "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+          "tableRowsChecked": 821700,
+          "unwindVersionRows": {
+            "1": 821697,
+            "2": 3
+          },
+          "completeParentTriplesChecked": true,
+          "allParentChainsTerminated": true,
+          "chainFrameBytesMatched": true,
+          "ranges": [
+            {
+              "runtimeTriple": [
+                106805952,
+                106806019,
+                269749472
+              ],
+              "tableRowRva": 317206964,
+              "runtimeTripleRawHex": "C0BA5D0603BB5D06E00C1410",
+              "codeBytes": 67,
+              "unwindRawHex": "010A04000A3408000A320670",
+              "unwindVersion": 1,
+              "unwindFlags": 0,
+              "frameByte": 0,
+              "parentChain": []
+            },
+            {
+              "runtimeTriple": [
+                106806019,
+                106806403,
+                269749484
+              ],
+              "tableRowRva": 317206976,
+              "runtimeTripleRawHex": "03BB5D0683BC5D06EC0C1410",
+              "codeBytes": 384,
+              "unwindRawHex": "2105020005640600C0BA5D0603BB5D06E00C1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    106806019,
+                    106806403,
+                    269749484
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                106806403,
+                106806414,
+                269749504
+              ],
+              "tableRowRva": 317206988,
+              "runtimeTripleRawHex": "83BC5D068EBC5D06000D1410",
+              "codeBytes": 11,
+              "unwindRawHex": "21000000C0BA5D0603BB5D06E00C1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    106806403,
+                    106806414,
+                    269749504
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                106806414,
+                106806420,
+                269749520
+              ],
+              "tableRowRva": 317207000,
+              "runtimeTripleRawHex": "8EBC5D0694BC5D06100D1410",
+              "codeBytes": 6,
+              "unwindRawHex": "2100020000640600C0BA5D0603BB5D06E00C1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    106806414,
+                    106806420,
+                    269749520
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                106806420,
+                106806504,
+                269749540
+              ],
+              "tableRowRva": 317207012,
+              "runtimeTripleRawHex": "94BC5D06E8BC5D06240D1410",
+              "codeBytes": 84,
+              "unwindRawHex": "21000000C0BA5D0603BB5D06E00C1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    106806420,
+                    106806504,
+                    269749540
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                124812072,
+                124812085,
+                269749556
+              ],
+              "tableRowRva": 318501236,
+              "runtimeTripleRawHex": "287B7007357B7007340D1410",
+              "codeBytes": 13,
+              "unwindRawHex": "21000000C0BA5D0603BB5D06E00C1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    124812072,
+                    124812085,
+                    269749556
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                124812085,
+                124812141,
+                269749572
+              ],
+              "tableRowRva": 318501248,
+              "runtimeTripleRawHex": "357B70076D7B7007440D1410",
+              "codeBytes": 56,
+              "unwindRawHex": "2100020000640600287B7007357B7007340D1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    124812085,
+                    124812141,
+                    269749572
+                  ],
+                  "parent": [
+                    124812072,
+                    124812085,
+                    269749556
+                  ]
+                },
+                {
+                  "child": [
+                    124812072,
+                    124812085,
+                    269749556
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                124812141,
+                124812162,
+                269749592
+              ],
+              "tableRowRva": 318501260,
+              "runtimeTripleRawHex": "6D7B7007827B7007580D1410",
+              "codeBytes": 21,
+              "unwindRawHex": "21000000287B7007357B7007340D1410",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    124812141,
+                    124812162,
+                    269749592
+                  ],
+                  "parent": [
+                    124812072,
+                    124812085,
+                    269749556
+                  ]
+                },
+                {
+                  "child": [
+                    124812072,
+                    124812085,
+                    269749556
+                  ],
+                  "parent": [
+                    106805952,
+                    106806019,
+                    269749472
+                  ]
+                }
+              ]
+            }
+          ],
+          "unwindOperationsOrFixedAllocationSemanticsProved": false,
+          "handlerLanguageDataProved": false,
+          "wholeManagedMethodProgramProved": false,
+          "runtimeExecutionKnown": false,
+          "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+        },
+        "codeWindows": [
+          {
+            "startRva": 106805952,
+            "endRva": 106806019,
+            "sha256": "B587C89C67B6074088BF19716EFD9FF0867EA3BB470E3CAAE61F7D4FFE59D5C6",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 106806019,
+            "endRva": 106806403,
+            "sha256": "B0876E9EECEA56855A558F2BC4E3C84B2C3836687408ED1F1297E603D85027B7",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 106806403,
+            "endRva": 106806414,
+            "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 106806414,
+            "endRva": 106806420,
+            "sha256": "E36DAD07C15CCAA5D2065A929D3E0319D6DEC8B950A72312FB1A45F181374ABC",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 106806420,
+            "endRva": 106806504,
+            "sha256": "6FC6D99FB626257EFFE86684B90975AF62B1D37EF17D40146777E32EB35B17C0",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 124812072,
+            "endRva": 124812085,
+            "sha256": "06D8C8492164A08B33B322F510A21B5A392F38CF5CD889A6E2878E25D0BEE0B6",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 124812085,
+            "endRva": 124812141,
+            "sha256": "B3C3910F7A44AFA2CAC360813843F7E9C400CB720FDD5507BAD38877EA5A2B89",
+            "boundary": "complete current role unwind range"
+          },
+          {
+            "startRva": 124812141,
+            "endRva": 124812162,
+            "sha256": "1273C810631B6433D52787D3B394DF266AB5999D14328F937A8A1DED890931CC",
+            "boundary": "complete current role unwind range"
+          }
+        ],
+        "header": [
+          106806080,
+          "4080FE09"
+        ],
+        "headerProof": {
+          "call": [
+            106806006,
+            "E87542A0FE"
+          ],
+          "resultLoad": [
+            106806075,
+            "0FB6742438"
+          ],
+          "outputSave": [
+            106805969,
+            "488BDA"
+          ],
+          "falseEdge": [
+            106806013,
+            "0F846AC01201"
+          ],
+          "falseProgram": [
+            [
+              124812141,
+              "488BCB"
+            ],
+            [
+              124812144,
+              "48C70300000000"
+            ],
+            [
+              124812151,
+              "E8E4C79FF8"
+            ],
+            [
+              124812156,
+              "90"
+            ],
+            [
+              124812157,
+              "E90141EDFE"
+            ],
+            [
+              106806403,
+              "488B5C2440"
+            ],
+            [
+              106806408,
+              "4883C420"
+            ],
+            [
+              106806412,
+              "5F"
+            ],
+            [
+              106806413,
+              "C3"
+            ]
+          ],
+          "helperFamily": {
+            "schema": "endfield.amd64-unwind-chain-family.v1",
+            "selectedPrimaryRva": 83754352,
+            "tableRva": 313733120,
+            "tableBytes": 9860400,
+            "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+            "tableRowsChecked": 821700,
+            "unwindVersionRows": {
+              "1": 821697,
+              "2": 3
+            },
+            "completeParentTriplesChecked": true,
+            "allParentChainsTerminated": true,
+            "chainFrameBytesMatched": true,
+            "ranges": [
+              {
+                "runtimeTriple": [
+                  83754352,
+                  83754439,
+                  267225008
+                ],
+                "tableRowRva": 316077896,
+                "runtimeTripleRawHex": "70FDFD04C7FDFD04B087ED0F",
+                "codeBytes": 87,
+                "unwindRawHex": "010F06000F6407000F3406000F320B70",
+                "unwindVersion": 1,
+                "unwindFlags": 0,
+                "frameByte": 0,
+                "parentChain": []
+              },
+              {
+                "runtimeTriple": [
+                  120410862,
+                  120410907,
+                  267285224
+                ],
+                "tableRowRva": 317996660,
+                "runtimeTripleRawHex": "EE522D071B532D07E872EE0F",
+                "codeBytes": 45,
+                "unwindRawHex": "2100000070FDFD04C7FDFD04B087ED0F",
+                "unwindVersion": 1,
+                "unwindFlags": 4,
+                "frameByte": 0,
+                "parentChain": [
+                  {
+                    "child": [
+                      120410862,
+                      120410907,
+                      267285224
+                    ],
+                    "parent": [
+                      83754352,
+                      83754439,
+                      267225008
+                    ]
+                  }
+                ]
+              }
+            ],
+            "unwindOperationsOrFixedAllocationSemanticsProved": false,
+            "handlerLanguageDataProved": false,
+            "wholeManagedMethodProgramProved": false,
+            "runtimeExecutionKnown": false,
+            "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+          },
+          "helperWindows": [
+            {
+              "startRva": 83754352,
+              "endRva": 83754439,
+              "sha256": "F5D54185CAD8DFD22FDB3C92312594556C9ADB3126526D28898ECD14CC96159E",
+              "boundary": "complete current role unwind range"
+            },
+            {
+              "startRva": 120410862,
+              "endRva": 120410907,
+              "sha256": "ABFE56BA791497AF8176F8B0188567201629E2F468137ACA102AE2980BD50CF9",
+              "boundary": "complete current role unwind range"
+            }
+          ],
+          "helperProgram": [
+            [
+              83754352,
+              "48895C2408"
+            ],
+            [
+              83754357,
+              "4889742410"
+            ],
+            [
+              83754362,
+              "57"
+            ],
+            [
+              83754363,
+              "4883EC20"
+            ],
+            [
+              83754367,
+              "83793001"
+            ],
+            [
+              83754371,
+              "488BFA"
+            ],
+            [
+              83754374,
+              "488BD9"
+            ],
+            [
+              83754377,
+              "0F8C5F552F02"
+            ],
+            [
+              83754383,
+              "488B4350"
+            ],
+            [
+              83754387,
+              "0FB608"
+            ],
+            [
+              83754390,
+              "880F"
+            ],
+            [
+              83754392,
+              "8B7330"
+            ],
+            [
+              83754395,
+              "83EE01"
+            ],
+            [
+              83754398,
+              "0F885D552F02"
+            ],
+            [
+              83754404,
+              "48FF4350"
+            ],
+            [
+              83754408,
+              "FF4340"
+            ],
+            [
+              83754411,
+              "FF4344"
+            ],
+            [
+              83754414,
+              "897330"
+            ],
+            [
+              83754417,
+              "803FFF"
+            ],
+            [
+              83754420,
+              "488B5C2430"
+            ],
+            [
+              83754425,
+              "488B742438"
+            ],
+            [
+              83754430,
+              "0F95C0"
+            ],
+            [
+              83754433,
+              "4883C420"
+            ],
+            [
+              83754437,
+              "5F"
+            ],
+            [
+              83754438,
+              "C3"
+            ]
+          ],
+          "condition": "one buffered source byte, ordinary native ABI and compatible caller output storage"
+        },
+        "readerRegister": "rdi",
+        "contexts": [
+          {
+            "instructionRva": 106806124,
+            "instructionHex": "488B15350A100A",
+            "cellVa": 6718080424,
+            "usageRawHex": "EBB613C000000000",
+            "methodSpecIndex": 646005,
+            "methodSpec": [
+              550332,
+              -1,
+              42893
+            ],
+            "argumentRawHex": "64250000000000000000118000000000",
+            "typeDefinition": 9572,
+            "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+            "generic": null,
+            "typeKind": 17,
+            "fullTypeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+            "methodOwner": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadUnmanaged",
+            "register": "rdx"
+          },
+          {
+            "instructionRva": 106806264,
+            "instructionHex": "488B15D1BA160A",
+            "cellVa": 6718518992,
+            "usageRawHex": "13B913C000000000",
+            "methodSpecIndex": 646281,
+            "methodSpec": [
+              550348,
+              -1,
+              1891
+            ],
+            "argumentRawHex": "4B260100000000000000120000000000",
+            "typeDefinition": 75339,
+            "typeName": "UnityEngine.AnimationCurve",
+            "generic": null,
+            "typeKind": 18,
+            "fullTypeName": "UnityEngine.AnimationCurve",
+            "methodOwner": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadValue",
+            "register": "rdx"
+          },
+          {
+            "instructionRva": 106806301,
+            "instructionHex": "488B15C476190A",
+            "cellVa": 6718698216,
+            "usageRawHex": "5DBA13C000000000",
+            "methodSpecIndex": 646446,
+            "methodSpec": [
+              550348,
+              -1,
+              16184
+            ],
+            "argumentRawHex": "CA000000000000000000120000000000",
+            "typeDefinition": 202,
+            "typeName": "Beyond.Blackboard+BlackboardDouble",
+            "generic": null,
+            "typeKind": 18,
+            "fullTypeName": "Beyond.Blackboard+BlackboardDouble",
+            "methodOwner": "MemoryPack.MemoryPackReader",
+            "methodName": "ReadValue",
+            "register": "rdx"
+          }
+        ],
+        "events": [
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              106806096,
+              "E87B42A0FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              106806137,
+              "E8D23AA0FE"
+            ],
+            "mode": "proved-primitive",
+            "context": {
+              "instructionRva": 106806124,
+              "instructionHex": "488B15350A100A",
+              "cellVa": 6718080424,
+              "usageRawHex": "EBB613C000000000",
+              "methodSpecIndex": 646005,
+              "methodSpec": [
+                550332,
+                -1,
+                42893
+              ],
+              "argumentRawHex": "64250000000000000000118000000000",
+              "typeDefinition": 9572,
+              "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "generic": null,
+              "typeKind": 17,
+              "fullTypeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadUnmanaged",
+              "register": "rdx"
+            }
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              106806170,
+              "E8B13AA0FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              106806203,
+              "E8903AA0FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              106806236,
+              "E8DF71C1FE"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "curve",
+            "context": {
+              "instructionRva": 106806264,
+              "instructionHex": "488B15D1BA160A",
+              "cellVa": 6718518992,
+              "usageRawHex": "13B913C000000000",
+              "methodSpecIndex": 646281,
+              "methodSpec": [
+                550348,
+                -1,
+                1891
+              ],
+              "argumentRawHex": "4B260100000000000000120000000000",
+              "typeDefinition": 75339,
+              "typeName": "UnityEngine.AnimationCurve",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "UnityEngine.AnimationCurve",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rdx"
+            },
+            "instruction": [
+              106806277,
+              "E8B67CA2FE"
+            ],
+            "mode": "proved-reference-clone"
+          },
+          {
+            "kind": "scalar-payload",
+            "context": {
+              "instructionRva": 106806301,
+              "instructionHex": "488B15C476190A",
+              "cellVa": 6718698216,
+              "usageRawHex": "5DBA13C000000000",
+              "methodSpecIndex": 646446,
+              "methodSpec": [
+                550348,
+                -1,
+                16184
+              ],
+              "argumentRawHex": "CA000000000000000000120000000000",
+              "typeDefinition": 202,
+              "typeName": "Beyond.Blackboard+BlackboardDouble",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Blackboard+BlackboardDouble",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rdx"
+            },
+            "instruction": [
+              106806314,
+              "E8917CA2FE"
+            ],
+            "mode": "proved-reference-clone"
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              106806344,
+              "E87371C1FE"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              106806374,
+              "E86541A0FE"
+            ],
+            "mode": "proved-primitive"
+          }
+        ],
+        "setterMethods": [
+          [
+            261523,
+            "set___curveTemplate__",
+            "System.String"
+          ],
+          [
+            261524,
+            "set___customCurve__",
+            "UnityEngine.AnimationCurve"
+          ],
+          [
+            261525,
+            "set___inputValue__",
+            "Beyond.Blackboard+BlackboardDouble"
+          ],
+          [
+            261526,
+            "set___key__",
+            "System.String"
+          ],
+          [
+            261527,
+            "set___useCustomCurve__",
+            "System.Boolean"
+          ]
+        ],
+        "selectedProgram": [
+          [
+            106806080,
+            "4080FE09"
+          ],
+          [
+            106806084,
+            "0F85EBBF1201"
+          ],
+          [
+            106806090,
+            "488B33"
+          ],
+          [
+            106806093,
+            "488BCF"
+          ],
+          [
+            106806096,
+            "E87B42A0FE"
+          ],
+          [
+            106806101,
+            "4885F6"
+          ],
+          [
+            106806104,
+            "0F8430010000"
+          ],
+          [
+            106806110,
+            "4533C0"
+          ],
+          [
+            106806113,
+            "0FB6D0"
+          ],
+          [
+            106806116,
+            "488BCE"
+          ],
+          [
+            106806119,
+            "E8B460C1FE"
+          ],
+          [
+            106806124,
+            "488B15350A100A"
+          ],
+          [
+            106806131,
+            "488BCF"
+          ],
+          [
+            106806134,
+            "488B33"
+          ],
+          [
+            106806137,
+            "E8D23AA0FE"
+          ],
+          [
+            106806142,
+            "4885F6"
+          ],
+          [
+            106806145,
+            "0F8407010000"
+          ],
+          [
+            106806151,
+            "4533C0"
+          ],
+          [
+            106806154,
+            "8BD0"
+          ],
+          [
+            106806156,
+            "488BCE"
+          ],
+          [
+            106806159,
+            "E83C4034FF"
+          ],
+          [
+            106806164,
+            "488B33"
+          ],
+          [
+            106806167,
+            "488BCF"
+          ],
+          [
+            106806170,
+            "E8B13AA0FE"
+          ],
+          [
+            106806175,
+            "4885F6"
+          ],
+          [
+            106806178,
+            "0F84E6000000"
+          ],
+          [
+            106806184,
+            "4533C0"
+          ],
+          [
+            106806187,
+            "8BD0"
+          ],
+          [
+            106806189,
+            "488BCE"
+          ],
+          [
+            106806192,
+            "E8FB3F34FF"
+          ],
+          [
+            106806197,
+            "488B33"
+          ],
+          [
+            106806200,
+            "488BCF"
+          ],
+          [
+            106806203,
+            "E8903AA0FE"
+          ],
+          [
+            106806208,
+            "4885F6"
+          ],
+          [
+            106806211,
+            "0F84C5000000"
+          ],
+          [
+            106806217,
+            "4533C0"
+          ],
+          [
+            106806220,
+            "8BD0"
+          ],
+          [
+            106806222,
+            "488BCE"
+          ],
+          [
+            106806225,
+            "E8BA3F34FF"
+          ],
+          [
+            106806230,
+            "488B33"
+          ],
+          [
+            106806233,
+            "488BCF"
+          ],
+          [
+            106806236,
+            "E8DF71C1FE"
+          ],
+          [
+            106806241,
+            "4885F6"
+          ],
+          [
+            106806244,
+            "0F84A4000000"
+          ],
+          [
+            106806250,
+            "4533C0"
+          ],
+          [
+            106806253,
+            "488BD0"
+          ],
+          [
+            106806256,
+            "488BCE"
+          ],
+          [
+            106806259,
+            "E8F8000000"
+          ],
+          [
+            106806264,
+            "488B15D1BA160A"
+          ],
+          [
+            106806271,
+            "488BCF"
+          ],
+          [
+            106806274,
+            "488B33"
+          ],
+          [
+            106806277,
+            "E8B67CA2FE"
+          ],
+          [
+            106806282,
+            "4885F6"
+          ],
+          [
+            106806285,
+            "747F"
+          ],
+          [
+            106806287,
+            "4533C0"
+          ],
+          [
+            106806290,
+            "488BD0"
+          ],
+          [
+            106806293,
+            "488BCE"
+          ],
+          [
+            106806296,
+            "E803010000"
+          ],
+          [
+            106806301,
+            "488B15C476190A"
+          ],
+          [
+            106806308,
+            "488BCF"
+          ],
+          [
+            106806311,
+            "488B33"
+          ],
+          [
+            106806314,
+            "E8917CA2FE"
+          ],
+          [
+            106806319,
+            "4885F6"
+          ],
+          [
+            106806322,
+            "745A"
+          ],
+          [
+            106806324,
+            "4533C0"
+          ],
+          [
+            106806327,
+            "488BD0"
+          ],
+          [
+            106806330,
+            "488BCE"
+          ],
+          [
+            106806333,
+            "E80E010000"
+          ],
+          [
+            106806338,
+            "488B33"
+          ],
+          [
+            106806341,
+            "488BCF"
+          ],
+          [
+            106806344,
+            "E87371C1FE"
+          ],
+          [
+            106806349,
+            "4885F6"
+          ],
+          [
+            106806352,
+            "743C"
+          ],
+          [
+            106806354,
+            "4533C0"
+          ],
+          [
+            106806357,
+            "488BD0"
+          ],
+          [
+            106806360,
+            "488BCE"
+          ],
+          [
+            106806363,
+            "E820010000"
+          ],
+          [
+            106806368,
+            "488B1B"
+          ],
+          [
+            106806371,
+            "488BCF"
+          ],
+          [
+            106806374,
+            "E86541A0FE"
+          ],
+          [
+            106806379,
+            "4885DB"
+          ],
+          [
+            106806382,
+            "741E"
+          ],
+          [
+            106806384,
+            "4533C0"
+          ],
+          [
+            106806387,
+            "0FB6D0"
+          ],
+          [
+            106806390,
+            "488BCB"
+          ],
+          [
+            106806393,
+            "E832010000"
+          ],
+          [
+            106806398,
+            "488B742430"
+          ],
+          [
+            106806403,
+            "488B5C2440"
+          ],
+          [
+            106806408,
+            "4883C420"
+          ],
+          [
+            106806412,
+            "5F"
+          ],
+          [
+            106806413,
+            "C3"
+          ]
+        ],
+        "selectedConditions": [
+          {
+            "instruction": [
+              106806084,
+              "0F85EBBF1201"
+            ],
+            "condition": "member count equals reviewed count",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806104,
+              "0F8430010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806145,
+              "0F8407010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806178,
+              "0F84E6000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806211,
+              "0F84C5000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806244,
+              "0F84A4000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806285,
+              "747F"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806322,
+              "745A"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806352,
+              "743C"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              106806382,
+              "741E"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          }
+        ]
+      }
+    ],
+    "childContracts": [
+      "memorypack_animation_curve_native.json",
+      "buff_blackboard_double_native.json"
+    ],
+    "readerOffsets": {
+      "currentPtr": 80,
+      "bufferLength": 48,
+      "advancedCount": 64,
+      "consumed": 68
+    }
+  }
+}

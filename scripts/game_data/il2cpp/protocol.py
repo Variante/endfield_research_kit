@@ -277,7 +277,7 @@ def native_enum_members(
     registration: dict[str, Any],
     type_name: str,
 ) -> list[dict[str, Any]]:
-    """Decode Int32-, byte- or Int16-backed enum defaults with selected native types.
+    """Decode Int32, UInt32, byte or Int16 enum defaults with selected native types.
 
     The caller must authenticate ``pe`` and ``metadata`` as the same selected
     installed build. Metadata default blobs do not identify their primitive
@@ -303,7 +303,7 @@ def native_enum_members(
         return runtime_type_name(pe, metadata, type_va)
 
     backing_type = primitive(backing[0].type_index)
-    if backing_type not in {"byte", "short", "int"}:
+    if backing_type not in {"byte", "short", "int", "uint"}:
         raise RuntimeError(f"unsupported enum backing type: {type_name}:{backing_type}")
     section = metadata.sections["fieldAndParameterDefaultValueData"]
     rows: list[dict[str, Any]] = []
@@ -326,10 +326,24 @@ def native_enum_members(
             if offset + 2 > section.offset + section.size:
                 raise RuntimeError(f"enum member default exceeds blob: {type_name}.{name}")
             value = struct.unpack_from("<h", metadata.buf, offset)[0]
+        elif backing_type == "uint":
+            # UInt32 defaults use the unsigned compressed representation;
+            # passing these bytes through the signed zigzag decoder changes
+            # ordinary values as well as the high-bit and sentinel cases.
+            try:
+                value, size = read_compressed_uint32(metadata.buf, offset)
+            except (IndexError, struct.error) as error:
+                raise RuntimeError(f"enum member default exceeds blob: {type_name}.{name}") from error
+            if offset + size > section.offset + section.size:
+                raise RuntimeError(f"enum member default exceeds blob: {type_name}.{name}")
+            if not 0 <= value <= 0xFFFFFFFF:
+                raise RuntimeError(f"enum UInt32 default outside bounds: {type_name}.{name}")
         else:
             value, size = read_compressed_int32(metadata.buf, offset)
             if offset + size > section.offset + section.size:
                 raise RuntimeError(f"enum member default exceeds blob: {type_name}.{name}")
+            if not -(1 << 31) <= value < (1 << 31):
+                raise RuntimeError(f"enum Int32 default outside bounds: {type_name}.{name}")
         rows.append({
             "id": value,
             "name": name,

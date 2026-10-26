@@ -20,6 +20,7 @@ from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usa
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineChannelingV2"
@@ -110,10 +111,10 @@ def _dependencies() -> tuple[dict[str, Any], list[dict[str, Any]]]:
         or switch.get("entryCount") != len(rows)
         or switch.get("base")
         != "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack"
-        or sibling.get("schemaVersion") != 1
+        or (sibling.get("schemaVersion") != 1 and not is_role_projection(sibling))
         or tuple(sibling.get("anonymousReadOrder", {}).get("member10", ())) != MATCHING_READ_ORDER
         or [row.get("typeName") for row in sibling.get("nestedContexts", ())] != list(NESTED_TYPES)
-        or any(row.get("schemaVersion") != 1 for row in reviewed[1:])
+        or any((row.get("schemaVersion") != 1 and not is_role_projection(row)) for row in reviewed[1:])
     ):
         raise ValueError(f"{LABEL}.contract:dependency-shape")
     for own, other in zip(contract["genericContexts"], sibling["nestedContexts"]):
@@ -158,13 +159,13 @@ def validate_current_native_contract() -> dict[str, Any]:
     if image.setter_methods(owner, parameter="typeName", label=LABEL) != contract["setterMethods"]:
         raise ValueError(f"{LABEL}.native:setter-order")
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     image.check_instruction_windows(
         [[contract["memberCountInstruction"]["rva"], contract["memberCountInstruction"]["hex"]]],
         label=LABEL,
     )
     for path, dependency in zip(DEPENDENCIES, dependencies):
-        image.check_windows(dependency["codeWindows"], label=f"{LABEL}.{path}")
+        check_formatter_windows(image, dependency, label=f"{LABEL}.{path}")
     reader_window = contract["codeWindows"][1]
     reads = contract["orderedSourceReads"]
     last = reader_window["startRva"]

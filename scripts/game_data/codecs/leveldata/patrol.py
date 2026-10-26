@@ -405,8 +405,8 @@ class NpcPatrolFramingError(ValueError):
                          f"expected={str(expected)[:250]} actual={str(actual)[:350]}")
 
 
-def _decode_npc_patrol_list(data, offset, *, strings, layout):
-    """Internal current pooled codec, selected only by its lexical native operation."""
+def _decode_current_patrol(data, offset, *, strings, layout, root_record=None, node_budget=None):
+    """Shared finite pooled evaluator; callers independently authenticate parents."""
     import math
     import struct
     from scripts.game_data.string_pool import resolve_string_pool_index
@@ -429,6 +429,8 @@ def _decode_npc_patrol_list(data, offset, *, strings, layout):
         if not -1 <= count <= limit:
             raise NpcPatrolFramingError("collection-elements-unproved" if empty else "count-unproved",
                                         field, start, [-1, limit], count)
+        if node_budget is not None and count>node_budget[0]:
+            raise NpcPatrolFramingError('node-limit',field,start)
         rows = [record(element, f"{field}[{i}]") for i in range(max(0, count))]
         for index, row in enumerate(rows):
             if row is not None:
@@ -436,8 +438,50 @@ def _decode_npc_patrol_list(data, offset, *, strings, layout):
         return dict(startOffset=start, endOffset=offset, count=count,
                     value=None if count == -1 else rows, rows=rows)
 
+    def data_pair_collection(field):
+        nonlocal offset
+        child=layout.get('dataPairCapability',{})
+        cap=layout.get('dataPairListCapability',{})
+        name='Beyond.Blackboard+DataPair'
+        plan=[dict(fieldName=f,kind=k)for f,k in (
+            ('isDynamic','bool'),('key','pooled-string'),('valueDouble','double-bits'),('valueStr','pooled-string'))]
+        if child.get('nullReturnsDefaultValue')is not True or (child.get('typeName'),child.get('memberCount'),child.get('managedBytes'),
+                child.get('nullMarker'),child.get('nullReturnsDefaultValue'),child.get('orderedReads'))!=(name,4,32,255,True,plan):
+            raise NpcPatrolFramingError('DataPair-child-unproved',field,offset)
+        if cap.get('positiveCountsAdmitted')is not True or cap.get('elementGrammarAdmitted')is not True or (cap.get('closedListType'),cap.get('countLimit'),cap.get('positiveCountsAdmitted'),
+                cap.get('elementGrammarAdmitted'),cap.get('managedElementBytes'))!=(
+                'System.Collections.Generic.List`1<'+name+'>',4096,True,True,32):
+            raise NpcPatrolFramingError('DataPair-list-unproved',field,offset)
+        start=offset;count=scalar('i',field+'.count')
+        if type(count)is not int or not -1<=count<=4096:
+            raise NpcPatrolFramingError('count-unproved',field,start,[-1,4096],count)
+        if node_budget is not None:
+            if count>node_budget[0]:raise NpcPatrolFramingError('node-limit',field,start)
+            node_budget[0]-=max(count,0)
+        rows=[]
+        for index in range(max(0,count)):
+            at=offset;marker=scalar('B',field+'.memberCount')
+            if marker==255:
+                values=dict(isDynamic=False,key=None,valueDouble=0.0,valueDoubleBits='0000000000000000',valueStr=None,
+                    defaultValue=True)
+            elif marker==4:
+                dynamic=scalar('B',field+'.isDynamic')
+                key=resolve_string_pool_index(scalar('i',field+'.key'),strings,field+'.key')
+                raw_at=offset;value=scalar('d',field+'.valueDouble')
+                text=resolve_string_pool_index(scalar('i',field+'.valueStr'),strings,field+'.valueStr')
+                values=dict(isDynamic=bool(dynamic),key=key,valueDouble=value if math.isfinite(value)else None,
+                    valueDoubleBits=bytes(data[raw_at:raw_at+8]).hex(),valueStr=text,defaultValue=False)
+            else:
+                raise NpcPatrolFramingError('member-count',field,at,[4,255],marker)
+            rows.append(dict(startOffset=at,endOffset=offset,indexInCollection=index,memberCount=marker,
+                recordType=name,**values))
+        return dict(startOffset=start,endOffset=offset,count=count,value=None if count==-1 else rows,rows=rows)
+
     def record(name, field, *, nullable=True):
         start = offset
+        if node_budget is not None:
+            if node_budget[0]<=0:raise NpcPatrolFramingError('node-limit',field,start)
+            node_budget[0]-=1
         marker = scalar("B", field + ".memberCount")
         if nullable and marker == 255:
             return None
@@ -458,6 +502,8 @@ def _decode_npc_patrol_list(data, offset, *, strings, layout):
                 value = [scalar("f", path + "." + axis) for axis in ("x", "y", "z")]
             elif wire in ("list", "empty-list"):
                 value = collection(row["element"], path, empty=wire == "empty-list")
+            elif wire == 'data-pair-list':
+                value = data_pair_collection(path)
             elif wire == "union":
                 tag = scalar("B", path + ".unionTag")
                 if tag == 255:
@@ -476,4 +522,19 @@ def _decode_npc_patrol_list(data, offset, *, strings, layout):
         return dict(startOffset=start, endOffset=offset, memberCount=marker,
                     recordType=name, fieldRanges=spans, enumNames=enum_names, **values)
 
+    if root_record is not None:
+        value=record(root_record,'patrolSubAction');return value,offset
     return collection(layout["root"], "npcPatrol")
+
+
+def _decode_npc_patrol_list(data,offset,*,strings,layout):
+    """Current NPC list frontdoor, selected by its lexical native operation."""
+    return _decode_current_patrol(data,offset,strings=strings,layout=layout)
+
+
+def _decode_pooled_patrol_sub_action(data,offset,*,strings,layout,node_budget):
+    """Read an already authenticated SubAction child without fabricating a list."""
+    if (not isinstance(node_budget,list)or len(node_budget)!=1 or type(node_budget[0])is not int
+            or node_budget[0]<=0):raise NpcPatrolFramingError('node-limit','patrolSubAction',offset)
+    return _decode_current_patrol(data,offset,strings=strings,layout=layout,
+        root_record='Beyond.Gameplay.Core.PatrolSubAction',node_budget=node_budget)

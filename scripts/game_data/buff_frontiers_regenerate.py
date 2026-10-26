@@ -73,10 +73,13 @@ def check_fields(wrapper: str, reviewed: list[str], installed: list[str]) -> Non
 
 
 def _type_definition(image: Any, name: str) -> int:
-    found = [i for i in range(len(image.metadata.types)) if image.type_name(i) == name]
+    # This immutable image already indexes every declaration, including
+    # duplicate names. Keep the uniqueness gate without rescanning all types
+    # for every formatter/helper field.
+    found = image.named_type_definitions.get(name, ())
     if len(found) != 1:
         raise RouteRefused(f"type={name}:found={len(found)}")
-    return found[0]
+    return found[0].index
 
 
 def _own_fields(image: Any, definition: int) -> list[str]:
@@ -129,8 +132,27 @@ def _function_window(image: Any, extents: dict[int, int], start_rva: int, bounda
     raise RouteRefused(f"no-{stop}={start_rva:#x}")
 
 
-def _nested_contexts(image: Any, window: dict[str, Any]) -> list[dict[str, Any]]:
-    """Derive every rip-relative ``mov rdx`` method-spec load in a reader window."""
+def _static_usage_bytes(pe: Any, cell: int) -> bytes | None:
+    """A wholly virtual-only cell has no on-disk token; other bad reads refuse.
+
+    This is a scanner exclusion, not a mapped-memory reader. Do not manufacture
+    bytes for a runtime cell or relax the strict PE/selected-context readers.
+    A partially backed, cross-section, ambiguous or unmapped range still fails.
+    """
+    offset,section_name,rva=pe.file_offset_for_va(cell)
+    if offset is None:
+        mapped=[s for s in pe.sections if s['virtualAddress']<rva+8
+                and rva<s['virtualAddress']+max(s['rawSize'],s['virtualSize'])]
+        if (len(mapped)==1 and mapped[0]['name']==section_name
+                and mapped[0]['virtualAddress']+mapped[0]['rawSize']<=rva
+                and rva+8<=mapped[0]['virtualAddress']+mapped[0]['virtualSize']):
+            return None
+    return pe.bytes_at_va(cell,8)
+
+
+def _nested_contexts(image: Any, window: dict[str, Any], *,
+                     skipped_runtime_cells: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    """Derive tagged static MethodSpec loads; runtime-only cells prove no type."""
     base, pe = image.pe.image_base, image.pe
     start, end = base + window["startRva"], base + window["endRva"]
     rows = image.mapper.decode_x64_subset(pe.bytes_at_va(start, end - start), start, stop_offset=end - start)
@@ -141,7 +163,12 @@ def _nested_contexts(image: Any, window: dict[str, Any]) -> list[dict[str, Any]]
         if len(raw) != 7 or raw[:3] != b"\x48\x8B\x15":
             continue
         cell = row["va"] + 7 + struct.unpack_from("<i", raw, 3)[0]
-        usage = pe.bytes_at_va(cell, 8)
+        usage = _static_usage_bytes(pe,cell)
+        if usage is None:
+            if skipped_runtime_cells is not None:
+                skipped_runtime_cells.append({'instructionRva':row['va']-base,'cellRva':cell-base,
+                    'reason':'virtual-only cell has no on-disk MethodSpec token'})
+            continue
         try:
             index = method_spec_usage_index(usage, image.registration["methodSpecsCount"],
                                             source=str(image.gameassembly), offset=cell)

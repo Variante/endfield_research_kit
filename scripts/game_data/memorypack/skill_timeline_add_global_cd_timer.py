@@ -21,6 +21,7 @@ from scripts.game_data.il2cpp.context_audit_memorypack import buff_action_read_o
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import is_role_projection
 
 
 LABEL = "skillTimelineAddGlobalCdTimer"
@@ -88,7 +89,7 @@ def _dependencies() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     route = catalog.get("families", {}).get("AbilityActionData", [])[TAG]
     switch = catalog.get("switches", {}).get("AbilityActionData", {})
     if (
-        source.get("schemaVersion") != 1
+        (source.get("schemaVersion") != 1 and not is_role_projection(source))
         or tuple(source.get("anonymousReadOrder", {}).get("member7", ()))
         != SOURCE_READ_ORDER
         or not isinstance(source.get("methods"), list)
@@ -97,7 +98,7 @@ def _dependencies() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         or source["methods"][1][2] != "Deserialize"
         or tuple(row.get("typeName") for row in source.get("nestedContexts", ()))
         != NESTED_TYPES
-        or child.get("schemaVersion") != 1
+        or (child.get("schemaVersion") != 1 and not is_role_projection(child))
         or child.get("anonymousReadOrder", {}).get("scalar-payload")
         != ["byte-payload", "byte", "scalar32"]
         or "member13" not in child.get("anonymousReadOrder", {})
@@ -167,12 +168,12 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["sourceContract"],
-    )
+     native_image=image)
     child_audit = buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["nestedProfileContract"],
-    )
+     native_image=image)
     if (
         tuple(source_audit["anonymousReadOrder"].get("member7", ()))
         != SOURCE_READ_ORDER

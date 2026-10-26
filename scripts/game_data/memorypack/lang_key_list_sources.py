@@ -2,8 +2,8 @@
 from scripts.game_data.il2cpp.formatter_value_paths import BytesPath
 
 
-def list_program(regions,entry,s,*,count,new=True):
- if type(count)is not int or count not in (-1,0,1) or type(new)is not bool:raise ValueError('langKeyList.selected-profile')
+def list_program(regions,entry,s,*,count,new=True,count_limit=1):
+ if type(count_limit)is not int or not 1<=count_limit<=3 or type(count)is not int or not -1<=count<=count_limit or type(new)is not bool:raise ValueError('langKeyList.selected-profile')
  g=BytesPath(regions,entry);g.take('4053','57','4154','4156','4883ec58');g.relative('803d');g.take('00','498bd9','498bf8','4c8be2');g.branch('75',True,1)
  g.take('0f57c0','488d942488000000','4533f6','498bcc','4489b42488000000','0f11442420');g.call(s['header']);g.take('84c0');g.branch('0f84',count==-1)
  if count==-1:
@@ -16,10 +16,49 @@ def list_program(regions,entry,s,*,count,new=True):
    g.take('488b4320','488b37','488b90c0000000','488b4210','4c397020');g.branch('75',True,1);g.take('488b4320','488bce','488b90c0000000','488b5210');g.call(s['clear']);g.take('90');g.jump('e9')
   provider_owner=g.relative('488b0d');g.take('4439b1e0000000');g.branch('75',True,1);g.take('488b4320','488b88c0000000','488b4918');g.call(s['provider']);g.take('488bf0','85ed');g.branch('7e',count==0,1)
   if count:
-   g.take('0f57c0','0f11442420','4885f6');g.branch('74',False,1);g.take('4c8d4c2420','4d8bc4','488bd6');g.call(s['dispatch']);g.take('4c8b3f','0f28742420','4d85ff');g.branch('0f84',False);g.take('488b4320','488b88c0000000','488b4130','4883782000');g.branch('0f84',False);g.take('488b4320','488d542430','498bcf','660f7f742430','4c8b80c0000000','4d8b4030');g.call(s['add']);g.take('41ffc6','443bf5');g.branch('7c',False,1)
+   loop=g.at
+   for i in range(count):
+    if g.at!=loop:raise ValueError('langKeyList.same-loop-entry')
+    g.take('0f57c0','0f11442420','4885f6');g.branch('74',False,1);g.take('4c8d4c2420','4d8bc4','488bd6');g.call(s['dispatch']);g.take('4c8b3f','0f28742420','4d85ff');g.branch('0f84',False);g.take('488b4320','488b88c0000000','488b4130','4883782000');g.branch('0f84',False);g.take('488b4320','488d542430','498bcf','660f7f742430','4c8b80c0000000','4d8b4030');g.call(s['add']);g.take('41ffc6','443bf5');g.branch('7c',i+1<count,1)
   g.take('4c8b7c2450','488bb42490000000','0f28742440','488bac2480000000')
  g.take('4883c458','415e','415c','5f','5b','c3')
- return dict(selectedBytes=g.seen,count=count,newList=new,elementRuntimeBytes=16,wireHeaderBytes=4,elementCallbacks=int(count==1),providerOwnerCell=None if count==-1 else provider_owner,elementOutput='zeroed sixteen-byte local at RSP+32 passed via R9',elementTransfer='exact XMM16 through aligned separate RSP+48 to Add',reader='incoming RDX retained R12',output='incoming R8 retained RDI',normalFrameAndReturn=True,boundary='Only null/zero/one-element witnesses. Positive child wire grammar and typed adapter/provider selection independently gated. Existing list requires count0 and sufficient capacity; new allocation/constructor effects and coherent initialized contexts remain explicit conditions. No growth or general loop invariant.')
+ return dict(selectedBytes=g.seen,count=count,newList=new,elementRuntimeBytes=16,wireHeaderBytes=4,elementCallbacks=max(0,count),providerOwnerCell=None if count==-1 else provider_owner,elementOutput='zeroed sixteen-byte local at RSP+32 passed via R9',elementTransfer='exact XMM16 through aligned separate RSP+48 to Add',reader='incoming RDX retained R12',output='incoming R8 retained RDI',normalFrameAndReturn=True,boundary=('Only null/zero/one-element witnesses. Positive child wire grammar and typed adapter/provider selection independently gated. Existing list requires count0 and sufficient capacity; new allocation/constructor effects and coherent initialized contexts remain explicit conditions. No growth or general loop invariant.' if count_limit==1 else 'Exact finite repeated-loop witnesses; child MC1/default wire and typed adapter/provider independently gated. Existing list begins count0 with capacity at least count; fresh typed constructor receives count. Normal disjoint helper effects and coherent initialized contexts are conditions. Count induction is proved separately; no growth path.'))
+
+
+def bounded_programs(regions,entry,s,*,count_limit=4096):
+ """Own managed16 loop induction; no reference8 or raw16 wire alias."""
+ from scripts.game_data.memorypack.counted_loop_sources import prove_induction
+ if type(count_limit)is not int or not 3<=count_limit<=4096:raise ValueError('langKeyList.bounded-count-domain')
+ programs=[dict(list_program(regions,entry,s,count=n,new=new,count_limit=3),countWitness=n)
+  for n in(0,1,2,3)for new in(False,True)]
+ induction=prove_induction(programs,initial='4533f6',increment='41ffc6',comparison='443bf5',
+  counter='r14d',saved_count='ebp',max_count=count_limit)
+ return dict(programs=programs,induction=induction,countLimit=count_limit,elementRuntimeBytes=16,
+  elementWireEncoding='MC1/int32-pool-index-or-default',initialReusedCount=0,
+  requiredCapacityAtLeastCount=True,wholeOwnerAdmitted=False)
+
+
+def derive_bounded(image,pins,profile,actual,*,count_limit=4096):
+ """Call only after derive freshly authenticated the complete old declaration."""
+ base=image.pe.image_base;entry=actual['listRegistration']['pointer'];windows=actual['listWindows']
+ image.check_windows(windows,label='langKeyList.bounded-list')
+ regions=[(base+w['startRva'],image.window_bytes(w))for w in windows]
+ symbols={k:base+v for k,v in profile['symbols'].items()}
+ result=bounded_programs(regions,entry,symbols,count_limit=count_limit)
+ steps={}
+ for role,canonical in(('add',False),('canonicalAdd',True)):
+  source=actual['native'][role];image.check_windows(source['windows'],label='langKeyList.bounded-'+role)
+  raw=[(base+w['startRva'],image.window_bytes(w))for w in source['windows']]
+  step=add_program(raw,base+source['entryRva'],symbols,canonical=canonical)
+  steps[role]=dict(selectedBytes=step['selectedBytes'],elementBytes=16,arrayDataOffset=32,arrayStride=16,
+   countSlot=24,versionSlot=28,normalReturn=True,
+   symbolicPrecondition='0<=size<count<=countLimit; capacity>=count; size and capacity fit signed Int32',
+   symbolicPostcondition='Version increments once; size becomes size+1; unchanged complete input16 stored at arrayData+16*size',
+   condition='Exact full owned Add source and normal unchanged typed array-store/barrier ABI; no growth')
+ return dict(result,addSteps=steps,parent=actual['parent'],listRegistration=actual['listRegistration'],
+  listWindows=windows,nominalDependency=actual['nominalDependency'],
+  constructorCapacity='Caller passes unchanged nonnegative EBP count; owned capacity constructor forwards incoming Int32 to typed array allocation',
+  providerAndChildSources=actual['components'])
 
 
 

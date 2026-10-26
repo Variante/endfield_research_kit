@@ -35,6 +35,18 @@ bools than the wire carries and nothing here says which were dropped.
 on physical EOF, and this layout closed every file that carried the action
 when it was reviewed; current counts are in the JsonData corpus report.
 
+**String storage is mixed, and each member is read the way the bytes and
+its owner prove.** In the pooled export the outer wrapper's ``_uid`` is a
+StringPool index, but this nested value is not written by a ``ForMemoryPack``
+wrapper: its ``_uid`` and its ``_param1`` JSON stay inline length-prefixed
+UTF-8 (the nested uid spells the same text the outer pooled uid resolves
+to), while ``_eventName`` is a ``Param<string>`` and so goes through the
+registered ``Param<string>`` formatter, whose value and path are pool
+indices. That formatter is authenticated by
+``levelscript_string_param_native``; the eventName read refuses unless it
+validates, and every read refuses without the matching StringPool rather
+than falling back to inline text.
+
 ``SendLuaEvent2`` declares a second ``Param<object>`` and so should write eight
 members. **No file in the corpus contains one**, so that count is a prediction
 and not a measurement; it is computed from the declaration and checked, so an
@@ -46,7 +58,9 @@ from __future__ import annotations
 import struct
 from typing import Any, Callable
 
-from . import params
+from scripts.game_data.string_pool import StringPoolDecodeError
+
+from .string_param import decode_string_param
 
 
 #: Members every SendLuaEvent nested value writes before its Param fields.
@@ -83,14 +97,45 @@ def json_param_count(declared: dict[str, Any]) -> int:
     return declared_params or 1
 
 
+def _require_pooled_string_param(field: str, game_root: Any) -> None:
+    """Refuse unless the installed ``Param<string>`` formatter reads pool indices."""
+
+    from scripts.game_data.levelscript_string_param_native import (
+        validate_string_param_native_contract,
+    )
+
+    audit = validate_string_param_native_contract(game_root=game_root)
+    observed = tuple(
+        audit.get(key)
+        for key in ("status", "codecKind", "rawSize", "pathEncoding", "valueEncoding")
+    )
+    if observed != ("validated", "Param<string>", 8, "int32-pool-index", "int32-pool-index"):
+        raise SendLuaEventDecodeError(
+            f"{field}.nativeContract:owner=levelscript_string_param_native,"
+            f"status={audit.get('status')},detail={str(audit.get('detail', ''))[:500]}"
+        )
+
+
 def decode_nested_send_lua_event(
     data: bytes,
     offset: int,
     field: str,
     json_params: int,
+    *,
+    strings: Any,
+    game_root: Any = None,
 ) -> tuple[dict[str, Any], int]:
-    """Read one nested ``manualValue`` and return it with the new cursor."""
+    """Read one nested ``manualValue`` and return it with the new cursor.
 
+    ``strings`` is the export's StringPool and is required: the pooled
+    ``_eventName`` cannot be read without it, and absence never selects the
+    historical inline spelling.
+    """
+
+    if strings is None:
+        raise SendLuaEventDecodeError(
+            f"{field}:matching-StringPool-required,offset={offset}"
+        )
     expected = FIXED_MEMBER_COUNT + json_params
     if offset < 0 or offset >= len(data):
         raise SendLuaEventDecodeError(f"{field}:truncated at {offset}")
@@ -143,13 +188,17 @@ def decode_nested_send_lua_event(
             raise SendLuaEventDecodeError(
                 f"{field}.{label}:unsupported-member-count={marker}"
             )
-        cursor += 1
-        value = read_string(label)
-        tail = params.decode_param_tail(data, cursor)
-        if tail is None:
-            raise SendLuaEventDecodeError(f"{field}.{label}:invalid-param-tail")
-        detail, cursor = tail
-        return {"value": value, **detail}
+        _require_pooled_string_param(f"{field}.{label}", game_root)
+        try:
+            parsed = decode_string_param(data, cursor, strings=strings)
+        except StringPoolDecodeError as exc:
+            raise SendLuaEventDecodeError(f"{field}.{label}:{exc}") from exc
+        if parsed is None:
+            raise SendLuaEventDecodeError(
+                f"{field}.{label}:invalid-Param<string>,offset={cursor}"
+            )
+        detail, cursor = parsed
+        return detail
 
     value: dict[str, Any] = {
         "ID": read_i32("ID"),

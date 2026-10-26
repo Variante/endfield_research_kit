@@ -75,7 +75,7 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
         path = CONTRACTS_DIR / record["sourceContract"]
         source = json.loads(path.read_bytes())
         buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-            image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+            image.modules, image.owners, source=str(gate.gameassembly), contract_path=path, native_image=image)
         extra = contract["additionalSourceWindows"].get(path.name, [])
         image.check_windows(extra, label=LABEL)
         source["codeWindows"] += extra

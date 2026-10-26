@@ -1,4 +1,4 @@
-"""Selected-build SkillData MoveToSlotAction 0x00FA source reader.
+"""Selected-build SkillData MoveToSlotAction source reader.
 
 The native source fixes 17 ordered reads and generic LayerMask,
 TargetSettings and AnimationCurve contexts. Stored fields do not prove live
@@ -17,12 +17,18 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff import (
+    _ability_action_tag, _ability_action_tag_bytes,
+)
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+from scripts.game_data.memorypack.skill_timeline_dependencies import validate_dependencies
 
 
 LABEL = "skillTimelineMoveToSlot"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_move_to_slot_native.json"
+TAG_NAME = "Core_MoveToSlotAction_Data"
 FIELD_NAMES = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "ignoreAllCollision", "ignoreCollisionLayer", "ignoreNavmesh", "moveSpeed",
@@ -37,7 +43,9 @@ READ_KINDS = (
 )
 
 
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
     contract, _ = read_reviewed_contract(
         CONTRACT_PATH, schema="endfield.skill-timeline-move-to-slot-native-contract.v1",
         label=LABEL, status="exact-current-build",
@@ -45,7 +53,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != 0x00FA
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(FIELD_NAMES)
         or not isinstance(reads, list) or len(reads) != len(FIELD_NAMES)
         or [row.get("memberIndex") for row in reads] != list(range(len(reads)))
@@ -56,7 +64,7 @@ def _contract() -> dict[str, Any]:
         or [row.get("typeName") for row in contexts]
         != ["UnityEngine.LayerMask", "Beyond.Gameplay.Core.TargetSettings", "UnityEngine.AnimationCurve"]
         or [row.get("path") for row in contract.get("dependencies", [])]
-        != ["buff_1f_native.json", "buff_ec_native.json", "buff_98_native.json"]
+        != ["memorypack_layer_mask_source_native.json", "buff_ec_native.json", "buff_98_native.json"]
         or len(contract.get("methods", [])) != 2
         or len(contract.get("codeWindows", [])) != 2
     ):
@@ -66,7 +74,7 @@ def _contract() -> dict[str, Any]:
 
 def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> dict[str, Any]:
     """Authenticate selected native inputs, route, reads and child contexts."""
-    contract = _contract()
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
         expected["GameAssembly.dll"], expected["global-metadata.dat"],
@@ -82,7 +90,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     image = open_native_image(gate.gameassembly, gate.metadata)
     image.validate_dispatcher(contract["dispatcher"], label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
-    image.check_windows(contract["codeWindows"], label=LABEL)
+    check_formatter_windows(image, contract, label=LABEL)
     instruction = contract["memberCountInstruction"]
     image.check_instruction_windows([[instruction["rva"], instruction["hex"]]], label=LABEL)
     owner = image.metadata.types[contract["dispatcher"]["wrapperTypeDefinition"]]
@@ -101,11 +109,8 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
         target = rva + 5 + struct.unpack_from("<i", raw, 1)[0]
         if target != read["sourceTargetRva"]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
-    for dependency in contract["dependencies"]:
-        reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
-            raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+    validate_dependencies(image, contract, label=LABEL)
+
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(
@@ -136,9 +141,12 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     }
 
 
-def _consume_action(reader: Reader, width: int) -> dict[str, Any]:
-    contract = _contract()
-    if width != 3 or reader.data[reader.pos:reader.pos + width] != b"\xFA\xFA\x00":
+def _consume_action(reader: Reader, width: int, *, gameassembly=None, metadata=None) -> dict[str, Any]:
+    selected = {} if gameassembly is None and metadata is None else dict(gameassembly=gameassembly, metadata=metadata)
+    contract = _contract(**selected)
+    encoded = _ability_action_tag_bytes(TAG_NAME, **selected)
+    if (encoded is None or width != len(encoded)
+            or reader.data[reader.pos:reader.pos + width] != encoded):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     start = reader.pos
     reader.take(width, "union-tag")
@@ -166,19 +174,28 @@ def _consume_action(reader: Reader, width: int) -> dict[str, Any]:
             "fields": fields, "evidenceBoundary": "stored framing only"}
 
 
-def decode_action(data: bytes, offset: int, *, validation: Mapping[str, Any]) -> dict[str, Any]:
-    if validation.get("status") != "validated" or validation.get("unionTag") != 0x00FA:
+def decode_action(data: bytes, offset: int, *, validation: Mapping[str, Any],
+                  gameassembly=None, metadata=None) -> dict[str, Any]:
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    selected = {} if gameassembly is None and metadata is None else dict(gameassembly=gameassembly, metadata=metadata)
+    if validation.get("status") != "validated" or validation.get("unionTag") != _ability_action_tag(TAG_NAME, **selected):
         raise ValueError(f"{LABEL}.native:not-validated")
     if type(offset) is not int or offset < 0 or offset + 4 > len(data):
         raise ValueError(f"{LABEL}.source:offset-outside-source")
+    encoded = _ability_action_tag_bytes(TAG_NAME, **selected)
+    if encoded is None:
+        raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader = Reader(data, f"{LABEL}.source")
     reader.pos = offset
-    return _consume_action(reader, 3)
+    return _consume_action(reader, len(encoded), **selected)
 
 
-def decode_shared_action(reader: Reader, depth: int, tag: int, width: int) -> None:
+def decode_shared_action(reader: Reader, depth: int, tag: int, width: int, *,
+                         gameassembly=None, metadata=None) -> None:
     """Read a shared-parser action after its composite native gate validates."""
     del depth
-    if tag != 0x00FA:
+    selected = {} if gameassembly is None and metadata is None else dict(gameassembly=gameassembly, metadata=metadata)
+    if tag != _contract(**selected)["dispatcher"]["unionTag"]:
         raise ValueError(f"{LABEL}.unionTag:unsupported")
-    _consume_action(reader, width)
+    _consume_action(reader, width, **selected)

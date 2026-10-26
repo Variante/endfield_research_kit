@@ -303,6 +303,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
 ) -> int:
     summary = json.loads(summary_path.read_bytes())
     if (
@@ -334,7 +335,7 @@ def _validate_sources(
                 or ledger.get(path, {}).get("length") != len(data)
             ):
                 raise ValueError(f"{LABEL}.source:receipt={path}@{start}")
-            _, actual_end = decode_on_encounter_battle_part_end_header(data, start, route)
+            _, actual_end = decode_on_encounter_battle_part_end_header(data, start, route, game_root=game_root, strings=strings)
             if actual_end != end:
                 raise ValueError(f"{LABEL}.source:cursor={path}@{start},end={actual_end},expected={end}")
             count += 1
@@ -367,7 +368,9 @@ def validate_levelscript_on_encounter_battle_part_end_native_contract(
         if any(value is not None for value in (export_root, ledger_path, summary_path)):
             if not all(value is not None for value in (export_root, ledger_path, summary_path)):
                 raise ValueError(f"{LABEL}.source:incomplete-paths")
-            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            from scripts.game_data.string_pool import export_string_pool
+            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         return {"status": "validated", "evidenceBoundary": "exact",
                 "routeCount": len(contract["routes"]), "routes": contract["routes"],
                 "sourceReceiptCount": count}

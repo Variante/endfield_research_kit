@@ -75,6 +75,7 @@ import struct
 import sys
 from pathlib import Path
 from scripts.game_data.il2cpp.context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index, rip_qword_load_target
+from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 from scripts.game_data.memorypack.corpus_gate import verify_current_report_inputs as verify_family_report_inputs
 from scripts.game_data.il2cpp.context import class_sharing_branch
@@ -805,7 +806,8 @@ def audit():
     buff_sequence=buff_sequence_read_order(pe,md,modules,image_owners,source=str(gate.gameassembly))
     buff_tag76=buff_tag76_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     buff_ec=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=CONTRACTS_DIR / 'buff_ec_native.json')
+        contract_path=CONTRACTS_DIR / 'buff_ec_native.json',
+        native_image=open_native_image(gate.gameassembly,gate.metadata))
     buff_50=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / 'buff_50_native.json')
     buff_11f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -945,7 +947,8 @@ def audit():
     buff_140=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / 'buff_140_native.json')
     buff_98=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=CONTRACTS_DIR / 'buff_98_native.json')
+        contract_path=CONTRACTS_DIR / 'buff_98_native.json',
+        native_image=open_native_image(gate.gameassembly,gate.metadata))
     buff_176=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / 'buff_176_native.json')
     buff_93=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -1187,7 +1190,8 @@ def audit():
     buff_a8=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / 'buff_a8_native.json')
     buff_23=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=CONTRACTS_DIR / 'buff_23_native.json')
+        contract_path=CONTRACTS_DIR / 'buff_23_native.json',
+        native_image=open_native_image(gate.gameassembly,gate.metadata))
     buff_16a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / 'buff_16a_native.json')
     buff_6f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),

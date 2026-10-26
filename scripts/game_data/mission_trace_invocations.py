@@ -2,7 +2,7 @@
 from __future__ import annotations
 import re
 
-PAIRED_ABI = re.compile(r'win64\.(?:(?:scoped_)?paired_gp_|paired_double_slot2_(?=void_4\.v1\Z))(void|bool|float|double|int|pointer)_([1-5])\.v1\Z')
+PAIRED_ABI = re.compile(r'win64\.(?:(?:scoped_)?paired_gp_|paired_double_slot2_(?=void_4\.v1\Z)|(?:scoped_)?paired_float_slot1_(?=(?:void|bool)_3\.v1\Z))(void|bool|float|double|int|pointer)_([1-5])\.v1\Z')
 
 
 class InvocationError(ValueError):

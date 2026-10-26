@@ -7,9 +7,11 @@ its MethodInfo, or any instantiated field layout.
 from __future__ import annotations
 
 import struct
+from types import MappingProxyType
 from typing import Any
 
 from .context import generic_method_candidates, method_spec_record
+from . import protocol as type_protocol
 from .protocol import runtime_type_name
 from scripts.game_data.il2cpp.native_image import NativeImage
 
@@ -55,9 +57,14 @@ class GenericEntries:
             by_method.setdefault(method, []).append((index, spec))
             pointer = struct.unpack_from("<Q", self.pointers, slot * 8)[0]
             aliases.setdefault(pointer, set()).add(method)
-        from types import MappingProxyType
         self._rows_by_method = MappingProxyType({key: tuple(value) for key, value in by_method.items()})
         self._pointer_aliases = MappingProxyType({key: tuple(sorted(value)) for key, value in aliases.items()})
+        self._argument_candidate_rows = {}
+        self._argument_candidate_raw_source = (image, image.pe, image.metadata,
+            getattr(image.pe, 'buf', None), getattr(image.metadata, 'buf', None),
+            self.table, self.pointers, self.specs, self._rows_by_method,
+            getattr(image.metadata, 'types', None), getattr(image.metadata, 'nested_parent_by_type_index', None)) if type(image) is NativeImage else None
+        self._argument_candidate_source = None
 
         if type(image) is NativeImage:
             self._initialized = True
@@ -69,18 +76,93 @@ class GenericEntries:
                  for arg in inst.arguments]
         return names, inst.as_dict()
 
+    def _argument_index_source(self):
+        """Identity of immutable raw projections, never a validation epoch."""
+        image = self.image
+        if (type(image) is not NativeImage or type(self) is not GenericEntries
+                or type(getattr(image.pe, 'buf', None)) is not bytes
+                or type(getattr(image.metadata, 'buf', None)) is not bytes
+                or type(self.table) is not bytes or type(self.pointers) is not bytes
+                or type(self.specs) is not tuple or 'arguments' in self.__dict__
+                or not all(type(value) is int for value in (self.table_base,
+                    self.code['genericMethodPointersCount'], self.code['invokerPointersCount']))):
+            return None
+        raw_source = (image, image.pe, image.metadata, image.pe.buf, image.metadata.buf,
+                      self.table, self.pointers, self.specs, self._rows_by_method,
+                      getattr(image.metadata, 'types', None), getattr(image.metadata, 'nested_parent_by_type_index', None))
+        if any(a is not b for a, b in zip(self._argument_candidate_raw_source, raw_source, strict=True)):
+            return None
+        # Never force NativeImage's lazy table before the old row decoder.
+        # The first full scan initializes it in the original order; a later
+        # lookup may build the optional coordinate index.
+        instantiations = image.__dict__.get('instantiations')
+        if instantiations is None:
+            return None
+        # Strong references keep ids from being recycled. Compare identities,
+        # not full buffer equality, and fail fresh if an input is replaced.
+        implementations = tuple(part for function in (
+            instantiations.resolve, getattr(instantiations, 'read_raw', None),
+            getattr(instantiations, '_read', None), getattr(image.metadata, 'type_full_name', None),
+            getattr(image.metadata, 'type_name', None), getattr(image.metadata, 'type_namespace', None),
+            getattr(image.metadata, 'string', None), getattr(image.pe, 'file_offset_for_va', None),
+            getattr(image.pe, 'u64_at_va', None), runtime_type_name, type_protocol.runtime_type_name,
+            type_protocol.runtime_generic_inst_type_pointers,
+            generic_method_candidates, GenericEntries.arguments, self._registration_arguments)
+            for part in (getattr(function, '__self__', None), getattr(function, '__func__', function)))
+        return ((image, image.pe, image.metadata, image.pe.buf, image.metadata.buf,
+                 self.table, self.pointers, self.specs, self._rows_by_method,
+                 instantiations, getattr(instantiations, 'pointer_bytes', None),
+                 getattr(image.metadata, 'types', None), getattr(image.metadata, 'nested_parent_by_type_index', None))
+                + implementations,
+                (self.table_base, self.code['genericMethodPointersCount'],
+                 self.code['invokerPointersCount'], getattr(instantiations, 'count', None),
+                 getattr(instantiations, 'table_va', None), getattr(instantiations, 'max_arguments', None)))
+
+    def _registration_arguments(self, index, spec):
+        # This remains fresh for every selected row, including warm lookups.
+        row, = generic_method_candidates(
+            self.table[index * 16:(index + 1) * 16], 1, len(self.specs), {spec},
+            self.code['genericMethodPointersCount'], self.code['invokerPointersCount'],
+            source=self.source, offset=self.table_base + index * 16)
+        row['tableIndex'] = index
+        _definition, ci, mi = self.specs[row['methodSpecIndex']]
+        cn, cp = self.arguments(ci)
+        mn, mp = self.arguments(mi)
+        return row, cn, cp, mn, mp
+
+    def _candidate_rows(self, method_index, class_arguments, method_arguments):
+        rows = self._rows_by_method.get(method_index, ())
+        if (not rows or type(method_index) is not int
+                or type(class_arguments) is not list or type(method_arguments) is not list
+                or not all(type(name) is str for name in class_arguments + method_arguments)):
+            return rows
+        source = self._argument_index_source()
+        if source is None:
+            return rows
+        if self._argument_candidate_source is None:
+            self._argument_candidate_source = source
+        else:
+            references, values = self._argument_candidate_source
+            if (values != source[1] or len(references) != len(source[0])
+                    or any(a is not b for a, b in zip(references, source[0], strict=True))):
+                return rows
+        if method_index not in self._argument_candidate_rows:
+            projected = {}
+            for index, spec in rows:
+                # Exhaust the old scan in the same order before publishing an
+                # index. Malformed unrelated triples/arguments still refuse;
+                # failures never leave a partial or cached successful result.
+                _row, cn, _cp, mn, _mp = self._registration_arguments(index, spec)
+                projected.setdefault((tuple(cn), tuple(mn)), []).append((index, spec))
+            self._argument_candidate_rows[method_index] = MappingProxyType(
+                {key: tuple(value) for key, value in projected.items()})
+        return self._argument_candidate_rows[method_index].get(
+            (tuple(class_arguments), tuple(method_arguments)), ())
+
     def _matching_registrations(self, method_index: int, class_arguments: list[str], method_arguments: list[str]) -> list[dict[str, Any]]:
         matches = []
-        for index, spec in self._rows_by_method.get(method_index, ()):
-            # Recheck each selected raw triple, including invoker/adjustor bounds.
-            row, = generic_method_candidates(
-                self.table[index * 16:(index + 1) * 16], 1, len(self.specs), {spec},
-                self.code["genericMethodPointersCount"], self.code["invokerPointersCount"],
-                source=self.source, offset=self.table_base + index * 16)
-            row["tableIndex"] = index
-            _definition, ci, mi = self.specs[row["methodSpecIndex"]]
-            cn, cp = self.arguments(ci)
-            mn, mp = self.arguments(mi)
+        for index, spec in self._candidate_rows(method_index, class_arguments, method_arguments):
+            row, cn, cp, mn, mp = self._registration_arguments(index, spec)
             if cn == class_arguments and mn == method_arguments:
                 slot = row["indices"][0]
                 pointer = struct.unpack_from("<Q", self.pointers, slot * 8)[0]

@@ -127,12 +127,12 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["sourceContract"],
-    )
+     native_image=image)
     inherited_audit = buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["inheritedSourceContract"],
-    )
+     native_image=image)
     if (
         source_audit["anonymousReadOrder"]["member19"]
         != inherited_audit["anonymousReadOrder"]["member19"]

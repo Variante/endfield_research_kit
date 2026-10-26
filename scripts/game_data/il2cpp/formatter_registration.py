@@ -54,6 +54,42 @@ def _stack_slot(row: dict, label: str) -> tuple[str, int]:
 
 def validate_eager_wrap_registration(image: Any, flow: dict, *, label: str) -> None:
     """Prove a concrete adapter and original key reach RegisterWrap together."""
+    if flow.get('profile')=='inline-closed-adapter-constructor.v1':
+        from .formatter_inline_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-closed-adapter-constructor.v1':
+        from .formatter_direct_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-reference-adapter-late-rbx-save.v1':
+        from .formatter_late_saved_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-adapter-explicit-static-checks.v1':
+        from .formatter_checked_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-value-adapter-explicit-static-checks.v1':
+        from .formatter_checked_value_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-reference-adapter-nonnull-skip-static-checks.v1':
+        from .formatter_guarded_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-constructed-reference-adapter-nonnull-skip-static-checks.v1':
+        from .formatter_constructed_guarded_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-adapter-key-in-rcx-single-static-check.v1':
+        from .formatter_key_receiver_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='stack-adapter-explicit-static-checks.v1':
+        from .formatter_stack_registration import validate
+        validate(image,flow,label=label)
+        return
     rows = _rows(image, flow['window'], 18, label)
     allocation, constructor, key = (flow[k] for k in ('allocation', 'constructor', 'key'))
     for usage in (allocation, constructor, key):

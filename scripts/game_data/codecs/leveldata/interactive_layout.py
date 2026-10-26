@@ -84,6 +84,7 @@ def level_interactive_data_list_frames(
 def parse_leveldata_interactive_narrative_records(
     data: bytes,
     *,
+    strings: StringPool | None,
     final_record_end_offset: int | None = None,
     record_parser: Callable[..., dict | None],
 ) -> list[dict]:
@@ -92,7 +93,9 @@ def parse_leveldata_interactive_narrative_records(
     Non-final records use the next typed list item. A caller may supply the
     exact start of top-level member 21 to bound the final record, but only after
     independently validating either the adjacent nonempty member-22 dictionary
-    or the complete empty-script members 21-43 suffix.
+    or the complete empty-script members 21-43 suffix. Records are framed and
+    handed to ``record_parser`` only through the matching ``strings`` pool;
+    without it nothing is recovered.
     """
     if not data or data[0] != 43:
         return []
@@ -100,6 +103,7 @@ def parse_leveldata_interactive_narrative_records(
     seen_offsets: set[int] = set()
     for frame in level_interactive_data_list_frames(
         data,
+        strings=strings,
         final_record_end_offset=final_record_end_offset,
     ):
         for boundary in frame.get("records") or []:
@@ -116,6 +120,7 @@ def parse_leveldata_interactive_narrative_records(
                 offset,
                 end_offset,
                 allow_progress_lock=True,
+                strings=strings,
             )
             if (
                 parsed is None
@@ -138,16 +143,21 @@ def parse_leveldata_interactive_narrative_records(
 def parse_leveldata_interactive_horn_dialog_records(
     data: bytes,
     *,
+    strings: StringPool | None,
     final_record_end_offset: int | None = None,
     record_parser: Callable[..., dict | None],
 ) -> list[dict]:
-    """Recover fully bounded ``int_horn.properties.dialog_id`` consumers."""
+    """Recover fully bounded ``int_horn.properties.dialog_id`` consumers.
+
+    Framed and parsed only through the matching ``strings`` pool.
+    """
     if not data or data[0] != 43:
         return []
     rows: list[dict] = []
     seen_offsets: set[int] = set()
     for frame in level_interactive_data_list_frames(
         data,
+        strings=strings,
         final_record_end_offset=final_record_end_offset,
     ):
         for boundary in frame.get("records") or []:
@@ -163,6 +173,7 @@ def parse_leveldata_interactive_horn_dialog_records(
                 data,
                 offset,
                 end_offset,
+                strings=strings,
             )
             if parsed is None:
                 continue
@@ -182,6 +193,7 @@ def leveldata_interactive_final_record_boundary(
     data: bytes,
     candidate_script_ids: set[int],
     *,
+    strings: StringPool | None,
     expected_level_id: str = "",
     brief_dictionary_parser: Callable[..., dict],
     narrative_record_parser: Callable[..., dict | None],
@@ -192,7 +204,10 @@ def leveldata_interactive_final_record_boundary(
     Current ``LevelData/43`` member 20 is the interactive list and member 21 is
     the fixed-width ``levelIdNum`` integer. A nonempty member-22 BriefData
     dictionary or the complete empty-script members 21-43 suffix supplies an
-    exact boundary without borrowing an unrelated byte pattern.
+    exact boundary without borrowing an unrelated byte pattern. Interactive
+    records and ``sceneId`` are StringPool indices (corpus correspondence +
+    maintained pooled codecs, not a native formatter proof), so the empty-
+    suffix path needs the matching ``strings`` pool.
     """
     brief_rows = (
         brief_dictionary_parser(
@@ -234,7 +249,7 @@ def leveldata_interactive_final_record_boundary(
     # LevelSafeZoneData/1 with its zero value; exact sceneId; two empty
     # collections; null LevelSpecificData; and three empty collections at EOF.
     candidates: list[dict] = []
-    for frame in level_interactive_data_list_frames(data):
+    for frame in level_interactive_data_list_frames(data, strings=strings):
         record_offset = frame.get("finalRecordOffset")
         if not isinstance(record_offset, int):
             continue
@@ -243,6 +258,7 @@ def leveldata_interactive_final_record_boundary(
             record_offset,
             len(data),
             allow_progress_lock=True,
+            strings=strings,
         )
         if parsed is None:
             parsed = horn_record_parser(
@@ -250,6 +266,7 @@ def leveldata_interactive_final_record_boundary(
                 record_offset,
                 len(data),
                 require_end_limit=False,
+                strings=strings,
             )
         if parsed is None:
             continue
@@ -275,6 +292,7 @@ def leveldata_interactive_final_record_boundary(
         scene_decoded = read_string(
             data,
             cursor,
+            strings=strings,
             max_length=256,
         )
         if scene_decoded is None:

@@ -19,6 +19,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from contextlib import ExitStack
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
@@ -139,13 +140,15 @@ def _first_stop(frame: dict[str, Any], family: str) -> str:
     return TEMPLATE_RECORD.sub(r"\1[<n>]", stop) if family == "LevelScriptTemplateData" else stop
 
 
-def _classify(data: bytes, family: str, source: str, *, strings=None, game_root=None, null_list_params=None) -> dict[str, Any]:
+def _classify(data: bytes, family: str, source: str, *, strings=None, game_root=None, null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None) -> dict[str, Any]:
     reader = (frame_levelscript_named if family == "LevelScriptData"
               else frame_levelscript_template)
     owner = ("scripts.game_data.levelscript_binary.frame_levelscript_named" if family == "LevelScriptData"
              else "scripts.game_data.levelscript_template_binary.frame_levelscript_template")
     try:
-        frame = reader(data, source=source, strings=strings, game_root=game_root, null_list_params=null_list_params) if family == "LevelScriptData" else reader(data, strings=strings)
+        options=dict(strings=strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params)
+        if family == "LevelScriptData":options['source']=source
+        frame = reader(data, **options)
     except ValueError as exc:
         diagnostic = str(exc)[:1500]
         details = getattr(exc, "diagnostics", [])
@@ -312,7 +315,17 @@ def build_report(*, outer_path: Path, ledger_path: Path, export_root: Path,
     rows = []
     announce("decoding selected sources with owning readers")
     from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
-    with current_null_list_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings) as null_list_params:
+    from scripts.game_data.levelscript_numeric_list_param_native import current_numeric_list_params
+    from scripts.game_data.levelscript_camera_shake_param_native import current_camera_shake_params
+    from scripts.game_data.levelscript_buff_ptr_param_native import current_buff_ptr_params
+    from scripts.game_data.levelscript_entity_list_param_native import current_entity_list_params
+    game_root=Path(outer['primaryAssets']).parent
+    with ExitStack()as scopes:
+        params={name:scopes.enter_context(factory(game_root=game_root,strings=strings))
+            for name,factory in(
+                ('null_list_params',current_null_list_params),('numeric_list_params',current_numeric_list_params),
+                ('camera_shake_params',current_camera_shake_params),('buff_ptr_params',current_buff_ptr_params),
+                ('entity_list_params',current_entity_list_params))}
         for ordinal, source in enumerate(selected, 1):
             relative = relatives[source["virtualPath"]]
             family = relative.split("/")[0]
@@ -328,7 +341,7 @@ def build_report(*, outer_path: Path, ledger_path: Path, export_root: Path,
                 _fail("export-vfs-byte-identity", relative,
                       {"length": len(vfs_data), "sha256": hashlib.sha256(vfs_data).hexdigest().upper()},
                       {"length": len(data), "sha256": digest})
-            classification = _classify(data, family, relative, strings=strings, game_root=Path(outer["primaryAssets"]).parent, null_list_params=null_list_params)
+            classification = _classify(data, family, relative, strings=strings, game_root=game_root,**params)
             rows.append({"virtualPath": source["virtualPath"], "exportRelativePath": relative,
                          "family": family, "length": len(data), "logicalMd5": md5,
                          "logicalSha256": digest, **classification})

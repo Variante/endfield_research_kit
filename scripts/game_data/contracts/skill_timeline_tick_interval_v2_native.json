@@ -2,89 +2,131 @@
   "schema": "endfield.skill-timeline-tick-interval-v2-native-contract.v1",
   "status": "exact-current-build",
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "dispatcher": {
-    "unionTag": 386,
-    "switchTableRva": 59855640,
-    "switchEntryCount": 416,
-    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
-    "switchTargetRva": 59833128,
+    "unionTag": 417,
+    "switchTableRva": 97297608,
+    "switchEntryCount": 447,
+    "switchTableSha256": "C2B6638C2D868D3944EBF702339849BB86B2C63C75B29920DEA604A21C3097F9",
+    "switchTargetRva": 97295213,
     "routeWindow": {
-      "startRva": 59833128,
-      "endRva": 59833178,
-      "sha256": "C7DBBA69606BC547DA085F20EE55ED6DB5E17139E8CFCFFF591FB3F8B445C741",
-      "boundary": "selected 0x0182 type usage and formatter route"
+      "startRva": 97295213,
+      "endRva": 97295263,
+      "sha256": "96ABE4C5DB50C50CD40885F7D72E29D21C6E3F07D128748335EBC5F738C0D44E",
+      "boundary": "selected 0x01A1 type usage and formatter route"
     },
-    "usageCellRva": 218258848,
-    "usageRawHex": "7145032000000000",
-    "registeredTypeIndex": 107192,
-    "wrapperTypeDefinition": 16533,
+    "usageCellRva": 275104216,
+    "usageRawHex": "0D18032000000000",
+    "registeredTypeIndex": 101382,
+    "wrapperTypeDefinition": 50490,
     "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPack"
   },
   "serializedMemberCount": 10,
   "methods": [
     [
-      123551,
+      265638,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPack",
       "Deserialize",
-      61451168
+      109678832
     ],
     [
-      123552,
+      265639,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPack+Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPackFormatter",
       "Deserialize",
-      61452384
+      109678736
     ]
   ],
   "memberCountInstruction": {
-    "rva": 61451296,
+    "rva": 109678960,
     "hex": "4080FE0A"
   },
   "codeWindows": [
     {
-      "startRva": 61451168,
-      "endRva": 61451692,
-      "sha256": "33CAE86DFEAEE8A689AB93A4E27FB28A2E3B496FF3E9D6277B064963F8321797",
-      "boundary": "ten normal source reads through RET"
+      "startRva": 109678832,
+      "endRva": 109678899,
+      "sha256": "0E003B5438D41A6B956A8AFECA140018B4711D97776558AD3E6DB56C4CAA9ECD",
+      "boundary": "complete pdata function extent"
     },
     {
-      "startRva": 61452384,
-      "endRva": 61452477,
-      "sha256": "6B68F661B263097AD5D55642FF34C5CB30CEB05E4C5F79473F0ACCBCC84A2904",
-      "boundary": "formatter initialization and forwarding to selected reader"
+      "startRva": 109678899,
+      "endRva": 109679329,
+      "sha256": "FF46249EF82BDAA1E1ED9793EF94872538EED4FDAAE48959073E54FA6847E69E",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 109679329,
+      "endRva": 109679340,
+      "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 109679340,
+      "endRva": 109679346,
+      "sha256": "7E073FB93970F2993782B7D919832CF997BEA1DB3198E4C1D76304CCE0DA1B32",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 109679346,
+      "endRva": 109679454,
+      "sha256": "77449BE6052644CDD1C2CB5D177993D46A69826FF951181CEFC9427A4775E6A8",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 125016470,
+      "endRva": 125016483,
+      "sha256": "3997A2DD30DF5F151C0A26A8BA83CA962A17B9652E5D4033F146DE674E9822F0",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 125016483,
+      "endRva": 125016539,
+      "sha256": "97F31F7172667DA65DF9381084187E53507DA9BF74C3F3F99A2CF5B1017CCE5B",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 125016539,
+      "endRva": 125016560,
+      "sha256": "E9F34277E1A32A3CD409DA74DD12230275F770A2FC7FA25BAADD9D78B0571102",
+      "boundary": "complete chained pdata fragment"
+    },
+    {
+      "startRva": 109678736,
+      "endRva": 109678829,
+      "sha256": "FF82FC9FDD6B6E676426289934B4989F55FCF57504735908A46F5D9A19E8A873",
+      "boundary": "complete pdata function extent"
     }
   ],
   "setterMethods": [
     [
-      123543,
+      265630,
       "set___actionOnTick__",
       "Beyond.Gameplay.Core.SequenceActionData"
     ],
     [
-      123544,
+      265631,
       "set___fixedTickCount__",
       "Beyond.Blackboard+BlackboardInt"
     ],
     [
-      123545,
+      265632,
       "set___tickInterval__",
       "Beyond.Blackboard+BlackboardDouble"
     ],
     [
-      123546,
+      265633,
       "set___tickMode__",
       "Beyond.Gameplay.Core.TickIntervalActionV2+TickMode"
     ],
     [
-      123547,
+      265634,
       "set___totalDuration__",
       "System.Single"
     ],
     [
-      123548,
+      265635,
       "set___totalTickCount__",
       "System.Int32"
     ]
@@ -94,166 +136,166 @@
       "memberIndex": 0,
       "fieldName": "isEnable",
       "readKind": "bool-byte",
-      "sourceCallsiteRva": 61451312,
-      "sourceCallHex": "E88BDC20FF",
-      "sourceTargetRva": 46827712
+      "sourceCallsiteRva": 109678976,
+      "sourceCallHex": "E84B6C74FE",
+      "sourceTargetRva": 83754448
     },
     {
       "memberIndex": 1,
       "fieldName": "priorityLevel",
       "readKind": "scalar32",
-      "sourceCallsiteRva": 61451353,
-      "sourceCallHex": "E852DA20FF",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 109679017,
+      "sourceCallHex": "E8A26474FE",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 2,
       "fieldName": "priorityOffset",
       "readKind": "scalar32",
-      "sourceCallsiteRva": 61451386,
-      "sourceCallHex": "E831DA20FF",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 109679050,
+      "sourceCallHex": "E8816474FE",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 3,
       "fieldName": "serverActionIndex",
       "readKind": "scalar32",
-      "sourceCallsiteRva": 61451419,
-      "sourceCallHex": "E810DA20FF",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 109679083,
+      "sourceCallHex": "E8606474FE",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 4,
       "fieldName": "actionOnTick",
       "readKind": "sequence-profile",
-      "sourceCallsiteRva": 61451459,
-      "sourceCallHex": "E8C8AF30FF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 109679123,
+      "sourceCallHex": "E8A8A676FE",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 5,
       "fieldName": "fixedTickCount",
       "readKind": "scalar-payload",
-      "sourceCallsiteRva": 61451500,
-      "sourceCallHex": "E89FAF30FF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 109679164,
+      "sourceCallHex": "E87FA676FE",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 6,
       "fieldName": "tickInterval",
       "readKind": "scalar-payload",
-      "sourceCallsiteRva": 61451541,
-      "sourceCallHex": "E876AF30FF",
-      "sourceTargetRva": 47864976
+      "sourceCallsiteRva": 109679205,
+      "sourceCallHex": "E856A676FE",
+      "sourceTargetRva": 83900608
     },
     {
       "memberIndex": 7,
       "fieldName": "tickMode",
       "readKind": "scalar32",
-      "sourceCallsiteRva": 61451582,
-      "sourceCallHex": "E86DD920FF",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 109679242,
+      "sourceCallHex": "E8C16374FE",
+      "sourceTargetRva": 83752528
     },
     {
       "memberIndex": 8,
       "fieldName": "totalDuration",
       "readKind": "float32-bits",
-      "sourceCallsiteRva": 61451615,
-      "sourceCallHex": "E84CDE20FF",
-      "sourceTargetRva": 46828464
+      "sourceCallsiteRva": 109679271,
+      "sourceCallHex": "E8046974FE",
+      "sourceTargetRva": 83753904
     },
     {
       "memberIndex": 9,
       "fieldName": "totalTickCount",
       "readKind": "scalar32",
-      "sourceCallsiteRva": 61451649,
-      "sourceCallHex": "E82AD920FF",
-      "sourceTargetRva": 46827184
+      "sourceCallsiteRva": 109679301,
+      "sourceCallHex": "E8866374FE",
+      "sourceTargetRva": 83752528
     }
   ],
   "nestedContexts": [
     {
       "memberIndex": 1,
-      "instructionRva": 61451340,
-      "instructionHex": "488B15D5F15E09",
-      "cellRva": 218668584,
-      "usageRawHex": "81E812C000000000",
-      "methodSpecIndex": 619584,
+      "instructionRva": 109679004,
+      "instructionHex": "488B150534E409",
+      "cellRva": 275629480,
+      "usageRawHex": "EBB613C000000000",
+      "methodSpecIndex": 646005,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42547
+        42893
       ],
-      "argumentRawHex": "EA230000000000000000118000000000",
-      "typeDefinition": 9194,
+      "argumentRawHex": "64250000000000000000118000000000",
+      "typeDefinition": 9572,
       "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
       "typeKind": 17
     },
     {
       "memberIndex": 4,
-      "instructionRva": 61451446,
-      "instructionHex": "488B15ABA15509",
-      "cellRva": 218058344,
-      "usageRawHex": "75EB12C000000000",
-      "methodSpecIndex": 619962,
+      "instructionRva": 109679110,
+      "instructionHex": "488B1543AAED09",
+      "cellRva": 276249680,
+      "usageRawHex": "09BA13C000000000",
+      "methodSpecIndex": 646404,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        16408
+        15587
       ],
-      "argumentRawHex": "F2230000000000000000120000000000",
-      "typeDefinition": 9202,
+      "argumentRawHex": "6C250000000000000000120000000000",
+      "typeDefinition": 9580,
       "typeName": "Beyond.Gameplay.Core.SequenceActionData",
       "typeKind": 18
     },
     {
       "memberIndex": 5,
-      "instructionRva": 61451487,
-      "instructionHex": "488B1542995509",
-      "cellRva": 218056232,
-      "usageRawHex": "CBEB12C000000000",
-      "methodSpecIndex": 620005,
+      "instructionRva": 109679151,
+      "instructionHex": "488B15AAA0ED09",
+      "cellRva": 276247264,
+      "usageRawHex": "5FBA13C000000000",
+      "methodSpecIndex": 646447,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17006
+        16185
       ],
-      "argumentRawHex": "AE000000000000000000120000000000",
-      "typeDefinition": 174,
+      "argumentRawHex": "CB000000000000000000120000000000",
+      "typeDefinition": 203,
       "typeName": "Beyond.Blackboard+BlackboardInt",
       "typeKind": 18
     },
     {
       "memberIndex": 6,
-      "instructionRva": 61451528,
-      "instructionHex": "488B1511995509",
-      "cellRva": 218056224,
-      "usageRawHex": "C9EB12C000000000",
-      "methodSpecIndex": 620004,
+      "instructionRva": 109679192,
+      "instructionHex": "488B1589A0ED09",
+      "cellRva": 276247272,
+      "usageRawHex": "5DBA13C000000000",
+      "methodSpecIndex": 646446,
       "methodSpec": [
-        428464,
+        550348,
         -1,
-        17005
+        16184
       ],
-      "argumentRawHex": "AD000000000000000000120000000000",
-      "typeDefinition": 173,
+      "argumentRawHex": "CA000000000000000000120000000000",
+      "typeDefinition": 202,
       "typeName": "Beyond.Blackboard+BlackboardDouble",
       "typeKind": 18
     },
     {
       "memberIndex": 7,
-      "instructionRva": 61451569,
-      "instructionHex": "488B1590B05809",
-      "cellRva": 218258888,
-      "usageRawHex": "71E812C000000000",
-      "methodSpecIndex": 619576,
+      "instructionRva": 109679229,
+      "instructionHex": "488B15642FDC09",
+      "cellRva": 275104232,
+      "usageRawHex": "D9B613C000000000",
+      "methodSpecIndex": 645996,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42542
+        42888
       ],
-      "argumentRawHex": "CD260000000000000000118000000000",
-      "typeDefinition": 9933,
+      "argumentRawHex": "83280000000000000000118000000000",
+      "typeDefinition": 10371,
       "typeName": "Beyond.Gameplay.Core.TickIntervalActionV2+TickMode",
       "typeKind": 17
     }
@@ -264,8 +306,8 @@
       "role": "selected SequenceActionData context and finite sequence reader"
     },
     {
-      "path": "buff_16b_native.json",
-      "role": "concrete BlackboardInt header-three reader"
+      "path": "buff_blackboard_int_native.json",
+      "role": "exact BlackboardInt reference source, MC3 framing and pooled key/bool/raw Int32 fields"
     },
     {
       "path": "buff_ec_native.json",
@@ -273,7 +315,7 @@
     }
   ],
   "evidenceBoundary": {
-    "exact": "Selected-build union 0x0182 registration identifies TickIntervalActionV2+Data; ten source calls, method identities, body windows, member count and five generic type arguments are pinned.",
+    "exact": "Selected-build union 0x01A1 registration identifies TickIntervalActionV2+Data; ten source calls, method identities, body windows, member count and five generic type arguments are pinned.",
     "direct": "The reader consumes a byte and three DWORDs, SequenceActionData, BlackboardInt, BlackboardDouble, a tick-mode DWORD, four float bits, and a final DWORD in source order.",
     "structuralOnly": "The sequence and scalar wrappers have finite stored profiles; names do not establish runtime scheduling or numeric interpretation.",
     "unresolved": "Live formatter selection, native refill/error parity, unsupported nested action routes, and enclosing SkillData EOF remain separate."

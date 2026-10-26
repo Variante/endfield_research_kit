@@ -14,6 +14,7 @@ _TYPE = "Beyond.Gameplay.Actions.LevelEvent.OnSpawnerEntityDie"
 
 def decode_on_spawner_entity_die_header(
     data: bytes, offset: int, route: dict[str, Any],
+    *, game_root: Any = None, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Read one selected header from the native route's exact member order."""
     fields = route.get("fields") or []
@@ -48,7 +49,7 @@ def decode_on_spawner_entity_die_header(
     header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
     if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onSpawnerEntityDieHeader:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + len(header))
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings, route=route)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:

@@ -325,7 +325,9 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
         _validate_context(image, context)
 
 
-def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: Path) -> int:
+def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: Path,
+    *, game_root: Path | None = None, strings: Any = None,
+) -> int:
     ledger = {}
     with gzip.open(ledger_path, "rt", encoding="utf8") as stream:
         for line in stream:
@@ -343,7 +345,7 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
             or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
         ):
             raise ValueError(f"{LABEL}.source:receipt={relative_path}")
-        cursor = action_map._Cursor(data, start)
+        cursor = action_map._Cursor(data, start, game_root=game_root, strings=strings, route=contract["route"])
         tag = cursor.byte("entityScanned.tag")
         members = cursor.byte("entityScanned.memberCount")
         if tag != route["tag"] or members != route["serializedMemberCount"]:
@@ -383,7 +385,9 @@ def validate_entity_scanned_native_contract(
         if export_root is not None:
             if ledger_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path))
+            from scripts.game_data.string_pool import export_string_pool
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path),
+                game_root=gate.metadata.parent.parent.parent, strings=export_string_pool(Path(export_root)))
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

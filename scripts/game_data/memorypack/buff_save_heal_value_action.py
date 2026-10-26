@@ -44,7 +44,7 @@ def validate_current_native_contract(*,string_native,gameassembly:Path|None=None
     image=open_native_image(gate.gameassembly,gate.metadata);record=c['records']['saveHealValue']
     path=CONTRACTS_DIR/record['sourceContract'];source=json.loads(path.read_bytes())
     buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,
-        source=str(gate.gameassembly),contract_path=path)
+        source=str(gate.gameassembly),contract_path=path, native_image=image)
     def fail(check,expected,actual,**details):
         raise ValueError(LABEL+'.'+check+':'+json.dumps({'source':str(path),'expected':str(expected)[:600],'actual':str(actual)[:600],'details':details}))
     proved=named.validate_named_records(image,source,c['records'],label=LABEL,fail=fail)

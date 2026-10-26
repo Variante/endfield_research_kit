@@ -28,6 +28,7 @@ def decode_script_task_ptr_param(
 
 def decode_mark_task_condition_failed_action(
     data: bytes, offset: int, route: dict[str, Any],
+    *, game_root: Any = None, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Advance one selected action span using the native route's field order."""
     fields = route.get("fields") or []
@@ -45,7 +46,7 @@ def decode_mark_task_condition_failed_action(
     header = memorypack_union_header(tag, members)
     if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"markTaskConditionFailed:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + len(header))
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings, route=route)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:

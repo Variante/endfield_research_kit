@@ -1,4 +1,7 @@
-"""Fail-closed structural framing for current SkillData MemoryPack payloads.
+"""Historical 48-member SkillData framing under its own receipt/native gates.
+
+The current root49 reader is ``skill_timeline_current_sequence`` and has no
+fallback to this module's inline strings, field table or terminal candidates.
 
 This module deliberately does not assign authored field names to the terminal
 members.  The selected-build metadata proves the wrapper's member count and
@@ -10,7 +13,7 @@ Object layout.  A SkillData payload is one 48-member object.  Field 0 is
 ``passiveEventActions`` and ``timelineActions`` lists; the empty profile is
 the member-count byte, the envelope count and two zero list counts (ten
 bytes).  Fields 1 through 42 are read by the sequential reader here, derived
-from the current generated wrapper types; it reproduces the field cursors of
+from the historical generated wrapper types; it reproduces the field cursors of
 the two accepted empty-ActionGroup live samples exactly and is applied only to
 that structurally identical profile or behind an exact ActionGroup endpoint
 from the timeline/passive readers.  Its hard limit is EOF, never a terminal

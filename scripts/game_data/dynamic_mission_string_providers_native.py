@@ -1,4 +1,21 @@
-"""Names-based string-key lookup and bounded counter requests; no live keys."""
+"""Authenticate selected string-key lookup, counter and GetStrKey value sources.
+
+The historical named-IsPatched grammars remain exact. Nullable inline shapes
+authenticate complete unwind families, separate instruction partitions and
+owned sparse edges, including the direct original entry and null-pointer
+resume. They prove the concrete dictionary request and referenced output,
+the counter's signed reset/modulo-32-bit increment, and GetStrKey's selected
+minus-one, lookup-hit and counter-candidate return sources. Native field,
+ordinary ABI, generic-owner and registered call-pointer checks stay separate
+from the instruction-shape proof.
+
+Claims require valid original arguments, selected original paths, normal
+returning Win64 callees and preserved caller locals; GetStrKey's value-source
+claim additionally selects an original false Boolean. Replacement behavior,
+ReadOnlySpan instance-field meaning, hash algorithms, dictionary execution or
+mutation, allocation, key stability/uniqueness and runtime invocation remain
+unresolved. Declared unwind ownership does not prove unwind-code semantics.
+"""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -16,9 +33,10 @@ from scripts.game_data.il2cpp.native_image import open_native_image, read_review
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext, closed_generic_reference_extent
 from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets
 from scripts.game_data.il2cpp.context import method_spec_usage_index, generic_method_candidates, type_parameter_owner
-from scripts.game_data.il2cpp.unwind_chains import read_exception_directory, UnwindChainIndex
 from scripts.game_data.dynamic_erosion_consumers_native import _ordinary_primitive_abi, _instruction_partition, _preserved_interval
-from scripts.game_data.dynamic_mission_condition_consumers_native import _composed_decoder
+from scripts.game_data.dynamic_mission_condition_consumers_native import (
+    _composed_decoder, _program_from_fragments, _expect_at, _branch_at,
+    _rip_load_cell, _call_at, _call_target)
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _parser_source_snapshots
 from scripts.game_data.corpus_common import atomic_write_text
 from scripts.game_data import dynamic_group_components_native as groups
@@ -182,7 +200,7 @@ def _methods(image,contract):
             raw=image.pe.bytes_at_va(pointer,end-pointer)
             bodies[role]={'rows':_instruction_partition(raw,pointer,_composed_decoder(image.mapper)),
                           'rva':pointer-image.pe.image_base,'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest().upper()}
-    require(methods['counter'][0].declaring_type==methods['lookup'][0].declaring_type,
+    require(methods['counter'][0].declaring_type==methods['lookup'][0].declaring_type==methods['getKey'][0].declaring_type,
             'same-concrete-provider-owner',[m.declaring_type for m,_ in methods.values()])
     return methods,bodies
 
@@ -191,7 +209,7 @@ def _register_preserved(rows,registers,allowed):
     """Closed-program checks cover all aliases, including flags held in BPL."""
     aliases={'rbp':{'rbp','ebp','bp','bpl'},'rbx':{'rbx','ebx','bx','bl','bh'},
              'rdi':{'rdi','edi','di','dil'},'rsi':{'rsi','esi','si','sil'},
-             'r14':{'r14','r14d','r14w','r14b'}}
+             'r14':{'r14','r14d','r14w','r14b'},'rax':{'rax','eax','ax','al','ah'}}
     watched=set().union(*(aliases[r] for r in registers))
     for row in rows:
         require((row.get('write') or {}).get('register') not in watched,'get-key-saved-register-alias',row)
@@ -293,8 +311,15 @@ def check_get_key_program(parts,methods,programs):
 
 def get_key_value_source(image,methods,contract,map_field):
     pe=image.pe;pointer=methods['getKey'][1]
-    table,size,raw=read_exception_directory(pe)
-    family=UnwindChainIndex(raw,lambda rva,n:pe.bytes_at_va(pe.image_base+rva,n),table_rva=table,image_size=size).family(pointer-pe.image_base)
+    family=image.unwind_index.family(pointer-pe.image_base)
+    if len(family['ranges'])==7:
+        program=_selected_program(image,pointer,7,'get-key-current')
+        proof=_current_get_key(program,methods)
+        by=program['by']
+        _,proof['lookupContext']=dictionary_context(image,by[125],by[140],map_field,method_name='TryGetValue',argument_kinds=(11,8))
+        _,proof['setterContext']=dictionary_context(image,by[243],by[256],map_field,method_name='set_Item',argument_kinds=(11,8))
+        proof['getKeyMethod']={'index':methods['getKey'][0].index,'rva':pointer-pe.image_base}
+        return proof
     require(len(family['ranges'])==5 and sum(p['codeBytes'] for p in family['ranges'])<=4096,'get-key-bounded-owned-family',family['ranges'])
     partitions={}
     for part in family['ranges']:
@@ -367,6 +392,255 @@ def dictionary_context(image,row,call_row,field,*,method_name,argument_kinds):
                     'fieldType':extent['type'],'argumentRawHex':[a.raw_type_record_hex for a in arguments]}
 
 
+def _selected_program(image,pointer,range_count,label):
+    """Every selected unwind range is decoded; sparse gaps remain unowned."""
+    family=image.unwind_index.family(pointer-image.pe.image_base)
+    require(len(family['ranges'])==range_count and sum(p['codeBytes'] for p in family['ranges'])<=4096,
+            label+'-bounded-complete-family',family['ranges'])
+    fragments=[];parts=[]
+    for record in family['ranges']:
+        start,end,_=record['runtimeTriple'];raw=image.pe.bytes_at_va(image.pe.image_base+start,end-start)
+        fragments.append({'startRva':image.pe.image_base+start,'rawHex':raw.hex()})
+        parts.append({'runtimeTriple':record['runtimeTriple'],'sha256':hashlib.sha256(raw).hexdigest().upper()})
+    program=_program_from_fragments(pointer,fragments,_composed_decoder(image.mapper))
+    program['unwindOwnership']=family;program['bodyParts']=parts
+    return program
+
+
+def _inline_original_selection(p,branch,resume,epilogue,kind):
+    """Prove the direct original path and its null-pointer resume, not replacement behavior."""
+    row=p['by'][branch];entry=branch_target(row)-p['base']
+    _branch_at(p,branch,'0F85',entry,kind+'-manager-selection')
+    source='498B81' if kind=='counter' else '488B81'
+    raw=_raw(p['by'][entry]);require(len(raw)==7 and raw[:3]==bytes.fromhex(source),kind+'-function-load',p['by'][entry])
+    slot=struct.unpack_from('<I',raw,3)[0]
+    _expect_at(p,entry+7,'4885C0',kind+'-function-null-test')
+    _branch_at(p,entry+10,'0F84',resume,kind+'-original-null-resume')
+    if kind=='counter':
+        _expect_at(p,entry+16,'4C8BC2488BD1',kind+'-replacement-carried-arguments')
+        context_at=entry+22;prefix='498B89';call=entry+29
+    elif kind=='lookup':
+        context_at=entry+16;prefix='488B89'
+        _expect_at(p,entry+23,'4C8BCE4C8BC348896C2420488BD7',kind+'-replacement-carried-arguments')
+        call=entry+37
+    else:
+        require(kind=='getKey','inline-selection-kind',kind)
+        _expect_at(p,entry+16,'0F1003','get-key-replacement-source-copy')
+        context_at=entry+19;prefix='488B89'
+        _expect_at(p,entry+26,'4C8D442440440FB6CD4889742420488BD70F29442440',
+                   'get-key-replacement-carried-arguments')
+        call=entry+48
+    context=_raw(p['by'][context_at])
+    require(len(context)==7 and context[:3]==bytes.fromhex(prefix) and struct.unpack_from('<I',context,3)[0]==slot+8,
+            kind+'-same-replacement-context-slot',p['by'][context_at])
+    _expect_at(p,call,'FFD090',kind+'-replacement-invocation-boundary')
+    _branch_at(p,call+3,'E9',epilogue,kind+'-replacement-epilogue')
+    return entry
+
+
+def _current_counter(p):
+    _expect_at(p,0,'4883EC28','counter-current-frame')
+    root=_rip_load_cell(p,4,'488B05','counter-current-root')
+    _expect_at(p,11,'4C8B48704D85C9','counter-current-manager')
+    _inline_original_selection(p,18,24,38,'counter')
+    _expect_at(p,24,'83792000','counter-current-signed-field-test')
+    _branch_at(p,28,'7C',43,'counter-current-negative-reset')
+    _expect_at(p,30,'8B4120FFC08941204883C428C3C7412000000000','counter-current-load-increment-store-reset')
+    _branch_at(p,50,'EB',30,'counter-current-reset-join')
+    require(p['by'][33].get('operandWidth')==32 and p['by'][33].get('upperRegisterEffect')=='zero upper 32 bits',
+            'counter-current-INC32',p['by'][33])
+    return root,{'negativeInput':1,'nonnegativeInput':'(stored UInt32 bits + 1) modulo 2^32',
+        'writesSameField':True,'globalUniquenessProved':False,'runtimeObserved':False,
+        'originalPathSelection':'direct original path or null replacement-pointer resume',
+        'unwindOwnership':p['unwindOwnership'],'bodyParts':p['bodyParts']}
+
+
+def _same_flag(p,test_at,write_at,label):
+    tested=_raw(p['by'][test_at]);written=_raw(p['by'][write_at])
+    require(len(tested)==len(written)==7 and tested[:2]==b'\x80\x3d' and tested[-1]==0 and
+        written[:2]==b'\xc6\x05' and written[-1]==1 and
+        test_at+7+struct.unpack_from('<i',tested,2)[0]==write_at+7+struct.unpack_from('<i',written,2)[0],
+        label+'-same-initialization-flag',(p['by'][test_at],p['by'][write_at]))
+
+
+def _current_lookup(p,hash_pointer,dictionary_pointer):
+    _expect_at(p,0,'48895C240848896C24104889742418574883EC30','lookup-current-frame')
+    _expect_at(p,27,'498BE9498BF0488BDA488BF9','lookup-current-original-inputs')
+    _branch_at(p,39,'74',143,'lookup-current-context-init')
+    root=_rip_load_cell(p,41,'488B05','lookup-current-root')
+    _expect_at(p,48,'488B48704885C9','lookup-current-manager')
+    _inline_original_selection(p,55,61,112,'lookup')
+    _expect_at(p,61,'4885DB','lookup-current-null-string')
+    _branch_at(p,64,'74',133,'lookup-current-null-result')
+    _expect_at(p,66,'837B1000','lookup-current-string-length')
+    _branch_at(p,70,'76',133,'lookup-current-empty-result')
+    _expect_at(p,72,'488B7F1033D2488BCB','lookup-current-map-and-string-hash-argument')
+    _call_at(p,81,hash_pointer,'lookup-current-typed-hash')
+    _expect_at(p,86,'4885FF','lookup-current-null-map')
+    _branch_at(p,89,'74',164,'lookup-current-map-exception')
+    context=_rip_load_cell(p,91,'4C8B0D','lookup-current-dictionary-context')
+    _expect_at(p,98,'4C8BC6488BD0488BCF','lookup-current-output-hash-and-map')
+    _call_at(p,107,dictionary_pointer,'lookup-current-dictionary-request')
+    _expect_at(p,112,'488B5C2440488B6C2448488B7424504883C4305FC3C706FFFFFFFF32C0',
+               'lookup-current-return-and-null-output')
+    _branch_at(p,141,'EB',112,'lookup-current-null-return')
+    require(_rip_load_cell(p,143,'488D0D','lookup-current-init-context')==context,
+            'lookup-current-same-initialized-context',context)
+    _call_target(p,150,'lookup-current-context-initializer')
+    _same_flag(p,20,155,'lookup-current')
+    _branch_at(p,162,'EB',41,'lookup-current-initialized-entry')
+    _call_target(p,164,'lookup-current-exception-helper');_expect_at(p,169,'CC','lookup-current-exception-terminal')
+    for start,end,register,allowed,label in ((86,107,'rax',set(),'hash-result'),(112,133,'rax',set(),'dictionary-Boolean'),
+        (76,107,'rdi',{81},'saved-map'),(33,107,'rsi',{81},'original-output')):
+        _preserved_interval(p['rows'],start,end,register,allowed,'current-lookup-'+label)
+    return root,{'nonemptyRequest':'selected UInt64 hash return to Dictionary<UInt64,Int32>.TryGetValue',
+        'normalReturn':'same dictionary Boolean return and original referenced Int32 output',
+        'nullOrEmpty':'false; referenced Int32 written -1','hashAlgorithmProved':False,'keyStabilityProved':False,
+        'runtimeObserved':False,'originalPathSelection':'direct original path or null replacement-pointer resume',
+        'unwindOwnership':p['unwindOwnership'],'bodyParts':p['bodyParts']}
+
+
+def _current_get_key(p,methods):
+    """Complete seven-range shape; evaluate only original/false-Boolean paths."""
+    _expect_at(p,0,'48895C241048896C24184889742420574883EC50','get-key-current-frame')
+    _expect_at(p,27,'498BF1410FB6E8488BDA488BF9','get-key-current-original-inputs')
+    _branch_at(p,40,'0F84',345,'get-key-current-entry-init')
+    root=_rip_load_cell(p,46,'488B05','get-key-current-root')
+    _expect_at(p,53,'488B48704885C9','get-key-current-manager')
+    replacement=_inline_original_selection(p,60,66,200,'getKey')
+    _expect_at(p,66,'837B0800C744243000000000','get-key-current-zero-lane-and-output-local')
+    _branch_at(p,78,'0F84',417,'get-key-current-zero-lane')
+    _expect_at(p,84,'4C897424600F100333D2488D4C24400F29442440','get-key-current-span-copy')
+    _call_at(p,104,methods['spanHash'][1],'get-key-current-typed-span-hash')
+    _expect_at(p,109,'488B4F10488BF04885C9','get-key-current-map-and-saved-hash')
+    _branch_at(p,119,'0F84',339,'get-key-current-lookup-null-map')
+    lookup_cell=_rip_load_cell(p,125,'4C8B0D','get-key-current-lookup-context')
+    _expect_at(p,132,'4C8D442430488BD0','get-key-current-output-local-and-hash-key')
+    _call_target(p,140,'get-key-current-dictionary-lookup')
+    _expect_at(p,145,'84C0','get-key-current-lookup-result')
+    _branch_at(p,147,'74',221,'get-key-current-miss-to-counter')
+    _expect_at(p,149,'8B7424304084ED','get-key-current-hit-output-and-original-Boolean')
+    _branch_at(p,156,'74',193,'get-key-current-false-Boolean-hit-return')
+    _expect_at(p,158,'488B4F184885C9','get-key-current-unselected-hit-receiver')
+    _branch_at(p,165,'0F84',339,'get-key-current-unselected-hit-null')
+    _rip_load_cell(p,171,'4C8B05','get-key-current-unselected-hit-context')
+    _expect_at(p,178,'8BD6','get-key-current-unselected-hit-argument')
+    _call_target(p,180,'get-key-current-unselected-hit-request')
+    _expect_at(p,185,'84C0','get-key-current-unselected-hit-test')
+    keep=branch_target(p['by'][187])-p['base']
+    _branch_at(p,187,'0F84',keep,'get-key-current-unselected-hit-cold')
+    _expect_at(p,193,'8BC64C8B742460488B5C2468488B6C2470488B7424784883C4505FC3',
+               'get-key-current-hit-return-and-frame')
+    _expect_at(p,221,'33D2488BCF','get-key-current-counter-arguments')
+    _call_at(p,226,methods['counter'][1],'get-key-current-typed-counter')
+    _expect_at(p,231,'488B4F10448BF04885C9','get-key-current-saved-counter-and-same-map')
+    _branch_at(p,241,'74',339,'get-key-current-setter-null-map')
+    setter_cell=_rip_load_cell(p,243,'4C8B0D','get-key-current-setter-context')
+    _expect_at(p,250,'448BC0488BD6','get-key-current-counter-value-and-retained-hash')
+    _call_target(p,256,'get-key-current-dictionary-setter')
+    _expect_at(p,261,'4084ED','get-key-current-original-Boolean-miss-test')
+    _branch_at(p,264,'75',271,'get-key-current-unselected-true-Boolean')
+    _expect_at(p,266,'418BC6','get-key-current-counter-return-value')
+    _branch_at(p,269,'EB',195,'get-key-current-counter-return-frame')
+    _expect_at(p,271,'488B7F1833C9','get-key-current-unselected-miss-receiver')
+    request=_call_target(p,277,'get-key-current-unselected-carrier-request')
+    _expect_at(p,282,'4885C0','get-key-current-unselected-carrier-test')
+    _branch_at(p,285,'74',339,'get-key-current-unselected-carrier-null')
+    copy='0F10034533C0488D542440488BC80F29442440'
+    _expect_at(p,287,copy,'get-key-current-unselected-carrier-copy')
+    conversion=_call_target(p,306,'get-key-current-unselected-conversion')
+    _expect_at(p,311,'4885FF','get-key-current-unselected-map-test')
+    _branch_at(p,314,'74',339,'get-key-current-unselected-map-null')
+    keep_cell=_rip_load_cell(p,316,'4C8B0D','get-key-current-unselected-map-context')
+    _expect_at(p,323,'4C8BC0418BD6488BCF','get-key-current-unselected-map-arguments')
+    store=_call_target(p,332,'get-key-current-unselected-map-request')
+    _branch_at(p,337,'EB',266,'get-key-current-unselected-miss-return')
+    _call_target(p,339,'get-key-current-exception-helper');_expect_at(p,344,'CC','get-key-current-exception-terminal')
+    initialized={}
+    for at in (345,357,369,381,393):
+        initialized[at]=_rip_load_cell(p,at,'488D0D','get-key-current-entry-context')
+    initializer=_call_target(p,352,'get-key-current-entry-initializer')
+    for at in (364,376,388,400):_call_at(p,at,initializer,'get-key-current-same-entry-initializer')
+    require(initialized[345]==_rip_load_cell(p,171,'4C8B05','get-key-current-hit-init-join') and
+        initialized[357]==lookup_cell and initialized[369]==setter_cell and initialized[381]==keep_cell,
+        'get-key-current-same-request-initialization',initialized)
+    _same_flag(p,20,405,'get-key-current')
+    _branch_at(p,412,'E9',46,'get-key-current-initialized-entry')
+    _expect_at(p,417,'B8FFFFFFFF','get-key-current-zero-lane-minus-one')
+    _branch_at(p,422,'E9',200,'get-key-current-zero-lane-return-frame')
+    # The second distant fragment is owned and partitioned even though its
+    # keep-true path is outside the original-false-Boolean claim.
+    _expect_at(p,keep,'488B7F1833C9','get-key-current-cold-unselected-receiver')
+    _call_at(p,keep+6,request,'get-key-current-same-cold-carrier-request')
+    _expect_at(p,keep+11,'4885C0','get-key-current-cold-carrier-test')
+    _branch_at(p,keep+14,'0F84',339,'get-key-current-cold-carrier-null')
+    _expect_at(p,keep+20,copy,'get-key-current-cold-carrier-copy')
+    _call_at(p,keep+39,conversion,'get-key-current-same-cold-conversion')
+    _expect_at(p,keep+44,'4885FF','get-key-current-cold-map-test')
+    _branch_at(p,keep+47,'0F84',339,'get-key-current-cold-map-null')
+    require(_rip_load_cell(p,keep+53,'4C8B0D','get-key-current-cold-map-context')==keep_cell,
+            'get-key-current-same-cold-map-context',keep_cell)
+    _expect_at(p,keep+60,'4C8BC08BD6488BCF','get-key-current-cold-map-arguments')
+    _call_at(p,keep+68,store,'get-key-current-same-cold-map-request')
+    _expect_at(p,keep+73,'90','get-key-current-cold-nop')
+    _branch_at(p,keep+74,'E9',193,'get-key-current-cold-hit-return')
+    paths=_current_get_key_paths(p,replacement)
+    return {'flagSelection':'original Boolean false','zeroAnonymousInt32LaneAt8':'Int32 -1',
+        'nonzeroLaneLookupHit':'successful referenced Int32 lookup output returned',
+        'nonzeroLaneLookupMiss':'typed counter return sent to same UInt64/Int32 dictionary setter and returned',
+        'instanceSpanFieldLayoutProved':False,'hashAlgorithmProved':False,'dictionaryMutationProved':False,
+        'globalUniquenessProved':False,'runtimeObserved':False,'normalPaths':len(paths),
+        'conditions':['valid original value carrier and receiver, selected original path, original Boolean false, nonnull dictionary',
+                      'normal returning Win64 callees preserve nonvolatile registers and caller locals'],
+        'originalPathSelection':'direct original path or null replacement-pointer resume',
+        'replacementRootCellVa':root,'bodyParts':p['bodyParts'],'unwindOwnership':p['unwindOwnership'],
+        'unwindInstructionSemanticsProved':False}
+
+
+def _current_get_key_paths(p,replacement):
+    """Visit both original entries and all three value exits, with full path preservation."""
+    by={_va(row):row for row in p['rows']};base=p['base'];paths=[]
+    choices={base+replacement+10:True,base+119:False,base+156:True,base+241:False,base+264:False}
+    def walk(va,path):
+        require(len(path)<512 and len(paths)<32,'get-key-current-CFG-bound',(len(path),len(paths)))
+        require(va in by and va not in path,'get-key-current-CFG-owned-acyclic-edge',va)
+        row=by[va];raw=_raw(row);path=path+[va]
+        if row['text']=='ret':paths.append(path);return
+        require(row['text']!='int3','get-key-current-selected-exception',row)
+        fallthrough=va+len(raw)
+        conditional=(len(raw)==2 and 0x70<=raw[0]<=0x7f) or (len(raw)==6 and raw[0]==15 and 0x80<=raw[1]<=0x8f)
+        if conditional:
+            choice=choices.get(va)
+            successors=[branch_target(row)] if choice is True else [fallthrough] if choice is False else [fallthrough,branch_target(row)]
+        else:successors=[branch_target(row)] if row['text'].startswith('jmp ') else [fallthrough]
+        for successor in successors:walk(successor,path)
+    walk(base,[])
+    require(len(paths)==12 and all(path[-1]==base+220 for path in paths),'get-key-current-twelve-normal-paths',len(paths))
+    calls={va for path in paths for va in path if by[va]['text'].startswith('call ')}
+    for path in paths:
+        selected=[by[va] for va in path]
+        def interval(start,end):return selected[path.index(base+start)+1:path.index(base+end)]
+        _register_preserved(interval(30,205),('rbp',),calls)
+        _register_preserved(interval(34,200),('rbx',),calls)
+        _register_preserved(interval(37,200),('rdi',),calls)
+        if base+226 in path:
+            _register_preserved(interval(235,266),('r14',),calls)
+            _register_preserved(interval(113,256),('rsi',),calls)
+            _register_preserved(selected[path.index(base+231):path.index(base+250)],('rax',),calls)
+        values=[offset for offset in (193,266,417) if base+offset in path]
+        require(len(values)==1,'get-key-current-one-value-source',values)
+        _register_preserved(selected[path.index(base+values[0])+1:],('rax',),set())
+        if base+149 in path:
+            for row in interval(140,149):
+                require(not row['text'].startswith(('mov [','movups [','movaps [','push ','pop ','add rsp','sub rsp','call ')),
+                        'get-key-current-output-local-preserved',row)
+        if base+89 in path:
+            for row in interval(89,99):
+                require((row.get('write') or {}).get('register')!='xmm0' and not row['text'].startswith('call '),
+                        'get-key-current-mechanical-copy-preserved',row)
+    return paths
+
+
 def validate(image,contract):
     methods,bodies=_methods(image,contract);md=image.metadata;pe=image.pe
     string_spec=contract['stringLength']
@@ -389,12 +663,23 @@ def validate(image,contract):
                 offsets[spec['name']]==spec['offset'],'provider-field-role-'+role,offsets)
         fields[role]=field
     _abi(image,fields['counter'].type_index,'Int32','counter-field-ABI')
-    lookup_rows=bodies['lookup']['rows']
-    pointer,context=dictionary_context(image,lookup_rows[24],lookup_rows[28],fields['map'],
-                                       method_name='TryGetValue',argument_kinds=(11,8))
-    counter=check_counter(bodies['counter']['rows'],methods['patch'][1],contract['programs']['counter'])
-    lookup=check_lookup(bodies['lookup']['rows'],methods['patch'][1],methods['hash'][1],pointer,contract['programs']['lookup'])
+    roots=[];lookup_rows=bodies['lookup']['rows'];counter_rows=bodies['counter']['rows']
+    current_lookup=bodies['lookup']['bytes']==170 and _raw(lookup_rows[1])==bytes.fromhex('48896C2410')
+    current_counter=bodies['counter']['bytes']==52 and _raw(counter_rows[0])==bytes.fromhex('4883EC28')
+    if current_lookup:
+        lookup_program=_selected_program(image,methods['lookup'][1],2,'lookup-current')
+        context_row=lookup_program['by'][91];call_row=lookup_program['by'][107]
+    else:context_row,call_row=lookup_rows[24],lookup_rows[28]
+    pointer,context=dictionary_context(image,context_row,call_row,fields['map'],method_name='TryGetValue',argument_kinds=(11,8))
+    if current_counter:
+        root,counter=_current_counter(_selected_program(image,methods['counter'][1],2,'counter-current'));roots.append(root)
+    else:counter=check_counter(counter_rows,methods['patch'][1],contract['programs']['counter'])
+    if current_lookup:
+        root,lookup=_current_lookup(lookup_program,methods['hash'][1],pointer);roots.append(root)
+    else:lookup=check_lookup(lookup_rows,methods['patch'][1],methods['hash'][1],pointer,contract['programs']['lookup'])
     key_source=get_key_value_source(image,methods,contract,fields['map'])
+    if 'replacementRootCellVa' in key_source:roots.append(key_source['replacementRootCellVa'])
+    require(not roots or len(set(roots))==1,'same-provider-original-selection-root',roots)
     field_proof={role:{'name':contract['fields'][role]['name'],'offset':offsets[contract['fields'][role]['name']],
                       'ownerDefinition':owner.index,'rawTypeHex':_type_record(image,f.type_index).hex().upper()}
                  for role,f in fields.items()}

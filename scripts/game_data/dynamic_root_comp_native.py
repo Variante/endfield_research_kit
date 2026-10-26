@@ -50,7 +50,10 @@ agreement). ``OnInit`` loads the literal that equals the metadata default of
 ``FAssetProxyHandle.Get<DynamicSceneTemplates>``, walks
 ``templateDataList`` and inserts each record by its ``entityType``. The path
 joins the fresh export's asset map to a ``DynamicSceneTemplates``
-MonoBehaviour whose type tree exposes ``entityType`` and ``comps``.
+MonoBehaviour whose rows carry exactly the template type's declared
+serialized fields, in order; only ``entityType`` and ``comps`` are read, and
+a further declared field (``lunaEditConfig`` on the current build) is
+structuralOnly.
 
 Template match (structural). Each observed ``RootComp.Type`` has one
 invariant ordered sequence of child ``DataIndex.Type`` values across all its
@@ -68,7 +71,9 @@ group start, routes each ``Type`` through the selected data-type system route
 and conditionally calls ``RegisterEntity``. The inner loop bound is a
 ``SafeCount<EDynamicSceneData>`` call on the template record's
 ``List<EDynamicSceneData> comps``; the body does not read stored
-``Comps.Num`` for it.
+``Comps.Num`` for it. Newer codegen inlines that SafeCount; the inline
+resolver/interface-count sequence is checked against the shared SafeCount
+body, and its method-spec usage still resolves to ``SafeCount<EDynamicSceneData>``.
 
 IdComp detour. When ``DataIndex.Type`` is IdComp, ``_ParseLoad`` passes the
 ``Index`` and grid to an IdComp vector helper (eight-byte stride) and reads
@@ -205,14 +210,26 @@ def _validate_visibility_code(
     root_slot: int, root_width: int, visible_offset: int, area_offset: int,
     primitive_slot: int, group_num_rva: int, index_getter_rva: int,
 ) -> None:
-    """Check the selected path from RootComp.VisibleDesc to primitive integers."""
+    """Check the selected path from RootComp.VisibleDesc to primitive integers.
+
+    Two codegen shapes are accepted, each requiring all of its own literals:
+    the original one (controller owner in rdi, grid in r14, Register argument
+    ``lea edx,[rsi+r13]``, helper ``lea edi,[rbx+rdi*4]`` then ``mov ebx,[rsi]``)
+    and the later one (owner in rsi, grid reloaded into rbp, Index saved in
+    r14d and added as ``lea edx,[r12+r14]``, and the helper's inlined span read,
+    whose bounds and element-read displacements must agree).
+    """
+    first_read = int(selected["registerEntityAreaFieldReadOffset"])
+    inlined = register_entity[first_read:first_read + 3] == b"\x48\x8b\x8e"
+    owner_read = b"\x48\x8b\x8e" if inlined else b"\x48\x8b\x8f"
+    grid_argument = b"\x4c\x8b\xcd" if inlined else b"\x4d\x8b\xce"
     for name, field in (("Area", "area"), ("State", "state")):
         offset = int(selected[f"registerEntity{name}FieldReadOffset"])
         field_offset = int(selected[f"{field}ControllerFieldOffset"])
-        if register_entity[offset:offset + 7] != b"\x48\x8b\x8f" + struct.pack("<I", field_offset):
+        if register_entity[offset:offset + 7] != owner_read + struct.pack("<I", field_offset):
             raise DynamicRootCompError(f"RegisterEntity {field} controller field read differs")
         grid_pass = int(selected[f"registerEntity{name}GridPassOffset"])
-        if register_entity[grid_pass:grid_pass + 3] != b"\x4d\x8b\xce":
+        if register_entity[grid_pass:grid_pass + 3] != grid_argument:
             raise DynamicRootCompError(f"RegisterEntity {field} grid argument differs")
         if _call_target(
             register_entity, int(selected[f"registerEntity{name}CallOffset"]),
@@ -222,7 +239,8 @@ def _validate_visibility_code(
     for name, getter in (("state", state_getter), ("area", area_getter)):
         if _mov_edx_imm32(getter, int(selected["getterRootSlotOffset"]), name + " RootComp slot") != root_slot:
             raise DynamicRootCompError(f"{name} visibility controller RootComp slot differs")
-        if _instruction(getter, int(selected["getterRootStrideOffset"]), b"\x6b\xc6",
+        if _instruction(getter, int(selected["getterRootStrideOffset"]),
+                        b"\x6b\xd7" if inlined else b"\x6b\xc6",
                         name + " RootComp stride") != root_width:
             raise DynamicRootCompError(f"{name} visibility controller RootComp stride differs")
         if _instruction(getter, int(selected["getterVisibleDescOffset"]), b"\x83\xc2",
@@ -248,21 +266,34 @@ def _validate_visibility_code(
     positive = int(selected["registerNumPositiveTestOffset"])
     if controller_register[positive:positive + 4] != b"\x85\xc0\x0f\x8e":
         raise DynamicRootCompError("visibility Register group Num positive guard differs")
-    if _call_target(controller_register, int(selected["registerIndexCallOffset"]),
+    index_call = int(selected["registerIndexCallOffset"])
+    if _call_target(controller_register, index_call,
                     controller_register_rva, "visibility DataIndex.Index") != index_getter_rva:
         raise DynamicRootCompError("visibility Register DataIndex.Index getter differs")
+    if inlined and controller_register[index_call + 5:index_call + 8] != b"\x44\x8b\xf0":
+        raise DynamicRootCompError("visibility Register DataIndex.Index save differs")
     if controller_register[int(selected["registerPrimitiveReadArgumentOffset"]):
-                           int(selected["registerPrimitiveReadArgumentOffset"]) + 4] != b"\x42\x8d\x14\x2e":
+                           int(selected["registerPrimitiveReadArgumentOffset"]) + 4] != (
+            b"\x43\x8d\x14\x34" if inlined else b"\x42\x8d\x14\x2e"):
         raise DynamicRootCompError("visibility Register Index plus loop position differs")
     if _call_target(controller_register, int(selected["registerPrimitiveReadCallOffset"]),
                     controller_register_rva, "visibility PrimitiveIntList reader") != int(selected["primitiveHelperRva"]):
         raise DynamicRootCompError("visibility Register PrimitiveIntList reader differs")
-    if (_mov_edx_imm32(primitive_helper, int(selected["primitiveHelperSlotOffset"]),
-                       "visibility primitive vector slot") != primitive_slot
-            or primitive_helper[int(selected["primitiveHelperStrideOffset"]):
-                                int(selected["primitiveHelperStrideOffset"]) + 3] != b"\x8d\x3c\xbb"
-            or primitive_helper[int(selected["primitiveHelperValueReadOffset"]):
-                                int(selected["primitiveHelperValueReadOffset"]) + 2] != b"\x8b\x1e"):
+    stride = int(selected["primitiveHelperStrideOffset"])
+    value_read = int(selected["primitiveHelperValueReadOffset"])
+    if _mov_edx_imm32(primitive_helper, int(selected["primitiveHelperSlotOffset"]),
+                      "visibility primitive vector slot") != primitive_slot:
+        raise DynamicRootCompError("visibility primitive vector slot/stride/read differs")
+    if inlined:
+        # lea edi,[rbx+r14*4]; lea ebp,[rdi+disp]; ...; mov ebx,[rdi+rbx+disp]
+        if (primitive_helper[stride:stride + 4] != b"\x42\x8d\x3c\xb3"
+                or primitive_helper[stride + 4:stride + 6] != b"\x8d\x6f"
+                or primitive_helper[value_read:value_read + 3] != b"\x8b\x5c\x1f"
+                or primitive_helper.count(b"\x8b\x5c\x1f") != 1
+                or primitive_helper[stride + 6] != primitive_helper[value_read + 3]):
+            raise DynamicRootCompError("visibility primitive vector slot/stride/read differs")
+    elif (primitive_helper[stride:stride + 3] != b"\x8d\x3c\xbb"
+            or primitive_helper[value_read:value_read + 2] != b"\x8b\x1e"):
         raise DynamicRootCompError("visibility primitive vector slot/stride/read differs")
 
 
@@ -364,12 +395,26 @@ def _template_path_literal(image: Any, raw: bytes, method_rva: int,
     return literal
 
 
-def _validate_id_comp_control_flow(raw: bytes, selected: dict[str, Any]) -> None:
+def _parse_load_inlined(raw: bytes, layout: dict[str, Any]) -> bool:
+    """Select the _ParseLoad codegen shape by its RootComp.Type read.
+
+    The original shape reloads RootComp.Type from the stack
+    (``mov edx,[rsp+0x78]``); the later shape keeps it in xmm6
+    (``movd edx,xmm6``), inlines SafeCount and renames registers. Every check
+    then requires all literals of the selected shape.
+    """
+    offset = int(layout["consumer"]["rootCompTypeFieldReadOffset"])
+    return raw[offset:offset + 4] == b"\x66\x0f\x7e\xf2"
+
+
+def _validate_id_comp_control_flow(raw: bytes, selected: dict[str, Any], inlined: bool = False) -> None:
     """Check the selected IdComp detour and its return to the shared route."""
     type_id = int(selected["dataTypeValue"])
     saved = int(selected["typeSavedOffset"])
     comparison = int(selected["typeCompareOffset"])
-    if raw[saved:saved + 2] != b"\x8b\xd8" or raw[comparison:comparison + 3] != bytes((0x83, 0xF8, type_id)):
+    saved_type = b"\x8b\xf8" if inlined else b"\x8b\xd8"
+    route_type = b"\x8b\xd7" if inlined else b"\x8b\xd3"
+    if raw[saved:saved + 2] != saved_type or raw[comparison:comparison + 3] != bytes((0x83, 0xF8, type_id)):
         raise DynamicRootCompError("_ParseLoad DataIndex.Type to IdComp comparison differs")
     branch = int(selected["specialBranchOffset"])
     if raw[branch:branch + 2] != b"\x0f\x84" or branch + 6 + struct.unpack_from("<i", raw, branch + 2)[0] != int(selected["specialTargetOffset"]):
@@ -377,8 +422,34 @@ def _validate_id_comp_control_flow(raw: bytes, selected: dict[str, Any]) -> None
     jump = int(selected["returnJumpOffset"])
     if raw[jump] != 0xE9 or jump + 5 + struct.unpack_from("<i", raw, jump + 1)[0] != int(selected["routeRejoinOffset"]):
         raise DynamicRootCompError("IdComp detour does not rejoin common route")
-    if raw[int(selected["routeArgumentOffset"]):int(selected["routeArgumentOffset"]) + 2] != b"\x8b\xd3":
+    if raw[int(selected["routeArgumentOffset"]):int(selected["routeArgumentOffset"]) + 2] != route_type:
         raise DynamicRootCompError("common route does not receive DataIndex.Type")
+
+
+def _validate_inlined_safe_count(image: Any, raw: bytes, method_rva: int, inner_count: int,
+                                 selected: dict[str, Any]) -> None:
+    """Prove that _ParseLoad's loop bound is an inlined copy of shared SafeCount.
+
+    The inline copy must pass the comps list (rdi) and the SafeCount method
+    info loaded into rsi through the same resolver and interface-count helper
+    that the shared SafeCount body (the one OnInit calls) uses: ``mov
+    rcx,[info+0x38]; xor edx,edx; call resolver; mov rdx,rax; xor ecx,ecx;
+    mov r8,<list>; call/jmp helper``.
+    """
+    start = inner_count - 19
+    if (start < 0 or raw[start:start + 7] != b"\x48\x8b\x4e\x38\x33\xd2\xe8"
+            or raw[start + 11:inner_count] != b"\x48\x8b\xd0\x33\xc9\x4c\x8b\xc7"):
+        raise DynamicRootCompError("_ParseLoad inlined SafeCount sequence differs")
+    resolver = _call_target(raw, start + 6, method_rva, "inlined SafeCount resolver")
+    shared_rva = int(selected["onInitSafeCountTargetRva"])
+    shared = image.pe.bytes_at_va(image.pe.image_base + shared_rva, 62)
+    if (shared[28:34] != b"\x48\x8b\x4f\x38\x33\xd2" or shared[39:47] != b"\x48\x8b\xd0\x33\xc9\x4c\x8b\xc3"
+            or shared[57] != 0xE9):
+        raise DynamicRootCompError("shared SafeCount body differs")
+    shared_resolver = _call_target(shared, 34, shared_rva, "shared SafeCount resolver")
+    shared_helper = shared_rva + 62 + struct.unpack_from("<i", shared, 58)[0]
+    if resolver != shared_resolver or int(selected["safeCountTargetRva"]) != shared_helper:
+        raise DynamicRootCompError("_ParseLoad inlined SafeCount targets differ from shared SafeCount")
 
 
 def _validate_template_lookup(image: Any, layout: dict[str, Any], methods: dict[int, dict[str, Any]],
@@ -405,6 +476,20 @@ def _validate_template_lookup(image: Any, layout: dict[str, Any], methods: dict[
         image, template_index, selected["compsField"], int(selected["compsFieldTypeIndex"]),
         int(selected["compsFieldOffset"]), selected["compsType"], selected["compsArguments"],
     )
+    # The exported template rows must carry exactly the serialized instance
+    # fields this build declares on the template type (public, not static, not
+    # NonSerialized). Only entityType and comps are interpreted; any further
+    # declared field is accepted as present, never read.
+    serialized: list[str] = []
+    for row in image.metadata.fields_for(image.metadata.types[template_index]):
+        pointer = image.pe.u64_at_va(int(image.registration["types"], 16) + row.type_index * 8)
+        attrs = struct.unpack_from("<H", image.pe.bytes_at_va(pointer, 16), 8)[0]
+        if attrs & 0x0010 or attrs & 0x0080 or attrs & 0x0007 != 0x0006:
+            continue
+        serialized.append(image.metadata.string(row.name_index))
+    if serialized[:2] != [selected["entityTypeField"], selected["compsField"]]:
+        raise DynamicRootCompError(f"template data serialized fields differ: {serialized}")
+    selected["templateDataSerializedFields"] = serialized
     asset_index = int(selected["templateAssetTypeIndex"])
     if image.type_name(asset_index) != selected["templateAssetType"]:
         raise DynamicRootCompError("DynamicSceneTemplates asset type differs")
@@ -416,23 +501,33 @@ def _validate_template_lookup(image: Any, layout: dict[str, Any], methods: dict[
     parse = methods[int(layout["parseLoadMethodIndex"])]
     raw = raw_methods[parse["index"]]
     map_offset = int(selected["mapFieldOffset"])
-    if raw[int(selected["parseMapReadOffset"]):int(selected["parseMapReadOffset"]) + 4] != bytes((0x49, 0x8B, 0x4F, map_offset)):
+    inlined = _parse_load_inlined(raw, layout)
+    # original: owner r15, out slot [rbp-0x28], value into rcx, SafeCount call;
+    # later: owner r13, out slot [rbp-0x38], value into rdi, SafeCount inlined.
+    owner_reg, out_slot = (0x4D, 0xC8) if inlined else (0x4F, 0xD8)
+    value_read = bytes((0x48, 0x8B, 0x7D, out_slot)) if inlined else bytes((0x48, 0x8B, 0x4D, out_slot))
+    comps_read = (0x48, 0x8B, 0x7F) if inlined else (0x48, 0x8B, 0x49)
+    if raw[int(selected["parseMapReadOffset"]):int(selected["parseMapReadOffset"]) + 4] != bytes((0x49, 0x8B, owner_reg, map_offset)):
         raise DynamicRootCompError("_ParseLoad template map field read differs")
     if raw[int(selected["parseKeyReadOffset"]):int(selected["parseKeyReadOffset"]) + 4] != b"\x40\x0f\xb6\xd6":
         raise DynamicRootCompError("_ParseLoad RootComp.Type dictionary key differs")
-    if raw[int(selected["parseLookupOutOffset"]):int(selected["parseLookupOutOffset"]) + 4] != b"\x4c\x8d\x45\xd8":
+    if raw[int(selected["parseLookupOutOffset"]):int(selected["parseLookupOutOffset"]) + 4] != bytes((0x4C, 0x8D, 0x45, out_slot)):
         raise DynamicRootCompError("_ParseLoad template lookup out slot differs")
     if _call_target(raw, int(selected["parseLookupCallOffset"]), int(parse["rva"]), "template TryGetValue") != int(selected["tryGetValueTargetRva"]):
         raise DynamicRootCompError("_ParseLoad template TryGetValue target differs")
-    if raw[int(selected["parseLookupValueReadOffset"]):int(selected["parseLookupValueReadOffset"]) + 4] != b"\x48\x8b\x4d\xd8":
+    if raw[int(selected["parseLookupValueReadOffset"]):int(selected["parseLookupValueReadOffset"]) + 4] != value_read:
         raise DynamicRootCompError("_ParseLoad looked-up template value read differs")
-    if raw[int(selected["parseCompsReadOffset"]):int(selected["parseCompsReadOffset"]) + 4] != bytes((0x48, 0x8B, 0x49, int(selected["compsFieldOffset"]))):
+    if raw[int(selected["parseCompsReadOffset"]):int(selected["parseCompsReadOffset"]) + 4] != bytes((*comps_read, int(selected["compsFieldOffset"]))):
         raise DynamicRootCompError("_ParseLoad template comps field read differs")
-    if _call_target(raw, int(layout["consumer"]["innerCountCallOffset"]), int(parse["rva"]), "template SafeCount") != int(selected["safeCountTargetRva"]):
+    inner_count = int(layout["consumer"]["innerCountCallOffset"])
+    if _call_target(raw, inner_count, int(parse["rva"]), "template SafeCount") != int(selected["safeCountTargetRva"]):
         raise DynamicRootCompError("_ParseLoad template SafeCount target differs")
+    if inlined:
+        _validate_inlined_safe_count(image, raw, int(parse["rva"]), inner_count, selected)
     if _method_spec_usage(
         image, raw, int(parse["rva"]), int(selected["safeCountUsageLoadOffset"]),
-        b"\x48\x8b\x15", int(selected["safeCountMethodSpecIndex"]), "_ParseLoad SafeCount",
+        b"\x48\x8b\x35" if inlined else b"\x48\x8b\x15",
+        int(selected["safeCountMethodSpecIndex"]), "_ParseLoad SafeCount",
     ) != (int(selected["safeCountMethodIndex"]), "Beyond.CollectionExtensions", "SafeCount", [], selected["compsArguments"]):
         raise DynamicRootCompError("_ParseLoad SafeCount instantiation differs from template comps")
     on_init = methods[int(selected["onInitMethodIndex"])]
@@ -523,7 +618,7 @@ def _validate_id_comp_path(
     vector = next((row for row in main_layout["vectors"]
                    if int(row["fieldIndex"]) == int(selected["vectorFieldIndex"])), None)
     if (vector is None or vector["name"] != "IdComp" or vector["elementType"] != selected["vectorType"]
-            or int(vector["elementWidth"]) != 8):
+            or int(vector["elementWidth"]) not in (8, 16)):
         raise DynamicRootCompError("selected IdComp vector binding differs")
     getter = methods[int(selected["uniqueIdGetterMethodIndex"])]
     if (getter["type"], getter["method"], getter["parameters"], getter["returnType"]) != (
@@ -532,14 +627,16 @@ def _validate_id_comp_path(
         raise DynamicRootCompError("IdComp.UniqueId getter identity differs")
     parse = methods[int(layout["parseLoadMethodIndex"])]
     raw = raw_methods[parse["index"]]
-    _validate_id_comp_control_flow(raw, selected)
+    inlined = _parse_load_inlined(raw, layout)
+    _validate_id_comp_control_flow(raw, selected, inlined)
     fields = {row["name"]: row for row in index_layout["fields"]}
     index_getter = image.metadata.methods[int(fields["Index"]["getterMethodIndex"])]
     if _call_target(raw, int(selected["indexGetterCallOffset"]), int(parse["rva"]), "IdComp DataIndex.get_Index") != image.method_pointer_va(index_getter) - image.pe.image_base:
         raise DynamicRootCompError("IdComp detour does not read DataIndex.Index")
     if raw[int(selected["indexPassOffset"]):int(selected["indexPassOffset"]) + 3] != b"\x44\x8b\xc0":
         raise DynamicRootCompError("IdComp vector index argument differs")
-    if raw[int(selected["gridPassOffset"]):int(selected["gridPassOffset"]) + 3] != b"\x49\x8b\xd5":
+    if raw[int(selected["gridPassOffset"]):int(selected["gridPassOffset"]) + 3] != (
+            b"\x49\x8b\xd4" if inlined else b"\x49\x8b\xd5"):
         raise DynamicRootCompError("IdComp containing grid argument differs")
     helper_rva = int(selected["helperRva"])
     if _call_target(raw, int(selected["helperCallOffset"]), int(parse["rva"]), "IdComp vector helper") != helper_rva:
@@ -555,8 +652,15 @@ def _validate_id_comp_path(
     ):
         if _call_target(helper, int(selected[offset_key]), helper_rva, label) != int(selected[target_key]):
             raise DynamicRootCompError(f"IdComp helper {label} target differs")
-    if helper[int(selected["helperStrideOffset"]):int(selected["helperStrideOffset"]) + 3] != b"\x8d\x14\xf0":
-        raise DynamicRootCompError("IdComp helper eight-byte stride differs")
+    stride = int(selected["helperStrideOffset"])
+    if int(vector["elementWidth"]) == 8:
+        if helper[stride:stride + 3] != b"\x8d\x14\xf0":
+            raise DynamicRootCompError("IdComp helper eight-byte stride differs")
+    # sixteen-byte element: shl edi,4 on the saved index, then lea edx,[rax+rdi]
+    elif (helper[stride:stride + 3] != b"\xc1\xe7\x04" or helper.count(b"\x8d\x14\x38") != 1
+            or helper.find(b"\x8d\x14\x38") < stride or helper.count(b"\x41\x8b\xf8") != 1
+            or helper.find(b"\x41\x8b\xf8") > stride):
+        raise DynamicRootCompError("IdComp helper sixteen-byte stride differs")
     getter_raw = raw_methods[getter["index"]]
     scalar_reader = _call_target(
         getter_raw, int(selected["uniqueIdGetterScalarCallOffset"]), int(getter["rva"]),
@@ -812,7 +916,9 @@ def validate_native_layout(
         raise DynamicRootCompError("DataGroup builder size/alignment differs")
     comps = raw_methods[int(layout["compsGetterMethodIndex"])]
     root_type_getter = raw_methods[int(layout["rootCompTypeGetterMethodIndex"])]
-    if int(layout["rootCompTypeOffset"]) != 0 or _unique(root_type_getter, b"\x8b\x1b", "RootComp.get_Type offset") < 0:
+    # mov ebx,[rbx] (original) or mov ebx,[rcx] (later): a zero-displacement read either way.
+    type_read = b"\x8b\x1b" if b"\x8b\x1b" in root_type_getter else b"\x8b\x19"
+    if int(layout["rootCompTypeOffset"]) != 0 or _unique(root_type_getter, type_read, "RootComp.get_Type offset") < 0:
         raise DynamicRootCompError("RootComp.Type offset differs")
     if _byte_after(comps, b"\x83\xc2", "RootComp.get_Comps offset") != int(layout["compsOffset"]):
         raise DynamicRootCompError("RootComp.Comps offset differs")
@@ -833,8 +939,9 @@ def validate_native_layout(
     visible_area = raw_methods[int(visible["visibleAreaGetterMethodIndex"])]
     state_read = int(visible["visibleStateBaseReadOffset"])
     state_call = int(visible["visibleStateCallOffset"])
+    # mov edx,[rdi] (original) or mov edx,[rdx] (later) at displacement zero.
     if (_byte_after(visible_builder, b"\x45\x8d\x41", "VisibleDesc builder width")
-            != int(visible["width"]) or visible_state[state_read:state_read + 2] != b"\x8b\x17"
+            != int(visible["width"]) or visible_state[state_read:state_read + 2] not in (b"\x8b\x17", b"\x8b\x12")
             or visible_state[state_call] != 0xE8
             or b"\x83\xc2" in visible_state[state_read + 2:state_call]
             or int(visible["visibleStateGroupOffset"]) != 0
@@ -843,11 +950,24 @@ def validate_native_layout(
             != int(visible["visibleAreaGroupOffset"])):
         raise DynamicRootCompError("VisibleDesc group width/offsets differ")
     group_index = raw_methods[int(layout["groupIndexGetterMethodIndex"])]
-    if (int(layout["groupIndexOffset"]) != 0 or b"\x8b\x17" not in group_index
-            or b"\x0f\x10\x47\x08" not in group_index):
+    # The DataIndex copy is read from the same base register in both shapes:
+    # rdi originally, rdx in the later codegen.
+    if (int(layout["groupIndexOffset"]) != 0
+            or not ((b"\x8b\x17" in group_index and b"\x0f\x10\x47\x08" in group_index)
+                    or (b"\x8b\x12" in group_index and b"\x0f\x10\x42\x08" in group_index))):
         raise DynamicRootCompError("DataGroup.Index inline offset differs")
     group_num = raw_methods[int(layout["groupNumGetterMethodIndex"])]
-    if _byte_after(group_num, b"\x8d\x7e", "DataGroup.get_Num offset") != int(layout["groupNumOffset"]):
+    if group_num.count(b"\x48\x63\x31") == 1:
+        # Later codegen inlines the span read: the bounds check and the element
+        # read must use the same displacement, which is the Num offset.
+        bounds = _unique(group_num, b"\x8d\x6e", "DataGroup.get_Num bounds")
+        read = _unique(group_num, b"\x8b\x5c\x1e", "DataGroup.get_Num read")
+        if group_num[bounds + 2] != group_num[read + 3]:
+            raise DynamicRootCompError("DataGroup.get_Num bounds and read offsets differ")
+        group_num_offset = group_num[read + 3]
+    else:
+        group_num_offset = _byte_after(group_num, b"\x8d\x7e", "DataGroup.get_Num offset")
+    if group_num_offset != int(layout["groupNumOffset"]):
         raise DynamicRootCompError("DataGroup.Num offset differs")
     group_total = raw_methods[int(layout["groupTotalGetterMethodIndex"])]
     if _byte_after(group_total, b"\x8d\x53", "DataGroup.get_TotalInGrid offset") != int(layout["groupTotalOffset"]):
@@ -874,7 +994,8 @@ def validate_native_layout(
     if _instruction(parse_raw, int(consumer["rootCompStrideOffset"]), b"\x6b\xd3", "_ParseLoad RootComp stride") != int(layout["rootCompWidth"]):
         raise DynamicRootCompError("_ParseLoad RootComp stride differs")
     type_read = int(consumer["rootCompTypeFieldReadOffset"])
-    if parse_raw[type_read:type_read + 4] != b"\x8b\x54\x24\x78":
+    inlined = _parse_load_inlined(parse_raw, layout)
+    if not inlined and parse_raw[type_read:type_read + 4] != b"\x8b\x54\x24\x78":
         raise DynamicRootCompError("_ParseLoad RootComp.Type field read differs")
     getter_row = methods[int(layout["rootCompTypeGetterMethodIndex"])]
     getter_reader = _call_target(
@@ -886,11 +1007,18 @@ def validate_native_layout(
         "_ParseLoad RootComp.Type scalar reader",
     ) != getter_reader:
         raise DynamicRootCompError("_ParseLoad RootComp.Type reader differs from generated getter")
-    if _instruction(parse_raw, int(consumer["compsOffsetCodeOffset"]), b"\x41\x8d\x56", "_ParseLoad Comps offset") != int(layout["compsOffset"]):
+    if _instruction(parse_raw, int(consumer["compsOffsetCodeOffset"]), b"\x83\xc2" if inlined else b"\x41\x8d\x56",
+                    "_ParseLoad Comps offset") != int(layout["compsOffset"]):
         raise DynamicRootCompError("_ParseLoad Comps offset differs")
     if _mov_edx_imm32(parse_raw, int(consumer["dataIndexSlotOffset"]), "_ParseLoad DataIndex slot") != int(directory_vector["vtableSlot"]):
         raise DynamicRootCompError("_ParseLoad DataIndex slot differs")
-    if parse_raw[int(consumer["dataIndexAddOffset"]):int(consumer["dataIndexAddOffset"]) + 3] != b"\x8d\x14\x1e":
+    add = int(consumer["dataIndexAddOffset"])
+    stride = int(consumer["dataIndexStrideOffset"])
+    if inlined:
+        # add edx,ebx (group start plus loop index); shl edx,4; add edx,eax
+        if parse_raw[add:add + 2] != b"\x03\xd3" or parse_raw[stride + 3:stride + 5] != b"\x03\xd0":
+            raise DynamicRootCompError("_ParseLoad DataGroup start plus loop offset differs")
+    elif parse_raw[add:add + 3] != b"\x8d\x14\x1e":
         raise DynamicRootCompError("_ParseLoad DataGroup start plus loop offset differs")
     if _instruction(parse_raw, int(consumer["dataIndexStrideOffset"]), b"\xc1\xe2", "_ParseLoad DataIndex stride") != 4:
         raise DynamicRootCompError("_ParseLoad DataIndex stride differs")
@@ -919,10 +1047,14 @@ def validate_native_layout(
         "_ParseLoad inner loop count",
     )
     count_store = int(consumer["innerCountStoreOffset"])
-    if parse_raw[count_store:count_store + 4] != b"\x89\x44\x24\x70":
+    # The bound is stored to one stack slot and the loop counter (esi
+    # originally, ebx later) is compared against that same slot.
+    count_slot, compare = (b"\x89\x44\x24\x44", b"\x3b\x5c\x24\x44") if inlined else (
+        b"\x89\x44\x24\x70", b"\x3b\x74\x24\x70")
+    if parse_raw[count_store:count_store + 4] != count_slot:
         raise DynamicRootCompError("_ParseLoad inner loop count storage differs")
     inner_comparison = int(consumer["innerLoopCompareOffset"])
-    if parse_raw[inner_comparison:inner_comparison + 4] != b"\x3b\x74\x24\x70":
+    if parse_raw[inner_comparison:inner_comparison + 4] != compare:
         raise DynamicRootCompError("_ParseLoad inner loop count comparison differs")
     inner_branch = int(consumer["innerLoopBranchOffset"])
     if parse_raw[inner_branch:inner_branch + 2] != b"\x0f\x8c":
@@ -969,7 +1101,10 @@ def validate_native_layout(
     ) != int(layout["rootCompWidth"]):
         raise DynamicRootCompError("_RegisterEntities RootComp stride differs")
     comparison = int(lifecycle["registerEntitiesLoopCompareOffset"])
-    if register_raw[comparison:comparison + 3] != b"\x41\x3b\xf4":
+    # cmp esi,r12d originally; later cmp edi,r12d after inc edi before the stride add.
+    if register_raw[comparison:comparison + 3] != b"\x41\x3b\xf4" and (
+            register_raw[comparison:comparison + 3] != b"\x41\x3b\xfc"
+            or register_raw[comparison - 6:comparison - 4] != b"\xff\xc7"):
         raise DynamicRootCompError("_RegisterEntities count loop comparison differs")
     branch = int(lifecycle["registerEntitiesLoopBranchOffset"])
     if register_raw[branch:branch + 2] != b"\x0f\x8c":
@@ -1200,13 +1335,14 @@ def _template_asset_map_row(path: Path, container: str) -> dict[str, Any]:
 
 
 def _template_rows(asset: dict[str, Any], entity_enum: dict[int, str],
-                   data_enum: dict[int, str]) -> dict[int, tuple[int, ...]]:
+                   data_enum: dict[int, str],
+                   fields: tuple[str, ...] | list[str] = ("entityType", "comps")) -> dict[int, tuple[int, ...]]:
     rows = asset.get("templateDataList")
     if not isinstance(rows, list) or not rows:
         raise DynamicRootCompError("DynamicSceneTemplates.templateDataList is empty or missing")
     templates: dict[int, tuple[int, ...]] = {}
     for ordinal, row in enumerate(rows):
-        if not isinstance(row, dict) or set(row) != {"entityType", "comps"}:
+        if not isinstance(row, dict) or list(row) != list(fields):
             raise DynamicRootCompError(f"DynamicSceneTemplates.templateDataList[{ordinal}] shape differs")
         type_id, comps = row["entityType"], row["comps"]
         if type(type_id) is not int or type_id not in entity_enum:
@@ -1292,7 +1428,7 @@ def load_current_template_asset(
         raise DynamicRootCompError("DynamicSceneTemplates source is outside selected installed StreamingAssets")
     if type(meta["sourceOffset"]) is not int or meta["sourceOffset"] < 0 or meta["sourceOffset"] + meta["byteSize"] > source_path.stat().st_size:
         raise DynamicRootCompError("DynamicSceneTemplates source object span exceeds installed VFS file")
-    templates = _template_rows(asset, entity_enum, data_enum)
+    templates = _template_rows(asset, entity_enum, data_enum, list(selected["templateDataSerializedFields"]))
     return templates, {
         "assetPath": selected["templateAssetPath"],
         "exportObject": object_row.ref,

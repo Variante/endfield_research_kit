@@ -76,7 +76,7 @@ def validate_current_native_contract(*,children,gameassembly:Path|None=None,meta
     for key,d in runtime.items():
         if image.type_name(d)!=c['childTypes'][key]:raise ValueError(LABEL+'.native:independently-owned-child-type='+key)
     record=c['records']['refrainObtainUsp'];source_path=CONTRACTS_DIR/record['sourceContract'];source=json.loads(source_path.read_bytes())
-    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=source_path)
+    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=source_path, native_image=image)
     def fail(check,expected,actual,**details):raise ValueError(f'{LABEL}.native:{check}:expected={str(expected)[:1000]}; actual={str(actual)[:1000]}; details={details}')
     proved=named.validate_named_records(image,source,c['records'],label=LABEL,fail=fail);bindings=_bindings(c,runtime)
     for b in bindings.values():named.check_typed_context(image,b['context'],c['childTypes'][b['child']],label=LABEL,fail=fail)

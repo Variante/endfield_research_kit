@@ -103,7 +103,7 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
     for key, record in contract['records'].items():
         path = CONTRACTS_DIR / record['sourceContract']; source = json.loads(path.read_bytes())
         buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
-            image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+            image.modules, image.owners, source=str(gate.gameassembly), contract_path=path, native_image=image)
         proved.update(records_native.validate_named_records(image, source, {key: record}, label=LABEL, fail=_fail))
         for member in record['members']:
             if member['kind'] == 'byte-payload' and member['sourceCall']['targetRva'] not in string_native['sourceHelpers']:

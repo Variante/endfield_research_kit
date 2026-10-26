@@ -34,6 +34,12 @@ BONE_WEIGHT_MASK_FIELDS = ("layerName", "maskPath")
 class AnimationConfigFramingError(ValueError):
     """Raised when the current-corpus prefix cannot be authenticated."""
 
+
+def decode_animation_config_current_animation(data, *, operation):
+    """Explicit whole MC15 opt-in; accept its native receipt only after exit."""
+    from scripts.game_data.animation_current_native import prepared_current_animation
+    return prepared_current_animation(operation).animation_config(data)
+
 def _require(data: bytes, offset: int, size: int, field: str) -> int:
     if size < 0 or offset < 0 or offset + size > len(data):
         raise AnimationConfigFramingError(

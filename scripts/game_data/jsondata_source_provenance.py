@@ -20,6 +20,8 @@ from scripts.game_data.memorypack.corpus_gate import (
 
 SCHEMA = "endfield.jsondata-current-source-receipt.v1"
 REGISTRY_FORMAT = "endfield-jsondata-current-corpus-v1"
+SOURCE_INVENTORY_FORMAT = "endfield-jsondata-current-source-inventory"
+SOURCE_INVENTORY_SCHEMA = "endfield.jsondata-current-source-inventory.v1"
 
 
 def _require(check: str, source: Any, expected: Any, actual: Any) -> None:
@@ -49,12 +51,19 @@ def authenticate_current_jsondata_receipt(
     The returned snapshot is stable only after a second successful check; it
     deliberately makes no use of another family's stored admission rows.
     """
+    return _authenticate_envelope(summary_path=summary_path, ledger_path=ledger_path,
+        expected_summary_sha256=expected_summary_sha256, native_sources=native_sources,
+        native_inputs=native_inputs, report_format=REGISTRY_FORMAT, producer_role="registry")
+
+
+def _authenticate_envelope(*, summary_path, ledger_path, expected_summary_sha256,
+                           native_sources, native_inputs, report_format, producer_role):
     summary_pin = _fingerprint(summary_path)
     _require("summary-byte-join", summary_path, expected_summary_sha256.upper(), summary_pin["sha256"])
     summary = json.loads(summary_path.read_bytes())
     if not isinstance(summary, dict):
         raise CensusGateError("summary-object", source=str(summary_path), expected="object", actual=type(summary).__name__)
-    _require("summary-format", summary_path, [REGISTRY_FORMAT, 1],
+    _require("summary-format", summary_path, [report_format, 1],
              [summary.get("format"), summary.get("schemaVersion")])
     _require("summary-status", summary_path, "complete", summary.get("status"))
     input_set = summary.get("inputSetSha256")
@@ -64,7 +73,7 @@ def authenticate_current_jsondata_receipt(
     if not isinstance(provenance, dict):
         raise CensusGateError("summary-provenance", source=str(summary_path), expected="object", actual=type(provenance).__name__)
     checked: dict[str, Any] = {"schema": SCHEMA, "summary": summary_pin, "inputSetSha256": input_set}
-    for role in ("outer", "ledger", "registry"):
+    for role in ("outer", "ledger", producer_role):
         pin = provenance.get(role)
         checked[role] = _snapshot_pinned_files([pin] if isinstance(pin, dict) else [],
                                               label=f"provenance.{role}")[0]
@@ -140,4 +149,41 @@ def authenticate_current_jsondata_receipt(
         _require("selected-assets-root", role, _path_key(game_root / folder), _path_key(outer[role]))
     checked["selectedNative"] = selected
     checked["evidenceBoundary"] = "current source/build receipt only; no schema, parent-reader or runtime admission"
+    return checked
+
+
+def source_inventory_flags() -> dict[str, bool]:
+    """Source completeness supplies no named schema or native execution grant."""
+    return dict(sourceIdentityComplete=True, namedSchemaAdmitted=False,
+        nativeAuthority=False, currentCensusAuthenticated=False,
+        currentVfsCorpus=False, completeVfsCorpusAdmitted=False, wholeOwnerEofAdmitted=False,
+        runtimeActivationProved=False, playbackProved=False, absenceProved=False,
+        publicationEligible=False)
+
+
+def authenticate_current_jsondata_source_inventory(
+    *, summary_path: Path, ledger_path: Path, expected_summary_sha256: str,
+    native_sources: Mapping[str, str], native_inputs: Mapping[str, str],
+) -> dict[str, Any]:
+    """Rejoin the complete inventory to live audit, export and producer bytes.
+
+    This explicit API never accepts the named-classification registry format.
+    Native owners must separately validate their own source, pool and EOF.
+    """
+    checked = _authenticate_envelope(summary_path=summary_path, ledger_path=ledger_path,
+        expected_summary_sha256=expected_summary_sha256, native_sources=native_sources,
+        native_inputs=native_inputs, report_format=SOURCE_INVENTORY_FORMAT, producer_role="producer")
+    summary = json.loads(summary_path.read_bytes())
+    _require("source-inventory-schema", summary_path, SOURCE_INVENTORY_SCHEMA, summary.get("schema"))
+    for key, expected in source_inventory_flags().items():
+        _require("source-inventory-authority", f"{summary_path}:{key}", expected, summary.get(key))
+    from scripts.game_data.jsondata_source_inventory import verify_saved_inventory
+    verified = verify_saved_inventory(summary, ledger_path=ledger_path)
+    _require("source-inventory-summary-drift", summary_path, checked["summary"], _fingerprint(summary_path))
+    output = _fingerprint(ledger_path)
+    _require("source-inventory-ledger-drift", ledger_path,
+             {key: checked["outputFiles"][key] for key in ("path", "length", "sha256")}, output)
+    checked.update(schema="endfield.jsondata-current-source-inventory-receipt.v1",
+        jsonRoot=summary["jsonRoot"], sourceInventory=verified,
+        sourceInventoryAuthenticated=True, **source_inventory_flags())
     return checked

@@ -1,4 +1,10 @@
-"""Prove selected node string fields without admitting other fields or owners."""
+"""Prove selected node string fields without admitting other fields or owners.
+
+Adding a wrapper derives its wire plan from the maintained layout and its
+declarations from the selected build, then requires the same UID source proof.
+Existing records can be reused only on their already reviewed native inputs;
+no addition admits the other fields or re-records source-corpus receipts.
+"""
 from __future__ import annotations
 
 if __name__ == "__main__" and not __package__:
@@ -124,11 +130,39 @@ def derive_record(build, reviewed):
         "codeWindows":[_window(image,a,b,"complete owned reader; only listed string source programs admitted") for a,b in sorted(spans)]}
 
 
-def regenerate(contract):
+def derive_added_record(build, wrapper_name):
+    """Admit a new UID prefix only through a complete existing proof profile."""
+    from scripts.game_data.codecs.levelscript.action_map import _layouts
+    from scripts.game_data.il2cpp.protocol import canonical_type_name
+    layouts=[row for row in _layouts().values() if row['wrapperName']==wrapper_name]
+    if len(layouts)!=1 or wrapper_name not in build.wrappers:
+        raise ValueError(f"nodeStrings.addWrapperLayout:{wrapper_name}:expected=one installed wrapper/layout:actual={len(layouts)}")
+    wrapper=build.wrappers[wrapper_name]
+    seed={"wrapperName":wrapper_name,"fields":layouts[0]['fields'],
+        "nativeDeclaredTypes":[[m.name,canonical_type_name(m.declared_type)] for m in wrapper.members],
+        "stringFields":[["uid","_uid"]]}
+    failures=[]
+    for name,profile in (("direct",{}),("inline",{"inlinePrefix":True}),
+                         ("initialized-cached",{"inlinePrefix":True,"initializedCachedPrefix":True})):
+        try:
+            return derive_record(build,{**seed,**profile})
+        except (ValueError,RuntimeError) as error:
+            failures.append(f"{name}={str(error)[:240]}")
+    raise ValueError(f"nodeStrings.addWrapperSource:{wrapper_name}:"+";".join(failures))
+
+
+def regenerate(contract, *, add_wrappers=()):
     from scripts.game_data.levelscript_family_regenerate import open_selected_build, Build
     image,pins = open_selected_build()
+    if add_wrappers:
+        existing=[row['wrapperName'] for row in contract['records']]
+        if (contract.get('status')!='validated' or contract.get('nativeInputs')!=pins):
+            raise ValueError("nodeStrings.addWrapperInputs:expected=current validated contract:actual=stale-or-pending")
+        if len(set(add_wrappers))!=len(add_wrappers) or any(name in existing for name in add_wrappers):
+            raise ValueError("nodeStrings.addWrapperDuplicate:requested wrapper already recorded or repeated")
     build = Build(image,pins)
-    records = [derive_record(build,row) for row in contract["records"]]
+    records = (list(contract['records'])+[derive_added_record(build,name) for name in add_wrappers]
+               if add_wrappers else [derive_record(build,row) for row in contract["records"]])
     gate = check_installed_native_inputs(pins["GameAssembly.dll"],pins["global-metadata.dat"],gameassembly=image.gameassembly,metadata=image.metadata_path)
     if gate.status != "validated" or sha256_file_upper(image.gameassembly.parent/"UnityPlayer.dll") != pins["UnityPlayer.dll"]:
         raise ValueError(f"nodeStrings.inputsChanged:{gate.status}:{gate.detail}")
@@ -139,20 +173,27 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--regenerate",action="store_true")
     parser.add_argument("--write",action="store_true")
+    parser.add_argument("--add-wrapper",action="append",default=[],metavar="FULL_WRAPPER_NAME",
+                        help="prove one new UID prefix; repeat for a batch; reuse existing records only on the same build")
     parser.add_argument("--report",type=Path,default=Path("reports/game_data/levelscript_node_strings_native.json"))
     args = parser.parse_args()
     if args.write and not args.regenerate:
         parser.error("--write requires --regenerate")
+    if args.add_wrapper and not args.regenerate:
+        parser.error("--add-wrapper requires --regenerate")
     report = {"validator":"nodeStrings","source":str(CONTRACT),"status":"validation_failed"}
     try:
         contract = read_contract(allow_pending=args.regenerate)
         if not args.regenerate:
             gate = check_node_string_native_inputs()
             if gate.status != "validated":raise ValueError(f"native-inputs:{gate.status}:{gate.detail}")
-        current = regenerate(contract)
+        current = regenerate(contract,add_wrappers=args.add_wrapper) if args.add_wrapper else regenerate(contract)
         if not args.regenerate and current != contract:raise ValueError("nodeStrings.source:reviewed facts differ")
-        if args.write:CONTRACT.write_text(json.dumps(current,indent=2)+"\n",encoding="utf8")
+        if args.write:
+            newline=b"\r\n" if b"\r\n" in CONTRACT.read_bytes() else b"\n"
+            CONTRACT.write_bytes((json.dumps(current,indent=2)+"\n").encode('utf8').replace(b"\n",newline))
         report.update(status="validated",nativeInputs=current["nativeInputs"])
+        if args.add_wrapper:report.update(addedWrappers=args.add_wrapper,recordCount=len(current['records']))
     except (ValueError,OSError,KeyError,TypeError,IndexError,RuntimeError) as exc:
         report.update(failedCheck=str(exc).split(":",1)[0],detail=str(exc)[:1000])
     args.report.parent.mkdir(parents=True,exist_ok=True)

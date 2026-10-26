@@ -344,6 +344,7 @@ def _validate_sources(
         _nested, cursor.offset = send_lua_event.decode_nested_send_lua_event(
             data, cursor.offset, "sendLuaEvent1.manualValue",
             contract["nestedValue"]["jsonParamCount"],
+            strings=source.strings, game_root=game_root,
         )
         if cursor.offset != end:
             raise ValueError(f"{LABEL}.source:end-offset={path}")

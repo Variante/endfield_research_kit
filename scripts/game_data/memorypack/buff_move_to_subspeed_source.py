@@ -85,7 +85,7 @@ def validate_current_native_contract(*, gameassembly: Path, metadata: Path) -> d
     source = json.loads(source_path.read_bytes())
     audit = buff_action_read_order(image.pe, image.metadata, image.registration,
         image.instantiations, image.modules, image.owners,
-        source=str(gate.gameassembly), contract_path=source_path)
+        source=str(gate.gameassembly), contract_path=source_path, native_image=image)
     for path in supplements:
         supplement = json.loads(path.read_bytes())
         if (supplement.get('schemaVersion') != 1 or not isinstance(supplement.get('methods'), list)

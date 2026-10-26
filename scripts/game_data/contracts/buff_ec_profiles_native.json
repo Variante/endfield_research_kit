@@ -1,0 +1,5879 @@
+{
+  "schema": "endfield.buff-ec-profile-roles-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "projection": "buff_ec_native.json",
+  "claims": [
+    {
+      "profile": "member10",
+      "ownerType": "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack",
+      "methodName": "Deserialize",
+      "anonymousReadOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "member13",
+        "byte",
+        "byte-payload",
+        "scalar32",
+        "scalar-payload"
+      ],
+      "members": [
+        {
+          "name": "isEnable",
+          "declaredType": "bool"
+        },
+        {
+          "name": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+        },
+        {
+          "name": "priorityOffset",
+          "declaredType": "int"
+        },
+        {
+          "name": "serverActionIndex",
+          "declaredType": "int"
+        },
+        {
+          "name": "calculateType",
+          "declaredType": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+CalculationType"
+        },
+        {
+          "name": "calculationTarget",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings"
+        },
+        {
+          "name": "directValue",
+          "declaredType": "bool"
+        },
+        {
+          "name": "key",
+          "declaredType": "string"
+        },
+        {
+          "name": "operation",
+          "declaredType": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType"
+        },
+        {
+          "name": "value",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble"
+        }
+      ]
+    },
+    {
+      "profile": "member13",
+      "ownerType": "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack",
+      "methodName": "Deserialize",
+      "anonymousReadOrder": [
+        "member8",
+        "byte-payload",
+        "byte",
+        "scalar32",
+        "byte",
+        "byte-payload",
+        "member3",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "byte-payload",
+        "byte-payload",
+        "scalar32"
+      ],
+      "members": [
+        {
+          "name": "advancedDirection",
+          "declaredType": "Beyond.Gameplay.Core.DirectionSettings"
+        },
+        {
+          "name": "centerContextKey",
+          "declaredType": "string"
+        },
+        {
+          "name": "centerToGround",
+          "declaredType": "bool"
+        },
+        {
+          "name": "centerType",
+          "declaredType": "Beyond.Gameplay.ActionTargetType"
+        },
+        {
+          "name": "enableAdvancedDirection",
+          "declaredType": "bool"
+        },
+        {
+          "name": "ownerContextKey",
+          "declaredType": "string"
+        },
+        {
+          "name": "selectorData",
+          "declaredType": "Beyond.Gameplay.Core.Selector+SelectorData"
+        },
+        {
+          "name": "selectorDirection",
+          "declaredType": "Beyond.Gameplay.DirectionType"
+        },
+        {
+          "name": "selectorOwner",
+          "declaredType": "Beyond.Gameplay.ActionTargetType"
+        },
+        {
+          "name": "target",
+          "declaredType": "Beyond.Gameplay.ActionTargetType"
+        },
+        {
+          "name": "targetContextKey",
+          "declaredType": "string"
+        },
+        {
+          "name": "targetGroupKey",
+          "declaredType": "string"
+        },
+        {
+          "name": "targetSource",
+          "declaredType": "Beyond.Gameplay.TargetSource"
+        }
+      ]
+    },
+    {
+      "profile": "member8",
+      "ownerType": "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack",
+      "methodName": "Deserialize",
+      "anonymousReadOrder": [
+        "byte",
+        "byte",
+        "scalar32",
+        "byte",
+        "member13",
+        "scalar32",
+        "member13",
+        "scalar32"
+      ],
+      "members": [
+        {
+          "name": "clampToXZ",
+          "declaredType": "bool"
+        },
+        {
+          "name": "customSourceAndTarget",
+          "declaredType": "bool"
+        },
+        {
+          "name": "directionType",
+          "declaredType": "Beyond.Gameplay.Core.DirectionSettings+DirectionType"
+        },
+        {
+          "name": "invertDirection",
+          "declaredType": "bool"
+        },
+        {
+          "name": "source",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings"
+        },
+        {
+          "name": "sourceMountPoint",
+          "declaredType": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "name": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings"
+        },
+        {
+          "name": "targetMountPoint",
+          "declaredType": "Beyond.Gameplay.MountPoint"
+        }
+      ]
+    },
+    {
+      "profile": "member3",
+      "ownerType": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack",
+      "methodName": "Deserialize",
+      "anonymousReadOrder": [
+        "delegated-finder",
+        "delegated-list",
+        "delegated-list"
+      ],
+      "members": [
+        {
+          "name": "finderData",
+          "declaredType": "Beyond.Gameplay.Core.Selector+Finder+Data"
+        },
+        {
+          "name": "postProcessorData",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Selector+PostProcessor+Data>"
+        },
+        {
+          "name": "validatorData",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Selector+Validator+Data>"
+        }
+      ]
+    }
+  ],
+  "methodRoles": [
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack+Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPackFormatter",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack+Beyond_Gameplay_Core_TargetSettingsForMemoryPackFormatter",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack+Beyond_Gameplay_Core_DirectionSettingsForMemoryPackFormatter",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack+Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPackFormatter",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack+Beyond_Blackboard_BlackboardDoubleForMemoryPackFormatter",
+      "Deserialize"
+    ],
+    [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPackFormatter",
+      "Deserialize"
+    ]
+  ],
+  "finderRole": [
+    "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPackFormatter",
+    "Deserialize"
+  ],
+  "dependencies": [
+    "memorypack_reader_clones_native.json",
+    "memorypack_pooled_string_reader_native.json",
+    "buff_blackboard_double_native.json"
+  ],
+  "evidenceBoundary": {
+    "exact": "Current named reader identities, complete selected unwind families, scoped static MethodSpecs, full list argument names, and normal-path source read order and scalar advances.",
+    "conditional": "Initialized metadata/class state, nonnull wrappers/instances/formatters, sufficient contiguous buffered bytes, disabled reference barriers, compatible selected nested formatters, ordinary Win64 ABI and normal callees.",
+    "unresolved": "Concrete live formatter/provider selection, refill/cold parity, segment replacement, runtime source selection, and whole-BuffData EOF."
+  },
+  "proof": {
+    "readerOffsets": {
+      "currentPtr": 80,
+      "bufferLength": 48,
+      "advancedCount": 64,
+      "consumed": 68
+    },
+    "profiles": [
+      {
+        "profile": "member10",
+        "method": [
+          263074,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyDynamicBlackboard_DataForMemoryPack",
+          "Deserialize",
+          101306096
+        ],
+        "family": {
+          "schema": "endfield.amd64-unwind-chain-family.v1",
+          "selectedPrimaryRva": 101306096,
+          "tableRva": 313733120,
+          "tableBytes": 9860400,
+          "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+          "tableRowsChecked": 821700,
+          "unwindVersionRows": {
+            "1": 821697,
+            "2": 3
+          },
+          "completeParentTriplesChecked": true,
+          "allParentChainsTerminated": true,
+          "chainFrameBytesMatched": true,
+          "ranges": [
+            {
+              "runtimeTriple": [
+                101306096,
+                101306815,
+                267248812
+              ],
+              "tableRowRva": 316960112,
+              "runtimeTripleRawHex": "F0CE0906BFD10906ACE4ED0F",
+              "codeBytes": 719,
+              "unwindRawHex": "0114080014640800145407001434060014321070",
+              "unwindVersion": 1,
+              "unwindFlags": 0,
+              "frameByte": 0,
+              "parentChain": []
+            },
+            {
+              "runtimeTriple": [
+                124206862,
+                124206979,
+                269301800
+              ],
+              "tableRowRva": 318418736,
+              "runtimeTripleRawHex": "0E3F6707833F670728380D10",
+              "codeBytes": 117,
+              "unwindRawHex": "21000000F0CE0906BFD10906ACE4ED0F",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    124206862,
+                    124206979,
+                    269301800
+                  ],
+                  "parent": [
+                    101306096,
+                    101306815,
+                    267248812
+                  ]
+                }
+              ]
+            }
+          ],
+          "unwindOperationsOrFixedAllocationSemanticsProved": false,
+          "handlerLanguageDataProved": false,
+          "wholeManagedMethodProgramProved": false,
+          "runtimeExecutionKnown": false,
+          "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+        },
+        "header": [
+          101306250,
+          "4080FD0A"
+        ],
+        "readerRegister": "rbx",
+        "events": [
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              101306266,
+              "E8312EF4FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              101306309,
+              "E88626F4FE"
+            ],
+            "mode": "proved-primitive",
+            "context": {
+              "instructionRva": 101306299,
+              "instructionHex": "488B15E6F5630A",
+              "cellVa": 6718080424,
+              "usageRawHex": "EBB613C000000000",
+              "methodSpecIndex": 646005,
+              "methodSpec": [
+                550332,
+                -1,
+                42893
+              ],
+              "argumentRawHex": "64250000000000000000118000000000",
+              "typeDefinition": 9572,
+              "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "generic": null,
+              "typeKind": 17,
+              "fullTypeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadUnmanaged",
+              "register": "rdx"
+            }
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              101306345,
+              "E86226F4FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              101306381,
+              "E83E26F4FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              101306424,
+              "E81326F4FE"
+            ],
+            "mode": "proved-primitive",
+            "context": {
+              "instructionRva": 101306414,
+              "instructionHex": "488B1563455B0A",
+              "cellVa": 6717511064,
+              "usageRawHex": "0FB713C000000000",
+              "methodSpecIndex": 646023,
+              "methodSpec": [
+                550332,
+                -1,
+                42911
+              ],
+              "argumentRawHex": "08270000000000000000118000000000",
+              "typeDefinition": 9992,
+              "typeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+CalculationType",
+              "generic": null,
+              "typeKind": 17,
+              "fullTypeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+CalculationType",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadUnmanaged",
+              "register": "rdx"
+            }
+          },
+          {
+            "kind": "member13",
+            "context": {
+              "instructionRva": 101306465,
+              "instructionHex": "488B1598666A0A",
+              "cellVa": 6718502656,
+              "usageRawHex": "27BA13C000000000",
+              "methodSpecIndex": 646419,
+              "methodSpec": [
+                550348,
+                -1,
+                15972
+              ],
+              "argumentRawHex": "EF290000000000000000120000000000",
+              "typeDefinition": 10735,
+              "typeName": "Beyond.Gameplay.Core.TargetSettings",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Gameplay.Core.TargetSettings",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rdx"
+            },
+            "instruction": [
+              101306475,
+              "E85068F6FE"
+            ],
+            "mode": "proved-reference-clone"
+          },
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              101306509,
+              "E83E2DF4FE"
+            ],
+            "mode": "proved-primitive"
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              101306555,
+              "E8005D15FF"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              101306596,
+              "E86725F4FE"
+            ],
+            "mode": "proved-primitive",
+            "context": {
+              "instructionRva": 101306583,
+              "instructionHex": "488B15C2445B0A",
+              "cellVa": 6717511072,
+              "usageRawHex": "11B713C000000000",
+              "methodSpecIndex": 646024,
+              "methodSpec": [
+                550332,
+                -1,
+                11005
+              ],
+              "argumentRawHex": "07270000000000000000118000000000",
+              "typeDefinition": 9991,
+              "typeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType",
+              "generic": null,
+              "typeKind": 17,
+              "fullTypeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadUnmanaged",
+              "register": "rdx"
+            }
+          },
+          {
+            "kind": "scalar-payload",
+            "context": {
+              "instructionRva": 101306629,
+              "instructionHex": "488B15DC616D0A",
+              "cellVa": 6718698216,
+              "usageRawHex": "5DBA13C000000000",
+              "methodSpecIndex": 646446,
+              "methodSpec": [
+                550348,
+                -1,
+                16184
+              ],
+              "argumentRawHex": "CA000000000000000000120000000000",
+              "typeDefinition": 202,
+              "typeName": "Beyond.Blackboard+BlackboardDouble",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Blackboard+BlackboardDouble",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rdx"
+            },
+            "instruction": [
+              101306639,
+              "E8AC67F6FE"
+            ],
+            "mode": "proved-reference-clone"
+          }
+        ],
+        "headerProof": {
+          "sourceProgram": [
+            [
+              101306157,
+              "488B4350"
+            ],
+            [
+              101306161,
+              "0FB628"
+            ],
+            [
+              101306164,
+              "8B7330"
+            ],
+            [
+              101306167,
+              "83EE01"
+            ],
+            [
+              101306170,
+              "0F88F16F5D01"
+            ],
+            [
+              101306176,
+              "48FF4350"
+            ],
+            [
+              101306180,
+              "FF4340"
+            ],
+            [
+              101306183,
+              "FF4344"
+            ],
+            [
+              101306186,
+              "897330"
+            ]
+          ],
+          "nullCompare": [
+            101306189,
+            "4080FDFF"
+          ],
+          "nullEdge": [
+            101306193,
+            "0F84E5010000"
+          ],
+          "outputSave": [
+            101306123,
+            "488BFA"
+          ],
+          "nullReturnProgram": [
+            [
+              101306684,
+              "488BCF"
+            ],
+            [
+              101306687,
+              "48C70700000000"
+            ],
+            [
+              101306694,
+              "E8157206FA"
+            ],
+            [
+              101306699,
+              "EBDA"
+            ],
+            [
+              101306663,
+              "488B5C2430"
+            ],
+            [
+              101306668,
+              "488B6C2438"
+            ],
+            [
+              101306673,
+              "488B742440"
+            ],
+            [
+              101306678,
+              "4883C420"
+            ],
+            [
+              101306682,
+              "5F"
+            ],
+            [
+              101306683,
+              "C3"
+            ]
+          ],
+          "wireBytes": 1,
+          "referenceBarrierTargetRva": 1065824,
+          "nullFrameBytes": 40,
+          "nullSavedHomes": {
+            "rbx": 8,
+            "rbp": 16,
+            "rsi": 24,
+            "rdi": -8
+          },
+          "condition": "selected buffered header path, compatible output storage and ordinary ABI/callee behavior"
+        },
+        "selectedProgram": [
+          [
+            101306250,
+            "4080FD0A"
+          ],
+          [
+            101306254,
+            "0F85B76F5D01"
+          ],
+          [
+            101306260,
+            "488B37"
+          ],
+          [
+            101306263,
+            "488BCB"
+          ],
+          [
+            101306266,
+            "E8312EF4FE"
+          ],
+          [
+            101306271,
+            "4885F6"
+          ],
+          [
+            101306274,
+            "0F84A5010000"
+          ],
+          [
+            101306280,
+            "488B4E10"
+          ],
+          [
+            101306284,
+            "4885C9"
+          ],
+          [
+            101306287,
+            "0F8498010000"
+          ],
+          [
+            101306293,
+            "884110"
+          ],
+          [
+            101306296,
+            "488BCB"
+          ],
+          [
+            101306299,
+            "488B15E6F5630A"
+          ],
+          [
+            101306306,
+            "488B37"
+          ],
+          [
+            101306309,
+            "E88626F4FE"
+          ],
+          [
+            101306314,
+            "4885F6"
+          ],
+          [
+            101306317,
+            "0F847A010000"
+          ],
+          [
+            101306323,
+            "488B4E10"
+          ],
+          [
+            101306327,
+            "4885C9"
+          ],
+          [
+            101306330,
+            "0F846D010000"
+          ],
+          [
+            101306336,
+            "894114"
+          ],
+          [
+            101306339,
+            "488BCB"
+          ],
+          [
+            101306342,
+            "488B37"
+          ],
+          [
+            101306345,
+            "E86226F4FE"
+          ],
+          [
+            101306350,
+            "4885F6"
+          ],
+          [
+            101306353,
+            "0F8456010000"
+          ],
+          [
+            101306359,
+            "488B4E10"
+          ],
+          [
+            101306363,
+            "4885C9"
+          ],
+          [
+            101306366,
+            "0F8449010000"
+          ],
+          [
+            101306372,
+            "894118"
+          ],
+          [
+            101306375,
+            "488BCB"
+          ],
+          [
+            101306378,
+            "488B37"
+          ],
+          [
+            101306381,
+            "E83E26F4FE"
+          ],
+          [
+            101306386,
+            "4885F6"
+          ],
+          [
+            101306389,
+            "0F8432010000"
+          ],
+          [
+            101306395,
+            "488B4E10"
+          ],
+          [
+            101306399,
+            "4885C9"
+          ],
+          [
+            101306402,
+            "0F8425010000"
+          ],
+          [
+            101306408,
+            "89411C"
+          ],
+          [
+            101306411,
+            "488BCB"
+          ],
+          [
+            101306414,
+            "488B1563455B0A"
+          ],
+          [
+            101306421,
+            "488B37"
+          ],
+          [
+            101306424,
+            "E81326F4FE"
+          ],
+          [
+            101306429,
+            "8BE8"
+          ],
+          [
+            101306431,
+            "4885F6"
+          ],
+          [
+            101306434,
+            "0F8405010000"
+          ],
+          [
+            101306440,
+            "33D2"
+          ],
+          [
+            101306442,
+            "488BCE"
+          ],
+          [
+            101306445,
+            "E88E020000"
+          ],
+          [
+            101306450,
+            "4885C0"
+          ],
+          [
+            101306453,
+            "0F84F2000000"
+          ],
+          [
+            101306459,
+            "896840"
+          ],
+          [
+            101306462,
+            "488BCB"
+          ],
+          [
+            101306465,
+            "488B1598666A0A"
+          ],
+          [
+            101306472,
+            "488B37"
+          ],
+          [
+            101306475,
+            "E85068F6FE"
+          ],
+          [
+            101306480,
+            "4885F6"
+          ],
+          [
+            101306483,
+            "0F84D4000000"
+          ],
+          [
+            101306489,
+            "4533C0"
+          ],
+          [
+            101306492,
+            "488BD0"
+          ],
+          [
+            101306495,
+            "488BCE"
+          ],
+          [
+            101306498,
+            "E869010000"
+          ],
+          [
+            101306503,
+            "488B37"
+          ],
+          [
+            101306506,
+            "488BCB"
+          ],
+          [
+            101306509,
+            "E83E2DF4FE"
+          ],
+          [
+            101306514,
+            "0FB6E8"
+          ],
+          [
+            101306517,
+            "4885F6"
+          ],
+          [
+            101306520,
+            "0F84AF000000"
+          ],
+          [
+            101306526,
+            "33D2"
+          ],
+          [
+            101306528,
+            "488BCE"
+          ],
+          [
+            101306531,
+            "E838020000"
+          ],
+          [
+            101306536,
+            "4885C0"
+          ],
+          [
+            101306539,
+            "0F849C000000"
+          ],
+          [
+            101306545,
+            "4088682C"
+          ],
+          [
+            101306549,
+            "488BCB"
+          ],
+          [
+            101306552,
+            "488B37"
+          ],
+          [
+            101306555,
+            "E8005D15FF"
+          ],
+          [
+            101306560,
+            "4885F6"
+          ],
+          [
+            101306563,
+            "0F8484000000"
+          ],
+          [
+            101306569,
+            "4533C0"
+          ],
+          [
+            101306572,
+            "488BD0"
+          ],
+          [
+            101306575,
+            "488BCE"
+          ],
+          [
+            101306578,
+            "E879010000"
+          ],
+          [
+            101306583,
+            "488B15C2445B0A"
+          ],
+          [
+            101306590,
+            "488BCB"
+          ],
+          [
+            101306593,
+            "488B37"
+          ],
+          [
+            101306596,
+            "E86725F4FE"
+          ],
+          [
+            101306601,
+            "8BE8"
+          ],
+          [
+            101306603,
+            "4885F6"
+          ],
+          [
+            101306606,
+            "745D"
+          ],
+          [
+            101306608,
+            "33D2"
+          ],
+          [
+            101306610,
+            "488BCE"
+          ],
+          [
+            101306613,
+            "E8E6010000"
+          ],
+          [
+            101306618,
+            "4885C0"
+          ],
+          [
+            101306621,
+            "744E"
+          ],
+          [
+            101306623,
+            "896828"
+          ],
+          [
+            101306626,
+            "488BCB"
+          ],
+          [
+            101306629,
+            "488B15DC616D0A"
+          ],
+          [
+            101306636,
+            "488B3F"
+          ],
+          [
+            101306639,
+            "E8AC67F6FE"
+          ],
+          [
+            101306644,
+            "4885FF"
+          ],
+          [
+            101306647,
+            "7434"
+          ],
+          [
+            101306649,
+            "4533C0"
+          ],
+          [
+            101306652,
+            "488BD0"
+          ],
+          [
+            101306655,
+            "488BCF"
+          ],
+          [
+            101306658,
+            "E889010000"
+          ],
+          [
+            101306663,
+            "488B5C2430"
+          ],
+          [
+            101306668,
+            "488B6C2438"
+          ],
+          [
+            101306673,
+            "488B742440"
+          ],
+          [
+            101306678,
+            "4883C420"
+          ],
+          [
+            101306682,
+            "5F"
+          ],
+          [
+            101306683,
+            "C3"
+          ]
+        ],
+        "selectedConditions": [
+          {
+            "instruction": [
+              101306254,
+              "0F85B76F5D01"
+            ],
+            "condition": "member count equals reviewed count",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306274,
+              "0F84A5010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306287,
+              "0F8498010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306317,
+              "0F847A010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306330,
+              "0F846D010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306353,
+              "0F8456010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306366,
+              "0F8449010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306389,
+              "0F8432010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306402,
+              "0F8425010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306434,
+              "0F8405010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306453,
+              "0F84F2000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306483,
+              "0F84D4000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306520,
+              "0F84AF000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306539,
+              "0F849C000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306563,
+              "0F8484000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306606,
+              "745D"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306621,
+              "744E"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              101306647,
+              "7434"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          }
+        ]
+      },
+      {
+        "profile": "member13",
+        "method": [
+          248375,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_TargetSettingsForMemoryPack",
+          "Deserialize",
+          85927488
+        ],
+        "family": {
+          "schema": "endfield.amd64-unwind-chain-family.v1",
+          "selectedPrimaryRva": 85927488,
+          "tableRva": 313733120,
+          "tableBytes": 9860400,
+          "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+          "tableRowsChecked": 821700,
+          "unwindVersionRows": {
+            "1": 821697,
+            "2": 3
+          },
+          "completeParentTriplesChecked": true,
+          "allParentChainsTerminated": true,
+          "chainFrameBytesMatched": true,
+          "ranges": [
+            {
+              "runtimeTriple": [
+                85927488,
+                85927902,
+                267547756
+              ],
+              "tableRowRva": 316182416,
+              "runtimeTripleRawHex": "40261F05DE271F056C74F20F",
+              "codeBytes": 414,
+              "unwindRawHex": "010C06000C340B000C32087007600650",
+              "unwindVersion": 1,
+              "unwindFlags": 0,
+              "frameByte": 0,
+              "parentChain": []
+            },
+            {
+              "runtimeTriple": [
+                85927902,
+                85929289,
+                267547772
+              ],
+              "tableRowRva": 316182428,
+              "runtimeTripleRawHex": "DE271F05492D1F057C74F20F",
+              "codeBytes": 1387,
+              "unwindRawHex": "2166040066E4090005F40A0040261F05DE271F056C74F20F",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    85927902,
+                    85929289,
+                    267547772
+                  ],
+                  "parent": [
+                    85927488,
+                    85927902,
+                    267547756
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                85929289,
+                85929328,
+                267547796
+              ],
+              "tableRowRva": 316182440,
+              "runtimeTripleRawHex": "492D1F05702D1F059474F20F",
+              "codeBytes": 39,
+              "unwindRawHex": "2100000040261F05DE271F056C74F20F",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    85929289,
+                    85929328,
+                    267547796
+                  ],
+                  "parent": [
+                    85927488,
+                    85927902,
+                    267547756
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                85929328,
+                85929334,
+                267547812
+              ],
+              "tableRowRva": 316182452,
+              "runtimeTripleRawHex": "702D1F05762D1F05A474F20F",
+              "codeBytes": 6,
+              "unwindRawHex": "2100040000F40A0000E4090040261F05DE271F056C74F20F",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    85929328,
+                    85929334,
+                    267547812
+                  ],
+                  "parent": [
+                    85927488,
+                    85927902,
+                    267547756
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                85929334,
+                85929396,
+                267547836
+              ],
+              "tableRowRva": 316182464,
+              "runtimeTripleRawHex": "762D1F05B42D1F05BC74F20F",
+              "codeBytes": 62,
+              "unwindRawHex": "2100000040261F05DE271F056C74F20F",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    85929334,
+                    85929396,
+                    267547836
+                  ],
+                  "parent": [
+                    85927488,
+                    85927902,
+                    267547756
+                  ]
+                }
+              ]
+            }
+          ],
+          "unwindOperationsOrFixedAllocationSemanticsProved": false,
+          "handlerLanguageDataProved": false,
+          "wholeManagedMethodProgramProved": false,
+          "runtimeExecutionKnown": false,
+          "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+        },
+        "header": [
+          85927746,
+          "4080FE0D"
+        ],
+        "readerRegister": "rbx",
+        "events": [
+          {
+            "kind": "member8",
+            "context": {
+              "instructionRva": 85927756,
+              "instructionHex": "488B35DD904E0B",
+              "cellVa": 6718076976,
+              "usageRawHex": "59B913C000000000",
+              "methodSpecIndex": 646316,
+              "methodSpec": [
+                550348,
+                -1,
+                13538
+              ],
+              "argumentRawHex": "F1290000000000000000120000000000",
+              "typeDefinition": 10737,
+              "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Gameplay.Core.DirectionSettings",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rsi"
+            },
+            "instruction": [
+              85927863,
+              "E8F462E4FA"
+            ],
+            "mode": "typed-provider-slot-five",
+            "providerCallTargetRva": 83902352
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              85928004,
+              "E877050000"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              85928131,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85928131,
+                "488B4350"
+              ],
+              [
+                85928135,
+                "440FB630"
+              ],
+              [
+                85928139,
+                "8B6B30"
+              ],
+              [
+                85928142,
+                "83ED01"
+              ],
+              [
+                85928145,
+                "7911"
+              ],
+              [
+                85928164,
+                "48FF4350"
+              ],
+              [
+                85928168,
+                "FF4340"
+              ],
+              [
+                85928171,
+                "FF4344"
+              ],
+              [
+                85928174,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              85928233,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85928233,
+                "488B4350"
+              ],
+              [
+                85928237,
+                "448B30"
+              ],
+              [
+                85928240,
+                "8B6B30"
+              ],
+              [
+                85928243,
+                "83C5FC"
+              ],
+              [
+                85928246,
+                "7911"
+              ],
+              [
+                85928265,
+                "4883435004"
+              ],
+              [
+                85928270,
+                "83434004"
+              ],
+              [
+                85928274,
+                "83434404"
+              ],
+              [
+                85928278,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              85928332,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85928332,
+                "488B4350"
+              ],
+              [
+                85928336,
+                "440FB630"
+              ],
+              [
+                85928340,
+                "8B6B30"
+              ],
+              [
+                85928343,
+                "83ED01"
+              ],
+              [
+                85928346,
+                "7911"
+              ],
+              [
+                85928365,
+                "48FF4350"
+              ],
+              [
+                85928369,
+                "FF4340"
+              ],
+              [
+                85928372,
+                "FF4344"
+              ],
+              [
+                85928375,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              85928415,
+              "E8DC030000"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "member3",
+            "context": {
+              "instructionRva": 85928521,
+              "instructionHex": "488B15A0F14E0B",
+              "cellVa": 6718102512,
+              "usageRawHex": "9DBA13C000000000",
+              "methodSpecIndex": 646478,
+              "methodSpec": [
+                550348,
+                -1,
+                16303
+              ],
+              "argumentRawHex": "C4290000000000000000120000000000",
+              "typeDefinition": 10692,
+              "typeName": "Beyond.Gameplay.Core.Selector+SelectorData",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Gameplay.Core.Selector+SelectorData",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rdx"
+            },
+            "instruction": [
+              85928534,
+              "E8650EE1FF"
+            ],
+            "mode": "proved-reference-clone"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              85928674,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85928674,
+                "488B4350"
+              ],
+              [
+                85928678,
+                "448B30"
+              ],
+              [
+                85928681,
+                "8B6B30"
+              ],
+              [
+                85928684,
+                "83C5FC"
+              ],
+              [
+                85928687,
+                "7911"
+              ],
+              [
+                85928706,
+                "4883435004"
+              ],
+              [
+                85928711,
+                "83434004"
+              ],
+              [
+                85928715,
+                "83434404"
+              ],
+              [
+                85928719,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              85928773,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85928773,
+                "488B4350"
+              ],
+              [
+                85928777,
+                "448B30"
+              ],
+              [
+                85928780,
+                "8B6B30"
+              ],
+              [
+                85928783,
+                "83C5FC"
+              ],
+              [
+                85928786,
+                "7911"
+              ],
+              [
+                85928805,
+                "4883435004"
+              ],
+              [
+                85928810,
+                "83434004"
+              ],
+              [
+                85928814,
+                "83434404"
+              ],
+              [
+                85928818,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              85928872,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85928872,
+                "488B4350"
+              ],
+              [
+                85928876,
+                "448B30"
+              ],
+              [
+                85928879,
+                "8B6B30"
+              ],
+              [
+                85928882,
+                "83C5FC"
+              ],
+              [
+                85928885,
+                "7911"
+              ],
+              [
+                85928904,
+                "4883435004"
+              ],
+              [
+                85928909,
+                "83434004"
+              ],
+              [
+                85928913,
+                "83434404"
+              ],
+              [
+                85928917,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              85928952,
+              "E8C3010000"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "byte-payload",
+            "wireBytes": 4,
+            "instruction": [
+              85929071,
+              "E84C010000"
+            ],
+            "mode": "proved-pooled-string"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              85929202,
+              "488B4350"
+            ],
+            "program": [
+              [
+                85929202,
+                "488B4350"
+              ],
+              [
+                85929206,
+                "8B28"
+              ],
+              [
+                85929208,
+                "8B7330"
+              ],
+              [
+                85929211,
+                "83C6FC"
+              ],
+              [
+                85929214,
+                "7911"
+              ],
+              [
+                85929233,
+                "4883435004"
+              ],
+              [
+                85929238,
+                "83434004"
+              ],
+              [
+                85929242,
+                "83434404"
+              ],
+              [
+                85929246,
+                "897330"
+              ]
+            ]
+          }
+        ],
+        "headerProof": {
+          "sourceProgram": [
+            [
+              85927640,
+              "488B4350"
+            ],
+            [
+              85927644,
+              "0FB630"
+            ],
+            [
+              85927647,
+              "8B6B30"
+            ],
+            [
+              85927650,
+              "83ED01"
+            ],
+            [
+              85927653,
+              "7911"
+            ],
+            [
+              85927672,
+              "48FF4350"
+            ],
+            [
+              85927676,
+              "FF4340"
+            ],
+            [
+              85927679,
+              "FF4344"
+            ],
+            [
+              85927682,
+              "896B30"
+            ]
+          ],
+          "nullCompare": [
+            85927685,
+            "4080FEFF"
+          ],
+          "nullEdge": [
+            85927689,
+            "0F843A060000"
+          ],
+          "outputSave": [
+            85927507,
+            "488BFA"
+          ],
+          "nullReturnProgram": [
+            [
+              85929289,
+              "488BCF"
+            ],
+            [
+              85929292,
+              "48C70700000000"
+            ],
+            [
+              85929299,
+              "488B5C2458"
+            ],
+            [
+              85929304,
+              "4883C420"
+            ],
+            [
+              85929308,
+              "5F"
+            ],
+            [
+              85929309,
+              "5E"
+            ],
+            [
+              85929310,
+              "5D"
+            ],
+            [
+              85929311,
+              "E9FC15F1FA"
+            ]
+          ],
+          "wireBytes": 1,
+          "referenceBarrierTargetRva": 1065824,
+          "nullFrameBytes": 56,
+          "nullSavedHomes": {
+            "rbx": 32,
+            "rbp": -8,
+            "rsi": -16,
+            "rdi": -24
+          },
+          "condition": "selected buffered header path, compatible output storage and ordinary ABI/callee behavior"
+        },
+        "selectedProgram": [
+          [
+            85927746,
+            "4080FE0D"
+          ],
+          [
+            85927750,
+            "0F8530060000"
+          ],
+          [
+            85927756,
+            "488B35DD904E0B"
+          ],
+          [
+            85927763,
+            "488B2F"
+          ],
+          [
+            85927766,
+            "48837E3800"
+          ],
+          [
+            85927771,
+            "751B"
+          ],
+          [
+            85927800,
+            "488B0DF146450B"
+          ],
+          [
+            85927807,
+            "48C744244000000000"
+          ],
+          [
+            85927816,
+            "83B9E000000000"
+          ],
+          [
+            85927823,
+            "7505"
+          ],
+          [
+            85927830,
+            "488B4E38"
+          ],
+          [
+            85927834,
+            "488B09"
+          ],
+          [
+            85927837,
+            "E8EE17E1FF"
+          ],
+          [
+            85927842,
+            "4885C0"
+          ],
+          [
+            85927845,
+            "7415"
+          ],
+          [
+            85927847,
+            "B905000000"
+          ],
+          [
+            85927852,
+            "4C8D4C2440"
+          ],
+          [
+            85927857,
+            "4C8BC3"
+          ],
+          [
+            85927860,
+            "488BD0"
+          ],
+          [
+            85927863,
+            "E8F462E4FA"
+          ],
+          [
+            85927868,
+            "4885ED"
+          ],
+          [
+            85927871,
+            "0F84A5050000"
+          ],
+          [
+            85927877,
+            "4C8B4510"
+          ],
+          [
+            85927881,
+            "4D85C0"
+          ],
+          [
+            85927884,
+            "0F84A4050000"
+          ],
+          [
+            85927890,
+            "833D57BC520C00"
+          ],
+          [
+            85927897,
+            "488B442440"
+          ],
+          [
+            85927902,
+            "4C897C2450"
+          ],
+          [
+            85927907,
+            "4C8D3D3683280C"
+          ],
+          [
+            85927914,
+            "49894058"
+          ],
+          [
+            85927918,
+            "7449"
+          ],
+          [
+            85927993,
+            "488B37"
+          ],
+          [
+            85927996,
+            "488BCB"
+          ],
+          [
+            85927999,
+            "4C89742448"
+          ],
+          [
+            85928004,
+            "E877050000"
+          ],
+          [
+            85928009,
+            "4885F6"
+          ],
+          [
+            85928012,
+            "0F841E050000"
+          ],
+          [
+            85928018,
+            "4C8B4610"
+          ],
+          [
+            85928022,
+            "4D85C0"
+          ],
+          [
+            85928025,
+            "0F8411050000"
+          ],
+          [
+            85928031,
+            "833DCABB520C00"
+          ],
+          [
+            85928038,
+            "49894038"
+          ],
+          [
+            85928042,
+            "743E"
+          ],
+          [
+            85928106,
+            "837B3001"
+          ],
+          [
+            85928110,
+            "488B37"
+          ],
+          [
+            85928113,
+            "7D10"
+          ],
+          [
+            85928131,
+            "488B4350"
+          ],
+          [
+            85928135,
+            "440FB630"
+          ],
+          [
+            85928139,
+            "8B6B30"
+          ],
+          [
+            85928142,
+            "83ED01"
+          ],
+          [
+            85928145,
+            "7911"
+          ],
+          [
+            85928164,
+            "48FF4350"
+          ],
+          [
+            85928168,
+            "FF4340"
+          ],
+          [
+            85928171,
+            "FF4344"
+          ],
+          [
+            85928174,
+            "896B30"
+          ],
+          [
+            85928177,
+            "4885F6"
+          ],
+          [
+            85928180,
+            "0F8476040000"
+          ],
+          [
+            85928186,
+            "488B4E10"
+          ],
+          [
+            85928190,
+            "4885C9"
+          ],
+          [
+            85928193,
+            "0F8469040000"
+          ],
+          [
+            85928199,
+            "4584F6"
+          ],
+          [
+            85928202,
+            "0F95C0"
+          ],
+          [
+            85928205,
+            "884140"
+          ],
+          [
+            85928208,
+            "837B3004"
+          ],
+          [
+            85928212,
+            "488B37"
+          ],
+          [
+            85928215,
+            "7D10"
+          ],
+          [
+            85928233,
+            "488B4350"
+          ],
+          [
+            85928237,
+            "448B30"
+          ],
+          [
+            85928240,
+            "8B6B30"
+          ],
+          [
+            85928243,
+            "83C5FC"
+          ],
+          [
+            85928246,
+            "7911"
+          ],
+          [
+            85928265,
+            "4883435004"
+          ],
+          [
+            85928270,
+            "83434004"
+          ],
+          [
+            85928274,
+            "83434404"
+          ],
+          [
+            85928278,
+            "896B30"
+          ],
+          [
+            85928281,
+            "4885F6"
+          ],
+          [
+            85928284,
+            "0F840E040000"
+          ],
+          [
+            85928290,
+            "488B4610"
+          ],
+          [
+            85928294,
+            "4885C0"
+          ],
+          [
+            85928297,
+            "0F8401040000"
+          ],
+          [
+            85928303,
+            "44897030"
+          ],
+          [
+            85928307,
+            "837B3001"
+          ],
+          [
+            85928311,
+            "488B37"
+          ],
+          [
+            85928314,
+            "7D10"
+          ],
+          [
+            85928332,
+            "488B4350"
+          ],
+          [
+            85928336,
+            "440FB630"
+          ],
+          [
+            85928340,
+            "8B6B30"
+          ],
+          [
+            85928343,
+            "83ED01"
+          ],
+          [
+            85928346,
+            "7911"
+          ],
+          [
+            85928365,
+            "48FF4350"
+          ],
+          [
+            85928369,
+            "FF4340"
+          ],
+          [
+            85928372,
+            "FF4344"
+          ],
+          [
+            85928375,
+            "896B30"
+          ],
+          [
+            85928378,
+            "4885F6"
+          ],
+          [
+            85928381,
+            "0F84AD030000"
+          ],
+          [
+            85928387,
+            "488B4E10"
+          ],
+          [
+            85928391,
+            "4885C9"
+          ],
+          [
+            85928394,
+            "0F84A0030000"
+          ],
+          [
+            85928400,
+            "4584F6"
+          ],
+          [
+            85928403,
+            "0F95C0"
+          ],
+          [
+            85928406,
+            "884150"
+          ],
+          [
+            85928409,
+            "488BCB"
+          ],
+          [
+            85928412,
+            "488B37"
+          ],
+          [
+            85928415,
+            "E8DC030000"
+          ],
+          [
+            85928420,
+            "4885F6"
+          ],
+          [
+            85928423,
+            "0F8483030000"
+          ],
+          [
+            85928429,
+            "4C8B4610"
+          ],
+          [
+            85928433,
+            "4D85C0"
+          ],
+          [
+            85928436,
+            "0F8476030000"
+          ],
+          [
+            85928442,
+            "833D2FBA520C00"
+          ],
+          [
+            85928449,
+            "49894028"
+          ],
+          [
+            85928453,
+            "7442"
+          ],
+          [
+            85928521,
+            "488B15A0F14E0B"
+          ],
+          [
+            85928528,
+            "488BCB"
+          ],
+          [
+            85928531,
+            "488B37"
+          ],
+          [
+            85928534,
+            "E8650EE1FF"
+          ],
+          [
+            85928539,
+            "4885F6"
+          ],
+          [
+            85928542,
+            "0F840C030000"
+          ],
+          [
+            85928548,
+            "4C8B4610"
+          ],
+          [
+            85928552,
+            "4D85C0"
+          ],
+          [
+            85928555,
+            "0F84FF020000"
+          ],
+          [
+            85928561,
+            "833DB8B9520C00"
+          ],
+          [
+            85928568,
+            "49894048"
+          ],
+          [
+            85928572,
+            "744B"
+          ],
+          [
+            85928649,
+            "837B3004"
+          ],
+          [
+            85928653,
+            "488B37"
+          ],
+          [
+            85928656,
+            "7D10"
+          ],
+          [
+            85928674,
+            "488B4350"
+          ],
+          [
+            85928678,
+            "448B30"
+          ],
+          [
+            85928681,
+            "8B6B30"
+          ],
+          [
+            85928684,
+            "83C5FC"
+          ],
+          [
+            85928687,
+            "7911"
+          ],
+          [
+            85928706,
+            "4883435004"
+          ],
+          [
+            85928711,
+            "83434004"
+          ],
+          [
+            85928715,
+            "83434404"
+          ],
+          [
+            85928719,
+            "896B30"
+          ],
+          [
+            85928722,
+            "4885F6"
+          ],
+          [
+            85928725,
+            "0F8455020000"
+          ],
+          [
+            85928731,
+            "488B4610"
+          ],
+          [
+            85928735,
+            "4885C0"
+          ],
+          [
+            85928738,
+            "0F8448020000"
+          ],
+          [
+            85928744,
+            "44897060"
+          ],
+          [
+            85928748,
+            "837B3004"
+          ],
+          [
+            85928752,
+            "488B37"
+          ],
+          [
+            85928755,
+            "7D10"
+          ],
+          [
+            85928773,
+            "488B4350"
+          ],
+          [
+            85928777,
+            "448B30"
+          ],
+          [
+            85928780,
+            "8B6B30"
+          ],
+          [
+            85928783,
+            "83C5FC"
+          ],
+          [
+            85928786,
+            "7911"
+          ],
+          [
+            85928805,
+            "4883435004"
+          ],
+          [
+            85928810,
+            "83434004"
+          ],
+          [
+            85928814,
+            "83434404"
+          ],
+          [
+            85928818,
+            "896B30"
+          ],
+          [
+            85928821,
+            "4885F6"
+          ],
+          [
+            85928824,
+            "0F84F2010000"
+          ],
+          [
+            85928830,
+            "488B4610"
+          ],
+          [
+            85928834,
+            "4885C0"
+          ],
+          [
+            85928837,
+            "0F84E5010000"
+          ],
+          [
+            85928843,
+            "44897020"
+          ],
+          [
+            85928847,
+            "837B3004"
+          ],
+          [
+            85928851,
+            "488B37"
+          ],
+          [
+            85928854,
+            "7D10"
+          ],
+          [
+            85928872,
+            "488B4350"
+          ],
+          [
+            85928876,
+            "448B30"
+          ],
+          [
+            85928879,
+            "8B6B30"
+          ],
+          [
+            85928882,
+            "83C5FC"
+          ],
+          [
+            85928885,
+            "7911"
+          ],
+          [
+            85928904,
+            "4883435004"
+          ],
+          [
+            85928909,
+            "83434004"
+          ],
+          [
+            85928913,
+            "83434404"
+          ],
+          [
+            85928917,
+            "896B30"
+          ],
+          [
+            85928920,
+            "4885F6"
+          ],
+          [
+            85928923,
+            "0F848F010000"
+          ],
+          [
+            85928929,
+            "488B4610"
+          ],
+          [
+            85928933,
+            "4885C0"
+          ],
+          [
+            85928936,
+            "0F8482010000"
+          ],
+          [
+            85928942,
+            "44897064"
+          ],
+          [
+            85928946,
+            "488BCB"
+          ],
+          [
+            85928949,
+            "488B37"
+          ],
+          [
+            85928952,
+            "E8C3010000"
+          ],
+          [
+            85928957,
+            "4885F6"
+          ],
+          [
+            85928960,
+            "0F846A010000"
+          ],
+          [
+            85928966,
+            "4C8B4610"
+          ],
+          [
+            85928970,
+            "4D85C0"
+          ],
+          [
+            85928973,
+            "0F845D010000"
+          ],
+          [
+            85928979,
+            "833D16B8520C00"
+          ],
+          [
+            85928986,
+            "49894068"
+          ],
+          [
+            85928990,
+            "7449"
+          ],
+          [
+            85929065,
+            "488B37"
+          ],
+          [
+            85929068,
+            "488BCB"
+          ],
+          [
+            85929071,
+            "E84C010000"
+          ],
+          [
+            85929076,
+            "4885F6"
+          ],
+          [
+            85929079,
+            "0F84F3000000"
+          ],
+          [
+            85929085,
+            "4C8B4610"
+          ],
+          [
+            85929089,
+            "4D85C0"
+          ],
+          [
+            85929092,
+            "0F84E6000000"
+          ],
+          [
+            85929098,
+            "833D9FB7520C00"
+          ],
+          [
+            85929105,
+            "49894018"
+          ],
+          [
+            85929109,
+            "7442"
+          ],
+          [
+            85929177,
+            "837B3004"
+          ],
+          [
+            85929181,
+            "488B3F"
+          ],
+          [
+            85929184,
+            "7D10"
+          ],
+          [
+            85929202,
+            "488B4350"
+          ],
+          [
+            85929206,
+            "8B28"
+          ],
+          [
+            85929208,
+            "8B7330"
+          ],
+          [
+            85929211,
+            "83C6FC"
+          ],
+          [
+            85929214,
+            "7911"
+          ],
+          [
+            85929233,
+            "4883435004"
+          ],
+          [
+            85929238,
+            "83434004"
+          ],
+          [
+            85929242,
+            "83434404"
+          ],
+          [
+            85929246,
+            "897330"
+          ],
+          [
+            85929249,
+            "4885FF"
+          ],
+          [
+            85929252,
+            "744A"
+          ],
+          [
+            85929254,
+            "488B4710"
+          ],
+          [
+            85929258,
+            "4885C0"
+          ],
+          [
+            85929261,
+            "7441"
+          ],
+          [
+            85929263,
+            "4C8B742448"
+          ],
+          [
+            85929268,
+            "4C8B7C2450"
+          ],
+          [
+            85929273,
+            "896810"
+          ],
+          [
+            85929276,
+            "488B5C2458"
+          ],
+          [
+            85929281,
+            "4883C420"
+          ],
+          [
+            85929285,
+            "5F"
+          ],
+          [
+            85929286,
+            "5E"
+          ],
+          [
+            85929287,
+            "5D"
+          ],
+          [
+            85929288,
+            "C3"
+          ]
+        ],
+        "selectedConditions": [
+          {
+            "instruction": [
+              85927750,
+              "0F8530060000"
+            ],
+            "condition": "member count equals reviewed count",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85927771,
+              "751B"
+            ],
+            "condition": "selected context/storage is initialized and nonnull",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85927823,
+              "7505"
+            ],
+            "condition": "selected class is initialized",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85927845,
+              "7415"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85927871,
+              "0F84A5050000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85927884,
+              "0F84A4050000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85927918,
+              "7449"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928012,
+              "0F841E050000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928025,
+              "0F8411050000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928042,
+              "743E"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928113,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928145,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928180,
+              "0F8476040000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928193,
+              "0F8469040000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928215,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928246,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928284,
+              "0F840E040000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928297,
+              "0F8401040000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928314,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928346,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928381,
+              "0F84AD030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928394,
+              "0F84A0030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928423,
+              "0F8483030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928436,
+              "0F8476030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928453,
+              "7442"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928542,
+              "0F840C030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928555,
+              "0F84FF020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928572,
+              "744B"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928656,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928687,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928725,
+              "0F8455020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928738,
+              "0F8448020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928755,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928786,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928824,
+              "0F84F2010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928837,
+              "0F84E5010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928854,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928885,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85928923,
+              "0F848F010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928936,
+              "0F8482010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928960,
+              "0F846A010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928973,
+              "0F845D010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85928990,
+              "7449"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85929079,
+              "0F84F3000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85929092,
+              "0F84E6000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85929109,
+              "7442"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85929184,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85929214,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              85929252,
+              "744A"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              85929261,
+              "7441"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          }
+        ]
+      },
+      {
+        "profile": "member8",
+        "method": [
+          267025,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_DirectionSettingsForMemoryPack",
+          "Deserialize",
+          93456656
+        ],
+        "family": {
+          "schema": "endfield.amd64-unwind-chain-family.v1",
+          "selectedPrimaryRva": 93456656,
+          "tableRva": 313733120,
+          "tableBytes": 9860400,
+          "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+          "tableRowsChecked": 821700,
+          "unwindVersionRows": {
+            "1": 821697,
+            "2": 3
+          },
+          "completeParentTriplesChecked": true,
+          "allParentChainsTerminated": true,
+          "chainFrameBytesMatched": true,
+          "ranges": [
+            {
+              "runtimeTriple": [
+                93456656,
+                93456900,
+                268487664
+              ],
+              "tableRowRva": 316579592,
+              "runtimeTripleRawHex": "10099205040A9205F0CB0010",
+              "codeBytes": 244,
+              "unwindRawHex": "010C06000C340B000C32087007600650",
+              "unwindVersion": 1,
+              "unwindFlags": 0,
+              "frameByte": 0,
+              "parentChain": []
+            },
+            {
+              "runtimeTriple": [
+                93456900,
+                93457462,
+                268487680
+              ],
+              "tableRowRva": 316579604,
+              "runtimeTripleRawHex": "040A9205360C920500CC0010",
+              "codeBytes": 562,
+              "unwindRawHex": "2105020005E4090010099205040A9205F0CB0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93456900,
+                    93457462,
+                    268487680
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                93457462,
+                93457881,
+                268487700
+              ],
+              "tableRowRva": 316579616,
+              "runtimeTripleRawHex": "360C9205D90D920514CC0010",
+              "codeBytes": 419,
+              "unwindRawHex": "2105020005F40A00040A9205360C920500CC0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93457462,
+                    93457881,
+                    268487700
+                  ],
+                  "parent": [
+                    93456900,
+                    93457462,
+                    268487680
+                  ]
+                },
+                {
+                  "child": [
+                    93456900,
+                    93457462,
+                    268487680
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                93457881,
+                93457914,
+                268487720
+              ],
+              "tableRowRva": 316579628,
+              "runtimeTripleRawHex": "D90D9205FA0D920528CC0010",
+              "codeBytes": 33,
+              "unwindRawHex": "2100000010099205040A9205F0CB0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93457881,
+                    93457914,
+                    268487720
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                93457914,
+                93457968,
+                268487736
+              ],
+              "tableRowRva": 316579640,
+              "runtimeTripleRawHex": "FA0D9205300E920538CC0010",
+              "codeBytes": 54,
+              "unwindRawHex": "2100020000E4090010099205040A9205F0CB0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93457914,
+                    93457968,
+                    268487736
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                93457968,
+                93457974,
+                268487756
+              ],
+              "tableRowRva": 316579652,
+              "runtimeTripleRawHex": "300E9205360E92054CCC0010",
+              "codeBytes": 6,
+              "unwindRawHex": "2100040000F40A0000E4090010099205040A9205F0CB0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93457968,
+                    93457974,
+                    268487756
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                93457974,
+                93457980,
+                268487780
+              ],
+              "tableRowRva": 316579664,
+              "runtimeTripleRawHex": "360E92053C0E920564CC0010",
+              "codeBytes": 6,
+              "unwindRawHex": "2100020000E4090010099205040A9205F0CB0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93457974,
+                    93457980,
+                    268487780
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            },
+            {
+              "runtimeTriple": [
+                93457980,
+                93458036,
+                268487800
+              ],
+              "tableRowRva": 316579676,
+              "runtimeTripleRawHex": "3C0E9205740E920578CC0010",
+              "codeBytes": 56,
+              "unwindRawHex": "2100000010099205040A9205F0CB0010",
+              "unwindVersion": 1,
+              "unwindFlags": 4,
+              "frameByte": 0,
+              "parentChain": [
+                {
+                  "child": [
+                    93457980,
+                    93458036,
+                    268487800
+                  ],
+                  "parent": [
+                    93456656,
+                    93456900,
+                    268487664
+                  ]
+                }
+              ]
+            }
+          ],
+          "unwindOperationsOrFixedAllocationSemanticsProved": false,
+          "handlerLanguageDataProved": false,
+          "wholeManagedMethodProgramProved": false,
+          "runtimeExecutionKnown": false,
+          "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+        },
+        "header": [
+          93456890,
+          "4080FE08"
+        ],
+        "readerRegister": "rbx",
+        "events": [
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              93456930,
+              "488B4350"
+            ],
+            "program": [
+              [
+                93456930,
+                "488B4350"
+              ],
+              [
+                93456934,
+                "440FB630"
+              ],
+              [
+                93456938,
+                "8B6B30"
+              ],
+              [
+                93456941,
+                "83ED01"
+              ],
+              [
+                93456944,
+                "7911"
+              ],
+              [
+                93456963,
+                "48FF4350"
+              ],
+              [
+                93456967,
+                "FF4340"
+              ],
+              [
+                93456970,
+                "FF4344"
+              ],
+              [
+                93456973,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              93457034,
+              "488B4350"
+            ],
+            "program": [
+              [
+                93457034,
+                "488B4350"
+              ],
+              [
+                93457038,
+                "440FB630"
+              ],
+              [
+                93457042,
+                "8B6B30"
+              ],
+              [
+                93457045,
+                "83ED01"
+              ],
+              [
+                93457048,
+                "7911"
+              ],
+              [
+                93457067,
+                "48FF4350"
+              ],
+              [
+                93457071,
+                "FF4340"
+              ],
+              [
+                93457074,
+                "FF4344"
+              ],
+              [
+                93457077,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              93457138,
+              "488B4350"
+            ],
+            "program": [
+              [
+                93457138,
+                "488B4350"
+              ],
+              [
+                93457142,
+                "448B30"
+              ],
+              [
+                93457145,
+                "8B6B30"
+              ],
+              [
+                93457148,
+                "83C5FC"
+              ],
+              [
+                93457151,
+                "7911"
+              ],
+              [
+                93457170,
+                "4883435004"
+              ],
+              [
+                93457175,
+                "83434004"
+              ],
+              [
+                93457179,
+                "83434404"
+              ],
+              [
+                93457183,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "byte",
+            "wireBytes": 1,
+            "instruction": [
+              93457237,
+              "488B4350"
+            ],
+            "program": [
+              [
+                93457237,
+                "488B4350"
+              ],
+              [
+                93457241,
+                "440FB630"
+              ],
+              [
+                93457245,
+                "8B6B30"
+              ],
+              [
+                93457248,
+                "83ED01"
+              ],
+              [
+                93457251,
+                "7911"
+              ],
+              [
+                93457270,
+                "48FF4350"
+              ],
+              [
+                93457274,
+                "FF4340"
+              ],
+              [
+                93457277,
+                "FF4344"
+              ],
+              [
+                93457280,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "member13",
+            "context": {
+              "instructionRva": 93457316,
+              "instructionHex": "488B35552BE20A",
+              "cellVa": 6718502656,
+              "usageRawHex": "27BA13C000000000",
+              "methodSpecIndex": 646419,
+              "methodSpec": [
+                550348,
+                -1,
+                15972
+              ],
+              "argumentRawHex": "EF290000000000000000120000000000",
+              "typeDefinition": 10735,
+              "typeName": "Beyond.Gameplay.Core.TargetSettings",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Gameplay.Core.TargetSettings",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rsi"
+            },
+            "instruction": [
+              93457423,
+              "E89C7E71FA"
+            ],
+            "mode": "typed-provider-slot-five",
+            "providerCallTargetRva": 83902352
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              93457570,
+              "488B4350"
+            ],
+            "program": [
+              [
+                93457570,
+                "488B4350"
+              ],
+              [
+                93457574,
+                "448B30"
+              ],
+              [
+                93457577,
+                "8B6B30"
+              ],
+              [
+                93457580,
+                "83C5FC"
+              ],
+              [
+                93457583,
+                "7911"
+              ],
+              [
+                93457602,
+                "4883435004"
+              ],
+              [
+                93457607,
+                "83434004"
+              ],
+              [
+                93457611,
+                "83434404"
+              ],
+              [
+                93457615,
+                "896B30"
+              ]
+            ]
+          },
+          {
+            "kind": "member13",
+            "context": {
+              "instructionRva": 93457647,
+              "instructionHex": "488B150A2AE20A",
+              "cellVa": 6718502656,
+              "usageRawHex": "27BA13C000000000",
+              "methodSpecIndex": 646419,
+              "methodSpec": [
+                550348,
+                -1,
+                15972
+              ],
+              "argumentRawHex": "EF290000000000000000120000000000",
+              "typeDefinition": 10735,
+              "typeName": "Beyond.Gameplay.Core.TargetSettings",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Gameplay.Core.TargetSettings",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rdx"
+            },
+            "instruction": [
+              93457657,
+              "E8C22B6EFF"
+            ],
+            "mode": "proved-reference-clone"
+          },
+          {
+            "kind": "scalar32",
+            "wireBytes": 4,
+            "instruction": [
+              93457794,
+              "488B4350"
+            ],
+            "program": [
+              [
+                93457794,
+                "488B4350"
+              ],
+              [
+                93457798,
+                "8B28"
+              ],
+              [
+                93457800,
+                "8B7330"
+              ],
+              [
+                93457803,
+                "83C6FC"
+              ],
+              [
+                93457806,
+                "7911"
+              ],
+              [
+                93457825,
+                "4883435004"
+              ],
+              [
+                93457830,
+                "83434004"
+              ],
+              [
+                93457834,
+                "83434404"
+              ],
+              [
+                93457838,
+                "897330"
+              ]
+            ]
+          }
+        ],
+        "headerProof": {
+          "sourceProgram": [
+            [
+              93456784,
+              "488B4350"
+            ],
+            [
+              93456788,
+              "0FB630"
+            ],
+            [
+              93456791,
+              "8B6B30"
+            ],
+            [
+              93456794,
+              "83ED01"
+            ],
+            [
+              93456797,
+              "7911"
+            ],
+            [
+              93456816,
+              "48FF4350"
+            ],
+            [
+              93456820,
+              "FF4340"
+            ],
+            [
+              93456823,
+              "FF4344"
+            ],
+            [
+              93456826,
+              "896B30"
+            ]
+          ],
+          "nullCompare": [
+            93456829,
+            "4080FEFF"
+          ],
+          "nullEdge": [
+            93456833,
+            "0F8412040000"
+          ],
+          "outputSave": [
+            93456675,
+            "488BFA"
+          ],
+          "nullReturnProgram": [
+            [
+              93457881,
+              "488BCF"
+            ],
+            [
+              93457884,
+              "48C70700000000"
+            ],
+            [
+              93457891,
+              "488B5C2458"
+            ],
+            [
+              93457896,
+              "4883C420"
+            ],
+            [
+              93457900,
+              "5F"
+            ],
+            [
+              93457901,
+              "5E"
+            ],
+            [
+              93457902,
+              "5D"
+            ],
+            [
+              93457903,
+              "E96C357EFA"
+            ]
+          ],
+          "wireBytes": 1,
+          "referenceBarrierTargetRva": 1065824,
+          "nullFrameBytes": 56,
+          "nullSavedHomes": {
+            "rbx": 32,
+            "rbp": -8,
+            "rsi": -16,
+            "rdi": -24
+          },
+          "condition": "selected buffered header path, compatible output storage and ordinary ABI/callee behavior"
+        },
+        "selectedProgram": [
+          [
+            93456890,
+            "4080FE08"
+          ],
+          [
+            93456894,
+            "0F8538040000"
+          ],
+          [
+            93456900,
+            "4C89742448"
+          ],
+          [
+            93456905,
+            "837B3001"
+          ],
+          [
+            93456909,
+            "488B37"
+          ],
+          [
+            93456912,
+            "7D10"
+          ],
+          [
+            93456930,
+            "488B4350"
+          ],
+          [
+            93456934,
+            "440FB630"
+          ],
+          [
+            93456938,
+            "8B6B30"
+          ],
+          [
+            93456941,
+            "83ED01"
+          ],
+          [
+            93456944,
+            "7911"
+          ],
+          [
+            93456963,
+            "48FF4350"
+          ],
+          [
+            93456967,
+            "FF4340"
+          ],
+          [
+            93456970,
+            "FF4344"
+          ],
+          [
+            93456973,
+            "896B30"
+          ],
+          [
+            93456976,
+            "4584F6"
+          ],
+          [
+            93456979,
+            "400F95C5"
+          ],
+          [
+            93456983,
+            "4885F6"
+          ],
+          [
+            93456986,
+            "0F849A030000"
+          ],
+          [
+            93456992,
+            "488B7610"
+          ],
+          [
+            93456996,
+            "4885F6"
+          ],
+          [
+            93456999,
+            "0F8493030000"
+          ],
+          [
+            93457005,
+            "40886E31"
+          ],
+          [
+            93457009,
+            "837B3001"
+          ],
+          [
+            93457013,
+            "488B37"
+          ],
+          [
+            93457016,
+            "7D10"
+          ],
+          [
+            93457034,
+            "488B4350"
+          ],
+          [
+            93457038,
+            "440FB630"
+          ],
+          [
+            93457042,
+            "8B6B30"
+          ],
+          [
+            93457045,
+            "83ED01"
+          ],
+          [
+            93457048,
+            "7911"
+          ],
+          [
+            93457067,
+            "48FF4350"
+          ],
+          [
+            93457071,
+            "FF4340"
+          ],
+          [
+            93457074,
+            "FF4344"
+          ],
+          [
+            93457077,
+            "896B30"
+          ],
+          [
+            93457080,
+            "4584F6"
+          ],
+          [
+            93457083,
+            "400F95C5"
+          ],
+          [
+            93457087,
+            "4885F6"
+          ],
+          [
+            93457090,
+            "0F843E030000"
+          ],
+          [
+            93457096,
+            "488B7610"
+          ],
+          [
+            93457100,
+            "4885F6"
+          ],
+          [
+            93457103,
+            "0F8437030000"
+          ],
+          [
+            93457109,
+            "40886E30"
+          ],
+          [
+            93457113,
+            "837B3004"
+          ],
+          [
+            93457117,
+            "488B37"
+          ],
+          [
+            93457120,
+            "7D10"
+          ],
+          [
+            93457138,
+            "488B4350"
+          ],
+          [
+            93457142,
+            "448B30"
+          ],
+          [
+            93457145,
+            "8B6B30"
+          ],
+          [
+            93457148,
+            "83C5FC"
+          ],
+          [
+            93457151,
+            "7911"
+          ],
+          [
+            93457170,
+            "4883435004"
+          ],
+          [
+            93457175,
+            "83434004"
+          ],
+          [
+            93457179,
+            "83434404"
+          ],
+          [
+            93457183,
+            "896B30"
+          ],
+          [
+            93457186,
+            "4885F6"
+          ],
+          [
+            93457189,
+            "0F84E7020000"
+          ],
+          [
+            93457195,
+            "488B7610"
+          ],
+          [
+            93457199,
+            "4885F6"
+          ],
+          [
+            93457202,
+            "0F84E0020000"
+          ],
+          [
+            93457208,
+            "44897610"
+          ],
+          [
+            93457212,
+            "837B3001"
+          ],
+          [
+            93457216,
+            "488B37"
+          ],
+          [
+            93457219,
+            "7D10"
+          ],
+          [
+            93457237,
+            "488B4350"
+          ],
+          [
+            93457241,
+            "440FB630"
+          ],
+          [
+            93457245,
+            "8B6B30"
+          ],
+          [
+            93457248,
+            "83ED01"
+          ],
+          [
+            93457251,
+            "7911"
+          ],
+          [
+            93457270,
+            "48FF4350"
+          ],
+          [
+            93457274,
+            "FF4340"
+          ],
+          [
+            93457277,
+            "FF4344"
+          ],
+          [
+            93457280,
+            "896B30"
+          ],
+          [
+            93457283,
+            "4584F6"
+          ],
+          [
+            93457286,
+            "400F95C5"
+          ],
+          [
+            93457290,
+            "4885F6"
+          ],
+          [
+            93457293,
+            "0F848B020000"
+          ],
+          [
+            93457299,
+            "488B7610"
+          ],
+          [
+            93457303,
+            "4885F6"
+          ],
+          [
+            93457306,
+            "0F8484020000"
+          ],
+          [
+            93457312,
+            "40886E32"
+          ],
+          [
+            93457316,
+            "488B35552BE20A"
+          ],
+          [
+            93457323,
+            "488B2F"
+          ],
+          [
+            93457326,
+            "48837E3800"
+          ],
+          [
+            93457331,
+            "751B"
+          ],
+          [
+            93457360,
+            "488B0D9962D20A"
+          ],
+          [
+            93457367,
+            "48C744244000000000"
+          ],
+          [
+            93457376,
+            "83B9E000000000"
+          ],
+          [
+            93457383,
+            "7505"
+          ],
+          [
+            93457390,
+            "488B4E38"
+          ],
+          [
+            93457394,
+            "488B09"
+          ],
+          [
+            93457397,
+            "E896336EFF"
+          ],
+          [
+            93457402,
+            "4885C0"
+          ],
+          [
+            93457405,
+            "7415"
+          ],
+          [
+            93457407,
+            "B905000000"
+          ],
+          [
+            93457412,
+            "4C8D4C2440"
+          ],
+          [
+            93457417,
+            "4C8BC3"
+          ],
+          [
+            93457420,
+            "488BD0"
+          ],
+          [
+            93457423,
+            "E89C7E71FA"
+          ],
+          [
+            93457428,
+            "4885ED"
+          ],
+          [
+            93457431,
+            "0F840D020000"
+          ],
+          [
+            93457437,
+            "4C8B4510"
+          ],
+          [
+            93457441,
+            "4D85C0"
+          ],
+          [
+            93457444,
+            "0F840C020000"
+          ],
+          [
+            93457450,
+            "833DFFD7DF0B00"
+          ],
+          [
+            93457457,
+            "488B442440"
+          ],
+          [
+            93457462,
+            "4C897C2450"
+          ],
+          [
+            93457467,
+            "4C8D3DDE9EB50B"
+          ],
+          [
+            93457474,
+            "49894018"
+          ],
+          [
+            93457478,
+            "7441"
+          ],
+          [
+            93457545,
+            "837B3004"
+          ],
+          [
+            93457549,
+            "488B37"
+          ],
+          [
+            93457552,
+            "7D10"
+          ],
+          [
+            93457570,
+            "488B4350"
+          ],
+          [
+            93457574,
+            "448B30"
+          ],
+          [
+            93457577,
+            "8B6B30"
+          ],
+          [
+            93457580,
+            "83C5FC"
+          ],
+          [
+            93457583,
+            "7911"
+          ],
+          [
+            93457602,
+            "4883435004"
+          ],
+          [
+            93457607,
+            "83434004"
+          ],
+          [
+            93457611,
+            "83434404"
+          ],
+          [
+            93457615,
+            "896B30"
+          ],
+          [
+            93457618,
+            "4885F6"
+          ],
+          [
+            93457621,
+            "0F8455010000"
+          ],
+          [
+            93457627,
+            "488B4610"
+          ],
+          [
+            93457631,
+            "4885C0"
+          ],
+          [
+            93457634,
+            "0F8448010000"
+          ],
+          [
+            93457640,
+            "44897028"
+          ],
+          [
+            93457644,
+            "488BCB"
+          ],
+          [
+            93457647,
+            "488B150A2AE20A"
+          ],
+          [
+            93457654,
+            "488B37"
+          ],
+          [
+            93457657,
+            "E8C22B6EFF"
+          ],
+          [
+            93457662,
+            "4885F6"
+          ],
+          [
+            93457665,
+            "0F8429010000"
+          ],
+          [
+            93457671,
+            "4C8B4610"
+          ],
+          [
+            93457675,
+            "4D85C0"
+          ],
+          [
+            93457678,
+            "0F841C010000"
+          ],
+          [
+            93457684,
+            "833D15D7DF0B00"
+          ],
+          [
+            93457691,
+            "49894020"
+          ],
+          [
+            93457695,
+            "7448"
+          ],
+          [
+            93457769,
+            "837B3004"
+          ],
+          [
+            93457773,
+            "488B3F"
+          ],
+          [
+            93457776,
+            "7D10"
+          ],
+          [
+            93457794,
+            "488B4350"
+          ],
+          [
+            93457798,
+            "8B28"
+          ],
+          [
+            93457800,
+            "8B7330"
+          ],
+          [
+            93457803,
+            "83C6FC"
+          ],
+          [
+            93457806,
+            "7911"
+          ],
+          [
+            93457825,
+            "4883435004"
+          ],
+          [
+            93457830,
+            "83434004"
+          ],
+          [
+            93457834,
+            "83434404"
+          ],
+          [
+            93457838,
+            "897330"
+          ],
+          [
+            93457841,
+            "4885FF"
+          ],
+          [
+            93457844,
+            "747A"
+          ],
+          [
+            93457846,
+            "488B4710"
+          ],
+          [
+            93457850,
+            "4885C0"
+          ],
+          [
+            93457853,
+            "7471"
+          ],
+          [
+            93457855,
+            "4C8B7C2450"
+          ],
+          [
+            93457860,
+            "4C8B742448"
+          ],
+          [
+            93457865,
+            "89682C"
+          ],
+          [
+            93457868,
+            "488B5C2458"
+          ],
+          [
+            93457873,
+            "4883C420"
+          ],
+          [
+            93457877,
+            "5F"
+          ],
+          [
+            93457878,
+            "5E"
+          ],
+          [
+            93457879,
+            "5D"
+          ],
+          [
+            93457880,
+            "C3"
+          ]
+        ],
+        "selectedConditions": [
+          {
+            "instruction": [
+              93456894,
+              "0F8538040000"
+            ],
+            "condition": "member count equals reviewed count",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93456912,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93456944,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93456986,
+              "0F849A030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93456999,
+              "0F8493030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457016,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457048,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457090,
+              "0F843E030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457103,
+              "0F8437030000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457120,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457151,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457189,
+              "0F84E7020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457202,
+              "0F84E0020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457219,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457251,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457293,
+              "0F848B020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457306,
+              "0F8484020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457331,
+              "751B"
+            ],
+            "condition": "selected context/storage is initialized and nonnull",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457383,
+              "7505"
+            ],
+            "condition": "selected class is initialized",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457405,
+              "7415"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457431,
+              "0F840D020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457444,
+              "0F840C020000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457478,
+              "7441"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457552,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457583,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457621,
+              "0F8455010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457634,
+              "0F8448010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457665,
+              "0F8429010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457678,
+              "0F841C010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457695,
+              "7448"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457776,
+              "7D10"
+            ],
+            "condition": "enough contiguous buffered input",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457806,
+              "7911"
+            ],
+            "condition": "remaining input after read is nonnegative",
+            "taken": true
+          },
+          {
+            "instruction": [
+              93457844,
+              "747A"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              93457853,
+              "7471"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          }
+        ]
+      },
+      {
+        "profile": "member3",
+        "method": [
+          267038,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SelectorDataForMemoryPack",
+          "Deserialize",
+          95689056
+        ],
+        "family": {
+          "schema": "endfield.amd64-unwind-chain-family.v1",
+          "selectedPrimaryRva": 95689056,
+          "tableRva": 313733120,
+          "tableBytes": 9860400,
+          "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+          "tableRowsChecked": 821700,
+          "unwindVersionRows": {
+            "1": 821697,
+            "2": 3
+          },
+          "completeParentTriplesChecked": true,
+          "allParentChainsTerminated": true,
+          "chainFrameBytesMatched": true,
+          "ranges": [
+            {
+              "runtimeTriple": [
+                95689056,
+                95689919,
+                267257392
+              ],
+              "tableRowRva": 316695344,
+              "runtimeTripleRawHex": "6019B405BF1CB4053006EE0F",
+              "codeBytes": 863,
+              "unwindRawHex": "0114080014640900145408001434070014321070",
+              "unwindVersion": 1,
+              "unwindFlags": 0,
+              "frameByte": 0,
+              "parentChain": []
+            }
+          ],
+          "unwindOperationsOrFixedAllocationSemanticsProved": false,
+          "handlerLanguageDataProved": false,
+          "wholeManagedMethodProgramProved": false,
+          "runtimeExecutionKnown": false,
+          "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+        },
+        "header": [
+          95689298,
+          "4080FD03"
+        ],
+        "readerRegister": "rbx",
+        "events": [
+          {
+            "kind": "delegated-finder",
+            "context": {
+              "instructionRva": 95689308,
+              "instructionHex": "488B35A54BB40A",
+              "cellVa": 6717728264,
+              "usageRawHex": "A9BA13C000000000",
+              "methodSpecIndex": 646484,
+              "methodSpec": [
+                550348,
+                -1,
+                16352
+              ],
+              "argumentRawHex": "6C290000000000000000120000000000",
+              "typeDefinition": 10604,
+              "typeName": "Beyond.Gameplay.Core.Selector+Finder+Data",
+              "generic": null,
+              "typeKind": 18,
+              "fullTypeName": "Beyond.Gameplay.Core.Selector+Finder+Data",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadValue",
+              "register": "rsi"
+            },
+            "instruction": [
+              95689415,
+              "E8E46F4FFA"
+            ],
+            "mode": "typed-provider-slot-five",
+            "providerCallTargetRva": 83902352
+          },
+          {
+            "kind": "delegated-list",
+            "context": {
+              "instructionRva": 95689545,
+              "instructionHex": "488B1580C3B10A",
+              "cellVa": 6717562576,
+              "usageRawHex": "E57013C000000000",
+              "methodSpecIndex": 637042,
+              "methodSpec": [
+                550346,
+                -1,
+                64841
+              ],
+              "argumentRawHex": "E0859090010000000000150000000000",
+              "typeDefinition": 68941,
+              "typeName": "System.Collections.Generic.List`1",
+              "generic": {
+                "carrierRawHex": "C0AD859001000000A8C42F8E0100000000000000000000000000000000000000",
+                "baseRawHex": "4D0D0100000000000000120000000000",
+                "elementInstantiationIndex": 16375,
+                "elementArguments": [
+                  "BA290000000000000000120000000000"
+                ]
+              },
+              "typeKind": 21,
+              "fullTypeName": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Selector+PostProcessor+Data>",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadPackable",
+              "register": "rdx"
+            },
+            "instruction": [
+              95689558,
+              "E8D5990800"
+            ],
+            "mode": "proved-reference-clone"
+          },
+          {
+            "kind": "delegated-list",
+            "context": {
+              "instructionRva": 95689673,
+              "instructionHex": "488B1518C3B10A",
+              "cellVa": 6717562600,
+              "usageRawHex": "E77013C000000000",
+              "methodSpecIndex": 637043,
+              "methodSpec": [
+                550346,
+                -1,
+                64842
+              ],
+              "argumentRawHex": "10869090010000000000150000000000",
+              "typeDefinition": 68941,
+              "typeName": "System.Collections.Generic.List`1",
+              "generic": {
+                "carrierRawHex": "C0AD85900100000048C42F8E0100000000000000000000000000000000000000",
+                "baseRawHex": "4D0D0100000000000000120000000000",
+                "elementInstantiationIndex": 16392,
+                "elementArguments": [
+                  "C5290000000000000000120000000000"
+                ]
+              },
+              "typeKind": 21,
+              "fullTypeName": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Selector+Validator+Data>",
+              "methodOwner": "MemoryPack.MemoryPackReader",
+              "methodName": "ReadPackable",
+              "register": "rdx"
+            },
+            "instruction": [
+              95689686,
+              "E855990800"
+            ],
+            "mode": "proved-reference-clone"
+          }
+        ],
+        "headerProof": {
+          "sourceProgram": [
+            [
+              95689192,
+              "488B4350"
+            ],
+            [
+              95689196,
+              "0FB628"
+            ],
+            [
+              95689199,
+              "8B7330"
+            ],
+            [
+              95689202,
+              "83EE01"
+            ],
+            [
+              95689205,
+              "7911"
+            ],
+            [
+              95689224,
+              "48FF4350"
+            ],
+            [
+              95689228,
+              "FF4340"
+            ],
+            [
+              95689231,
+              "FF4344"
+            ],
+            [
+              95689234,
+              "897330"
+            ]
+          ],
+          "nullCompare": [
+            95689237,
+            "4080FDFF"
+          ],
+          "nullEdge": [
+            95689241,
+            "0F842C020000"
+          ],
+          "outputSave": [
+            95689083,
+            "488BFA"
+          ],
+          "nullReturnProgram": [
+            [
+              95689803,
+              "488BCF"
+            ],
+            [
+              95689806,
+              "48C70700000000"
+            ],
+            [
+              95689813,
+              "E806275CFA"
+            ],
+            [
+              95689818,
+              "488B5C2438"
+            ],
+            [
+              95689823,
+              "488B6C2440"
+            ],
+            [
+              95689828,
+              "488B742448"
+            ],
+            [
+              95689833,
+              "4883C420"
+            ],
+            [
+              95689837,
+              "5F"
+            ],
+            [
+              95689838,
+              "C3"
+            ]
+          ],
+          "wireBytes": 1,
+          "referenceBarrierTargetRva": 1065824,
+          "nullFrameBytes": 40,
+          "nullSavedHomes": {
+            "rbx": 16,
+            "rbp": 24,
+            "rsi": 32,
+            "rdi": -8
+          },
+          "condition": "selected buffered header path, compatible output storage and ordinary ABI/callee behavior"
+        },
+        "selectedProgram": [
+          [
+            95689298,
+            "4080FD03"
+          ],
+          [
+            95689302,
+            "0F852B020000"
+          ],
+          [
+            95689308,
+            "488B35A54BB40A"
+          ],
+          [
+            95689315,
+            "488B2F"
+          ],
+          [
+            95689318,
+            "48837E3800"
+          ],
+          [
+            95689323,
+            "751B"
+          ],
+          [
+            95689352,
+            "488B0DE153B00A"
+          ],
+          [
+            95689359,
+            "48C744243000000000"
+          ],
+          [
+            95689368,
+            "83B9E000000000"
+          ],
+          [
+            95689375,
+            "7505"
+          ],
+          [
+            95689382,
+            "488B4E38"
+          ],
+          [
+            95689386,
+            "488B09"
+          ],
+          [
+            95689389,
+            "E8DE244CFF"
+          ],
+          [
+            95689394,
+            "4885C0"
+          ],
+          [
+            95689397,
+            "7415"
+          ],
+          [
+            95689399,
+            "B905000000"
+          ],
+          [
+            95689404,
+            "4C8D4C2430"
+          ],
+          [
+            95689409,
+            "4C8BC3"
+          ],
+          [
+            95689412,
+            "488BD0"
+          ],
+          [
+            95689415,
+            "E8E46F4FFA"
+          ],
+          [
+            95689420,
+            "4885ED"
+          ],
+          [
+            95689423,
+            "0F84A0010000"
+          ],
+          [
+            95689429,
+            "4C8B4510"
+          ],
+          [
+            95689433,
+            "4D85C0"
+          ],
+          [
+            95689436,
+            "0F849F010000"
+          ],
+          [
+            95689442,
+            "833D47C9BD0B00"
+          ],
+          [
+            95689449,
+            "488D2D3090930B"
+          ],
+          [
+            95689456,
+            "488B442430"
+          ],
+          [
+            95689461,
+            "49894010"
+          ],
+          [
+            95689465,
+            "744E"
+          ],
+          [
+            95689545,
+            "488B1580C3B10A"
+          ],
+          [
+            95689552,
+            "488BCB"
+          ],
+          [
+            95689555,
+            "488B37"
+          ],
+          [
+            95689558,
+            "E8D5990800"
+          ],
+          [
+            95689563,
+            "4885F6"
+          ],
+          [
+            95689566,
+            "0F8417010000"
+          ],
+          [
+            95689572,
+            "4C8B4610"
+          ],
+          [
+            95689576,
+            "4D85C0"
+          ],
+          [
+            95689579,
+            "0F840A010000"
+          ],
+          [
+            95689585,
+            "833DB8C8BD0B00"
+          ],
+          [
+            95689592,
+            "49894020"
+          ],
+          [
+            95689596,
+            "744B"
+          ],
+          [
+            95689673,
+            "488B1518C3B10A"
+          ],
+          [
+            95689680,
+            "488BCB"
+          ],
+          [
+            95689683,
+            "488B3F"
+          ],
+          [
+            95689686,
+            "E855990800"
+          ],
+          [
+            95689691,
+            "4885FF"
+          ],
+          [
+            95689694,
+            "0F8497000000"
+          ],
+          [
+            95689700,
+            "4C8B4710"
+          ],
+          [
+            95689704,
+            "4D85C0"
+          ],
+          [
+            95689707,
+            "0F848A000000"
+          ],
+          [
+            95689713,
+            "833D38C8BD0B00"
+          ],
+          [
+            95689720,
+            "49894018"
+          ],
+          [
+            95689724,
+            "745C"
+          ],
+          [
+            95689818,
+            "488B5C2438"
+          ],
+          [
+            95689823,
+            "488B6C2440"
+          ],
+          [
+            95689828,
+            "488B742448"
+          ],
+          [
+            95689833,
+            "4883C420"
+          ],
+          [
+            95689837,
+            "5F"
+          ],
+          [
+            95689838,
+            "C3"
+          ]
+        ],
+        "selectedConditions": [
+          {
+            "instruction": [
+              95689302,
+              "0F852B020000"
+            ],
+            "condition": "member count equals reviewed count",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689323,
+              "751B"
+            ],
+            "condition": "selected context/storage is initialized and nonnull",
+            "taken": true
+          },
+          {
+            "instruction": [
+              95689375,
+              "7505"
+            ],
+            "condition": "selected class is initialized",
+            "taken": true
+          },
+          {
+            "instruction": [
+              95689397,
+              "7415"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689423,
+              "0F84A0010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689436,
+              "0F849F010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689465,
+              "744E"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              95689566,
+              "0F8417010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689579,
+              "0F840A010000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689596,
+              "744B"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          },
+          {
+            "instruction": [
+              95689694,
+              "0F8497000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689707,
+              "0F848A000000"
+            ],
+            "condition": "selected reference/formatter is nonnull",
+            "taken": false
+          },
+          {
+            "instruction": [
+              95689724,
+              "745C"
+            ],
+            "condition": "selected reference barrier guard is zero",
+            "taken": true
+          }
+        ]
+      }
+    ],
+    "finderNull": {
+      "callerMethod": [
+        305884,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPackFormatter",
+        "Deserialize",
+        102470176
+      ],
+      "callerFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 102470176,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              102470176,
+              102470226,
+              269403488
+            ],
+            "tableRowRva": 317013932,
+            "runtimeTripleRawHex": "20921B0652921B0660C50E10",
+            "codeBytes": 50,
+            "unwindRawHex": "011508001534170015D20EF00CC00A7009600850",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              102470226,
+              102472852,
+              269403508
+            ],
+            "tableRowRva": 317013944,
+            "runtimeTripleRawHex": "52921B06949C1B0674C50E10",
+            "codeBytes": 2626,
+            "unwindRawHex": "210F04000FE4160004D4140020921B0652921B0660C50E10",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  102470226,
+                  102472852,
+                  269403508
+                ],
+                "parent": [
+                  102470176,
+                  102470226,
+                  269403488
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              102472852,
+              102473253,
+              269403532
+            ],
+            "tableRowRva": 317013956,
+            "runtimeTripleRawHex": "949C1B06259E1B068CC50E10",
+            "codeBytes": 401,
+            "unwindRawHex": "2100020000E4160020921B0652921B0660C50E10",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  102472852,
+                  102473253,
+                  269403532
+                ],
+                "parent": [
+                  102470176,
+                  102470226,
+                  269403488
+                ]
+              }
+            ]
+          },
+          {
+            "runtimeTriple": [
+              102473253,
+              102483936,
+              269403552
+            ],
+            "tableRowRva": 317013968,
+            "runtimeTripleRawHex": "259E1B06E0C71B06A0C50E10",
+            "codeBytes": 10683,
+            "unwindRawHex": "2100000020921B0652921B0660C50E10",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  102473253,
+                  102483936,
+                  269403552
+                ],
+                "parent": [
+                  102470176,
+                  102470226,
+                  269403488
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "callerPrologue": [
+        [
+          102470197,
+          "4533E4"
+        ],
+        [
+          102470214,
+          "498BD8"
+        ],
+        [
+          102470217,
+          "488BFA"
+        ]
+      ],
+      "callerInitializedEntryProgram": [
+        [
+          102470176,
+          "488BC4"
+        ],
+        [
+          102470179,
+          "48895820"
+        ],
+        [
+          102470183,
+          "55"
+        ],
+        [
+          102470184,
+          "56"
+        ],
+        [
+          102470185,
+          "57"
+        ],
+        [
+          102470186,
+          "4154"
+        ],
+        [
+          102470188,
+          "4157"
+        ],
+        [
+          102470190,
+          "488BEC"
+        ],
+        [
+          102470193,
+          "4883EC70"
+        ],
+        [
+          102470197,
+          "4533E4"
+        ],
+        [
+          102470200,
+          "4C8D3DC16DE4F9"
+        ],
+        [
+          102470207,
+          "4438256D47570B"
+        ],
+        [
+          102470214,
+          "498BD8"
+        ],
+        [
+          102470217,
+          "488BFA"
+        ],
+        [
+          102470220,
+          "0F853E2B0000"
+        ]
+      ],
+      "callerHeaderAndFalseEdge": [
+        [
+          102481296,
+          "488D5538"
+        ],
+        [
+          102481300,
+          "6644896538"
+        ],
+        [
+          102481305,
+          "488BCF"
+        ],
+        [
+          102481308,
+          "E82F20B0FF"
+        ],
+        [
+          102481313,
+          "84C0"
+        ],
+        [
+          102481315,
+          "0F8455060000"
+        ]
+      ],
+      "callerOutputClear": [
+        102482942,
+        "4C8923"
+      ],
+      "helperEntryRva": 97246672,
+      "helperFamily": {
+        "schema": "endfield.amd64-unwind-chain-family.v1",
+        "selectedPrimaryRva": 97246672,
+        "tableRva": 313733120,
+        "tableBytes": 9860400,
+        "tableSha256": "97C1B9B338B9CB1C7F5F87A2C8BE31C9085AFDECEA7FAA5F293BC68EEE344CC3",
+        "tableRowsChecked": 821700,
+        "unwindVersionRows": {
+          "1": 821697,
+          "2": 3
+        },
+        "completeParentTriplesChecked": true,
+        "allParentChainsTerminated": true,
+        "chainFrameBytesMatched": true,
+        "ranges": [
+          {
+            "runtimeTriple": [
+              97246672,
+              97246873,
+              267233160
+            ],
+            "tableRowRva": 316777316,
+            "runtimeTripleRawHex": "D0DDCB0599DECB0588A7ED0F",
+            "codeBytes": 201,
+            "unwindRawHex": "01150800157408001564070015340600153211E0",
+            "unwindVersion": 1,
+            "unwindFlags": 0,
+            "frameByte": 0,
+            "parentChain": []
+          },
+          {
+            "runtimeTriple": [
+              123746022,
+              123746118,
+              268918368
+            ],
+            "tableRowRva": 318356876,
+            "runtimeTripleRawHex": "E636600746376007605E0710",
+            "codeBytes": 96,
+            "unwindRawHex": "21000000D0DDCB0599DECB0588A7ED0F",
+            "unwindVersion": 1,
+            "unwindFlags": 4,
+            "frameByte": 0,
+            "parentChain": [
+              {
+                "child": [
+                  123746022,
+                  123746118,
+                  268918368
+                ],
+                "parent": [
+                  97246672,
+                  97246873,
+                  267233160
+                ]
+              }
+            ]
+          }
+        ],
+        "unwindOperationsOrFixedAllocationSemanticsProved": false,
+        "handlerLanguageDataProved": false,
+        "wholeManagedMethodProgramProved": false,
+        "runtimeExecutionKnown": false,
+        "evidenceBoundary": "Exact declared exception-table framing and complete parent triples establish selected-primary range membership, including nested and noncontiguous chains. Version 1/2 code-slot contents, fixed-allocation consistency, handlers, managed control flow, live MethodInfo and execution remain separate proofs; adjacency and start-address-only joins are not used."
+      },
+      "helperSourceProgram": [
+        [
+          97246722,
+          "488B4350"
+        ],
+        [
+          97246726,
+          "0FB638"
+        ],
+        [
+          97246729,
+          "8B7330"
+        ],
+        [
+          97246732,
+          "83EE01"
+        ],
+        [
+          97246735,
+          "0F88E7589401"
+        ],
+        [
+          97246741,
+          "48FF4350"
+        ],
+        [
+          97246745,
+          "FF4340"
+        ],
+        [
+          97246748,
+          "FF4344"
+        ],
+        [
+          97246751,
+          "897330"
+        ]
+      ],
+      "helperHighByteDecision": [
+        [
+          97246754,
+          "4080FFFA"
+        ],
+        [
+          97246758,
+          "731C"
+        ],
+        [
+          97246788,
+          "754B"
+        ],
+        [
+          97246865,
+          "33C0"
+        ],
+        [
+          97246867,
+          "66418906"
+        ],
+        [
+          97246871,
+          "EB95"
+        ]
+      ],
+      "helperFalseReturn": [
+        [
+          97246766,
+          "488B5C2430"
+        ],
+        [
+          97246771,
+          "488B742438"
+        ],
+        [
+          97246776,
+          "488B7C2440"
+        ],
+        [
+          97246781,
+          "4883C420"
+        ],
+        [
+          97246785,
+          "415E"
+        ],
+        [
+          97246787,
+          "C3"
+        ]
+      ],
+      "falseFirstByteRange": [
+        251,
+        255
+      ]
+    },
+    "scalarDependency": "buff_blackboard_double_native.json"
+  }
+}

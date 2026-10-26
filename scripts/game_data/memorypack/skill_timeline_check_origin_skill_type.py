@@ -171,17 +171,17 @@ def validate_current_native_contract() -> dict[str, Any]:
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["sourceContract"],
-    )
+     native_image=image)
     element_audit = buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["listElementContract"],
-    )
+     native_image=image)
     loop_audit = buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["listCountLoopContract"],
-    )
+     native_image=image)
     if (
         source_audit["anonymousReadOrder"].get("member6") != list(SOURCE_READ_ORDER)
         or "member9" not in element_audit["anonymousReadOrder"]

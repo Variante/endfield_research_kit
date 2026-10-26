@@ -33,6 +33,7 @@ def decode_visible_source_param(
 
 def decode_visibility_action(
     data: bytes, offset: int, route: dict[str, Any], enum_values: dict[int, str],
+    *, game_root: Any = None, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     fields = route["fields"]
     tag = route["tag"]
@@ -47,7 +48,7 @@ def decode_visibility_action(
         or offset < 0 or data[offset:offset + len(header)] != header
     ):
         raise ActionMapCodecError(f"visibilityAction:invalid-route-or-header,offset={offset}")
-    cursor = _Cursor(data, offset + len(header))
+    cursor = _Cursor(data, offset + len(header), game_root=game_root, strings=strings, route=route)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind, *_ in fields:

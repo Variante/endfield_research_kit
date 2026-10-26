@@ -1,0 +1,60 @@
+{
+  "schema": "endfield.enum-nominal-callback-profile.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "nominalEnums": [
+    "Beyond.GEnums.DamageType",
+    "Beyond.GEnums.FCNodeType",
+    "Beyond.Gameplay.Core.AbilityEntityFinishReason",
+    "Beyond.Gameplay.Core.Buff+FinishReason",
+    "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait",
+    "Beyond.Gameplay.Core.Skill+InterruptReason",
+    "Beyond.Gameplay.GainAtbMethod",
+    "Beyond.Gameplay.GainAtbType",
+    "Beyond.Gameplay.LevelWideConfig+LevelWideConfigType",
+    "Beyond.Gameplay.SkillType",
+    "Beyond.Gameplay.View.CameraControlModuleType"
+  ],
+  "formatterType": "MemoryPack.Formatters.UnmanagedFormatter`1",
+  "callbackMethod": "Deserialize",
+  "callbackSlot": 5,
+  "readerByref": true,
+  "outputByref": true,
+  "wireBytes": 4,
+  "sourceEntries": {
+    "seedEntryRva": 268672,
+    "selectionEntryRva": 41792,
+    "primitiveEntryRva": 6668832,
+    "normalizerEntryRva": 636432,
+    "placeholderPublicationEntryRva": 220468
+  },
+  "fixupEntries": {
+    "loopTargetRva": 6739488,
+    "recordTargetRva": 6739424,
+    "alternateTargetRva": 6739376,
+    "projectionTargetRva": 302896,
+    "publicationEntryRva": 217595
+  },
+  "selectionConditions": {
+    "originalNominalFormatterRequired": true,
+    "originalNominalMethodInfoClassAndContextRequired": true,
+    "selectedStaticRegistrationsInitializedRequired": true,
+    "coherentCanonicalInternerAndMethodTableRequired": true,
+    "providerRegistryEagerRegistrationRequired": true,
+    "noInterveningRuntimeFormatterReplacementRequired": true,
+    "actualRuntimeSelectionObserved": false
+  },
+  "evidenceBoundary": {
+    "exact": "Finite named enum carriers, source-selected ordinary formatter slot5 and raw DWORD Reader/output program, independently rederived source/registration/class/MethodInfo/normalization joins.",
+    "conditional": "Original nominal formatter/MethodInfo and coherent initialized selected source state; source proof does not observe runtime execution or exclude user replacement.",
+    "structuralOnly": "Source profile anchors and native representation transfers; no integer/name alias.",
+    "unresolved": [
+      "opaque helper/cache alias effects and actual runtime state",
+      "enclosing child/list/owner/EOF"
+    ]
+  }
+}

@@ -100,7 +100,7 @@ def validate_current_native_contract(*,children:dict[str,Any],gameassembly:Path|
     record=contract['records']['teleport'];source_path=CONTRACTS_DIR/record['sourceContract']
     source=json.loads(source_path.read_bytes())
     source_audit=buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,
-        image.modules,image.owners,source=str(gate.gameassembly),contract_path=source_path)
+        image.modules,image.owners,source=str(gate.gameassembly),contract_path=source_path, native_image=image)
     def fail(check,expected,actual,**details):
         raise ValueError(f'{LABEL}.native:{check}:expected={str(expected)[:900]},actual={str(actual)[:900]},details={details}')
     proved=named.validate_named_records(image,source,contract['records'],label=LABEL,fail=fail)

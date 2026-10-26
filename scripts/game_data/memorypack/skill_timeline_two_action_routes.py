@@ -18,6 +18,7 @@ from scripts.game_data.il2cpp.context_audit_memorypack import buff_action_read_o
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
 
 
 LABEL = "skillTimelineTwoActionRoutes"
@@ -95,7 +96,7 @@ def _dependencies() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         or primitive.get("schema")
         != "endfield.skill-timeline-check-hit-collider-options-native-contract.v1"
         or primitive.get("status") != "exact-current-build"
-        or target.get("schemaVersion") != 1
+        or (target.get("schemaVersion") != 1 and not is_role_projection(target))
         or len(target.get("anonymousReadOrder", {}).get("member13", ())) != 13
         or target["anonymousReadOrder"]["member13"][0] != "member8"
     ):
@@ -162,12 +163,12 @@ def validate_current_native_contract() -> dict[str, Any]:
     ):
         raise ValueError(f"{LABEL}.native:switch-table")
     image.validate_dispatcher(primitive["dispatcher"], label=LABEL)
-    image.check_windows(primitive["codeWindows"], label=LABEL)
+    check_formatter_windows(image, primitive, label=LABEL)
     target_audit = buff_action_read_order(
         image.pe, image.metadata, image.registration, image.instantiations,
         image.modules, image.owners, source=str(gate.gameassembly),
         contract_path=CONTRACTS_DIR / contract["targetProfileContract"],
-    )
+     native_image=image)
     if len(target_audit["anonymousReadOrder"]["member13"]) != 13:
         raise ValueError(f"{LABEL}.native:target-profile")
     summaries = []
@@ -175,7 +176,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         tag = int(route["tag"], 16)
         image.validate_dispatcher(route["dispatcher"], label=LABEL)
         methods = [image.validate_method_row(row, label=LABEL) for row in route["methods"]]
-        image.check_windows(route["codeWindows"], label=LABEL)
+        check_formatter_windows(image, route, label=LABEL)
         count_instruction = route["memberCountInstruction"]
         image.check_instruction_windows(
             [[count_instruction["rva"], count_instruction["hex"]]], label=LABEL

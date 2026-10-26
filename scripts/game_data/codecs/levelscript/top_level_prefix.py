@@ -20,8 +20,9 @@ booleans and explicitly pooled strings are validated at the physical cursor.  Po
 ``enemies``, ``interactiveLocks`` and ``npcs``
 dictionaries stop before their count until their pooled child codecs are
 independently migrated; old inline string readers cannot admit current rows. The current sparse pooled Interactive dictionary has a separate selected-build gate and bounded nested children. Positive
-``modules`` use the current conditional RollingStone/Launcher native gate; other
-positive module types remain refused. ``properties``, ``propertyIdToKeyMap`` and
+``modules`` use the selected complete current Module graph, with all child
+caps checked even for null/empty maps. The explicit legacy RollingStone/Launcher
+gate keeps its narrower domain. ``properties``, ``propertyIdToKeyMap`` and
 ``refWorldEntityIdList`` are accepted only null or empty.
 """
 
@@ -154,7 +155,7 @@ def decode_empty_action_map_owner_prefix(
     offset: int = 20,
     *,
     strings: StringPool | None = None,
-    gameassembly=None, metadata=None, npc_decoder=None,
+    gameassembly=None, metadata=None, npc_decoder=None,current_owner=None,
 ) -> dict[str, Any]:
     """Decode members 2..23 after a complete empty action-map asset.
 
@@ -163,6 +164,9 @@ def decode_empty_action_map_owner_prefix(
     because this codec does not own that collection's element grammar.
     """
     cursor = offset
+    if current_owner is not None:
+        from scripts.game_data.memorypack.levelscript_current_source import require_framing_owner
+        require_framing_owner(current_owner,strings=strings)
     fields: dict[str, Any] = {}
     ranges: dict[str, dict[str, Any]] = {}
 
@@ -213,11 +217,13 @@ def decode_empty_action_map_owner_prefix(
     ranges["endType"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
-    if (stop := unmigrated_child("enemies")) is not None:
+    if current_owner is None and (stop := unmigrated_child("enemies")) is not None:
         return stop
     try:
-        enemy_rows, cursor = enemies.decode_enemy_dictionary(data, cursor)
-    except enemies.LevelEnemyCodecError as error:
+        if current_owner is not None:
+            enemy_rows,cursor=current_owner.root_record_map('enemies',data,cursor,strings=strings)
+        else:enemy_rows, cursor = enemies.decode_enemy_dictionary(data, cursor)
+    except ValueError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
     if enemy_rows is None:
         count, _ = _i32(data, start, "enemies.count")
@@ -247,7 +253,7 @@ def decode_empty_action_map_owner_prefix(
     ranges["exitBufferOverride"] = {"startOffset": start, "endOffset": cursor}
 
     name = "interactiveActiveRiskEntityIdList"
-    detail, end = _empty_collection(data, cursor, name)
+    detail, end = current_owner.collection(name,data,cursor,strings=strings)if current_owner is not None else _empty_collection(data, cursor, name)
     if end is None:
         return {"startOffset": offset, "endOffset": cursor, "fields": fields, "ranges": ranges,
                 "stopField": name, "stopDetail": detail}
@@ -256,13 +262,13 @@ def decode_empty_action_map_owner_prefix(
     cursor = end
 
     start = cursor
-    if (stop := unmigrated_child("interactiveLocks")) is not None:
+    if current_owner is None and (stop := unmigrated_child("interactiveLocks")) is not None:
         return stop
     try:
-        lock_rows, cursor = interactive_locks.decode_interactive_lock_dictionary(
-            data, cursor
-        )
-    except interactive_locks.InteractiveLockCodecError as error:
+        if current_owner is not None:
+            lock_rows,cursor=current_owner.root_record_map('interactiveLocks',data,cursor,strings=strings)
+        else:lock_rows, cursor = interactive_locks.decode_interactive_lock_dictionary(data,cursor)
+    except ValueError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
     if lock_rows is None:
         count, _ = _i32(data, start, "interactiveLocks.count")
@@ -283,12 +289,15 @@ def decode_empty_action_map_owner_prefix(
     ranges["interactiveLocks"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
-    if _i32(data,cursor,"interactives.count")[0]>1 and (stop := unmigrated_child("interactives")) is not None:
+    if current_owner is None and _i32(data,cursor,"interactives.count")[0]>1 and (stop := unmigrated_child("interactives")) is not None:
         return stop
     try:
-        interactive_rows, cursor = interactives.decode_interactive_dictionary(
-            data, cursor, strings=strings, gameassembly=gameassembly, metadata=metadata
-        )
+        if current_owner is not None:
+            interactive_rows,cursor=current_owner.collection('interactives',data,cursor,strings=strings)
+        else:
+            interactive_rows, cursor = interactives.decode_interactive_dictionary(
+                data, cursor, strings=strings, gameassembly=gameassembly, metadata=metadata
+            )
     except interactives.LevelInteractiveCodecError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
     fields["interactives"] = interactive_rows
@@ -316,7 +325,17 @@ def decode_empty_action_map_owner_prefix(
     start = cursor
     module_diagnostics = []
     try:
-        module_rows, module_end = modules.decode_module_dictionary(data, cursor, module_diagnostics)
+        if current_owner is not None:
+            from scripts.game_data.memorypack.levelscript_module_graph_sources import CAP_SCHEMA as MODULE_SCHEMA
+            selected=getattr(current_owner,'module_caps',None)
+            if isinstance(selected,dict)and selected.get('schema')==MODULE_SCHEMA:
+                module_rows,module_end=current_owner.module_map(data,cursor,strings=strings,diagnostics=module_diagnostics)
+            else:
+                empty,module_end=_empty_collection(data,cursor,'modules')
+                if module_end is None:
+                    module_rows,module_end=current_owner.module_map(data,cursor,strings=strings,diagnostics=module_diagnostics)
+                else:module_rows=empty
+        else:module_rows, module_end = modules.decode_module_dictionary(data, cursor, module_diagnostics)
     except modules.LevelScriptModuleCodecError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
     if module_rows is None:
@@ -360,7 +379,7 @@ def decode_empty_action_map_owner_prefix(
     ranges["parentLevelScriptId"] = {"startOffset": start, "endOffset": cursor}
 
     for name in ("properties", "propertyIdToKeyMap", "refWorldEntityIdList"):
-        collection, next_cursor = _empty_collection(data, cursor, name)
+        collection, next_cursor = current_owner.collection(name,data,cursor,strings=strings)if current_owner is not None else _empty_collection(data, cursor, name)
         if next_cursor is None:
             return {
                 "startOffset": offset,

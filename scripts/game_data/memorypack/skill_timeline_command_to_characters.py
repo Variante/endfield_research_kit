@@ -1,4 +1,4 @@
-"""Selected-build SkillData CommandToCharactersAction 0x004F reader.
+"""Selected-build SkillData CommandToCharactersAction reader.
 
 The native source pins fourteen ordered reads and the two nested generic
 contexts. The stored command fields are not a runtime recipient trace.
@@ -14,15 +14,21 @@ import struct
 from functools import lru_cache
 from typing import Any
 
+from scripts.game_data.memorypack.formatter_native import check_formatter_windows, is_role_projection
+
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff import (
+    _ability_action_tag, _ability_action_tag_bytes,
+)
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 
 LABEL = "skillTimelineCommandToCharacters"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_command_to_characters_native.json"
+TAG_NAME = "Core_CommandToCharactersAction_CommandToCharactersActionData"
 FIELD_NAMES = (
     "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
     "activeDisToMainChar", "commandType", "contextKey", "dirMoveType",
@@ -46,7 +52,7 @@ _READERS = {
 
 
 @lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
+def _contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH,
         schema="endfield.skill-timeline-command-to-characters-native-contract.v1",
@@ -56,7 +62,7 @@ def _contract() -> dict[str, Any]:
     reads = contract.get("orderedSourceReads")
     contexts = contract.get("nestedContexts")
     if (
-        contract.get("dispatcher", {}).get("unionTag") != 0x004F
+        contract.get("dispatcher", {}).get("unionTag") != _ability_action_tag(TAG_NAME, gameassembly=gameassembly, metadata=metadata)
         or contract.get("serializedMemberCount") != len(FIELD_NAMES)
         or not isinstance(reads, list)
         or len(reads) != len(FIELD_NAMES)
@@ -72,11 +78,13 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly=None, metadata=None) -> dict[str, Any]:
     """Authenticate the selected route, source calls, and nested types."""
-    contract = _contract()
+    if (gameassembly is None) != (metadata is None):
+        raise ValueError(f"{LABEL}.native:both-selected-paths-required")
+    contract = _contract(gameassembly=gameassembly, metadata=metadata)
     expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
+    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"], gameassembly=gameassembly, metadata=metadata)
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
@@ -108,9 +116,9 @@ def validate_current_native_contract() -> dict[str, Any]:
             raise ValueError(f"{LABEL}.native:source-target={rva:#x}")
     for dependency in contract["dependencies"]:
         reviewed = json.loads((CONTRACTS_DIR / dependency["path"]).read_bytes())
-        if reviewed.get("schemaVersion") != 1:
+        if (reviewed.get("schemaVersion") != 1 and not is_role_projection(reviewed)):
             raise ValueError(f"{LABEL}.native:dependency-schema={dependency['path']}")
-        image.check_windows(reviewed["codeWindows"], label=f"{LABEL}.{dependency['path']}")
+        check_formatter_windows(image, reviewed, label=f"{LABEL}.{dependency['path']}")
     for context in contract["nestedContexts"]:
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(
@@ -146,7 +154,8 @@ def decode_command_to_characters_action(reader: Reader, depth: int, tag: int, wi
     """Consume one 14-member action using finite nested profiles."""
     del depth
     contract = _contract()
-    if tag != contract["dispatcher"]["unionTag"] or width != 1:
+    if (tag != contract["dispatcher"]["unionTag"]
+            or width != len(_ability_action_tag_bytes(TAG_NAME))):
         raise ValueError(f"{LABEL}.unionTag:unsupported")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

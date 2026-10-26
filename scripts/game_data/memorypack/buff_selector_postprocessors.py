@@ -50,7 +50,7 @@ def validate_current_native_contract(*,children:dict[str,Any],gameassembly:Path|
     unity=Path(gate.gameassembly).parent/'UnityPlayer.dll'
     if not unity.is_file() or hashlib.sha256(unity.read_bytes()).hexdigest().upper()!=pins['UnityPlayer.dll']:_fail('UnityPlayer.dll',pins['UnityPlayer.dll'],'missing-or-mismatched')
     image=open_native_image(gate.gameassembly,gate.metadata);path=CONTRACTS_DIR/c['sourceContract'];source=json.loads(path.read_bytes())
-    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=path)
+    buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=path, native_image=image)
     references.validate_reference_join(image,source,c['listJoin'],fail=_fail)
     selector=children['selector'];registry=selector['_registry'];plan=registry.plans[selector['selectorDefinition']]
     lists=[m for m in plan if m.name=='postProcessorData' and m.kind=='list' and m.element and m.element.kind=='union']
@@ -60,7 +60,7 @@ def validate_current_native_contract(*,children:dict[str,Any],gameassembly:Path|
     sources={}
     for key,record in c['records'].items():
         path=CONTRACTS_DIR/record['sourceContract'];source=json.loads(path.read_bytes())
-        buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=path)
+        buff_action_read_order(image.pe,image.metadata,image.registration,image.instantiations,image.modules,image.owners,source=str(gate.gameassembly),contract_path=path, native_image=image)
         sources[key]=source
         proved.update(named.validate_named_records(image,source,{key:record},label=LABEL,fail=_fail))
     for tag,key in c['postprocessorDispatch'].items():

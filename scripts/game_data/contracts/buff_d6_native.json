@@ -2,34 +2,34 @@
   "schemaVersion": 1,
   "methods": [
     [
-      120799,
+      262656,
       "Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceOnHpZeroAction_DataForMemoryPack",
       "Deserialize",
-      153754580
+      205922372
     ]
   ],
   "codeWindows": [
     {
-      "startRva": 153754580,
-      "endRva": 153754975,
-      "sha256": "2256CCF5032B30A1906A9830B8D815D491B6963EA04330DA4E67BBE49D399F7F",
+      "startRva": 205922372,
+      "endRva": 205922770,
+      "sha256": "EB97DB89C304C6EB3CC6B51C7DDD531A4BC65E2E65069EEC5BAB98F291B23B90",
       "boundary": "member4 direct source-read body through its normal RET"
     }
   ],
   "nestedContexts": [
     {
-      "instructionRva": 153754797,
-      "instructionHex": "488B157481DE03",
-      "cellVa": 6661119528,
-      "usageRawHex": "81E812C000000000",
-      "methodSpecIndex": 619584,
+      "instructionRva": 205922589,
+      "instructionHex": "488B1584A42704",
+      "cellVa": 6718080424,
+      "usageRawHex": "EBB613C000000000",
+      "methodSpecIndex": 646005,
       "methodSpec": [
-        428448,
+        550332,
         -1,
-        42547
+        42893
       ],
-      "argumentRawHex": "EA230000000000000000118000000000",
-      "typeDefinition": 9194,
+      "argumentRawHex": "64250000000000000000118000000000",
+      "typeDefinition": 9572,
       "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
       "typeKind": 17
     }

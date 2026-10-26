@@ -122,7 +122,7 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
     source = json.loads((CONTRACTS_DIR / c["parentContract"]).read_bytes())
     parent_audit = buff_action_read_order(image.pe, image.metadata, image.registration,
         image.instantiations, image.modules, image.owners, source=str(gate.gameassembly),
-        contract_path=CONTRACTS_DIR / c["parentContract"])
+        contract_path=CONTRACTS_DIR / c["parentContract"], native_image=image)
     for binding in raise_c["fieldBindings"]:
         index = binding["memberIndex"]; ctx = source["nestedContexts"][binding["contextIndex"]]
         if (r.member_order[index] != binding["fieldName"] or r.member_declared_types[index] != STRING_TYPE

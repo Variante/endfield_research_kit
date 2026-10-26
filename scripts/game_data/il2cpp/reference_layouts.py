@@ -89,8 +89,27 @@ class NativeReferenceContext:
 
 
 def closed_generic_reference_extent(selected, type_index):
+    return _closed_generic_reference_pointer_extent(selected,selected.type_pointer(type_index),selected.type_name(type_index))
+
+
+def closed_generic_reference_pointer_extent(selected, pointer):
+    """Fresh actual argument pointer; no constructed-name or indexed alias.
+
+    MethodSpec arguments can be closed reference carriers absent from the
+    registration's named TypeDef table. The same strict carrier/definition,
+    reciprocal generic owner/arity and resolved argument proof applies here.
+    This establishes pointer representation only, never child wire grammar,
+    provider identity or runtime instantiation.
+    """
+    if type(pointer)is not int or pointer<=0:
+        raise ValueError('closed generic reference extent: actual native pointer required')
+    image=selected.image
+    return _closed_generic_reference_pointer_extent(selected,pointer,runtime_type_name(image.pe,image.metadata,pointer))
+
+
+def _closed_generic_reference_pointer_extent(selected,pointer,expected_name):
     image=selected.image;pe=image.pe;metadata=image.metadata
-    pointer=selected.type_pointer(type_index);raw=pe.bytes_at_va(pointer,16)
+    raw=pe.bytes_at_va(pointer,16)
     if len(raw)!=16 or raw[10]!=0x15 or raw[11]!=0 or int.from_bytes(raw[8:10],'little')&0x10:
         raise ValueError('closed generic reference extent: undecorated reference instantiation required')
     generic=int.from_bytes(raw[:8],'little');carrier=pe.bytes_at_va(generic,16)
@@ -120,7 +139,7 @@ def closed_generic_reference_extent(selected, type_index):
            or 'VAR[' in name or 'MVAR[' in name for p,name in zip(argument_pointers,argument_names)):
         raise ValueError('closed generic reference extent: unresolved argument')
     expected=definition_name+'<'+','.join(argument_names)+'>'
-    if selected.type_name(type_index)!=expected:
+    if expected_name!=expected:
         raise ValueError('closed generic reference extent: declared closed identity differs')
     return {'bytes':8,'type':expected,'definitionTypeIndex':definition_index,
             'declaredTypeRecordHex':raw.hex().upper(),'definitionTypeRecordHex':definition_raw.hex().upper(),

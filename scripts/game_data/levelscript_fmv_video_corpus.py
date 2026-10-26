@@ -12,6 +12,9 @@ from scripts.game_data.levelscript_fmv_video_native import validate,CONTRACT_PAT
 from scripts.game_data.levelscript_corpus import verify_family_receipt,DEFAULT_OUTPUT,_guard_output
 from scripts.game_data.levelscript_binary import frame_levelscript_named
 from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
+from scripts.game_data.levelscript_numeric_list_param_native import current_numeric_list_params
+from scripts.game_data.levelscript_camera_shake_param_native import current_camera_shake_params
+from scripts.game_data.levelscript_buff_ptr_param_native import current_buff_ptr_params
 from scripts.game_data.levelscript_source_receipts import SourceReader
 from scripts.game_data.codecs.levelscript import fmv
 from scripts.game_data.memorypack.corpus_gate import _fingerprint,_chunk_selection_snapshot,_chunk_fingerprints
@@ -52,11 +55,11 @@ def audit(*,expected_input_set_sha256,expected_family_receipt_sha256,family_rece
  source=SourceReader(dict(status='complete',provenance=dict(levelscriptReaderInputs=provenance['readerInputs'],levelscriptStringPoolInputs=provenance['levelscriptStringPoolInputs'])),export_root/'game/Json',pins,game_root=selected_root)
  universe={r['exportRelativePath']:r for r in before['rows']if r['family']=='LevelScriptData'};selected=sorted(universe)if sources is None else sorted(set(sources));_require(bool(selected)and all(p in universe for p in selected),'selected-owner-source-set',receipt_path,selected=selected[:8],unknown=sorted(set(selected)-set(universe))[:8])
  projected=[];failures=[];files={};owners=0
- with current_null_list_params(game_root=selected_root,strings=source.strings)as null_list_params:
+ with current_null_list_params(game_root=selected_root,strings=source.strings)as null_list_params,current_numeric_list_params(game_root=selected_root,strings=source.strings)as numeric_list_params,current_camera_shake_params(game_root=selected_root,strings=source.strings)as camera_shake_params,current_buff_ptr_params(game_root=selected_root,strings=source.strings)as buff_ptr_params:
   for path in selected:
    file=source.root/path;data=file.read_bytes();digest=hashlib.sha256(data).hexdigest().upper();logical=universe[path];_require([len(data),digest]==[logical['length'],logical['logicalSha256']],'owner-logical-byte-join',path,expected={k:logical[k]for k in('length','logicalSha256')},actual=dict(length=len(data),sha256=digest));files[file]=data
    try:
-    frame=frame_levelscript_named(data,source=path,strings=source.strings,game_root=selected_root,null_list_params=null_list_params);out=fmv.project_owner(data,frame,source=path,strings=source.strings);owners+=1
+    frame=frame_levelscript_named(data,source=path,strings=source.strings,game_root=selected_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params);out=fmv.project_owner(data,frame,source=path,strings=source.strings);owners+=1
     for row in out['rows']:row['nameCandidates']=fmv.name_candidates(row['projection']['fmvId'],gate['layout']);projected.append(row)
     failures.extend(dict(source=path,**r)for r in out['diagnostics'])
    except(ValueError,KeyError,IndexError,TypeError)as error:failures.append(dict(source=path,check='fresh-typed-owner-or-name-refused',sourceSha256=digest,detail=str(error)[:1200]))

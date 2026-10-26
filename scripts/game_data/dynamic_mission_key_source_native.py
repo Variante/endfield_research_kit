@@ -44,7 +44,7 @@ def validate_claims(gameassembly,metadata):
     require(len(consumers)==1,'source-owned-Id-consumer',len(consumers));consumer=consumers[0]
     keys=[row for row in scalar['methods'] if row['index']==consumer['runtimeKeyMethodIndex']]
     require(len(keys)==1,'source-owned-key-method',len(keys));key=keys[0]
-    _check_method(image,writer);_check_method(image,key);query_raw=_check_method(image,query)
+    _check_method(image,writer);check_key_method(image,key);query_raw=_check_method(image,query)
     writer_meta=md.methods[writer['index']];query_meta=md.methods[query['index']]
     require(writer_meta.declaring_type==query_meta.declaring_type and not writer_meta.flags&0x10 and not query_meta.flags&0x10,
             'same-concrete-system-owner',(writer_meta.declaring_type,query_meta.declaring_type))
@@ -60,12 +60,14 @@ def validate_claims(gameassembly,metadata):
     require(not selected.field_attributes(field.type_index)&0x10,'instance-pool-field',field.type_index)
     pool_offset=runtime_type_field_offsets(md,pe,reg,owner.index)[field_name]
     query_rows=_instruction_partition(query_raw,query['rva'],_composed_decoder(image.mapper))
-    check_query_hot_slot_width(query_rows)
+    query_shape=check_query_shape(query_raw,query_rows)
+    check_query_hot_slot_width(query_rows,at=query_shape['hotSlot'])
     require(query_raw[61:65]==bytes.fromhex('488B4B'+struct.pack('<b',pool_offset).hex()),'query-same-pool-field',query_raw[61:65].hex())
-    helper=_relative_call_target(query_raw,query['rva'],83,'query-slot-helper')
-    require(query_raw[70:73]==bytes.fromhex('4C8B0D') and query_raw[109:112]==bytes.fromhex('8B5008'),
-            'query-context-and-lane',query_raw[70:77].hex())
-    context=query['rva']+77+struct.unpack_from('<i',query_raw,73)[0]
+    helper=_relative_call_target(query_raw,query['rva'],query_shape['call'],'query-slot-helper')
+    load=query_shape['context'];lane=query_shape['lane']
+    require(query_raw[load:load+3]==bytes.fromhex('4C8B0D') and query_raw[lane:lane+3]==bytes.fromhex('8B5008'),
+            'query-context-and-lane',(query_raw[load:load+7].hex(),query_raw[lane:lane+3].hex()))
+    context=query['rva']+load+7+struct.unpack_from('<i',query_raw,load+3)[0]
     spec=method_spec_usage_index(pe.bytes_at_va(pe.image_base+context,8),reg['methodSpecsCount'],source=str(gameassembly),offset=pe.image_base+context)
     definition,class_inst,method_inst=struct.unpack('<iii',pe.bytes_at_va(int(reg['methodSpecs'],16)+spec*12,12))
     require(0<=definition<len(md.methods) and 0<=class_inst<reg['genericInstsCount'] and method_inst==-1,'slot-context-spec',(definition,class_inst,method_inst))
@@ -98,8 +100,11 @@ def validate_claims(gameassembly,metadata):
         [row.generic_container_index for row in md.types],source=str(metadata))
     require(return_owner['typeIndex']==slot_method.declaring_type and return_owner['ordinal']==0,
             'slot-context-return-owner',return_owner)
-    _preserved_interval(query_rows,88,109,'rax',set(),'slot-return-to-query-key')
-    call=consumer['runtimeKeyCallOffset'];block_start=call-28;block_end=call+74
+    _preserved_interval(query_rows,query_shape['call']+5,lane,'rax',set(),'slot-return-to-query-key')
+    call=consumer['runtimeKeyCallOffset'];block_start=call-28
+    prefix=pe.bytes_at_va(pe.image_base+writer['rva']+block_start,43)
+    block_size=102 if prefix[33:43]==bytes.fromhex('448BF0898424C4000000') else 96
+    block_end=block_start+block_size
     table_rva,image_size,table=read_exception_directory(pe)
     chains=UnwindChainIndex(table,lambda rva,n:pe.bytes_at_va(pe.image_base+rva,n),table_rva=table_rva,image_size=image_size)
     family=chains.family(writer['rva'])
@@ -130,8 +135,47 @@ def require(ok,check,actual):
 def require_false_get_key_argument(block):
     require(block[17:20]==bytes.fromhex('4533C0'),'original-Boolean-false-argument',block[17:20].hex())
 
-def check_query_hot_slot_width(rows):
-    selected=[row for row in rows if row['offset']==25]
+def check_key_method(image,row):
+    """Bind the pooled-span overload by native type structure, not display aliases."""
+    require(row['parameters']==['System.ReadOnlySpan`1<System.Byte>','System.Boolean'] and
+            row['returnType']=='System.Int32','source-owned-span-key-signature',row)
+    image.validate_method_row([row['index'],row['type'],row['method'],row['rva']],label='mission_key_source')
+    method=image.metadata.methods[row['index']];parameters=image.metadata.parameters_for(method)
+    require(len(parameters)==2 and not method.flags&0x10,'span-key-instance-parameters',(len(parameters),method.flags))
+    _ordinary_primitive_abi(image,method.return_type,0x08,'span-key-return')
+    string_providers._abi(image,parameters[0].type_index,'SpanByte','span-key-argument')
+    _ordinary_primitive_abi(image,parameters[1].type_index,0x02,'span-key-keep')
+    names=[image.metadata.string(p.name_index) for p in parameters]
+    require(names==row['parameterNames'],'span-key-parameter-names',names)
+    raw=image.pe.bytes_at_va(image.pe.image_base+row['rva'],row['bodyExtent'])
+    require(hashlib.sha256(raw).hexdigest().upper()==row['bodySha256'].upper(),'span-key-method-bytes',row['method'])
+    return raw
+
+
+def check_query_shape(raw,rows):
+    """Two exact selected query layouts; offsets never drift independently."""
+    if len(raw)==187 and raw[:15]==bytes.fromhex('48895C24084889742410574883EC40'):
+        shape={'hotSlot':25,'context':70,'call':83,'lane':109}
+        probes={22:'418BF80FB7F2488BD9',61:'488B4B284885C9',77:'448BC70FB7D6',
+            88:'488B4B384885C9',104:'4C8D4424308B5008',117:'84C074388B442430'}
+    elif len(raw)==200 and raw[:20]==bytes.fromhex('48895C240848896C24104889742418574883EC40'):
+        shape={'hotSlot':33,'context':78,'call':91,'lane':117}
+        probes={27:'498BE9418BF80FB7F2488BD9',61:'488B4B28C7442430000000004885C9',
+            85:'448BC70FB7D6',96:'488B4B384885C9',112:'4C8D4424308B5008',125:'84C074438B442430'}
+    else:raise ValueError('mission-key-lane.query-shape: expected exact named-check or nullable-inline layout')
+    by={row['offset']:row for row in rows}
+    for at,encoded in probes.items():
+        data=bytes.fromhex(encoded);cursor=at
+        while cursor<at+len(data):
+            require(cursor in by,'query-shape-instruction-boundary',cursor)
+            cursor+=len(bytes.fromhex(by[cursor]['bytes']))
+        require(cursor==at+len(data) and raw[at:cursor]==data,'query-shape-'+str(at),raw[at:cursor].hex())
+    _direct_call_boundary(rows,shape['call'],'query-slot-helper')
+    return shape
+
+
+def check_query_hot_slot_width(rows,*,at=25):
+    selected=[row for row in rows if row['offset']==at]
     require(len(selected)==1,'query-hot-slot-word-register-boundary',len(selected))
     row=selected[0]
     require(bytes.fromhex(row['bytes'])==bytes.fromhex('0FB7F2') and row['text']=='movzx esi, dx' and
@@ -146,24 +190,34 @@ def check_block(raw,rva,key_pointer,helper_pointer,pool_offset,context_rva,mappe
     try:rows=_instruction_partition(raw,rva,_composed_decoder(mapper))
     except (IndexError,struct.error) as exc:
         raise ValueError('mission-key-lane.instruction-partition:'+str(exc)[:400]) from exc
-    require(len(raw)==102,'block-extent',len(raw))
-    probes={0:'0F28842440010000660F7F4424504533C94533C0488D542450488BCB',
-        33:'448BF0898424C4000000',43:'498B5D'+struct.pack('<b',pool_offset).hex(),47:'4885DB',
-        56:'448B4424404403C6',71:'0FB7942490000000488BCB',
-        87:'488B8C244002000048890844897008'}
+    if len(raw)==102:
+        probes={0:'0F28842440010000660F7F4424504533C94533C0488D542450488BCB',
+            33:'448BF0898424C4000000',43:'498B5D'+struct.pack('<b',pool_offset).hex(),47:'4885DB',
+            56:'448B4424404403C6',71:'0FB7942490000000488BCB',
+            87:'488B8C244002000048890844897008'}
+        call,branch,context,receiver,saved=82,50,64,47,'r14d'
+    elif len(raw)==96:
+        probes={0:'0F28842470010000660F7F4424404533C94533C0488D542440488BCB',
+            33:'448BE08944247C',40:'498B5E'+struct.pack('<b',pool_offset).hex(),44:'4885DB',
+            53:'448B4424684403C6',68:'0FB7542470488BCB',
+            81:'488B8C246002000048890844896008'}
+        call,branch,context,receiver,saved=76,47,61,44,'r12d'
+    else:raise ValueError('mission-key-lane.block-extent: expected complete selected102 or96 byte block, actual='+str(len(raw)))
     for at,encoded in probes.items():
         data=bytes.fromhex(encoded)
         require(raw[at:at+len(data)]==data,'program-'+str(at),raw[at:at+len(data)].hex())
-    calls={at:_direct_call_boundary(rows,at,'key-lane-'+str(at)) for at in (28,82)}
+    calls={at:_direct_call_boundary(rows,at,'key-lane-'+str(at)) for at in (28,call)}
     def target(at):return rva+at+5+struct.unpack_from('<i',raw,at+1)[0]
-    require(target(28)==key_pointer and target(82)==helper_pointer,'same-actual-calls',(target(28),target(82)))
-    require(raw[50:52]==bytes.fromhex('0F84') and not rva<=rva+56+struct.unpack_from('<i',raw,52)[0]<rva+len(raw),
-        'conditional-nonnull-pool',raw[50:56].hex())
-    require(raw[64:67]==bytes.fromhex('4C8B0D') and rva+71+struct.unpack_from('<i',raw,67)[0]==context_rva,
-        'same-actual-context',raw[64:71].hex())
-    _preserved_interval(rows,36,98,'r14d',{82},'returned-Int32-to-slot8')
-    _preserved_interval(rows,87,98,'rax',set(),'same-returned-slot-to-store')
-    _preserved_interval(rows,47,79,'rbx',set(),'same-pool-receiver')
+    require(target(28)==key_pointer and target(call)==helper_pointer,'same-actual-calls',(target(28),target(call)))
+    require(raw[branch:branch+2]==bytes.fromhex('0F84') and
+        not rva<=rva+branch+6+struct.unpack_from('<i',raw,branch+2)[0]<rva+len(raw),
+        'conditional-nonnull-pool',raw[branch:branch+6].hex())
+    require(raw[context:context+3]==bytes.fromhex('4C8B0D') and
+        rva+context+7+struct.unpack_from('<i',raw,context+3)[0]==context_rva,
+        'same-actual-context',raw[context:context+7].hex())
+    _preserved_interval(rows,36,len(raw),saved,{call},'returned-Int32-to-slot8')
+    _preserved_interval(rows,call+5,len(raw),'rax',set(),'same-returned-slot-to-store')
+    _preserved_interval(rows,receiver,call,'rbx',set(),'same-pool-receiver')
     return {'source':'selected GetStrKey Int32 return','destination':'anonymous returned slot Int32 lane+8',
         'helperNameProved':False,'boxedFieldLabelProved':False,'entryProgramProved':False,'runtimeObserved':False}
 
