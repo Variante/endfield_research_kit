@@ -3,6 +3,10 @@
 This recognizes one complete native instruction program. Addresses and field
 offsets come from the selected build. Changed compiler programs fail closed.
 Other paths, getter internals and live receiver/context validity stay separate.
+
+The installed build enters through the inline patch-table guard proven by
+``il2cpp.patch_table_guard``; only its unpatched fall-through is followed, so
+the path selection is conditional on anonymous runtime patch state.
 """
 from __future__ import annotations
 
@@ -10,12 +14,13 @@ from scripts.game_data.damage_snapshot_abi import (require_ordinary_type, requir
 
 import re
 import struct
-from typing import Any
+from typing import Any, Callable
 
 from scripts.game_data.il2cpp.context import (
     method_spec_record, method_spec_usage_index, relative_branch_target,
     rip_qword_load_target,
 )
+from scripts.game_data.il2cpp.patch_table_guard import check_entry_guard
 from scripts.game_data.il2cpp.protocol import runtime_type_name
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
 from scripts.game_data.il2cpp.stack_argument_flow import _edge
@@ -34,36 +39,30 @@ def _check_encoding(row: dict) -> None:
     """Check the ISA encodings of this bounded compiler program, not hashes."""
     text = row['text']; raw = bytes.fromhex(row['bytes'])
     forms = {
-        'mov [rsp+0x8], rbx': '48 89 5c 24 08',
-        'mov [rsp+0x10], rbp': '48 89 6c 24 10',
-        'mov [rsp+0x18], rsi': '48 89 74 24 18',
-        'mov [rsp+0x20], rdi': '48 89 7c 24 20',
-        'push r12': '41 54', 'push r14': '41 56', 'push r15': '41 57',
+        'push rbx': '40 53', 'push rsi': '56', 'push rdi': '57',
         'sub rsp, 0x70': '48 83 ec 70',
-        'mov rdi, [rsp+0xb8]': '48 8b bc 24 b8 00 00 00',
-        'mov r14, rdx': '4c 8b f2', 'mov rsi, rcx': '48 8b f1',
+        'mov [rsp+0x90], rbp': '48 89 ac 24 90 00 00 00',
+        'mov [rsp+0x98], r14': '4c 89 b4 24 98 00 00 00',
+        'mov [rsp+0xa0], r15': '4c 89 bc 24 a0 00 00 00',
         'movaps [rsp+0x60], xmm6': '0f 29 74 24 60',
         'movaps [rsp+0x50], xmm7': '0f 29 7c 24 50',
-        'xor edx, edx': '33 d2', 'mov rbx, r9': '49 8b d9',
-        'mov rbp, r8': '49 8b e8', 'test al, al': '84 c0',
-        'test rbx, rbx': '48 85 db', 'test rcx, rcx': '48 85 c9',
+        'test r9, r9': '4d 85 c9', 'test rcx, rcx': '48 85 c9',
         'movaps xmm6, xmm0': '0f 28 f0', 'movq rax, xmm6': '66 48 0f 7e f0',
+        'mov r15, [rsp+0xa0]': '4c 8b bc 24 a0 00 00 00',
         'movaps xmm6, [rsp+0x60]': '0f 28 74 24 60',
-        'lea r11, [rsp+0x70]': '4c 8d 5c 24 70',
-        'mov rbx, [r11+0x20]': '49 8b 5b 20', 'mov rbp, [r11+0x28]': '49 8b 6b 28',
-        'mov rsi, [r11+0x30]': '49 8b 73 30', 'mov rdi, [r11+0x38]': '49 8b 7b 38',
-        'movaps xmm7, [rsp+0x50]': '0f 28 7c 24 50', 'mov rsp, r11': '49 8b e3',
-        'pop r15': '41 5f', 'pop r14': '41 5e', 'pop r12': '41 5c', 'ret': 'c3',
+        'mov r14, [rsp+0x98]': '4c 8b b4 24 98 00 00 00',
+        'mov rbp, [rsp+0x90]': '48 8b ac 24 90 00 00 00',
+        'movaps xmm7, [rsp+0x50]': '0f 28 7c 24 50', 'add rsp, 0x70': '48 83 c4 70',
+        'pop rdi': '5f', 'pop rsi': '5e', 'pop rbx': '5b', 'ret': 'c3',
     }
     expected = bytes.fromhex(forms[text]) if text in forms else None
-    if match := re.fullmatch(r'mov ecx, (0x[0-9a-f]+)', text):
-        expected = b'\xb9' + struct.pack('<I', int(match[1], 16))
-    elif match := re.fullmatch(r'mov edx, \[rsp\+(0x[0-9a-f]+)\]', text):
+    if match := re.fullmatch(r'mov edx, \[rsp\+(0x[0-9a-f]+)\]', text):
         expected = b'\x8b\x94\x24' + struct.pack('<i', int(match[1], 16))
-    elif match := re.fullmatch(r'(mov rcx, \[rsi|cmp \[rbx)\+(0x[0-9a-f]+)\](?:, al)?', text):
+    elif match := re.fullmatch(r'(mov rcx, \[rdi|cmp \[r9)\+(0x[0-9a-f]+)\](?:, 0x0)?', text):
         displacement = int(match[2], 16)
         _require(0 <= displacement < 128, 'program-field-displacement', 'positive disp8', displacement)
-        expected = (b'\x48\x8b\x4e' if match[1].startswith('mov') else b'\x38\x43') + bytes([displacement])
+        expected = (b'\x48\x8b\x4f' + bytes([displacement]) if match[1].startswith('mov')
+                    else b'\x41\x80\x79' + bytes([displacement, 0]))
     elif match := re.fullmatch(r'call (0x[0-9a-f]+)', text):
         actual = relative_branch_target(raw, _address(row), source='damageSnapshotCache')
         _require(raw[0] == 0xe8 and actual == int(match[1], 16), 'program-call-target', match[1], hex(actual))
@@ -82,10 +81,13 @@ def _check_encoding(row: dict) -> None:
 
 def check_return_program(rows: list[dict], *, pointer: int, cache_offset: int,
                          snapshot_offset: int, index_entry_offset: int,
-                         patch_pointer: int, getter_pointer: int) -> dict:
+                         getter_pointer: int,
+                         guard: Callable[[list[dict], int], dict]) -> dict:
     """Check entry aliases, guard edges, cache/index arguments and full return.
 
-    Only the false patch guard, nonnull unit/cache and true snapshot flag path
+    ``guard(rows, position)`` proves the inline patch-table guard (see
+    ``il2cpp.patch_table_guard``) and returns its aliases and ordinary entry.
+    Only the unpatched guard, nonnull unit/cache and true snapshot flag path
     is followed. The normal call is assumed to return under Win64 preservation.
     Every selected instruction and edge is checked; unselected code is not.
     """
@@ -114,49 +116,55 @@ def check_return_program(rows: list[dict], *, pointer: int, cache_offset: int,
         _require(edge is not None, 'program-edge', 'complete relative branch', raw.hex())
         return edge[0]
 
-    prefix = sequence(pointer, [
-        r'mov \[rsp\+0x8\], rbx', r'mov \[rsp\+0x10\], rbp',
-        r'mov \[rsp\+0x18\], rsi', r'mov \[rsp\+0x20\], rdi',
-        'push r12', 'push r14', 'push r15', r'sub rsp, 0x70',
-        r'mov rdi, \[rsp\+0xb8\]', 'mov r14, rdx', 'mov rsi, rcx',
-        r'movaps \[rsp\+0x60\], xmm6', 'xor edx, edx',
-        r'movaps \[rsp\+0x50\], xmm7', r'mov ecx, 0x[0-9a-f]+',
-        'mov rbx, r9', 'mov rbp, r8', f'call {patch_pointer:#x}',
-        'test al, al', r'j(?:cc|ne) 0x[0-9a-f]+',
-        'test rbx, rbx', r'j(?:cc|e) 0x[0-9a-f]+',
-        rf'cmp \[rbx\+{snapshot_offset:#x}\], al', r'j(?:cc|ne) 0x[0-9a-f]+',
+    frame = sequence(pointer, ['push rbx', 'push rsi', 'push rdi', r'sub rsp, 0x70'])
+    guard_proof = guard(rows, positions[pointer] + len(frame))
+    aliases = guard_proof['aliases']
+    # The receiver must reach RDI before RCX is reused for the patch table, and
+    # R9 must still hold the incoming DamageUnit.
+    _require(aliases.get('rdi') == 'rcx' and 'r9' not in aliases, 'program-entry-aliases',
+             {'rdi': 'rcx', 'r9': 'incoming'}, aliases)
+    ordinary = int(guard_proof['ordinaryEntry'], 16)
+    _require(positions.get(ordinary) == guard_proof['nextPosition'], 'program-guard-fallthrough',
+             guard_proof['nextPosition'], positions.get(ordinary))
+    guard_rows = rows[positions[pointer] + len(frame):guard_proof['nextPosition']]
+    prefix = sequence(ordinary, [
+        r'mov \[rsp\+0x90\], rbp', r'mov \[rsp\+0x98\], r14',
+        r'mov \[rsp\+0xa0\], r15', r'movaps \[rsp\+0x60\], xmm6',
+        r'movaps \[rsp\+0x50\], xmm7', 'test r9, r9', r'j(?:cc|e) 0x[0-9a-f]+',
+        rf'cmp \[r9\+{snapshot_offset:#x}\], 0x0', r'j(?:cc|ne) 0x[0-9a-f]+',
     ])
-    patch_edge = branch(prefix[19], b'\x0f\x85')
-    unit_null = branch(prefix[21], b'\x0f\x84')
-    snapshot_start = branch(prefix[23], b'\x0f\x85')
+    unit_null = branch(prefix[6], b'\x0f\x84')
+    snapshot_start = branch(prefix[8], b'\x0f\x85')
     # Three eight-byte pushes plus the checked 0x70 frame allocation.
     index_stack_offset = index_entry_offset + 3 * 8 + 0x70
     snapshot = sequence(snapshot_start, [
-        rf'mov rcx, \[rsi\+{cache_offset:#x}\]', 'test rcx, rcx',
+        rf'mov rcx, \[rdi\+{cache_offset:#x}\]', 'test rcx, rcx',
         r'j(?:cc|e) 0x[0-9a-f]+',
         r'mov r8, \[rip\+0x[0-9a-f]+ => 0x[0-9a-f]+\]',
         rf'mov edx, \[rsp\+{index_stack_offset:#x}\]',
         f'call {getter_pointer:#x}', 'movaps xmm6, xmm0', r'jmp 0x[0-9a-f]+',
     ])
-    cache_null = branch(snapshot[2], b'\x0f\x84')
+    cache_null = branch(snapshot[2], b'\x74')
     return_start = branch(snapshot[7], b'\xeb')
     epilogue = sequence(return_start, [
-        'movq rax, xmm6', r'movaps xmm6, \[rsp\+0x60\]',
-        r'lea r11, \[rsp\+0x70\]', r'mov rbx, \[r11\+0x20\]',
-        r'mov rbp, \[r11\+0x28\]', r'mov rsi, \[r11\+0x30\]',
-        r'mov rdi, \[r11\+0x38\]', r'movaps xmm7, \[rsp\+0x50\]',
-        'mov rsp, r11', 'pop r15', 'pop r14', 'pop r12', 'ret',
+        r'mov r15, \[rsp\+0xa0\]', 'movq rax, xmm6', r'movaps xmm6, \[rsp\+0x60\]',
+        r'mov r14, \[rsp\+0x98\]', r'mov rbp, \[rsp\+0x90\]',
+        r'movaps xmm7, \[rsp\+0x50\]', r'add rsp, 0x70',
+        'pop rdi', 'pop rsi', 'pop rbx', 'ret',
     ])
-    selected_addresses = {_address(row) for row in prefix + snapshot + epilogue}
+    selected_rows = frame + guard_rows + prefix + snapshot + epilogue
+    selected_addresses = {_address(row) for row in selected_rows}
+    patch_edge = int(guard_proof['coldEntry'], 16)
     for edge in (patch_edge, unit_null, cache_null):
         _require(edge not in selected_addresses, 'excluded-edge', 'outside selected trace', hex(edge))
-    _require(snapshot_start not in {_address(row) for row in prefix + epilogue},
+    _require(snapshot_start not in {_address(row) for row in frame + guard_rows + prefix + epilogue},
              'snapshot-entry', 'separate selected block', hex(snapshot_start))
     return {'selectedInstructionCount': len(selected_addresses),
             'snapshotEntry': hex(snapshot_start), 'returnEntry': hex(return_start),
             'getterCall': snapshot[5]['va'], 'usageLoad': snapshot[3],
             'indexEntryStackOffset': index_entry_offset,
             'indexFrameStackOffset': index_stack_offset,
+            'patchTableGuard': {k: v for k, v in guard_proof.items() if k != 'nextPosition'},
             'excludedTargets': [hex(edge) for edge in (patch_edge, unit_null, cache_null)]}
 
 
@@ -207,22 +215,11 @@ def check_cache_return(index, spec: dict) -> dict:
     _require(all(row.get('type') == 'System.Collections.Generic.List`1' and row.get('method') == 'get_Item'
                  and [a['typeName'] for a in row.get('classInstantiation', {}).get('arguments', [])] == ['System.Double']
                  for row in aliases), 'getter-closed-identity', 'only List<Double>.get_Item', aliases)
-    first_call = next((row for row in body.rows if row['text'].startswith('call ')), None)
-    _require(first_call is not None, 'patch-call', 'direct entry call', first_call)
-    patch_pointer = int(first_call['text'].split()[1], 16)
-    patch_methods = [index.metadata.methods[row['methodIndex']]
-                     for row in index.names_by_pointer.get(patch_pointer, ())
-                     if row.get('type') == 'IFix.WrappersManagerImpl' and row.get('method') == 'IsPatched']
-    _require(bool(patch_methods), 'patch-call-identity', 'IsPatched', hex(patch_pointer))
-    for method in patch_methods:
-        parameter_types = [selected.type_name(p.type_index) for p in index.metadata.parameters_for(method)]
-        _require(bool(method.flags & 0x10) and parameter_types == ['int']
-                 and selected.type_name(method.return_type) == 'bool',
-                 'patch-call-signature', 'static bool IsPatched(int)', parameter_types)
-        require_ordinary_signature(selected,method,['int'],'bool','consumer.IFix')
+    def guard(rows: list[dict], position: int) -> dict:
+        return check_entry_guard(rows, position, pe=index.pe, decode=index._decode)
     proof = check_return_program(body.rows, pointer=body.pointer, cache_offset=cache_offset,
                                  snapshot_offset=snapshot_offset, index_entry_offset=index_offset,
-                                 patch_pointer=patch_pointer, getter_pointer=getter.pointer)
+                                 getter_pointer=getter.pointer, guard=guard)
     usage = proof.pop('usageLoad')
     usage_raw = bytes.fromhex(usage['bytes'])
     _require(usage_raw[:3] == b'\x4c\x8b\x05', 'method-info-load', 'R8 RIP qword', usage_raw.hex())
@@ -245,4 +242,4 @@ def check_cache_return(index, spec: dict) -> dict:
     return {**proof, 'symbol': body.symbol, 'claim': 'snapshotCacheIndexToReturn',
             'cacheField': spec['cacheField'], 'cacheType': cache_type,
             'getterMethodSpecIndex': spec_index, 'getterUsageCell': hex(cell),
-            'boundary': 'Selected false-IFix, nonnull unit/cache, true snapshot path: incoming this cache and incoming Int32 index reach the closed Double getter, and its normally returned XMM0 bits reach RAX as the sole CalcResult Double value. Getter internals, valid live object/context, cache producer and live path selection remain conditional.'}
+            'boundary': 'Selected unpatched inline patch-table guard (null table or null slot, anonymous runtime state), nonnull unit/cache, true snapshot path: incoming this cache and incoming Int32 index reach the closed Double getter, and its normally returned XMM0 bits reach RAX as the sole CalcResult Double value. Getter internals, valid live object/context, cache producer and live path selection remain conditional.'}

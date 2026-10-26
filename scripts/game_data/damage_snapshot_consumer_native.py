@@ -75,7 +75,7 @@ from scripts.game_data.il2cpp.native_image import (open_native_image, read_revie
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _parser_source_snapshots
 
 CONTRACT_PATH = CONTRACTS_DIR / 'damage_snapshot_consumers_native.json'
-SCHEMA = 'endfield.damage-snapshot-consumer-claims.v61'
+SCHEMA = 'endfield.damage-snapshot-consumer-claims.v64'
 
 
 def _unity_hash(path: Path) -> str | None:

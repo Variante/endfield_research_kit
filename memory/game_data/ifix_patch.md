@@ -39,6 +39,15 @@ join the two integers or read an AOT id as a VM body offset. A `None` from
 `BodyIndex.ifix_patch_id` means *not found by its bounded search*, not
 *unwrapped* or *not fixed*; the fix record is the authority.
 
+The installed build (GameAssembly AB00F1C4) has no direct `IsPatched` call:
+wrapped methods open with an inline patch-table guard (RIP load of a zero-
+initialized `.data` root, table qword at a per-method displacement, slot
+function pointer; null table or null slot falls through to the original body).
+[`il2cpp/patch_table_guard.py`](../../scripts/game_data/il2cpp/patch_table_guard.py)
+proves the shape; the selection is anonymous runtime state, so proofs through it
+are **conditional**. `ifix_patch_id` returns `None` for these bodies, and no
+join from slot displacement to a VM method index is established.
+
 ## Opcodes, operands, frames and signatures
 
 Native modules below derive their facts from the explicit selected
