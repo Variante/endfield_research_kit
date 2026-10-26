@@ -1,0 +1,171 @@
+{
+  "schema": "endfield.levelscript-route-deserialize-native.v4",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "gameAssembly": {
+      "sha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C"
+    },
+    "metadata": {
+      "sha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+    }
+  },
+  "routes": [
+    {
+      "family": "GameCondition",
+      "tag": 96,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckIsSquadInFightForMemoryPack",
+      "typeName": "Beyond.Gameplay.CheckIsSquadInFight",
+      "typeDefinition": 48400,
+      "memberCount": 5,
+      "inheritedMemberCount": 4,
+      "fields": [
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "uniqueId",
+          "string"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "isInFight",
+          "Param<bool>"
+        ]
+      ],
+      "nativeIdentity": {
+        "dispatcherVa": "0x1866932c0",
+        "switchTableVa": "0x18669cb74",
+        "switchTargetVa": "0x186698084",
+        "branchBodyVa": "0x186698084",
+        "usageCellVa": "0x190781e20",
+        "registeredTypeIndex": 100162,
+        "typeDefinition": 48400,
+        "branchCodeHex": "488B15959D0E0A",
+        "usageRawHex": "850E032000000000"
+      },
+      "deserializeMethodIndex": 250834,
+      "deserializeRva": 205019280,
+      "normalBodyLength": 452,
+      "normalBodySha256": "DD744C84ED089837C2FEF363AB04D55C4F88DA77E7C46D6EA03B0D507981FB39",
+      "memberCountInstruction": {
+        "rva": 205019469,
+        "hex": "807C243805"
+      },
+      "readOrder": [
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 245191,
+          "setterName": "set___scopeMask__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+          "readCallRva": 205019493,
+          "readTargetRva": 83752528,
+          "setterCallRva": 205019515,
+          "setterTargetRva": 104030448
+        },
+        {
+          "name": "uniqueId",
+          "declaredType": "string",
+          "setterMethodIndex": 245192,
+          "setterName": "set___uniqueId__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+          "readCallRva": 205019526,
+          "readTargetRva": 85929408,
+          "setterCallRva": 205019545,
+          "setterTargetRva": 88443952
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 245193,
+          "setterName": "set___useCurrentScope__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+          "readCallRva": 205019556,
+          "readTargetRva": 83754448,
+          "setterCallRva": 205019574,
+          "setterTargetRva": 104030480
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 245194,
+          "setterName": "set___useGraphScope__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+          "readCallRva": 205019585,
+          "readTargetRva": 83754448,
+          "setterCallRva": 205019603,
+          "setterTargetRva": 104030512
+        },
+        {
+          "name": "isInFight",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<bool>",
+          "setterMethodIndex": 250831,
+          "setterName": "set____isInFight__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_CheckIsSquadInFightForMemoryPack",
+          "readCallRva": 205019621,
+          "readTargetRva": 83900608,
+          "setterCallRva": 205019640,
+          "setterTargetRva": 205020156,
+          "typedReadContext": {
+            "instructionRva": 205019608,
+            "instructionHex": "488B1521C73F04",
+            "usageRawHex": "CFB713C000000000",
+            "methodSpecIndex": 646119,
+            "methodSpec": [
+              550348,
+              -1,
+              12658
+            ],
+            "cellVa": 6718759168,
+            "argumentRawHex": "70D28C90010000000000150000000000",
+            "argumentType": "Beyond.Gameplay.Actions.Param`1<bool>",
+            "readerType": "MemoryPack.MemoryPackReader",
+            "readerMethod": "ReadValue"
+          }
+        }
+      ],
+      "sourceReceipts": [
+        [
+          "LevelScriptData/base01_dg001/9900000002.json",
+          "1347490179D1666A6BC91D3CEDE5BF13279D2A93FBEBE08746C7D5FED8D2AE61",
+          1555,
+          1589,
+          "3936B700AB33A2A03D09A92F761FF492B77868008C2D8E9B7B279D71B5893B93"
+        ]
+      ],
+      "deserializeFragmentWindows": []
+    }
+  ],
+  "typedReaderWindows": [
+    {
+      "startRva": 83900608,
+      "endRva": 83902061,
+      "sha256": "CF5CF3E415A3B966CEF2130CFCA2FD74012AA746A6434D135BAB04B73CF23A4D",
+      "boundary": "selected ReadValue helper bytes; provider/cache execution is not inferred from registration",
+      "fragmentWindows": [
+        {
+          "startRva": 120421436,
+          "endRva": 120421525,
+          "sha256": "447FF4A44F83682B84C9FC9D2FB842144A2CC2F7D787124C2F2F98B467BC47DC"
+        }
+      ]
+    }
+  ],
+  "enumUnderlying": [
+    {
+      "typeDefinition": 62456,
+      "typeName": "Beyond.GEnums.ScopeName",
+      "underlyingType": "int"
+    }
+  ],
+  "evidenceBoundary": "exact selected union identity, complete generated reader, member count, typed read contexts and ordered setters; source receipts are historical and separately hash-gated; default provider selection, current owner EOF and runtime effects remain unresolved",
+  "collectionReaders": []
+}

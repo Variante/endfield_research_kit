@@ -1,0 +1,224 @@
+{
+  "schema": "endfield.character-shadow-cpp-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
+  },
+  "evidenceBoundary": "conditional",
+  "boundary": "Selected static call/data flow only. Live invocation, opaque camera identity and cache-to-caster ownership remain unobserved. Native callers can retain Win64 volatile registers that the specific small callee never writes; formal parameters and return values alone are not a transparent interception boundary. Preserve original machine state around observation and bypass shared helpers outside the fit without entering C++. The selected fit and helpers use x87/SSE state, not an admitted AVX path. Observe original operands without mutation.",
+  "functions": {
+    "fit": {
+      "module": "UnityPlayer.dll",
+      "rva": 1947728,
+      "prefix": "488bc4555356574156488da8e8fdffff",
+      "arguments": [
+        "const-matrix4*",
+        "const-native-camera*",
+        "const-bounds*",
+        "const-native-settings*",
+        "matrix4*",
+        "matrix4*",
+        "vector3*"
+      ],
+      "result": "void",
+      "codeWindows": [
+        {
+          "rva": 1947728,
+          "bytes": 3486,
+          "sha256": "d36881755fc79c5b6d979a497c111f2d50d03f6572bf81e8681c3936bdbfeea0"
+        }
+      ]
+    },
+    "frame": {
+      "module": "UnityPlayer.dll",
+      "rva": 478080,
+      "prefix": "4883ec284c8bca488bd1498bc8e8fe01",
+      "arguments": [
+        "matrix4*",
+        "const-vector3*",
+        "const-quaternion*"
+      ],
+      "result": "void",
+      "codeWindows": [
+        {
+          "rva": 478080,
+          "bytes": 44,
+          "sha256": "680e7c25ea7863cd212f49583feba1a7ef915e4c9c3e13a32b8c176045a94b1b"
+        }
+      ]
+    },
+    "inverse": {
+      "module": "UnityPlayer.dll",
+      "rva": 580496,
+      "prefix": "488bc455488d68a14881ecc0000000f3",
+      "arguments": [
+        "const-matrix4*",
+        "matrix4*"
+      ],
+      "result": "bool",
+      "codeWindows": [
+        {
+          "rva": 580496,
+          "bytes": 411,
+          "sha256": "59145cb7766cbb07593ddd16af3e2b7bd93aab128fadeddc99b85028f5ffd493"
+        },
+        {
+          "rva": 580907,
+          "bytes": 408,
+          "sha256": "bbb82f3ab47468135c93fafbfa4f1c1a6153c5342c9bcc1f8b5fba691b1c3e86"
+        },
+        {
+          "rva": 581315,
+          "bytes": 1392,
+          "sha256": "c82a0e2fc9e9fd5d0187cc284bbb519c71a2029d69f125f3fa282dc4a2ada4e1"
+        },
+        {
+          "rva": 582707,
+          "bytes": 66,
+          "sha256": "0c55bae6968634306be0e7f51a878edb332eba842ffc5a5700701d7b37a8f61d"
+        },
+        {
+          "rva": 582773,
+          "bytes": 57,
+          "sha256": "67ef8714e50c252353a8fefe6ecba7f8cb1ff2b22f58b5ad503bd02ad261284b"
+        },
+        {
+          "rva": 582830,
+          "bytes": 132,
+          "sha256": "312bf81ba3fe1ebce0322c56ae4809a76e71c6c11db0c57c8ea3765f74caee92"
+        },
+        {
+          "rva": 582962,
+          "bytes": 37,
+          "sha256": "a5bae35019c57f8a07395a331578344d10bf1cabaf2329454e2d5e6ce091d051"
+        }
+      ]
+    },
+    "rotate": {
+      "module": "UnityPlayer.dll",
+      "rva": 1947360,
+      "prefix": "4c8bdc4883ec78f30f102dc519980148",
+      "arguments": [
+        "vector3*",
+        "const-quaternion*",
+        "const-vector3*"
+      ],
+      "result": "out-pointer",
+      "codeWindows": [
+        {
+          "rva": 1947360,
+          "bytes": 359,
+          "sha256": "d8c43f74c5249b6388a4e62ff07115510fdb1eb95db56bc2a9fb6416ef0a90bb"
+        }
+      ]
+    },
+    "look": {
+      "module": "UnityPlayer.dll",
+      "rva": 1045952,
+      "prefix": "48895c24084889742410574881ec8000",
+      "arguments": [
+        "quaternion*",
+        "const-vector3*",
+        "const-vector3*"
+      ],
+      "result": "out-pointer",
+      "codeWindows": [
+        {
+          "rva": 1045952,
+          "bytes": 252,
+          "sha256": "869df833967c22294f2669dfc42ccad55e90cb3fd762356eca6bfe812b9a635e"
+        },
+        {
+          "rva": 15792448,
+          "bytes": 36,
+          "sha256": "0b421d0f891edfa1cae8b98e7a35f7044ed621804caf2012993eb2b365788f89"
+        }
+      ]
+    },
+    "toEuler": {
+      "module": "UnityPlayer.dll",
+      "rva": 1048576,
+      "prefix": "40534883ec30488bd9488d4c2420e85d",
+      "arguments": [
+        "vector3*",
+        "const-quaternion*"
+      ],
+      "result": "out-pointer",
+      "codeWindows": [
+        {
+          "rva": 1048576,
+          "bytes": 45,
+          "sha256": "5331d69f65e072a9d048b06c146830c20c7a784bb8970cd9c26324566c091f97"
+        }
+      ]
+    },
+    "fromEuler": {
+      "module": "UnityPlayer.dll",
+      "rva": 586848,
+      "prefix": "48895c2408488974241048897c241855",
+      "arguments": [
+        "quaternion*",
+        "const-vector3*",
+        "int32-rotation-order"
+      ],
+      "result": "out-pointer",
+      "codeWindows": [
+        {
+          "rva": 586848,
+          "bytes": 271,
+          "sha256": "4c6d2af94a0b31f4e0bb8789d0f8f763ac923fdd74e10babcfd842fb4993d5c9"
+        },
+        {
+          "rva": 15722572,
+          "bytes": 212,
+          "sha256": "908db2be2669f8c9b5f0f18bd085343f9d1f8676408b9faf2bdcbef0e617fc83"
+        }
+      ]
+    }
+  },
+  "cameraFields": {
+    "view": 0,
+    "world": 64,
+    "fieldOfView": 2396,
+    "nearClip": 2400,
+    "farClip": 2404,
+    "aspect": 2420,
+    "orthoSize": 2424,
+    "orthographic": 2428
+  },
+  "settings": {
+    "type": "UnityEngine.HyperGryphEngineCode.HGCharacterShadowInputsCPP",
+    "unboxedBytes": 56,
+    "objectHeaderBytes": 16,
+    "unboxedFields": {
+      "characterCount": 0,
+      "bounds": 8,
+      "shadowLayers": 16,
+      "characterVolumeEnabled": 24,
+      "characterVolume_shadowPassEnabledState": 25,
+      "characterVolume_selfShadowMode": 28,
+      "characterVolume_charMainLightMode": 32,
+      "characterVolume_charCameraFollowMainLightBias": 36,
+      "characterVolume_charCustomMainLightDir": 44
+    }
+  },
+  "caller": {
+    "rva": 2159760,
+    "callRva": 2160173,
+    "targetRva": 1947728,
+    "stackOutputOffsetsAtEntry": [
+      40,
+      48,
+      56
+    ],
+    "boundary": "Caller passes bounds array element with24byte stride and forwards settings; consumes three output pointers. Logical return unused."
+  },
+  "capacity": {
+    "preFits": 64,
+    "postFits": 64,
+    "eventsPerFit": 64,
+    "characters": 64
+  }
+}

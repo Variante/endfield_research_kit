@@ -68,7 +68,7 @@ from scripts.webui.story.source_gap.providers import (
     _timeline,
 )
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
-from scripts.game_data.story_native_consumers_native import cited_address, cited_token
+from scripts.webui.story.source_gap.data import cited_address, cited_token
 
 
 @lru_cache(maxsize=1)
@@ -100,6 +100,7 @@ def _current_tracked_proxy_dialog_sources() -> dict[str, Any]:
 def _validate_general_tracked_proxy_flow_context(
     row: Any,
     owner_mission: str,
+    *, native_scope=None,
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """Revalidate a generated shared-proxy relation against current sources."""
     story_key = safe_key(row.get("key")) if isinstance(row, dict) else ""
@@ -188,7 +189,7 @@ def _validate_general_tracked_proxy_flow_context(
         and safe_key(row.get("nativeMappingId"))
         == NPC_PROXY_DIALOG_SELECTION_MAPPING_ID
         and safe_key(row.get("gameAssemblySha256"))
-        == npc_proxy_dialog_selection_sha256()
+        == npc_proxy_dialog_selection_sha256(native_scope=native_scope)
     )
     if not valid:
         return None, {
@@ -2446,23 +2447,22 @@ def _closed_exact_black_carrier_context_isolated_scenes(
         actual: Any,
         rows: list[dict[str, Any]],
     ) -> None:
+        sources = sorted({source for row in rows for field in
+            ("sourceFiles", "assetPaths", "trackPaths", "rootPaths")
+            for source in _string_list(row.get(field))})[:16]
+        hashes = {source: _sha256_file(ROOT / source) for source in sources}
         failures.append({
             "validator": validator,
             "gate": gate,
             "missionId": owner_mission,
             "sceneKey": scene_key,
+            "storyKey": scene_key,
+            "sourceFile": sources[0] if sources else "",
+            "sourceSha256": hashes.get(sources[0], "") if sources else "",
+            "sourceHashes": hashes,
             "expected": expected,
             "actual": actual,
-            "sourceFiles": sorted({
-                source
-                for row in rows
-                for source in (
-                    _string_list(row.get("sourceFiles"))
-                    + _string_list(row.get("assetPaths"))
-                    + _string_list(row.get("trackPaths"))
-                    + _string_list(row.get("rootPaths"))
-                )
-            })[:16],
+            "sourceFiles": sources,
         })
 
     for scene_key, scene_rows in sorted(
@@ -2768,6 +2768,26 @@ def _closed_exact_black_carrier_context_isolated_scenes(
         ]
         if not dialog_rows:
             continue
+        expanded = []
+        for row in dialog_rows:
+            parents = _string_list(row.get("parentStoryKeys"))
+            actions = row.get("dialogTreeNarrativeActions") or []
+            if (not row.get("parentStoryKey")
+                and row.get("relation") == "dialog_tree_narrative_action_unscoped"
+                and row.get("parentStatus") == "ambiguous_multiple_parent_dialogs"
+                and len(parents) > 1
+                and set(parents) == set(_string_list(row.get("allParentStoryKeys")))
+                and isinstance(actions, list)
+                and row.get("occurrenceCount") == len(actions)
+                and all(isinstance(action, dict) for action in actions)
+                and {safe_key(action.get("dialogKey")) for action in actions} == set(parents)):
+                for parent in parents:
+                    selected = [action for action in actions if action["dialogKey"] == parent]
+                    expanded.append({**row, "parentStoryKey": parent,
+                        "dialogTreeNarrativeActions": selected, "occurrenceCount": len(selected)})
+            else:
+                expanded.append(row)
+        dialog_rows = expanded
         dialog_valid = True
         parent_keys: set[str] = set()
         declared_parent_keys: set[str] = set()
@@ -2776,11 +2796,12 @@ def _closed_exact_black_carrier_context_isolated_scenes(
         placements: set[str] = set()
         for row in dialog_rows:
             parent_key = safe_key(row.get("parentStoryKey"))
+            raw_occurrences = row.get("dialogTreeNarrativeActions") or []
             occurrences = [
                 occurrence
-                for occurrence in row.get("dialogTreeNarrativeActions") or []
+                for occurrence in raw_occurrences
                 if isinstance(occurrence, dict)
-            ]
+            ] if isinstance(raw_occurrences, list) else []
             declared_parent_keys.update(
                 _string_list(row.get("allParentStoryKeys"))
             )
@@ -4225,11 +4246,13 @@ def _closed_exact_runtime_config_isolated_scenes(
     owner_mission: str,
     offline_exhaustion_index: dict[str, dict[str, Any]] | None = None,
     validation_failures: list[dict[str, Any]] | None = None,
+    *, native_scope=None,
 ) -> list[dict[str, Any]]:
     """Close exact executable Story configs that encode no chronology.
 
     ``NpcProxyEx`` rows are executable configuration, not loose name matches:
-    the installed client selects ``exDatas[activeCondIndex - 1]`` and
+    the original client path converts the external one-based index once,
+    selects ``exDatas[m_activeCondIndex]`` with its stored zero-based ordinal, and
     ``NpcInteractComponent`` reads that row's ``dialogId``.  The adjacent
     ``missionId`` is consumed separately by the paused-mission deactivation
     guard.  This establishes a mission-scoped, selectable interaction dialog,
@@ -4978,6 +5001,7 @@ def _closed_exact_runtime_config_isolated_scenes(
         context, failure = _validate_general_tracked_proxy_flow_context(
             row,
             owner_mission,
+            native_scope=native_scope,
         )
         if failure is not None:
             if validation_failures is not None:
@@ -5012,7 +5036,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             "configuredDialogIds": context["configuredDialogIds"],
             "activeRowIndex": context["activeRowIndex"],
             "selectionSemantics":
-                "exDatas[activeCondIndex - 1].dialogId",
+                "exDatas[m_activeCondIndex].dialogId",
             "contextBoundary": (
                 "all exact typed tracking consumers for this same-level NPC "
                 "proxy agree on one mission; the tracking quests observe the "
@@ -5054,7 +5078,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             or safe_key(row.get("nativeMappingId"))
             != NPC_PROXY_DIALOG_SELECTION_MAPPING_ID
             or safe_key(row.get("gameAssemblySha256"))
-            != npc_proxy_dialog_selection_sha256()
+            != npc_proxy_dialog_selection_sha256(native_scope=native_scope)
             or safe_key(row.get("selectionOrderStatus"))
             != (
                 "one_based_active_row_selection_only_no_cross_row_"
@@ -5084,7 +5108,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             not mission_ids
             or mapping_ids != {NPC_PROXY_DIALOG_SELECTION_MAPPING_ID}
             or hashes
-            != {npc_proxy_dialog_selection_sha256()}
+            != {npc_proxy_dialog_selection_sha256(native_scope=native_scope)}
         ):
             continue
         context_missions = sorted(mission_ids, key=natural_key)
@@ -5136,7 +5160,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                 if safe_key(row.get("npcProxyId"))
             }, key=natural_key),
             "selectionSemantics":
-                "exDatas[activeCondIndex - 1].dialogId",
+                "exDatas[m_activeCondIndex].dialogId",
             "orderBoundary": (
                 "activeCondIndex selects one proxy row; neither row index, "
                 "proxy suffix, table order, nor adjacent missionId orders "
@@ -5169,12 +5193,12 @@ def _closed_exact_runtime_config_isolated_scenes(
             "nativeConsumers": [{
                 "method":
                     "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
-                "token": cited_token("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
-                "address": cited_address("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
+                "token": cited_token("NpcInteractComponent._TryGetNpcProxyInteractDialogId", native_scope=native_scope),
+                "address": cited_address("NpcInteractComponent._TryGetNpcProxyInteractDialogId", native_scope=native_scope),
             }, {
                 "method": "NpcProxy._IsMissionConflict",
-                "token": cited_token("NpcProxy._IsMissionConflict"),
-                "address": cited_address("NpcProxy._IsMissionConflict"),
+                "token": cited_token("NpcProxy._IsMissionConflict", native_scope=native_scope),
+                "address": cited_address("NpcProxy._IsMissionConflict", native_scope=native_scope),
             }],
             "nativeMappingId": next(iter(mapping_ids)),
             "gameAssemblySha256": next(iter(hashes)),
@@ -5740,6 +5764,7 @@ def build_gap_row(
         dict[str, dict[str, Any]] | None = None,
     cross_owner_story_connections: list[dict[str, Any]] | None = None,
     story_trigger_manifest: dict[str, Any] | None = None,
+    native_scope=None,
 ) -> dict[str, Any]:
     non_mission_content = non_mission_content or {}
     offline_exhaustion_index = offline_exhaustion_index or {}
@@ -5998,6 +6023,7 @@ def build_gap_row(
             safe_key(partial_row.get("mission")),
             offline_exhaustion_index,
             exact_runtime_config_validation_failures,
+            native_scope=native_scope,
         )
     )
     closed_exact_runtime_config_isolated_keys = {
@@ -6954,6 +6980,7 @@ def build_gap_report(
     story_trigger_manifest_status: dict[str, Any] | None = None,
     project_authored_content: dict[str, dict[str, Any]] | None = None,
     project_authored_status: dict[str, Any] | None = None,
+    *, native_scope=None,
 ) -> dict[str, Any]:
     non_mission_content = (
         combined_non_mission_content_keys(table_root, source_digest=document_digest)
@@ -7229,6 +7256,7 @@ def build_gap_report(
                 safe_key(row.get("mission"))
             ),
             story_trigger_manifest=story_trigger_manifest,
+            native_scope=native_scope,
         )
         for row in partial_report.get("missions") or []
         if isinstance(row, dict)

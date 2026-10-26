@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from scripts.game_data.leveldata_binary import frame_leveldata_named_prefix
-from scripts.game_data.levelscript_binary import decode_levelscript_binary_summary
+from scripts.game_data.levelscript_binary import frame_levelscript_named
 from scripts.game_data.levelscript_template_binary import frame_levelscript_template
 from scripts.game_data.memorypack.tables import (
     DIALOG_ID_TABLE_REL,
@@ -53,19 +53,17 @@ class DecodedText:
 
 
 def _leveldata(rel_path: str, data: bytes, strings: StringPool | None) -> dict[str, Any]:
-    return frame_leveldata_named_prefix(data)
+    return frame_leveldata_named_prefix(data, strings=strings)
 
 
 def _levelscript(rel_path: str, data: bytes, strings: StringPool | None) -> dict[str, Any]:
-    # The summary is keyed by the script id, which is the file's own stem.
-    stem = rel_path.rsplit("/", 1)[-1].removesuffix(".json")
-    return decode_levelscript_binary_summary(data, int(stem))
+    return frame_levelscript_named(data, source=rel_path, strings=strings)
 
 
 def _levelscript_template(
     rel_path: str, data: bytes, strings: StringPool | None
 ) -> dict[str, Any]:
-    return frame_levelscript_template(data)
+    return frame_levelscript_template(data, strings=strings)
 
 
 def _dialog_id_table(rel_path: str, data: bytes, strings: StringPool | None) -> dict[str, Any]:
@@ -76,8 +74,8 @@ def _dialog_id_table(rel_path: str, data: bytes, strings: StringPool | None) -> 
 
 # Export-relative path prefix -> (dotted reader name, call). A prefix ending in
 # ``/`` routes a whole family; one ending in ``.json`` routes a single file.
-# Each call receives the owning export's string pool, or ``None`` for an export
-# that inlines its strings.
+# Each call receives the owning export's string pool. A missing pool never
+# selects an alternative wire format.
 RouteCall = Callable[[str, bytes, StringPool | None], dict[str, Any]]
 ROUTES: tuple[tuple[str, str, RouteCall], ...] = (
     (
@@ -87,7 +85,7 @@ ROUTES: tuple[tuple[str, str, RouteCall], ...] = (
     ),
     (
         JSON_ROOT + "LevelScriptData/",
-        "scripts.game_data.levelscript_binary.decode_levelscript_binary_summary",
+        "scripts.game_data.levelscript_binary.frame_levelscript_named",
         _levelscript,
     ),
     (
@@ -122,8 +120,8 @@ def render_decoded_payload(
     covers only part of a payload cannot be mistaken for a complete view of it.
 
     ``export_root`` names the export that holds ``rel_path``; its
-    ``game/Json/StringPool`` decides whether strings are pooled. Without it the
-    payload is read as inline-string, so a pooled payload renders as ``None``.
+    ``game/Json/StringPool`` supplies the selected pool. Each reader owns its
+    wire format and refuses any pooled index that requires an unavailable pool.
     """
 
     route = _route(rel_path)
@@ -142,7 +140,7 @@ def render_decoded_payload(
     if not isinstance(result, dict) or not result:
         return None
     consumed = result.get("bytesConsumed")
-    whole = isinstance(consumed, int) and consumed == len(data)
+    whole = type(consumed) is int and consumed == len(data) and result.get("schemaStatus") in {"exact", "named_exact"}
     coverage = "whole_file" if whole else "partial"
     read = (
         f"{consumed} of {len(data)} bytes read"

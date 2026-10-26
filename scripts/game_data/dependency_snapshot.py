@@ -163,6 +163,9 @@ def _literal_python_helpers(tree: ast.AST, source: Path) -> set[Path]:
     ``with_suffix`` and ``resolve``. Dynamic arguments remain outside this
     development snapshot rather than being guessed.
     """
+    if not any(isinstance(node, ast.Call) and len(node.args) >= 2
+               and _call_name(node).endswith("spec_from_file_location") for node in ast.walk(tree)):
+        return set()
     assignments: dict[str, list[ast.AST]] = {}
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign)):

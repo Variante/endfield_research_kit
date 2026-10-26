@@ -9,6 +9,7 @@ from scripts.common import resolve_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack import pooled_source_helper
 from scripts.game_data.string_pool import resolve_string_pool_index
+from scripts.game_data.il2cpp.protocol import canonical_type_name
 from scripts.game_data.levelscript_node_strings_native import CONTRACT as SOURCE_CONTRACT, SCHEMA as SOURCE_SCHEMA
 
 
@@ -19,7 +20,7 @@ def _profiles(raw, schema):
     if not isinstance(fact,dict) or (fact.get('schema'),fact.get('status'))!=(schema,status):
         raise ValueError('nodeString.source:contract-identity')
     pins=fact.get('nativeInputs',{})
-    typed=schema=='endfield.levelscript-route-deserialize-native.v2'
+    typed=schema in ('endfield.levelscript-route-deserialize-native.v2','endfield.levelscript-route-deserialize-native.v3','endfield.levelscript-route-deserialize-native.v4','endfield.levelscript-route-deserialize-native.v5','endfield.levelscript-route-deserialize-native.v6')
     if typed:
         if (not isinstance(pins,dict) or set(pins)!={'gameAssembly','metadata'}
                 or any(not isinstance(v,dict) or set(v)!={'sha256'} for v in pins.values())):
@@ -54,7 +55,7 @@ def _profiles(raw, schema):
             if typed and value.get('wrapperName') and isinstance(fields,list):
                 reads=value.get('readOrder',[])
                 if ([r.get('name') for r in reads]!=[f[0] for f in fields]
-                        or any(r.get('declaredType')!='string' for r,f in zip(reads,fields) if f[1]=='string')):
+                        or any(canonical_type_name(str(r.get('declaredType')))!=canonical_type_name('string') for r,f in zip(reads,fields) if f[1]=='string')):
                     raise ValueError('nodeString.source:typed-field-plan')
                 targets={r.get('readTargetRva') for r,f in zip(reads,fields) if f[1]=='string'}
                 if len(targets)!=1:raise ValueError('nodeString.source:typed-string-helper-count')

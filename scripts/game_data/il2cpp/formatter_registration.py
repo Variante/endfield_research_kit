@@ -13,6 +13,7 @@ from typing import Any
 
 from .formatter_composition import validate_typed_usage_context
 from .reference_layouts import NativeReferenceContext
+from .integer_source_operands import is_unknown_instruction
 
 
 def _rows(image: Any, window: dict, count: int, label: str) -> list[dict]:
@@ -25,7 +26,7 @@ def _rows(image: Any, window: dict, count: int, label: str) -> list[dict]:
     rows = image.mapper.decode_x64_subset(raw, start, stop_offset=len(raw))
     if (len(rows) != count or not rows or int(rows[0]['va'], 16) != start
             or int(rows[-1]['va'], 16) + len(bytes.fromhex(rows[-1]['bytes'])) != start + len(raw)
-            or any('db ' in row['text'] for row in rows)):
+            or any(is_unknown_instruction(row) for row in rows)):
         raise ValueError(f'{label}.native:complete-program={count}')
     return rows
 

@@ -1,20 +1,30 @@
 {
-  "schema": "endfield.story-native-consumers.v1",
+  "schema": "endfield.story-native-consumers.v7",
   "groups": {
     "npcProxyDialogSelection": {
-      "mappingId": "npc-proxy-dialog-selection-native-v1",
+      "mappingId": "npc-proxy-dialog-selection-native-v3",
       "methods": {
         "NpcInteractComponent._TryGetNpcProxyInteractDialogId": {
           "type": "Beyond.Gameplay.Core.NpcInteractComponent",
           "method": "_TryGetNpcProxyInteractDialogId",
-          "contract": "Selects exDatas[activeCondIndex - 1] for the interacting NPC's proxy and returns that row's dialogId; it does not consult MissionSystem.",
+          "contract": "On the original typed path, uses the stored zero-based m_activeCondIndex to select exDatas[m_activeCondIndex].dialogId and copy it to the incoming dialog output after present-count and nonnegative bounds checks. Live selection, playback and ordering remain separate.",
           "claims": [
             {
               "calls": [
                 "Beyond.Gameplay.Core.NpcProxyMgr.TryGetNpcProxyByNpcId",
-                "Beyond.Gameplay.Core.NpcProxy.get_activeCondIndex",
                 "System.Collections.Generic.List`1.get_Item"
               ]
+            },
+            {
+              "selectsProxyDialogByStoredOrdinal": {
+                "proxyIndex": "Beyond.Gameplay.Core.NpcProxy::m_activeCondIndex",
+                "dataField": "Beyond.Gameplay.Core.NpcInteractComponent::m_levelNpcData",
+                "rowsField": "Beyond.Gameplay.Core.NpcRuntimeProxyData::exDatas",
+                "dialogField": "Beyond.Gameplay.Core.NpcRuntimeProxyExData::dialogId",
+                "lookup": "Beyond.Gameplay.Core.NpcProxyMgr.TryGetNpcProxyByNpcId",
+                "npcIdGetter": "Beyond.Gameplay.Core.NpcInteractComponent.get_npcId",
+                "indexGetter": "Beyond.Gameplay.Core.NpcProxy.get_activeCondIndex"
+              }
             },
             {
               "notCallsPrefix": "Beyond.Gameplay.MissionSystem."
@@ -56,11 +66,35 @@
               ]
             }
           ]
+        },
+        "NpcProxy.ChangeActiveCondition": {
+          "type": "Beyond.Gameplay.Core.NpcProxy",
+          "method": "ChangeActiveCondition",
+          "contract": "The original path stores -1 for negative external inputs, otherwise incoming Int32 minus one, and passes the old and stored ordinals to its callback.",
+          "claims": [
+            {
+              "normalizesExternalProxyIndex": {
+                "field": "Beyond.Gameplay.Core.NpcProxy::m_activeCondIndex",
+                "callback": "Beyond.Gameplay.Core.NpcProxy._OnActiveConditionChanged"
+              }
+            }
+          ]
         }
+      },
+      "fields": [
+        "Beyond.Gameplay.Core.NpcProxy::m_activeCondIndex",
+        "Beyond.Gameplay.Core.NpcInteractComponent::m_levelNpcData",
+        "Beyond.Gameplay.Core.NpcRuntimeProxyData::exDatas",
+        "Beyond.Gameplay.Core.NpcRuntimeProxyExData::dialogId"
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed current fields, original getter return, complete owned ordinary control and exact selected list/cast transfer programs.",
+        "conditional": "Original paths, ordinary compatible callees and typed stable disjoint runtime storage. External input is converted once before the stored zero-based selection.",
+        "unresolved": "Live server state, replacement code, exceptional/resumption behavior, playback, mission ownership and Story chronology."
       }
     },
     "dialogTreeTrunkPlayback": {
-      "mappingId": "gameassembly-2026-07-11-dialog-tree-trunk-playback-v1",
+      "mappingId": "dialog-trunk-owned-handle-reference-flow-v2",
       "methods": {
         "DTTrunkNodeData.get_trunkId": {
           "type": "Beyond.Gameplay.DTTrunkNodeData",
@@ -101,12 +135,14 @@
         "DialogManager.PlayTrunkNode": {
           "type": "Beyond.Gameplay.Core.DialogManager",
           "method": "PlayTrunkNode",
-          "contract": "Starts the main-flow trunk playback.",
+          "contract": "On the ordinary original path, typed incoming trunk/extra references and this manager reach MainFlowHandle construction; the same constructor-receiver bits are stored in this manager handle field before this manager receives _DoPlayMainFlow. Complete owned control and constructor/store dominance are checked. Correctly typed returning callees and stable disjoint storage are conditional; allocator internals, opaque effects, IFix replacements and runtime playback remain separate.",
           "claims": [
             {
-              "calls": [
-                "Beyond.Gameplay.Core.DialogManager._DoPlayTrunk"
-              ]
+              "constructsStoresReferenceHandleBeforeCall": {
+                "constructorType": "Beyond.Gameplay.Core.DialogManager+MainFlowHandle",
+                "field": "Beyond.Gameplay.Core.DialogManager::m_mainFlowHandle",
+                "playMethod": "Beyond.Gameplay.Core.DialogManager._DoPlayMainFlow"
+              }
             }
           ]
         }
@@ -131,7 +167,7 @@
       }
     },
     "cutsceneRootDirectorPlayback": {
-      "mappingId": "gameassembly-2026-07-28-cutscene-root-director-playback-v1",
+      "mappingId": "cutscene-root-director-owned-reference-return-v2",
       "fields": [
         "Beyond.Gameplay.View.CutsceneRootComponent::_director",
         "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::root"
@@ -150,15 +186,16 @@
         "TimelineHandle.get_director": {
           "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle",
           "method": "get_director",
-          "contract": "reads the handle's root and returns its top director",
+          "contract": "On the original ordinary path, a false UnityEngine.Object.op_Equality guard returns the current handle.root._director reference through the matching frame restore; a true guard returns null. IFix replacement results and runtime execution are separate.",
           "claims": [
             {
-              "readsField": "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::root"
-            },
-            {
-              "calls": [
-                "Beyond.Gameplay.View.CutsceneRootComponent.get_topDirector"
-              ]
+              "returnsReferenceChainAfterFalseCall": {
+                "guard": "UnityEngine.Object.op_Equality",
+                "fields": [
+                  "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::root",
+                  "Beyond.Gameplay.View.CutsceneRootComponent::_director"
+                ]
+              }
             }
           ]
         },
@@ -203,7 +240,7 @@
       }
     },
     "dialogTreeIfNextIndex": {
-      "mappingId": "gameassembly-2026-08-02-dialog-tree-if-next-index-v1",
+      "mappingId": "dialog-if-owned-int32-field-equality-return-v2",
       "methods": {
         "DialogTreeIfNode.GetNextIndex": {
           "type": "Beyond.Gameplay.DialogTreeIfNode",
@@ -220,19 +257,14 @@
         "DialogManager.GetIfNextIndex": {
           "type": "Beyond.Gameplay.Core.DialogManager",
           "method": "GetIfNextIndex",
-          "contract": "returns outgoing index 1 exactly when GameCondition.result equals 1",
+          "contract": "On the ordinary original path after the same condition activation returns, its typed Int32 result field read becomes outgoing index one exactly for ConditionResult.True, otherwise zero. Saved-value and frame preservation are checked; IFix replacement results and runtime execution remain separate.",
           "claims": [
             {
-              "calls": [
-                "Beyond.Gameplay.GameCondition.Activate",
-                "Beyond.Gameplay.GameCondition.get_result"
-              ],
-              "ordered": true
-            },
-            {
-              "comparesResult": {
-                "call": "Beyond.Gameplay.GameCondition.get_result",
-                "value": 1
+              "returnsArgumentFieldEqualityAfterCall": {
+                "parameter": "condition",
+                "field": "Beyond.Gameplay.GameCondition::m_result",
+                "enumMember": "True",
+                "activation": "Beyond.Gameplay.GameCondition.Activate"
               }
             }
           ]
@@ -252,9 +284,10 @@
       }
     },
     "dialogTreeBranchNextIndex": {
-      "mappingId": "gameassembly-2026-08-02-dialog-tree-branch-next-index-v1",
+      "mappingId": "dialog-tree-first-true-or-null-native-v2",
       "fields": [
-        "Beyond.Gameplay.DialogBranchData::conditions"
+        "Beyond.Gameplay.DialogBranchData::conditions",
+        "Beyond.Gameplay.GameCondition::m_result"
       ],
       "methods": {
         "DialogTreeBranchNode.GetNextIndex": {
@@ -284,21 +317,14 @@
         "DialogManager.GetBranchNextIndex": {
           "type": "Beyond.Gameplay.Core.DialogManager",
           "method": "GetBranchNextIndex",
-          "contract": "iterates DialogBranchData.conditions and returns the first condition ordinal with GameCondition.result == 1, else 0",
+          "contract": "Under original ordinary code and valid stable declared list/count/item storage, selects the first null condition or post-activation True result; no selection returns ordinal zero. Live interface/generic binding, IFix, exception/resumption and actual selection remain separate.",
           "claims": [
             {
-              "readsField": "Beyond.Gameplay.DialogBranchData::conditions"
-            },
-            {
-              "calls": [
-                "Beyond.Gameplay.GameCondition.Activate",
-                "Beyond.Gameplay.GameCondition.get_result"
-              ]
-            },
-            {
-              "comparesResult": {
-                "call": "Beyond.Gameplay.GameCondition.get_result",
-                "value": 1
+              "selectsFirstTrueOrNullDialogCondition": {
+                "conditionsField": "Beyond.Gameplay.DialogBranchData::conditions",
+                "resultField": "Beyond.Gameplay.GameCondition::m_result",
+                "resultGetter": "Beyond.Gameplay.GameCondition.get_result",
+                "activateMethod": "Beyond.Gameplay.GameCondition.Activate"
               }
             }
           ]
@@ -488,14 +514,14 @@
       }
     },
     "protocolEventPaths": {
-      "mappingId": "protocol-registry-native-event-paths-v1",
+      "mappingId": "protocol-registry-native-event-paths-v2",
       "fields": [
-        "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::missionId_",
-        "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::eventName_",
-        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::sceneNumId_",
-        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::scriptId_",
-        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::eventName_",
-        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::ctxToken_"
+        "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::<MissionId>k__BackingField",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::<EventName>k__BackingField",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<SceneNumId>k__BackingField",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<ScriptId>k__BackingField",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<EventName>k__BackingField",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<CtxToken>k__BackingField"
       ],
       "methods": {
         "MissionSystem.Handle_ClientMissionEvent": {
@@ -504,10 +530,10 @@
           "contract": "reads missionId/eventName, interns the pair through KeyGenerator<T1,T2>.GetKey, and publishes it with EventManager.SendGlobal",
           "claims": [
             {
-              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::missionId_"
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::<MissionId>k__BackingField"
             },
             {
-              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::eventName_"
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::<EventName>k__BackingField"
             },
             {
               "calls": [
@@ -524,13 +550,13 @@
           "contract": "stores a non-empty ctxToken in the event ParamBlackboard, then raises eventName through LevelEventManager.RaiseScriptEvent",
           "claims": [
             {
-              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::scriptId_"
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<ScriptId>k__BackingField"
             },
             {
-              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::eventName_"
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<EventName>k__BackingField"
             },
             {
-              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::ctxToken_"
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::<CtxToken>k__BackingField"
             },
             {
               "calls": [
@@ -557,12 +583,15 @@
         "GameplayNetwork.TriggerLevelScriptServerEvent": {
           "type": "Beyond.Gameplay.GameplayNetwork",
           "method": "TriggerLevelScriptServerEvent",
-          "contract": "copies netToken into CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.CtxToken",
+          "contract": "Under matching initialized closed factory MethodInfo and ordinary declared generic reference return, the incoming netToken stack reference reaches the allocated message CtxToken field through the inline store. Factory internals and actual runtime receiver/delivery remain unobserved.",
           "claims": [
             {
-              "calls": [
-                "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken"
-              ]
+              "storesStackParameterInTypedFactoryField": {
+                "field": "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER::<CtxToken>k__BackingField",
+                "fromParameter": "netToken",
+                "allocatorType": "Proto.ProtoBufFactory",
+                "allocatorMethod": "Allocate"
+              }
             }
           ]
         },
@@ -714,6 +743,7 @@
     "NpcManager.AddOverrideInteractDialogId": "Beyond.Gameplay.Core.NpcManager.AddOverrideInteractDialogId",
     "NpcProxy.OnDeActive": "Beyond.Gameplay.Core.NpcProxy.OnDeActive",
     "NpcProxy._IsMissionConflict": "Beyond.Gameplay.Core.NpcProxy._IsMissionConflict",
+    "NpcProxy.get_activeCondIndex": "Beyond.Gameplay.Core.NpcProxy.get_activeCondIndex",
     "NpcProxyMgr.ApplyLazyDestroyData": "Beyond.Gameplay.Core.NpcProxyMgr.ApplyLazyDestroyData",
     "NpcProxyTrackingInfo.GetTargetPos": "Beyond.Gameplay.NpcProxyTrackingInfo.GetTargetPos",
     "OnScriptStageChanged": "Beyond.Gameplay.Core.LevelScriptRuntime.OnScriptStageChanged",

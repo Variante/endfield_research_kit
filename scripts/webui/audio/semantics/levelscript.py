@@ -699,9 +699,9 @@ def collect_levelscript_audio_semantics(
         }
 
         def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
-            records = extract_levelscript_uid_records(data)
+            records = extract_levelscript_uid_records(data, source_path=_path)
             _action_map, memberships = levelscript_action_map_membership(data, records)
-            topology, topology_diagnostic = decode_levelscript_native_action_topology(data)
+            topology, topology_diagnostic = decode_levelscript_native_action_topology(data, source_path=_path)
             rows: list[dict[str, Any]] = []
             string_list_getters: dict[int, dict[str, Any]] = {}
             target_count = 0

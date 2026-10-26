@@ -25,6 +25,7 @@
   const text = (en, zh) => window.WEBUI_UI_LOCALE === "en" ? en : zh;
   function sync(binding) {
     const { source, category, order: direction, pairs } = binding;
+    if (!source.isConnected) return;
     const groups = [];
     for (const option of source.options) {
       if (option.hidden) continue;

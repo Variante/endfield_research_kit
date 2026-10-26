@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
@@ -168,6 +167,22 @@ def boolean_source(image: Any, record: dict[str, Any], offsets: dict[str, int], 
         need(label,'guardOpcode',opcode,raw[:2]);need(label,'guardSize',6,len(raw))
         target=rva+6+int.from_bytes(raw[2:],'little',signed=True)
         need(label,'coldGuardOutsideBufferedProgram',False,record['window']['startRva']<=target<record['window']['endRva'])
+
+
+
+def raw_byte_source(image,record,offsets):
+    label='unmanagedByte';cur,rem,adv,used=(offsets[k] for k in ('currentPtr','bufferLength','advancedCount','consumed'))
+    expected=[b'\x48\x89\x5c\x24\x08',b'\x48\x89\x74\x24\x10',b'\x57',b'\x48\x83\xec\x20',b'\x83\x79'+bytes((rem,1)),b'\x48\x8b\xd9',None,
+        b'\x48\x8b\x43'+bytes((cur,)),b'\x0f\xb6\x30',b'\x8b\x7b'+bytes((rem,)),b'\x83\xef\x01',None,b'\x48\xff\x43'+bytes((cur,)),
+        b'\xff\x43'+bytes((adv,)),b'\xff\x43'+bytes((used,)),b'\x89\x7b'+bytes((rem,)),b'\x48\x8b\x5c\x24\x30',b'\x40\x0f\xb6\xc6',
+        b'\x48\x8b\x74\x24\x38',b'\x48\x83\xc4\x20',b'\x5f',b'\xc3']
+    image.check_windows([record['window']],label=label);program_extent(record['instructions'],record['window'],label);program(image,record['instructions'],expected,label)
+    for i,prefix in ((6,b'\x0f\x8c'),(11,b'\x0f\x88')):
+        at,raw=record['instructions'][i];raw=bytes.fromhex(raw)
+        need(label,'cold guard',(6,prefix),(len(raw),raw[:2]))
+        target=at+6+int.from_bytes(raw[2:],'little',signed=True)
+        need(label,'cold guard outside buffered program',False,record['window']['startRva']<=target<record['window']['endRva'])
+    return dict(bufferedWireBytes=1,unsignedBytePreserved=True,condition='Sufficient contiguous input and disjoint selected reader/storage. Cold refill/failure effects and the owning formatter/provider remain separate.')
 
 
 def uint64_source(image: Any, source: dict[str, Any], offsets: dict[str, int]) -> None:
@@ -377,10 +392,7 @@ def validate(path: Path, *, schema: str, type_name: str, codec_kind: str, game_r
         strings = pooled_source_helper.validate_current_native_contract(gameassembly=gate.gameassembly, metadata=gate.metadata)
         if strings.get("status") != "validated":
             return {"status": strings.get("status"), "detail": strings.get("detail"), "dependency": "pooledStringSource"}
-        # Cache only the expensive composition, after the selected-input gate.
-        # Declarations are a value key, not a pinned tracked-file digest.
-        result = _cached_composition(gate.gameassembly, gate.metadata,
-            json.dumps(contract, sort_keys=True), json.dumps(strings, sort_keys=True), prove_source, label)
+        result = _composition(open_native_image(gate.gameassembly, gate.metadata), contract, strings, prove_source, label)
         after = check_installed_native_inputs(pins["GameAssembly.dll"], pins["global-metadata.dat"], gameassembly=gate.gameassembly, metadata=gate.metadata)
         if after.status != "validated":
             return {"status": after.status, "detail": after.detail, "nativeInputs": pins}
@@ -389,13 +401,6 @@ def validate(path: Path, *, schema: str, type_name: str, codec_kind: str, game_r
         return {"status": "validated", "nativeInputs": pins, **result}
     except (ValueError, KeyError, OSError, IndexError, StopIteration, struct.error, TypeError) as exc:
         return native_validation_failure(exc,label=label,source_path=path)
-
-
-@lru_cache(maxsize=8)
-def _cached_composition(gameassembly: Path, metadata: Path, declaration: str,
-                        string_declaration: str, prove_source: Callable, label: str) -> dict[str, Any]:
-    image = open_native_image(gameassembly, metadata)
-    return _composition(image, json.loads(declaration), json.loads(string_declaration), prove_source, label)
 
 
 def _composition(image: Any, contract: dict[str, Any], strings: dict[str, Any], prove_source: Callable, label: str) -> dict[str, Any]:

@@ -18,6 +18,13 @@ The tree follows the same split: two lines of work, each mirroring one memory
 axis. A path appears under exactly one owner; each module's docstring states
 the rest.
 
+`game_data/endminf_particle_matrix_native.py` is the selected-build loader for
+the reviewed particle getter/matrix code families and raw-backed constants;
+`game_data/endminf_particle_quad_native.py` extends that selected-build gate to
+complete size/getter families and bounded quad stages. The Lab's offline
+numeric consumer owns its report and does not publish WebUI
+data through this package.
+
 | Line | Path | Responsibility |
 | --- | --- | --- |
 | **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, `scope.py` (the structured-block and Unity-class vocabulary an export selects), the freshness guard with its per-output provenance, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
@@ -39,6 +46,7 @@ the rest.
 | | `webui/gameplay/items/` | Gameplay Items, buildings and recipes; `gameplay/gameplay_refs.py` and `gameplay/factory_models.py` own Gameplay-to-Assets joins, retaining the existing `data/assets/gameplay_refs.json` output |
 | | `webui/audio/semantics/` | Audio's reusable evidence owners (see *Audio decode, indexing and semantics*), including `conversation_sidecar.py` (the per-conversation Story sidecars the Story page merges), `decoded_payload_event_names.py` and `runtime_capture_import.py` (validates one bounded saved audio session) |
 | | `webui/recovery/` | the debug-only Recovery page: `build_recovery.py` plus `recovery_declarations.json` (reviewed enum names, family rules, per-type entries and evidence text); reads reports, asset maps, the VFS index and `memory/game_data/README.md`'s level table; `jsondata_stages.py` authenticates the optional current registry and checks exact path-partitioned L2 declarations before publication |
+| | `webui/localization.py` | shared language-specific hotfixes for semantic page text and Updates comparisons; preserves raw tables |
 | | `webui/decoded_payloads.py` | export-relative path to the `game_data` reader that owns it, rendered as diffable text |
 | **Shared** | `common.py`, `source_paths.py`, `repo_paths.py` | helpers used by both lines; `repo_paths.REPO_ROOT` is the only repo-root anchor |
 | **Tests** | `tests/` | stdlib `unittest`, untracked, run by explicit module path |
@@ -351,9 +359,10 @@ Lua consumer index and the installed-build-gated
 `game_data/contracts/cinematic_queue.json`; the full native carrier report is
 not a production input. Story extraction omits Lua; Data and all-page extraction
 include it. Refresh the index only from a complete plaintext-Lua extraction.
-Task RVAs, message
-IDs and field offsets have one source, `game_data/contracts/mission_task_paths.json`,
-read by the protocol registry and validated by the mission hook manifest.
+Task-hook declarations live in `game_data/contracts/mission_task_paths.json`.
+Its loader re-proves named claims and typed storage on the selected binaries;
+the protocol registry publishes the resulting current method identities and
+explicit capture limits. The contract carries no old address catalog.
 
 Work in small validated batches (AGENTS.md, *Mission Recovery Edit-Loop
 Policy*); a direct Story build takes several minutes, so allow at least 15 for
@@ -857,6 +866,11 @@ docstring (its `--help` text) names the flags it takes and its default report.
 | `--limit`, `--max-files` | bounded diagnostics only; output belongs in `tmp/` or `scratch/` and never certifies a corpus |
 | `--output`, `--out`, `--report`, `--output-json`/`--output-md` | report path; defaults live in the module |
 
+`levelscript_source_receipts.py` binds source replays to the complete reader,
+selected native inputs and matching StringPool receipts before and after reading.
+Plain replays share its exact-span loop; domain and script-ID checks stay with
+their validators. Unproved direct EntityPtr/LevelScriptPtr interpretations refuse.
+
 The chain starts with the bundle-free VFS audit, which returns non-zero for
 any missing or unauthenticated declaration while still publishing its ledger:
 
@@ -929,8 +943,7 @@ are under `reports/animestudio/` unless another directory is shown.
 | `levelscript_receipt_compare` | compares two saved complete family receipts with `--before`/`--after` and required artifact SHA256s; identical audit input sets by default, or explicit `--allow-audit-run-change`; every source and selected-native identity, decoded EOF and no-regression gate still applies | v2 stdout comparison, optional `--output` under `reports/`; records both audit identities, rejects input aliases and other owners, preserves output on failure, and never claims current inputs or partial cursor progress |
 | `damage_snapshot_consumer_native` | re-proves snapshot consumer, cache construction, request/store/getter/reset paths, selected named numerical rules and bounded control graphs; `--gameassembly`/`--metadata` select inputs, `--output` selects an ignored report path; every nonvalidated result preserves it | `reports/game_data/damage_snapshot_consumers_native.json`; separate `.diagnostics.json` for native/source refusals, pending claims and tooling failures |
 | `damage_pack_scale_native` | authenticates conditional zone, modifier, formula, immunity/tag, shield, base-HP and part-transfer rules; `--gameassembly`/`--metadata` select inputs, `--output` selects an ignored report; optional `--export-root` plus `--game-root` projects the fresh stored zone config (`--zone-config` selects a document). Runtime selection and final output parity remain separate | `reports/game_data/damage_pack_scale_native.json` |
-| `levelscript_on_squad_member_usp_native` | `--game-root` or explicit `--gameassembly`/`--metadata`: authenticate parent typed reads and isolated child grammars; shared provider selection remains unresolved and the canonical owner refuses positive headers | CLI audit only; direct outer-wrapper null branch is supported |
-| `levelscript_pos_rot_native` | `--game-root`: authenticate PosRot order, complete buffered Vector3 source/forwarder programs and before/after native inputs; the current parent list/provider join remains unresolved | CLI audit only; no positive-list admission |
+| `levelscript_pos_rot_native` | `--game-root`: authenticate selected current PosRot value, pooled Param, list capacity/store and typed adapter/provider transfers | CLI audit; runtime camera/provider selection and owner EOF remain separate |
 | `levelscript_spline_ptr_native` | `--contract`, selected `--game-root` or explicit native pair: authenticates the current stored `Param<SplinePtr>`, four-byte ID/cursor, owned stores and pooled path | stdout audit only; parent movement and complete owner require separate validation |
 | `levelscript_{gameplay_tag_param,water_volume_ptr_param}_native` | optional `--game-root`/`--contract`: authenticate actual four/eight-byte scalar sources, cursor updates, typed wrapper methods and selected allocation/store paths; shared proof primitives live in `memorypack.scalar_param_native` | stdout audit only; registered generic entries, actual caller targets, parent read order and complete owner are checked separately |
 | `levelscript_environment_volume_ptr_param_native` | optional `--game-root`/`--contract` or explicit `--gameassembly`/`--metadata`: authenticate the independent raw UInt64 child and pooled path with the shared scalar proof | stdout audit only; EnvironmentEnable parent admission remains separate |
@@ -944,6 +957,11 @@ are under `reports/animestudio/` unless another directory is shown.
 | `levelscript_vector2_param_native` | same selected-input flags: authenticate Vector2 Param's typed context, packed XY return, SIMD restores and matching owned setter | stdout audit only; parent/list/default selection and owner admission are separate |
 | `levelscript_param_output_native` | same selected-input flags and optional `--codec-kind`: authenticate closed output wrappers, raw Int32 target, pooled path, complete caller variants and owned null exits | stdout audit only; no serialized T value, live/default provider selection or owner admission |
 | `levelscript_enum_param_native` | same selected-input flags: authenticate the reviewed closed enum Param catalog, signed Int32 backing, typed ReadUnmanaged context, complete caller/null program, owned setters and pooled path | stdout audit only; unknown enum components refuse, and parent/default selection and owner admission remain separate |
+| `levelscript_byte_enum_param_native` | same selected-input flags: authenticate the reviewed unsigned-byte enum Param component, raw byte source, typed four-field caller/setters and pooled path | stdout audit only; byte values remain intact, and parent/default selection and owner admission remain separate |
+| `levelscript_camera_target_param_native` | same selected-input flags: authenticate the initialized buffered target-enum Param, raw Int32/source/path reads, owned stores, factories/getter and bitmap marking branches | stdout audit only; cold initialization/refill, live provider selection and enclosing camera owner remain separate |
+| `levelscript_area_rule_native` | internal library used by the protocol registry with an explicit selected NativeImage, actual/named targets and typed empty-exit witness; the scalar buffer, outer-branch and geometry relation tools live under `il2cpp/` | authenticated conditional original initialized rule only; finite Euler inputs, original icall caches and explicit override/storage/FP premises stay in the projection |
+| `levelscript_script_ptr_param_native` | optional `--game-root`/`--contract` or explicit `--gameassembly`/`--metadata`: authenticate the current raw16 LevelScriptPtr Param source, owned stores, reference factories/getter, concrete registration and pooled tail | stdout audit only; stored ID/level/padding do not establish effective script resolution, live providers or enclosing owners |
+| `levelscript_null_param_native` | same selected-input flags: authenticate reviewed one-byte null class-Param branches and reference getters | stdout audit only; positive values, generic provider selection and owner admission remain separate |
 | `levelscript_long_param_native` | optional `--game-root`/`--contract` or explicit `--gameassembly`/`--metadata`: authenticate the buffered eight-byte source, signed Int64 ABI and four-field Param composition with a separately proved pooled path | stdout audit only; selected native pair and pooled source are rechecked outside the cache; parent routes and physical owner EOF require separate proofs |
 | `levelscript_param_value_native` | required `--gameassembly`/`--metadata`, optional `--contract`/`--output`: authenticate selected closed Int32 evaluator entries, actual caller targets, explicit byref constant copy and generated typed wrapper slots | stdout audit, optional report under `reports/`; source/native gates clear rows on failure and preserve publication; runtime receiver/provider choice and stored-codec integration remain conditional or unresolved |
 | `levelscript_long_param_value_native` | required `--gameassembly`/`--metadata`, optional `--contract`/`--output`: evaluate qualified named Int64 consumer claims, closed registered entries, selected full-width caller/constant transfers and generated setter view; declared types and named registration/wrapper logic live in `levelscript_param_types` and `levelscript_param_value_bridge` | stdout audit, optional report under `reports/`; changed claims are `pendingReview`, native/source refusals clear rows and preserve publication; runtime selection and stored cursor/evaluator integration remain separate |
@@ -956,6 +974,7 @@ are under `reports/animestudio/` unless another directory is shown.
 | `lipsync_native`; `memorypack.lipsync_corpus --expected-input-set-sha256 SHA` | Re-prove the selected channel reader with `--regenerate --write`, then join available JsonData/JsonLip language identities and require strict EOF; wholly absent languages remain explicit exclusions | native stdout audit; `reports/animestudio/lipsync_current_latest.{json,md}` |
 | `spawner_records_native [--regenerate --write]` | Validate the selected Spawner root read/setter order, typed contexts, pooled strings and Boolean leaves; declaration drift refuses regeneration | `reports/game_data/spawner_record_sources_native.json`; source facts do not establish runtime spawning or collection-provider selection |
 | `serialization_roots_native [--regenerate --write]` | Validate world-root declarations/counts, preserved source arguments, risk/world-list joins, pooled LevelScript template path and LevelData scene ID | `reports/game_data/serialization_roots_native.json`; positive list/property children and whole-owner admission remain separate |
+| `char_interact_perform_actor_native.validate_current_native_contract(...)` (Python API) | Validate the selected actor source contract, typed fields, source/store instructions and owned code/table windows; accepts explicit `gameassembly` and `metadata` paths | Returns actor facts only after before/after native gates; missing or mismatched inputs return no fields; enclosing-owner admission stays false |
 | `leveldata_function_area_native [--regenerate --write]` | Validate the current base additions, factory-hide read/setter order, typed sources and enum storage | `reports/game_data/leveldata_function_area_native.json`; stored configuration does not establish runtime visibility |
 | `leveldata_airwalls_native [--regenerate --write]` | Validate air-wall declarations/counts and pooled radio/effect/mission-ID sources, including the mission-ID setter transfer | `reports/game_data/leveldata_airwalls_native.json`; callback consumers and collector behavior remain separate |
 | `levelscript_node_strings_native [--regenerate --write]` | Prove reviewed node UID prefixes, primitive sources and pooled-string setter transfers | `reports/game_data/levelscript_node_strings_native.json`; other fields and whole owners remain separate |
@@ -1174,12 +1193,12 @@ After one route changes, `python -m scripts.game_data.levelscript_targeted_repla
 
 | Kind | Modules (`levelscript_*_native`) |
 | --- | --- |
-| Shared camera fields | `camera_look_at` (camera layouts and the typed `CameraBlendCurveKey` reader; `--game-root`, stdout native audit) |
+| Shared camera fields | `route_deserialize --contract scripts/game_data/contracts/levelscript_camera_look_at_fields_native.json` (parent fields), `curve_key_param` (pooled key), `camera_initial_param` (managed raw24), `camera_state_param` (null reference constant); child gates authenticate pooled bindings and selected native/Unity inputs |
 | ActionBase actions | `add_buffs_to_target_selves`, `add_tracking_point`, `tracking_point`, `remove_tracking_point`, `archery_stage`, `typhoea_chip_id`, `audio_cue`, `block_auto_music_change_cancel`, `block_battle_music`, `bool_compare`, `building_pos_hint_show`, `building_pos_hint_hide`, `cutscene_teleport`, `enemy_patrol_start`, `entities_visibility`, `environment_enable`, `event_args_float`, `fac_build_effect`, `fac_change_building`, `fac_get_building_position`, `fac_guide_hint_enable`, `fac_set_interact_locked_state`, `fac_top_view_range`, `finish_buffs`, `finish_scene_effect`, `is_look_at_point_in_screen`, `list_add_value_entity_ptr`, `manually_stop_guide`, `mark_task_condition_failed`, `npc_effect`, `npc_stop_cur_montage`, `npc_proxy_effect`, `npc_proxy_patrol_stop`, `override_npc_dialog`, `play_voice_narrative`, `post_audio_status`, `stop_radio`, `require_settlement_show`, `settlement_followon`, `settlement_upgrade_show`, `reset_follow_camera`, `resume_spawner`, `scripted_char_teleport_to`, `scripted_char_patrol_start`, `stop_char_scripted_mode`, `send_lua_event1`, `set_enemy_ui_show_range`, `set_fac_mode`, `set_forbid_map_teleport`, `set_list_buff`, `show_chapter_completed_panel`, `show_chapter_panel_direct`, `show_finish_toast`, `show_start_toast`, `start_seq_loop`, `start_subgame_countdown`, `stop_subgame_countdown_by_handle`, `start_track_camera`, `exit_camera`, `switch_to_camera`, `track_camera`, `toggle_clear_screen_but_radio_v2`, `toggle_main_hud_ignore`, `set_squad_special_idle_enable`, `set_squad_enable_relax_idle`, `character_play_montage`, `set_decoration_animator_int`, `set_decoration_view_state`, `entity_move_to_with_speed`, `move_bamboo_last`, `set_bamboo_pos_index`, `start_fmv_and_teleport`, `start_narrative_black_screen_teleport`, `disable_hud_fade`, `start_cutscene_hide_scene_object`, `start_cutscene_control_scene_object`, `stop_effect_on_npc_proxy`, `set_main_char_hp_bar_active`, `destroy_ability_entity`, `teleport_gameplay_npc`, `apply_movement_setting_modifier`, `toggle_ui_dev_only`, `set_squad_icon_active`, `skip_entity_die_display`, `water_height` |
 | ActionHeader events | `header` (snapshot enter/leave), `entity_hp_changed`, `entity_scanned`, `squad_fight_header`, `squad_all_die_header`, `mission_changed_header`, `leader_enter_trigger_volume`, `on_leader_enter_trigger_volume_list`, `on_spawner_entity_spawn`, `on_spawner_group_begin`, `on_spawner_group_complete`, `on_spawner_start`, `on_spawner_wave_begin`, `on_spawner_pause`, `on_spawner_entity_die`, `on_entity_die`, `on_encounter_intro_part_end`, `on_npc_dirty_block_cleaned`, `on_server_dialog_exit`, `on_level_reset`, `on_specific_entity_die`, `on_specific_entity_list_die`, `on_script_pre_start`, `on_client_global_var_changed`, `on_sub_game_start`, `on_npc_patrol_checkpoint_reach`, `on_physical_no_guard`, `on_physical_infliction`, `on_any_entity_die`, `on_any_enemy_poise_zero`, `on_any_enemy_poise_knot_break`, `on_aether_lock_endpoint_scanned`, `on_blight_miasma_weak_guide`, `on_cutscene_exit`, `on_bb_variable_changed`, `on_start_script_controlled_char_mode`, `on_encounter_activated`, `on_encounter_battle_part_begin`, `on_encounter_battle_part_end`, `on_entity_cast_skill`, `on_spell_abnormal_start`, `settlement_ready_performance`, `archery_advanced_headers`, `on_train_level_event`, `on_enemy_take_last_attack_damage`, `on_spell_infliction`, `on_map_var_changed` (OnMapVarChanged), `on_enemy_in_fight` (OnEnemyInFight) |
 | PureGetter getters | `getter_int`, `getter_compare`, `getter_entity_ptr`, `getter_levelscript_ptr`, `getter_list_buff`, `get_cur_squad_all_dead`, `get_character_template_id`, `float_getter_int_to_float`, `float_getter_plus`, `get_interactive_property_int`, `get_mission_save_property_int`, `bool_getter_mult_or`, `npc_get_pack_anim_has_clean`, `get_script_task_objective_is_completed`, `is_endmin_gender`, `entity_to_string`, `get_mission_state`, `get_is_leader_in_trigger_volume`, `check_performance_ready`, `list_make_entity_ptr` |
 | GameCondition (`taskMap`) | `taskmap_condition`, `taskmap_followon`, `taskmap_submit`, `taskmap_archery`, `check_game_inst_start_duration`, `check_fac_linking_mode`, `encounter_opera_segments`; `task_condition` is a loader |
-| Claims and aggregates | `audio_cue_execute` (build-independent `SetAudioCueVar.Execute` body claims; `--game-root`, `--output`), `route_deserialize` (`--report`), `two_routes` and `param_list` (loaders) |
+| Claims and aggregates | `audio_cue_execute` (build-independent `SetAudioCueVar.Execute` body claims; `--game-root`, `--output`), `route_deserialize` (`--report`), `two_routes` (loader), `param_list` (current pooled graph native audit; shared sequence/template codec) |
 
 Most take `--game-root` and the three source-replay flags. `entity_scanned`
 and `track_camera` take no `--summary`. `header`, `getter_*`,
@@ -1187,6 +1206,11 @@ and `track_camera` take no `--summary`. `header`, `getter_*`,
 `post_audio_status`, `set_fac_mode`, `start_seq_loop` and `water_height` take
 no options: they print their native audit (some replay default paths) and
 their `validate_*` function accepts explicit paths.
+
+`track_camera` authenticates the current parent read/store component and
+move-state declarations. It accepts an explicit `--gameassembly`/`--metadata`
+pair; source replay remains refused until the current child composition is
+proved. Its old owner spans are not reused.
 
 `levelscript_union_layouts` derives every union layout from `tools/DummyDll`
 (through `dummydll_metadata`, the stdlib ECMA-335 reader), gates on
@@ -1268,10 +1292,14 @@ per-contract refusals in its report. Source cursor receipts are separately gated
 String target resolution also accepts the reviewed pooled-index reader only
 when its native-input pins, named extension method and complete code windows
 validate against `memorypack_pooled_string_reader_native.json`.
-Reviewed type comparisons expand only fixed C# aliases. Anonymous `ReadValue`
-and `ReadArray` targets require the exact build, registered generic equivalent,
+The pooled helper's Python API also accepts `wrapper`/`field` for its reviewed
+inline sources; explicit selected native paths are required, and a passing
+field component never admits its enclosing owner.
+Reviewed type comparisons expand only fixed C# aliases. Anonymous `ReadValue`,
+`ReadArray` and `ReadPackable` targets require the exact build, registered generic equivalent,
 complete body/fragment windows and instruction proof in
-`memorypack_reader_clones_native.json`; the typed context must name the same reader.
+`memorypack_reader_clones_native.json`; the typed context must name the same reader
+and the reference-return, hidden-output16 or hidden-output40 ABI must match.
 Saved argument roles and inlined stores use the maintained instruction readers;
 unknown bytes, changed fields and unproved transfers still refuse publication.
 Grouped single-Param routes also require a consistent switch and shared helpers.

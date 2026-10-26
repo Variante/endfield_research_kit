@@ -7911,6 +7911,283 @@
       ]
     },
     {
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_CallServerViaTemplateForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "finishIdParam",
+          "Param<int>"
+        ],
+        [
+          "interactiveOpType",
+          "Param<SP_INTERACTIVE_OP_TYPE>"
+        ],
+        [
+          "targetEntity",
+          "Param<EntityPtr>"
+        ],
+        [
+          "targetState",
+          "Param<int>"
+        ]
+      ],
+      "nativeDeclaredTypes": [
+        [
+          "_dontLogWarning",
+          "bool"
+        ],
+        [
+          "_ID",
+          "int"
+        ],
+        [
+          "_releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "_uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "Beyond.GEnums.ScopeName"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "_nextID",
+          "int"
+        ],
+        [
+          "finishIdParam",
+          "Beyond.Gameplay.Actions.Param`1<int>"
+        ],
+        [
+          "interactiveOpType",
+          "Beyond.Gameplay.Actions.Param`1<Proto.SP_INTERACTIVE_OP_TYPE>"
+        ],
+        [
+          "targetEntity",
+          "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+        ],
+        [
+          "targetState",
+          "Beyond.Gameplay.Actions.Param`1<int>"
+        ]
+      ],
+      "stringFields": [
+        [
+          "uid",
+          "_uid"
+        ]
+      ],
+      "method": [
+        285338,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_CallServerViaTemplateForMemoryPack",
+        "Deserialize",
+        94564912
+      ],
+      "stringSources": [
+        {
+          "field": "uid",
+          "source": {
+            "field": "_uid",
+            "fieldOffset": 24,
+            "readerArgument": "rdi",
+            "wrapperArgument": "rbx",
+            "callRva": 94565157,
+            "targetRva": 85929408,
+            "setter": [
+              268357,
+              "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+              "set____uid__",
+              85897088
+            ],
+            "setterCallRva": 94565180,
+            "setterWindows": [
+              {
+                "startRva": 85897088,
+                "endRva": 85897124,
+                "sha256": "CE85982081BE3B661C6213E5F4306CF41CD2C51D86F020418D02E97689C6B43C",
+                "boundary": "complete reference setter; collector behavior is separate"
+              }
+            ]
+          }
+        }
+      ],
+      "prefixReads": [
+        {
+          "field": "dontLogWarning",
+          "kind": "bool",
+          "callRva": 94565056,
+          "targetRva": 83754448,
+          "setter": [
+            268354,
+            "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+            "set____dontLogWarning__",
+            126050396
+          ],
+          "setterCallRva": 94565079
+        },
+        {
+          "field": "ID",
+          "kind": "int32",
+          "callRva": 94565090,
+          "targetRva": 83752528,
+          "setter": [
+            268355,
+            "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+            "set____ID__",
+            126046456
+          ],
+          "setterCallRva": 94565112
+        },
+        {
+          "field": "releaseWhenExecutionFinished",
+          "kind": "bool",
+          "callRva": 94565123,
+          "targetRva": 83754448,
+          "setter": [
+            268356,
+            "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+            "set____releaseWhenExecutionFinished__",
+            126050312
+          ],
+          "setterCallRva": 94565146
+        },
+        {
+          "field": "uid",
+          "kind": "string",
+          "callRva": 94565157,
+          "targetRva": 85929408,
+          "setter": [
+            268357,
+            "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+            "set____uid__",
+            85897088
+          ],
+          "setterCallRva": 94565180
+        }
+      ],
+      "memberCountInstruction": [
+        94565040,
+        "40 80 fe 0c"
+      ],
+      "primitiveWindows": [
+        {
+          "startRva": 83752528,
+          "endRva": 83752608,
+          "sha256": "C1D63B45B187409C02CE9DC3291CDDC2ED578D0B4080B37C62CD3333DC5B4A6B",
+          "boundary": "complete owned primitive bytes; buffered source proof only"
+        },
+        {
+          "startRva": 83754448,
+          "endRva": 83754530,
+          "sha256": "380C8A9E737B21291FA8612B076D6FD996C76CC2CB3A19764C9B821AA4C9D61A",
+          "boundary": "complete owned primitive bytes; buffered source proof only"
+        },
+        {
+          "startRva": 121754666,
+          "endRva": 121754711,
+          "sha256": "2D19BEA05EDD9F9748353642EF95B20B31076342043B770F1712392128A87AA9",
+          "boundary": "complete owned primitive bytes; buffered source proof only"
+        },
+        {
+          "startRva": 121754860,
+          "endRva": 121754905,
+          "sha256": "ADF81D870B056BE3D4FA364C52C681F3F6597D179F8701EA070882DDF5B531A3",
+          "boundary": "complete owned primitive bytes; buffered source proof only"
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 94564912,
+          "endRva": 94565596,
+          "sha256": "4DD3084E559F7D013F2778228643B7804F45D92A43C68C5ADDF9217FB5BD6111",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 94564979,
+          "endRva": 94565483,
+          "sha256": "17BC2CFA8270A6AEA92962AFEBB1A99B85EECAF6B80D1F78257BD50B811D7E2C",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 94565483,
+          "endRva": 94565494,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 94565494,
+          "endRva": 94565500,
+          "sha256": "8B20ECCAAD1A0F9A01AD64F5CA2C685812D07E9304D47A293C78943C9CE817F7",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 94565500,
+          "endRva": 94565596,
+          "sha256": "8765DE59EDC0DF0FB5983BF11FC52591E704674595D3557C484247BA3E4FD8FE",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 123469798,
+          "endRva": 123469811,
+          "sha256": "2EE1F1883F507BD5709B294BB3AE24DF7E87D746205B36C27D33EA0235C4DCB9",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 123469811,
+          "endRva": 123469867,
+          "sha256": "EB868FBA19507C5438700BB5212C54B321E2B1EF689605B840B01B4AA9B4418E",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        },
+        {
+          "startRva": 123469867,
+          "endRva": 123469888,
+          "sha256": "6F3680742FB6BC16E995EB825EB6222F42C62A58F28EF3696A32234B89A7FE61",
+          "boundary": "complete owned reader; only listed string source programs admitted"
+        }
+      ]
+    },
+    {
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_CameraShake2DForMemoryPack",
       "fields": [
         [

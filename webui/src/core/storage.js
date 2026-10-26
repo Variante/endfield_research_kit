@@ -30,9 +30,11 @@
     if (saved === null) { restored.add(control); return; }
     if (control.tagName === "SELECT" && ![...control.options].some((option) => option.value === saved)) return;
     restored.add(control);
+    const before = control.type === "checkbox" ? control.checked : control.value;
     if (control.type === "checkbox") control.checked = saved === "1";
     else control.value = saved;
-    if (notify) control.dispatchEvent(new Event(control.tagName === "SELECT" || control.type === "checkbox" ? "change" : "input", { bubbles: true }));
+    const after = control.type === "checkbox" ? control.checked : control.value;
+    if (notify && (notify === "initial" || before !== after)) control.dispatchEvent(new Event(control.tagName === "SELECT" || control.type === "checkbox" ? "change" : "input", { bubbles: true }));
   }
   function saveControl(control) {
     if (control.tagName === "SELECT" && !control.options.length) return;
@@ -66,7 +68,7 @@
     // Page controllers have now bound their handlers and can receive defaults.
     document.querySelectorAll(controlSelector).forEach((control) => {
       restored.delete(control);
-      restoreControl(control, true);
+      restoreControl(control, "initial");
     });
   });
   window.addEventListener("pagehide", saveControls);

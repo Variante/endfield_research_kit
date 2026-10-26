@@ -376,6 +376,11 @@
           "allowedTags": [
             "Beyond.Gameplay.GeneralAbilityForbidParams, Gameplay.Beyond"
           ]
+        },
+        "$.mainCharacterForbidTagConfigs[].forbidSettings.phaseNameWhiteList[]": {
+          "types": [
+            "string"
+          ]
         }
       },
       "taggedObjects": {
@@ -465,7 +470,8 @@
             "Beyond.Gameplay.Core.SpaceShipGameModeSetting, Gameplay.Beyond",
             "Beyond.Gameplay.Core.TowerDefenseGameModeSetting, Gameplay.Beyond",
             "Beyond.Gameplay.Core.WeekRaidGameModeSetting, Gameplay.Beyond",
-            "Beyond.Gameplay.Core.WeekRaidIntroGameModeSetting, Gameplay.Beyond"
+            "Beyond.Gameplay.Core.WeekRaidIntroGameModeSetting, Gameplay.Beyond",
+            "Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond"
           ]
         },
         "@Beyond.Gameplay.Core.WorldChallengeGameModeSetting, Gameplay.Beyond.modeId": {
@@ -2099,6 +2105,109 @@
           "types": [
             "array"
           ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.modeId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.functionSettings": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "forbidItems",
+              "forbidPhaseMode",
+              "forbidPhaseItems",
+              "whiteListPhaseForbidStyle",
+              "phaseNameWhiteList"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.forbidItems": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.forbidPhaseMode": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.forbidPhaseItems": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.whiteListPhaseForbidStyle": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.phaseNameWhiteList": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.gameplayTagList": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.cameraDitherProfileId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.functionSettings[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "modeFuncType"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.functionSettings[].modeFuncType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.forbidItems[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "forbidType"
+            ],
+            [
+              "forbidType",
+              "forbidParams"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.forbidItems[].forbidType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond.forbidSettings.forbidItems[].forbidParams": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.DisableSwitchModeForbidParams, Gameplay.Beyond",
+            "Beyond.Gameplay.ForbidForceSNSForbidParams, Gameplay.Beyond",
+            "Beyond.Gameplay.GeneralAbilityForbidParams, Gameplay.Beyond"
+          ]
         }
       },
       "taggedObjects": {
@@ -2324,6 +2433,18 @@
               "gameplayTagList"
             ]
           ]
+        },
+        "Beyond.Gameplay.Core.InnGameModeSetting, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "modeId",
+              "functionSettings",
+              "forbidSettings",
+              "gameplayTagList",
+              "cameraDitherProfileId"
+            ]
+          ]
         }
       }
     },
@@ -2501,7 +2622,11 @@
             "Beyond.Gameplay.MapMarkVisibilityDataRift, Gameplay.Beyond",
             "Beyond.Gameplay.MapMarkVisibilityDataSewageTreatPlant, Gameplay.Beyond",
             "Beyond.Gameplay.MapMarkVisibilityDataSimulationTraining, Gameplay.Beyond",
-            "Beyond.Gameplay.MapMarkVisibilityDataTyphoeaArchery, Gameplay.Beyond"
+            "Beyond.Gameplay.MapMarkVisibilityDataTyphoeaArchery, Gameplay.Beyond",
+            "Beyond.Gameplay.MapMarkVisibilityDataFarmTerminal, Gameplay.Beyond",
+            "Beyond.Gameplay.MapMarkVisibilityDataFoodBox, Gameplay.Beyond",
+            "Beyond.Gameplay.MapMarkVisibilityDataInn, Gameplay.Beyond",
+            "Beyond.Gameplay.MapMarkVisibilityDataRanch, Gameplay.Beyond"
           ]
         },
         "@Beyond.Gameplay.MapMarkVisibilityDataMapDetectorEntity, Gameplay.Beyond.distToPosThreshold": {
@@ -2530,7 +2655,8 @@
             "Beyond.Gameplay.MapMarkDataGasMinePointTeam, Gameplay.Beyond",
             "Beyond.Gameplay.MapMarkDetailedDataEquipFormulaChest, Gameplay.Beyond",
             "Beyond.Gameplay.MapMarkDetailedDataRift, Gameplay.Beyond",
-            "Beyond.Gameplay.MapMarkDetailedDataSewageTreatPlant, Gameplay.Beyond"
+            "Beyond.Gameplay.MapMarkDetailedDataSewageTreatPlant, Gameplay.Beyond",
+            "Beyond.Gameplay.MapMarkDetailedDataRanch, Gameplay.Beyond"
           ]
         },
         "@Beyond.Gameplay.MapMarkDetailedDataSystemInteractive, Gameplay.Beyond.systemInstId": {
@@ -3045,6 +3171,15 @@
               "overrideDisappear",
               "appendDisappear",
               "disappearExpandCond"
+            ],
+            [
+              "overrideVisible",
+              "appendVisible",
+              "overrideActivate",
+              "appendActivate",
+              "activateExpandCond",
+              "overrideDisappear",
+              "appendDisappear"
             ]
           ]
         },
@@ -3222,6 +3357,259 @@
           "types": [
             "string"
           ]
+        },
+        "$.*[].expandRuntime.activateExpandCond": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.SimpleConditionCheckMissionState, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataMapDetectorEntity, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataBossRush, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataDungeonCommon, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataCampfire, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFixableRobot, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSettlementDefenseTerminal, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataBlackbox, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataMinePointTeam, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataRecycleBin, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataGetNearEntity, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSnapshotActivity, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataActivity, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataCollectionPiece, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataDomainShop, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataWorldEnergyPoint, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataHighDifficulty, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataActivityRacingDungeon, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataDungeonWorldLevel, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSeasonTower, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataDomainDepot, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataItemSubmission, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataWeekRaid, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSpaceShipGuestRoom, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSpaceshipSystem, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSpaceshipGuestRoomClue, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSpaceshipControlCenter, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSpaceshipTrainingRoom, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataGasMinePointTeam, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataEquipFormulaChest, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkDataMinigameBalloon, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataKiteStation, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataActivityCleaning, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataRift, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSewageTreatPlant, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataSimulationTraining, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataTyphoeaArchery, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFarmTerminal, Gameplay.Beyond.distToPosThreshold": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFarmTerminal, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFarmTerminal, Gameplay.Beyond.systemInsId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFoodBox, Gameplay.Beyond.distToPosThreshold": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFoodBox, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataFoodBox, Gameplay.Beyond.doodadGroupId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataInn, Gameplay.Beyond.distToPosThreshold": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataInn, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataInn, Gameplay.Beyond.systemInsId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkDetailedDataRanch, Gameplay.Beyond.ranchId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkDetailedDataRanch, Gameplay.Beyond.teleportValidationId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataRanch, Gameplay.Beyond.distToPosThreshold": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataRanch, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
         }
       },
       "taggedObjects": {
@@ -3230,6 +3618,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "entityId"
             ]
           ]
@@ -3252,6 +3641,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3261,6 +3651,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3285,6 +3676,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "intLogicIdGlobal"
             ]
           ]
@@ -3294,6 +3686,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "entityLogicIdGlobal",
               "minigameIds"
             ]
@@ -3312,6 +3705,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId",
               "settlementId"
             ]
@@ -3322,6 +3716,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "logicId"
             ]
           ]
@@ -3352,6 +3747,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "allCoreEntity"
             ]
           ]
@@ -3361,6 +3757,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3383,6 +3780,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "entityLogicIdGlobal"
             ]
           ]
@@ -3411,6 +3809,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "activityId",
               "activityStageId"
             ]
@@ -3429,6 +3828,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "activityId"
             ]
           ]
@@ -3446,6 +3846,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "entityLogicIdGlobal",
               "pieceItemId"
             ]
@@ -3466,6 +3867,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3475,6 +3877,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3483,7 +3886,8 @@
           "shapes": [
             [
               "$type",
-              "distToPosThreshold"
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         },
@@ -3492,6 +3896,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "activityId"
             ]
           ]
@@ -3501,6 +3906,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3509,7 +3915,8 @@
           "shapes": [
             [
               "$type",
-              "distToPosThreshold"
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         },
@@ -3518,6 +3925,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3537,6 +3945,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "activityId"
             ]
           ]
@@ -3546,6 +3955,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3554,7 +3964,8 @@
           "shapes": [
             [
               "$type",
-              "distToPosThreshold"
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         },
@@ -3562,7 +3973,8 @@
           "shapes": [
             [
               "$type",
-              "distToPosThreshold"
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         },
@@ -3571,6 +3983,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "isViewingFriend"
             ]
           ]
@@ -3580,6 +3993,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "isViewingFriend"
             ]
           ]
@@ -3588,7 +4002,8 @@
           "shapes": [
             [
               "$type",
-              "distToPosThreshold"
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         },
@@ -3609,6 +4024,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "allCoreEntity"
             ]
           ]
@@ -3626,6 +4042,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "rewardId",
               "logicId"
             ]
@@ -3636,6 +4053,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "entityLogicIdGlobal",
               "minigameIds"
             ]
@@ -3646,6 +4064,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3655,6 +4074,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "activityId",
               "activityStageId"
             ]
@@ -3672,7 +4092,8 @@
           "shapes": [
             [
               "$type",
-              "distToPosThreshold"
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         },
@@ -3689,6 +4110,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "plantId"
             ]
           ]
@@ -3698,6 +4120,7 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
             ]
           ]
@@ -3707,7 +4130,56 @@
             [
               "$type",
               "distToPosThreshold",
+              "dynamicVisibility",
               "systemInsId"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.MapMarkVisibilityDataFarmTerminal, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "distToPosThreshold",
+              "dynamicVisibility",
+              "systemInsId"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.MapMarkVisibilityDataFoodBox, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "distToPosThreshold",
+              "dynamicVisibility",
+              "doodadGroupId"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.MapMarkVisibilityDataInn, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "distToPosThreshold",
+              "dynamicVisibility",
+              "systemInsId"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.MapMarkDetailedDataRanch, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "ranchId",
+              "teleportValidationId"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.MapMarkVisibilityDataRanch, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "distToPosThreshold",
+              "dynamicVisibility"
             ]
           ]
         }
@@ -4349,7 +4821,8 @@
             "Beyond.Gameplay.Core.WeekRaidSubGameData, Gameplay.Beyond",
             "Beyond.Gameplay.Core.ParkourSubGameData, Gameplay.Beyond",
             "Beyond.Gameplay.Core.TowerDefenceSubGameData, Gameplay.Beyond",
-            "Beyond.Gameplay.Core.SimulationTrainingSubGameData, Gameplay.Beyond"
+            "Beyond.Gameplay.Core.SimulationTrainingSubGameData, Gameplay.Beyond",
+            "Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond"
           ]
         },
         "@Beyond.Gameplay.Core.WorldChallengeSubGameData, Gameplay.Beyond.subDataParentId": {
@@ -6112,6 +6585,301 @@
           "types": [
             "integer"
           ]
+        },
+        "@Beyond.Gameplay.Core.DungeonSubGameData, Gameplay.Beyond.allowReadProgressOnReenter": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.WeekRaidSubGameData, Gameplay.Beyond.allowReadProgressOnReenter": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.WorldChallengeSubGameData, Gameplay.Beyond.isolateEntityArea": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "id"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.WorldChallengeSubGameData, Gameplay.Beyond.isolateEntityArea.id": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.subDataParentId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.id": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.modeType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.gameMechanicsType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.modeId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.teamConfigId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.hasTimeLimit": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.countDownType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.countingType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.taskGoalStyle": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.taskGoalIconName": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.hasTimer": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.bindScriptId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.mainTasks": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.mainTasks[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "taskId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.mainTasks[].taskId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.extraTasks": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.failTasks": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.manualSyncTrackingStage": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.successInfo": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "key"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.successInfo.key": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.failInfo": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "key"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.failInfo.key": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.canQuit": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.resetBtnName": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "key"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.resetBtnName.key": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.showDesc": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.dungeonMissionId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.manualStartBanner": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.disableTracking": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.hideStageProgress": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.ignoreFinishToast": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.noFailOnTeamAllDie": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.preparePhaseUIType": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.logicIdWhitelist": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.proxyWhitelist": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.missionWhitelist": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.useTeamDieBlackscreen": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.blackscreenDuration": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.teamDieHint": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "key"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.teamDieHint.key": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.failTasks[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "taskId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.failTasks[].taskId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.extraTasks[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "taskId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.extraTasks[].taskId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.teamConfigIds": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond.teamConfigIds[]": {
+          "types": [
+            "string"
+          ]
         }
       },
       "taggedObjects": {
@@ -6150,7 +6918,8 @@
               "proxyWhitelist",
               "spawnerIds",
               "ignoreFailToastBeforeStart",
-              "showTimeInfoOnFinishToast"
+              "showTimeInfoOnFinishToast",
+              "isolateEntityArea"
             ]
           ]
         },
@@ -6192,7 +6961,8 @@
               "missionWhitelist",
               "useTeamDieBlackscreen",
               "blackscreenDuration",
-              "teamDieHint"
+              "teamDieHint",
+              "allowReadProgressOnReenter"
             ],
             [
               "$type",
@@ -6229,7 +6999,8 @@
               "missionWhitelist",
               "useTeamDieBlackscreen",
               "blackscreenDuration",
-              "teamDieHint"
+              "teamDieHint",
+              "allowReadProgressOnReenter"
             ],
             [
               "$type",
@@ -6265,7 +7036,8 @@
               "missionWhitelist",
               "useTeamDieBlackscreen",
               "blackscreenDuration",
-              "teamDieHint"
+              "teamDieHint",
+              "allowReadProgressOnReenter"
             ],
             [
               "$type",
@@ -6302,7 +7074,8 @@
               "missionWhitelist",
               "useTeamDieBlackscreen",
               "blackscreenDuration",
-              "teamDieHint"
+              "teamDieHint",
+              "allowReadProgressOnReenter"
             ]
           ]
         },
@@ -6378,7 +7151,8 @@
               "missionWhitelist",
               "useTeamDieBlackscreen",
               "blackscreenDuration",
-              "teamDieHint"
+              "teamDieHint",
+              "allowReadProgressOnReenter"
             ],
             [
               "$type",
@@ -6415,7 +7189,8 @@
               "missionWhitelist",
               "useTeamDieBlackscreen",
               "blackscreenDuration",
-              "teamDieHint"
+              "teamDieHint",
+              "allowReadProgressOnReenter"
             ]
           ]
         },
@@ -6540,6 +7315,46 @@
               "showTimeInfoOnFinishToast",
               "challengeDuration",
               "lightStripDynamicEntityId"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.Core.GambleBattleSubGameData, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "subDataParentId",
+              "id",
+              "modeType",
+              "gameMechanicsType",
+              "modeId",
+              "hasTimeLimit",
+              "countDownType",
+              "countingType",
+              "taskGoalStyle",
+              "taskGoalIconName",
+              "hasTimer",
+              "bindScriptId",
+              "mainTasks",
+              "extraTasks",
+              "failTasks",
+              "manualSyncTrackingStage",
+              "successInfo",
+              "failInfo",
+              "canQuit",
+              "resetBtnName",
+              "showDesc",
+              "manualStartBanner",
+              "disableTracking",
+              "hideStageProgress",
+              "ignoreFinishToast",
+              "noFailOnTeamAllDie",
+              "preparePhaseUIType",
+              "logicIdWhitelist",
+              "proxyWhitelist",
+              "missionWhitelist",
+              "useTeamDieBlackscreen",
+              "blackscreenDuration",
+              "teamDieHint"
             ]
           ]
         }

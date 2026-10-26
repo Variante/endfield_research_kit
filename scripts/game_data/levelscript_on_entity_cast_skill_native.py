@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.levelscript_source_receipts import replay_sources
 from scripts.game_data.memorypack.core import memorypack_union_header
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
@@ -327,44 +328,8 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
             _validate_context(image, context, route["fields"][index][1])
 
 
-def _validate_sources(
-    contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
-) -> int:
-    summary = json.loads(summary_path.read_bytes())
-    if (
-        summary.get("status") != "complete"
-        or hashlib.sha256(ledger_path.read_bytes()).hexdigest().upper()
-        != summary.get("provenance", {}).get("outputFiles", {}).get("sha256", "").upper()
-    ):
-        raise ValueError(f"{LABEL}.source:summary-ledger-join")
-    ledger = {}
-    with gzip.open(ledger_path, "rt", encoding="utf-8") as stream:
-        for line in stream:
-            row = json.loads(line)
-            if row.get("family") == "LevelScriptData":
-                ledger[row["exportRelativePath"]] = row
-    from scripts.game_data.codecs.levelscript.on_entity_cast_skill import (
-        decode_on_entity_cast_skill_header,
-    )
-    count = 0
-    for route in contract["routes"]:
-        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
-        for path, digest, start, end, span_digest in route["sourceReceipts"]:
-            data = (export_root / path).read_bytes()
-            if (
-                not 0 <= start < end <= len(data)
-                or data[start:start + len(prefix)] != prefix
-                or hashlib.sha256(data).hexdigest().upper() != digest.upper()
-                or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
-                or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
-                or ledger.get(path, {}).get("length") != len(data)
-            ):
-                raise ValueError(f"{LABEL}.source:receipt={path}@{start}")
-            _, actual_end = decode_on_entity_cast_skill_header(data, start, route)
-            if actual_end != end:
-                raise ValueError(f"{LABEL}.source:cursor={path}@{start},end={actual_end},expected={end}")
-            count += 1
-    return count
+def _validate_sources(contract, export_root, ledger_path, summary_path, *, game_root=None) -> int:
+    return replay_sources(contract,export_root,ledger_path,summary_path,game_root=game_root)
 
 
 def validate_levelscript_on_entity_cast_skill_native_contract(
@@ -393,7 +358,7 @@ def validate_levelscript_on_entity_cast_skill_native_contract(
         if any(value is not None for value in (export_root, ledger_path, summary_path)):
             if not all(value is not None for value in (export_root, ledger_path, summary_path)):
                 raise ValueError(f"{LABEL}.source:incomplete-paths")
-            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path), game_root=game_root)
         return {"status": "validated", "evidenceBoundary": "exact",
                 "routeCount": len(contract["routes"]), "routes": contract["routes"],
                 "sourceReceiptCount": count}

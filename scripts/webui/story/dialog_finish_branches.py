@@ -26,6 +26,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
+from scripts.webui.story.protocol_contracts import ACTIVATION_CONTROL_SCHEMA, activation_control_projection_failures
 from scripts.repo_paths import REPO_ROOT
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex, ClaimError
@@ -118,7 +119,7 @@ DEFAULT_MARKDOWN = (
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 
 NATIVE_CLAIMS_CONTRACT = CONTRACTS_DIR / "dialog_finish_native.json"
-NATIVE_CLAIMS_SCHEMA = "endfield.dialog-finish-native-claims.v1"
+NATIVE_CLAIMS_SCHEMA = "endfield.dialog-finish-native-claims.v2"
 
 
 class AuditValidationError(RuntimeError):
@@ -151,7 +152,6 @@ def _native_gate_diagnostic(validator: str, native: Any) -> str:
         f"validator={validator} gate=installedNativeInputs "
         f"expected=validated actual={native.status} detail={native.detail}"
     )
-
 
 
 def resolve_source(value: str) -> Path:
@@ -201,7 +201,8 @@ def validate_native_contract(
     native = check_installed_native_inputs(gameassembly=game_assembly, metadata=metadata)
     if not native.validated:
         raise NativeContractUnavailable(native, _native_gate_diagnostic(validator, native))
-    contract = json.loads(NATIVE_CLAIMS_CONTRACT.read_bytes())
+    contract_raw = NATIVE_CLAIMS_CONTRACT.read_bytes()
+    contract = json.loads(contract_raw)
     if contract.get("schema") != NATIVE_CLAIMS_SCHEMA:
         raise AuditValidationError(
             f"validator={validator} gate=contractSchema expected={NATIVE_CLAIMS_SCHEMA} "
@@ -217,13 +218,22 @@ def validate_native_contract(
             }
         except ClaimError as error:
             failures.append({"symbol": type_name, "claim": "runtimeFields", "reason": str(error)})
+    after = check_installed_native_inputs(native.gameassembly_sha256, native.metadata_sha256,
+        gameassembly=game_assembly, metadata=metadata)
+    if not after.validated:
+        raise NativeContractUnavailable(after, _native_gate_diagnostic(validator, after))
+    if contract_raw != NATIVE_CLAIMS_CONTRACT.read_bytes():
+        raise AuditValidationError(f"validator={validator} gate=contractChanged source={NATIVE_CLAIMS_CONTRACT}")
     if failures:
         first = failures[0]
-        raise NativeContractUnavailable(
-            dataclasses.replace(native, status=NATIVE_EVIDENCE_MISMATCHED),
+        diagnostic = (
             f"validator={validator} gate=nativeClaim symbol={first['symbol']} "
             f"claim={json.dumps(first['claim'], sort_keys=True)} actual={first['reason']} "
-            f"failures={len(failures)} source={source_label(game_assembly)}",
+            f"failures={len(failures)} source={source_label(game_assembly)} "
+            f"gameAssemblySha256={native.gameassembly_sha256} metadataSha256={native.metadata_sha256}"
+        )
+        raise NativeContractUnavailable(
+            dataclasses.replace(native, status=NATIVE_EVIDENCE_MISMATCHED, detail=diagnostic), diagnostic
         )
     return {
         "status": "validated",
@@ -984,22 +994,26 @@ def _validate_levelscript_task_contracts(
     """Validate the binary-derived task and SubGame activation contracts."""
     validator = "dialog_finish_levelscript_task_contract"
     runtime = index.get("runtimeContract") or {}
+    lifecycle = runtime.get("levelScriptTaskLifecycleAudit") or {}
+    current_path = (lifecycle.get("methods") or {}).get("conditionResultChanged") or {}
+    identity_keys = ("symbol", "token", "methodIndex", "rva")
+    if (any(not isinstance(current_path.get(k), str) or not current_path[k] for k in ("symbol", "token", "rva"))
+            or type(current_path.get("methodIndex")) is not int or current_path["methodIndex"] < 0):
+        raise AuditValidationError(f"validator={validator} gate=conditionResultIdentity expected=current typed lifecycle method actual={current_path!r} source={lifecycle.get('source') or 'mission_pipeline/index.json'}")
     task = runtime.get("levelScriptTaskAuthorityAudit") or {}
     task_shape = {
         "schema": task.get("schema"),
         "status": (task.get("validation") or {}).get("status"),
         "identityFields": task.get("identityFields"),
         "missionQuestIdentityFields": task.get("missionQuestIdentityFields"),
-        "conditionResultToken": (
-            (task.get("nativePaths") or {}).get("conditionResultChanged") or {}
-        ).get("token"),
+        "conditionResultPath": {key: ((task.get("nativePaths") or {}).get("conditionResultChanged") or {}).get(key) for key in identity_keys},
     }
     expected_task_shape = {
         "schema": "levelScriptTaskAuthority.v1",
         "status": "validated",
-        "identityFields": ["sceneNumId", "scriptId", "taskId"],
+        "identityFields": ["SceneNumId", "ScriptId", "TaskId"],
         "missionQuestIdentityFields": [],
-        "conditionResultToken": "0x060121fe",
+        "conditionResultPath": {key: current_path[key] for key in identity_keys},
     }
     if task_shape != expected_task_shape:
         raise AuditValidationError(
@@ -1008,7 +1022,6 @@ def _validate_levelscript_task_contracts(
             f"source={task.get('source') or 'mission_pipeline/index.json'}"
         )
 
-    lifecycle = runtime.get("levelScriptTaskLifecycleAudit") or {}
     lifecycle_shape = {
         "schema": lifecycle.get("schema"),
         "status": (lifecycle.get("validation") or {}).get("status"),
@@ -1053,6 +1066,10 @@ def _validate_levelscript_task_contracts(
         )
 
     activation = runtime.get("levelScriptActivationControlAudit") or {}
+    projection_failures=activation_control_projection_failures(activation)
+    if projection_failures:
+        failure=projection_failures[0]
+        raise AuditValidationError(f"validator={validator} gate={failure['gate']} expected={failure['expected']!r} actual={failure['actual']!r} source=mission_pipeline/index.json")
     interaction = activation.get("subGameInteractionFlow") or {}
     methods = activation.get("methods") or {}
     activation_shape = {
@@ -1066,7 +1083,7 @@ def _validate_levelscript_task_contracts(
         "manualStartMapped": bool((methods.get("ManualStart") or {}).get("token")),
     }
     expected_activation_shape = {
-        "schema": "levelScriptActivationControl.v7",
+        "schema": ACTIVATION_CONTROL_SCHEMA,
         "status": "validated",
         "subGameIdFieldRead": True,
         "bindScriptIdFieldRead": True,

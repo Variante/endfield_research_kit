@@ -16,6 +16,7 @@ edge does not by itself identify a mission, quest, playback order, or
 server-side state selector.
 """
 from __future__ import annotations
+from scripts.webui.story.protocol_contracts import levelscript_start_policy_failures, ACTIVATION_CONTROL_SCHEMA, activation_control_projection_failures
 
 import argparse
 import filecmp
@@ -993,7 +994,7 @@ def build_teleport_finish_correlation_census(
             match.group(1).decode("ascii")
             for match in TELEPORT_FINISH_FILTER_BYTES_RE.finditer(data)
         )
-        topology, diagnostic = topology_decoder(data)
+        topology, diagnostic = (topology_decoder(data, source_path=path) if topology_decoder is decode_levelscript_native_action_topology else topology_decoder(data))
         status = safe_text((topology or {}).get("status"))
         if diagnostic or not status.startswith("exact_"):
             failures.append({
@@ -2028,7 +2029,7 @@ def build_story_trigger_zone_coverage(
                 if active_hash and actual_hash != active_hash:
                     continue
                 topology, topology_diagnostic = (
-                    *decode_levelscript_native_action_topology(data),
+                    *decode_levelscript_native_action_topology(data, source_path=repo_path(active_source)),
                 )
                 topology_cache[active_source] = (
                     topology,
@@ -2273,7 +2274,7 @@ def build_story_trigger_zone_coverage(
                             })
                         else:
                             topology_cache[active_source] = (
-                                *decode_levelscript_native_action_topology(data),
+                                *decode_levelscript_native_action_topology(data, source_path=repo_path(active_source)),
                             )
                 topology, topology_diagnostic = topology_cache[active_source]
                 if topology_diagnostic or not str(
@@ -2568,10 +2569,7 @@ def build_story_trigger_zone_coverage(
                     if active_source not in binary_cache:
                         try:
                             data = read_bytes_cached(repo_path(active_source))
-                            binary_cache[active_source] = decode_levelscript_binary_summary(
-                                data,
-                                int(script_id),
-                            )
+                            binary_cache[active_source] = decode_levelscript_binary_summary(data, int(script_id), source_path=repo_path(active_source))
                         except (OSError, ValueError, TypeError) as error:
                             binary_cache[active_source] = {
                                 "status": "unavailable",
@@ -3211,7 +3209,6 @@ def annotate_task_sources(
             })
         if bindings:
             task["subGameMainTaskBindings"] = bindings
-
 
 
 def _short_type_name(value: Any) -> str:
@@ -4564,7 +4561,7 @@ def activation_class(
 def exact_active_phase_receiver_contract(
     script_data: bytes,
     receiver: dict[str, Any],
-    activation_control: dict[str, Any],
+    activation_control: dict[str, Any], *, source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Join exact receiver header ids to their original serialized phase."""
     header_ids = sorted({
@@ -4572,7 +4569,7 @@ def exact_active_phase_receiver_contract(
         for value in receiver.get("listenerHeaderLocalIds") or []
         if isinstance(value, int)
     })
-    topology, diagnostic = decode_levelscript_native_action_topology(script_data)
+    topology, diagnostic = decode_levelscript_native_action_topology(script_data, source_path=source_path)
     roots_by_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
     if isinstance(topology, dict):
         for root in topology.get("eventRoots") or []:
@@ -4705,7 +4702,8 @@ def exact_client_active_request_contract(
         if isinstance((host.get("briefData") or {}).get("levelScriptType"), int)
     ]
     binary_validated = (
-        activation_control.get("schema") == "levelScriptActivationControl.v7"
+        activation_control.get("schema") == ACTIVATION_CONTROL_SCHEMA
+        and not activation_control_projection_failures(activation_control)
         and validation.get("status") == "validated"
         and selector.get("nonSubLevelRequiresEnabledAndActiveArea") is True
         and selector.get("subLevelRequiresPublicActive") is True
@@ -4843,15 +4841,7 @@ def build_report(
         )
         or {}
     )
-    start_policy_validated = (
-        (start_policy.get("validation") or {}).get("status") == "validated"
-        and safe_text(start_policy.get("classification"))
-        == "same_with_active_enters_prestart_when_active"
-        and (start_policy.get("discoveryPattern") or {}).get(
-            "objectIdentityInputs"
-        )
-        == []
-    )
+    start_policy_validated = not levelscript_start_policy_failures(start_policy)
     manual_self_control = (
         (index_payload.get("runtimeContract") or {}).get(
             "levelScriptManualSelfControlAudit"
@@ -5108,11 +5098,7 @@ def build_report(
                     consumer_type = safe_text(consumer.get("conditionType"))
                     if consumer_type:
                         task_mission_consumer_types[consumer_type] += 1
-        active_phase_receiver = exact_active_phase_receiver_contract(
-            script_data,
-            receiver,
-            activation_control,
-        )
+        active_phase_receiver = exact_active_phase_receiver_contract(script_data, receiver, activation_control, source_path=script_path)
         active_phase_receiver_validated = (
             active_phase_receiver.get("status") == "validated"
         )

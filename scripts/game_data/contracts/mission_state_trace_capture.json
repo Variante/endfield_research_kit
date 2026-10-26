@@ -544,7 +544,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_QUEST_STATE_UPDATE::questId_",
+              "field": "Proto.SC_QUEST_STATE_UPDATE::<QuestId>k__BackingField",
               "type": "string"
             }
           ]
@@ -556,7 +556,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.SC_QUEST_STATE_UPDATE::questState_",
+              "field": "Proto.SC_QUEST_STATE_UPDATE::<QuestState>k__BackingField",
               "type": "int"
             }
           ]
@@ -568,7 +568,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.SC_QUEST_STATE_UPDATE::bRollback_",
+              "field": "Proto.SC_QUEST_STATE_UPDATE::<BRollback>k__BackingField",
               "type": "bool"
             }
           ]
@@ -602,7 +602,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_MISSION_STATE_UPDATE::missionId_",
+              "field": "Proto.SC_MISSION_STATE_UPDATE::<MissionId>k__BackingField",
               "type": "string"
             }
           ]
@@ -614,7 +614,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.SC_MISSION_STATE_UPDATE::missionState_",
+              "field": "Proto.SC_MISSION_STATE_UPDATE::<MissionState>k__BackingField",
               "type": "int"
             }
           ]
@@ -626,7 +626,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_MISSION_STATE_UPDATE::succeedId_",
+              "field": "Proto.SC_MISSION_STATE_UPDATE::<SucceedId>k__BackingField",
               "type": "int"
             }
           ]
@@ -638,7 +638,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.SC_MISSION_STATE_UPDATE::externalSystemType_",
+              "field": "Proto.SC_MISSION_STATE_UPDATE::<ExternalSystemType>k__BackingField",
               "type": "int"
             }
           ]
@@ -650,7 +650,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_MISSION_STATE_UPDATE::externalSystemId_",
+              "field": "Proto.SC_MISSION_STATE_UPDATE::<ExternalSystemId>k__BackingField",
               "type": "string"
             }
           ]
@@ -662,7 +662,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.SC_MISSION_STATE_UPDATE::acceptTime_",
+              "field": "Proto.SC_MISSION_STATE_UPDATE::<AcceptTime>k__BackingField",
               "type": "long"
             }
           ]
@@ -696,7 +696,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_QUEST_OBJECTIVES_UPDATE::questId_",
+              "field": "Proto.SC_QUEST_OBJECTIVES_UPDATE::<QuestId>k__BackingField",
               "type": "string"
             }
           ]
@@ -730,7 +730,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_SYNC_ALL_MISSION::trackMissionId_",
+              "field": "Proto.SC_SYNC_ALL_MISSION::<TrackMissionId>k__BackingField",
               "type": "string"
             }
           ]
@@ -742,7 +742,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_SYNC_ALL_MISSION::dailyMissionId_",
+              "field": "Proto.SC_SYNC_ALL_MISSION::<DailyMissionId>k__BackingField",
               "type": "string"
             }
           ]
@@ -754,7 +754,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.SC_SYNC_ALL_MISSION::curMainMissionId_",
+              "field": "Proto.SC_SYNC_ALL_MISSION::<CurMainMissionId>k__BackingField",
               "type": "string"
             }
           ]
@@ -766,7 +766,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.SC_SYNC_ALL_MISSION::earlyAcceptMissionChapters_",
+              "field": "Proto.SC_SYNC_ALL_MISSION::<EarlyAcceptMissionChapters>k__BackingField",
               "type": "ulong"
             }
           ]
@@ -838,7 +838,7 @@
           "role": "identity",
           "path": [
             {
-              "field": "Proto.QUEST_OBJECTIVE::conditionId_",
+              "field": "Proto.QUEST_OBJECTIVE::<ConditionId>k__BackingField",
               "type": "string"
             }
           ]
@@ -850,7 +850,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.QUEST_OBJECTIVE::isComplete_",
+              "field": "Proto.QUEST_OBJECTIVE::<IsComplete>k__BackingField",
               "type": "bool"
             }
           ]
@@ -862,7 +862,7 @@
           "role": "state",
           "path": [
             {
-              "field": "Proto.QUEST_OBJECTIVE::descriptionIndex_",
+              "field": "Proto.QUEST_OBJECTIVE::<DescriptionIndex>k__BackingField",
               "type": "int"
             }
           ]

@@ -1,4 +1,5 @@
-﻿from __future__ import annotations
+from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, text_hotfixes
 import copy
 import json
 import json as _radio_cont_json
@@ -33,8 +34,6 @@ from scripts.webui.story.context import (
     DLG_RE,
     FOCUS_MODE_INSTANCE_TABLE_PATH,
     GAMEPLAY_CONFIG_DIR,
-    I18N_HOTFIX_LANGUAGE_TYPES,
-    I18N_HOTFIX_TABLE,
     LEVELDATA_DIR,
     LT_BINDING_RE,
     MISSION_SCENE_ENTRY_KINDS,
@@ -65,7 +64,7 @@ from scripts.webui.story.context import (
     shared_load_dialog_id_registry,
     write_json,
 )
-from scripts.game_data.story_native_consumers_native import cited_address, cited_token
+from scripts.game_data.story_native_consumers_native import load_story_native_consumers
 
 
 def append_native_event_producer_family_diagnostic(
@@ -410,10 +409,6 @@ from scripts.webui.story.narrative_video_overrides import (
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 from scripts.repo_paths import REPO_ROOT
-from scripts.game_data.story_native_consumers_native import (
-    consumer_rows,
-    validated_group,
-)
 
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     REPO_ROOT
@@ -431,28 +426,30 @@ _STORY_TEXT_KEY_RE = re.compile(
 )
 
 
-
 NPC_PROXY_NATIVE_GROUP = "npcProxyDialogSelection"
 
 
-def npc_proxy_consumer_rows(methods: list[str]) -> list[dict]:
-    """The selector's native consumers, resolved on the installed build."""
-    return consumer_rows(NPC_PROXY_NATIVE_GROUP, methods)
+def story_native_citation(evaluation: dict, display: str) -> dict:
+    row = (evaluation.get("cited") or {}).get(display) if evaluation.get("status") == "validated" else None
+    return {"method": display, "address": row.get("address") if row else None, "token": row.get("token") if row else None}
 
 
-def _cited_consumer(display: str) -> dict:
-    """A native consumer row whose token/address the installed build supplies."""
-    return {
-        "method": display,
-        "address": cited_address(display),
-        "token": cited_token(display),
-    }
+def npc_proxy_native_evidence(evaluation: dict) -> tuple[dict | None, str]:
+    group = (evaluation.get("groups") or {}).get(NPC_PROXY_NATIVE_GROUP) or {}
+    if evaluation.get("status") != "validated" or group.get("status") != "validated":
+        return None, ""
+    return {row["method"]: row for row in group.get("methods", [])}, evaluation["gameAssemblySha256"]
 
 
-def npc_proxy_native_sha256() -> str:
-    """The build that proved the selector claims; empty when they do not hold."""
-    group = validated_group(NPC_PROXY_NATIVE_GROUP)
-    return group["gameAssemblySha256"] if group else ""
+def require_same_story_native_evaluation(before: dict, after: dict) -> None:
+    keys = ("status", "gameAssemblySha256", "globalMetadataSha256", "contractSha256", "readerInputs")
+    if any(before.get(key) != after.get(key) for key in keys):
+        raise ValueError("story-language-bundle:nativeInputsAfterBuild " + json.dumps({
+            "sourceFile": __file__,
+            "expected": {key: before.get(key) for key in keys[:-1]},
+            "actual": {key: after.get(key) for key in keys[:-1]},
+            "rawReaderInputsChanged": before.get("readerInputs") != after.get("readerInputs"),
+        }, ensure_ascii=False))
 
 
 def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
@@ -1148,7 +1145,8 @@ def build_unique_mission_tracked_npc_proxy_dialog_contexts(
 ) -> list[dict]:
     """Recover a mission shell for a shared missionless proxy dialog set.
 
-    The runtime's one-based ``activeCondIndex`` selects one NpcProxyEx row,
+    The external one-based ``activeCondIndex`` is converted once to the
+    stored zero-based ``m_activeCondIndex`` used to select one NpcProxyEx row,
     but neither the packet nor the row carries a quest id or chronology.  A
     mission shell is therefore accepted only when every typed tracking
     consumer for the exact proxy belongs to one mission and one level, the
@@ -1907,6 +1905,9 @@ def build_language_bundle(
     include_reference_in_story_index = profile == "full"
     i18n_table_name = f"I18nTextTable_{language_code}.json"
     i18n_table_key = i18n_table_name.removesuffix(".json")
+    native_evaluation = load_story_native_consumers()
+    npc_native_rows, npc_native_hash = npc_proxy_native_evidence(native_evaluation)
+    def native_cited(display):return story_native_citation(native_evaluation, display)
     t0 = time.time()
     conv_dir = out_dir / "conv"
     reference_dir = out_dir / "reference"
@@ -2023,44 +2024,20 @@ def build_language_bundle(
                 except OSError:
                     pass
     print(f"\n[{language_code}] Loading tables...")
-    i18n_by_source = {"game": load(i18n_table_name)}
+    i18n_by_source = {"game": dict(load(i18n_table_name))}
     default_text_source = "game"
     def apply_i18n_hotfixes() -> dict[str, dict[str, int]]:
-        hotfix_type = I18N_HOTFIX_LANGUAGE_TYPES.get(language_code)
-        stats: dict[str, dict[str, int]] = {}
-        if hotfix_type is None:
-            return stats
+        stats = {}
         for source_name, table_dir in (("game", TABLE_DIR),):
             target = i18n_by_source.get(source_name)
             if not isinstance(target, dict):
                 continue
-            hotfix_rows = load_optional_table_json(
-                table_dir,
-                I18N_HOTFIX_TABLE,
-                f"{source_name}/{I18N_HOTFIX_TABLE}",
-            )
-            patched = 0
-            added = 0
-            for row_id, row in hotfix_rows.items():
-                if not isinstance(row, dict):
-                    continue
-                for item in row.get("list") or []:
-                    if not isinstance(item, dict):
-                        continue
-                    if item.get("type") != hotfix_type:
-                        continue
-                    text = item.get("text")
-                    if text is None:
-                        continue
-                    text_id = str(item.get("id") or row_id)
-                    if not text_id:
-                        continue
-                    if text_id not in target:
-                        added += 1
-                    target[text_id] = str(text)
-                    patched += 1
-            if patched or added:
-                stats[source_name] = {"patched": patched, "added": added}
+            rows = load_optional_table_json(table_dir, HOTFIX_TABLE, f"{source_name}/{HOTFIX_TABLE}")
+            patches = text_hotfixes(rows, language_code)
+            if patches:
+                added = len({key for key, _ in patches} - target.keys())
+                target.update(patches)
+                stats[source_name] = {"patched": len(patches), "added": added}
         return stats
     hotfix_stats = apply_i18n_hotfixes()
     if hotfix_stats:
@@ -2068,7 +2045,7 @@ def build_language_bundle(
             f"{source}: {row['patched']} patched ({row['added']} new)"
             for source, row in sorted(hotfix_stats.items())
         )
-        print(f"  applied {I18N_HOTFIX_TABLE}: {summary}")
+        print(f"  applied {HOTFIX_TABLE}: {summary}")
     text_table = load("TextTable.json")
     dialogs = load("DialogTextTable.json")
     sns = load("SNSDialogTable.json")
@@ -7813,7 +7790,7 @@ def build_language_bundle(
         "GamepadSettingOptionTable.json",
         "GameSystemConfigTable.json",
         "GiftpackCashShopIdTable.json",
-        I18N_HOTFIX_TABLE,
+        HOTFIX_TABLE,
         "MissionExtraInfoTable.json",
         "MoneyConfigTable.json",
         "MoneyConsumeTable.json",
@@ -8000,7 +7977,7 @@ def build_language_bundle(
             source_out_dir.mkdir(parents=True, exist_ok=True)
             for table_path in sorted(table_dir.glob("*.json")):
                 table_name = table_path.name
-                if table_name.startswith("I18nTextTable_") or table_name == I18N_HOTFIX_TABLE:
+                if table_name.startswith("I18nTextTable_") or table_name == HOTFIX_TABLE:
                     continue
                 payload = collection_table_payload(table_source, table_name)
                 if not isinstance(payload, dict) or not payload:
@@ -11628,14 +11605,14 @@ def build_language_bundle(
                         "activeCondIndex, not mission, quest, dialog, or "
                         "relative Story order"
                     ),
-                    "nativeConsumers": npc_proxy_consumer_rows([
+                    "nativeConsumers": [dict(npc_native_rows[name]) for name in (
                         "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
                         "NpcProxy._IsMissionConflict",
-                    ]),
+                    )] if npc_native_rows is not None else [],
                     "nativeMappingId": (
                         "npc-proxy-dialog-selection-native-v1"
                     ),
-                    "gameAssemblySha256": npc_proxy_native_sha256(),
+                    "gameAssemblySha256": npc_native_hash,
                 }
                 story_owner = story_owner_by_key.get(story_key) or ""
                 if story_owner:
@@ -12520,19 +12497,19 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "_Handle_SyncLevelScriptStage",
-                    "address": cited_address("_Handle_SyncLevelScriptStage"),
+                    "address": native_cited("_Handle_SyncLevelScriptStage")["address"],
                 },
                 {
                     "method": "ServerSyncLevelScriptStage",
-                    "address": cited_address("ServerSyncLevelScriptStage"),
+                    "address": native_cited("ServerSyncLevelScriptStage")["address"],
                 },
                 {
                     "method": "UpdateStage",
-                    "address": cited_address("UpdateStage"),
+                    "address": native_cited("UpdateStage")["address"],
                 },
                 {
                     "method": "OnScriptStageChanged",
-                    "address": cited_address("OnScriptStageChanged"),
+                    "address": native_cited("OnScriptStageChanged")["address"],
                 },
             ],
             "worldEntityIds": world_entity_ids,
@@ -12668,15 +12645,15 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "GetDeliverStaticDataForMissionWrapper",
-                    "address": cited_address("GetDeliverStaticDataForMissionWrapper"),
+                    "address": native_cited("GetDeliverStaticDataForMissionWrapper")["address"],
                 },
                 {
                     "method": "_AddDialogInDelivering",
-                    "address": cited_address("_AddDialogInDelivering"),
+                    "address": native_cited("_AddDialogInDelivering")["address"],
                 },
                 {
                     "method": "_OnTargetDialogFinish",
-                    "address": cited_address("_OnTargetDialogFinish"),
+                    "address": native_cited("_OnTargetDialogFinish")["address"],
                 },
             ],
             "nativeMappingId": "domain-depot-delivery-dialog-tables-native-v1",
@@ -12739,13 +12716,13 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "ActivitySystem.SendDoSkipChapter",
-                    "address": cited_address("ActivitySystem.SendDoSkipChapter"),
-                    "token": cited_token("ActivitySystem.SendDoSkipChapter"),
+                    "address": native_cited("ActivitySystem.SendDoSkipChapter")["address"],
+                    "token": native_cited("ActivitySystem.SendDoSkipChapter")["token"],
                 },
                 {
                     "method": "ActivitySystem._HandleDoSkipChapter",
-                    "address": cited_address("ActivitySystem._HandleDoSkipChapter"),
-                    "token": cited_token("ActivitySystem._HandleDoSkipChapter"),
+                    "address": native_cited("ActivitySystem._HandleDoSkipChapter")["address"],
+                    "token": native_cited("ActivitySystem._HandleDoSkipChapter")["token"],
                 },
             ],
             "nativeMappingId": "skip-chapter-table-native-protocol-v1",
@@ -12826,8 +12803,8 @@ def build_language_bundle(
             ),
             "nativeConsumer": {
                 "method": "FactoryUtil.CheckBuildingLock",
-                "address": cited_address("FactoryUtil.CheckBuildingLock"),
-                "token": cited_token("FactoryUtil.CheckBuildingLock"),
+                "address": native_cited("FactoryUtil.CheckBuildingLock")["address"],
+                "token": native_cited("FactoryUtil.CheckBuildingLock")["token"],
             },
             "nativeMappingId": "factory-panel-lock-quest-radio-native-v1",
         }
@@ -14680,15 +14657,15 @@ def build_language_bundle(
                 } - {""}),
                 "npcProxyTableRow": context.get("npcProxyTableRow"),
                 "npcProxyExRows": context.get("npcProxyExRows"),
-                "nativeConsumers": npc_proxy_consumer_rows([
+                "nativeConsumers": [dict(npc_native_rows[name]) for name in (
                     "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
                     "NpcProxyDataSys.SyncAllActiveProxy",
                     "NpcProxyDataSys.OnProxyChange",
-                ]),
+                )] if npc_native_rows is not None else [],
                 "nativeMappingId": (
                     "npc-proxy-dialog-selection-native-v1"
                 ),
-                "gameAssemblySha256": npc_proxy_native_sha256(),
+                "gameAssemblySha256": npc_native_hash,
             }
             flow_payload.setdefault(
                 "missionStoryConnections", []
@@ -14769,20 +14746,20 @@ def build_language_bundle(
             "npcProxyTableRow": context.get("npcProxyTableRow"),
             "nativeConsumers": [{
                 "method": "NpcProxyTrackingInfo.GetTargetPos",
-                "token": cited_token("NpcProxyTrackingInfo.GetTargetPos"),
-                "address": cited_address("NpcProxyTrackingInfo.GetTargetPos"),
+                "token": native_cited("NpcProxyTrackingInfo.GetTargetPos")["token"],
+                "address": native_cited("NpcProxyTrackingInfo.GetTargetPos")["address"],
             }, {
                 "method": "NpcProxy.OnDeActive",
-                "token": cited_token("NpcProxy.OnDeActive"),
-                "address": cited_address("NpcProxy.OnDeActive"),
+                "token": native_cited("NpcProxy.OnDeActive")["token"],
+                "address": native_cited("NpcProxy.OnDeActive")["address"],
             }, {
                 "method": "NpcProxyMgr.ApplyLazyDestroyData",
-                "token": cited_token("NpcProxyMgr.ApplyLazyDestroyData"),
-                "address": cited_address("NpcProxyMgr.ApplyLazyDestroyData"),
+                "token": native_cited("NpcProxyMgr.ApplyLazyDestroyData")["token"],
+                "address": native_cited("NpcProxyMgr.ApplyLazyDestroyData")["address"],
             }, {
                 "method": "NpcManager.AddOverrideInteractDialogId",
-                "token": cited_token("NpcManager.AddOverrideInteractDialogId"),
-                "address": cited_address("NpcManager.AddOverrideInteractDialogId"),
+                "token": native_cited("NpcManager.AddOverrideInteractDialogId")["token"],
+                "address": native_cited("NpcManager.AddOverrideInteractDialogId")["address"],
             }],
             "nativeMappingId": (
                 "npc-proxy-lazy-destroy-dialog-context-native-v1"
@@ -14902,16 +14879,16 @@ def build_language_bundle(
             "dialogTreeChildRoutes": context.get("dialogTreeChildRoutes"),
             "nativeConsumers": [{
                 "method": "NpcProxyTrackingInfo.GetTargetPos",
-                "token": cited_token("NpcProxyTrackingInfo.GetTargetPos"),
-                "address": cited_address("NpcProxyTrackingInfo.GetTargetPos"),
+                "token": native_cited("NpcProxyTrackingInfo.GetTargetPos")["token"],
+                "address": native_cited("NpcProxyTrackingInfo.GetTargetPos")["address"],
             }, {
                 "method": "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
-                "token": cited_token("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
-                "address": cited_address("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
+                "token": native_cited("NpcInteractComponent._TryGetNpcProxyInteractDialogId")["token"],
+                "address": native_cited("NpcInteractComponent._TryGetNpcProxyInteractDialogId")["address"],
             }, {
                 "method": "DialogTreeDialogNode.DoExecute",
-                "token": cited_token("DialogTreeDialogNode.DoExecute"),
-                "address": cited_address("DialogTreeDialogNode.DoExecute"),
+                "token": native_cited("DialogTreeDialogNode.DoExecute")["token"],
+                "address": native_cited("DialogTreeDialogNode.DoExecute")["address"],
             }],
             "nativeMappingId": (
                 "npc-proxy-tracking-dialog-navigation-context-native-v1"
@@ -18041,6 +18018,7 @@ def build_language_bundle(
             parent_scope_key=parent_scope_key,
             story_kind_by_key=story_kind_by_key,
             story_owner_by_key=story_owner_by_key,
+            native_cited=native_cited,
         )
         if scope.get("scopeKind") == "quest":
             target = (target_mission, str(scope.get("questId") or ""))
@@ -18192,14 +18170,14 @@ def build_language_bundle(
             "dialogTreePrimeStoryPlaybackCarriers": occurrence_rows,
             "parentCompletionConditions": scope_rows,
             "nativeEntryMethods": [
-                {"method": "DialogTreeController.StartDialog", "token": cited_token("DialogTreeController.StartDialog"), "va": cited_address("DialogTreeController.StartDialog")},
-                {"method": "DialogTreeController.StartDialogue()", "token": cited_token("DialogTreeController.StartDialogue()"), "va": cited_address("DialogTreeController.StartDialogue()")},
-                {"method": "DialogTreeController.StartDialogue(instigator,callback)", "token": cited_token("DialogTreeController.StartDialogue(instigator,callback)"), "va": cited_address("DialogTreeController.StartDialogue(instigator,callback)")},
-                {"method": "NodeCanvas.Framework.Graph.StartGraph", "token": cited_token("NodeCanvas.Framework.Graph.StartGraph"), "va": cited_address("NodeCanvas.Framework.Graph.StartGraph")},
-                {"method": "NodeCanvas.Framework.Graph.get_primeNode", "token": cited_token("NodeCanvas.Framework.Graph.get_primeNode"), "va": cited_address("NodeCanvas.Framework.Graph.get_primeNode")},
-                {"method": "DialogTree.get_requiresPrimeNode", "token": cited_token("DialogTree.get_requiresPrimeNode"), "va": cited_address("DialogTree.get_requiresPrimeNode")},
-                {"method": "DialogTree.OnGraphStarted", "token": cited_token("DialogTree.OnGraphStarted"), "va": cited_address("DialogTree.OnGraphStarted")},
-                {"method": "DialogTree.EnterNode", "token": cited_token("DialogTree.EnterNode"), "va": cited_address("DialogTree.EnterNode")},
+                {"method": "DialogTreeController.StartDialog", "token": native_cited("DialogTreeController.StartDialog")["token"], "va": native_cited("DialogTreeController.StartDialog")["address"]},
+                {"method": "DialogTreeController.StartDialogue()", "token": native_cited("DialogTreeController.StartDialogue()")["token"], "va": native_cited("DialogTreeController.StartDialogue()")["address"]},
+                {"method": "DialogTreeController.StartDialogue(instigator,callback)", "token": native_cited("DialogTreeController.StartDialogue(instigator,callback)")["token"], "va": native_cited("DialogTreeController.StartDialogue(instigator,callback)")["address"]},
+                {"method": "NodeCanvas.Framework.Graph.StartGraph", "token": native_cited("NodeCanvas.Framework.Graph.StartGraph")["token"], "va": native_cited("NodeCanvas.Framework.Graph.StartGraph")["address"]},
+                {"method": "NodeCanvas.Framework.Graph.get_primeNode", "token": native_cited("NodeCanvas.Framework.Graph.get_primeNode")["token"], "va": native_cited("NodeCanvas.Framework.Graph.get_primeNode")["address"]},
+                {"method": "DialogTree.get_requiresPrimeNode", "token": native_cited("DialogTree.get_requiresPrimeNode")["token"], "va": native_cited("DialogTree.get_requiresPrimeNode")["address"]},
+                {"method": "DialogTree.OnGraphStarted", "token": native_cited("DialogTree.OnGraphStarted")["token"], "va": native_cited("DialogTree.OnGraphStarted")["address"]},
+                {"method": "DialogTree.EnterNode", "token": native_cited("DialogTree.EnterNode")["token"], "va": native_cited("DialogTree.EnterNode")["address"]},
             ],
             "nativeMappingId": (
                 "dialog-tree-prime-reachable-completion-dependency-native-v1"
@@ -18326,6 +18304,7 @@ def build_language_bundle(
                 evidence_tier="native_direct",
                 story_kind_by_key=story_kind_by_key,
                 story_owner_by_key=story_owner_by_key,
+                native_cited=native_cited,
             )
             if parent_scope_key != dialog_key:
                 connection["parentStoryOutKey"] = parent_scope_key
@@ -18389,6 +18368,7 @@ def build_language_bundle(
                 evidence_tier="derived_exact_quest",
                 story_kind_by_key=story_kind_by_key,
                 story_owner_by_key=story_owner_by_key,
+                native_cited=native_cited,
             )
             if parent_scope_key != dialog_key:
                 connection["parentStoryOutKey"] = parent_scope_key
@@ -18472,6 +18452,7 @@ def build_language_bundle(
                 evidence_tier="derived_exact_shell",
                 story_kind_by_key=story_kind_by_key,
                 story_owner_by_key=story_owner_by_key,
+                native_cited=native_cited,
             )
             if parent_scope_key != dialog_key:
                 connection["parentStoryOutKey"] = parent_scope_key
@@ -18569,6 +18550,7 @@ def build_language_bundle(
             evidence_tier=evidence_tier,
             story_kind_by_key=story_kind_by_key,
             story_owner_by_key=story_owner_by_key,
+            native_cited=native_cited,
         )
         if parent_scope_key != dialog_key:
             connection["parentStoryOutKey"] = parent_scope_key
@@ -19241,20 +19223,18 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "CheckQuestState.OnActivate",
-                    "address": cited_address("CheckQuestState.OnActivate"),
-                    "token": cited_token("CheckQuestState.OnActivate"),
+                    "address": native_cited("CheckQuestState.OnActivate")["address"],
+                    "token": native_cited("CheckQuestState.OnActivate")["token"],
                 },
                 {
                     "method": "CheckQuestState._OnQuestStateChange",
-                    "address": cited_address("CheckQuestState._OnQuestStateChange"),
-                    "token": cited_token("CheckQuestState._OnQuestStateChange"),
+                    "address": native_cited("CheckQuestState._OnQuestStateChange")["address"],
+                    "token": native_cited("CheckQuestState._OnQuestStateChange")["token"],
                 },
-                _cited_consumer(
-                    "DialogTreeIfNode._TrySelectIfBranch"
+                native_cited("DialogTreeIfNode._TrySelectIfBranch"
                     if carrier.get("nodeType")
                     == "Beyond.Gameplay.DialogTreeIfNode"
-                    else "DialogTreeBranchNode._TrySelectBranch"
-                ),
+                    else "DialogTreeBranchNode._TrySelectBranch"),
             ],
             "nativeMappingId": "dialog-tree-check-quest-state-native-v1",
         }
@@ -20189,6 +20169,7 @@ def build_language_bundle(
     if reference_stats:
         print(f"  reference:     {reference_stats.get('bytes', 0)/1024/1024:.1f} MB across {reference_stats.get('tables', 0)} tables")
     print(f"  index:         {index_path.stat().st_size/1024:.1f} KB")
+    require_same_story_native_evaluation(native_evaluation, load_story_native_consumers())
     return {
         "language": language_code,
         "profile": profile,

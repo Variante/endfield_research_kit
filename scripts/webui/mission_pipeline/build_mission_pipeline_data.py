@@ -1,11 +1,11 @@
-"""Build the experimental Mission Pipeline graph payload for the static WebUI.
+"""Build the standalone Mission Pipeline graph payload.
 
 The payload keeps authored MissionRuntimeAsset structure separate from native
 runtime conclusions.  Predecessor edges are prerequisites visible in exported
 data; they are never promoted to proof that the client chooses a successor.
 
 Run from the repository root:
-    python scripts/webui/mission_pipeline/build_mission_pipeline_data.py
+    python -m scripts.webui.mission_pipeline.build_mission_pipeline_data
 """
 from __future__ import annotations
 
@@ -43,6 +43,8 @@ from scripts.common import (
     write_text_if_changed,
 )
 from scripts.webui.story.unity_documents import document_digest
+from scripts.webui.story.protocol_contracts import (quest_enable_application_failures, REGISTRY_SCHEMA,
+    START_POLICY_SCHEMA, START_POLICY_CLASSIFICATION, levelscript_start_policy_failures, ACTIVATION_CONTROL_SCHEMA, activation_control_projection_failures)
 from scripts.webui.story.animestudio_story_objects.reverse import story_root_playback_aliases
 from scripts.game_data.levelscript_binary import (
     compact_callserver_serialized_contract,
@@ -280,7 +282,7 @@ SOURCE_STORY_GAP_QUEUE_SCHEMA = "sourceStoryGapQueue.v132"
 # Story definition remain visible instead of falling out of the manifest.
 # v49 validates every authored fork-arm source identity against the original
 # questDic and publishes generalized, hash-bearing source evidence per arm.
-SCHEMA_VERSION = 50
+SCHEMA_VERSION = 55
 PIPELINE_STORY_KINDS = {"dlg", "sns", "cutscene", "black", "remotecomm", "radio"}
 PIPELINE_VISIBLE_NON_MISSION_EVIDENCE_KINDS = {
     "guide_runtime_asset",
@@ -2628,7 +2630,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-
 def _inactive_source_boundary(validator: str, status: dict[str, Any]) -> bool:
     """Accept only audited empty indexes from the two source-pinned catalogs.
 
@@ -2832,7 +2833,6 @@ def refresh_source_story_gap_queue(
     return report
 
 
-
 def classify_definition_only_current_build_consumers(
     story_keys: Iterable[str],
     text_vo_id_table_path: Path | None,
@@ -2962,8 +2962,6 @@ def _scoped_connection_rows(
     for row in flow.get("missionStoryConnections") or []:
         if isinstance(row, dict):
             yield row, "", "mission"
-
-
 
 
 def build_composed_root_playback_alias_route(
@@ -3413,7 +3411,6 @@ def load_dynamic_scene_identity_cross_references(
     )
 
 
-
 def _playback_gate_operand_label(operand: Any) -> str:
     if not isinstance(operand, dict):
         return ""
@@ -3542,10 +3539,7 @@ def exact_native_receiver_playback_gate(
     source_file: str,
 ) -> dict[str, Any]:
     """Build a UI-safe exact gate without specializing Story ids or objects."""
-    validation = decode_levelscript_action_header_validation(
-        data,
-        header_local_id,
-    )
+    validation = decode_levelscript_action_header_validation(data, header_local_id, source_path=ROOT / source_file)
     predicate_type = str(validation.get("predicateType") or "")
     predicate = validation.get("predicate")
     if not validation or not isinstance(predicate, dict):
@@ -3764,8 +3758,6 @@ def exact_native_receiver_post_playback_control(
     }
 
 
-
-
 POST_PLAYBACK_VARIABLE_SETTER_ACTIONS = {
     "SetBool",
     "SetInt",
@@ -3783,10 +3775,10 @@ def load_state_update_application_contract(
             f"expected=file actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             "validator=state_update_application_contract gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     census = audit.get("stateUpdateApplicationCensus") or {}
@@ -3846,68 +3838,11 @@ def load_state_update_application_contract(
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
         )
-    enable_message = quest_enable_lifecycle.get("message") or {}
-    enable_routes = quest_enable_lifecycle.get("routes") or []
-    packet_fields = enable_message.get("consumedControlFields") or []
-    runtime_field = str(
-        (quest_enable_lifecycle.get("runtimeControl") or {}).get("field") or ""
-    )
-    route_values = sorted({
-        (
-            (route.get("values") or {}).get(packet_fields[0]),
-            (route.get("values") or {}).get(runtime_field),
-        )
-        for route in enable_routes
-    }) if len(packet_fields) == 1 and runtime_field else []
-    route_calls = [
-        route.get("reachableLifecycleCalls") or [] for route in enable_routes
-    ]
-    enable_shape = {
-        "schema": quest_enable_lifecycle.get("schema"),
-        "identityField": enable_message.get("identityField"),
-        "packetControlFieldCount": len(packet_fields),
-        "runtimeControlField": runtime_field,
-        "routeValues": route_values,
-        "oneCallPerRoute": bool(route_calls)
-        and all(len(calls) == 1 for calls in route_calls),
-        "distinctLifecycleMethods": len({
-            calls[0].get("method")
-            for calls in route_calls
-            if len(calls) == 1
-        }),
-        "samePacketIdentity": bool(route_calls)
-        and all(
-            calls[0].get("samePacketIdentity") is True
-            for calls in route_calls
-            if len(calls) == 1
-        ),
-        "unreadControlFieldCount": len(
-            enable_message.get("unreadControlFields") or []
-        ),
-        "successorLikeFields": enable_message.get("successorLikeFields") or [],
-    }
-    expected_route_values = [
-        (False, False), (False, True), (True, False), (True, True)
-    ]
-    if (
-        enable_shape["schema"] != "questEnableLifecycleApplication.v1"
-        or not enable_shape["identityField"]
-        or enable_shape["packetControlFieldCount"] != 1
-        or not enable_shape["runtimeControlField"]
-        or enable_shape["routeValues"] != expected_route_values
-        or not enable_shape["oneCallPerRoute"]
-        or enable_shape["distinctLifecycleMethods"] < 3
-        or not enable_shape["samePacketIdentity"]
-        or enable_shape["unreadControlFieldCount"] < 1
-        or enable_shape["successorLikeFields"]
-    ):
-        raise RuntimeError(
-            "validator=state_update_application_contract "
-            "gate=questEnableLifecycleShape "
-            "expected='generic complete two-boolean matrix, one identity-preserving "
-            "lifecycle call per route, >=3 methods, unread context, no successor field' "
-            f"actual={enable_shape!r} source={audit_path}"
-        )
+    enable_failures = quest_enable_application_failures(quest_enable_lifecycle)
+    if enable_failures:
+        failure=enable_failures[0]
+        raise RuntimeError("validator=state_update_application_contract "
+            f"gate={failure['gate']} expected={failure.get('expected')!r} actual={failure.get('actual')!r} source={audit_path}")
     quest_start = census.get("questStartApplication") or {}
     quest_start_validation = quest_start.get("validation") or {}
     if quest_start_validation.get("status") != "validated":
@@ -3965,11 +3900,11 @@ def load_state_update_application_contract(
             f"source={failure.get('sourceFile') or audit_path}"
         )
     semantic_fields = topology_consumers.get("questSemanticFields") or {}
-    if semantic_fields.get("schema") != "questSemanticFieldConsumers.v2":
+    if semantic_fields.get("schema") != "questSemanticFieldConsumers.v3":
         raise RuntimeError(
             "validator=state_update_application_contract "
             "gate=questSemanticFieldsSchema "
-            "expected='questSemanticFieldConsumers.v2' "
+            "expected='questSemanticFieldConsumers.v3' "
             f"actual={semantic_fields.get('schema')!r} source={audit_path}"
         )
     semantic_validation = semantic_fields.get("validation") or {}
@@ -4088,10 +4023,10 @@ def load_action_extra_thread_scheduler_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("actionExtraThreadSchedulerCensus") or {}
@@ -4172,10 +4107,10 @@ def load_levelscript_task_authority_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
 
@@ -4183,22 +4118,22 @@ def load_levelscript_task_authority_contract(
         "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS": (
             105,
             "client_to_server",
-            ["sceneNumId", "scriptId", "taskId", "objectiveValueOps"],
+            ["SceneNumId", "ScriptId", "TaskId", "ObjectiveValueOps"],
         ),
         "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE": (
             813,
             "server_to_client",
-            ["sceneNumId", "scriptId", "taskId", "taskState"],
+            ["SceneNumId", "ScriptId", "TaskId", "TaskState"],
         ),
         "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE": (
             815,
             "server_to_client",
-            ["sceneNumId", "scriptId", "taskId", "conditionCompletedMap"],
+            ["SceneNumId", "ScriptId", "TaskId", "ConditionCompletedMap"],
         ),
         "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH": (
             816,
             "server_to_client",
-            ["sceneNumId", "scriptId", "taskId"],
+            ["SceneNumId", "ScriptId", "TaskId"],
         ),
     }
     schemas = {
@@ -4231,7 +4166,7 @@ def load_levelscript_task_authority_contract(
                 f"message={schema_name} expected={expected!r} actual={actual!r} "
                 f"source={audit_path}"
             )
-        if {"missionId", "questId", "storyId"} & set(actual["fields"]):
+        if {"MissionId", "QuestId", "StoryId"} & set(actual["fields"]):
             raise RuntimeError(
                 f"validator={validator} gate=noMissionQuestStoryIdentity "
                 f"message={schema_name} expected=[] actual={actual['fields']!r} "
@@ -4299,7 +4234,7 @@ def load_levelscript_task_authority_contract(
         "schema": "levelScriptTaskAuthority.v1",
         "source": repo_path(audit_path),
         "classification": "server_selected_scene_script_task_identity",
-        "identityFields": ["sceneNumId", "scriptId", "taskId"],
+        "identityFields": ["SceneNumId", "ScriptId", "TaskId"],
         "messages": messages,
         "nativePaths": {
             name: native_paths[name] for name in expected_native_paths
@@ -4336,10 +4271,10 @@ def load_levelscript_task_lifecycle_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptTaskLifecycle") or {}
@@ -4447,10 +4382,10 @@ def load_levelscript_start_policy_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptStartPolicy") or {}
@@ -4465,6 +4400,11 @@ def load_levelscript_start_policy_contract(
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
         )
+    projection_failures = levelscript_start_policy_failures(contract)
+    if projection_failures:
+        failure = projection_failures[0]
+        raise RuntimeError(f"validator={validator} gate={failure['gate']} expected={failure['expected']!r} "
+                           f"actual={failure['actual']!r} source={audit_path}")
     discovery = contract.get("discoveryPattern") or {}
     actual_shape = {
         "schema": contract.get("schema"),
@@ -4472,8 +4412,8 @@ def load_levelscript_start_policy_contract(
         "objectIdentityInputs": discovery.get("objectIdentityInputs"),
     }
     expected_shape = {
-        "schema": "levelScriptStartPolicy.v1",
-        "classification": "same_with_active_enters_prestart_when_active",
+        "schema": START_POLICY_SCHEMA,
+        "classification": START_POLICY_CLASSIFICATION,
         "objectIdentityInputs": [],
     }
     if actual_shape != expected_shape:
@@ -4518,6 +4458,8 @@ def load_levelscript_start_policy_contract(
         "discoveryPattern": discovery,
         "enumValues": contract.get("enumValues") or {},
         "methods": contract.get("methods") or {},
+        "runtimeStateGate": contract.get("runtimeStateGate") or {},
+        "ordinaryEntryProof": contract.get("ordinaryEntryProof") or {},
         "activeStateGate": contract.get("activeStateGate") or {},
         "doneGate": contract.get("doneGate") or {},
         "startTypeGates": contract.get("startTypeGates") or {},
@@ -4541,10 +4483,10 @@ def load_levelscript_manual_self_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptManualSelfControl") or {}
@@ -4637,10 +4579,10 @@ def load_levelscript_activation_control_contract(
             f"actual=missing source={audit_path}"
         )
     audit = read_json(audit_path)
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = audit.get("levelScriptActivationControl") or {}
@@ -4655,6 +4597,10 @@ def load_levelscript_activation_control_contract(
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
         )
+    projection_failures=activation_control_projection_failures(contract)
+    if projection_failures:
+        failure=projection_failures[0]
+        raise RuntimeError(f"validator={validator} gate={failure['gate']} expected={failure['expected']!r} actual={failure['actual']!r} source={audit_path}")
     discovery = contract.get("discoveryPattern") or {}
     expected_inputs = [
         "SubGameInstanceData.id",
@@ -4666,7 +4612,7 @@ def load_levelscript_activation_control_contract(
         "serializedObjectInputs": discovery.get("serializedObjectInputs"),
     }
     expected_shape = {
-        "schema": "levelScriptActivationControl.v7",
+        "schema": ACTIVATION_CONTROL_SCHEMA,
         "classification": "server_state_subgame_and_runtime_request_paths",
         "serializedObjectInputs": expected_inputs,
     }
@@ -5996,7 +5942,6 @@ def type_name(value: Any) -> str:
     return value.split(",", 1)[0].rsplit(".", 1)[-1]
 
 
-
 def iter_dicts(value: Any) -> Iterable[dict[str, Any]]:
     if isinstance(value, dict):
         yield value
@@ -6005,7 +5950,6 @@ def iter_dicts(value: Any) -> Iterable[dict[str, Any]]:
     elif isinstance(value, list):
         for child in value:
             yield from iter_dicts(child)
-
 
 
 def compact_scalar(value: Any) -> Any:
@@ -6065,7 +6009,6 @@ FACT_KEYS = (
 )
 
 
-
 def condition_tree(condition: Any) -> dict[str, Any] | None:
     if not isinstance(condition, dict):
         return None
@@ -6087,7 +6030,6 @@ def condition_tree(condition: Any) -> dict[str, Any] | None:
     if children:
         row["children"] = children
     return row
-
 
 
 def tracking_info_row(info: Any, index: int) -> dict[str, Any] | None:
@@ -6314,7 +6256,7 @@ def level_script_native_control_evidence(
     cached = _LEVEL_SCRIPT_NATIVE_CONTROL_EVIDENCE_CACHE.get(cache_key)
     if cached is not None:
         return copy.deepcopy(cached)
-    topology, diagnostic = decode_levelscript_native_action_topology(data)
+    topology, diagnostic = decode_levelscript_native_action_topology(data, source_path=source_path)
     if not isinstance(topology, dict):
         topology = {
             "schema": "levelScriptNativeActionTopology.v4",
@@ -6474,7 +6416,7 @@ def level_script_source_evidence(
                 f"sources={overlay['searchedSources']!r}"
             )
         data = read_bytes_cached(source_path)
-        records = extract_levelscript_uid_records(data)
+        records = extract_levelscript_uid_records(data, source_path=source_path)
         action_map = decode_levelscript_action_map_lists(data, records)
         native_control_evidence = level_script_native_control_evidence(
             data,
@@ -6941,8 +6883,6 @@ def record_tracked_proxy_candidate_topology(
     )
 
 
-
-
 def annotate_quest_fork_state_application(
     payload: dict[str, Any],
     contract: dict[str, Any],
@@ -7020,57 +6960,15 @@ def annotate_quest_fork_enable_application(
     payload: dict[str, Any],
     contract: dict[str, Any],
 ) -> Counter[str]:
-    """Attach a corpus-derived boolean lifecycle matrix to every quest fork."""
+    """Attach the proved enable/state/pause matrix to each authored quest fork."""
     validator = "quest_fork_enable_application"
-    if contract.get("schema") != "questEnableLifecycleApplication.v1":
-        raise RuntimeError(
-            f"validator={validator} gate=contractSchema "
-            "expected='questEnableLifecycleApplication.v1' "
-            f"actual={contract.get('schema')!r}"
-        )
-    if (contract.get("validation") or {}).get("status") != "validated":
-        failure = ((contract.get("validation") or {}).get("failures") or [{}])[0]
-        raise RuntimeError(
-            f"validator={validator} gate={failure.get('gate') or 'contractValidation'} "
-            f"expected={failure.get('expected')!r} actual={failure.get('actual')!r} "
-            f"source={failure.get('sourceFile') or contract.get('source') or ''}"
-        )
-    message = contract.get("message") or {}
-    runtime_control = contract.get("runtimeControl") or {}
-    identity_field = str(message.get("identityField") or "")
-    packet_fields = message.get("consumedControlFields") or []
-    runtime_field = str(runtime_control.get("field") or "")
-    routes = contract.get("routes") or []
-    matrix = sorted({
-        (
-            (route.get("values") or {}).get(packet_fields[0]),
-            (route.get("values") or {}).get(runtime_field),
-        )
-        for route in routes
-    }) if len(packet_fields) == 1 and runtime_field else []
-    expected_matrix = [
-        (False, False), (False, True), (True, False), (True, True)
-    ]
-    route_calls = [
-        route.get("reachableLifecycleCalls") or [] for route in routes
-    ]
-    if (
-        not identity_field
-        or matrix != expected_matrix
-        or not route_calls
-        or not all(len(calls) == 1 for calls in route_calls)
-        or len({calls[0].get("method") for calls in route_calls}) < 3
-        or not all(calls[0].get("samePacketIdentity") is True for calls in route_calls)
-        or message.get("successorLikeFields")
-    ):
-        raise RuntimeError(
-            f"validator={validator} gate=applicationShape "
-            "expected='complete generic two-boolean identity-preserving matrix, "
-            "one call per route, >=3 methods, no successor fields' "
-            f"actual={{'identityField': {identity_field!r}, 'matrix': {matrix!r}, "
-            f"'routeCalls': {route_calls!r}, "
-            f"'successorLikeFields': {message.get('successorLikeFields') or []!r}}}"
-        )
+    failures=quest_enable_application_failures(contract)
+    if failures:
+        failure=failures[0]
+        raise RuntimeError(f"validator={validator} gate={failure['gate']} "
+            f"expected={failure.get('expected')!r} actual={failure.get('actual')!r} source={contract.get('source') or 'protocol contract'}")
+    message=contract['message']; identity_field=message['identityField']
+    packet_fields=message['consumedControlFields']; runtime_control=contract['runtimeControl']; routes=contract['routes']
     compact_contract = {
         "schema": contract.get("schema"),
         "classification": contract.get("classification"),
@@ -7078,12 +6976,18 @@ def annotate_quest_fork_enable_application(
             "type": message.get("type"),
             "messageId": message.get("messageId"),
             "identityField": identity_field,
+            "fields": message["fields"],
+            "fieldOffsets": message["fieldOffsets"],
             "consumedControlFields": packet_fields,
             "unreadControlFields": message.get("unreadControlFields") or [],
             "successorLikeFields": [],
             "handler": message.get("handler") or {},
         },
         "runtimeControl": runtime_control,
+        "validation": contract["validation"],
+        "controlRoles": contract["controlRoles"],
+        "stateEnum": contract["stateEnum"],
+        "stateSelections": contract["stateSelections"],
         "routes": routes,
         "source": contract.get("source") or "",
         "relatedOriginalFiles": contract.get("relatedOriginalFiles") or [],
@@ -7958,11 +7862,11 @@ def build_all(
     return index
 
 
-
 def main() -> int:
     args = parse_args()
     require_export_layout(getattr(args, 'export_root', None))
     output_root = args.output_root.resolve()
+    print("[mission-pipeline] Building mission data", flush=True)
     index = build_all(
         args.mission_root.resolve(),
         output_root,
@@ -7986,6 +7890,7 @@ def main() -> int:
             args.story_language,
         )
     )
+    print("[mission-pipeline] Auditing dialog finish consumers", flush=True)
     dialog_finish_branch_audit: dict[str, Any] = {}
     if output_root == DEFAULT_OUTPUT_ROOT.resolve():
         try:
@@ -8029,6 +7934,7 @@ def main() -> int:
     # Build the complete-corpus callback audit before the partial-order report
     # so exact same-LevelScript Story -> CallServer -> Story bridges can be
     # admitted without consuming a stale previous report.
+    print("[mission-pipeline] Auditing CallServer callbacks", flush=True)
     callserver_callback_audit: dict[str, Any] = {}
     if output_root == DEFAULT_OUTPUT_ROOT.resolve():
         callserver_callback_audit = build_callserver_callback_audit_report()
@@ -8042,6 +7948,7 @@ def main() -> int:
                 callserver_callback_audit
             ),
         )
+    print("[mission-pipeline] Publishing source Story order", flush=True)
     order_report = source_order_publication.publish_source_story_partial_order(
         index,
         output_root,
@@ -8055,6 +7962,7 @@ def main() -> int:
     )
     # The complete-corpus callback audit is generated once for the canonical
     # pipeline. Reduced fixture outputs never overwrite or silently consume it.
+    print("[mission-pipeline] Auditing embedded Timeline runtime", flush=True)
     timeline_embedded_runtime_audit: dict[str, Any] = {}
     if output_root == DEFAULT_OUTPUT_ROOT.resolve():
         try:
@@ -8084,6 +7992,7 @@ def main() -> int:
                 ),
             )
     lua_consumer_reference_index = DEFAULT_LUA_CONSUMER_REFERENCE_INDEX.resolve()
+    print("[mission-pipeline] Building Story binding coverage", flush=True)
     coverage = build_story_binding_coverage(
         index,
         output_root / "index.json",
@@ -8107,6 +8016,7 @@ def main() -> int:
             DEFAULT_SOURCE_STORY_GAP_QUEUE,
         ).resolve()
         if getattr(args, "refresh_source_story_gap_queue", False):
+            print("[mission-pipeline] Refreshing source Story gap queue", flush=True)
             refresh_source_story_gap_queue(
                 args.story_language,
                 source_story_gap_queue,

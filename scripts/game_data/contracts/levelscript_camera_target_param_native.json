@@ -1,0 +1,1529 @@
+{
+  "schema": "endfield.levelscript-camera-target-param-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "codecKind": "Param<ETrackCameraTargetType>",
+  "valueType": "Beyond.Gameplay.View.ETrackCameraTargetType",
+  "proof": {
+    "schema": "endfield.memorypack-inlined-int32-enum-param-proof.v1",
+    "wrappedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.ETrackCameraTargetType>",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_View_ETrackCameraTargetType_ForMemoryPack",
+    "memberCount": 4,
+    "rawSize": 4,
+    "pathEncoding": "int32-pool-index",
+    "ownedWindows": [
+      {
+        "startRva": 79662720,
+        "endRva": 79662764,
+        "sha256": "36E25CC4C7D12AE831997238804BFD6EA695544B81927EF452DA20EC2BE71596"
+      },
+      {
+        "startRva": 79662764,
+        "endRva": 79664870,
+        "sha256": "142C22001C0934D2F831C66BABC038E3CF878E10FFDB88BA681188BC0639E7E0"
+      },
+      {
+        "startRva": 79664870,
+        "endRva": 79665350,
+        "sha256": "05A90EAA3024E1C5C8CDE31C234CDC8F3266CC9B5871E9FF6859FE426436D3E8"
+      },
+      {
+        "startRva": 79665350,
+        "endRva": 79665782,
+        "sha256": "78F2AE63347D14DE12F639BC22B39D27E9BEB0AA25074BDA9E7F6FE96B9FB340"
+      },
+      {
+        "startRva": 79665782,
+        "endRva": 79666044,
+        "sha256": "2CA48988108643D572FF529588B3C9A6FFA6B92ACBF8570C70D62DC9D736E77F"
+      }
+    ],
+    "ingress": {
+      "initializationFlag": 6735190697,
+      "initializedTarget": 6522115814,
+      "reader": "entry RCX -> RBX",
+      "holder": "entry RDX -> R14",
+      "imageBaseRegister": "R15",
+      "entryRspSavedRbxOffset": 32
+    },
+    "ownedSetterSlots": {
+      "constValue": 32,
+      "idRef": 36,
+      "paramSource": 16,
+      "path": 24
+    },
+    "setters": {
+      "constValue": {
+        "methodIndex": 307696,
+        "codeWindows": [
+          {
+            "startRva": 78981216,
+            "endRva": 78981243,
+            "sha256": "8EBE75E4C724F79CF188E1EA024245FC0E1428B3F558446EB6C6F11AA4A8B113"
+          }
+        ],
+        "selectedInstructions": null
+      },
+      "idRef": {
+        "methodIndex": 307697,
+        "codeWindows": [
+          {
+            "startRva": 78981248,
+            "endRva": 78981275,
+            "sha256": "612566C410FC6A8EB3B89D9C6A6D89A240843AE3E6CEFB66CF914606108E9FAD"
+          }
+        ],
+        "selectedInstructions": null
+      },
+      "paramSource": {
+        "methodIndex": 307698,
+        "codeWindows": [
+          {
+            "startRva": 78981280,
+            "endRva": 78981307,
+            "sha256": "C38C735C1612C21BFBC3E09BEF56A0F3494AAD1DBDA5E625A8AB1D59A0774C6C"
+          }
+        ],
+        "selectedInstructions": null
+      },
+      "path": {
+        "methodIndex": 307699,
+        "codeWindows": [
+          {
+            "startRva": 78981312,
+            "endRva": 78981404,
+            "sha256": "22A3ACD1A5332C81F1E6E7A9B02F9BC0902295846A9A024DC4726D66203EC0DF"
+          }
+        ],
+        "selectedInstructions": [
+          6521432256,
+          6521432260,
+          6521432264,
+          6521432267,
+          6521432269,
+          6521432276,
+          6521432280,
+          6521432337,
+          6521432341
+        ]
+      }
+    },
+    "sourcePaths": [
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522115891,
+          6522115895,
+          6522116001,
+          6522116005,
+          6522116011,
+          6522116015,
+          6522116018,
+          6522116036,
+          6522116040,
+          6522116042,
+          6522116045,
+          6522116048,
+          6522116067,
+          6522116072,
+          6522116076,
+          6522116080,
+          6522116083,
+          6522116086,
+          6522116092,
+          6522116096,
+          6522116099,
+          6522116105,
+          6522116108,
+          6522116111,
+          6522116114,
+          6522116119,
+          6522116122,
+          6522116128,
+          6522116132,
+          6522116135,
+          6522116141,
+          6522116144,
+          6522116147,
+          6522116150,
+          6522116155,
+          6522116158,
+          6522116164,
+          6522116168,
+          6522116171,
+          6522116177,
+          6522116180,
+          6522116183,
+          6522116186,
+          6522116191,
+          6522116194,
+          6522116200,
+          6522116204,
+          6522116207,
+          6522116213,
+          6522116220,
+          6522116224,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {
+          "idRef": {
+            "site": 6522116114,
+            "target": 6526203472
+          },
+          "paramSource": {
+            "site": 6522116150,
+            "target": 6526203472
+          },
+          "path": {
+            "site": 6522116186,
+            "target": 6528380352
+          }
+        },
+        "stores": {
+          "constValue": 6522116105,
+          "idRef": 6522116141,
+          "paramSource": 6522116177,
+          "path": 6522116220
+        },
+        "wireBytes": 17,
+        "markFlags": [
+          6735127600
+        ],
+        "markLoops": [],
+        "allocationLoad": null,
+        "nullOutput": false,
+        "allocated": false,
+        "pathMark": false,
+        "wrapperMark": false
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522115891,
+          6522115895,
+          6522116001,
+          6522116005,
+          6522116011,
+          6522116015,
+          6522116018,
+          6522116036,
+          6522116040,
+          6522116042,
+          6522116045,
+          6522116048,
+          6522116067,
+          6522116072,
+          6522116076,
+          6522116080,
+          6522116083,
+          6522116086,
+          6522116092,
+          6522116096,
+          6522116099,
+          6522116105,
+          6522116108,
+          6522116111,
+          6522116114,
+          6522116119,
+          6522116122,
+          6522116128,
+          6522116132,
+          6522116135,
+          6522116141,
+          6522116144,
+          6522116147,
+          6522116150,
+          6522116155,
+          6522116158,
+          6522116164,
+          6522116168,
+          6522116171,
+          6522116177,
+          6522116180,
+          6522116183,
+          6522116186,
+          6522116191,
+          6522116194,
+          6522116200,
+          6522116204,
+          6522116207,
+          6522116213,
+          6522116220,
+          6522116224,
+          6522116230,
+          6522116234,
+          6522116241,
+          6522116245,
+          6522116252,
+          6522116255,
+          6522116259,
+          6522116263,
+          6522116267,
+          6522116270,
+          6522116272,
+          6522116275,
+          6522116278,
+          6522116282,
+          6522116287,
+          6522116289,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {
+          "idRef": {
+            "site": 6522116114,
+            "target": 6526203472
+          },
+          "paramSource": {
+            "site": 6522116150,
+            "target": 6526203472
+          },
+          "path": {
+            "site": 6522116186,
+            "target": 6528380352
+          }
+        },
+        "stores": {
+          "constValue": 6522116105,
+          "idRef": 6522116141,
+          "paramSource": 6522116177,
+          "path": 6522116220
+        },
+        "wireBytes": 17,
+        "markFlags": [
+          6735127600
+        ],
+        "markLoops": [
+          {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522116272,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          }
+        ],
+        "allocationLoad": null,
+        "nullOutput": false,
+        "allocated": false,
+        "pathMark": true,
+        "wrapperMark": false
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522115891,
+          6522115895,
+          6522115897,
+          6522115904,
+          6522115909,
+          6522115912,
+          6522115915,
+          6522115921,
+          6522115923,
+          6522115926,
+          6522115931,
+          6522115938,
+          6522115941,
+          6522116001,
+          6522116005,
+          6522116011,
+          6522116015,
+          6522116018,
+          6522116036,
+          6522116040,
+          6522116042,
+          6522116045,
+          6522116048,
+          6522116067,
+          6522116072,
+          6522116076,
+          6522116080,
+          6522116083,
+          6522116086,
+          6522116092,
+          6522116096,
+          6522116099,
+          6522116105,
+          6522116108,
+          6522116111,
+          6522116114,
+          6522116119,
+          6522116122,
+          6522116128,
+          6522116132,
+          6522116135,
+          6522116141,
+          6522116144,
+          6522116147,
+          6522116150,
+          6522116155,
+          6522116158,
+          6522116164,
+          6522116168,
+          6522116171,
+          6522116177,
+          6522116180,
+          6522116183,
+          6522116186,
+          6522116191,
+          6522116194,
+          6522116200,
+          6522116204,
+          6522116207,
+          6522116213,
+          6522116220,
+          6522116224,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {
+          "allocateWrapper": {
+            "site": 6522115904,
+            "target": 6442540560
+          },
+          "constructor": {
+            "site": 6522115926,
+            "target": 6522125568
+          },
+          "idRef": {
+            "site": 6522116114,
+            "target": 6526203472
+          },
+          "paramSource": {
+            "site": 6522116150,
+            "target": 6526203472
+          },
+          "path": {
+            "site": 6522116186,
+            "target": 6528380352
+          }
+        },
+        "stores": {
+          "constValue": 6522116105,
+          "idRef": 6522116141,
+          "paramSource": 6522116177,
+          "path": 6522116220
+        },
+        "wireBytes": 17,
+        "markFlags": [
+          6735127600,
+          6735127600
+        ],
+        "markLoops": [],
+        "allocationLoad": {
+          "offset": 83,
+          "va": "0x184bf9739",
+          "bytes": "48 8b 0d 40 9b f3 0b",
+          "text": "mov rcx, [rip+0xbf39b40 => 0x190b33280]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0xbf39b40 => 0x190b33280]"
+          }
+        },
+        "nullOutput": false,
+        "allocated": true,
+        "pathMark": false,
+        "wrapperMark": false
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522115891,
+          6522115895,
+          6522115897,
+          6522115904,
+          6522115909,
+          6522115912,
+          6522115915,
+          6522115921,
+          6522115923,
+          6522115926,
+          6522115931,
+          6522115938,
+          6522115941,
+          6522115943,
+          6522115946,
+          6522115953,
+          6522115957,
+          6522115964,
+          6522115967,
+          6522115971,
+          6522115975,
+          6522115979,
+          6522115982,
+          6522115984,
+          6522115987,
+          6522115990,
+          6522115994,
+          6522115999,
+          6522116001,
+          6522116005,
+          6522116011,
+          6522116015,
+          6522116018,
+          6522116036,
+          6522116040,
+          6522116042,
+          6522116045,
+          6522116048,
+          6522116067,
+          6522116072,
+          6522116076,
+          6522116080,
+          6522116083,
+          6522116086,
+          6522116092,
+          6522116096,
+          6522116099,
+          6522116105,
+          6522116108,
+          6522116111,
+          6522116114,
+          6522116119,
+          6522116122,
+          6522116128,
+          6522116132,
+          6522116135,
+          6522116141,
+          6522116144,
+          6522116147,
+          6522116150,
+          6522116155,
+          6522116158,
+          6522116164,
+          6522116168,
+          6522116171,
+          6522116177,
+          6522116180,
+          6522116183,
+          6522116186,
+          6522116191,
+          6522116194,
+          6522116200,
+          6522116204,
+          6522116207,
+          6522116213,
+          6522116220,
+          6522116224,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {
+          "allocateWrapper": {
+            "site": 6522115904,
+            "target": 6442540560
+          },
+          "constructor": {
+            "site": 6522115926,
+            "target": 6522125568
+          },
+          "idRef": {
+            "site": 6522116114,
+            "target": 6526203472
+          },
+          "paramSource": {
+            "site": 6522116150,
+            "target": 6526203472
+          },
+          "path": {
+            "site": 6522116186,
+            "target": 6528380352
+          }
+        },
+        "stores": {
+          "constValue": 6522116105,
+          "idRef": 6522116141,
+          "paramSource": 6522116177,
+          "path": 6522116220
+        },
+        "wireBytes": 17,
+        "markFlags": [
+          6735127600,
+          6735127600
+        ],
+        "markLoops": [
+          {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522115984,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          }
+        ],
+        "allocationLoad": {
+          "offset": 83,
+          "va": "0x184bf9739",
+          "bytes": "48 8b 0d 40 9b f3 0b",
+          "text": "mov rcx, [rip+0xbf39b40 => 0x190b33280]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0xbf39b40 => 0x190b33280]"
+          }
+        },
+        "nullOutput": false,
+        "allocated": true,
+        "pathMark": false,
+        "wrapperMark": true
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522115891,
+          6522115895,
+          6522115897,
+          6522115904,
+          6522115909,
+          6522115912,
+          6522115915,
+          6522115921,
+          6522115923,
+          6522115926,
+          6522115931,
+          6522115938,
+          6522115941,
+          6522116001,
+          6522116005,
+          6522116011,
+          6522116015,
+          6522116018,
+          6522116036,
+          6522116040,
+          6522116042,
+          6522116045,
+          6522116048,
+          6522116067,
+          6522116072,
+          6522116076,
+          6522116080,
+          6522116083,
+          6522116086,
+          6522116092,
+          6522116096,
+          6522116099,
+          6522116105,
+          6522116108,
+          6522116111,
+          6522116114,
+          6522116119,
+          6522116122,
+          6522116128,
+          6522116132,
+          6522116135,
+          6522116141,
+          6522116144,
+          6522116147,
+          6522116150,
+          6522116155,
+          6522116158,
+          6522116164,
+          6522116168,
+          6522116171,
+          6522116177,
+          6522116180,
+          6522116183,
+          6522116186,
+          6522116191,
+          6522116194,
+          6522116200,
+          6522116204,
+          6522116207,
+          6522116213,
+          6522116220,
+          6522116224,
+          6522116230,
+          6522116234,
+          6522116241,
+          6522116245,
+          6522116252,
+          6522116255,
+          6522116259,
+          6522116263,
+          6522116267,
+          6522116270,
+          6522116272,
+          6522116275,
+          6522116278,
+          6522116282,
+          6522116287,
+          6522116289,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {
+          "allocateWrapper": {
+            "site": 6522115904,
+            "target": 6442540560
+          },
+          "constructor": {
+            "site": 6522115926,
+            "target": 6522125568
+          },
+          "idRef": {
+            "site": 6522116114,
+            "target": 6526203472
+          },
+          "paramSource": {
+            "site": 6522116150,
+            "target": 6526203472
+          },
+          "path": {
+            "site": 6522116186,
+            "target": 6528380352
+          }
+        },
+        "stores": {
+          "constValue": 6522116105,
+          "idRef": 6522116141,
+          "paramSource": 6522116177,
+          "path": 6522116220
+        },
+        "wireBytes": 17,
+        "markFlags": [
+          6735127600,
+          6735127600
+        ],
+        "markLoops": [
+          {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522116272,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          }
+        ],
+        "allocationLoad": {
+          "offset": 83,
+          "va": "0x184bf9739",
+          "bytes": "48 8b 0d 40 9b f3 0b",
+          "text": "mov rcx, [rip+0xbf39b40 => 0x190b33280]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0xbf39b40 => 0x190b33280]"
+          }
+        },
+        "nullOutput": false,
+        "allocated": true,
+        "pathMark": true,
+        "wrapperMark": false
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522115891,
+          6522115895,
+          6522115897,
+          6522115904,
+          6522115909,
+          6522115912,
+          6522115915,
+          6522115921,
+          6522115923,
+          6522115926,
+          6522115931,
+          6522115938,
+          6522115941,
+          6522115943,
+          6522115946,
+          6522115953,
+          6522115957,
+          6522115964,
+          6522115967,
+          6522115971,
+          6522115975,
+          6522115979,
+          6522115982,
+          6522115984,
+          6522115987,
+          6522115990,
+          6522115994,
+          6522115999,
+          6522116001,
+          6522116005,
+          6522116011,
+          6522116015,
+          6522116018,
+          6522116036,
+          6522116040,
+          6522116042,
+          6522116045,
+          6522116048,
+          6522116067,
+          6522116072,
+          6522116076,
+          6522116080,
+          6522116083,
+          6522116086,
+          6522116092,
+          6522116096,
+          6522116099,
+          6522116105,
+          6522116108,
+          6522116111,
+          6522116114,
+          6522116119,
+          6522116122,
+          6522116128,
+          6522116132,
+          6522116135,
+          6522116141,
+          6522116144,
+          6522116147,
+          6522116150,
+          6522116155,
+          6522116158,
+          6522116164,
+          6522116168,
+          6522116171,
+          6522116177,
+          6522116180,
+          6522116183,
+          6522116186,
+          6522116191,
+          6522116194,
+          6522116200,
+          6522116204,
+          6522116207,
+          6522116213,
+          6522116220,
+          6522116224,
+          6522116230,
+          6522116234,
+          6522116241,
+          6522116245,
+          6522116252,
+          6522116255,
+          6522116259,
+          6522116263,
+          6522116267,
+          6522116270,
+          6522116272,
+          6522116275,
+          6522116278,
+          6522116282,
+          6522116287,
+          6522116289,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {
+          "allocateWrapper": {
+            "site": 6522115904,
+            "target": 6442540560
+          },
+          "constructor": {
+            "site": 6522115926,
+            "target": 6522125568
+          },
+          "idRef": {
+            "site": 6522116114,
+            "target": 6526203472
+          },
+          "paramSource": {
+            "site": 6522116150,
+            "target": 6526203472
+          },
+          "path": {
+            "site": 6522116186,
+            "target": 6528380352
+          }
+        },
+        "stores": {
+          "constValue": 6522116105,
+          "idRef": 6522116141,
+          "paramSource": 6522116177,
+          "path": 6522116220
+        },
+        "wireBytes": 17,
+        "markFlags": [
+          6735127600,
+          6735127600
+        ],
+        "markLoops": [
+          {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522115984,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          },
+          {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522116272,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          }
+        ],
+        "allocationLoad": {
+          "offset": 83,
+          "va": "0x184bf9739",
+          "bytes": "48 8b 0d 40 9b f3 0b",
+          "text": "mov rcx, [rip+0xbf39b40 => 0x190b33280]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0xbf39b40 => 0x190b33280]"
+          }
+        },
+        "nullOutput": false,
+        "allocated": true,
+        "pathMark": true,
+        "wrapperMark": true
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522116726,
+          6522116733,
+          6522116740,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {},
+        "stores": {},
+        "wireBytes": 1,
+        "markFlags": [
+          6735127600
+        ],
+        "markLoops": [],
+        "allocationLoad": null,
+        "nullOutput": true,
+        "allocated": false,
+        "pathMark": false,
+        "wrapperMark": false
+      },
+      {
+        "selectedInstructions": [
+          6522115814,
+          6522115818,
+          6522115836,
+          6522115840,
+          6522115843,
+          6522115846,
+          6522115849,
+          6522115868,
+          6522115872,
+          6522115875,
+          6522115878,
+          6522115881,
+          6522115885,
+          6522116726,
+          6522116733,
+          6522116740,
+          6522116742,
+          6522116746,
+          6522116753,
+          6522116760,
+          6522116763,
+          6522116767,
+          6522116771,
+          6522116775,
+          6522116778,
+          6522116784,
+          6522116787,
+          6522116790,
+          6522116794,
+          6522116799,
+          6522116801,
+          6522116809,
+          6522116813,
+          6522116815,
+          6522116817,
+          6522116818,
+          6522116819,
+          6522116820
+        ],
+        "calls": {},
+        "stores": {},
+        "wireBytes": 1,
+        "markFlags": [
+          6735127600
+        ],
+        "markLoops": [
+          {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522116784,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          }
+        ],
+        "allocationLoad": null,
+        "nullOutput": true,
+        "allocated": false,
+        "pathMark": true,
+        "wrapperMark": false
+      }
+    ],
+    "constructors": [
+      {
+        "name": ".ctor",
+        "methodIndex": 307691,
+        "ownedWindows": [
+          {
+            "startRva": 79674624,
+            "endRva": 79674654,
+            "sha256": "7D8AEF5EEA5D935B0D845F8527EB9E1A8DCE23414071B3D93ADCA361BAE91027"
+          },
+          {
+            "startRva": 79674654,
+            "endRva": 79675974,
+            "sha256": "A2E2C3006868AD932D062ACD7AFD16D909087B893C4C199926F4EEC61B149366"
+          },
+          {
+            "startRva": 79675974,
+            "endRva": 79676152,
+            "sha256": "16A3AC261AF7143E4921C75B008441EB0268EB07337F1B4EF96526E71DD86FD6"
+          }
+        ],
+        "allocationContext": {
+          "instructionRva": 79675974,
+          "instructionHex": "488B0D2BF5F20B",
+          "usageCellRva": 280147832,
+          "usageRawHex": "3DFA012000000000",
+          "tag": 1,
+          "typeIndex": 64798,
+          "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.ETrackCameraTargetType>",
+          "typeRawHex": "E81F0B91010000000000150000000000"
+        },
+        "program": {
+          "initializationFlag": 6735190693,
+          "allocationLoad": {
+            "offset": 0,
+            "va": "0x184bfc246",
+            "bytes": "48 8b 0d 2b f5 f2 0b",
+            "text": "mov rcx, [rip+0xbf2f52b => 0x190b2b778]",
+            "write": {
+              "register": "rcx",
+              "value": "[rip+0xbf2f52b => 0x190b2b778]"
+            }
+          },
+          "allocator": 6442540560,
+          "markFlag": 6735127600,
+          "markLoop": null,
+          "selectedInstructions": [
+            6522126918,
+            6522126925,
+            6522126930,
+            6522126933,
+            6522126935,
+            6522126942,
+            6522126949,
+            6522126953,
+            6522127025,
+            6522127029,
+            6522127030,
+            6522127031
+          ],
+          "allocatedField": "declared Param instance in wrapper+16",
+          "idRefDefault": -1
+        }
+      },
+      {
+        "name": ".ctor",
+        "methodIndex": 307691,
+        "ownedWindows": [
+          {
+            "startRva": 79674624,
+            "endRva": 79674654,
+            "sha256": "7D8AEF5EEA5D935B0D845F8527EB9E1A8DCE23414071B3D93ADCA361BAE91027"
+          },
+          {
+            "startRva": 79674654,
+            "endRva": 79675974,
+            "sha256": "A2E2C3006868AD932D062ACD7AFD16D909087B893C4C199926F4EEC61B149366"
+          },
+          {
+            "startRva": 79675974,
+            "endRva": 79676152,
+            "sha256": "16A3AC261AF7143E4921C75B008441EB0268EB07337F1B4EF96526E71DD86FD6"
+          }
+        ],
+        "allocationContext": {
+          "instructionRva": 79675974,
+          "instructionHex": "488B0D2BF5F20B",
+          "usageCellRva": 280147832,
+          "usageRawHex": "3DFA012000000000",
+          "tag": 1,
+          "typeIndex": 64798,
+          "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.ETrackCameraTargetType>",
+          "typeRawHex": "E81F0B91010000000000150000000000"
+        },
+        "program": {
+          "initializationFlag": 6735190693,
+          "allocationLoad": {
+            "offset": 0,
+            "va": "0x184bfc246",
+            "bytes": "48 8b 0d 2b f5 f2 0b",
+            "text": "mov rcx, [rip+0xbf2f52b => 0x190b2b778]",
+            "write": {
+              "register": "rcx",
+              "value": "[rip+0xbf2f52b => 0x190b2b778]"
+            }
+          },
+          "allocator": 6442540560,
+          "markFlag": 6735127600,
+          "markLoop": {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522127008,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          },
+          "selectedInstructions": [
+            6522126918,
+            6522126925,
+            6522126930,
+            6522126933,
+            6522126935,
+            6522126942,
+            6522126949,
+            6522126953,
+            6522126955,
+            6522126959,
+            6522126963,
+            6522126970,
+            6522126977,
+            6522126980,
+            6522126984,
+            6522126988,
+            6522126992,
+            6522126995,
+            6522126999,
+            6522127008,
+            6522127011,
+            6522127014,
+            6522127018,
+            6522127023,
+            6522127025,
+            6522127029,
+            6522127030,
+            6522127031
+          ],
+          "allocatedField": "declared Param instance in wrapper+16",
+          "idRefDefault": -1
+        }
+      },
+      {
+        "name": "CreateInstance",
+        "methodIndex": 307695,
+        "ownedWindows": [
+          {
+            "startRva": 79661184,
+            "endRva": 79661214,
+            "sha256": "6748F366842ACC74B81777C8395C7A48001AB2E87AE63C4052E849B4AAC8AE42"
+          },
+          {
+            "startRva": 79661214,
+            "endRva": 79662534,
+            "sha256": "617FBC6E7E12560D832C129BC9D78A658C798A167E574BBE20B948856F4AA2D9"
+          },
+          {
+            "startRva": 79662534,
+            "endRva": 79662712,
+            "sha256": "FFB31EF2F0CB8F838EF708EB8AAA5C2DC79D482D549E53F5FD11EBFA59677F5F"
+          }
+        ],
+        "allocationContext": {
+          "instructionRva": 79662534,
+          "instructionHex": "488B0DAB29F30B",
+          "usageCellRva": 280147832,
+          "usageRawHex": "3DFA012000000000",
+          "tag": 1,
+          "typeIndex": 64798,
+          "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.ETrackCameraTargetType>",
+          "typeRawHex": "E81F0B91010000000000150000000000"
+        },
+        "program": {
+          "initializationFlag": 6735190694,
+          "allocationLoad": {
+            "offset": 0,
+            "va": "0x184bf8dc6",
+            "bytes": "48 8b 0d ab 29 f3 0b",
+            "text": "mov rcx, [rip+0xbf329ab => 0x190b2b778]",
+            "write": {
+              "register": "rcx",
+              "value": "[rip+0xbf329ab => 0x190b2b778]"
+            }
+          },
+          "allocator": 6442540560,
+          "markFlag": 6735127600,
+          "markLoop": null,
+          "selectedInstructions": [
+            6522113478,
+            6522113485,
+            6522113490,
+            6522113493,
+            6522113495,
+            6522113502,
+            6522113509,
+            6522113513,
+            6522113585,
+            6522113589,
+            6522113590,
+            6522113591
+          ],
+          "allocatedField": "declared Param instance in wrapper+16",
+          "idRefDefault": -1
+        }
+      },
+      {
+        "name": "CreateInstance",
+        "methodIndex": 307695,
+        "ownedWindows": [
+          {
+            "startRva": 79661184,
+            "endRva": 79661214,
+            "sha256": "6748F366842ACC74B81777C8395C7A48001AB2E87AE63C4052E849B4AAC8AE42"
+          },
+          {
+            "startRva": 79661214,
+            "endRva": 79662534,
+            "sha256": "617FBC6E7E12560D832C129BC9D78A658C798A167E574BBE20B948856F4AA2D9"
+          },
+          {
+            "startRva": 79662534,
+            "endRva": 79662712,
+            "sha256": "FFB31EF2F0CB8F838EF708EB8AAA5C2DC79D482D549E53F5FD11EBFA59677F5F"
+          }
+        ],
+        "allocationContext": {
+          "instructionRva": 79662534,
+          "instructionHex": "488B0DAB29F30B",
+          "usageCellRva": 280147832,
+          "usageRawHex": "3DFA012000000000",
+          "tag": 1,
+          "typeIndex": 64798,
+          "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.ETrackCameraTargetType>",
+          "typeRawHex": "E81F0B91010000000000150000000000"
+        },
+        "program": {
+          "initializationFlag": 6735190694,
+          "allocationLoad": {
+            "offset": 0,
+            "va": "0x184bf8dc6",
+            "bytes": "48 8b 0d ab 29 f3 0b",
+            "text": "mov rcx, [rip+0xbf329ab => 0x190b2b778]",
+            "write": {
+              "register": "rcx",
+              "value": "[rip+0xbf329ab => 0x190b2b778]"
+            }
+          },
+          "allocator": 6442540560,
+          "markFlag": 6735127600,
+          "markLoop": {
+            "bitmapRva": 290200088,
+            "maxQwordIndex": 32767,
+            "bitmapBytes": 262144,
+            "retryTarget": 6522113568,
+            "loopInvariant": "Each retry only reloads/updates the same bitmap qword and RAX/RCX/flags. Reader, frame, field value and caller aliases are untouched; normal completion may take any finite retries."
+          },
+          "selectedInstructions": [
+            6522113478,
+            6522113485,
+            6522113490,
+            6522113493,
+            6522113495,
+            6522113502,
+            6522113509,
+            6522113513,
+            6522113515,
+            6522113519,
+            6522113523,
+            6522113530,
+            6522113537,
+            6522113540,
+            6522113544,
+            6522113548,
+            6522113552,
+            6522113555,
+            6522113559,
+            6522113568,
+            6522113571,
+            6522113574,
+            6522113578,
+            6522113583,
+            6522113585,
+            6522113589,
+            6522113590,
+            6522113591
+          ],
+          "allocatedField": "declared Param instance in wrapper+16",
+          "idRefDefault": -1
+        }
+      }
+    ],
+    "getter": {
+      "methodIndex": 307694,
+      "pointerRva": 43147504,
+      "bytes": "488B4110C3",
+      "field": "declared wrapper::__instance",
+      "fieldOffset": 16,
+      "returnedBits": 64
+    },
+    "bitmapSection": {
+      "name": ".data",
+      "virtualAddress": 274452480,
+      "virtualSize": 18641912,
+      "rawPointer": 274444288,
+      "rawSize": 15443456,
+      "characteristics": 3221225536
+    },
+    "int32Source": {
+      "window": {
+        "startRva": 83752528,
+        "endRva": 83752608,
+        "sha256": "C1D63B45B187409C02CE9DC3291CDDC2ED578D0B4080B37C62CD3333DC5B4A6B"
+      },
+      "instructions": [
+        [
+          83752528,
+          "48895C2408"
+        ],
+        [
+          83752533,
+          "4889742410"
+        ],
+        [
+          83752538,
+          "57"
+        ],
+        [
+          83752539,
+          "4883EC20"
+        ],
+        [
+          83752543,
+          "83793004"
+        ],
+        [
+          83752547,
+          "488BD9"
+        ],
+        [
+          83752550,
+          "0F8CBEDD4302"
+        ],
+        [
+          83752556,
+          "488B4350"
+        ],
+        [
+          83752560,
+          "8B30"
+        ],
+        [
+          83752562,
+          "8B7B30"
+        ],
+        [
+          83752565,
+          "83C7FC"
+        ],
+        [
+          83752568,
+          "0F88BFDD4302"
+        ],
+        [
+          83752574,
+          "4883435004"
+        ],
+        [
+          83752579,
+          "83434004"
+        ],
+        [
+          83752583,
+          "83434404"
+        ],
+        [
+          83752587,
+          "897B30"
+        ],
+        [
+          83752590,
+          "488B5C2430"
+        ],
+        [
+          83752595,
+          "8BC6"
+        ],
+        [
+          83752597,
+          "488B742438"
+        ],
+        [
+          83752602,
+          "4883C420"
+        ],
+        [
+          83752606,
+          "5F"
+        ],
+        [
+          83752607,
+          "C3"
+        ]
+      ]
+    },
+    "pooledSource": {
+      "status": "validated",
+      "nativeInputs": {
+        "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+        "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+        "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+      },
+      "sourceHelpers": [
+        85929408
+      ],
+      "wireEncoding": "int32-pool-index",
+      "emptyIndex": -1,
+      "nullIndex": -2,
+      "evidenceBoundary": {
+        "exact": "Complete pdata/chained windows of the anonymous optimized reader and metadata-named BeyondReadString, plus the shared lookup helper.",
+        "direct": "On the pool-present branch, both consume an Int32 index, return the same empty-string literal for -1 and null for -2, and tail-forward the remaining index and identical pool instance to the same lookup helper.",
+        "conditional": "Selected initialized pool-present branch, compatible reader and pool, sufficient buffered index bytes and normal helpers. Pool-absent behavior and live pool selection are not admitted.",
+        "unresolved": "This proves a string-valued read, not inline MemoryPack string wire compatibility or current corpus admission."
+      }
+    },
+    "evidenceBoundary": {
+      "direct": "Typed Int32-backed enum and owned setter slots; initialized buffered header/count, raw constant, two Int32 binding reads, pooled path, FF output, fresh wrapper/parameter construction, pointer getter and both bitmap-mark branches.",
+      "conditional": "Initialized metadata flags; valid disjoint source/reader/output/frame/heap/bitmap, sufficient contiguous input and nonoverflowing counters, matching coherent StringPool, compatible normal ABI-preserving allocation and helpers; atomic retry loops complete normally. Runtime metadata inflation and provider/holder selection are not observed.",
+      "unresolved": [
+        "cold metadata initialization and refill paths",
+        "live generic provider/cache selection",
+        "enclosing action/source/corpus admission and camera execution"
+      ]
+    }
+  }
+}

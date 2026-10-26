@@ -25,6 +25,13 @@ from pathlib import Path
 from typing import Any
 
 
+from scripts.game_data.il2cpp.levelscript_area_call import prove_levelscript_area_call
+from scripts.game_data.il2cpp.collection_empty_clone import prove_collection_empty_clone
+from scripts.game_data.il2cpp.int32_enum_transfer import check_int32_enum_transfer
+from scripts.game_data.il2cpp.levelscript_state_transfers import prove_levelscript_state_transfers
+from scripts.game_data.il2cpp.levelscript_selector import prove_levelscript_selector
+from scripts.game_data.il2cpp.levelscript_request_senders import prove_levelscript_request_senders
+from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.common import (
     ROOT,
     check_installed_native_inputs,
@@ -37,7 +44,10 @@ from scripts.common import (
     write_text_if_changed,
 )
 from scripts.game_data.il2cpp import protocol as il2cpp
-from scripts.game_data.protobuf_schema import message_schema
+from scripts.game_data.protobuf_schema import message_fields, message_schema
+from scripts.webui.story import protocol_contracts
+from scripts.game_data.il2cpp.summary_instructions import decode_summary_instructions
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs, reader_input_changes
 from scripts.game_data.ifix_patch_native import (
     fixed_method_prefix_matches,
     load_ifix_patch_contract,
@@ -69,6 +79,111 @@ LEVELSCRIPT_ROOTS = (
     EXPORT_LAYOUT.json_dir / "LevelScriptData",
 )
 MESSAGE_125_PAYLOAD_TYPE = "Beyond.Gameplay.EventData"
+
+
+class ProtocolRegistryGateError(ValueError):
+    def __init__(self, diagnostic: dict[str, Any]):
+        self.diagnostic = diagnostic
+        super().__init__(json.dumps(diagnostic, ensure_ascii=False))
+
+
+def _required_message_fields(schema: dict[str, Any], expected: list[tuple[str, int]]) -> list[tuple[str, Any]]:
+    names = {il2cpp.normalized_field_name(name): name for name, _tag in expected}
+    return [(names[il2cpp.normalized_field_name(row.get("name") or "")], row.get("tag"))
+            for row in schema.get("fields", []) if row.get("matchedTagAndStorage") is True
+            and il2cpp.normalized_field_name(row.get("name") or "") in names]
+
+
+def _message_field_offsets(metadata: Any, defaults: dict, owner: Any, offsets: dict, names: tuple[str, ...]) -> dict:
+    # Audit keys are stable logical names; storage names come from the wire-tag join.
+    tags, storage = message_fields(metadata, defaults, owner)
+    return {name: offsets.get(storage[key]["storageName"])
+            for name in names if (key := il2cpp.normalized_field_name(name)) in tags and key in storage}
+
+
+def _message_field_runtime_type(metadata, defaults, pe, registration, owners, name, tag):
+    if len(owners)!=1:return ""
+    tags,storage=message_fields(metadata,defaults,owners[0]);key=il2cpp.normalized_field_name(name)
+    if key not in storage or tags.get(key,{}).get("tag")!=tag:return ""
+    fields=[f for f in metadata.fields_for(owners[0]) if metadata.string(f.name_index)==storage[key]["storageName"]]
+    if len(fields)!=1:return ""
+    index=fields[0].type_index
+    if type(index) is not int or not 0<=index<registration["typesCount"]:return ""
+    pointer=pe.u64_at_va(int(registration["types"],16)+index*8)
+    return il2cpp.runtime_type_name(pe,metadata,pointer) if pointer else ""
+
+
+def _native_body_summary(mapper, row, data, start_va, methods, pe=None, *, max_instructions):
+    return mapper.build_method_body_summary(row, data, start_va, methods, pe, max_instructions=max_instructions,
+        decoded_instructions=decode_summary_instructions(mapper, data, start_va))
+
+
+def _reader_recipe() -> dict[str, Any]:
+    return {"scriptSha256": file_sha256(Path(__file__)), "sharedContractsSha256": file_sha256(Path(protocol_contracts.__file__)),
+            "rawReaders": snapshot_complete_reader_inputs()}
+
+
+def _after_read_failure(native: Any, gameassembly: Path, metadata: Path, recipe: dict, source: dict) -> dict | None:
+    diagnostic = {"validator": "protocol_registry", "sourceFile": str(gameassembly),
+                  "sourceHashes": {key: source[key] for key in ("gameAssemblySha256", "metadataSha256")}}
+    after = check_installed_native_inputs(native.gameassembly_sha256, native.metadata_sha256,
+                                         gameassembly=gameassembly, metadata=metadata)
+    if not after.validated:
+        return {**diagnostic, "gate": "selectedNativeInputsAfterRead", "expected": "unchanged selected native pair",
+                "actual": f"{after.status}: {after.detail}"}
+    current = _reader_recipe()
+    if current != recipe:
+        return {**diagnostic, "gate": "readerInputsAfterRead", "sourceFile": str(Path(__file__)),
+                "expected": {"scriptSha256": recipe["scriptSha256"], "rawReaders": "unchanged complete snapshot"},
+                "actual": {"scriptSha256": current["scriptSha256"],
+                           "rawReaderDrift": reader_input_changes(recipe["rawReaders"], current["rawReaders"])}}
+    return None
+def _write_validation_failure(output: Path, failures: list[dict[str, Any]]) -> int:
+    path = output.with_suffix(".failed.json")
+    write_report_json(path, {"status": "validation_failed", "failures": failures[:64],
+                             "omittedFailures": max(0, len(failures)-64)})
+    first = failures[0]
+    print(f"[protocol-registry] validator={first['validator']} gate={first['gate']} "
+          f"message={first.get('message')} expected={str(first['expected'])[:256]} "
+          f"actual={str(first['actual'])[:384]} source={first['sourceFile']} report={path}", file=sys.stderr)
+    return 1
+
+
+def _report_validation_failures(report: dict[str, Any]) -> list[dict[str, Any]]:
+    census = "stateUpdateApplicationCensus"
+    paths = [(census,), *[(census, key) for key in ("questStateLifecycleApplication",
+        "questEnableLifecycleApplication", "questStartApplication", "questSucceedActionApplication",
+        "questTopologyFieldConsumers")], (census, "questTopologyFieldConsumers", "questSemanticFields"),
+        *[(key,) for key in ("actionExtraThreadSchedulerCensus", "levelScriptStartPolicy",
+                            "levelScriptManualSelfControl", "levelScriptActivationControl", "levelScriptTaskLifecycle")]]
+    failures = []
+    for path in paths:
+        node = report
+        for key in path: node = node[key]
+        validation = node["validation"]
+        if validation.get("status") != "validated":
+            failures.extend(validation.get("failures") or [{
+                "validator": ".".join(path), "gate": "validationStatus", "expected": "validated",
+                "actual": validation.get("status"), "sourceFile": report["source"]["gameAssembly"],
+                "sourceHashes": {key: report["source"][key] for key in ("gameAssemblySha256", "metadataSha256")}}])
+    enable = (report.get("stateUpdateApplicationCensus") or {}).get("questEnableLifecycleApplication") or {}
+    if (enable.get("validation") or {}).get("status") == "validated":
+        failures.extend(dict(validator="quest_enable_contract_projection", sourceFile=report["source"]["gameAssembly"],
+                             sourceHashes={key: report["source"][key] for key in ("gameAssemblySha256", "metadataSha256")}) | row
+                        for row in protocol_contracts.quest_enable_application_failures(enable))
+    start = report.get("levelScriptStartPolicy") or {}
+    if (start.get("validation") or {}).get("status") == "validated":
+        failures.extend(dict(validator="levelscript_start_policy_projection", sourceFile=report["source"]["gameAssembly"],
+                             sourceHashes={key: report["source"][key] for key in ("gameAssemblySha256", "metadataSha256")}) | row
+                        for row in protocol_contracts.levelscript_start_policy_failures(start))
+    activation=report.get('levelScriptActivationControl') or {}
+    if (activation.get('validation') or {}).get('status')=='validated':
+        failures.extend(dict(validator='levelscript_activation_projection',sourceFile=report['source']['gameAssembly'],
+            sourceHashes={key:report['source'][key] for key in ('gameAssemblySha256','metadataSha256')}) | row
+            for row in protocol_contracts.activation_control_projection_failures(activation))
+    return failures
+
+
 def located_code_registration(mapper: Any, pe: Any, metadata: Any, gameassembly_path: Path) -> int:
     """Locate Il2CppCodeRegistration in the selected build instead of pinning it."""
     try:
@@ -132,8 +247,8 @@ def native_mission_event_paths() -> dict[int, dict[str, Any]]:
         125: {
             **handler,
             "fieldOffsets": {
-                "missionId": offsets[f"{MISSION_EVENT_125}::missionId_"],
-                "eventName": offsets[f"{MISSION_EVENT_125}::eventName_"],
+                "missionId": offsets[f"{MISSION_EVENT_125}::<MissionId>k__BackingField"],
+                "eventName": offsets[f"{MISSION_EVENT_125}::<EventName>k__BackingField"],
             },
             "keyGenerator": _cited_row("KeyGenerator`2.GetKey", "Beyond.KeyGenerator`2.GetKey"),
             "keyBackend": _cited_row("CombineKeyManager.GetKey", "Beyond.CombineKeyManager.GetKey"),
@@ -189,15 +304,13 @@ def native_level_script_event_paths() -> dict[int, dict[str, Any]]:
         "GameAction.TriggerServerEvent",
         "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent",
     )
-    set_ctx_token = _cited_row(
-        "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
-        "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
-    )
+    token_store = next(row["contract"] for row in group["methods"]
+                       if row["method"] == "GameplayNetwork.TriggerLevelScriptServerEvent")
     return {
         57: {
             **handler,
             "fieldOffsets": {
-                name: offsets[f"{LEVEL_SCRIPT_EVENT_57}::{name}_"]
+                name: offsets[f"{LEVEL_SCRIPT_EVENT_57}::<{name[:1].upper()+name[1:]}>k__BackingField"]
                 for name in ("sceneNumId", "scriptId", "eventName", "ctxToken")
             },
             "eventParamsPath": {
@@ -205,7 +318,7 @@ def native_level_script_event_paths() -> dict[int, dict[str, Any]]:
                 "receiver": "Beyond.Gameplay.Core.LevelScriptPtr(scriptId)",
                 "receiverSetter": "Beyond.Gameplay.Core.EventParams.SetReceiver",
                 "ctxToken": (
-                    "when the protobuf ByteString is non-empty, store it in the "
+                    "when the token is non-empty, store it in the "
                     "EventParams/ParamBlackboard before dispatch"
                 ),
                 "dispatch": "Beyond.Gameplay.Core.LevelEventManager.RaiseScriptEvent",
@@ -237,8 +350,8 @@ def native_level_script_event_paths() -> dict[int, dict[str, Any]]:
                 },
                 "outboundPath": [
                     {**server_event, "parameter": "netToken"},
-                    {**trigger, "parameter": "netToken"},
-                    set_ctx_token,
+                    {**trigger, "parameter": "netToken", "operation": "inline CtxToken field store",
+                     "evidenceBoundary": "conditional", "condition": token_store},
                 ],
                 "installedIfix": _installed_ifix(
                     (
@@ -669,6 +782,7 @@ def mission_event_asset_coverage(
     mission_runtime_root: Path,
     levelscript_roots: tuple[Path, ...],
     native_header_contract: dict[str, Any],
+    *, progress: bool = False,
 ) -> dict[str, Any]:
     """Measure serialized consumers of the native mission-event surface."""
     if not mission_runtime_root.is_dir():
@@ -743,22 +857,33 @@ def mission_event_asset_coverage(
     }
     levelscript_files = 0
     levelscript_candidates: list[dict[str, Any]] = []
+    levelscript_decoded = 0
+    levelscript_failures = []
     for root in levelscript_roots:
         if not root.is_dir():
-            continue
+            raise RuntimeError(f"LevelScript source root not found: {root}")
         for path in sorted(root.rglob("*.json")):
             levelscript_files += 1
+            if progress and (levelscript_files-1)%16==0:
+                print(f'[protocol-registry] LevelScript checked={levelscript_files-1} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} next={path}',file=sys.stderr,flush=True)
             data = path.read_bytes()
-            records = extract_levelscript_uid_records(data)
-            _action_map, memberships = levelscript_action_map_membership(data, records)
-            for row in summarize_levelscript_native_header_records(
-                records,
-                memberships,
-                names=target_header_names,
-            ):
+            try:
+                records = extract_levelscript_uid_records(data, source_path=path)
+                _action_map, memberships = levelscript_action_map_membership(data, records)
+                candidates = list(summarize_levelscript_native_header_records(records, memberships, names=target_header_names))
+            except ValueError as error:
+                levelscript_failures.append(dict(status='unavailable_fail_closed',validator='protocolRegistryMissionEventAssets',
+                    gate='typedActionMap',sourceFile=str(path.resolve()),sourceHashes={'sha256':hashlib.sha256(data).hexdigest().upper()},
+                    expected='complete current typed action/getter/header lists',actual=str(error)[:1000],
+                    diagnostics=getattr(error,'diagnostics',None)))
+                continue
+            levelscript_decoded += 1
+            for row in candidates:
                 row = dict(row)
                 row["sourceFile"] = str(path.resolve())
                 levelscript_candidates.append(row)
+    if progress:
+        print(f'[protocol-registry] LevelScript checked={levelscript_files} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} complete',file=sys.stderr,flush=True)
     levelscript_candidate_count = sum(
         int(row.get("count") or 0) for row in levelscript_candidates
     )
@@ -776,17 +901,27 @@ def mission_event_asset_coverage(
         ),
         "actionTypes": dict(sorted(action_types.items())),
         "levelScriptFilesScanned": levelscript_files,
+        "levelScriptActionMapsDecoded": levelscript_decoded,
+        "levelScriptActionMapsUnavailable": len(levelscript_failures),
+        "levelScriptActionMapStatus": "partial" if levelscript_failures else "complete",
+        "levelScriptDecodeFailures": levelscript_failures,
         "levelScriptNativeHeaderContract": native_header_contract,
         "levelScriptCustomMissionEventRecords": levelscript_candidate_count,
         "levelScriptCandidateOpcodeMappings": levelscript_candidates,
         "finding": (
-            "The refreshed serialized assets contain no "
-            "MissionEvent_OnCustomEventForMission listener. This bounds that serialized "
-            "action family only: message 125 actually publishes through the keyed global "
-            "EventManager bus, so this scan cannot establish whether that bus has a "
-            "runtime or indirect consumer."
+            "Only complete typed action-map lists contribute LevelScript candidates; "
+            "unavailable maps establish no listener absence. These serialized action-family "
+            "counts do not establish a runtime or indirect consumer of message 125's keyed global EventManager bus."
         ),
     }
+
+
+def _print_levelscript_coverage(coverage):
+    if coverage["levelScriptDecodeFailures"]:
+        first = coverage["levelScriptDecodeFailures"][0]
+        print(f"[protocol-registry] unavailable LevelScript action maps={coverage['levelScriptActionMapsUnavailable']}; "
+              f"source={first['sourceFile']} sha256={first['sourceHashes']['sha256']} "
+              f"gate={first['gate']} actual={first['actual'][:300]}",file=sys.stderr)
 
 
 def validate_levelscript_start_policy_observation(
@@ -944,396 +1079,32 @@ def validate_levelscript_start_policy_observation(
     }
 
 
-def levelscript_start_policy_contract(
-    metadata: Any,
-    defaults: dict[int, tuple[int, int]],
-    helper: Any,
-    gameassembly_path: Path,
-    mapper_path: Path = NATIVE_MAPPER_HELPER,
-) -> dict[str, Any]:
-    """Discover SameWithActive semantics from names, enums, and native flow."""
-    mapper = il2cpp.load_native_mapper(mapper_path)
-    pe = mapper.PeImage(gameassembly_path)
-    code_registration = located_code_registration(
-        mapper, pe, metadata, gameassembly_path
-    )
-    modules = mapper.parse_codegen_modules(pe, code_registration)
-    ranges = mapper.image_method_ranges(metadata)
-    pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
-        pe, metadata, modules, ranges
-    )
-    sorted_pointers = sorted({
-        pointer
-        for pointers in pointers_by_image.values()
-        for pointer in pointers
-        if pointer
-    })
-    pointers_by_method_index: dict[int, set[int]] = {}
-    for pointer, aliases in method_by_pointer.items():
-        for alias in aliases:
-            method_index = alias.get("methodIndex")
-            if isinstance(method_index, int):
-                pointers_by_method_index.setdefault(method_index, set()).add(pointer)
-
-    enum_type_names = (
-        "Beyond.GEnums.LevelScriptState",
-        "Beyond.Gameplay.LevelScriptStartType",
-        "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",
-    )
-    enum_rows = {
-        type_name: il2cpp.enum_members(metadata, defaults, type_name)
-        for type_name in enum_type_names
-    }
-    enum_values = {
-        type_name: {row["name"]: row["id"] for row in rows}
-        for type_name, rows in enum_rows.items()
-    }
-
-    runtime_type_name = "Beyond.Gameplay.Core.LevelScriptRuntime"
-    runtime_types = [
-        type_def
-        for type_def in metadata.types
-        if metadata.type_full_name(type_def) == runtime_type_name
-    ]
-    method_specs = {
-        "get_state": ("get_state", (), "Beyond.GEnums.LevelScriptState"),
-        "get_isDone": ("get_isDone", (), "System.Boolean"),
-        "get_startType": (
-            "get_startType",
-            (),
-            "Beyond.Gameplay.LevelScriptStartType",
-        ),
-        "UpdateWithinStartArea": (
-            "UpdateWithinStartArea",
-            (),
-            "System.Boolean",
-        ),
-        "set_runtimeState": (
-            "set_runtimeState",
-            ("Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState",),
-            "System.Void",
-        ),
-        "UpdateRuntimeState": (
-            "UpdateRuntimeState",
-            ("Beyond.Gameplay.Core.ScriptEndReason",),
-            "System.Void",
-        ),
-    }
-    method_rows: dict[str, dict[str, Any]] = {}
-    if len(runtime_types) == 1:
-        runtime_type = runtime_types[0]
-        for key, (name, parameter_types, return_type) in method_specs.items():
-            candidates: list[dict[str, Any]] = []
-            for method_def in metadata.methods_for(runtime_type):
-                info = helper.method_row(metadata, method_def)
-                actual_parameter_types = tuple(
-                    row.get("typeName")
-                    for row in info.get("parameterDetails") or []
-                )
-                if (
-                    info.get("name") == name
-                    and actual_parameter_types == parameter_types
-                    and info.get("returnTypeName") == return_type
-                ):
-                    method_index = method_def.index
-                    pointers = sorted(
-                        pointers_by_method_index.get(method_index) or []
-                    )
-                    candidates.append({
-                        "methodIndex": method_index,
-                        "token": info.get("token"),
-                        "parameterTypes": list(actual_parameter_types),
-                        "returnTypeName": info.get("returnTypeName"),
-                        "pointers": pointers,
-                    })
-            if len(candidates) == 1 and len(candidates[0]["pointers"]) == 1:
-                candidate = candidates[0]
-                pointer = candidate["pointers"][0]
-                method_rows[key] = {
-                    **candidate,
-                    "pointers": [f"0x{value:x}" for value in candidate["pointers"]],
-                    "methodPointerVa": f"0x{pointer:x}",
-                    "mappingStatus": "mapped_unique",
-                }
-            else:
-                method_rows[key] = {
-                    "mappingStatus": "unresolved",
-                    "candidateCount": len(candidates),
-                    "candidates": candidates,
-                }
-    else:
-        method_rows = {
-            key: {
-                "mappingStatus": "unresolved",
-                "candidateCount": 0,
-                "runtimeTypeCount": len(runtime_types),
-            }
-            for key in method_specs
-        }
-
-    observation: dict[str, Any] = {
-        "enumValues": enum_values,
-        "methods": method_rows,
-        "activeStateGate": {},
-        "doneGate": {},
-        "startTypeGates": {},
-        "startAreaGate": {},
-        "preStartTransition": {},
-    }
-    runtime_method = method_rows.get("UpdateRuntimeState") or {}
-    if runtime_method.get("mappingStatus") == "mapped_unique":
-        runtime_pointer = int(runtime_method["methodPointerVa"], 16)
-        scan_size, next_pointer = mapper.estimate_scan_size(
-            runtime_pointer, sorted_pointers, 65536
-        )
-        method_index = int(runtime_method["methodIndex"])
-        mapper_row = full_method_mapper_row(metadata, helper, method_index)
-        body_bytes = pe.bytes_at_va(runtime_pointer, scan_size)
-        body = mapper.build_method_body_summary(
-            mapper_row,
-            body_bytes,
-            runtime_pointer,
-            method_by_pointer,
-            pe=pe,
-            max_instructions=30000,
-        )
-        instructions = mapper.decode_x64_subset(
-            body_bytes, runtime_pointer, stop_offset=len(body_bytes)
-        )
-        calls = sorted(body.get("calls") or [], key=lambda row: row["offset"])
-
-        def calls_to(method_key: str) -> list[dict[str, Any]]:
-            expected_index = (method_rows.get(method_key) or {}).get("methodIndex")
-            return [
-                call
-                for call in calls
-                if any(
-                    target.get("methodIndex") == expected_index
-                    for target in call.get("resolved") or []
-                )
-            ]
-
-        def instructions_between(start: int, end: int) -> list[dict[str, Any]]:
-            return [
-                row
-                for row in instructions
-                if start < int(row.get("offset") or 0) < end
-            ]
-
-        def compared_value(rows: list[dict[str, Any]]) -> int | None:
-            for row in rows:
-                match = re.fullmatch(
-                    r"cmp eax, (?:0x([0-9a-f]+)|(-?\d+))",
-                    str(row.get("text") or ""),
-                )
-                if match:
-                    return int(match.group(1), 16) if match.group(1) else int(match.group(2))
-                if str(row.get("text") or "") == "test eax, eax":
-                    return 0
-            return None
-
-        def branch_target(rows: list[dict[str, Any]]) -> int | None:
-            for row in rows:
-                match = re.fullmatch(
-                    r"(?:je|jne|jcc) 0x([0-9a-f]+)",
-                    str(row.get("text") or ""),
-                )
-                if match:
-                    return int(match.group(1), 16)
-            return None
-
-        state_calls = calls_to("get_state")
-        done_calls = calls_to("get_isDone")
-        start_type_calls = calls_to("get_startType")
-        start_area_calls = calls_to("UpdateWithinStartArea")
-        state_setter_calls = calls_to("set_runtimeState")
-        first_done = done_calls[0] if done_calls else None
-        first_start_area = start_area_calls[0] if start_area_calls else None
-        start_policy_calls = (
-            [
-                call
-                for call in start_type_calls
-                if int(first_done["offset"]) < int(call["offset"])
-                < int(first_start_area["offset"])
-            ]
-            if first_done and first_start_area
-            else []
-        )
-        first_start_type = start_policy_calls[0] if start_policy_calls else None
-        if first_done and first_start_type:
-            active_gate_candidates: list[dict[str, Any]] = []
-            for state_call in state_calls:
-                if int(state_call["offset"]) >= int(first_done["offset"]):
-                    continue
-                rows = instructions_between(
-                    int(state_call["offset"]), int(first_done["offset"])
-                )
-                if compared_value(rows) == enum_values[
-                    "Beyond.GEnums.LevelScriptState"
-                ].get("Active"):
-                    candidate = {
-                        "callOffset": state_call["offset"],
-                        "comparedValue": compared_value(rows),
-                        "branchTargetVa": (
-                            f"0x{branch_target(rows):x}"
-                            if branch_target(rows) is not None
-                            else None
-                        ),
-                        "branchTargetIsDoneCheck": (
-                            branch_target(rows)
-                            == runtime_pointer + int(first_done["offset"])
-                        ),
-                    }
-                    active_gate_candidates.append(candidate)
-                    if candidate["branchTargetIsDoneCheck"]:
-                        observation["activeStateGate"] = candidate
-                        break
-            if not observation["activeStateGate"] and active_gate_candidates:
-                observation["activeStateGate"] = active_gate_candidates[0]
-            observation["activeStateGateCandidates"] = active_gate_candidates
-            done_rows = instructions_between(
-                int(first_done["offset"]), int(first_start_type["offset"])
-            )
-            observation["doneGate"] = {
-                "callOffset": first_done["offset"],
-                "doneResultTested": any(
-                    str(row.get("text") or "") == "test al, al"
-                    for row in done_rows
-                ),
-                "notDoneFallsThroughToStartPolicy": any(
-                    str(row.get("text") or "").startswith(("je ", "jne ", "jcc "))
-                    for row in done_rows
-                ),
-            }
-
-        common_pre_start_va: int | None = None
-        if len(start_policy_calls) == 3 and start_area_calls:
-            boundary_offsets = [
-                int(start_policy_calls[1]["offset"]),
-                int(start_policy_calls[2]["offset"]),
-                int(start_area_calls[0]["offset"]),
-            ]
-            gate_names = ("Never", "ByEnterStartShape", "SameWithActive")
-            for index, (name, call) in enumerate(zip(gate_names, start_policy_calls)):
-                rows = instructions_between(
-                    int(call["offset"]), boundary_offsets[index]
-                )
-                target = branch_target(rows)
-                gate = {
-                    "callOffset": call["offset"],
-                    "comparedValue": compared_value(rows),
-                    "branchTargetVa": f"0x{target:x}" if target is not None else None,
-                }
-                if name == "Never":
-                    gate["branchesAwayFromPreStart"] = target is not None
-                elif name == "ByEnterStartShape":
-                    gate["branchTargetIsStartAreaCheck"] = (
-                        target
-                        == runtime_pointer + int(start_area_calls[0]["offset"])
-                    )
-                else:
-                    common_pre_start_va = target
-                    gate["branchTargetIsCommonPreStart"] = target is not None
-                observation["startTypeGates"][name] = gate
-
-        if start_area_calls and common_pre_start_va is not None:
-            start_area_offset = int(start_area_calls[0]["offset"])
-            common_offset = common_pre_start_va - runtime_pointer
-            area_rows = instructions_between(start_area_offset, common_offset)
-            observation["startAreaGate"] = {
-                "callOffset": start_area_offset,
-                "resultTested": any(
-                    str(row.get("text") or "") == "test al, al"
-                    for row in area_rows
-                ),
-                "trueFallsThroughToCommonPreStart": any(
-                    str(row.get("text") or "").startswith(("je ", "jne ", "jcc "))
-                    for row in area_rows
-                ),
-            }
-            setter = next(
-                (
-                    call
-                    for call in state_setter_calls
-                    if int(call["offset"]) > common_offset
-                ),
-                None,
-            )
-            if setter:
-                transition_rows = [
-                    row
-                    for row in instructions
-                    if common_offset <= int(row.get("offset") or 0) < int(setter["offset"])
-                ]
-                pre_start_value = enum_values[
-                    "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState"
-                ].get("PreStart")
-                expected_move = f"mov edx, 0x{pre_start_value:x}"
-                observation["preStartTransition"] = {
-                    "commonTargetVa": f"0x{common_pre_start_va:x}",
-                    "setterCallOffset": setter["offset"],
-                    "runtimeStateValue": pre_start_value,
-                    "setterReceivesValue": any(
-                        str(row.get("text") or "") == expected_move
-                        for row in transition_rows
-                    ),
-                    "instructionWindow": [
-                        {
-                            "offset": row.get("offset"),
-                            "va": row.get("va"),
-                            "text": row.get("text"),
-                            "bytes": row.get("bytes"),
-                        }
-                        for row in transition_rows
-                    ],
-                }
-        observation["methodBody"] = {
-            "methodPointerVa": f"0x{runtime_pointer:x}",
-            "methodPointerRva": f"0x{runtime_pointer - pe.image_base:x}",
-            "scanBytes": scan_size,
-            "nextMethodPointerVa": f"0x{next_pointer:x}" if next_pointer else None,
-            "instructionCount": body.get("instructionCount"),
-            "unknownInstructionCount": body.get("unknownInstructionCount"),
-            "startTypeCallCount": len(start_type_calls),
-            "startPolicyCallCount": len(start_policy_calls),
-        }
-
-    source_hashes = {
-        "gameAssemblySha256": file_sha256(gameassembly_path),
-        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
-    }
-    validation = validate_levelscript_start_policy_observation(
-        observation,
-        source_file=str(gameassembly_path.resolve()),
-        source_hashes=source_hashes,
-    )
-    return {
-        "schema": "levelScriptStartPolicy.v1",
-        "classification": "same_with_active_enters_prestart_when_active",
-        "discoveryPattern": {
-            "runtimeType": runtime_type_name,
-            "methodSelection": "exact metadata name, signature, and return type",
-            "enumSelection": "exact metadata enum types and constant values",
-            "nativeFlow": (
-                "decoded current-binary direct calls, comparisons, conditional "
-                "targets, and common runtime-state setter"
-            ),
-            "objectIdentityInputs": [],
-        },
-        **observation,
-        "finding": (
-            "When a LevelScript's public state is Active and it is not done, "
-            "startType SameWithActive branches directly to the same internal "
-            "PreStart transition used after a successful start-area check."
-        ),
-        "boundary": (
-            "This proves the generic client start policy for every serialized "
-            "SameWithActive LevelScript in this exact binary. It does not identify "
-            "which mission or server transition made the script Active, nor does it "
-            "order multiple Story actions inside or across scripts."
-        ),
-        "validation": validation,
-    }
+def levelscript_start_policy_contract(gameassembly_path: Path, metadata_path: Path) -> dict[str, Any]:
+    """Prove the current ordinary Active-case program from selected native bytes."""
+    from scripts.game_data.il2cpp.native_image import open_native_image
+    from scripts.game_data.il2cpp.levelscript_start_policy import prove_levelscript_start_policy
+    source_hashes = {"gameAssemblySha256": file_sha256(gameassembly_path), "metadataSha256": file_sha256(metadata_path)}
+    try:
+        observation = prove_levelscript_start_policy(open_native_image(gameassembly_path, metadata_path))
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+        observation = {"nativeProgramFailure": str(error)[:2000]}
+    validation = validate_levelscript_start_policy_observation(observation,
+        source_file=str(gameassembly_path.resolve()), source_hashes=source_hashes)
+    if observation.get("nativeProgramFailure"):
+        validation["failures"].insert(0, {"validator": "levelscript_start_policy_contract", "gate": "currentNativeStartProgram",
+            "message": "typed ordinary Active-case code/table/field/call proof", "expected": "complete selected ordinary program",
+            "actual": observation["nativeProgramFailure"], "sourceFile": str(gameassembly_path.resolve()), "sourceHashes": source_hashes})
+        validation["status"] = "validation_failed"
+    return {"schema": protocol_contracts.START_POLICY_SCHEMA, "classification": protocol_contracts.START_POLICY_CLASSIFICATION,
+        "discoveryPattern": {"runtimeType": "Beyond.Gameplay.Core.LevelScriptRuntime", "objectIdentityInputs": [],
+            "methodSelection": "exact selected metadata names, signatures and undecorated native representations",
+            "nativeFlow": "complete owned code/table framing; ordinary entry frames, typed field returns and actual guarded runtime-state arm"},
+        **observation, "validation": validation,
+        "finding": "In the ordinary RuntimeState.Active arm, public Active and not-done reach the authored start policy. "
+            "SameWithActive passes PreStart to the selected runtime-state setter, using the same call reached after a true named start-area return.",
+        "boundary": "Conditional ordinary entry control and value flow. Typed original getter implementations, ordinary returning Win64 callees "
+            "and stable disjoint storage are conditions. Non-entry owned code remains separately decoded; exception/resumption entries, "
+            "IFix replacements, spatial outcomes, effective runtime state and server selection are unproved. No mission/quest/Story identity or order follows."}
 
 
 def validate_levelscript_manual_self_control_observation(
@@ -1637,7 +1408,7 @@ def levelscript_manual_self_control_contract(
             metadata, helper, int(method["methodIndex"])
         )
         body_bytes = pe.bytes_at_va(pointer, scan_size)
-        body = mapper.build_method_body_summary(
+        body = _native_body_summary(mapper,
             mapper_row,
             body_bytes,
             pointer,
@@ -1713,14 +1484,7 @@ def levelscript_manual_self_control_contract(
             for row in start_instructions
             if setter_offset - 24 <= int(row.get("offset") or 0) < setter_offset
         ]
-        texts = {str(row.get("text") or "") for row in setter_window}
-        setter_receives_pre_start = (
-            f"mov edx, 0x{pre_start_value:x}" in texts
-            or (
-                "xor r8d, r8d" in texts
-                and f"lea rdx, [r8+0x{pre_start_value:x}]" in texts
-            )
-        )
+        setter_receives_pre_start = _cfg_integer_argument(setter_calls[0], "rdx") == pre_start_value
     manual_start_flow = {
         "runtimeStateValue": pre_start_value,
         "setterCallCount": len(setter_calls),
@@ -1737,6 +1501,8 @@ def levelscript_manual_self_control_contract(
         "updateRuntimeStateCallOffset": (
             update_calls[0]["offset"] if len(update_calls) == 1 else None
         ),
+        "setterArgumentOrigin": (setter_calls[0].get("argumentOrigins") or {}).get("rdx") if len(setter_calls) == 1 else None,
+        "setterArgumentValue": _cfg_integer_argument(setter_calls[0], "rdx") if len(setter_calls) == 1 else None,
         "setterInstructionWindow": [
             {
                 "offset": row.get("offset"),
@@ -1824,13 +1590,11 @@ def _returned_bool_at(pe: Any, target: int) -> bool | None:
 def active_area_hysteresis_flow(
     mapper: Any,
     pe: Any,
-    area_body: dict[str, Any],
     hysteresis: dict[str, Any],
-    range_sensitive: dict[str, Any],
     method_by_pointer: dict[int, list[dict[str, Any]]],
     field_offsets: dict[str, Any],
 ) -> dict[str, Any]:
-    """Prove the within-active-area rule and tie UpdateWithinActiveArea to it."""
+    """Read named original-rule observations; typed caller/target proofs admit them."""
     enter_offset = field_offsets.get("levelScriptRuntime.activeShapeList")
     exit_offset = field_offsets.get("levelScriptRuntime.activeShapeOutsideList")
     within_offset = field_offsets.get("levelScriptRuntime.withinActiveArea")
@@ -1917,79 +1681,10 @@ def active_area_hysteresis_flow(
         flow["shapeTestCallee"] = sorted(f"0x{target:x}" for target in shape_tests)
     flow.update(rule)
 
-    # -- the UpdateWithinActiveArea call site --------------------------------
-    area_pointer = int(area_body.get("methodPointerVa") or "0x0", 16)
-    tie = {"callSiteOffset": -1, "withinStoreOffset": -1, "calleeRoute": "unresolved"}
-    if area_pointer and all(isinstance(value, int) for value in (enter_offset, exit_offset, within_offset)):
-        size = int(area_body.get("scanBytes") or 0)
-        rows = mapper.decode_x64_subset(pe.bytes_at_va(area_pointer, size), area_pointer, stop_offset=size)
-        texts = [str(row.get("text") or "") for row in rows]
-        this_regs = {"rcx"}
-        for text in texts[:12]:
-            match = re.fullmatch(r"mov (\w+), rcx", text)
-            if match:
-                this_regs.add(match.group(1))
-        loaded: dict[int, str] = {}
-        for text in texts[:80]:
-            match = re.fullmatch(r"(?:mov|movzx) (\w+), \[(\w+)\+0x([0-9a-f]+)\]", text)
-            if match and match.group(2) in this_regs:
-                loaded.setdefault(int(match.group(3), 16), match.group(1))
-        enter_reg, exit_reg, within_reg = (loaded.get(enter_offset), loaded.get(exit_offset), loaded.get(within_offset))
-        sensitive_pointer = int(range_sensitive.get("methodPointerVa") or "0x0", 16)
-        hysteresis_pointer = int(hysteresis.get("methodPointerVa") or "0x0", 16)
-        sensitive_seen = False
-        for index, text in enumerate(texts):
-            match = re.fullmatch(r"call 0x([0-9a-f]+)", text)
-            if not match:
-                continue
-            target = int(match.group(1), 16)
-            if target == sensitive_pointer:
-                sensitive_seen = True
-                continue
-            window = texts[max(0, index - 12):index]
-            if not (
-                sensitive_seen and enter_reg and exit_reg and within_reg
-                and f"mov rdx, {enter_reg}" in window
-                and f"mov r8, {exit_reg}" in window
-                and any(re.fullmatch(r"lea r9, \[rsp\+0x[0-9a-f]+\]", text) for text in window)
-                and any(re.fullmatch(rf"mov \[rsp\+0x20\], {within_reg[1:] if within_reg.startswith('e') else within_reg}l?", text)
-                        or text == f"mov [rsp+0x20], {'bl' if within_reg in ('ebx', 'rbx') else within_reg}"
-                        for text in window)
-            ):
-                continue
-            tie["callSiteOffset"] = int(rows[index]["offset"])
-            tie["calleeRoute"] = (
-                "named" if target == hysteresis_pointer else "inlinedCopyWithMatchingSignature"
-            )
-            result = next(
-                (
-                    re.fullmatch(r"movzx (\w+), al", later).group(1)
-                    for later in texts[index + 1:index + 4]
-                    if re.fullmatch(r"movzx (\w+), al", later)
-                ),
-                None,
-            )
-            byte_reg = {"r15d": "r15b", "r14d": "r14b", "r13d": "r13b", "r12d": "r12b",
-                        "ebx": "bl", "esi": "sil", "edi": "dil", "ebp": "bpl"}.get(result or "", "")
-            for later_index in range(index + 1, len(rows)):
-                later = texts[later_index]
-                if byte_reg and re.fullmatch(
-                    rf"mov \[(?:{'|'.join(sorted(this_regs))})\+0x{within_offset:x}\], {byte_reg}", later
-                ):
-                    tie["withinStoreOffset"] = int(rows[later_index]["offset"])
-                    break
-            break
-    flow.update(tie)
-    flow["callSitePassesFieldsInSignatureOrder"] = tie["callSiteOffset"] >= 0
-    flow["callResultStoredToWithin"] = tie["withinStoreOffset"] >= 0
-    flow["evidenceBoundary"] = {
-        "exact": "the named _CalcWithinAreaHysteresis body decides the rule",
-        "conditional": (
-            "an inlined callee is tied to that body by its argument shape and "
-            "result store, not by comparing its bytes"
-            if tie["calleeRoute"] == "inlinedCopyWithMatchingSignature" else ""
-        ),
-    }
+    # Typed caller and target-identity proofs below own these fields.
+    flow.update(callSiteOffset=-1,withinStoreOffset=-1,calleeRoute='unresolved',
+        callSitePassesFieldsInSignatureOrder=False,callResultStoredToWithin=False)
+    flow['evidenceBoundary']={'direct':'Named original-body observations; admission separately requires typed caller and actual-target proofs.'}
     return flow
 
 
@@ -2059,16 +1754,9 @@ def validate_levelscript_activation_control_observation(
             ("triggerVolumeInfos", 6),
         ],
     }
-    actual_fields = {
-        key: [
-            (row.get("name"), row.get("tag"))
-            for row in ((observation.get("messageSchemas") or {}).get(key) or {}).get(
-                "fields", []
-            )
-            if row.get("name") in {name for name, _tag in expected_fields[key]}
-        ]
-        for key in expected_fields
-    }
+    actual_fields = {key: _required_message_fields(
+        (observation.get("messageSchemas") or {}).get(key) or {}, fields)
+        for key, fields in expected_fields.items()}
     if actual_fields != expected_fields:
         fail("messageSchemas", expected_fields, actual_fields)
 
@@ -2130,6 +1818,7 @@ def validate_levelscript_activation_control_observation(
         "RuntimeSendActive",
         "RuntimeSendStart",
         "BaseSendMsg",
+        "BaseSendAndDispose",
     }
     unresolved = sorted(
         name
@@ -2143,7 +1832,7 @@ def validate_levelscript_activation_control_observation(
         fail("methodMapping", "all mapped_unique", unresolved)
 
     expected_state_flow = {
-        "handlerToManagerShort": 1,
+        "handlerToManagerFull": 1,
         "managerShortToManagerFull": 1,
         "managerFullToContainer": 1,
         "containerToUpdateState": 1,
@@ -2162,14 +1851,14 @@ def validate_levelscript_activation_control_observation(
         "snapshotMessageId": 25,
         "incrementalMessageId": 37,
         "snapshotLevelScriptsRuntimeType": (
-            "Google.Protobuf.Collections.RepeatedField`1<Proto.LEVEL_SCRIPT_INFO>"
+            "Proto.RepeatedField`1<Proto.LEVEL_SCRIPT_INFO>"
         ),
         "managerStateShortDirectCallers": [
-            "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
             "Beyond.Gameplay.GameplayNetwork._Handle_SelfSceneInfo",
         ],
         "managerStateFullDirectCallers": [
             "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptState",
+            "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
         ],
         "managerServerSyncDirectCallers": [],
         "containerStateDirectCallers": [
@@ -2194,7 +1883,7 @@ def validate_levelscript_activation_control_observation(
         "publicStateSetterArguments": {
             "Beyond.Gameplay.Core.LevelScriptContainer.LoadFromLevelData": ["0"],
             "Beyond.Gameplay.Core.LevelScriptRuntime.Init": ["0"],
-            "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSync": ["param:state"],
+            "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSync": ["low32(param:state)"],
             "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateState": ["param:value"],
         },
     }
@@ -2208,6 +1897,9 @@ def validate_levelscript_activation_control_observation(
             expected_public_state_sources,
             actual_public_state_sources,
         )
+
+    for failure in protocol_contracts.activation_control_projection_failures(dict(observation,schema=protocol_contracts.ACTIVATION_CONTROL_SCHEMA)):
+        fail(failure['gate'],failure['expected'],failure['actual'])
 
     expected_subgame_flow = {
         "subGameLookupCallCount": 1,
@@ -2243,8 +1935,8 @@ def validate_levelscript_activation_control_observation(
         fail("manualStartDirectCallers", expected_callers, actual_callers)
 
     expected_request_flow = {
-        "networkActiveToSendMsg": 1,
-        "networkStartToSendMsg": 1,
+        "networkActiveToSendAndDispose": 1,
+        "networkStartToSendAndDispose": 1,
         "runtimeActiveToSendMsg": 1,
         "runtimeStartToSendMsg": 1,
         "networkSetActiveOnlyFromRuntime": True,
@@ -2300,7 +1992,7 @@ def validate_levelscript_activation_control_observation(
     for name in ['levelScriptTypeValues', 'nonSubLevelRequiresEnabledAndActiveArea', 'subLevelRequiresPublicActive', 'nonSubLevelSendsActiveTrueAfterPreActive', 'subLevelSkipsActiveTrueRequest']:
         if observed_activation_selector_flow.get(name) != expected_activation_selector_flow[name]:
             fail("activationSelectorFlow", {name: expected_activation_selector_flow[name]}, {name: observed_activation_selector_flow.get(name)})
-    for name in ['enabledStateValue', 'activeStateValue', 'preActiveStateValue', 'preActiveEndSendActiveStateValue', 'waitForStateActiveValue', 'inactiveLevelScriptTypeCallOffset', 'nonSubLevelEnabledStateCallOffset', 'activeAreaGateCallOffset', 'subLevelActiveStateCallOffset', 'preActiveSetterCallOffset', 'preActiveLevelScriptTypeCallOffset', 'activeTrueRequestCallOffset', 'waitForStateActiveSetterOffsets']:
+    for name in ['enabledStateValue', 'activeStateValue', 'preActiveStateValue', 'preActiveEndSendActiveStateValue', 'waitForStateActiveValue', 'inactiveLevelScriptTypeInstructionOffset', 'nonSubLevelEnabledStateInstructionOffset', 'activeAreaGateCallOffset', 'subLevelActiveStateInstructionOffset', 'preActiveSetterCallOffset', 'preActiveLevelScriptTypeCallOffset', 'activeTrueRequestCallOffset', 'waitForStateActiveSetterOffsets']:
         value = observed_activation_selector_flow.get(name)
         values = value if isinstance(value, list) else [value]
         if not values or any(not isinstance(item, int) or item < 0 for item in values):
@@ -2620,6 +2312,8 @@ def levelscript_activation_control_contract(
             "System.Void",
             parameter_types=("System.Boolean",),
         ),
+        "BaseSendAndDispose": mapped_method(
+            "Beyond.Gameplay.BaseNetworkSystem", "SendMsgAndDispose", 2, "System.Void"),
         "BaseSendMsg": mapped_method(
             "Beyond.Gameplay.BaseNetworkSystem",
             "SendMsg",
@@ -2639,7 +2333,7 @@ def levelscript_activation_control_contract(
         mapper_row = full_method_mapper_row(
             metadata, helper, int(method["methodIndex"])
         )
-        body = mapper.build_method_body_summary(
+        body = _native_body_summary(mapper,
             mapper_row,
             pe.bytes_at_va(pointer, scan_size),
             pointer,
@@ -2694,8 +2388,8 @@ def levelscript_activation_control_contract(
         ]
 
     state_links = {
-        "handlerToManagerShort": calls_to(
-            "StateNotifyHandler", "ManagerStateShort"
+        "handlerToManagerFull": calls_to(
+            "StateNotifyHandler", "ManagerStateFull"
         ),
         "managerShortToManagerFull": calls_to(
             "ManagerStateShort", "ManagerStateFull"
@@ -2757,25 +2451,8 @@ def levelscript_activation_control_contract(
     )
     self_scene_info_fields = find_type("Proto.SC_SELF_SCENE_INFO")
     level_script_info_fields = find_type("Proto.LEVEL_SCRIPT_INFO")
-    runtime_types_va = int(metadata_summary["types"], 16)
-
-    def field_runtime_type(type_rows: list[Any], field_name: str) -> str:
-        if len(type_rows) != 1:
-            return ""
-        matches = [
-            field
-            for field in metadata.fields_for(type_rows[0])
-            if metadata.string(field.name_index) == field_name
-        ]
-        if len(matches) != 1:
-            return ""
-        type_va = pe.u64_at_va(runtime_types_va + matches[0].type_index * 8)
-        return il2cpp.runtime_type_name(pe, metadata, type_va)
-
-    snapshot_level_scripts_runtime_type = field_runtime_type(
-        self_scene_info_fields,
-        "levelScripts_",
-    )
+    snapshot_level_scripts_runtime_type = _message_field_runtime_type(
+        metadata,defaults,pe,metadata_summary,self_scene_info_fields,"levelScripts_",8)
     field_offsets: dict[str, int | None] = {}
     if len(challenge_fields) == 1:
         current = il2cpp.runtime_type_field_offsets(
@@ -2795,27 +2472,28 @@ def levelscript_activation_control_contract(
         current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, state_notify_fields[0].index
         )
-        for name in ("sceneNumId_", "scriptId_", "state_", "isComplete_"):
-            field_offsets[f"stateNotify.{name}"] = current.get(name)
+        field_offsets.update({f"stateNotify.{name}": value for name, value in _message_field_offsets(
+            metadata, defaults, state_notify_fields[0], current, ("sceneNumId_", "scriptId_", "state_", "isComplete_")).items()})
     if len(self_scene_info_fields) == 1:
         current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, self_scene_info_fields[0].index
         )
-        for name in ("sceneNumId_", "sceneId_", "levelScripts_"):
-            field_offsets[f"selfSceneInfo.{name}"] = current.get(name)
+        field_offsets.update({f"selfSceneInfo.{name}": value for name, value in _message_field_offsets(
+            metadata, defaults, self_scene_info_fields[0], current, ("sceneNumId_", "sceneId_", "levelScripts_")).items()})
     if len(level_script_info_fields) == 1:
         current = il2cpp.runtime_type_field_offsets(
             metadata, pe, metadata_summary, level_script_info_fields[0].index
         )
-        for name in (
+        names = (
             "scriptId_",
             "state_",
             "properties_",
             "isDone_",
             "stage_",
             "triggerVolumeInfos_",
-        ):
-            field_offsets[f"levelScriptInfo.{name}"] = current.get(name)
+        )
+        field_offsets.update({f"levelScriptInfo.{name}": value for name, value in _message_field_offsets(
+            metadata, defaults, level_script_info_fields[0], current, names).items()})
     runtime_fields = find_type("Beyond.Gameplay.Core.LevelScriptRuntime")
     if len(runtime_fields) == 1:
         current = il2cpp.runtime_type_field_offsets(
@@ -2922,7 +2600,7 @@ def levelscript_activation_control_contract(
                             caller_pointer, sorted_pointers, 65536
                         )
                         caller_body_cache[caller_pointer] = (
-                            mapper.build_method_body_summary(
+                            _native_body_summary(mapper,
                                 full_method_mapper_row(
                                     metadata,
                                     helper,
@@ -3080,8 +2758,8 @@ def levelscript_activation_control_contract(
         in {f"mov edx, 0x{prestart_value:x}", f"mov dl, 0x{prestart_value:x}"}
     ]
     request_links = {
-        "networkActiveToSendMsg": calls_to("NetworkSetActive", "BaseSendMsg"),
-        "networkStartToSendMsg": calls_to("NetworkSetStart", "BaseSendMsg"),
+        "networkActiveToSendAndDispose": calls_to("NetworkSetActive", "BaseSendAndDispose"),
+        "networkStartToSendAndDispose": calls_to("NetworkSetStart", "BaseSendAndDispose"),
         "runtimeActiveToSendMsg": calls_to("RuntimeSendActive", "BaseSendMsg"),
         "runtimeStartToSendMsg": calls_to("RuntimeSendStart", "BaseSendMsg"),
     }
@@ -3264,10 +2942,10 @@ def levelscript_activation_control_contract(
             "PreActiveEndSendActiveState"
         ),
         "waitForStateActiveValue": runtime_state_values.get("WaitForStateActive"),
-        "inactiveLevelScriptTypeCallOffset": inactive_type_offset,
-        "nonSubLevelEnabledStateCallOffset": non_sub_state_offset,
+        "inactiveLevelScriptTypeInstructionOffset": inactive_type_offset,
+        "nonSubLevelEnabledStateInstructionOffset": non_sub_state_offset,
         "activeAreaGateCallOffset": active_area_offset,
-        "subLevelActiveStateCallOffset": sublevel_state_offset,
+        "subLevelActiveStateInstructionOffset": sublevel_state_offset,
         "preActiveSetterCallOffset": preactive_setter_offset,
         "preActiveLevelScriptTypeCallOffset": preactive_type_offset,
         "activeTrueRequestCallOffset": active_true_offset,
@@ -3302,15 +2980,13 @@ def levelscript_activation_control_contract(
     # enterShapes, exitShapes, center, prevWithin)``: an enter-shape hit sets
     # the flag, and once inside it holds while an exit shape still contains the
     # position. Its named body proves that rule. UpdateWithinActiveArea calls
-    # either that method or an inlined copy of it, so the call site is tied to
-    # it by passing exactly its five arguments from the three runtime fields
-    # and storing the result back into withinActiveArea.
+    # either that method or an optimized target. The typed caller/empty-list
+    # proofs below are independent of the actual target's rule identity;
+    # optimized geometry additionally requires the reviewed conditional original-rule proof.
     active_area_flow = active_area_hysteresis_flow(
         mapper,
         pe,
-        bodies.get("UpdateWithinActiveArea") or {},
         methods.get("CalcWithinAreaHysteresis") or {},
-        methods.get("GetActiveRangeSensitive") or {},
         method_by_pointer,
         field_offsets,
     )
@@ -3435,6 +3111,43 @@ def levelscript_activation_control_contract(
         "activationSelectorFlow": activation_selector_flow,
         "activeAreaFlow": active_area_flow,
     }
+    image=open_native_image(gameassembly_path,metadata.path)
+    area=observation['activeAreaFlow']
+    try:
+        proof=prove_levelscript_area_call(image);area['typedCallerProof']=dict(proof,status='validated')
+        for key in ('callSiteOffset','withinStoreOffset','callSitePassesFieldsInSignatureOrder','callResultStoredToWithin'):area[key]=proof[key]
+    except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:area['typedCallerProof']=dict(status='refused',detail=str(error))
+    try:
+        rule=image.body_index.body('Beyond.Gameplay.Core.LevelScriptRuntime','_CalcWithinAreaHysteresis')
+        proof=prove_collection_empty_clone(image,rule,argument_type='Beyond.Gameplay.Core.LevelScriptShape')
+        area['typedEmptyExitProof']=dict(proof,status='validated');area['emptyExitListClearsWithin']=proof['trueResultReturnsFalse']
+    except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:area['typedEmptyExitProof']=dict(status='refused',detail=str(error))
+    try:
+        from scripts.game_data.levelscript_area_rule_native import validate_on_image
+        caller=area['typedCallerProof'];named=(methods.get('CalcWithinAreaHysteresis') or {}).get('methodPointerVa')
+        if caller.get('status')!='validated':raise ValueError('Typed area caller is unproved: '+str(caller.get('detail','')))
+        actual=int(caller['optimizedCalleeVa'],16);same=bool(named) and actual==int(named,16)
+        area['calleeRuleIdentityProof']=(dict(status='validated',kind='direct-current-named-target',namedRuleVa=named,actualCalleeVa=hex(actual),evidenceBoundary='direct') if same
+            else validate_on_image(image,actual_callee=actual,named_rule=int(named,16),empty_exit_proof=area['typedEmptyExitProof']))
+        area['calleeRoute']='named' if same else 'optimized_original_rule' if area['calleeRuleIdentityProof'].get('status')=='validated' else 'optimized_rule_identity_pending'
+    except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:area['calleeRuleIdentityProof']=dict(status='refused',detail=str(error))
+    area['evidenceBoundary']=dict(direct='Typed caller lanes, stored result and the named empty-exit path have independent checks.',
+        conditional='Original initialized rule equivalence requires the identity proof premises, including finite Euler inputs and selected original Quaternion caches.',
+        unresolved=(area['calleeRuleIdentityProof'].get('boundary') or {}).get('unresolved') or ['Cold initialization, overrides/replacements, nonfinite Euler paths and runtime execution are outside the original-rule proof.'])
+    try:
+        transfers=prove_levelscript_state_transfers(image)
+        observation['publicStateSourceFlow']['typedStateTransfers']=transfers
+    except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:
+        observation['publicStateSourceFlow']['typedStateTransfers']={'status':'refused','detail':str(error)[:700]}
+    try:
+        selector=prove_levelscript_selector(image)
+        observation['activationSelectorFlow'].update(selector)
+    except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:
+        observation['activationSelectorFlow']['ordinaryEntryProof']={'status':'refused','detail':str(error)[:700]}
+    try:
+        observation['clientRequestFlow']['typedRequestSenders']=prove_levelscript_request_senders(image)
+    except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:
+        observation['clientRequestFlow']['typedRequestSenders']={'status':'refused','detail':str(error)[:700]}
     source_hashes = {
         "gameAssemblySha256": file_sha256(gameassembly_path),
         "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
@@ -3445,7 +3158,7 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v7",
+        "schema": protocol_contracts.ACTIVATION_CONTROL_SCHEMA,
         "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
@@ -3652,11 +3365,8 @@ def state_update_candidate_schemas(
         type_name = metadata.type_full_name(type_def)
         if not type_name.startswith("Proto.SC_"):
             continue
-        storage_names = {
-            il2cpp.normalized_field_name(metadata.string(field.name_index))
-            for field in metadata.fields_for(type_def)
-            if metadata.string(field.name_index).endswith("_")
-        }
+        tags, storage = message_fields(metadata, defaults, type_def)
+        storage_names = tags.keys() & storage.keys()
         matches: list[tuple[str, list[str], str]] = []
         for stem in ("mission", "quest"):
             if f"{stem}id" not in storage_names:
@@ -3675,7 +3385,9 @@ def state_update_candidate_schemas(
         if registry_row is None:
             continue
         schema = message_schema(metadata, defaults, type_name)
-        identity_name = f"{stem}Id"
+        names = {il2cpp.normalized_field_name(field["name"]): field["name"] for field in schema["fields"]}
+        identity_name = names[f"{stem}id"]
+        control_names = [names[il2cpp.normalized_field_name(name)] for name in control_names]
         candidates.append(
             {
                 "type": type_name,
@@ -3918,7 +3630,7 @@ def levelscript_task_lifecycle_contract(
             pointer, sorted_pointers, limit
         )
         body_bytes = pe.bytes_at_va(pointer, scan_size)
-        body = mapper.build_method_body_summary(
+        body = _native_body_summary(mapper,
             row,
             body_bytes,
             pointer,
@@ -4113,13 +3825,13 @@ def levelscript_task_lifecycle_contract(
     observed_operations = [
         symbol for symbol in required_condition_operations if symbol in cold_operations
     ]
-    state_forwarding = (
-        len(inner_calls) == 1
-        and (outer_calls[0][0].get("argumentOrigins") or {}).get("r8")
-        == "param:taskState"
-        and (inner_calls[0].get("argumentOrigins") or {}).get("rdx")
-        == "param:newState"
-    )
+    state_transfers = [
+        check_int32_enum_transfer(metadata,pe,metadata_summary,manager_update['methodIndex'],outer_calls[0][0],
+            'r8','taskState','Beyond.Gameplay.Core.LevelScriptRuntime','UpdateTaskState'),
+        check_int32_enum_transfer(metadata,pe,metadata_summary,outer_update['methodIndex'],inner_calls[0],
+            'rdx','newState',task_runtime_name,'UpdateTaskState'),
+    ] if len(inner_calls) == 1 else []
+    state_forwarding = len(state_transfers) == 2 and all(proof['status'] == 'validated' for proof in state_transfers)
     observation = {
         "scriptTaskStateEnum": {
             str(row["name"]): int(row["id"])
@@ -4139,6 +3851,7 @@ def levelscript_task_lifecycle_contract(
             inner_update["symbol"],
         ],
         "stateArgumentForwarding": state_forwarding,
+        "stateArgumentForwardingProofs": state_transfers,
         "processingConditionCallCount": len(processing_calls),
         "conditionProcessingOperations": observed_operations,
         "conditionProgressSender": (
@@ -4191,6 +3904,7 @@ def levelscript_task_lifecycle_contract(
             "serverStateApplicationChain"
         ],
         "stateArgumentForwarding": state_forwarding,
+        "stateArgumentForwardingProofs": state_transfers,
         "processingConditionCallCount": len(processing_calls),
         "conditionProcessingOperations": observed_operations,
         "conditionProcessingColdBlocks": cold_blocks,
@@ -4292,7 +4006,7 @@ def map_state_update_handler(
     scan_size, next_pointer = mapper.estimate_scan_size(
         pointer, sorted_pointers, 4096
     )
-    summary = mapper.build_method_body_summary(
+    summary = _native_body_summary(mapper,
         row,
         pe.bytes_at_va(pointer, scan_size),
         pointer,
@@ -4643,90 +4357,6 @@ def discover_boolean_field_predicates(
     return [predicates[offset] for offset in sorted(predicates)]
 
 
-def validate_quest_enable_lifecycle_application(
-    *,
-    candidate_rows: list[dict[str, Any]],
-    packet_predicates: list[dict[str, Any]],
-    runtime_predicates: list[dict[str, Any]],
-    routes: list[dict[str, Any]],
-    unread_control_fields: list[str],
-    packet_field: str,
-    runtime_field: str,
-    source_file: str,
-    source_hashes: dict[str, str],
-    prior_failures: list[dict[str, Any]] | None = None,
-) -> dict[str, Any]:
-    """Fail closed on a complete two-boolean quest enable application matrix."""
-    failures = list(prior_failures or [])
-
-    def fail(gate: str, expected: Any, actual: Any) -> None:
-        failures.append({
-            "validator": "quest_enable_lifecycle_application",
-            "gate": gate,
-            "message": (
-                candidate_rows[0].get("type") if len(candidate_rows) == 1 else None
-            ),
-            "expected": expected,
-            "actual": actual,
-            "sourceFile": source_file,
-            "sourceHashes": source_hashes,
-        })
-
-    if len(candidate_rows) != 1:
-        fail("uniqueQuestEnableUpdate", 1, [row.get("type") for row in candidate_rows])
-    if len(packet_predicates) != 1:
-        fail("packetEnablePredicate", 1, packet_predicates)
-    if len(runtime_predicates) != 2:
-        fail("runtimePausePredicates", 2, runtime_predicates)
-    expected_inputs = {
-        (False, False), (False, True), (True, False), (True, True)
-    }
-    actual_inputs = {
-        ((row.get("values") or {}).get(packet_field),
-         (row.get("values") or {}).get(runtime_field))
-        for row in routes
-    }
-    typed_boolean_inputs = all(
-        type(value) is bool
-        for values in actual_inputs
-        for value in values
-    )
-    if actual_inputs != expected_inputs or not typed_boolean_inputs:
-        fail(
-            "completeBooleanMatrix",
-            sorted(expected_inputs),
-            sorted(actual_inputs, key=repr),
-        )
-    invalid_routes = [
-        row for row in routes
-        if len(row.get("reachableLifecycleCalls") or []) != 1
-    ]
-    distinct_calls = {
-        tuple(call.get("method") for call in row.get("reachableLifecycleCalls") or [])
-        for row in routes
-    }
-    if invalid_routes or len(distinct_calls) < 3:
-        fail(
-            "oneDistinctLifecycleCallPerRoute",
-            "4 single-call routes spanning >=3 lifecycle methods",
-            routes,
-        )
-    mismatched = [
-        {"values": row.get("values"), "method": call.get("method")}
-        for row in routes
-        for call in row.get("reachableLifecycleCalls") or []
-        if call.get("samePacketIdentity") is not True
-    ]
-    if mismatched:
-        fail("samePacketIdentity", [], mismatched)
-    if not unread_control_fields:
-        fail("unusedPacketControlReported", ">=1 unread control field", [])
-    return {
-        "status": "validated" if not failures else "validation_failed",
-        "failures": failures,
-    }
-
-
 def validate_quest_state_lifecycle_application(
     *,
     candidate_rows: list[dict[str, Any]],
@@ -5005,6 +4635,11 @@ def validate_quest_succeed_action_observation(
         "status": "validation_failed" if failures else "validated",
         "failures": failures,
     }
+
+
+def _cfg_integer_argument(call: dict[str, Any], register: str) -> int | None:
+    origin = str((call.get("argumentOrigins") or {}).get(register) or "")
+    return int(origin, 0) if re.fullmatch(r"-?(?:0x[0-9a-f]+|0|[1-9][0-9]*)", origin, re.I) else None
 
 
 def decode_direct_enum_argument(
@@ -5614,6 +5249,34 @@ def semantic_enum_branch_observations(
     return observations
 
 
+def _ordinary_lifecycle_reachability(instructions, *, entry, method_pointer, lifecycle_offsets):
+    """Check decoded direct-call reachability; an earlier address can be an exit."""
+    from scripts.game_data.il2cpp.initializer_control import control_transfer
+    by_at={int(row['offset']):row for row in instructions};seen=set();terminals=0
+    pending=[(entry,frozenset())]
+    def result(status,reason=None):
+        return dict(status=status,reason=reason,visitedOffsets=sorted(seen)[:64])
+    while pending:
+        at,ancestors=pending.pop()
+        if at in ancestors:return result('unresolved','cycle')
+        if at in seen:continue
+        if at in lifecycle_offsets:return result('reachable')
+        row=by_at.get(at)
+        if row is None or row['text'].startswith('db '):return result('unresolved','unknown-or-outside-instruction')
+        seen.add(at)
+        if len(seen)>256:return result('unresolved','bounded-path-limit')
+        try:flow=control_transfer(row)
+        except ValueError as error:return result('unresolved',str(error)[:300])
+        kind=flow['kind'];end=at+len(bytes.fromhex(row['bytes']))
+        if kind in ('return','trap'):terminals+=1;continue
+        if kind in ('jump','conditional'):
+            pending.append((flow['target']-method_pointer,ancestors|{at}))
+        if kind in ('next','conditional','call','indirectCall','registerCall'):
+            pending.append((end,ancestors|{at}))
+        elif kind not in ('jump',):return result('unresolved','unclassified-control-transfer')
+    return result('closed_without_direct_lifecycle' if terminals else 'unresolved',None if terminals else 'no-terminal')
+
+
 def typed_getter_field_consumer_census(
     metadata: Any,
     helper: Any,
@@ -5670,7 +5333,7 @@ def typed_getter_field_consumer_census(
         scan_size, next_pointer = mapper.estimate_scan_size(
             pointer, sorted_pointers, max_method_bytes
         )
-        body = mapper.build_method_body_summary(
+        body = _native_body_summary(mapper,
             mapper_row,
             pe.bytes_at_va(pointer, scan_size),
             pointer,
@@ -5721,8 +5384,10 @@ def typed_getter_field_consumer_census(
             semantic_read_offsets[0] if semantic_read_offsets else None
         )
         backward_lifecycle_branches: list[dict[str, Any]] = []
+        backward_non_lifecycle_branches: list[dict[str, Any]] = []
         if first_semantic_read is not None and lifecycle_offsets:
             latest_lifecycle = max(lifecycle_offsets)
+            instructions=decode_summary_instructions(mapper,pe.bytes_at_va(pointer,scan_size),pointer)
             for control in body.get("controlFlow") or []:
                 source_offset = int(control.get("offset") or 0)
                 text = str(control.get("text") or "")
@@ -5737,11 +5402,12 @@ def typed_getter_field_consumer_census(
                     and 0 <= target_offset < scan_size
                     and target_offset <= latest_lifecycle
                 ):
-                    backward_lifecycle_branches.append({
-                        "offset": source_offset,
-                        "targetOffset": target_offset,
-                        "text": text,
-                    })
+                    reachability=_ordinary_lifecycle_reachability(instructions,entry=target_offset,
+                        method_pointer=pointer,lifecycle_offsets=set(lifecycle_offsets))
+                    observation={"offset":source_offset,"targetOffset":target_offset,"text":text,"reachability":reachability}
+                    if reachability['status']=='closed_without_direct_lifecycle':
+                        backward_non_lifecycle_branches.append(observation)
+                    else:backward_lifecycle_branches.append(observation)
         enum_branches = semantic_enum_branch_observations(
             body,
             reads,
@@ -5814,6 +5480,7 @@ def typed_getter_field_consumer_census(
             "semanticFieldReadOffsets": semantic_read_offsets,
             "semanticEnumBranches": enum_branches,
             "backwardLifecycleBranches": backward_lifecycle_branches,
+            "backwardNonLifecycleBranches": backward_non_lifecycle_branches,
         })
     return {
         "getterVa": f"0x{getter_va:x}",
@@ -6019,7 +5686,7 @@ def quest_optional_objective_flag_contract(
             [metadata.type_full_name(row) for row in type_candidates],
         )
         return {
-            "schema": "questOptionalObjectiveFlag.v1",
+            "schema": "questOptionalObjectiveFlag.v2",
             "classification": "validation_failed",
             "validation": {"status": "validation_failed", "failures": failures},
         }
@@ -6067,7 +5734,7 @@ def quest_optional_objective_flag_contract(
             int(caller.get("methodIndex")),
         )
         body_bytes = pe.bytes_at_va(pointer, scan_size)
-        body = mapper.build_method_body_summary(
+        body = _native_body_summary(mapper,
             mapper_row,
             body_bytes,
             pointer,
@@ -6075,11 +5742,22 @@ def quest_optional_objective_flag_contract(
             pe=pe,
             max_instructions=30000,
         )
-        instructions = mapper.decode_x64_subset(
-            body_bytes,
-            pointer,
-            stop_offset=len(body_bytes),
-        )
+        from scripts.game_data.il2cpp.owned_consumer_instructions import read_owned_consumer_instructions
+        from scripts.game_data.il2cpp.consumer_reference_origins import check_reference_origins
+        from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
+        from types import SimpleNamespace
+        context=NativeReferenceContext(SimpleNamespace(metadata=metadata,pe=pe,registration=metadata_summary))
+        try:
+            if context.field(type_name+'::optional')[1]!='bool':
+                raise ValueError('optional field is not an instance Boolean')
+            instructions,owned_ranges,owned_control=read_owned_consumer_instructions(mapper,pe,pointer)
+            reference=check_reference_origins(instructions,entry=pointer,owned_ranges=owned_ranges,
+                incoming_registers={'rcx':'this','rdx':'packet-quest-id'},incoming_stack_slots={},
+                selected_call_returns={call['site']:'returnBits@'+hex(call['site']) for call in owned_control['calls']})
+        except (ValueError,RuntimeError,KeyError,IndexError,TypeError) as error:
+            fail('ownedInstructionAndObjectFlow','complete owned ordinary CFG and selected Boolean field',str(error)[:700])
+            return dict(schema='questOptionalObjectiveFlag.v2',classification='validation_failed',
+                        validation=dict(status='validation_failed',failures=failures))
         instruction_by_offset = {
             int(inst.get("offset") or 0): inst for inst in instructions
         }
@@ -6146,7 +5824,27 @@ def quest_optional_objective_flag_contract(
                 == f"mov {output_register.lower()}, rax"
                 for inst in instructions
             )
+        same_constructor_object=False
+        constructor_origin=[]; field_origin=[]
+        if len(constructor_calls)==1 and output_register and write_inst:
+            ctor=constructor_calls[0]; site=pointer+int(ctor['offset'])
+            declared=(ctor.get('resolved') or [])
+            matches=[target for target in declared if target.get('type')==type_name and target.get('method')=='.ctor']
+            if len(matches)==1:
+                method=metadata.methods[matches[0]['methodIndex']]
+                owner=metadata.types[method.declaring_type]
+                ordinary_ctor=(not method.flags&0x10 and method.generic_container_index<0 and owner.generic_container_index<0
+                               and context.type_name(method.return_type)=='void' and method.parameter_count==0)
+                constructor_origin=reference['registerOrigins'][site]['rcx']
+                field_origin=reference['registerOrigins'][pointer+int(write_inst['offset'])][output_register]
+                same_constructor_object=(ordinary_ctor and constructor_origin==field_origin and len(field_origin)==1
+                                         and field_origin[0].startswith('returnBits@'))
         observation = {
+            "ownedRanges": [[hex(a),hex(b)] for a,b in owned_ranges],
+            "ownedInstructionsChecked": owned_control['instructionsChecked'],
+            "constructorReceiverOrigins": constructor_origin,
+            "optionalFieldReceiverOrigins": field_origin,
+            "sameConstructorObject": same_constructor_object,
             "caller": caller,
             "comparison": optional_branch,
             "objectiveShowDataType": type_name,
@@ -6178,7 +5876,7 @@ def quest_optional_objective_flag_contract(
                 f"mov [object+0x{optional_offset:x}], al",
                 None,
             )
-        if len(constructor_calls) != 1 or not output_alias_before_constructor:
+        if len(constructor_calls) != 1 or not output_alias_before_constructor or not same_constructor_object:
             fail(
                 "objectiveShowDataObjectIdentity",
                 "one constructor and output-register alias",
@@ -6186,6 +5884,7 @@ def quest_optional_objective_flag_contract(
                     "constructorCalls": len(constructor_calls),
                     "outputRegister": output_register,
                     "outputAliasBeforeConstructor": output_alias_before_constructor,
+                    "sameConstructorObject": same_constructor_object,
                 },
             )
 
@@ -6194,7 +5893,7 @@ def quest_optional_objective_flag_contract(
         "failures": failures,
     }
     return {
-        "schema": "questOptionalObjectiveFlag.v1",
+        "schema": "questOptionalObjectiveFlag.v2",
         "classification": "optional_objective_presentation_flag",
         "observation": observation,
         "finding": (
@@ -6205,7 +5904,7 @@ def quest_optional_objective_flag_contract(
         "boundary": (
             "This is a client objective-display flag after QuestInfo lookup. It "
             "does not activate an Optional quest, select a successor, or establish "
-            "parallel or exclusive execution."
+            "parallel or exclusive execution. Owned ordinary CFG, Boolean field and unchanged constructor/store receiver bits are checked; correctly typed ordinary calls and stable disjoint storage remain conditions, with allocator internals, IFix replacement results and runtime execution separate."
         ),
         "validation": validation,
     }
@@ -6224,6 +5923,19 @@ def quest_topology_field_consumer_census(
     gameassembly_path: Path,
 ) -> dict[str, Any]:
     """Classify all discovered client consumers of authored quest topology."""
+    validation = quest_start.get("validation") or {}
+    getter_rows = quest_start.get("questInfoGetterCalls") or []
+    targets = {row.get("targetVa") for row in getter_rows}
+    if validation.get("status") != "validated" or len(targets) != 1 or None in targets:
+        failures = validation.get("failures") or []
+        raise ProtocolRegistryGateError(failures[0] if failures else {
+            "validator": "quest_topology_field_consumer_census", "gate": "validatedQuestInfoGetter",
+            "message": "client quest topology consumers", "expected": "validated StartQuest and one getter target",
+            "actual": {"validation": validation.get("status"), "targets": sorted(str(v) for v in targets)[:8]},
+            "sourceFile": str(gameassembly_path.resolve()),
+            "sourceHashes": {"gameAssemblySha256": file_sha256(gameassembly_path),
+                             "metadataSha256": hashlib.sha256(metadata.buf).hexdigest()},
+        })
     quest_fields = {
         name: int(str(value), 16)
         for name, value in (quest_start.get("questInfoFieldOffsets") or {}).items()
@@ -6234,8 +5946,7 @@ def quest_topology_field_consumer_census(
             "flowIndex",
         } and value
     }
-    getter_rows = quest_start.get("questInfoGetterCalls") or []
-    getter_va = int(str(getter_rows[0]["targetVa"]), 16)
+    getter_va = int(str(next(iter(targets))), 16)
     quest_type_enum = il2cpp.enum_members(
         metadata,
         defaults,
@@ -6341,7 +6052,7 @@ def quest_topology_field_consumer_census(
             scan_size, next_pointer = mapper.estimate_scan_size(
                 pointer, sorted_pointers, 65536
             )
-            body = mapper.build_method_body_summary(
+            body = _native_body_summary(mapper,
                 mapper_row,
                 pe.bytes_at_va(pointer, scan_size),
                 pointer,
@@ -6483,7 +6194,7 @@ def quest_topology_field_consumer_census(
         "flowIndexNonSortConsumerCount": len(non_sort_flow_rows),
         "topologyLifecycleCalls": lifecycle_calls,
         "questSemanticFields": {
-            "schema": "questSemanticFieldConsumers.v2",
+            "schema": "questSemanticFieldConsumers.v3",
             "classification": "client_presentation_and_post_application_only",
             "questType": {
                 "type": "Beyond.GEnums.QuestType",
@@ -6527,14 +6238,14 @@ def quest_topology_field_consumer_census(
                 "comparison writes ObjectiveShowData.optional. The two network "
                 "handlers that compare Block apply their typed quest lifecycle calls "
                 "first, then the Block-equal corridor emits EventManager.SendGlobal, "
-                "with no native back-edge to lifecycle application. Neither field "
+                "with no direct lifecycle call reachable from the checked backward-target corridors. Neither field "
                 "selects a successor arm."
             ),
             "boundary": (
                 "These enum names explain authored arm metadata and current client "
                 "consumption. Normal, Block, Optional, AlwaysShow, and AlwaysHide do "
                 "not prove parallel execution, exclusivity, eligibility, or server "
-                "successor selection."
+                "successor selection. This is direct AOT/ordinary control-flow evidence; opaque callee effects, indirect dispatch, IFix replacement results and runtime execution are separate."
             ),
             "validation": semantic_validation,
         },
@@ -6659,7 +6370,7 @@ def quest_start_application_contract(
     scan_size, next_pointer = mapper.estimate_scan_size(
         start_va, sorted_pointers, 8192
     )
-    body = mapper.build_method_body_summary(
+    body = _native_body_summary(mapper,
         mapper_row,
         pe.bytes_at_va(start_va, scan_size),
         start_va,
@@ -6844,7 +6555,7 @@ def quest_succeed_action_contract(
             sorted_pointers,
             8192,
         )
-        body = mapper.build_method_body_summary(
+        body = _native_body_summary(mapper,
             full_method_mapper_row(metadata, helper, int(alias["methodIndex"])),
             pe.bytes_at_va(pointer, scan_size),
             pointer,
@@ -6914,7 +6625,8 @@ def quest_succeed_action_contract(
                 fail("uniqueRunQuestActionTarget", 1, sorted(run_va_values))
             else:
                 run_va = next(iter(run_va_values))
-            flow_text = [str(row.get("text") or "") for row in quest_action_flow]
+            safe_transfer = check_int32_enum_transfer(metadata,pe,metadata_summary,safe_aliases[0]['methodIndex'],run_calls[0],
+                'r8','questAction','Beyond.Gameplay.MissionSystem','RunQuestAction') if len(run_calls) == 1 else dict(status='mismatched',detail='unique RunQuestAction call required')
             safe_run_action_flow = {
                 "symbol": "Beyond.Gameplay.MissionSystem.SafeRunQuestAction",
                 "token": safe_aliases[0].get("token"),
@@ -6923,6 +6635,7 @@ def quest_succeed_action_contract(
                     safe_next - safe_va if isinstance(safe_next, int) else None
                 ),
                 "paramQuestActionFlow": quest_action_flow,
+                "questActionForwardingProof": safe_transfer,
                 "runQuestActionCalls": [
                     {
                         "callOffset": call.get("offset"),
@@ -6931,8 +6644,7 @@ def quest_succeed_action_contract(
                     for call in run_calls
                 ],
                 "preservesQuestActionArgument": (
-                    len(run_calls) == 1
-                    and saves_and_restores_register(flow_text, "r8d")
+                    safe_transfer['status'] == 'validated'
                 ),
             }
 
@@ -6971,7 +6683,7 @@ def quest_succeed_action_contract(
                 helper,
                 method_indexes[0],
             )
-            caller_body = mapper.build_method_body_summary(
+            caller_body = _native_body_summary(mapper,
                 caller_row,
                 pe.bytes_at_va(pointer, scan_size),
                 pointer,
@@ -7019,7 +6731,11 @@ def quest_succeed_action_contract(
             run_param_flow = (
                 run_body.get("paramFlow") or {}
             ).get("param:action") or []
-            run_flow_text = [str(row.get("text") or "") for row in run_param_flow]
+            asset_calls = [call for call in run_body.get('calls') or [] if any(
+                target.get('type') == 'Beyond.Gameplay.MissionRuntimeAsset' and target.get('method') == 'RunQuestAction'
+                for target in call.get('resolved') or [])]
+            run_transfer = check_int32_enum_transfer(metadata,pe,metadata_summary,run_aliases[0]['methodIndex'],asset_calls[0],
+                'r8','action','Beyond.Gameplay.MissionRuntimeAsset','RunQuestAction') if len(asset_calls) == 1 else dict(status='mismatched',detail='unique asset RunQuestAction call required')
             mission_system_def = metadata.types[
                 metadata.methods[int(run_aliases[0]["methodIndex"])].declaring_type
             ]
@@ -7058,7 +6774,7 @@ def quest_succeed_action_contract(
                     })
                     continue
                 caller_row = full_method_mapper_row(metadata, helper, method_indexes[0])
-                caller_body = mapper.build_method_body_summary(
+                caller_body = _native_body_summary(mapper,
                     caller_row,
                     pe.bytes_at_va(pointer, scan_size),
                     pointer,
@@ -7119,9 +6835,8 @@ def quest_succeed_action_contract(
                 "va": f"0x{run_va:x}",
                 "scanBytes": run_next - run_va if isinstance(run_next, int) else None,
                 "paramQuestActionFlow": run_param_flow,
-                "preservesQuestActionArgument": saves_and_restores_register(
-                    run_flow_text, "r8d"
-                ),
+                "preservesQuestActionArgument": run_transfer['status'] == 'validated',
+                "questActionForwardingProof": run_transfer,
                 "sharedPendingCarrier": (
                     len(shared_fields) == 1
                     and shared_fields[0].get("field") == "m_pendingQuestActionList"
@@ -7317,231 +7032,117 @@ def quest_state_lifecycle_application_contract(
     }
 
 
-def quest_enable_lifecycle_application_contract(
-    metadata: Any,
-    pe: Any,
-    metadata_summary: dict[str, Any],
-    rows: list[dict[str, Any]],
-    mapped_bodies: dict[str, dict[str, Any]],
-    decoded_instructions: dict[str, list[dict[str, Any]]],
-    gameassembly_path: Path,
-) -> dict[str, Any]:
-    """Recover packet-enable/runtime-pause lifecycle routing by field shape."""
-    source_hashes = {
-        "gameAssemblySha256": file_sha256(gameassembly_path),
-        "metadataSha256": hashlib.sha256(metadata.buf).hexdigest(),
-    }
-    candidates = [
-        row for row in rows
-        if row.get("entityKind") == "quest"
-        and row.get("controlKind") == "enable_update"
-        and len(row.get("identityFields") or []) == 1
-    ]
-    failures: list[dict[str, Any]] = []
-    packet_field = ""
-    runtime_field = ""
-    runtime_owner = ""
-    runtime_field_type = ""
-    runtime_offset: int | None = None
-    packet_predicates: list[dict[str, Any]] = []
-    runtime_predicates: list[dict[str, Any]] = []
-    routes: list[dict[str, Any]] = []
-    unread_control_fields: list[str] = []
-    candidate = candidates[0] if len(candidates) == 1 else None
-
-    def fail(gate: str, expected: Any, actual: Any) -> None:
-        failures.append({
-            "validator": "quest_enable_lifecycle_application",
-            "gate": gate,
-            "message": candidate.get("type") if candidate else None,
-            "expected": expected,
-            "actual": actual,
-            "sourceFile": str(gameassembly_path.resolve()),
-            "sourceHashes": source_hashes,
-        })
-
-    if candidate is not None:
-        body = mapped_bodies.get(str(candidate.get("type") or "")) or {}
-        instructions = decoded_instructions.get(str(candidate.get("type") or "")) or []
-        field_accesses = body.get("fieldAccesses") or []
-        packet_fields = [
-            name for name in candidate.get("controlFields") or []
-            if any(
-                access.get("origin")
-                == f"param:msg+{candidate.get('fieldOffsets', {}).get(name)}"
-                for access in field_accesses
-            )
-        ]
-        unread_control_fields = [
-            name for name in candidate.get("controlFields") or []
-            if name not in packet_fields
-        ]
-        if len(packet_fields) == 1:
-            packet_field = packet_fields[0]
-        else:
-            fail("uniqueConsumedPacketControl", 1, packet_fields)
-        packet_origin = (
-            f"param:msg+{candidate.get('fieldOffsets', {}).get(packet_field)}"
-            if packet_field else ""
-        )
-        packet_reads = [
-            access for access in field_accesses
-            if access.get("kind") == "read"
-            and access.get("origin") == packet_origin
-        ]
-        runtime_reads: list[tuple[dict[str, Any], str, int, str, str]] = []
-        runtime_types_va = int(metadata_summary["types"], 16)
-        runtime_type_count = int(metadata_summary["typesCount"])
-        for access in field_accesses:
-            if access.get("kind") != "read":
-                continue
-            origin = str(access.get("origin") or "")
-            match = re.fullmatch(r"return:(.+)\+0x([0-9a-f]+)", origin, re.I)
-            if not match:
-                continue
-            owner_name = match.group(1)
-            field_offset = int(match.group(2), 16)
-            owner_types = [
-                type_def for type_def in metadata.types
-                if metadata.type_full_name(type_def) == owner_name
-            ]
-            if len(owner_types) != 1:
-                continue
-            try:
-                offsets = il2cpp.runtime_type_field_offsets(
-                    metadata,
-                    pe,
-                    metadata_summary,
-                    owner_types[0].index,
-                )
-            except RuntimeError as exc:
-                fail(
-                    "runtimeFieldOffsetResolution",
-                    "current MetadataRegistration field-offset row",
-                    {"ownerType": owner_name, "error": str(exc)},
-                )
-                continue
-            for field_def in metadata.fields_for(owner_types[0]):
-                field_name = metadata.string(field_def.name_index)
-                if offsets.get(field_name) != field_offset:
-                    continue
-                if not 0 <= field_def.type_index < runtime_type_count:
-                    continue
-                type_va = pe.u64_at_va(runtime_types_va + field_def.type_index * 8)
-                field_type = il2cpp.runtime_type_name(pe, metadata, type_va)
-                if field_type == "bool":
-                    runtime_reads.append(
-                        (access, owner_name, field_offset, field_name, field_type)
-                    )
-        if len(packet_reads) != 1:
-            fail("uniquePacketControlRead", 1, packet_reads)
-        if len(runtime_reads) != 1:
-            fail("uniqueRuntimeBooleanRead", 1, runtime_reads)
-        if len(runtime_reads) == 1:
-            (
-                runtime_access,
-                runtime_owner,
-                runtime_offset,
-                runtime_field,
-                runtime_field_type,
-            ) = runtime_reads[0]
-        method_va = int(str((candidate.get("handler") or {}).get("va") or "0"), 16)
-        if len(packet_reads) == 1 and packet_field:
-            packet_predicates = discover_boolean_field_predicates(
-                instructions,
-                field=packet_field,
-                field_read_offset=int(packet_reads[0].get("offset") or 0),
-                method_va=method_va,
-            )
-        if len(runtime_reads) == 1 and runtime_field:
-            runtime_predicates = discover_boolean_field_predicates(
-                instructions,
-                field=runtime_field,
-                field_read_offset=int(runtime_reads[0][0].get("offset") or 0),
-                method_va=method_va,
-            )
-        if packet_field and runtime_field:
-            scenarios = [
-                {
-                    "values": {
-                        packet_field: enabled,
-                        runtime_field: paused,
-                    },
-                }
-                for enabled in (False, True)
-                for paused in (False, True)
-            ]
-            routes = constrained_lifecycle_routes(
-                instructions,
-                [*packet_predicates, *runtime_predicates],
-                candidate.get("lifecycleCalls") or [],
-                scenarios,
-                method_va=method_va,
-            )
-    validation = validate_quest_enable_lifecycle_application(
-        candidate_rows=candidates,
-        packet_predicates=packet_predicates,
-        runtime_predicates=runtime_predicates,
-        routes=routes,
-        unread_control_fields=unread_control_fields,
-        packet_field=packet_field,
-        runtime_field=runtime_field,
-        source_file=str(gameassembly_path.resolve()),
-        source_hashes=source_hashes,
-        prior_failures=failures,
-    )
-    return {
-        "schema": "questEnableLifecycleApplication.v1",
-        "classification": "server_selected_quest_enable_local_pause_application",
-        "discoveryPattern": {
-            "message": (
-                "unique quest identity+enable server packet from the generic "
-                "state-update census"
-            ),
-            "runtimeField": (
-                "unique exact returned-object Boolean field read resolved through "
-                "the current MetadataRegistration field-offset and runtime-type tables"
-            ),
-            "controlFlow": (
-                "live boolean register provenance into exact zero/nonzero native "
-                "branches, followed by the shared constrained CFG solver"
-            ),
-        },
-        "message": ({
-            "type": candidate.get("type"),
-            "messageId": candidate.get("messageId"),
-            "identityField": candidate.get("identityField"),
-            "controlFields": candidate.get("controlFields") or [],
-            "consumedControlFields": [packet_field] if packet_field else [],
-            "unreadControlFields": unread_control_fields,
-            "fields": candidate.get("fields") or [],
-            "successorLikeFields": candidate.get("successorLikeFields") or [],
-            "handler": candidate.get("handler") or {},
-        } if candidate else {}),
-        "runtimeControl": {
-            "ownerType": runtime_owner,
-            "field": runtime_field,
-            "type": runtime_field_type,
-            "offset": f"0x{runtime_offset:x}" if runtime_offset is not None else None,
-        },
-        "packetPredicates": packet_predicates,
-        "runtimePredicates": runtime_predicates,
-        "routes": routes,
-        "finding": (
-            "The quest-enable handler routes the same server-supplied questId by the "
-            "packet enable flag and the exact current QuestData pause flag. Enabling "
-            "starts an unpaused quest but preserves a paused quest through PauseQuest; "
-            "disabling reaches DisableQuest for either pause value. The serialized "
-            "previous-state field is not read by this handler."
-        ),
-        "boundary": (
-            "This proves client-side enable/pause/disable application after the server "
-            "selects a quest identity. It does not recover server arm eligibility, "
-            "successor selection, sibling exclusivity, or Story-file order. Other "
-            "runtime state mutations and server policy remain outside this static path."
-        ),
-        "validation": validation,
-    }
+def quest_enable_lifecycle_application_contract(metadata, pe, metadata_summary, defaults, rows,
+                                               mapped_bodies, decoded_instructions, gameassembly_path):
+    from types import SimpleNamespace
+    from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
+    from scripts.game_data.il2cpp.integer_tag_dispatch import decode_memory_immediate_compare
+    source_hashes = dict(gameAssemblySha256=file_sha256(gameassembly_path),
+                         metadataSha256=hashlib.sha256(metadata.buf).hexdigest())
+    result = dict(schema='questEnableLifecycleApplication.v2', classification='server_selected_quest_enable_state_pause_application')
+    failures = []
+    def require(ok, gate, expected, actual):
+        if not ok:
+            raise ProtocolRegistryGateError(dict(validator='quest_enable_lifecycle_application',gate=gate,
+                expected=expected,actual=actual,sourceFile=str(gameassembly_path.resolve()),sourceHashes=source_hashes))
+    try:
+        candidates = [row for row in rows if row.get('entityKind') == 'quest' and row.get('controlKind') == 'enable_update']
+        require(len(candidates) == 1, 'uniqueQuestEnableUpdate', 1, [r.get('type') for r in candidates])
+        candidate = candidates[0]; packet = candidate['type']; body = mapped_bodies.get(packet) or {}
+        instructions = decoded_instructions.get(packet) or []
+        context = NativeReferenceContext(SimpleNamespace(metadata=metadata,pe=pe,registration=metadata_summary))
+        enable,previous = 'IsEnable','PrevQuestState'; runtime_owner='Beyond.Gameplay.MissionSystem+QuestData'
+        _,enable_type,enable_offset = context.field(packet+'::<IsEnable>k__BackingField')
+        _,previous_type,previous_offset = context.field(packet+'::<PrevQuestState>k__BackingField')
+        _,state_type,state_offset = context.field(runtime_owner+'::questState')
+        _,paused_type,paused_offset = context.field(runtime_owner+'::isPaused')
+        require((enable_type,previous_type,paused_type,context.field(state_type+'::value__')[1]) == ('bool','int','bool','int'),
+                'typedControlFields', ['bool','int','bool','int'], [enable_type,previous_type,paused_type,context.field(state_type+'::value__')[1]])
+        require(set(candidate.get('controlFields') or []) == {enable,previous}, 'completePacketControls', [enable,previous],candidate.get('controlFields'))
+        enum_rows = il2cpp.native_enum_members(metadata,defaults,pe,metadata_summary,state_type)
+        enum = {r['name']:r['id'] for r in enum_rows}
+        require({'Disabled','Processing'} <= enum.keys() and len(enum) == len(set(enum.values())), 'stateEnum', 'unique Disabled and Processing values',enum)
+        pointer = int(candidate['handler']['va'],16)
+        mapper = il2cpp.load_native_mapper(NATIVE_MAPPER_HELPER)
+        methods = {int(c['targetVa'],16):c['resolved'] for c in body.get('calls') or []}
+        deltas,_ = mapper.instruction_stack_deltas(instructions,pointer)
+        initial = body['initialRegisterOrigins']
+        require(initial == {'rcx':'this','rdx':'param:msg'}, 'handlerIncomingReferences', {'rcx':'this','rdx':'param:msg'},initial)
+        states = mapper._instruction_origin_states(instructions,pointer,initial,deltas,methods)
+        by_offset = {r['offset']:r for r in instructions}; following = dict(zip(by_offset,list(by_offset)[1:]))
+        selectors=[]; stores=[]; pause_reads=[]
+        for row in instructions:
+            origins = states.get(row['offset'],({},{}))[0]
+            match = re.fullmatch(r'cmp \[(\w+)\+0x([0-9a-f]+)\], 0x0',row['text'])
+            if match and origins.get(match[1]) == 'param:msg' and int(match[2],16) == enable_offset:
+                decoded = decode_memory_immediate_compare(bytes.fromhex(row['bytes']),0,int(row['va'],16))
+                require(decoded is not None and decoded[1] == len(bytes.fromhex(row['bytes']))
+                    and decoded[0]['memoryImmediateComparisonOperation']['bits'] == 8,'byteEnablePredicate','complete byte comparison',row)
+                branch=by_offset.get(following.get(row['offset'])) or {}
+                require(bool(conditional_branch_kind(branch)),'enablePredicateBranch','JE/JNE',branch)
+                selectors.append(branch)
+            match = re.fullmatch(r'mov \[(\w+)\+0x([0-9a-f]+)\], (\w+)',row['text'])
+            if match and origins.get(match[1]) == 'return:'+runtime_owner and int(match[2],16) == state_offset:
+                require(mapper._origin_register_bits(match[3]) == 32,'stateStoreWidth',32,row)
+                stores.append((row,mapper.canonical_register(match[3])))
+            for access in body.get('fieldAccesses') or []:
+                if access.get('offset') == row['offset'] and access.get('origin') == f'return:{runtime_owner}+0x{paused_offset:x}' and access.get('kind') == 'read':
+                    pause_reads.append(row)
+        require((len(selectors),len(stores),len(pause_reads)) == (1,1,1),'uniqueControlComponents',[1,1,1],[len(selectors),len(stores),len(pause_reads)])
+        branch=selectors[0]; store,state_reg=stores[0]
+        require(len({t.get('methodIndex') for c in body.get('calls') or [] for t in c.get('resolved') or []
+            if t.get('returnTypeName') == runtime_owner}) == 1,'uniqueQuestDataReturn',1,
+            [c for c in body.get('calls') or [] if any(t.get('returnTypeName') == runtime_owner for t in c.get('resolved') or [])])
+        data_calls=[c for c in body.get('calls') or [] if any(t.get('returnTypeName') == runtime_owner for t in c.get('resolved') or [])]
+        require(len(data_calls) == 1 and (data_calls[0].get('argumentOrigins') or {}).get('rdx') == 'param:msg+'+candidate['fieldOffsets'][candidate['identityField']],
+                'sameQuestDataIdentity','one getter receiving packet questId',data_calls)
+        disable_calls=[c for c in body.get('calls') or [] if any(t.get('method') == 'DisableQuest' for t in c.get('resolved') or [])]
+        require(len(disable_calls) == 1,'uniqueDisableQuestCall',1,len(disable_calls))
+        previous_origin=f'low32(param:msg+0x{previous_offset:x})'; selections=[]; selected_states={}
+        for enabled in (False,True):
+            taken = not enabled if conditional_branch_kind(branch) == 'je' else enabled
+            edge = direct_branch_target_offset(branch,pointer) if taken else following[branch['offset']]
+            selected = mapper._instruction_origin_states(instructions,pointer,initial,deltas,methods,selected_successors={branch['offset']:edge})
+            selected_states[enabled] = selected
+            stored = selected.get(store['offset'],({},{}))[0].get(state_reg)
+            reason = selected.get(disable_calls[0]['offset'],({},{}))[0].get('r8')
+            expected = (previous_origin,hex(enum['Disabled'])) if enabled else (hex(enum['Disabled']),previous_origin)
+            require((stored,reason) == expected,'conditionalStateAndPriorArgument',expected,[stored,reason])
+            selections.append(dict(isEnable=enabled,stateStoreOrigin=stored,disableQuestPreviousStateOrigin=reason))
+        effective='effectiveQuestState'; paused='isPaused'; predicates=[]
+        for row in instructions:
+            match=re.fullmatch(r'cmp (\w+), 0x([0-9a-f]+)',row['text'])
+            if not match or mapper._origin_register_bits(match[1]) != 32:continue
+            register=mapper.canonical_register(match[1])
+            if selected_states[True].get(row['offset'],({},{}))[0].get(register) != previous_origin:continue
+            require(selected_states[False].get(row['offset'],({},{}))[0].get(register) == hex(enum['Disabled']),
+                'effectiveStateComparedOnBothArms',hex(enum['Disabled']),row)
+            next_branch=by_offset.get(following.get(row['offset'])) or {}
+            require(bool(conditional_branch_kind(next_branch)),'effectiveStateEqualityBranch','JE/JNE',next_branch)
+            predicates.append(dict(field=effective,equalValue=int(match[2],16),branchOffset=next_branch['offset']))
+        require({r['equalValue'] for r in predicates} == {enum['Disabled'],enum['Processing']} and len(predicates) == 2,
+                'effectiveStateComparisons',[enum['Disabled'],enum['Processing']],predicates)
+        runtime_predicates=discover_boolean_field_predicates(instructions,field=paused,field_read_offset=pause_reads[0]['offset'],method_va=pointer)
+        require(len(runtime_predicates) == 2,'runtimePausePredicates',2,runtime_predicates)
+        predicates += runtime_predicates+[dict(field=enable,equalValue=False,branchOffset=branch['offset'])]
+        scenarios=[dict(values={enable:e,previous:s,paused:p,effective:s if e else enum['Disabled']})
+                   for e in (False,True) for s in enum.values() for p in (False,True)]
+        routes=constrained_lifecycle_routes(instructions,predicates,candidate['lifecycleCalls'],scenarios,method_va=pointer)
+        failures=protocol_contracts.quest_enable_matrix_failures(routes,enable=enable,previous=previous,paused=paused,enum=enum)
+        result.update(controlRoles=dict(enable=enable,previousState=previous,effectiveState=effective),
+            message={**candidate,'consumedControlFields':[enable,previous],'unreadControlFields':[]},
+            runtimeControl=dict(ownerType=runtime_owner,field=paused,type=paused_type,offset=hex(paused_offset)),
+            stateEnum=dict(type=state_type,values=enum_rows),packetPredicates=[predicates[-1]],runtimePredicates=runtime_predicates,
+            effectiveStatePredicates=predicates[:2],stateSelections=selections,stateStore=store,routes=routes)
+    except ProtocolRegistryGateError as exc:
+        failures=[exc.diagnostic]
+    except (KeyError,IndexError,ValueError,RuntimeError) as exc:
+        failures=[dict(gate='currentEnableStateProgram',expected='complete typed selector and route proof',actual=str(exc)[:700])]
+    failures=[dict(validator='quest_enable_lifecycle_application',sourceFile=str(gameassembly_path.resolve()),sourceHashes=source_hashes) | f for f in failures]
+    result.update(validation=dict(status='validation_failed' if failures else 'validated',failures=failures),
+        finding='The handler stores the packet previous state when enabled and Disabled when disabled; it dispatches lifecycle calls from that effective state and the runtime pause flag. DisableQuest receives the opposite selected prior-state source.',
+        boundary='Conditional ordinary CFG and declared typed fields/callees only. Routes are possible call sets under supplied enable/state/pause values; exceptional paths, opaque callee mutation, actual execution and server policy are not established.')
+    return result
 
 
 def state_update_application_census(
@@ -7656,10 +7257,8 @@ def state_update_application_census(
         body = mapped["bodySummary"]
         mapped_bodies[candidate["type"]] = body
         method_va = int(mapped["va"], 16)
-        decoded_instructions[candidate["type"]] = mapper.decode_x64_subset(
-            pe.bytes_at_va(method_va, int(mapped["scanBytes"])),
-            method_va,
-            stop_offset=int(mapped["scanBytes"]),
+        decoded_instructions[candidate["type"]] = decode_summary_instructions(
+            mapper, pe.bytes_at_va(method_va, int(mapped["scanBytes"])), method_va,
         )
         field_origins = {
             row.get("origin") for row in body.get("fieldLikeOrigins") or []
@@ -7794,6 +7393,7 @@ def state_update_application_census(
         metadata,
         pe,
         metadata_summary,
+        defaults,
         rows,
         mapped_bodies,
         decoded_instructions,
@@ -8060,13 +7660,18 @@ def build_report(
     task_contract_path: Path = MISSION_TASK_PATH_CONTRACT,
     mission_runtime_root: Path = MISSION_RUNTIME_ROOT,
     levelscript_roots: tuple[Path, ...] = LEVELSCRIPT_ROOTS,
+    progress: bool = False,
 ) -> dict[str, Any]:
     helper = il2cpp.load_metadata_helper(helper_path)
     metadata = helper.Metadata(metadata_path)
     defaults = il2cpp.field_defaults(metadata)
     mission_event_paths = native_mission_event_paths()
     level_script_event_paths = native_level_script_event_paths()
-    native_task_paths = load_mission_task_paths(task_contract_path)
+    native_task_paths = load_mission_task_paths(task_contract_path, gameassembly=gameassembly_path, metadata=metadata_path)
+    if native_task_paths.get("status") != "validated":
+        raise ProtocolRegistryGateError(dict(validator="missionTaskPaths", gate="currentNativeTaskHooks",
+            expected="validated", actual={key:native_task_paths.get(key) for key in ("status", "failures")},
+            sourceFile=str(task_contract_path)))
     mission_event_assets = mission_event_asset_coverage(
         mission_runtime_root,
         levelscript_roots,
@@ -8074,6 +7679,7 @@ def build_report(
             file_sha256(gameassembly_path),
             file_sha256(metadata_path),
         ),
+        progress=progress,
     )
     cs = il2cpp.enum_members(metadata, defaults, "Proto.CSMessageID")
     sc = il2cpp.enum_members(metadata, defaults, "Proto.SCMessageID")
@@ -8100,13 +7706,7 @@ def build_report(
         gameassembly_path,
         mapper_path,
     )
-    start_policy_contract = levelscript_start_policy_contract(
-        metadata,
-        defaults,
-        helper,
-        gameassembly_path,
-        mapper_path,
-    )
+    start_policy_contract = levelscript_start_policy_contract(gameassembly_path, metadata_path)
     manual_self_control_contract = levelscript_manual_self_control_contract(
         metadata,
         defaults,
@@ -8136,14 +7736,14 @@ def build_report(
         message_id = hook.get("messageId")
         if isinstance(message_id, int):
             native_hooks_by_message_id.setdefault(message_id, []).append(hook_name)
-    registry_by_name = {row["name"]: row["id"] for row in (*cs, *sc)}
+    registry_by_name = {il2cpp.normalized_field_name(row["name"]): row["id"] for row in (*cs, *sc)}
 
     checks = [
         {
             "name": name,
             "expectedId": expected,
-            "actualId": registry_by_name.get(name),
-            "matches": registry_by_name.get(name) == expected,
+            "actualId": registry_by_name.get(il2cpp.normalized_field_name(name)),
+            "matches": registry_by_name.get(il2cpp.normalized_field_name(name)) == expected,
         }
         for name, expected in KNOWN_ID_CHECKS.items()
     ]
@@ -8151,7 +7751,7 @@ def build_report(
     schemas: list[dict[str, Any]] = []
     for selection in RELEVANT_MESSAGES:
         schema = message_schema(metadata, defaults, selection["type"])
-        actual_id = registry_by_name.get(selection["enumName"])
+        actual_id = registry_by_name.get(il2cpp.normalized_field_name(selection["enumName"]))
         schemas.append(
             {
                 **schema,
@@ -8170,7 +7770,7 @@ def build_report(
         )
 
     return {
-        "_schema": "endfieldProtocolRegistryAudit.v20",
+        "_schema": protocol_contracts.REGISTRY_SCHEMA,
         "source": {
             "metadata": str(metadata_path.resolve()),
             "metadataSize": len(metadata.buf),
@@ -8200,6 +7800,8 @@ def build_report(
                 mission_event_assets["customMissionEventListeners"]
                 + mission_event_assets["levelScriptCustomMissionEventRecords"]
             ),
+            "serializedCustomMissionEventListenerCoverage": mission_event_assets["levelScriptActionMapStatus"],
+            "unavailableLevelScriptActionMaps": mission_event_assets["levelScriptActionMapsUnavailable"],
             "message125TypedBindSpecializations": event_bus_census[
                 "matchingBindSpecializationCount"
             ],
@@ -8591,9 +8193,10 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"**{coverage['customMissionEventListeners']:,}** typed custom-mission "
                 "listeners, and "
                 f"**{coverage['levelScriptCustomMissionEventRecords']:,}** matching "
-                "LevelScript records. Those zeroes describe the separate serialized "
-                "`MissionEvent_OnCustomEventForMission` family; they are not a consumer "
-                "census for the keyed global event bus."
+                f"LevelScript records from **{coverage['levelScriptActionMapsDecoded']:,}** "
+                f"complete typed action maps; **{coverage['levelScriptActionMapsUnavailable']:,}** "
+                "maps remain unavailable with source-specific diagnostics. Counts establish "
+                "no absence in unavailable maps and no keyed-global-event-bus consumer census."
             ),
             "",
             (
@@ -8633,7 +8236,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         ]
     )
     level_events = report["nativeLevelScriptEventPaths"]
-    level_event = level_events.get(57) or level_events["57"]
+    level_event = level_events.get(57) or level_events.get("57")
     lines.extend(
         [
             "",
@@ -8645,7 +8248,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "constructs a `LevelScriptPtr` receiver from `scriptId`, allocates "
                 "`EventParams`, and raises `eventName` through "
                 "`LevelEventManager.RaiseScriptEvent`."
-            ),
+            ) if level_event else "The current selected-native event route is unproved; no handler or token-transport conclusion is published.",
             "",
             (
                 "When `ctxToken` is non-empty, the handler copies the protobuf bytes into "
@@ -8657,7 +8260,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "`CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.CtxToken`. This proves a server-event "
                 "round trip, not mission/quest identity, and therefore creates no ownership "
                 "or order edge."
-            ),
+            ) if level_event else "",
         ]
     )
     lines.extend(
@@ -8808,11 +8411,13 @@ def render_markdown(report: dict[str, Any]) -> str:
             quest_enable_lifecycle.get("finding")
             or "[quest-enable lifecycle audit unavailable]",
             "",
-            "| Packet enable | Current pause | Native lifecycle call |",
-            "|---|---|---|",
+            "| Packet enable | Packet previous state | Effective state | Current pause | Native lifecycle call |",
+            "|---|---|---|---|---|",
             *[
-                "| `{enable}` | `{paused}` | {calls} |".format(
-                    enable=route.get("values", {}).get("isEnable"),
+                "| `{enable}` | `{previous}` | `{effective}` | `{paused}` | {calls} |".format(
+                    enable=route.get("values", {}).get("IsEnable"),
+                    previous=route.get("values", {}).get("PrevQuestState"),
+                    effective=route.get("values", {}).get("effectiveQuestState"),
                     paused=route.get("values", {}).get("isPaused"),
                     calls=", ".join(
                         f"`{md_escape(str(call.get('method') or '?'))}`"
@@ -8828,7 +8433,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                     f"`{md_escape(str(field))}`"
                     for field in (
                         quest_enable_lifecycle.get("message", {}).get(
-                            "unreadControlFields"
+                            "consumedControlFields"
                         )
                         or []
                     )
@@ -8986,7 +8591,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 ),
                 offset=int(
                     (start_policy.get("activeStateGate") or {}).get(
-                        "callOffset", 0
+                        "instructionOffset", 0
                     )
                 ),
                 target=(start_policy.get("activeStateGate") or {}).get(
@@ -9233,7 +8838,7 @@ def parse_args() -> argparse.Namespace:
         "--ensure-current",
         action="store_true",
         help=(
-            "Reuse an existing validated v20 report when its original "
+            "Reuse a validated report with the current schema when its original "
             "GameAssembly, metadata, and task-contract hashes still match; "
             "otherwise rebuild it."
         ),
@@ -9260,116 +8865,17 @@ def current_report_status(
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         return False, f"report unreadable: {exc}"
-    if report.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if not isinstance(report, dict):
+        return False, f"report must be an object, got {type(report).__name__}"
+    if report.get("_schema") != protocol_contracts.REGISTRY_SCHEMA:
         return False, f"schema is {report.get('_schema')!r}"
-    scheduler_validation = (
-        (report.get("actionExtraThreadSchedulerCensus") or {}).get("validation")
-        or {}
-    )
-    if scheduler_validation.get("status") != "validated":
-        return False, (
-            "action-extra-thread validation is "
-            f"{scheduler_validation.get('status')!r}"
-        )
-    validation = (
-        (report.get("stateUpdateApplicationCensus") or {}).get("validation") or {}
-    )
-    if validation.get("status") != "validated":
-        return False, f"validation is {validation.get('status')!r}"
-    quest_start_validation = (
-        ((report.get("stateUpdateApplicationCensus") or {}).get(
-            "questStartApplication"
-        ) or {}).get("validation") or {}
-    )
-    if quest_start_validation.get("status") != "validated":
-        return False, (
-            "quest-start validation is "
-            f"{quest_start_validation.get('status')!r}"
-        )
-    quest_state_lifecycle_validation = (
-        ((report.get("stateUpdateApplicationCensus") or {}).get(
-            "questStateLifecycleApplication"
-        ) or {}).get("validation") or {}
-    )
-    if quest_state_lifecycle_validation.get("status") != "validated":
-        return False, (
-            "quest-state lifecycle validation is "
-            f"{quest_state_lifecycle_validation.get('status')!r}"
-        )
-    quest_enable_lifecycle_validation = (
-        ((report.get("stateUpdateApplicationCensus") or {}).get(
-            "questEnableLifecycleApplication"
-        ) or {}).get("validation") or {}
-    )
-    if quest_enable_lifecycle_validation.get("status") != "validated":
-        return False, (
-            "quest-enable lifecycle validation is "
-            f"{quest_enable_lifecycle_validation.get('status')!r}"
-        )
-    quest_succeed_validation = (
-        ((report.get("stateUpdateApplicationCensus") or {}).get(
-            "questSucceedActionApplication"
-        ) or {}).get("validation") or {}
-    )
-    if quest_succeed_validation.get("status") != "validated":
-        return False, (
-            "quest-action-dispatch validation is "
-            f"{quest_succeed_validation.get('status')!r}"
-        )
-    topology_validation = (
-        ((report.get("stateUpdateApplicationCensus") or {}).get(
-            "questTopologyFieldConsumers"
-        ) or {}).get("validation") or {}
-    )
-    if topology_validation.get("status") != "validated":
-        return False, (
-            "topology-consumer validation is "
-            f"{topology_validation.get('status')!r}"
-        )
-    semantic_validation = (
-        (((report.get("stateUpdateApplicationCensus") or {}).get(
-            "questTopologyFieldConsumers"
-        ) or {}).get("questSemanticFields") or {}).get("validation") or {}
-    )
-    if semantic_validation.get("status") != "validated":
-        return False, (
-            "quest-semantic-field validation is "
-            f"{semantic_validation.get('status')!r}"
-        )
-    start_policy_validation = (
-        (report.get("levelScriptStartPolicy") or {}).get("validation") or {}
-    )
-    if start_policy_validation.get("status") != "validated":
-        return False, (
-            "LevelScript start-policy validation is "
-            f"{start_policy_validation.get('status')!r}"
-        )
-    manual_self_validation = (
-        (report.get("levelScriptManualSelfControl") or {}).get("validation")
-        or {}
-    )
-    if manual_self_validation.get("status") != "validated":
-        return False, (
-            "LevelScript manual-self-control validation is "
-            f"{manual_self_validation.get('status')!r}"
-        )
-    activation_control_validation = (
-        (report.get("levelScriptActivationControl") or {}).get("validation")
-        or {}
-    )
-    if activation_control_validation.get("status") != "validated":
-        return False, (
-            "LevelScript activation-control validation is "
-            f"{activation_control_validation.get('status')!r}"
-        )
-    task_lifecycle_validation = (
-        (report.get("levelScriptTaskLifecycle") or {}).get("validation") or {}
-    )
-    if task_lifecycle_validation.get("status") != "validated":
-        return False, (
-            "LevelScript task-lifecycle validation is "
-            f"{task_lifecycle_validation.get('status')!r}"
-        )
+    try:
+        failures = _report_validation_failures(report)
+    except (KeyError, TypeError, AttributeError) as error:
+        return False, f"required native validation missing or malformed: {str(error)[:160]}"
+    if failures:
+        first = failures[0]
+        return False, f"{first['validator']}.{first['gate']}: actual={str(first['actual'])[:256]}"
     source = report.get("source") or {}
     checks = (
         (metadata_path, "metadataSha256"),
@@ -9380,7 +8886,7 @@ def current_report_status(
             return False, f"source missing: {source_path}"
         expected = str(source.get(hash_key) or "").lower()
         actual = (measured_hashes or {}).get(hash_key) or file_sha256(source_path)
-        if actual != expected:
+        if actual.lower() != expected:
             return False, f"{hash_key} differs: expected={expected!r} actual={actual!r}"
     expected_contract = str(source.get("nativeTaskContractSha256") or "").lower()
     if not task_contract_path.is_file():
@@ -9391,7 +8897,9 @@ def current_report_status(
             "nativeTaskContractSha256 differs: "
             f"expected={expected_contract!r} actual={actual_contract!r}"
         )
-    return True, "validated report hashes match original inputs"
+    if source.get("readerRecipe") != _reader_recipe():
+        return False, "reader recipe differs or is missing"
+    return True, "validated report hashes and reader recipe match original inputs"
 
 
 def main() -> int:
@@ -9413,6 +8921,7 @@ def main() -> int:
         raise SystemExit(f"metadata helper not found: {args.helper}")
     if not args.native_mapper.is_file():
         raise SystemExit(f"native mapper not found: {args.native_mapper}")
+    recipe = _reader_recipe()
     if args.ensure_current:
         is_current, reason = current_report_status(
             args.json_output,
@@ -9427,10 +8936,14 @@ def main() -> int:
             existing_report = json.loads(
                 args.json_output.read_text(encoding="utf-8")
             )
+            failure = _after_read_failure(native, args.gameassembly, args.metadata, recipe, existing_report["source"])
+            if failure:
+                return _write_validation_failure(args.json_output, [failure])
             write_text_if_changed(
                 args.markdown_output,
                 render_markdown(existing_report),
             )
+            _print_levelscript_coverage(existing_report["missionEventAssetCoverage"])
             print(f"protocol registry audit current: {reason}")
             return 0
         print(f"protocol registry audit refresh required: {reason}")
@@ -9441,7 +8954,10 @@ def main() -> int:
             gameassembly_path=args.gameassembly,
             mapper_path=args.native_mapper,
             mission_runtime_root=args.mission_runtime_root,
+            progress=True,
         )
+    except ProtocolRegistryGateError as exc:
+        return _write_validation_failure(args.json_output, [exc.diagnostic])
     except il2cpp.load_metadata_helper(args.helper).MetadataParseError as exc:
         # Re-deriving the registry is how a different client build is
         # supported; metadata this parser cannot read is a real stop.
@@ -9450,156 +8966,16 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+    failures = _report_validation_failures(report)
+    if failures:
+        return _write_validation_failure(args.json_output, failures)
+    failure = _after_read_failure(native, args.gameassembly, args.metadata, recipe, report["source"])
+    if failure:
+        return _write_validation_failure(args.json_output, [failure])
+    report["source"]["readerRecipe"] = recipe
     write_report_json(args.json_output, report)
     write_text_if_changed(args.markdown_output, render_markdown(report))
-    validation = report["stateUpdateApplicationCensus"]["validation"]
-    if validation["status"] != "validated":
-        first = validation["failures"][0]
-        print(
-            "state-update validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    quest_state_lifecycle_validation = report["stateUpdateApplicationCensus"][
-        "questStateLifecycleApplication"
-    ]["validation"]
-    if quest_state_lifecycle_validation["status"] != "validated":
-        first = quest_state_lifecycle_validation["failures"][0]
-        print(
-            "quest-state lifecycle validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    quest_enable_lifecycle_validation = report["stateUpdateApplicationCensus"][
-        "questEnableLifecycleApplication"
-    ]["validation"]
-    if quest_enable_lifecycle_validation["status"] != "validated":
-        first = quest_enable_lifecycle_validation["failures"][0]
-        print(
-            "quest-enable lifecycle validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    quest_start_validation = report["stateUpdateApplicationCensus"][
-        "questStartApplication"
-    ]["validation"]
-    if quest_start_validation["status"] != "validated":
-        first = quest_start_validation["failures"][0]
-        print(
-            "quest-start validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    quest_succeed_validation = report["stateUpdateApplicationCensus"][
-        "questSucceedActionApplication"
-    ]["validation"]
-    if quest_succeed_validation["status"] != "validated":
-        first = quest_succeed_validation["failures"][0]
-        print(
-            "quest-succeed-action validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    topology_validation = report["stateUpdateApplicationCensus"][
-        "questTopologyFieldConsumers"
-    ]["validation"]
-    if topology_validation["status"] != "validated":
-        first = topology_validation["failures"][0]
-        print(
-            "topology-consumer validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    semantic_validation = report["stateUpdateApplicationCensus"][
-        "questTopologyFieldConsumers"
-    ]["questSemanticFields"]["validation"]
-    if semantic_validation["status"] != "validated":
-        first = semantic_validation["failures"][0]
-        print(
-            "quest-semantic-field validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    scheduler_validation = report["actionExtraThreadSchedulerCensus"]["validation"]
-    if scheduler_validation["status"] != "validated":
-        first = scheduler_validation["failures"][0]
-        print(
-            "action-extra-thread validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    start_policy_validation = report["levelScriptStartPolicy"]["validation"]
-    if start_policy_validation["status"] != "validated":
-        first = start_policy_validation["failures"][0]
-        print(
-            "LevelScript start-policy validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    manual_self_validation = report["levelScriptManualSelfControl"][
-        "validation"
-    ]
-    if manual_self_validation["status"] != "validated":
-        first = manual_self_validation["failures"][0]
-        print(
-            "LevelScript manual-self-control validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    activation_control_validation = report["levelScriptActivationControl"][
-        "validation"
-    ]
-    if activation_control_validation["status"] != "validated":
-        first = activation_control_validation["failures"][0]
-        print(
-            "LevelScript activation-control validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"message={first.get('message')} expected={first['expected']!r} "
-            f"actual={first['actual']!r} source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
-    task_lifecycle_validation = report["levelScriptTaskLifecycle"]["validation"]
-    if task_lifecycle_validation["status"] != "validated":
-        first = task_lifecycle_validation["failures"][0]
-        print(
-            "LevelScript task-lifecycle validator failed: "
-            f"validator={first['validator']} gate={first['gate']} "
-            f"expected={first['expected']!r} actual={first['actual']!r} "
-            f"source={first['sourceFile']}",
-            file=sys.stderr,
-        )
-        return 1
+    _print_levelscript_coverage(report["missionEventAssetCoverage"])
     print(
         f"wrote {args.json_output} and {args.markdown_output}: "
         f"{report['summary']['totalMessages']} messages, "

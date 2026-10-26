@@ -376,7 +376,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::sourceId_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<SourceId>k__BackingField",
               "type": "ulong",
               "mode": "reference"
             }
@@ -389,7 +389,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::targetId_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<TargetId>k__BackingField",
               "type": "ulong",
               "mode": "reference"
             }
@@ -402,7 +402,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::value_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<Value>k__BackingField",
               "type": "double",
               "mode": "reference"
             }
@@ -415,7 +415,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::curHp_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<CurHp>k__BackingField",
               "type": "double",
               "mode": "reference"
             }

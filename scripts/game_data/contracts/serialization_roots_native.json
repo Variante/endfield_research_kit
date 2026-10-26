@@ -594,6 +594,121 @@
           "boundary": "complete owned reader coverage"
         }
       ]
+    },
+    {
+      "typeName": "Beyond.Gameplay.LevelScriptTemplateData",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptTemplateDataForMemoryPack",
+      "fields": [
+        [
+          "actionMap",
+          "Beyond.Gameplay.Actions.ActionMapAssetRaw"
+        ],
+        [
+          "maxStage",
+          "int"
+        ],
+        [
+          "properties",
+          "System.Collections.Generic.List`1<Beyond.Gameplay.ParamKeyValue>"
+        ],
+        [
+          "propertyIdToKeyMap",
+          "System.Collections.Generic.Dictionary`2<int,string>"
+        ],
+        [
+          "taskMap",
+          "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.LevelScriptTaskData>"
+        ],
+        [
+          "templateId",
+          "string"
+        ]
+      ],
+      "sourceFields": [
+        [
+          "templateId",
+          "pooled-string-setter"
+        ]
+      ],
+      "method": [
+        242781,
+        "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptTemplateDataForMemoryPack",
+        "Deserialize",
+        103414688
+      ],
+      "memberCountInstruction": [
+        103414763,
+        "40 80 fe 06"
+      ],
+      "fieldSources": [
+        {
+          "field": "templateId",
+          "fieldOffset": 16,
+          "readerArgument": "rdi",
+          "wrapperArgument": "rbx",
+          "callRva": 103414968,
+          "targetRva": 85929408,
+          "setter": [
+            242778,
+            "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptTemplateDataForMemoryPack",
+            "set___templateId__",
+            88443952
+          ],
+          "setterCallRva": 103414987,
+          "setterWindows": [
+            {
+              "startRva": 88443952,
+              "endRva": 88443988,
+              "sha256": "1490A6C2BD8B515067547FCDB5E4AF2D2078371C4497842474F52D6D197A7809",
+              "boundary": "complete reference setter; collector behavior is separate"
+            }
+          ]
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 103414688,
+          "endRva": 103415110,
+          "sha256": "C480E14A191C90DFBBEB215D75EB5B2031C1C846A0184CE26048182F6C8C2450",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 103414743,
+          "endRva": 103414997,
+          "sha256": "E01570E2BEC0A439E1AD2A28F0B64095DEDF5F324FA827535A1C233AD0BAC071",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 103414997,
+          "endRva": 103415008,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 103415008,
+          "endRva": 103415014,
+          "sha256": "438469BA8118E4A78655B04CE04F67A9E2C05394F8E7F0EF10CDB954A1D85B31",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 103415014,
+          "endRva": 103415110,
+          "sha256": "49E66A0742BF371A017DA564E6BCCFF6AD18A94ACD6B4147EBD053B0CB5F53FA",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124463798,
+          "endRva": 124463905,
+          "sha256": "96288D0F36D0BA55A37F4329259BCA81B8E2B0E48EBA53709FF793BAB0A47F8F",
+          "boundary": "complete owned reader coverage"
+        },
+        {
+          "startRva": 124463905,
+          "endRva": 124463926,
+          "sha256": "C6B4D8CB158173C9A413C03E41F16F88C7A18C16C223AA68DA8F746D71A1EB76",
+          "boundary": "complete owned reader coverage"
+        }
+      ]
     }
   ],
   "evidenceBoundary": {

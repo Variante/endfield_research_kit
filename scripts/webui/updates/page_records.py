@@ -6,6 +6,7 @@ languages present on both sides. Missing primary catalogs fail closed; deleted
 IDs stay in the sidecar, but are never inserted into current page datasets.
 """
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, localize
 
 import hashlib
 import json
@@ -25,7 +26,7 @@ from scripts.webui.updates.gameplay_items import item_source_records
 from scripts.webui.updates.gameplay_sources import PRIMARY_TABLES, entity_source_records
 from scripts.webui.updates.catalog_sources import activity_source_records
 from scripts.webui.updates.scanner import (
-    TEXT_DIFF_MAX_BYTES, TEXT_KIND_BINARY, TEXT_KIND_DECODED_PARTIAL,
+    TEXT_DIFF_MAX_BYTES, TEXT_KIND_PLAIN, TEXT_KIND_BINARY, TEXT_KIND_DECODED_PARTIAL,
     TEXT_KIND_DECODED_WHOLE, build_text_diff, textual_form,
 )
 
@@ -244,7 +245,8 @@ def _file_comparison(source: str, status: str, roots: list[Path]) -> dict[str, A
 
 
 def build_page_updates(previous_root: Path, current_root: Path, *,
-                       pages: tuple[str, ...] | None = None) -> dict[str, dict[str, Any]]:
+                       pages: tuple[str, ...] | None = None,
+                       scan_entries: list[dict[str, Any]] | None = None) -> dict[str, dict[str, Any]]:
     """Return independently available, uncapped page sidecars for two exports."""
     selected = set(pages) if pages is not None else {'story', 'gameplay', 'map', 'reference', 'activities'}
     if selected - {'story', 'gameplay', 'map', 'reference', 'activities'}:
@@ -264,7 +266,8 @@ def build_page_updates(previous_root: Path, current_root: Path, *,
         tables.append(loaded)
     languages = sorted({name for name in tables[0] if name.startswith("I18nTextTable_")}
                        & {name for name in tables[1] if name.startswith("I18nTextTable_")})
-    localization = [{name.removeprefix("I18nTextTable_"): side[name] for name in languages} for side in tables]
+    localization = [{name.removeprefix("I18nTextTable_"): localize(side[name], side.get(HOTFIX_TABLE[:-5], {}), name.removeprefix("I18nTextTable_"))
+                     for name in languages} for side in tables]
     # Optional inputs must exist on both sides, just like localization. An
     # incomplete optional lane must not turn an entire family into additions.
     common_tables = tables[0].keys() & tables[1].keys()
@@ -275,7 +278,17 @@ def build_page_updates(previous_root: Path, current_root: Path, *,
     } if all(layout.json_dir.is_dir() for layout in layouts) else set()
     map_families = [name for name in ("LevelConfig", "LevelData", "LevelScriptData", "MapConfig")
                     if name in file_families]
-    file_comparisons = {}
+    # Reuse only the completed comparison from this same two-export scan.
+    # Missing/capped entries keep the direct-reader fallback below.
+    file_comparisons = {
+        (row["path"], row["status"]): {"text_kind": row.get("text_kind", TEXT_KIND_PLAIN), **{key: row[key] for key in (
+            "path", "status", "old_size", "new_size", "text_kind", "text_diff",
+            "text_diff_truncated", "text_diff_note") if key in row}}
+        for row in scan_entries or []
+        if row.get("domain") in ("game", "text") and str(row.get("path", "")).startswith("game/")
+        and (row.get("text_diff") or row.get("text_diff_note"))
+        and row.get("text_diff_note") != "binary_too_large"
+    }
     for page, projector, required in (
         ("story", lambda layout, rows, text: _story(layout, rows, text, include_unity=include_unity), ("DialogTextTable", "TextTable")),
         ("gameplay", lambda layout, rows, text: _gameplay(layout, rows, text, file_families=file_families), (*GAMEPLAY_TABLES.values(), "ItemTable")),

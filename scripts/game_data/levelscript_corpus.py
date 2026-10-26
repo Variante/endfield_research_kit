@@ -24,6 +24,8 @@ from typing import Any, Callable
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.corpus_common import atomic_write_text
+from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.codecs.levelscript.framing_common import bounded_diagnostic_rows
 from scripts.game_data.game_file_store import iter_game_tree, read_game_file
 from scripts.game_data.levelscript_binary import frame_levelscript_named
 from scripts.game_data.levelscript_template_binary import frame_levelscript_template
@@ -56,8 +58,10 @@ def _fail(check: str, source: str | Path, expected: Any, actual: Any,
 
 
 def _native_inputs(gameassembly: Path | None, metadata: Path | None) -> list[dict[str, Any]]:
-    pins = json.loads(LAYOUT_CONTRACT_PATH.read_bytes())["nativeInputs"]
-    hashes = (pins["gameAssembly"]["sha256"], pins["metadata"]["sha256"])
+    pins = union_tags.contract_native_inputs()
+    hashes = (pins['gameAssemblySha256'],pins['metadataSha256'])
+    if any(not re.fullmatch(r'[0-9A-Fa-f]{64}',value) for value in hashes):
+        _fail('native-contract-inputs',union_tags.DEFAULT_CONTRACT,'two SHA-256 values',pins)
     selected = check_installed_native_inputs(*hashes, gameassembly=gameassembly, metadata=metadata)
     if selected.status != "validated":
         _native_refusal("native-inputs", selected, hashes, fallback=gameassembly or "selected native build")
@@ -147,7 +151,7 @@ def _classify(data: bytes, family: str, source: str) -> dict[str, Any]:
         _require_format_refusal([str(exc), *_diagnostic_messages(details)], source)
         return {"status": "unclassified_binary", "reader": None,
                 "namedSchemaStatus": "unproved", "diagnostic": diagnostic,
-                "diagnostics": details[:8]}
+                "diagnostics": bounded_diagnostic_rows(details)}
     messages = _diagnostic_messages([frame.get(key, []) for key in
         ("readerRefusals", "diagnostics", "taskDiagnostics", "stopDetail")])
     messages.append(str((frame.get("actionMap") or {}).get("unresolvedReason", "")))
@@ -162,7 +166,7 @@ def _classify(data: bytes, family: str, source: str) -> dict[str, Any]:
             "namedSchemaStatus": "partial", "storedOwnerStatus": frame.get("status"),
             "firstStop": _first_stop(frame, family),
             **({"stopDetail": frame["stopDetail"]} if module_first_stop(frame) else {}),
-            "diagnostics": {key: frame.get(key, [])[:8] for key in
+            "diagnostics": {key: bounded_diagnostic_rows(frame.get(key, [])) for key in
                             ("readerRefusals", "diagnostics", "taskDiagnostics")}}
 
 

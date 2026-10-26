@@ -4,7 +4,6 @@ import hashlib
 import struct
 from scripts.game_data.il2cpp.generic_entries import GenericEntries
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
-from scripts.game_data.il2cpp.unwind_chains import UnwindChainIndex,read_exception_directory
 from scripts.game_data.il2cpp.string_source_instructions import decode_string_source_instructions
 from scripts.game_data.il2cpp.sse_lanes import decode_sse_lanes
 from scripts.game_data.memorypack import scalar_param_native as scalar
@@ -12,8 +11,7 @@ from scripts.game_data.memorypack import scalar_param_native as scalar
 
 def vector_recorder(image, *, lanes=False):
     base = image.pe.image_base
-    table, size, raw = read_exception_directory(image.pe)
-    unwind = UnwindChainIndex(raw, lambda r,n:image.pe.bytes_at_va(base+r,n), table_rva=table, image_size=size)
+    unwind = image.unwind_index
     class LaneMapper:
         def decode_one_x64(self,data,offset,start_va):
             return decode_sse_lanes(data,offset,start_va) or image.mapper.decode_one_x64(data,offset,start_va)

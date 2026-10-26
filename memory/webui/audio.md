@@ -330,6 +330,9 @@ Inspect `--help` for non-CN or targeted maintenance options. Focused audits
   chains stay withheld (`native_callsite_rederivation.py` owns the rules). A
   re-derived row proves the literal and playback path, not its reviewed trigger
   prose (`branchConditionStatus`). Authored and HIRC evidence is unaffected.
+  Positioned ModelView uses the current reviewed call-interface recipe in
+  `audio_model_view_consumers.json`; it publishes no old field/endpoint claims.
+  Its route remains `currentBuildCallsitesOnly`, with ownership and execution open.
 
 See [`../game_data_recovery.md`](../game_data_recovery.md) for durable
 serialized-data and native-consumer conclusions, and

@@ -824,8 +824,8 @@
     const title = decoded ? updateText("decodedDiff") : updateText("textDiff");
     const decoderNote = decoded
       ? `<div class="updates-detail-note">${escapeHtml(
-          updateText(kind === "decoded_partial" ? "decodedDiffPartial" : "decodedDiffWhole")
-            .replace("{decoder}", decodedFrom(entry) || "a maintained reader"),
+          updateText(kind === "decoded_partial" ? "decodedDiffPartial" : "decodedDiffWhole",
+            { decoder: decodedFrom(entry) || "a maintained reader" }),
         )}</div>`
       : "";
     const rows = lines.map((line) => {

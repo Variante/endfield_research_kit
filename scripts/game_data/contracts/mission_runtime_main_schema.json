@@ -1,7 +1,7 @@
 {
-  "schema": "endfield.mission-runtime-main-json-schema.v1",
+  "schema": "endfield.mission-runtime-main-json-schema.v2",
   "status": "named_exact",
-  "evidenceBoundary": "Every object key, ordered object shape, array member, scalar JSON type, and observed $type discriminator in the reviewed main mission bodies is validated. Only questDic and the two inverse property maps are dynamic dictionaries; their keys and value schemas are explicitly bounded. currentCorpus retains the original 523-body baseline identity; subsequent installed-corpus validation is recorded separately.",
+  "evidenceBoundary": "Every ordered object shape, array member, scalar JSON type and reviewed $type discriminator is validated. Only questDic and the two inverse property maps are dynamic dictionaries; keys and value schemas are explicitly bounded. Installed-corpus coverage belongs to the authenticated corpus report; condition evaluation and runtime selection remain unresolved.",
   "dynamicDictionaries": {
     "$.questDic": {
       "keyPattern": "^.+$",
@@ -26,10 +26,6 @@
     "propertyIdToKeyMap and propertyKeyToIdMap are exact inverses",
     "clientActionMapKey and clientActionMapValue have equal lengths"
   ],
-  "currentCorpus": {
-    "fileCount": 523,
-    "identitySetSha256": "FF5F7BDFC62599A3D0C857D77E593279A493D34DED707F28F88BB316C90A6EFF"
-  },
   "nodes": {
     "$": {
       "types": [
@@ -624,6 +620,24 @@
           "wrapperSystemType",
           "objectiveWrapperStep",
           "isBlockObjective"
+        ],
+        [
+          "multiple",
+          "condition",
+          "displayCondition",
+          "description",
+          "useMultipleDescription",
+          "multipleDescription",
+          "showProgressMethod",
+          "muteTrack",
+          "mapSubCondition",
+          "trackingInfoList",
+          "mapTrackingToMultiDesc",
+          "multiDescTrackingInfoList",
+          "isObjectiveWrapper",
+          "wrapperSystemType",
+          "objectiveWrapperStep",
+          "isBlockObjective"
         ]
       ]
     },
@@ -695,7 +709,14 @@
         "Beyond.Gameplay.PlayerHasItem, Gameplay.Beyond",
         "Beyond.Gameplay.PlayerHasItemInItemBag, Gameplay.Beyond",
         "Beyond.Gameplay.ReachDestination, Gameplay.Beyond",
-        "Beyond.Gameplay.WeekRaidPlayerHasItem, Gameplay.Beyond"
+        "Beyond.Gameplay.WeekRaidPlayerHasItem, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilPlacedInPanel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMapVar, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond"
       ]
     },
     "$.questDic.*.objectiveList[].description": {
@@ -5736,7 +5757,13 @@
         "Beyond.Gameplay.InteractiveCheckInt, Gameplay.Beyond",
         "Beyond.Gameplay.PlayerHasItem, Gameplay.Beyond",
         "Beyond.Gameplay.PlayerHasItemInItemBag, Gameplay.Beyond",
-        "Beyond.Gameplay.ReachDestination, Gameplay.Beyond"
+        "Beyond.Gameplay.ReachDestination, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMapVar, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond"
       ]
     },
     "@Beyond.Gameplay.CombineCondition, Gameplay.Beyond.uniqueId": {
@@ -7459,6 +7486,394 @@
       "types": [
         "boolean"
       ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond.uniqueId": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond.useCurrentScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond.scopeMask": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond.useGraphScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond._compareOperator": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond._compareOperator.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond._progressToCompare": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond._progressToCompare.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond.uniqueId": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond.useCurrentScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond.scopeMask": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond.useGraphScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._mapId": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._mapId.constValue": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._key": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._key.constValue": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._comparer": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._comparer.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._targetValue": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckMapVar, Gameplay.Beyond._targetValue.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond.uniqueId": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond.useCurrentScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond.scopeMask": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond.useGraphScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond._progressGlobalVarKey": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond._targetCount": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond._targetCount.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond.uniqueId": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond.useCurrentScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond.scopeMask": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond.useGraphScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond._levelId": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond._levelId.constValue": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond.uniqueId": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond.useCurrentScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond.scopeMask": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond.useGraphScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond._progressGlobalVarKey": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond._targetCount": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond._targetCount.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond.uniqueId": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond.useCurrentScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond.scopeMask": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond.useGraphScope": {
+      "types": [
+        "boolean"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond._id": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond._id.constValue": {
+      "types": [
+        "string"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond._compareOperator": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond._compareOperator.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond._progressToCompare": {
+      "types": [
+        "object"
+      ],
+      "shapes": [
+        [
+          "constValue"
+        ]
+      ]
+    },
+    "@Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond._progressToCompare.constValue": {
+      "types": [
+        "integer"
+      ]
+    },
+    "$.questDic.*.objectiveList[].displayCondition": {
+      "types": [
+        "object"
+      ],
+      "allowedTags": [
+        "Beyond.Gameplay.CheckActivityConditionalStageStatus, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckAdventureBookStage, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckAdventureLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckAllImportantCheckinTakenReward, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckBlackboxComplete, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckBuildingConnected, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckBuildingConnectedSpecify, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckBuildingStateInArea, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckClientGlobalVar, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckCutsceneFinish, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckDomainDevelopmentLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckDomainShopChannelLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFMVFinish, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckGuideGroupComplete, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckInTimeTableTimeRange, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckInteractiveDestroyed, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckInteractiveIsActivated, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckIsPortableDeviceActive, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckLevelScriptPropertyBool, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckLevelScriptPropertyInt, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckLevelScriptTaskFinished, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckLiquidInBag, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMapCollectionNum, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMissionChapterEarlyAccept, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMissionState, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMoney, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMonsterKilled, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckPRTSUnlocked, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckPassedSpecifiedShootingRangeSimulationLevelIds, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckPlayerInMap, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckQuestState, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckRemoteCommFinish, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckScanInteractive, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSceneCollectionNum, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckScriptMonsterKilled, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSeasonTowerLevelAchieveCount, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckShootingRangeDailyLevelPass, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSnapshotIdentifySuccess, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSpaceshipGrowCabinSow, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSpaceshipRoomBuilt, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSpaceshipRoomBuiltById, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSpaceshipRoomLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckStatisticValByEnum, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckTalkOptionFinish, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckUnlockTech, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckUnlockTechLayer, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckUnlockWorldLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckWorldLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CombineCondition, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.CheckCurrentDungeonBoth, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnBuildingPanelOpen, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFacPlaceBuilding, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFacShowBackupPower, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFacStartBackupPower, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFacZeroPower, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnMailHasLostItem, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnUIPanelClose, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnUIPanelOpen, Gameplay.Beyond",
+        "Beyond.Gameplay.FacProducePowerReach, Gameplay.Beyond",
+        "Beyond.Gameplay.GameConditionServerPlaceHolder, Gameplay.Beyond",
+        "Beyond.Gameplay.PlayerHasItem, Gameplay.Beyond",
+        "Beyond.Gameplay.PlayerHasItemInItemBag, Gameplay.Beyond",
+        "Beyond.Gameplay.ReachDestination, Gameplay.Beyond",
+        "Beyond.Gameplay.WeekRaidPlayerHasItem, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilPlacedInPanel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckMapVar, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond",
+        "Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond"
+      ]
     }
   },
   "taggedObjects": {
@@ -9128,6 +9543,86 @@
           "useGraphScope",
           "_itemId",
           "_comparer",
+          "_progressToCompare"
+        ]
+      ]
+    },
+    "Beyond.Gameplay.CheckInnManagementLevel, Gameplay.Beyond": {
+      "shapes": [
+        [
+          "$type",
+          "uniqueId",
+          "useCurrentScope",
+          "scopeMask",
+          "useGraphScope",
+          "_compareOperator",
+          "_progressToCompare"
+        ]
+      ]
+    },
+    "Beyond.Gameplay.CheckMapVar, Gameplay.Beyond": {
+      "shapes": [
+        [
+          "$type",
+          "uniqueId",
+          "useCurrentScope",
+          "scopeMask",
+          "useGraphScope",
+          "_mapId",
+          "_key",
+          "_comparer",
+          "_targetValue"
+        ]
+      ]
+    },
+    "Beyond.Gameplay.CheckFacSoilWateringCount, Gameplay.Beyond": {
+      "shapes": [
+        [
+          "$type",
+          "uniqueId",
+          "useCurrentScope",
+          "scopeMask",
+          "useGraphScope",
+          "_progressGlobalVarKey",
+          "_targetCount"
+        ]
+      ]
+    },
+    "Beyond.Gameplay.Conditions.OnFoodBoxPicked, Gameplay.Beyond": {
+      "shapes": [
+        [
+          "$type",
+          "uniqueId",
+          "useCurrentScope",
+          "scopeMask",
+          "useGraphScope",
+          "_levelId"
+        ]
+      ]
+    },
+    "Beyond.Gameplay.CheckFacSoilFertilizingCount, Gameplay.Beyond": {
+      "shapes": [
+        [
+          "$type",
+          "uniqueId",
+          "useCurrentScope",
+          "scopeMask",
+          "useGraphScope",
+          "_progressGlobalVarKey",
+          "_targetCount"
+        ]
+      ]
+    },
+    "Beyond.Gameplay.CheckSoilMgrLevel, Gameplay.Beyond": {
+      "shapes": [
+        [
+          "$type",
+          "uniqueId",
+          "useCurrentScope",
+          "scopeMask",
+          "useGraphScope",
+          "_id",
+          "_compareOperator",
           "_progressToCompare"
         ]
       ]

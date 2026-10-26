@@ -470,9 +470,7 @@ def regenerate(contract: dict[str, Any], *, export_root: Path | None = None) -> 
         data = script_path.read_bytes()
     except OSError as error:
         return contract, [f"levelscript:{error}"]
-    details = levelscript_binary.decode_levelscript_action_map_details(
-        data, sample_record_limit=100000, max_hint_records=100000
-    )
+    details = levelscript_binary.decode_levelscript_action_map_details(data, sample_record_limit=100000, max_hint_records=100000, source_path=script_path)
     records = {row.get("localId"): row for row in details.get("sampleRecords") or []}
     action_code = levelscript_union_tags.action(BRIDGE_ACTION_NAME)
     action = records.get(script.get("actionLocalId")) or {}
@@ -485,7 +483,7 @@ def regenerate(contract: dict[str, Any], *, export_root: Path | None = None) -> 
         refused.append(f"levelscript-header:{header.get('payloadHint')}")
     if switch.get("payloadHint") != "actionbase-switch-int":
         refused.append(f"levelscript-switch:{switch.get('payloadHint')}")
-    summary = levelscript_binary.decode_levelscript_binary_summary(data, int(script["scriptId"]))
+    summary = levelscript_binary.decode_levelscript_binary_summary(data, int(script['scriptId']), source_path=script_path)
     volumes = [
         row for row in (summary.get("triggerVolumesDetails") or {}).get("volumes") or []
         if row.get("slotId") == script.get("triggerSlotId") and row.get("triggerVolumeType") == "Leader"

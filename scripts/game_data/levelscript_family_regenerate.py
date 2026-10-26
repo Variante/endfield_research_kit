@@ -29,6 +29,7 @@ from scripts.common import check_installed_native_inputs, NATIVE_EVIDENCE_VALIDA
 from scripts.game_data.audit_build_impact import native_pins
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp import protocol
+from scripts.game_data.il2cpp.integer_tag_dispatch import decode_memory_immediate_compare
 from scripts.game_data.il2cpp.reference_field_programs import preserved_argument,instance_getter,inlined_getter_setter
 from scripts.game_data.il2cpp.type_data_initialization_instructions import decode_type_data_initialization_instructions
 from scripts.game_data.il2cpp.native_image import open_native_image
@@ -109,10 +110,22 @@ def select_calls(rows: list[dict[str, Any]], count: int, setters: list[int], inl
     limit = count if prefix_count is None else prefix_count
     if type(limit) is not int or not 1 <= limit <= count or len(setters) < limit:
         raise RouteRefused('read-setter-prefix:invalid-bound')
-    headers = [i for i, r in enumerate(rows) if r['text'].startswith('cmp ')
-               and r['text'].endswith(f', {count:#x}')
-               and bytes.fromhex(r['bytes'])[-1] == count
-               and len(bytes.fromhex(r['bytes'])) in (4, 5)]
+    def byte_count(row):
+        raw = bytes.fromhex(row['bytes'])
+        try:
+            decoded = decode_memory_immediate_compare(raw, 0, int(row['va'], 16)) if raw else None
+        except (ValueError, IndexError):
+            return False
+        if decoded:
+            fact, end = decoded
+            return (end == len(raw) and fact['memoryImmediateComparisonOperation']['bits'] == 8
+                    and fact['memoryImmediateComparisonOperation']['immediateValue'] == count
+                    and fact['text'].replace('cmp byte ', 'cmp ') == row['text'].replace('cmp byte ', 'cmp '))
+        if raw and 0x40 <= raw[0] <= 0x4f:
+            raw = raw[1:]
+        return (len(raw) == 3 and raw[0] == 0x80 and raw[1] & 0xf8 == 0xf8 and raw[2] == count
+                and re.fullmatch(r'cmp [a-z0-9]+, '+f'{count:#x}', row['text']) is not None)
+    headers = [i for i, row in enumerate(rows) if byte_count(row)]
     if len(headers) != 1:
         raise RouteRefused(f'member-count-instruction:expected=1:actual={len(headers)}')
     prove_argument=reader_register is None
@@ -312,21 +325,23 @@ class Build:
                 wrappers={w.type_definition: w for w in self.wrappers.values()})
         return self.switches[family]
 
-    def prove_named_target(self, target: int, owner: str, name: str):
+    def prove_named_target(self, target: int, owner: str, name: str, *, result_abi="reference"):
         claim = f'{owner}.{name}'
         if claim in self.body.names_of(target):
             return
         if claim == 'MemoryPack.MemoryPackReader.ReadString':
             self.prove_pooled_string_target(target)
             return
-        if owner == 'MemoryPack.MemoryPackReader' and name in ('ReadValue', 'ReadArray'):
-            self.prove_reader_clone_target(target, claim)
+        if owner == 'MemoryPack.MemoryPackReader' and name in ('ReadValue', 'ReadArray', 'ReadPackable'):
+            self.prove_reader_clone_target(target, claim, result_abi=result_abi)
             return
         raise RouteRefused(f'called-target:{claim}:not-resolved-at={target:#x}')
 
-    def prove_reader_clone_target(self, target: int, claim: str):
+    def prove_reader_clone_target(self, target: int, claim: str, *, result_abi="reference"):
         """Authenticate one reviewed optimized reader, never a similar body.
 
+        The explicit result ABI prevents reference-return and hidden-output facts
+        from crossing. The caller still proves its typed context and result use.
         The fact records the registered generic equivalent and the complete
         code/dataflow proof (including inlined helper and dispatch joins).
         Its exact build, claim, target, registration identity, complete pdata
@@ -336,13 +351,16 @@ class Build:
         if not path.is_file():
             raise RouteRefused('reader-clone:reviewed-fact:missing')
         fact = json.loads(path.read_bytes())
-        if (fact.get('schema') != 'endfield.memorypack-reader-clones-native.v1'
+        if (fact.get('schema') != 'endfield.memorypack-reader-clones-native.v3'
                 or fact.get('status') != 'exact-current-build'):
             raise RouteRefused('reader-clone:unsupported-reviewed-fact')
         if {k:v.upper() for k,v in fact['nativeInputs'].items()} != {k:v.upper() for k,v in self.inputs.items()}:
             raise RouteRefused('reader-clone:native-inputs:mismatched')
         base = self.image.pe.image_base
-        matches = [c for c in fact['clones'] if c['claim'] == claim and base+c['targetRva'] == target]
+        if result_abi not in ('reference','hidden-output-16','hidden-output-40'):
+            raise RouteRefused('reader-clone:unsupported-result-ABI')
+        matches = [c for c in fact['clones'] if c['claim'] == claim and base+c['targetRva'] == target
+                   and c.get('resultAbi') == result_abi]
         if len(matches) != 1:
             raise RouteRefused(f'reader-clone:unproven-target:{claim}:target={target:#x}')
         c = matches[0]
@@ -905,8 +923,13 @@ def typed_route_template(contract: dict[str, Any], build: Build) -> dict[str, An
 def regenerate_typed_routes(contract: dict[str, Any], build: Build) -> dict[str, Any]:
     """Re-derive the bounded V2 read/setter shape; receipts stay historical."""
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
-    if set(contract)-{'enumUnderlying'} != {'schema','status','nativeInputs','routes','evidenceBoundary','typedReaderWindows'}:
+    collection_schema='endfield.levelscript-route-deserialize-native.v6'
+    if set(contract)-{'enumUnderlying'}-({'collectionReaders'} if contract['schema']==collection_schema else set()) != {'schema','status','nativeInputs','routes','evidenceBoundary','typedReaderWindows'}:
         raise RouteRefused('typed-routes:auxiliary-claims:adapter-required')
+    if contract['schema']==collection_schema and contract.get('collectionReaders')!=[{'codecKind':'List<int>','declaredType':'System.Collections.Generic.List`1<int>','sourceContract':'levelscript_int_list_native.json'}]:
+        raise RouteRefused('typed-routes:int-list-source-shape')
+    if contract['schema']==collection_schema and (len(contract['routes'])!=1 or contract['routes'][0]['wrapperName']!='Beyond.MemoryPack.Beyond_Gameplay_Actions_SwitchIntLargerForMemoryPack' or contract['routes'][0]['family']!='ActionBase' or [(i,f[0]) for i,f in enumerate(contract['routes'][0]['fields']) if f[1]=='List<int>']!=[(8,'caseIDList'),(9,'caseValueList')]):
+        raise RouteRefused('typed-routes:int-list-SwitchIntLarger-scope')
     out = copy.deepcopy(contract); image = build.image; base = image.pe.image_base
     window_boundaries = {}
     for window in contract['typedReaderWindows']:
@@ -937,14 +960,20 @@ def regenerate_typed_routes(contract: dict[str, Any], build: Build) -> dict[str,
         if row['inheritedMemberCount'] != len(wrapper.inherited_members):
             raise RouteRefused('typed-routes:inherited-member-count')
         body = build.body.body(wrapper.name, 'Deserialize')
+        inline = [i for i,item in enumerate(row['readOrder']) if 'setterInlineProof' in item]
+        if inline and (out['schema'] != 'endfield.levelscript-route-deserialize-native.v5'
+                or any(row['readOrder'][i]['setterInlineProof'].get('transfer') != 'inlinedBaseStore'
+                       or row['fields'][i][1] not in ('bool','int32') for i in inline)):
+            raise RouteRefused('typed-routes:inline-base-store-claims')
         header, reads, setters, setups = select_calls(body.rows, len(wrapper.members),
-            [image.method_pointer_va(image.metadata.methods[m.method_index]) for m in wrapper.members])
+            [image.method_pointer_va(image.metadata.methods[m.method_index]) for m in wrapper.members],inline_members=inline)
         for index, (item, member, read, setter, setup) in enumerate(zip(row['readOrder'],wrapper.members,reads,setters,setups,strict=True)):
             expected_keys = {'name','declaredType','setterMethodIndex','setterName','declaringWrapper',
                              'readCallRva','readTargetRva','setterCallRva','setterTargetRva'}
             kind = row['fields'][index][1]
-            generic = kind.startswith(('Param<','ParamOutput<'))
-            if set(item) != expected_keys | ({'typedReadContext'} if generic else set()):
+            literal_list=kind=='List<int>' and out['schema']==collection_schema and member.declared_type=='System.Collections.Generic.List`1<int>'
+            generic = kind.startswith(('Param<','ParamOutput<')) or literal_list
+            if set(item) != expected_keys | ({'typedReadContext'} if generic else set()) | ({'setterInlineProof'} if index in inline else set()):
                 raise RouteRefused(f'typed-routes:read-claims:member={index}')
             if item['setterName'] != image.metadata.string(image.metadata.methods[member.method_index].name_index) or item['declaringWrapper'] != member.declaring_wrapper:
                 raise RouteRefused(f'typed-routes:setter-identity:member={index}')
@@ -961,8 +990,9 @@ def regenerate_typed_routes(contract: dict[str, Any], build: Build) -> dict[str,
                 loads = [r for r in setup if bytes.fromhex(r['bytes'])[:3] == b'\x48\x8b\x15']
                 if len(loads) != 1:raise RouteRefused('typed-routes:context-load-count')
                 context = derive_typed_usage_context(image,int(loads[0]['va'],16)-base,label='typed-routes')
+                reader_method='ReadPackable' if literal_list else 'ReadValue'
                 if (context['tag'] != 6 or context['typeName'] != 'MemoryPack.MemoryPackReader'
-                        or context['methodName'] != 'ReadValue' or context['classArguments']
+                        or context['methodName'] != reader_method or context['classArguments']
                         or context['methodArguments'] != [member.declared_type]):
                     raise RouteRefused('typed-routes:reader-context-type')
                 arguments = image.instantiations.resolve(context['methodSpec'][2]).arguments
@@ -980,11 +1010,17 @@ def regenerate_typed_routes(contract: dict[str, Any], build: Build) -> dict[str,
                 boundary = window_boundaries[old_target]
                 if target in targets and targets[target] != boundary:raise RouteRefused('typed-routes:reader-boundary-drift')
                 targets[target] = boundary
-                build.prove_named_target(target,'MemoryPack.MemoryPackReader','ReadValue')
+                if literal_list:build.prove_reader_clone_target(target,'MemoryPack.MemoryPackReader.ReadPackable',result_abi='reference')
+                else:build.prove_named_target(target,'MemoryPack.MemoryPackReader','ReadValue')
             else:raise RouteRefused(f'typed-routes:wire-kind-adapter-required={kind}')
+            if index in inline:
+                from scripts.game_data.il2cpp.reference_field_programs import inlined_base_setter
+                item['setterInlineProof']=inlined_base_setter(image,build.body,build.wrappers,member,body.rows,read,setter)
+                item['setterInlineProof']['memberIndex']=index
             item.update(declaredType=member.declared_type,setterMethodIndex=member.method_index,
                 readCallRva=int(read['va'],16)-base,readTargetRva=target-base,
-                setterCallRva=int(setter['va'],16)-base,setterTargetRva=image.method_pointer_va(image.metadata.methods[member.method_index])-base)
+                setterCallRva=None if index in inline else int(setter['va'],16)-base,
+                setterTargetRva=image.method_pointer_va(image.metadata.methods[member.method_index])-base)
         switch = build.switch(row['family'])
         entries = [e for e in switch['entries'] if e.get('wrapperName') == wrapper.name]
         if len(entries) != 1:raise RouteRefused('typed-routes:union-entry-count')
@@ -1602,16 +1638,31 @@ def regenerate_environment_enable(contract: dict[str, Any], build: Build) -> dic
 
 
 def regenerate(contract: dict[str, Any], build: Build) -> dict[str, Any]:
+    if contract.get('schema')=='endfield.levelscript-null-param-native.v1':
+        from scripts.game_data.levelscript_null_param_native import _check_contract
+        from scripts.game_data.memorypack.null_param import derive
+        try:_check_contract(contract)
+        except (KeyError,TypeError,ValueError) as error:raise RouteRefused('null-param:component-shape:'+str(error)) from error
+        out=copy.deepcopy(contract);out['nativeInputs']=build.inputs
+        for row in out['components']:row['proof']=derive(build.image,build.inputs,row['valueType'])
+        return out
+    if contract.get('schema')=='endfield.levelscript-camera-target-param-native.v1':
+        from scripts.game_data.levelscript_camera_target_param_native import SCHEMA,KIND,VALUE_TYPE
+        from scripts.game_data.memorypack.inlined_integer_param import derive
+        if (set(contract)!={'schema','status','nativeInputs','codecKind','valueType','proof'}
+                or (contract['schema'],contract['status'],contract['codecKind'],contract['valueType'])!=(SCHEMA,'exact-current-build',KIND,VALUE_TYPE)):
+            raise RouteRefused('camera-target-param:component-shape')
+        return {**copy.deepcopy(contract),'nativeInputs':build.inputs,'proof':derive(build.image,build.inputs,VALUE_TYPE)}
     if contract.get('schema')=='endfield.levelscript-environment-enable-native-contract.v1':
         return regenerate_environment_enable(contract,build)
-    if contract.get('schema') == 'endfield.levelscript-enum-param-native.v1':
+    if contract.get('schema') in ('endfield.levelscript-enum-param-native.v1','endfield.levelscript-byte-enum-param-native.v1'):
         from scripts.game_data.memorypack.primitive_param import derive_parameter
         if set(contract)!={'schema','status','nativeInputs','components','evidenceBoundary'}:raise RouteRefused('enum-param:auxiliary-claims')
         out=copy.deepcopy(contract);out['nativeInputs']=build.inputs
         for row in out['components']:
             if set(row)!={'codecKind','wrappedType','proof'} or not row['wrappedType'].startswith('Beyond.Gameplay.Actions.Param`1<') or not row['wrappedType'].endswith('>'):
                 raise RouteRefused('enum-param:component-claims')
-            row['proof']=derive_parameter(build.image,build.inputs,'int',value_type=row['wrappedType'][len('Beyond.Gameplay.Actions.Param`1<'):-1])
+            row['proof']=derive_parameter(build.image,build.inputs,'int',value_type=row['wrappedType'][len('Beyond.Gameplay.Actions.Param`1<'):-1],**({'enum_byte':True} if contract['schema']=='endfield.levelscript-byte-enum-param-native.v1' else {}))
         return out
     if contract.get('schema') == 'endfield.levelscript-route-deserialize-native.v1':
         return regenerate_typed_routes(typed_route_template(contract,build),build)
@@ -1624,7 +1675,7 @@ def regenerate(contract: dict[str, Any], build: Build) -> dict[str, Any]:
             if set(row)!={'codecKind','wrappedType','proof'}:raise RouteRefused('param-output:component-claims')
             row['proof']=derive_output(build.image,build.inputs,row['wrappedType'])
         return out
-    if contract.get('schema') == 'endfield.levelscript-route-deserialize-native.v2':return regenerate_typed_routes(contract,build)
+    if contract.get('schema') in ('endfield.levelscript-route-deserialize-native.v2','endfield.levelscript-route-deserialize-native.v5','endfield.levelscript-route-deserialize-native.v6'):return regenerate_typed_routes(contract,build)
     if contract.get('schema') in _PRIMITIVE_SCHEMAS:return regenerate_primitive_param(contract,build)
     if contract.get('schema')=='endfield.levelscript-param-value-native.v1':return regenerate_param_value(contract,build)
     if contract.get('schema','').rsplit('.',1)[0] in ('endfield.levelscript-long-param-native','endfield.levelscript-gameplay-tag-param-native','endfield.levelscript-water-volume-ptr-param-native','endfield.levelscript-environment-volume-ptr-param-native','endfield.levelscript-spline-ptr-native'):
@@ -1666,8 +1717,10 @@ def validate_candidate(filename: str, contract: dict[str, Any], build: Build) ->
             audit=validate_environment_enable_native_contract(contract_path=path,game_root=build.image.metadata_path.parent.parent.parent)
         if audit.get('status')!='validated':raise RouteRefused(f'environment-enable:consumer-validation:{audit}')
         return
-    if contract.get('schema') == 'endfield.levelscript-enum-param-native.v1':
+    if contract.get('schema') in ('endfield.levelscript-enum-param-native.v1','endfield.levelscript-byte-enum-param-native.v1'):
         from scripts.game_data.levelscript_enum_param_native import validate_enum_param_native_contract
+        if contract['schema']=='endfield.levelscript-byte-enum-param-native.v1':
+            from scripts.game_data.levelscript_byte_enum_param_native import validate_byte_enum_param_native_contract as validate_enum_param_native_contract
         with tempfile.TemporaryDirectory() as temporary:
             path=Path(temporary)/filename;path.write_text(json.dumps(contract),encoding='utf8')
             audit=validate_enum_param_native_contract(contract_path=path,gameassembly=build.image.gameassembly,metadata=build.image.metadata_path)
@@ -1680,7 +1733,7 @@ def validate_candidate(filename: str, contract: dict[str, Any], build: Build) ->
             audit=validate_param_output_native_contract(contract_path=path,gameassembly=build.image.gameassembly,metadata=build.image.metadata_path)
         if audit.get('status')!='validated':raise RouteRefused(f'param-output:consumer-validation:{audit}')
         return
-    if contract.get('schema') == 'endfield.levelscript-route-deserialize-native.v2':
+    if contract.get('schema') in ('endfield.levelscript-route-deserialize-native.v2','endfield.levelscript-route-deserialize-native.v5','endfield.levelscript-route-deserialize-native.v6'):
         from scripts.game_data.levelscript_route_deserialize_native import validate
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary)/filename; path.write_text(json.dumps(contract),encoding='utf8')

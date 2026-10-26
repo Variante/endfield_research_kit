@@ -2,7 +2,7 @@
   "schema": "endfield.action-map-layouts.v5",
   "evidenceBoundary": "exact",
   "interpretation": "The selected native dispatcher switch and registered type usage authenticate union identity. Current generated wrapper setters establish inherited typed field order; sequential corpus closure corroborates the complete wire layout. This describes serialized fields, not runtime execution or event causality.",
-  "supportedBoundary": "Three-member ActionSerializedMap; non-null action, getter and header lists containing only reviewed concrete wrappers. Getter bodies inherit seven NodeBase fields and no nextID. Nullable field lists/Params remain distinct; Param<List<EntityPtr>> accepts null, empty, and exact three-member EntityPtr values. NpcProxy env-talk lists accept exact two-member string/int records; CommonMaskBlendData accepts the reviewed six-member value with null or empty AnimationCurve keys. Unknown shapes fail closed. Param<List<PosRot>> accepts null and empty lists only; positive PosRot elements remain unsupported. Param<List<GameplayTag>> accepts null/empty collections only. Param<bool>[] uses a counted array with each element decoded by the reviewed Param<bool> cursor.",
+  "supportedBoundary": "Three-member ActionSerializedMap with separately authenticated action/getter/header unions and typed fields. Pooled Params, values and lists require their own selected current native gates. PosRot accepts bounded null, empty and positive lists; EnvTalk values use pooled IDs and Int32 odds. CameraBlendCurveKey stores a pooled key and does not imply curve lookup or camera execution. Every unsupported child fails closed. Whole-owner EOF and runtime effects remain separate.",
   "layouts": [
     {
       "family": "ActionBase",
@@ -96,7 +96,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800950004.json",
         "sourceSha256": "9259A766A725C4133E771D536AAD5092383F0A7EF3DD9FD98D3A70C42379F635",
@@ -106,8 +106,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -259,10 +259,10 @@
           "___useBlackboard__"
         ]
       ],
-      "cursorEvidence": {
-        "source": "LevelScriptData/dung01_rdg002/13100000008.json",
-        "unionOffset": 7,
-        "boundary": "The authenticated current sequential action-list cursor reaches this tag/member pair; every generated field is consumed in setter order and later map fields must remain aligned."
+      "nativeGate": "levelscript_blackboard_fields_native",
+      "nativeEvidence": {
+        "contract": "levelscript_blackboard_fields_native.json",
+        "boundary": "Current parent field order only; child readers and owner closure require separate gates."
       }
     },
     {
@@ -452,10 +452,10 @@
           "___useBlackboard__"
         ]
       ],
-      "cursorEvidence": {
-        "source": "LevelScriptData/dung01_rdg004/24200000002.json",
-        "unionOffset": 55,
-        "boundary": "The authenticated current sequential action-list cursor reaches this tag/member pair; every generated field is consumed in setter order and later map fields must remain aligned."
+      "nativeGate": "levelscript_blackboard_fields_native",
+      "nativeEvidence": {
+        "contract": "levelscript_blackboard_fields_native.json",
+        "boundary": "Current parent field order only; child readers and owner closure require separate gates."
       }
     },
     {
@@ -547,10 +547,10 @@
           "___useBlackboard__"
         ]
       ],
-      "cursorEvidence": {
-        "source": "LevelScriptData/base01_dg002/22000010000.json",
-        "unionOffset": 422,
-        "boundary": "The authenticated current sequential action-list cursor reaches this tag/member pair; every generated field is consumed in setter order and later map fields must remain aligned."
+      "nativeGate": "levelscript_blackboard_fields_native",
+      "nativeEvidence": {
+        "contract": "levelscript_blackboard_fields_native.json",
+        "boundary": "Current parent field order only; child readers and owner closure require separate gates."
       }
     },
     {
@@ -795,10 +795,10 @@
           "___useBlackboard__"
         ]
       ],
-      "cursorEvidence": {
-        "source": "LevelScriptTemplateData/LST_Sdg_Exp_Graph.json",
-        "unionOffset": 113,
-        "boundary": "The authenticated current action-list cursor selects tag 14/member 12. Six templates consume the generated inherited and own field order sequentially; later action/getter/header lists and all remaining template fields must close at physical EOF."
+      "nativeGate": "levelscript_blackboard_fields_native",
+      "nativeEvidence": {
+        "contract": "levelscript_blackboard_fields_native.json",
+        "boundary": "Current parent field order only; child readers and owner closure require separate gates."
       }
     },
     {
@@ -899,7 +899,7 @@
           "Param<UnlockSystemType>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/blackbox_miner_1/9700000001.json",
         "sourceSha256": "8F8B5D03F961CE35A3E10D30C22C66E30385CE117435F6ED808A0A35A1DBD96D",
@@ -909,8 +909,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -1232,7 +1232,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000014.json",
         "sourceSha256": "9EE3C1F35A1AFEDC900567E9F7E013BAC265B8CC938E7BCA04E32FB99E2AA7F7",
@@ -1242,8 +1242,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -1627,13 +1627,13 @@
           "useYawCheck"
         ]
       ],
-      "cursorEvidence": {
-        "source": "Interactive/InteractiveData/data_int_weekraid_bosstreasure.json",
-        "unionOffset": 3235,
-        "endOffset": 3502,
-        "boundary": "The authenticated current sequential map cursor reaches this tag/member pair and consumes every generated field in setter order; later map and root fields close at physical EOF."
-      },
-      "evidenceBoundary": "Exact generated BlendToCameraTransform field order. Param<List<PosRot>> admits a null parameter or present parameter with null/empty collection only; positive element lists remain unresolved and reject at their count."
+      "evidenceBoundary": "Exact generated BlendToCameraTransform field order. Param<List<PosRot>> admits a null parameter or present parameter with null/empty collection only; positive element lists remain unresolved and reject at their count.",
+      "nativeGate": "levelscript_blend_camera_transform_fields_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_blend_camera_transform_fields_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
+      }
     },
     {
       "family": "ActionBase",
@@ -2246,7 +2246,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv005/3400020089.json",
         "sourceSha256": "1F8387D9243F3E7F7BB9247A2674995DBD9BB2877C84C4B67CC837EFCA1A7F31",
@@ -2256,8 +2256,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -2883,7 +2883,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg007/24700010035.json",
         "sourceSha256": "06E4C250EA0B3FAC7C2AAE868747FD2C5C25E84ACFB761F7CDA122BA60DBD779",
@@ -2893,8 +2893,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -3045,7 +3045,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000000001.json",
         "sourceSha256": "7C12EB64D38F2A9624F679B81D06B4F69E41BB67AB20B4E48521DC29404D39EC",
@@ -3055,8 +3055,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -3397,7 +3397,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv005/3400020090.json",
         "sourceSha256": "CFC03C010CF94EAD8AC759C076307A569414914B6CDF87FAE5E00CC44CACF2A1",
@@ -3407,8 +3407,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -3508,7 +3508,7 @@
           "Param<ShowUIToast.ShowToastType>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000010006.json",
         "sourceSha256": "0FC028D4E072290661659CE624CBBF57D4C8A8E2C87B52D1368E72631C93AC65",
@@ -3518,8 +3518,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -4036,7 +4036,7 @@
           "Param<LsmPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv007/2800000047.json",
         "sourceSha256": "FEC3B3A3AFD717A28D29439ACF755A7F51F8478AFDDF57C8166D347A4B72F65D",
@@ -4046,8 +4046,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -4096,7 +4096,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg011/39400000004.json",
         "sourceSha256": "DBFBD9877664430934621944EDBA8C01C0A6FD962BE1FC9EA9C7EC0CA31DDB07",
@@ -4106,8 +4106,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -4152,7 +4152,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_bdg002/41100000004.json",
         "sourceSha256": "4EAFDA0B52EB73F9E61A2B51F2EE47429394EBE79B5F32EB29ADB24DB2EBB897",
@@ -4162,8 +4162,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -4624,14 +4624,6 @@
         ]
       ],
       "nativeGate": "levelscript_track_camera_native",
-      "cursorEvidence": {
-        "source": "LevelScriptData/base01_dg001/9900000002.json",
-        "sourceSha256": "1347490179D1666A6BC91D3CEDE5BF13279D2A93FBEBE08746C7D5FED8D2AE61",
-        "unionOffset": 358,
-        "endOffset": 692,
-        "spanSha256": "644975729F172C1F4B40D67C408B74533EB2D2BA6C8345262314EAB287D02154",
-        "boundary": "Selected native ActionBase branch, 38 ordered reader/setter pairs and 30 Param contexts match this current source-hash and ledger-joined cursor. Runtime camera execution is unobserved."
-      },
       "insertedFields": [
         [
           "customCameraName",
@@ -4776,7 +4768,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg005/25600010001.json",
         "sourceSha256": "51AE91D8F5AD68B378DEC11E07E64AC56BE0F3D91D0335AC9BBBCA09F7D6CB86",
@@ -4786,8 +4778,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -4840,7 +4832,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040000.json",
         "sourceSha256": "642931EE442A49A7BA445B3E6D9A46BA0DBC36B6439AE0C985CDCBB6C150C478",
@@ -4850,8 +4842,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -5228,7 +5220,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040000.json",
         "sourceSha256": "642931EE442A49A7BA445B3E6D9A46BA0DBC36B6439AE0C985CDCBB6C150C478",
@@ -5238,8 +5230,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -5474,7 +5466,7 @@
           "ParamOutput<uint>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg002/26700000020.json",
         "sourceSha256": "560D4CBCE8AE235C9488C57E7E84CB6B107A8BBDDAD640B2D5F5AFCFBBE9235A",
@@ -5484,8 +5476,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -6015,7 +6007,7 @@
           "Param<LevelScriptPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_wrdg001/26800000057.json",
         "sourceSha256": "74668C6F59E5A3E79D9928E6F857193C7CA77AD352253BE5993C90BBA8AC99C1",
@@ -6025,8 +6017,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -6431,7 +6423,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/blackbox_converger_1/16600000002.json",
         "sourceSha256": "EE48E00C4B6BFDFE0CF3FFA6EDE80A4AC95024060218F8831763B43B01A0ECBC",
@@ -6441,8 +6433,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -6499,7 +6491,7 @@
           "Param<Vector3>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100060006.json",
         "sourceSha256": "2AE700AE4B6C2B3F9891CA2AB8C5EA901FE1AA36BA0942E7066B585AAFE653E9",
@@ -6509,8 +6501,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -7018,7 +7010,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000023.json",
         "sourceSha256": "89DC58553725D094AEA5804E0A1D060CFB4EB2CD90B62D7DC8A1066CC85FD780",
@@ -7028,8 +7020,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -7183,7 +7175,7 @@
           "Param<GlobalBuffId>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000010001.json",
         "sourceSha256": "3AFA4068F3631E01D35C606F74CB49DB1FA4A1C72D515C1561328E6F7CC7B458",
@@ -7193,8 +7185,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -7302,7 +7294,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv003/300010009.json",
         "sourceSha256": "05AEC5D577D6AEC5F1CDC30DD35F22BE7F0755D20E5382192C99A4590622BB56",
@@ -7312,8 +7304,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -7354,7 +7346,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_bdg003/17500000001.json",
         "sourceSha256": "446A7298AB157E6C423719F81D3F10018963352F7323189A2BD4C22033432082",
@@ -7364,8 +7356,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -7512,7 +7504,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv006/25000140003.json",
         "sourceSha256": "87BF58483E584834D1C62D3195B10D165B00D857F792DAA2909F41607B436ADB",
@@ -7522,8 +7514,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "appendedFields": [
         [
@@ -7752,7 +7744,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_wrdg001/26800000057.json",
         "sourceSha256": "74668C6F59E5A3E79D9928E6F857193C7CA77AD352253BE5993C90BBA8AC99C1",
@@ -7762,8 +7754,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -7900,7 +7892,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg011/39400000002.json",
         "sourceSha256": "D6CD641AF10B24A5E25F1189DE38620FF68E4F1A32F0EDE9310164DF5F827EAE",
@@ -7910,8 +7902,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8126,7 +8118,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000050001.json",
         "sourceSha256": "1190867F2A684C76A8CAF365983A028DB7ED04B2FDF29692BCCAA9C626D7AAEE",
@@ -8136,8 +8128,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8242,7 +8234,7 @@
           "Param<int>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000014.json",
         "sourceSha256": "9EE3C1F35A1AFEDC900567E9F7E013BAC265B8CC938E7BCA04E32FB99E2AA7F7",
@@ -8252,8 +8244,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8298,7 +8290,7 @@
           "Param<List<EntityPtr>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv008/23100270001.json",
         "sourceSha256": "5384809219DEC0D92B19B2A9F91EE6455A2BA4637811D5C063DCECFE2E1E51E8",
@@ -8308,8 +8300,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8358,7 +8350,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000020.json",
         "sourceSha256": "7D1B297481BD1CACA93640217698EEC41A0CFFC3A25197CD49DE034AA364D6E9",
@@ -8368,8 +8360,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8422,7 +8414,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg005/28100000010.json",
         "sourceSha256": "3C677B738E468FDBD41481B0C9E8554125A2F55DBE1BC175A1D6622D6884FB89",
@@ -8432,8 +8424,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8579,7 +8571,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg013/50200000007.json",
         "sourceSha256": "71FB0FC2328EE9E75B4E747D8DBDA9A946C96965E6235BA2166CB9B8E76B7E64",
@@ -8589,8 +8581,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8651,7 +8643,7 @@
           "Param<RollingStoneController.ManipulateLauncherOp>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg009/38300000005.json",
         "sourceSha256": "85F6755916F309C4524B3290016B995DB526DDE0121E01C66487CEC0E8274E0A",
@@ -8661,8 +8653,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8778,7 +8770,7 @@
           "ParamOutput<int>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv005/3400010000.json",
         "sourceSha256": "48F1B049155DB984D49083164546272101B71CFBD064005E445AD76B132FF780",
@@ -8788,8 +8780,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -8834,7 +8826,7 @@
           "Param<int>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv005/3400010000.json",
         "sourceSha256": "48F1B049155DB984D49083164546272101B71CFBD064005E445AD76B132FF780",
@@ -8844,8 +8836,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -9486,7 +9478,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300030018.json",
         "sourceSha256": "980CC1BF5F28B6DBBAF286874BB1786DFA62B35CD1553650C3CA3E0CDB561878",
@@ -9496,8 +9488,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -9546,7 +9538,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100060025.json",
         "sourceSha256": "43BF2411C8494BCECB38A2AD26DE9E1D204C2BC7A28F9E69742241AFEF0AF79D",
@@ -9556,8 +9548,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -9610,7 +9602,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100310000.json",
         "sourceSha256": "55AB33954B6EC4642F2878B9256412C9F489D13C3E0A985D3220D94A25F888A6",
@@ -9620,8 +9612,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -9973,10 +9965,11 @@
           "___overrideNpc__"
         ]
       ],
-      "cursorEvidence": {
-        "source": "LevelScriptData/dung02_dg002/24900160009.json",
-        "unionOffset": 170,
-        "boundary": "The authenticated current sequential action-list cursor reaches this tag/member pair; every generated field is consumed in setter order and later map fields must remain aligned."
+      "nativeGate": "levelscript_npc_proxy_envtalk_fields_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_npc_proxy_envtalk_fields_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10025,7 +10018,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100070024.json",
         "sourceSha256": "889A17DCD0998D3C12672C164E5DA402C6E19D5965D58B62946953860B65EBA9",
@@ -10035,8 +10028,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10085,7 +10078,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg001/13000020023.json",
         "sourceSha256": "9B7914594AB952CF7A92EAC667DB19EE1AEB7410E668436094417A6563CFED7B",
@@ -10095,8 +10088,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10212,7 +10205,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg014/50000010005.json",
         "sourceSha256": "54467C4A8F6C7239A6418E2E9AF9289E3874F4BF5B518ECEFC33A8DDA0D5E472",
@@ -10222,8 +10215,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10438,7 +10431,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100080009.json",
         "sourceSha256": "66DB65BC8D48B6FEE6AD0E428A22BDCF6860943D353200D85C011FC789AF4147",
@@ -10448,8 +10441,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10557,7 +10550,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100070025.json",
         "sourceSha256": "92D0F7087CAF5E122C1EEA6F48457FC1F49CF8D95646B4169ACE01A6FE5B0A70",
@@ -10567,8 +10560,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10669,7 +10662,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv007/10200030005.json",
         "sourceSha256": "9C2F390A55EE6CDEB75C95DF0C9A00E63E09EDF18EB1966BC49B03926B14B0AF",
@@ -10679,8 +10672,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -10975,7 +10968,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000013.json",
         "sourceSha256": "8EF84F4758498964E477891F6F7BC9481EBE6CC1069C0F6F98E68C529E2F92B9",
@@ -10985,8 +10978,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -11542,7 +11535,7 @@
           "ParamOutput<int>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000013.json",
         "sourceSha256": "8EF84F4758498964E477891F6F7BC9481EBE6CC1069C0F6F98E68C529E2F92B9",
@@ -11552,8 +11545,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -11921,7 +11914,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_preload_controls_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_dg002/24900160009.json",
         "sourceSha256": "34BE7C0DCBC4AB3D23C2C3FE54B1A76E83AEE54CEC86681DF2D30A97FF863111",
@@ -11931,8 +11924,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_preload_controls_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "insertedFields": [
         [
@@ -11995,7 +11988,7 @@
           "Param<ulong>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg007/24700000012.json",
         "sourceSha256": "CDE85CB5F22FF2AD841EB5F750A87F87D74BF58DE2DEDB198DEDFBCCFE04B550",
@@ -12005,8 +11998,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -12354,7 +12347,13 @@
           "Param<bool>",
           "__overrideAfterMaskConfig__"
         ]
-      ]
+      ],
+      "nativeGate": "levelscript_play_fmv_fields_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_play_fmv_fields_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
+      }
     },
     {
       "family": "ActionBase",
@@ -12546,7 +12545,7 @@
           "bool"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_preload_controls_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg007/26200000013.json",
         "sourceSha256": "490CC1BB041CFA71BECF264DAA392F08DC002464D2F5F490AAC16EF9AFAE7441",
@@ -12556,8 +12555,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_preload_controls_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "insertedFields": [
         [
@@ -13414,7 +13413,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_tower001/43000010020.json",
         "sourceSha256": "DED9DA7C8F0CF30E6973995D224972250A3602D00EB3D935BE10773036AF62EE",
@@ -13424,8 +13423,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -13517,10 +13516,11 @@
           "___overrideBlend__"
         ]
       ],
-      "cursorEvidence": {
-        "source": "Interactive/InteractiveData/data_int_accelerate_buff.json",
-        "unionOffset": 1829,
-        "boundary": "The authenticated sequential action cursor selects tag 914/member 14. The current CameraControlState constant is explicitly null inside its four-member Param; its binding tail and every following field are consumed before the next list count."
+      "nativeGate": "levelscript_remove_camera_control_state_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_remove_camera_control_state_native.json",
+        "boundary": "exact selected union identity, complete generated reader, member count, typed read contexts and ordered setters; source receipts are historical and separately hash-gated; default provider selection, current owner EOF and runtime effects remain unresolved"
       }
     },
     {
@@ -13565,7 +13565,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000014.json",
         "sourceSha256": "9EE3C1F35A1AFEDC900567E9F7E013BAC265B8CC938E7BCA04E32FB99E2AA7F7",
@@ -13575,8 +13575,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -13681,7 +13681,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100210004.json",
         "sourceSha256": "81A23A2FB0E9C91474975E1DF66F4E3DFC29185C2193275D5C15A1CF6E2FAB8A",
@@ -13691,8 +13691,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -13737,7 +13737,7 @@
           "Param<UnlockSystemType>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/blackbox_miner_1/9700000001.json",
         "sourceSha256": "8F8B5D03F961CE35A3E10D30C22C66E30385CE117435F6ED808A0A35A1DBD96D",
@@ -13747,8 +13747,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -14154,7 +14154,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg010/39100000004.json",
         "sourceSha256": "424DE1574EFEE708F0918FC1A38555150FBD60FAB109563A0C4DB5607FFF39A3",
@@ -14164,8 +14164,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -14257,7 +14257,7 @@
           "Param<List<EntityPtr>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg004/28000000006.json",
         "sourceSha256": "26499BEC96D98DEB36786A3AD2DE3028B3C01C6FEC83FA2B46E6974528FD20B9",
@@ -14267,8 +14267,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -14426,7 +14426,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000013.json",
         "sourceSha256": "8EF84F4758498964E477891F6F7BC9481EBE6CC1069C0F6F98E68C529E2F92B9",
@@ -14436,8 +14436,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -14534,7 +14534,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg013/49900010007.json",
         "sourceSha256": "7255BEC8780655CE9EEC21B4B8025FA599484D225DA16FD94A771D9EA68506E0",
@@ -14544,8 +14544,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -14650,7 +14650,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg001/26900000008.json",
         "sourceSha256": "D7A6D2F273057EE042ABA3A693ABC9AD1DE148DBCEB0635428D1E0871E7CE7B7",
@@ -14660,8 +14660,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -14730,7 +14730,7 @@
           "Param<Vector3>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg002/24400003020.json",
         "sourceSha256": "2C0EBBD83A1CB02E9BA5568A366264BB07CCBBF302859957B6084E478CACEA1F",
@@ -14740,8 +14740,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "insertedFields": [
         [
@@ -14916,7 +14916,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg009/38100020002.json",
         "sourceSha256": "25241A6CB56BBE370116F095D55190CBF78E346F8CA4503E7AECF67F275432D7",
@@ -14926,8 +14926,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -15466,7 +15466,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_hdg009/37400010001.json",
         "sourceSha256": "C6197F73639498F3F668C6C747EBE21A0A302145E5C40EF387B5BCC4E7668254",
@@ -15476,8 +15476,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -15628,7 +15628,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg008/37800000001.json",
         "sourceSha256": "120B67187B7F64F09DA0C831C8D64530C527EF69F9B72FBC317FFFE1FDBF7A2E",
@@ -15638,8 +15638,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -15754,7 +15754,7 @@
           "Param<ulong>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg005/24300000017.json",
         "sourceSha256": "1F1BC478EB946A0BA8A492DFA2A33E6B28CD547E044C7C814F2CC96BF3122C2F",
@@ -15764,8 +15764,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -15826,7 +15826,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg004/28000000001.json",
         "sourceSha256": "7A3C9C6E96CF210258029ED2AB3FBA8BF6FFA5844908E4C583C2689E9DA09912",
@@ -15836,8 +15836,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -16274,7 +16274,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000000001.json",
         "sourceSha256": "7C12EB64D38F2A9624F679B81D06B4F69E41BB67AB20B4E48521DC29404D39EC",
@@ -16284,8 +16284,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -16873,7 +16873,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg008/37800000001.json",
         "sourceSha256": "120B67187B7F64F09DA0C831C8D64530C527EF69F9B72FBC317FFFE1FDBF7A2E",
@@ -16883,8 +16883,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -16998,7 +16998,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg009/38100010011.json",
         "sourceSha256": "6A834076AC9CE321E2AE2E305CF8247879C8A10182876B6E94DDD7C1FC10AF17",
@@ -17008,8 +17008,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -17289,7 +17289,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg007/26200000001.json",
         "sourceSha256": "5B82B83E88A316949A0222F1ED7BF73E343355373613B9EA4A66CD0FCC198090",
@@ -17299,8 +17299,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -17726,7 +17726,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100210004.json",
         "sourceSha256": "81A23A2FB0E9C91474975E1DF66F4E3DFC29185C2193275D5C15A1CF6E2FAB8A",
@@ -17736,8 +17736,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -17786,7 +17786,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100210004.json",
         "sourceSha256": "81A23A2FB0E9C91474975E1DF66F4E3DFC29185C2193275D5C15A1CF6E2FAB8A",
@@ -17796,8 +17796,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -17846,7 +17846,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg010/46500010002.json",
         "sourceSha256": "3508795A207669EC16E0BF3847CCF8D333CEB7D7B148A03B64F9A35ABE44E7E3",
@@ -17856,8 +17856,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -18518,7 +18518,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg004/28000000015.json",
         "sourceSha256": "280E9FC18BF6B0E1D21E89FC7A176F47C41FB82280C3E88107AD27154C1C71FE",
@@ -18528,8 +18528,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -18766,7 +18766,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg002/24400000015.json",
         "sourceSha256": "25FD2630EC37B666DDA03C3915F5E10811565A51402E7CC9556D3C37142C8E1A",
@@ -18776,8 +18776,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -19048,7 +19048,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000000001.json",
         "sourceSha256": "7C12EB64D38F2A9624F679B81D06B4F69E41BB67AB20B4E48521DC29404D39EC",
@@ -19058,8 +19058,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -19164,7 +19164,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800950004.json",
         "sourceSha256": "9259A766A725C4133E771D536AAD5092383F0A7EF3DD9FD98D3A70C42379F635",
@@ -19174,8 +19174,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -19448,7 +19448,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg011/39400000004.json",
         "sourceSha256": "DBFBD9877664430934621944EDBA8C01C0A6FD962BE1FC9EA9C7EC0CA31DDB07",
@@ -19458,8 +19458,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -21549,7 +21549,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg009/38100020040.json",
         "sourceSha256": "71313E11A8905132C56AF30C9DEF806FEB62737FA104839DCF1E6E921318A2A8",
@@ -21559,8 +21559,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -22070,7 +22070,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_dg003/29800030000.json",
         "sourceSha256": "EA2CE548C28F74FA4DAF348E4B4B353D24D2680FC4BE351E29EDBA88113F7050",
@@ -22080,8 +22080,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -22288,7 +22288,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700010007.json",
         "sourceSha256": "54CEDE4845253C7E2B75E7C100BEB79EF3D4AE1BF69C1D20C54A29746631FD6F",
@@ -22298,8 +22298,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -23070,7 +23070,7 @@
           "Param<uint>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg001/13000020015.json",
         "sourceSha256": "E6A01BBBFFAC1A7835E66C9F3C873644C11C37A7B0F8662B1E07DC0BD9156D93",
@@ -23080,8 +23080,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -23248,7 +23248,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv003/300000023.json",
         "sourceSha256": "D52C1A895F07ADA314E1F55745A4CC29E6ED07C8B5FEFE2EC2328F4F6903BF00",
@@ -23258,8 +23258,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -23352,7 +23352,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg008/35600010001.json",
         "sourceSha256": "ACD41F81B819F0E10884FABB9D4B01A22C7872F6457694B3A562BE53A80D5F78",
@@ -23362,8 +23362,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -23464,7 +23464,7 @@
           "Param<LsmPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv006/25000060001.json",
         "sourceSha256": "B0928EE01C65B53A478F264E2CF376E3B1D149167D0DBAB68097F8172490F81E",
@@ -23474,8 +23474,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -23759,7 +23759,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100350001.json",
         "sourceSha256": "98A7597D0539C108BF11E66E24E629D92462723EB304EA9C2B10D35978988585",
@@ -23769,8 +23769,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -23899,7 +23899,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg009/38300000002.json",
         "sourceSha256": "4661DAE441153650F4EE935C2BF369546D8146EA67DC981FC8A3CC85E5AD313D",
@@ -23909,8 +23909,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -24297,7 +24297,7 @@
           "ParamOutput<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000010004.json",
         "sourceSha256": "32F9D1CE6CBFB128523AE4C3763393ED0801F882096DBAADB47B383F50ED676C",
@@ -24307,8 +24307,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -24656,7 +24656,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800330000.json",
         "sourceSha256": "EAD37F2471DA3863C6D12E06ACD9B1CA173756BE2E5F9048E43CBBA29B021F6B",
@@ -24666,8 +24666,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -25671,7 +25671,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv003/300000021.json",
         "sourceSha256": "337B696FFA6F72F6D164944121D3A8032EFA2C5E1C2297EBA32496BAB53E0EA7",
@@ -25681,8 +25681,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -27063,7 +27063,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg001/9900010010.json",
         "sourceSha256": "928B92D4AA7BFB411632B06EAC47D55791D58D96E169E63F34869E85A183955B",
@@ -27073,8 +27073,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -27927,7 +27927,7 @@
           "ParamOutput<ulong>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv007/10200060024.json",
         "sourceSha256": "500368BB58018AF3F599DBEEDDEEA7BAB43BB6F9B5EADCDA08EBF361A7578CA7",
@@ -27937,8 +27937,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -28299,7 +28299,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000010017.json",
         "sourceSha256": "3182BB14AA0A1CE11C832DB98B8C84BB2623D6AF1274627A70479B15AAF81278",
@@ -28309,8 +28309,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -29283,7 +29283,7 @@
           "ParamOutput<ulong>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg007/24700010035.json",
         "sourceSha256": "06E4C250EA0B3FAC7C2AAE868747FD2C5C25E84ACFB761F7CDA122BA60DBD779",
@@ -29293,8 +29293,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -30325,7 +30325,7 @@
           "ParamOutput<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_wrdg001/26800000048.json",
         "sourceSha256": "3BCC125601584236D661AABB6B15463D68709BB9AAB3C8C168AE9274563C6F10",
@@ -30335,8 +30335,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -30913,7 +30913,7 @@
           "ParamOutput<LsmPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800410003.json",
         "sourceSha256": "E209E82E36C5C388D0D605EA3E9630E829E59DE91BD1C37B85C51BDE3F0BCE28",
@@ -30923,8 +30923,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -31164,7 +31164,7 @@
           "ParamOutput<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_dg002/24900160009.json",
         "sourceSha256": "34BE7C0DCBC4AB3D23C2C3FE54B1A76E83AEE54CEC86681DF2D30A97FF863111",
@@ -31174,8 +31174,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -32525,7 +32525,7 @@
           "ParamOutput<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_cdg003/12000000003.json",
         "sourceSha256": "C360A3631ADF1FE519225FC57B4E8E1E8070445DCD2D4791DEBBE0B22F9B7182",
@@ -32535,8 +32535,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -34931,7 +34931,7 @@
           "bool"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv006/3500240019.json",
         "sourceSha256": "AEF234F8BF2EDA00107AEA1691956E2300729BA792F6407F0076D477F14BD70E",
@@ -34941,8 +34941,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -35137,7 +35137,7 @@
           "Param<uint>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300000012.json",
         "sourceSha256": "8C4CC20E12EB546D20450DAC3EA89509A7A234D36B1ADD572A1D3671764137F4",
@@ -35147,8 +35147,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -35341,7 +35341,7 @@
           "Param<LevelScriptPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv006/3500010027.json",
         "sourceSha256": "5E6658C381C1D3EB6AEAB88E1C3CFFCA768C01BCE957E951E997B2E79D7575FA",
@@ -35351,8 +35351,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -35579,7 +35579,7 @@
           "Param<MountPoint>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv001/10100460002.json",
         "sourceSha256": "DE898F88EFDE9ED6979AA83D9976B7CC1A91B625F747782D079629A5DFF363E9",
@@ -35589,8 +35589,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -35738,7 +35738,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_tower001/43000010020.json",
         "sourceSha256": "DED9DA7C8F0CF30E6973995D224972250A3602D00EB3D935BE10773036AF62EE",
@@ -35748,8 +35748,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -36124,7 +36124,7 @@
           "Param<List<EntityPtr>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg002/22000050001.json",
         "sourceSha256": "1190867F2A684C76A8CAF365983A028DB7ED04B2FDF29692BCCAA9C626D7AAEE",
@@ -36134,8 +36134,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -36217,7 +36217,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100210004.json",
         "sourceSha256": "81A23A2FB0E9C91474975E1DF66F4E3DFC29185C2193275D5C15A1CF6E2FAB8A",
@@ -36227,8 +36227,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -36538,7 +36538,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100010046.json",
         "sourceSha256": "085F01687B8ACC261E726280F42BEC5BD504A96CE6DCA2C2565F4C2378FDCFE1",
@@ -36548,8 +36548,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -36694,7 +36694,7 @@
           "Param<int>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_hdg012/37600010001.json",
         "sourceSha256": "C8995B47D526E25223F342FDC3C74E9D91A6112704277015C1A7B59AF802DC54",
@@ -36704,8 +36704,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -37115,7 +37115,7 @@
           "Param<List<int>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg006/28200000009.json",
         "sourceSha256": "124CC6B70250F498D90EB461E387AC6E89199D2120000CFE92E2AF97EDB358E9",
@@ -37125,8 +37125,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -37208,7 +37208,7 @@
           "Param<List<EntityPtr>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000020.json",
         "sourceSha256": "7D1B297481BD1CACA93640217698EEC41A0CFFC3A25197CD49DE034AA364D6E9",
@@ -37218,8 +37218,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -37414,7 +37414,7 @@
           "Param<List<int>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg006/28200000009.json",
         "sourceSha256": "124CC6B70250F498D90EB461E387AC6E89199D2120000CFE92E2AF97EDB358E9",
@@ -37424,8 +37424,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -37658,7 +37658,7 @@
           "Param<string>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800950004.json",
         "sourceSha256": "9259A766A725C4133E771D536AAD5092383F0A7EF3DD9FD98D3A70C42379F635",
@@ -37668,8 +37668,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -38769,7 +38769,7 @@
           "Param<List<EntityPtr>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg005/24300000014.json",
         "sourceSha256": "49026F05FCA7315CE07C4232D835D9E2476B5DAAA39A5E4F784B4FD923E4AA60",
@@ -38779,8 +38779,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -38821,7 +38821,7 @@
           "int32"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv005/3400020089.json",
         "sourceSha256": "1F8387D9243F3E7F7BB9247A2674995DBD9BB2877C84C4B67CC837EFCA1A7F31",
@@ -38831,8 +38831,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -38881,7 +38881,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040000.json",
         "sourceSha256": "642931EE442A49A7BA445B3E6D9A46BA0DBC36B6439AE0C985CDCBB6C150C478",
@@ -38891,8 +38891,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -38941,7 +38941,7 @@
           "ParamOutput<int>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg009/38100010023.json",
         "sourceSha256": "FE0721202BF09C54D2AEB54C39EC31E97F87CA43747AC310EA50B47FF414911B",
@@ -38951,8 +38951,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39001,7 +39001,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg008/35600010001.json",
         "sourceSha256": "ACD41F81B819F0E10884FABB9D4B01A22C7872F6457694B3A562BE53A80D5F78",
@@ -39011,8 +39011,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39053,7 +39053,7 @@
           "Param<SpawnerPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg007/26200040000.json",
         "sourceSha256": "AE8931923E5FA37C58DDD33E58BCE925EE63CE6BAEC7486616E2C1D8EC8D2BDF",
@@ -39063,8 +39063,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39113,7 +39113,7 @@
           "Param<Vector3>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040000.json",
         "sourceSha256": "642931EE442A49A7BA445B3E6D9A46BA0DBC36B6439AE0C985CDCBB6C150C478",
@@ -39123,8 +39123,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39169,7 +39169,7 @@
           "Param<List<EntityPtr>>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg005/24300000014.json",
         "sourceSha256": "49026F05FCA7315CE07C4232D835D9E2476B5DAAA39A5E4F784B4FD923E4AA60",
@@ -39179,8 +39179,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39229,7 +39229,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg008/35600010001.json",
         "sourceSha256": "ACD41F81B819F0E10884FABB9D4B01A22C7872F6457694B3A562BE53A80D5F78",
@@ -39239,8 +39239,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39289,7 +39289,7 @@
           "Param<bool>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv006/25000050000.json",
         "sourceSha256": "C4B08EB260D5FE4B161EBD51C932B8A9134A0C4C857EA489AF3579D7721B488F",
@@ -39299,8 +39299,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39349,7 +39349,7 @@
           "Param<EntityPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv006/25000060001.json",
         "sourceSha256": "B0928EE01C65B53A478F264E2CF376E3B1D149167D0DBAB68097F8172490F81E",
@@ -39359,8 +39359,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39401,7 +39401,7 @@
           "Param<LevelScriptPtr>"
         ]
       ],
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv005/3400170004.json",
         "sourceSha256": "575CE0218057CA6266C5891B2364173464E9C207971B105703E37D5D2087CC9C",
@@ -39411,8 +39411,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39465,7 +39465,7 @@
       ],
       "memberCount": 11,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EnterSplineMoveForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg001/26900010003.json",
         "sourceSha256": "9C025422BD56CB2EC9DB829C962F486ED0140B58D91A69B7C5D61A4393E6C507",
@@ -39475,8 +39475,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and independently gated Param<SplinePtr> child; source span replay, no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39521,7 +39521,7 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RemoveMovementSettingModifierForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData\\dung02_rdg008\\35600010001.json",
         "sourceSha256": "ACD41F81B819F0E10884FABB9D4B01A22C7872F6457694B3A562BE53A80D5F78",
@@ -39531,8 +39531,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, typed ReadValue<Param<string>> context and ordered actual setters; selected source span replay, no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39581,7 +39581,7 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ToggleControllerHintBarForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040002.json",
         "sourceSha256": "8117FCFECA751FC65A570707706500BF86C1B39E6DEAA4D7761670E229E6F70B",
@@ -39591,8 +39591,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, exact typed primitive Param contexts, ordered actual setters and selected source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39641,7 +39641,7 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyPatrolPointPassedForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg014/50000010005.json",
         "sourceSha256": "54467C4A8F6C7239A6418E2E9AF9289E3874F4BF5B518ECEFC33A8DDA0D5E472",
@@ -39651,8 +39651,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "selected native union branch, complete generated reader, exact typed primitive Param contexts, ordered actual setters and selected source span replay; no execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39725,7 +39725,7 @@
       ],
       "memberCount": 16,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnTravelPoleExitForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040002.json",
         "sourceSha256": "8117FCFECA751FC65A570707706500BF86C1B39E6DEAA4D7761670E229E6F70B",
@@ -39735,8 +39735,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent native union branch, complete generated reader, exact typed primitive Param/output contexts, ordered actual setters and selected source span; stored representation only, no live output or event claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39781,7 +39781,7 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StringFormatForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040013.json",
         "sourceSha256": "7B8DAAB8EF755337835CC3098900C392E19F308151FB662BE70105CE4668C81A",
@@ -39791,8 +39791,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent native union branch, complete generated reader, exact typed primitive Param/output contexts, ordered actual setters and selected source span; stored representation only, no live output or event claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39865,7 +39865,7 @@
       ],
       "memberCount": 16,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnTravelPoleReachForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040002.json",
         "sourceSha256": "8117FCFECA751FC65A570707706500BF86C1B39E6DEAA4D7761670E229E6F70B",
@@ -39875,8 +39875,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent header union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no event/output execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -39949,7 +39949,7 @@
       ],
       "memberCount": 16,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnTravelPoleEnterForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040013.json",
         "sourceSha256": "7B8DAAB8EF755337835CC3098900C392E19F308151FB662BE70105CE4668C81A",
@@ -39959,8 +39959,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent header union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no event/output execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40013,7 +40013,7 @@
       ],
       "memberCount": 11,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_FacOverrideCullingSettingForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/blackbox_basic_1/8900000002.json",
         "sourceSha256": "55B857D1A638EA2D22BE2CF4EEAB4F099B5A84B66FF5D9BB3ACFEE3131A24DC0",
@@ -40023,8 +40023,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no resolved value or execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40069,7 +40069,7 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetFacTopViewForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/blackbox_powerstation_1/16300000001.json",
         "sourceSha256": "1A14E31E4A779314943361E048B043FB37D114C7A7E4BDE928432D058A8E7BA6",
@@ -40079,8 +40079,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no resolved value or execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40121,7 +40121,7 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ExitFacBuildModeForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800090012.json",
         "sourceSha256": "16AC5D7CDD39EC58879EBA1AEEB57F8F8451B4BAABD509741EAB6C4FD1FA61CA",
@@ -40131,8 +40131,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no resolved value or execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40173,7 +40173,7 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetterFloatForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300010006.json",
         "sourceSha256": "071357F7B1358989CD762A080F7FE6D5B5928986052E3C0FD51B74F8E8E6039E",
@@ -40183,8 +40183,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no resolved value or execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40229,7 +40229,7 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SendLuaEventForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_race001/12800015001.json",
         "sourceSha256": "9A4A9D138B2EA8F34F6693145EFD6D2E087E205832521F466371A40CEA8D9F0F",
@@ -40239,8 +40239,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no resolved value or execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40289,7 +40289,7 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GuideFreezeWorldForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_dg003/29800030000.json",
         "sourceSha256": "EA2CE548C28F74FA4DAF348E4B4B353D24D2680FC4BE351E29EDBA88113F7050",
@@ -40299,8 +40299,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent union branch, complete generated reader, exact typed primitive Param/output contexts and ordered actual setters; selected source span only, no resolved value or execution claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40349,7 +40349,7 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GuideUnFreezeWorldForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_dg003/29800030000.json",
         "sourceSha256": "EA2CE548C28F74FA4DAF348E4B4B353D24D2680FC4BE351E29EDBA88113F7050",
@@ -40359,8 +40359,8 @@
       },
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "independent action union branch, complete generated reader, typed boolean/integer Param contexts and ordered actual setters; selected source span, no live world state claim"
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       }
     },
     {
@@ -40409,11 +40409,11 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PreloadNpcMontageForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg008/36500010002.json",
@@ -40473,11 +40473,11 @@
       ],
       "memberCount": 11,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeSetAmountForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg009/38300000003.json",
@@ -40533,11 +40533,11 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeSetFillSpeedForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300000013.json",
@@ -40613,11 +40613,11 @@
       ],
       "memberCount": 15,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnSnailWaterFillingFinishForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800400001.json",
@@ -40697,11 +40697,11 @@
       ],
       "memberCount": 16,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnMainCharacterChangedForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_dg004/52000010001.json",
@@ -40749,11 +40749,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ResetNpcEnvTalkTriggerDistanceForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_lv001/9800150000.json",
@@ -40801,11 +40801,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetPlayerNameForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_lv002/16000010000.json",
@@ -40853,11 +40853,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ClearMainCharFocusTargetForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent union branch, complete generated parent read order and typed Param contexts; separately gated scalar child stored composition, no runtime target or provider selection."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg003/24000000010.json",
@@ -40909,11 +40909,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_FloatGetterMinusForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete generated reader, inherited fields and actual read/setter call order with closed Param contexts; no evaluation, playback or event result."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300010007.json",
@@ -40965,11 +40965,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetNpcEnvTalkTriggerDistanceForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete generated reader, inherited fields and actual read/setter call order with closed Param contexts; no evaluation, playback or event result."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_lv001/9800150000.json",
@@ -41021,11 +41021,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_FloatGetterMultiplyForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; the long parameter additionally requires its independent buffered signed scalar child gate. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300010007.json",
@@ -41073,11 +41073,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_InterruptHenshinForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; the long parameter additionally requires its independent buffered signed scalar child gate. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_rdg002/24400020037.json",
@@ -41125,11 +41125,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Vector3GetYForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; the movement enum requires its independent ordinary signed backing gate. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung02_cdg002/26700000025.json",
@@ -41189,11 +41189,11 @@
       ],
       "memberCount": 11,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetSquadMemberPosRotForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; the movement enum requires its independent ordinary signed backing gate. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg011/49700020004.json",
@@ -41249,11 +41249,11 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchMovementSettingForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; the movement enum requires its independent ordinary signed backing gate. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg002/13100000003.json",
@@ -41309,11 +41309,11 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_CCSToggleCollisionForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700040001.json",
@@ -41365,11 +41365,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ToggleDitherActionForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700050001.json",
@@ -41425,11 +41425,11 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LoadExtraStreamingActionForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300010003.json",
@@ -41481,11 +41481,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ChangeSkipBossButtonStateForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700050001.json",
@@ -41533,11 +41533,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ClearExtraStreamingActionForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg016/46300010003.json",
@@ -41585,11 +41585,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartGenderSelectForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700020000.json",
@@ -41641,11 +41641,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ToggleClearScreenV2ForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv007/10200280013.json",
@@ -41701,11 +41701,11 @@
       ],
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ToggleUIPanelUseBlackOutForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv006/3500300009.json",
@@ -41757,11 +41757,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericResetEnvTalkForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map02_lv002/22800770008.json",
@@ -41813,11 +41813,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ShowDramaticPerformanceNewItemToastForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg004/23900030000.json",
@@ -41869,11 +41869,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EnterDungeonSkipPanelForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg005/25600120008.json",
@@ -41941,11 +41941,11 @@
       ],
       "memberCount": 13,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_RefreshAnchorCoreDecorationForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100020045.json",
@@ -41997,11 +41997,11 @@
       ],
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ShowDramaticPerformanceBagForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg004/23900030000.json",
@@ -42049,11 +42049,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ShowDungeonInfoPopupForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_tower001/43000000002.json",
@@ -42101,11 +42101,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_CloseSnapshotForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100360011.json",
@@ -42153,11 +42153,11 @@
       ],
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetFalseNewHighDifficultySeriesNotifyForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv001/2100680001.json",
@@ -42241,6 +42241,247 @@
           "Param<bool>"
         ]
       ]
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 39,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelCameraLookAtForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "alpha",
+          "Param<float>"
+        ],
+        [
+          "blendCurveKey",
+          "Param<CameraBlendCurveKey>"
+        ],
+        [
+          "blendStyle",
+          "Param<CinemachineBlendDefinition.Style>"
+        ],
+        [
+          "blendTime",
+          "Param<float>"
+        ],
+        [
+          "controlState",
+          "ParamOutput<CameraControlState>"
+        ],
+        [
+          "controlStateId",
+          "ParamOutput<int>"
+        ],
+        [
+          "direction1",
+          "Param<Vector3>"
+        ],
+        [
+          "direction2",
+          "Param<Vector3>"
+        ],
+        [
+          "exitParam",
+          "Param<CameraControlStateInitialParam>"
+        ],
+        [
+          "flattenLookAt",
+          "Param<bool>"
+        ],
+        [
+          "horizontalBaseAngle",
+          "Param<float>"
+        ],
+        [
+          "horizontalSpeedFactor",
+          "Param<float>"
+        ],
+        [
+          "initParam",
+          "Param<CameraControlStateInitialParam>"
+        ],
+        [
+          "lookAt1",
+          "Param<EntityPtr>"
+        ],
+        [
+          "lookAt1Type",
+          "Param<NodeLookAtType>"
+        ],
+        [
+          "lookAt2",
+          "Param<EntityPtr>"
+        ],
+        [
+          "lookAt2Type",
+          "Param<NodeLookAtType>"
+        ],
+        [
+          "lookAtHeight",
+          "Param<float>"
+        ],
+        [
+          "mountPoint1",
+          "Param<MountPoint>"
+        ],
+        [
+          "mountPoint2",
+          "Param<MountPoint>"
+        ],
+        [
+          "noInputDampingTime",
+          "Param<float>"
+        ],
+        [
+          "npcProxyId1",
+          "Param<string>"
+        ],
+        [
+          "npcProxyId2",
+          "Param<string>"
+        ],
+        [
+          "position1",
+          "Param<Vector3>"
+        ],
+        [
+          "position2",
+          "Param<Vector3>"
+        ],
+        [
+          "rotation1",
+          "Param<Vector3>"
+        ],
+        [
+          "rotation2",
+          "Param<Vector3>"
+        ],
+        [
+          "useExitParam",
+          "Param<bool>"
+        ],
+        [
+          "useInitialParam",
+          "Param<bool>"
+        ],
+        [
+          "verticalBaseValue",
+          "Param<float>"
+        ],
+        [
+          "verticalSpeedFactor",
+          "Param<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_camera_look_at_fields_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_camera_look_at_fields_native.json",
+        "boundary": "exact selected union identity, complete generated reader, member count, typed read contexts and ordered setters; source receipts are historical and separately hash-gated; default provider selection, current owner EOF and runtime effects remain unresolved"
+      }
+    },
+    {
+      "family": "ActionHeader",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnSquadMemberUspReachMaxForMemoryPack",
+      "memberCount": 16,
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "squadMemeber",
+          "ParamOutput<EntityPtr>"
+        ],
+        [
+          "uspValue",
+          "ParamOutput<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_on_squad_member_usp_fields_native"
     }
   ],
   "primitiveEvidence": {
@@ -42611,11 +42852,11 @@
       ],
       "memberCount": 5,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckFMVFinishForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete generated reader, inherited fields and actual read/setter call order with closed Param contexts; no evaluation, playback or event result."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_lv002/16000010000.json",
@@ -42659,11 +42900,11 @@
       ],
       "memberCount": 7,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckServerGlobalVarForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; the long parameter additionally requires its independent buffered signed scalar child gate. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/base01_lv002/16000010000.json",
@@ -42695,11 +42936,11 @@
       ],
       "memberCount": 4,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDramaticPerformanceBagFinishForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg004/23900030000.json",
@@ -42735,11 +42976,11 @@
       ],
       "memberCount": 5,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCutsceneFinishForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/indie_dg002/8700020001.json",
@@ -42775,18 +43016,11 @@
       ],
       "memberCount": 5,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckIsSquadInFightForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_check_is_squad_in_fight_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "contract": "scripts/game_data/contracts/levelscript_check_is_squad_in_fight_native.json",
         "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
-      },
-      "nativeCursorEvidence": {
-        "source": "LevelScriptData/base01_dg001/9900000002.json",
-        "sourceSha256": "1347490179D1666A6BC91D3CEDE5BF13279D2A93FBEBE08746C7D5FED8D2AE61",
-        "unionOffset": 1555,
-        "endOffset": 1589,
-        "spanSha256": "3936B700AB33A2A03D09A92F761FF492B77868008C2D8E9B7B279D71B5893B93"
       }
     },
     {
@@ -42823,11 +43057,11 @@
       ],
       "memberCount": 7,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckClientGlobalVarForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/map01_lv003/300010029.json",
@@ -42859,11 +43093,11 @@
       ],
       "memberCount": 4,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnSquadReviveForMemoryPack",
-      "nativeGate": "levelscript_stored_routes_native",
+      "nativeGate": "levelscript_stored_routes_current_native",
       "nativeEvidence": {
         "status": "exact-current-build",
-        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
-        "boundary": "Independent family dispatcher, complete reader/inherited order and closed typed read/setter contexts; Each typed operand uses its independently proved child grammar; no live effect is inferred. Stored operands do not establish evaluation or event execution."
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_current_native.json",
+        "boundary": "Current generated parent identity and ordered typed fields. Nested values retain independent gates; runtime selection and owner closure are separate."
       },
       "nativeCursorEvidence": {
         "source": "LevelScriptData/dung01_rdg004/24200000002.json",

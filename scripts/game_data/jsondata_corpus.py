@@ -87,6 +87,7 @@ import hashlib
 import json
 import os
 import re
+import sys,time
 import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
@@ -2417,7 +2418,7 @@ def _classify_binary(
         }
     if family == "LevelScriptTemplateData":
         ok, detail, diagnostic = _run_reader(
-            frame_levelscript_template,
+            lambda payload: frame_levelscript_template(payload, strings=strings),
             data,
             (LevelScriptTemplateFramingError, ValueError),
         )
@@ -2687,6 +2688,7 @@ def build_report(
     buff_report_path: Path = DEFAULT_BUFF_REPORT,
     skill_report_path: Path = DEFAULT_SKILL_REPORT,
     loaded_family_reports: dict[str, tuple[dict[str, Any], dict[str, Any]]] | None = None,
+    progress: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     levelscript_inputs_before = snapshot_complete_reader_inputs()
     pool_inputs_before = snapshot_string_pool_inputs(export_root)
@@ -2786,8 +2788,11 @@ def build_report(
 
     seen_paths: set[str] = set()
     results: list[dict[str, Any]] = []
-    for ledger in selected:
+    progress_at=0.0
+    for number,ledger in enumerate(selected,1):
         virtual_path = str(ledger["virtualPath"])
+        if progress and (time.monotonic()-progress_at>=10 or number==len(selected)):
+            print(f"JsonData scanning {number}/{len(selected)}: {virtual_path}",file=sys.stderr,flush=True);progress_at=time.monotonic()
         _path, relative, family = _safe_export_path(export_root, virtual_path)
         if relative.casefold() in seen_paths:
             raise ValueError(f"case-insensitive duplicate JsonData export path: {relative}")
@@ -3206,6 +3211,7 @@ def main(argv: list[str] | None = None) -> int:
              "folders such as Json/LipSync are read from its game/GameFiles.sqlite.",
     )
     parser.add_argument("--expected-input-set-sha256", required=True)
+    parser.add_argument("--progress", action="store_true", help="Log current file/count to stderr during long sweeps.")
     parser.add_argument("--buff-report", type=Path, default=DEFAULT_BUFF_REPORT)
     parser.add_argument("--skill-report", type=Path, default=DEFAULT_SKILL_REPORT)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_JSON)
@@ -3242,6 +3248,7 @@ def main(argv: list[str] | None = None) -> int:
             buff_report_path=args.buff_report,
             skill_report_path=args.skill_report,
             loaded_family_reports=loaded_family_reports,
+            progress=args.progress,
         )
         validation_safe = False
         protected_paths.extend(_recorded_input_paths(report.get("provenance")))

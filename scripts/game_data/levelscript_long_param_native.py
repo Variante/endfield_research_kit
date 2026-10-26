@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import struct
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from scripts.common import check_installed_native_inputs
@@ -88,11 +87,6 @@ def _composition(image: Any, contract: dict, strings: dict) -> dict:
     return {'codecKind':'Param<long>','rawSize':8,'primitiveType':'long','pathEncoding':'int32-pool-index','evidenceBoundary':contract['evidenceBoundary']}
 
 
-@lru_cache(maxsize=8)
-def _cached(gameassembly: Path, metadata: Path, declaration: str, strings: str) -> dict:
-    return _composition(open_native_image(gameassembly,metadata),json.loads(declaration),json.loads(strings))
-
-
 def validate_long_param_native_contract(*, contract_path: Path=CONTRACT_PATH, game_root: Path | None=None,
                                       gameassembly: Path | None=None, metadata: Path | None=None) -> dict:
     try:
@@ -108,7 +102,7 @@ def validate_long_param_native_contract(*, contract_path: Path=CONTRACT_PATH, ga
         if gate.status!='validated': return {'status':gate.status,'detail':gate.detail}
         strings=pooled_source_helper.validate_current_native_contract(gameassembly=gate.gameassembly,metadata=gate.metadata)
         if strings.get('status')!='validated': return {'status':strings.get('status','unresolved'),'detail':strings.get('detail'),'dependency':'pooledStringSource'}
-        result=_cached(gate.gameassembly,gate.metadata,json.dumps(contract,sort_keys=True),json.dumps(strings,sort_keys=True))
+        result=_composition(open_native_image(gate.gameassembly,gate.metadata),contract,strings)
         after=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated': return {'status':after.status,'detail':after.detail}
         failed=pooled_source_helper.check_unity_input(gate.gameassembly,strings['nativeInputs'])

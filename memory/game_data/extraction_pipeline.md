@@ -280,6 +280,20 @@ stale part (`animestudio_index_io.py`). Read
 `reports/export/export_full_summary.md` first, then
 `reports/export/{runs/<timestamp>,benchmarks}/` and the root's
 `meta/<Layer>/{asset_status,export_manifest}/` and `meta/extraction/failures/`.
+A worker-loaded external target can name a second physical copy of the same
+CAB/PathID outside the exported object surface. One exported candidate then
+does not prove uniqueness: the merger preserves `ambiguous_external`, removes
+the target and resolution basis, and counts the runtime conflict. Complete
+parts can still publish their other objects; malformed identities, incomplete
+parts and conflicting duplicate object bodies still block publication.
+Whole-source stat fingerprints also include unused physical chunks. Their
+removal can change freshness without changing selected payloads. Reuse requires
+fresh complete VFS audits with authenticated, identical logical file rows and
+unchanged catalog/build inputs; file counts alone cannot establish this. Keep
+the failed run, revalidate saved parts and their selected signatures, and publish
+only the completed scopes through the maintained publishers and provenance
+writer before the final freshness gate. Never repair a stale receipt by editing
+its recorded fingerprint.
 An `Export <Type>:<Name> error` may be object-local even when the process
 continues; a nonzero subprocess return code fails the wrapper. Metadata-only or
 `$partial` output is useful evidence, not a completeness claim.

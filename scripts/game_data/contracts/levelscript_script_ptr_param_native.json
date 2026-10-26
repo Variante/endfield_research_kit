@@ -1,0 +1,5252 @@
+{
+  "schema": "endfield.levelscript-script-ptr-param-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "codecKind": "Param<LevelScriptPtr>",
+  "valueType": "Beyond.Gameplay.Core.LevelScriptPtr",
+  "profile": {
+    "ownedFieldSlots": {
+      "constValue": 32,
+      "idRef": 48,
+      "paramSource": 16,
+      "path": 24
+    },
+    "registration": {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+      "window": {
+        "startRva": 80292562,
+        "endRva": 80292677,
+        "sha256": "4604AEF87A4491C19A0CCDD7BF4FEEAB4B3479EFF94C83CE7CADD3F9F9888645"
+      },
+      "allocation": {
+        "instructionRva": 80292562,
+        "instructionHex": "488B0DFF06A90B",
+        "usageCellRva": 275919320,
+        "usageRawHex": "5FFD062000000000",
+        "tag": 1,
+        "typeIndex": 229039,
+        "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>,Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack>",
+        "typeRawHex": "2034AB90010000000000150000000000"
+      },
+      "constructor": {
+        "instructionRva": 80292595,
+        "instructionHex": "488B153E9CA90B",
+        "usageCellRva": 275957560,
+        "usageRawHex": "FFE511C000000000",
+        "tag": 6,
+        "methodSpecIndex": 586495,
+        "methodSpec": [
+          242568,
+          37554,
+          -1
+        ],
+        "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+        "methodName": ".ctor",
+        "classArguments": [
+          "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack"
+        ],
+        "methodArguments": []
+      },
+      "key": {
+        "instructionRva": 80292615,
+        "instructionHex": "488B0502ADA80B",
+        "usageCellRva": 275896336,
+        "usageRawHex": "E5FA014000000000",
+        "tag": 2,
+        "typeIndex": 64882,
+        "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+        "typeRawHex": "D0C68C90010000000000150000000000"
+      },
+      "actualCalls": {
+        "allocation": 132640,
+        "objectCheck": 12576,
+        "constructor": 945312,
+        "typeFromHandle": 83483248,
+        "registerWrap": 92647504
+      },
+      "helperMethods": {
+        "typeFromHandle": [
+          394692,
+          "System.Type",
+          "GetTypeFromHandle",
+          83483248
+        ],
+        "registerWrap": [
+          550270,
+          "MemoryPack.MemoryPackFormatterProvider",
+          "RegisterWrap",
+          92647504
+        ]
+      },
+      "constructorThunk": {
+        "window": {
+          "startRva": 945312,
+          "endRva": 945324,
+          "sha256": "C8F70A63792E5563BEBC468CA692B593AC4E4D818D2808C89366558804E2689D"
+        },
+        "context": {
+          "instructionRva": 945312,
+          "instructionHex": "488B15915A6410",
+          "usageCellRva": 275957560,
+          "usageRawHex": "FFE511C000000000",
+          "tag": 6,
+          "methodSpecIndex": 586495,
+          "methodSpec": [
+            242568,
+            37554,
+            -1
+          ],
+          "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+          "methodName": ".ctor",
+          "classArguments": [
+            "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+            "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack"
+          ],
+          "methodArguments": []
+        },
+        "sharedTargetRva": 106252544
+      }
+    },
+    "composition": {
+      "registrations": [
+        {
+          "originalType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+          "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+          "classInstantiation": 37554,
+          "adapterTypeIndex": 229039,
+          "keyTypeIndex": 64882,
+          "constructorMethodSpecIndex": 586495,
+          "constructorMethodSpec": [
+            242568,
+            37554,
+            -1
+          ]
+        }
+      ],
+      "interfaces": [
+        {
+          "originalType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+          "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+          "wrapperDefinition": 50760,
+          "interfaceTypeIndex": 43893,
+          "interfaceOffset": 4,
+          "getValueMethodIndex": 267494,
+          "formatterDefinition": 50759,
+          "formatterDeserializeMethodIndex": 267503
+        }
+      ],
+      "genericContexts": [
+        {
+          "definition": 47356,
+          "isMethod": false,
+          "token": 33554445,
+          "image": "MemoryPack.Beyond.dll",
+          "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+          "methodName": null,
+          "start": 4,
+          "count": 13,
+          "entries": [
+            {
+              "relativeSlot": 0,
+              "moduleEntryIndex": 4,
+              "entryVa": 6705636256,
+              "rawHex": "0300000000000000FCA1748F01000000",
+              "kind": 3,
+              "index": 173373,
+              "methodSpec": [
+                242564,
+                36751,
+                -1
+              ],
+              "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+              "methodName": "ReadIsNull",
+              "classArguments": [
+                {
+                  "name": "VAR[14700]",
+                  "typePointerVa": 6719547312,
+                  "rawHex": "6C390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14700,
+                    "parameterOffset": 54078904,
+                    "parameterRawHex": "161000005F928F000000000000000000",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                },
+                {
+                  "name": "VAR[14701]",
+                  "typePointerVa": 6721801952,
+                  "rawHex": "6D390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14701,
+                    "parameterOffset": 54078920,
+                    "parameterRawHex": "1610000069928F00D901020001000400",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 1,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ],
+              "methodArguments": []
+            },
+            {
+              "relativeSlot": 1,
+              "moduleEntryIndex": 5,
+              "entryVa": 6705636272,
+              "rawHex": "0200000000000000F0A1748F01000000",
+              "kind": 2,
+              "index": 228236,
+              "type": {
+                "name": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<VAR[14700],VAR[14701]>",
+                "typePointerVa": 6704834216,
+                "rawHex": "C86E1491010000000000150000000000",
+                "definition": {
+                  "name": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+                  "typePointerVa": 6719765680,
+                  "rawHex": "FCB80000000000000000120000000000"
+                },
+                "classInstantiationIndex": 36751,
+                "classArguments": [
+                  {
+                    "name": "VAR[14700]",
+                    "typePointerVa": 6719547312,
+                    "rawHex": "6C390000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 14700,
+                      "parameterOffset": 54078904,
+                      "parameterRawHex": "161000005F928F000000000000000000",
+                      "containerIndex": 4118,
+                      "containerOffset": 54328796,
+                      "containerRawHex": "FCB8000002000000000000006C390000",
+                      "typeIndex": 47356,
+                      "ordinal": 0,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                    }
+                  },
+                  {
+                    "name": "VAR[14701]",
+                    "typePointerVa": 6721801952,
+                    "rawHex": "6D390000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 14701,
+                      "parameterOffset": 54078920,
+                      "parameterRawHex": "1610000069928F00D901020001000400",
+                      "containerIndex": 4118,
+                      "containerOffset": 54328796,
+                      "containerRawHex": "FCB8000002000000000000006C390000",
+                      "typeIndex": 47356,
+                      "ordinal": 1,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                    }
+                  }
+                ]
+              },
+              "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<VAR[14700],VAR[14701]>"
+            },
+            {
+              "relativeSlot": 2,
+              "moduleEntryIndex": 6,
+              "entryVa": 6705636288,
+              "rawHex": "0200000000000000D844748F01000000",
+              "kind": 2,
+              "index": 57267,
+              "type": {
+                "name": "MemoryPack.MemoryPackFormatter`1<VAR[14700]>",
+                "typePointerVa": 6704607432,
+                "rawHex": "B05E9090010000000000150000000000",
+                "definition": {
+                  "name": "MemoryPack.MemoryPackFormatter`1",
+                  "typePointerVa": 6719626848,
+                  "rawHex": "82540100000000000000120000000000"
+                },
+                "classInstantiationIndex": 11908,
+                "classArguments": [
+                  {
+                    "name": "VAR[14700]",
+                    "typePointerVa": 6719547312,
+                    "rawHex": "6C390000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 14700,
+                      "parameterOffset": 54078904,
+                      "parameterRawHex": "161000005F928F000000000000000000",
+                      "containerIndex": 4118,
+                      "containerOffset": 54328796,
+                      "containerRawHex": "FCB8000002000000000000006C390000",
+                      "typeIndex": 47356,
+                      "ordinal": 0,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                    }
+                  }
+                ]
+              },
+              "typeName": "MemoryPack.MemoryPackFormatter`1<VAR[14700]>"
+            },
+            {
+              "relativeSlot": 3,
+              "moduleEntryIndex": 7,
+              "entryVa": 6705636304,
+              "rawHex": "030000000000000038A2748F01000000",
+              "kind": 3,
+              "index": 173372,
+              "methodSpec": [
+                242566,
+                36751,
+                -1
+              ],
+              "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+              "methodName": "DeserializeNotNull",
+              "classArguments": [
+                {
+                  "name": "VAR[14700]",
+                  "typePointerVa": 6719547312,
+                  "rawHex": "6C390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14700,
+                    "parameterOffset": 54078904,
+                    "parameterRawHex": "161000005F928F000000000000000000",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                },
+                {
+                  "name": "VAR[14701]",
+                  "typePointerVa": 6721801952,
+                  "rawHex": "6D390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14701,
+                    "parameterOffset": 54078920,
+                    "parameterRawHex": "1610000069928F00D901020001000400",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 1,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ],
+              "methodArguments": []
+            },
+            {
+              "relativeSlot": 4,
+              "moduleEntryIndex": 8,
+              "entryVa": 6705636320,
+              "rawHex": "0300000000000000F445748F01000000",
+              "kind": 3,
+              "index": 535206,
+              "methodSpec": [
+                550278,
+                -1,
+                42193
+              ],
+              "typeName": "MemoryPack.MemoryPackFormatterProvider",
+              "methodName": "GetFormatter",
+              "classArguments": [],
+              "methodArguments": [
+                {
+                  "name": "VAR[14701]",
+                  "typePointerVa": 6721801952,
+                  "rawHex": "6D390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14701,
+                    "parameterOffset": 54078920,
+                    "parameterRawHex": "1610000069928F00D901020001000400",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 1,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ]
+            },
+            {
+              "relativeSlot": 5,
+              "moduleEntryIndex": 9,
+              "entryVa": 6705636336,
+              "rawHex": "02000000000000003045748F01000000",
+              "kind": 2,
+              "index": 237042,
+              "type": {
+                "name": "MemoryPack.MemoryPackFormatter`1<VAR[14701]>",
+                "typePointerVa": 6705281192,
+                "rawHex": "58A61291010000000000150000000000",
+                "definition": {
+                  "name": "MemoryPack.MemoryPackFormatter`1",
+                  "typePointerVa": 6719626848,
+                  "rawHex": "82540100000000000000120000000000"
+                },
+                "classInstantiationIndex": 42193,
+                "classArguments": [
+                  {
+                    "name": "VAR[14701]",
+                    "typePointerVa": 6721801952,
+                    "rawHex": "6D390000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 14701,
+                      "parameterOffset": 54078920,
+                      "parameterRawHex": "1610000069928F00D901020001000400",
+                      "containerIndex": 4118,
+                      "containerOffset": 54328796,
+                      "containerRawHex": "FCB8000002000000000000006C390000",
+                      "typeIndex": 47356,
+                      "ordinal": 1,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                    }
+                  }
+                ]
+              },
+              "typeName": "MemoryPack.MemoryPackFormatter`1<VAR[14701]>"
+            },
+            {
+              "relativeSlot": 6,
+              "moduleEntryIndex": 10,
+              "entryVa": 6705636352,
+              "rawHex": "0300000000000000CC46748F01000000",
+              "kind": 3,
+              "index": 291790,
+              "methodSpec": [
+                550292,
+                42193,
+                -1
+              ],
+              "typeName": "MemoryPack.MemoryPackFormatter`1",
+              "methodName": "Deserialize",
+              "classArguments": [
+                {
+                  "name": "VAR[14701]",
+                  "typePointerVa": 6721801952,
+                  "rawHex": "6D390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14701,
+                    "parameterOffset": 54078920,
+                    "parameterRawHex": "1610000069928F00D901020001000400",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 1,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ],
+              "methodArguments": []
+            },
+            {
+              "relativeSlot": 7,
+              "moduleEntryIndex": 11,
+              "entryVa": 6705636368,
+              "rawHex": "0200000000000000D8F6738F01000000",
+              "kind": 2,
+              "index": 10895,
+              "type": {
+                "name": "VAR[14701]",
+                "typePointerVa": 6721801952,
+                "rawHex": "6D390000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 14701,
+                  "parameterOffset": 54078920,
+                  "parameterRawHex": "1610000069928F00D901020001000400",
+                  "containerIndex": 4118,
+                  "containerOffset": 54328796,
+                  "containerRawHex": "FCB8000002000000000000006C390000",
+                  "typeIndex": 47356,
+                  "ordinal": 1,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              },
+              "typeName": "VAR[14701]"
+            },
+            {
+              "relativeSlot": 8,
+              "moduleEntryIndex": 12,
+              "entryVa": 6705636384,
+              "rawHex": "0200000000000000486A748F01000000",
+              "kind": 2,
+              "index": 43087,
+              "type": {
+                "name": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<VAR[14700]>",
+                "typePointerVa": 6703951720,
+                "rawHex": "48200D91010000000000150000000000",
+                "definition": {
+                  "name": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1",
+                  "typePointerVa": 6719705136,
+                  "rawHex": "54EC0000000000000000120000000000"
+                },
+                "classInstantiationIndex": 11908,
+                "classArguments": [
+                  {
+                    "name": "VAR[14700]",
+                    "typePointerVa": 6719547312,
+                    "rawHex": "6C390000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 14700,
+                      "parameterOffset": 54078904,
+                      "parameterRawHex": "161000005F928F000000000000000000",
+                      "containerIndex": 4118,
+                      "containerOffset": 54328796,
+                      "containerRawHex": "FCB8000002000000000000006C390000",
+                      "typeIndex": 47356,
+                      "ordinal": 0,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                    }
+                  }
+                ]
+              },
+              "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<VAR[14700]>"
+            },
+            {
+              "relativeSlot": 9,
+              "moduleEntryIndex": 13,
+              "entryVa": 6705636400,
+              "rawHex": "03000000000000004C6A748F01000000",
+              "kind": 3,
+              "index": 181723,
+              "methodSpec": [
+                359790,
+                11908,
+                -1
+              ],
+              "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1",
+              "methodName": "GetValue",
+              "classArguments": [
+                {
+                  "name": "VAR[14700]",
+                  "typePointerVa": 6719547312,
+                  "rawHex": "6C390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14700,
+                    "parameterOffset": 54078904,
+                    "parameterRawHex": "161000005F928F000000000000000000",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ],
+              "methodArguments": []
+            },
+            {
+              "relativeSlot": 10,
+              "moduleEntryIndex": 14,
+              "entryVa": 6705636416,
+              "rawHex": "0100000000000000D8F6738F01000000",
+              "kind": 1,
+              "index": 10895,
+              "type": {
+                "name": "VAR[14701]",
+                "typePointerVa": 6721801952,
+                "rawHex": "6D390000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 14701,
+                  "parameterOffset": 54078920,
+                  "parameterRawHex": "1610000069928F00D901020001000400",
+                  "containerIndex": 4118,
+                  "containerOffset": 54328796,
+                  "containerRawHex": "FCB8000002000000000000006C390000",
+                  "typeIndex": 47356,
+                  "ordinal": 1,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              },
+              "typeName": "VAR[14701]"
+            },
+            {
+              "relativeSlot": 11,
+              "moduleEntryIndex": 15,
+              "entryVa": 6705636432,
+              "rawHex": "03000000000000005C3F758F01000000",
+              "kind": 3,
+              "index": 475898,
+              "methodSpec": [
+                395375,
+                -1,
+                42193
+              ],
+              "typeName": "System.Activator",
+              "methodName": "CreateInstance",
+              "classArguments": [],
+              "methodArguments": [
+                {
+                  "name": "VAR[14701]",
+                  "typePointerVa": 6721801952,
+                  "rawHex": "6D390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14701,
+                    "parameterOffset": 54078920,
+                    "parameterRawHex": "1610000069928F00D901020001000400",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 1,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ]
+            },
+            {
+              "relativeSlot": 12,
+              "moduleEntryIndex": 16,
+              "entryVa": 6705636448,
+              "rawHex": "03000000000000004046748F01000000",
+              "kind": 3,
+              "index": 291763,
+              "methodSpec": [
+                550294,
+                11908,
+                -1
+              ],
+              "typeName": "MemoryPack.MemoryPackFormatter`1",
+              "methodName": ".ctor",
+              "classArguments": [
+                {
+                  "name": "VAR[14700]",
+                  "typePointerVa": 6719547312,
+                  "rawHex": "6C390000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 14700,
+                    "parameterOffset": 54078904,
+                    "parameterRawHex": "161000005F928F000000000000000000",
+                    "containerIndex": 4118,
+                    "containerOffset": 54328796,
+                    "containerRawHex": "FCB8000002000000000000006C390000",
+                    "typeIndex": 47356,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                  }
+                }
+              ],
+              "methodArguments": []
+            }
+          ]
+        }
+      ],
+      "methods": [
+        [
+          267494,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+          "GetValue",
+          43147504
+        ],
+        [
+          267503,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack+Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPackFormatter",
+          "Deserialize",
+          106834224
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 43147504,
+          "endRva": 43147509,
+          "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+        },
+        {
+          "startRva": 106834224,
+          "endRva": 106834317,
+          "sha256": "BC14BB9BE7D2A8CF7EA4EA8D32CCD9ACB97009C400C913BB7AC9191B24132C62"
+        }
+      ]
+    }
+  },
+  "proof": {
+    "wrappedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+    "codecKind": "Param<LevelScriptPtr>",
+    "memberCount": 4,
+    "rawSize": 16,
+    "pathEncoding": "int32-pool-index",
+    "readerOffsets": {
+      "currentPtr": 80,
+      "bufferLength": 48,
+      "advancedCount": 64,
+      "consumed": 68
+    },
+    "callerMethod": [
+      267502,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+      "Deserialize",
+      106834320
+    ],
+    "caller": {
+      "pointerRva": 106834320,
+      "windows": [
+        {
+          "startRva": 106834320,
+          "endRva": 106834375,
+          "sha256": "959DAA97204DA0FB3F6C9273547CB125C6A3C632CCF8281501FC6F739664DFD9"
+        },
+        {
+          "startRva": 106834375,
+          "endRva": 106834559,
+          "sha256": "8F2019B4C0CD9B411B0A05F711E0765BA4F8B2522CB2026F307A05769FCEBF0D"
+        },
+        {
+          "startRva": 106834559,
+          "endRva": 106834570,
+          "sha256": "036EA2B84AA465695DA1C7E6D61B70EEA91754445FC83EF49EE9390BACA62AEA"
+        },
+        {
+          "startRva": 106834570,
+          "endRva": 106834576,
+          "sha256": "322EF85D835BD69872102596DC4ECB4DAF1119DE3190CED045CB9A169EA727B1"
+        },
+        {
+          "startRva": 106834576,
+          "endRva": 106834636,
+          "sha256": "597195C2477D24D526686A09305CB4B36C746C2091D0ED59461C5CBD280E6FA9"
+        },
+        {
+          "startRva": 124815158,
+          "endRva": 124815287,
+          "sha256": "B70A8EDE0DE743A709C6C0CE09C5944C122F9B8920F796914050F27D7BC67040"
+        },
+        {
+          "startRva": 124815287,
+          "endRva": 124815308,
+          "sha256": "15BE7622B6F49220B04B24086C1EB715BB1336843F7BA9246C700FD9CF7BC315"
+        }
+      ],
+      "rows": [
+        {
+          "offset": 0,
+          "va": "0x1865e2990",
+          "bytes": "48 89 5c 24 18",
+          "text": "mov [rsp+0x18], rbx",
+          "write": null
+        },
+        {
+          "offset": 5,
+          "va": "0x1865e2995",
+          "bytes": "57",
+          "text": "push rdi",
+          "write": null
+        },
+        {
+          "offset": 6,
+          "va": "0x1865e2996",
+          "bytes": "48 83 ec 30",
+          "text": "sub rsp, 0x30",
+          "write": {
+            "register": "rsp",
+            "value": "rsp sub 0x30"
+          }
+        },
+        {
+          "offset": 10,
+          "va": "0x1865e299a",
+          "bytes": "80 3d 96 8d 14 0b 00",
+          "text": "cmp [rip+0xb148d96 => 0x19172b737], 0x0",
+          "write": null
+        },
+        {
+          "offset": 17,
+          "va": "0x1865e29a1",
+          "bytes": "48 8b fa",
+          "text": "mov rdi, rdx",
+          "write": {
+            "register": "rdi",
+            "value": "rdx"
+          }
+        },
+        {
+          "offset": 20,
+          "va": "0x1865e29a4",
+          "bytes": "48 8b d9",
+          "text": "mov rbx, rcx",
+          "write": {
+            "register": "rbx",
+            "value": "rcx"
+          }
+        },
+        {
+          "offset": 23,
+          "va": "0x1865e29a7",
+          "bytes": "0f 84 e3 00 00 00",
+          "text": "jcc 0x1865e2a90",
+          "write": null
+        },
+        {
+          "offset": 29,
+          "va": "0x1865e29ad",
+          "bytes": "48 8d 54 24 40",
+          "text": "lea rdx, [rsp+0x40]",
+          "write": {
+            "register": "rdx",
+            "value": "&[rsp+0x40]"
+          }
+        },
+        {
+          "offset": 34,
+          "va": "0x1865e29b2",
+          "bytes": "c6 44 24 40 00",
+          "text": "mov [rsp+0x40], 0x0",
+          "write": null,
+          "operandWidth": 8
+        },
+        {
+          "offset": 39,
+          "va": "0x1865e29b7",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 42,
+          "va": "0x1865e29ba",
+          "bytes": "e8 b1 d3 9f fe",
+          "text": "call 0x184fdfd70",
+          "write": null
+        },
+        {
+          "offset": 47,
+          "va": "0x1865e29bf",
+          "bytes": "84 c0",
+          "text": "test al, al",
+          "write": null
+        },
+        {
+          "offset": 49,
+          "va": "0x1865e29c1",
+          "bytes": "0f 84 f0 5d 12 01",
+          "text": "jcc 0x1877087b7",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x1865e29c7",
+          "bytes": "48 89 74 24 48",
+          "text": "mov [rsp+0x48], rsi",
+          "write": null
+        },
+        {
+          "offset": 5,
+          "va": "0x1865e29cc",
+          "bytes": "48 83 3f 00",
+          "text": "cmp [rdi], 0x0",
+          "write": null
+        },
+        {
+          "offset": 9,
+          "va": "0x1865e29d0",
+          "bytes": "0f 84 60 5d 12 01",
+          "text": "jcc 0x187708736",
+          "write": null
+        },
+        {
+          "offset": 15,
+          "va": "0x1865e29d6",
+          "bytes": "0f b6 74 24 40",
+          "text": "movzx esi, [rsp+0x40]",
+          "write": {
+            "register": "esi",
+            "value": "modified"
+          },
+          "sourceWidth": 8,
+          "operandWidth": 32,
+          "sourceExtension": "zero extension",
+          "upperRegisterEffect": "zero upper 32 bits"
+        },
+        {
+          "offset": 20,
+          "va": "0x1865e29db",
+          "bytes": "40 80 fe 04",
+          "text": "cmp sil, 0x4",
+          "write": null
+        },
+        {
+          "offset": 24,
+          "va": "0x1865e29df",
+          "bytes": "0f 85 9a 5d 12 01",
+          "text": "jcc 0x18770877f",
+          "write": null
+        },
+        {
+          "offset": 30,
+          "va": "0x1865e29e5",
+          "bytes": "83 7b 30 10",
+          "text": "cmp [rbx+0x30], 0x10",
+          "write": null
+        },
+        {
+          "offset": 34,
+          "va": "0x1865e29e9",
+          "bytes": "48 8b 37",
+          "text": "mov rsi, [rdi]",
+          "write": {
+            "register": "rsi",
+            "value": "[rdi]"
+          }
+        },
+        {
+          "offset": 37,
+          "va": "0x1865e29ec",
+          "bytes": "0f 8c 77 5d 12 01",
+          "text": "jcc 0x187708769",
+          "write": null
+        },
+        {
+          "offset": 43,
+          "va": "0x1865e29f2",
+          "bytes": "48 8b 43 50",
+          "text": "mov rax, [rbx+0x50]",
+          "write": {
+            "register": "rax",
+            "value": "[rbx+0x50]"
+          }
+        },
+        {
+          "offset": 47,
+          "va": "0x1865e29f6",
+          "bytes": "ba 10 00 00 00",
+          "text": "mov edx, 0x10",
+          "write": {
+            "register": "edx",
+            "value": "0x10"
+          }
+        },
+        {
+          "offset": 52,
+          "va": "0x1865e29fb",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 55,
+          "va": "0x1865e29fe",
+          "bytes": "0f 10 00",
+          "text": "movups xmm0, [rax]",
+          "write": {
+            "register": "xmm0",
+            "value": "[rax]"
+          }
+        },
+        {
+          "offset": 58,
+          "va": "0x1865e2a01",
+          "bytes": "0f 11 44 24 20",
+          "text": "movups [rsp+0x20], xmm0",
+          "write": null
+        },
+        {
+          "offset": 63,
+          "va": "0x1865e2a06",
+          "bytes": "e8 45 d4 9f fe",
+          "text": "call 0x184fdfe50",
+          "write": null
+        },
+        {
+          "offset": 68,
+          "va": "0x1865e2a0b",
+          "bytes": "48 85 f6",
+          "text": "test rsi, rsi",
+          "write": null
+        },
+        {
+          "offset": 71,
+          "va": "0x1865e2a0e",
+          "bytes": "74 7a",
+          "text": "je 0x1865e2a8a",
+          "write": null
+        },
+        {
+          "offset": 73,
+          "va": "0x1865e2a10",
+          "bytes": "48 8b 46 10",
+          "text": "mov rax, [rsi+0x10]",
+          "write": {
+            "register": "rax",
+            "value": "[rsi+0x10]"
+          }
+        },
+        {
+          "offset": 77,
+          "va": "0x1865e2a14",
+          "bytes": "48 85 c0",
+          "text": "test rax, rax",
+          "write": null
+        },
+        {
+          "offset": 80,
+          "va": "0x1865e2a17",
+          "bytes": "74 71",
+          "text": "je 0x1865e2a8a",
+          "write": null
+        },
+        {
+          "offset": 82,
+          "va": "0x1865e2a19",
+          "bytes": "0f 10 44 24 20",
+          "text": "movups xmm0, [rsp+0x20]",
+          "write": {
+            "register": "xmm0",
+            "value": "[rsp+0x20]"
+          }
+        },
+        {
+          "offset": 87,
+          "va": "0x1865e2a1e",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 90,
+          "va": "0x1865e2a21",
+          "bytes": "0f 11 40 20",
+          "text": "movups [rax+0x20], xmm0",
+          "write": null
+        },
+        {
+          "offset": 94,
+          "va": "0x1865e2a25",
+          "bytes": "48 8b 37",
+          "text": "mov rsi, [rdi]",
+          "write": {
+            "register": "rsi",
+            "value": "[rdi]"
+          }
+        },
+        {
+          "offset": 97,
+          "va": "0x1865e2a28",
+          "bytes": "e8 23 cc 9f fe",
+          "text": "call 0x184fdf650",
+          "write": null
+        },
+        {
+          "offset": 102,
+          "va": "0x1865e2a2d",
+          "bytes": "48 85 f6",
+          "text": "test rsi, rsi",
+          "write": null
+        },
+        {
+          "offset": 105,
+          "va": "0x1865e2a30",
+          "bytes": "74 58",
+          "text": "je 0x1865e2a8a",
+          "write": null
+        },
+        {
+          "offset": 107,
+          "va": "0x1865e2a32",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 110,
+          "va": "0x1865e2a35",
+          "bytes": "8b d0",
+          "text": "mov edx, eax",
+          "write": {
+            "register": "edx",
+            "value": "eax"
+          }
+        },
+        {
+          "offset": 112,
+          "va": "0x1865e2a37",
+          "bytes": "48 8b ce",
+          "text": "mov rcx, rsi",
+          "write": {
+            "register": "rcx",
+            "value": "rsi"
+          }
+        },
+        {
+          "offset": 115,
+          "va": "0x1865e2a3a",
+          "bytes": "e8 31 2a 25 01",
+          "text": "call 0x187835470",
+          "write": null
+        },
+        {
+          "offset": 120,
+          "va": "0x1865e2a3f",
+          "bytes": "48 8b 37",
+          "text": "mov rsi, [rdi]",
+          "write": {
+            "register": "rsi",
+            "value": "[rdi]"
+          }
+        },
+        {
+          "offset": 123,
+          "va": "0x1865e2a42",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 126,
+          "va": "0x1865e2a45",
+          "bytes": "e8 06 cc 9f fe",
+          "text": "call 0x184fdf650",
+          "write": null
+        },
+        {
+          "offset": 131,
+          "va": "0x1865e2a4a",
+          "bytes": "48 85 f6",
+          "text": "test rsi, rsi",
+          "write": null
+        },
+        {
+          "offset": 134,
+          "va": "0x1865e2a4d",
+          "bytes": "74 3b",
+          "text": "je 0x1865e2a8a",
+          "write": null
+        },
+        {
+          "offset": 136,
+          "va": "0x1865e2a4f",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 139,
+          "va": "0x1865e2a52",
+          "bytes": "8b d0",
+          "text": "mov edx, eax",
+          "write": {
+            "register": "edx",
+            "value": "eax"
+          }
+        },
+        {
+          "offset": 141,
+          "va": "0x1865e2a54",
+          "bytes": "48 8b ce",
+          "text": "mov rcx, rsi",
+          "write": {
+            "register": "rcx",
+            "value": "rsi"
+          }
+        },
+        {
+          "offset": 144,
+          "va": "0x1865e2a57",
+          "bytes": "e8 9c 26 25 01",
+          "text": "call 0x1878350f8",
+          "write": null
+        },
+        {
+          "offset": 149,
+          "va": "0x1865e2a5c",
+          "bytes": "48 8b 3f",
+          "text": "mov rdi, [rdi]",
+          "write": {
+            "register": "rdi",
+            "value": "[rdi]"
+          }
+        },
+        {
+          "offset": 152,
+          "va": "0x1865e2a5f",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 155,
+          "va": "0x1865e2a62",
+          "bytes": "e8 59 03 c1 fe",
+          "text": "call 0x1851f2dc0",
+          "write": null
+        },
+        {
+          "offset": 160,
+          "va": "0x1865e2a67",
+          "bytes": "48 85 ff",
+          "text": "test rdi, rdi",
+          "write": null
+        },
+        {
+          "offset": 163,
+          "va": "0x1865e2a6a",
+          "bytes": "74 1e",
+          "text": "je 0x1865e2a8a",
+          "write": null
+        },
+        {
+          "offset": 165,
+          "va": "0x1865e2a6c",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 168,
+          "va": "0x1865e2a6f",
+          "bytes": "48 8b d0",
+          "text": "mov rdx, rax",
+          "write": {
+            "register": "rdx",
+            "value": "rax"
+          }
+        },
+        {
+          "offset": 171,
+          "va": "0x1865e2a72",
+          "bytes": "48 8b cf",
+          "text": "mov rcx, rdi",
+          "write": {
+            "register": "rcx",
+            "value": "rdi"
+          }
+        },
+        {
+          "offset": 174,
+          "va": "0x1865e2a75",
+          "bytes": "e8 06 85 c0 fe",
+          "text": "call 0x1851eaf80",
+          "write": null
+        },
+        {
+          "offset": 179,
+          "va": "0x1865e2a7a",
+          "bytes": "48 8b 74 24 48",
+          "text": "mov rsi, [rsp+0x48]",
+          "write": {
+            "register": "rsi",
+            "value": "[rsp+0x48]"
+          }
+        },
+        {
+          "offset": 0,
+          "va": "0x1865e2a7f",
+          "bytes": "48 8b 5c 24 50",
+          "text": "mov rbx, [rsp+0x50]",
+          "write": {
+            "register": "rbx",
+            "value": "[rsp+0x50]"
+          }
+        },
+        {
+          "offset": 5,
+          "va": "0x1865e2a84",
+          "bytes": "48 83 c4 30",
+          "text": "add rsp, 0x30",
+          "write": {
+            "register": "rsp",
+            "value": "rsp add 0x30"
+          }
+        },
+        {
+          "offset": 9,
+          "va": "0x1865e2a88",
+          "bytes": "5f",
+          "text": "pop rdi",
+          "write": {
+            "register": "rdi",
+            "value": "pop(rdi)"
+          }
+        },
+        {
+          "offset": 10,
+          "va": "0x1865e2a89",
+          "bytes": "c3",
+          "text": "ret",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x1865e2a8a",
+          "bytes": "e8 b1 be af f9",
+          "text": "call 0x1800de940",
+          "write": null
+        },
+        {
+          "offset": 5,
+          "va": "0x1865e2a8f",
+          "bytes": "cc",
+          "text": "int3",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x1865e2a90",
+          "bytes": "48 8d 0d 91 1f 0a 0a",
+          "text": "lea rcx, [rip+0xa0a1f91 => 0x190684a28]",
+          "write": {
+            "register": "rcx",
+            "value": "&[rip+0xa0a1f91 => 0x190684a28]"
+          }
+        },
+        {
+          "offset": 7,
+          "va": "0x1865e2a97",
+          "bytes": "e8 04 ea a5 f9",
+          "text": "call 0x1800414a0",
+          "write": null
+        },
+        {
+          "offset": 12,
+          "va": "0x1865e2a9c",
+          "bytes": "48 8d 0d 95 1f 0a 0a",
+          "text": "lea rcx, [rip+0xa0a1f95 => 0x190684a38]",
+          "write": {
+            "register": "rcx",
+            "value": "&[rip+0xa0a1f95 => 0x190684a38]"
+          }
+        },
+        {
+          "offset": 19,
+          "va": "0x1865e2aa3",
+          "bytes": "e8 f8 e9 a5 f9",
+          "text": "call 0x1800414a0",
+          "write": null
+        },
+        {
+          "offset": 24,
+          "va": "0x1865e2aa8",
+          "bytes": "48 8d 0d 99 1f 0a 0a",
+          "text": "lea rcx, [rip+0xa0a1f99 => 0x190684a48]",
+          "write": {
+            "register": "rcx",
+            "value": "&[rip+0xa0a1f99 => 0x190684a48]"
+          }
+        },
+        {
+          "offset": 31,
+          "va": "0x1865e2aaf",
+          "bytes": "e8 ec e9 a5 f9",
+          "text": "call 0x1800414a0",
+          "write": null
+        },
+        {
+          "offset": 36,
+          "va": "0x1865e2ab4",
+          "bytes": "48 8d 0d fd 95 16 0a",
+          "text": "lea rcx, [rip+0xa1695fd => 0x19074c0b8]",
+          "write": {
+            "register": "rcx",
+            "value": "&[rip+0xa1695fd => 0x19074c0b8]"
+          }
+        },
+        {
+          "offset": 43,
+          "va": "0x1865e2abb",
+          "bytes": "e8 e0 e9 a5 f9",
+          "text": "call 0x1800414a0",
+          "write": null
+        },
+        {
+          "offset": 48,
+          "va": "0x1865e2ac0",
+          "bytes": "c6 05 70 8c 14 0b 01",
+          "text": "mov [rip+0xb148c70 => 0x19172b737], 0x1",
+          "write": null,
+          "operandWidth": 8
+        },
+        {
+          "offset": 55,
+          "va": "0x1865e2ac7",
+          "bytes": "e9 e1 fe ff ff",
+          "text": "jmp 0x1865e29ad",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x187708736",
+          "bytes": "48 8b 0d fb c2 f7 08",
+          "text": "mov rcx, [rip+0x8f7c2fb => 0x190684a38]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0x8f7c2fb => 0x190684a38]"
+          }
+        },
+        {
+          "offset": 7,
+          "va": "0x18770873d",
+          "bytes": "e8 ce d6 90 f8",
+          "text": "call 0x180015e10",
+          "write": null
+        },
+        {
+          "offset": 12,
+          "va": "0x187708742",
+          "bytes": "48 8b f0",
+          "text": "mov rsi, rax",
+          "write": {
+            "register": "rsi",
+            "value": "rax"
+          }
+        },
+        {
+          "offset": 15,
+          "va": "0x187708745",
+          "bytes": "48 85 c0",
+          "text": "test rax, rax",
+          "write": null
+        },
+        {
+          "offset": 18,
+          "va": "0x187708748",
+          "bytes": "0f 84 3c a3 ed fe",
+          "text": "jcc 0x1865e2a8a",
+          "write": null
+        },
+        {
+          "offset": 24,
+          "va": "0x18770874e",
+          "bytes": "33 d2",
+          "text": "xor edx, edx",
+          "write": {
+            "register": "edx",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 26,
+          "va": "0x187708750",
+          "bytes": "48 8b c8",
+          "text": "mov rcx, rax",
+          "write": {
+            "register": "rcx",
+            "value": "rax"
+          }
+        },
+        {
+          "offset": 29,
+          "va": "0x187708753",
+          "bytes": "e8 e8 f8 29 ff",
+          "text": "call 0x1869a8040",
+          "write": null
+        },
+        {
+          "offset": 34,
+          "va": "0x187708758",
+          "bytes": "48 8b cf",
+          "text": "mov rcx, rdi",
+          "write": {
+            "register": "rcx",
+            "value": "rdi"
+          }
+        },
+        {
+          "offset": 37,
+          "va": "0x18770875b",
+          "bytes": "48 89 37",
+          "text": "mov [rdi], rsi",
+          "write": null
+        },
+        {
+          "offset": 40,
+          "va": "0x18770875e",
+          "bytes": "e8 fd bb 9f f8",
+          "text": "call 0x180104360",
+          "write": null
+        },
+        {
+          "offset": 45,
+          "va": "0x187708763",
+          "bytes": "90",
+          "text": "nop",
+          "write": null
+        },
+        {
+          "offset": 46,
+          "va": "0x187708764",
+          "bytes": "e9 6d a2 ed fe",
+          "text": "jmp 0x1865e29d6",
+          "write": null
+        },
+        {
+          "offset": 51,
+          "va": "0x187708769",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 54,
+          "va": "0x18770876c",
+          "bytes": "ba 10 00 00 00",
+          "text": "mov edx, 0x10",
+          "write": {
+            "register": "edx",
+            "value": "0x10"
+          }
+        },
+        {
+          "offset": 59,
+          "va": "0x187708771",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 62,
+          "va": "0x187708774",
+          "bytes": "e8 37 ad 1b 05",
+          "text": "call 0x18c8c34b0",
+          "write": null
+        },
+        {
+          "offset": 67,
+          "va": "0x187708779",
+          "bytes": "90",
+          "text": "nop",
+          "write": null
+        },
+        {
+          "offset": 68,
+          "va": "0x18770877a",
+          "bytes": "e9 73 a2 ed fe",
+          "text": "jmp 0x1865e29f2",
+          "write": null
+        },
+        {
+          "offset": 73,
+          "va": "0x18770877f",
+          "bytes": "48 8b 0d 32 39 04 09",
+          "text": "mov rcx, [rip+0x9043932 => 0x19074c0b8]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0x9043932 => 0x19074c0b8]"
+          }
+        },
+        {
+          "offset": 80,
+          "va": "0x187708786",
+          "bytes": "48 8b 1d 9b c2 f7 08",
+          "text": "mov rbx, [rip+0x8f7c29b => 0x190684a28]",
+          "write": {
+            "register": "rbx",
+            "value": "[rip+0x8f7c29b => 0x190684a28]"
+          }
+        },
+        {
+          "offset": 87,
+          "va": "0x18770878d",
+          "bytes": "83 b9 e0 00 00 00 00",
+          "text": "cmp [rcx+0xe0], 0x0",
+          "write": null
+        },
+        {
+          "offset": 94,
+          "va": "0x187708794",
+          "bytes": "75 05",
+          "text": "jne 0x18770879b",
+          "write": null
+        },
+        {
+          "offset": 96,
+          "va": "0x187708796",
+          "bytes": "e8 45 de 90 f8",
+          "text": "call 0x1800165e0",
+          "write": null
+        },
+        {
+          "offset": 101,
+          "va": "0x18770879b",
+          "bytes": "33 d2",
+          "text": "xor edx, edx",
+          "write": {
+            "register": "edx",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 103,
+          "va": "0x18770879d",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 106,
+          "va": "0x1877087a0",
+          "bytes": "e8 cb 52 89 fd",
+          "text": "call 0x184f9da70",
+          "write": null
+        },
+        {
+          "offset": 111,
+          "va": "0x1877087a5",
+          "bytes": "45 33 c9",
+          "text": "xor r9d, r9d",
+          "write": {
+            "register": "r9d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 114,
+          "va": "0x1877087a8",
+          "bytes": "44 0f b6 c6",
+          "text": "movzx r8d, sil",
+          "write": {
+            "register": "r8d",
+            "value": "modified"
+          },
+          "sourceWidth": 8,
+          "operandWidth": 32,
+          "sourceExtension": "zero extension",
+          "upperRegisterEffect": "zero upper 32 bits"
+        },
+        {
+          "offset": 118,
+          "va": "0x1877087ac",
+          "bytes": "b2 04",
+          "text": "mov dl, 0x4",
+          "write": {
+            "register": "dl",
+            "value": "0x4"
+          }
+        },
+        {
+          "offset": 120,
+          "va": "0x1877087ae",
+          "bytes": "48 8b c8",
+          "text": "mov rcx, rax",
+          "write": {
+            "register": "rcx",
+            "value": "rax"
+          }
+        },
+        {
+          "offset": 123,
+          "va": "0x1877087b1",
+          "bytes": "e8 ca e9 3b ff",
+          "text": "call 0x186ac7180",
+          "write": null
+        },
+        {
+          "offset": 128,
+          "va": "0x1877087b6",
+          "bytes": "cc",
+          "text": "int3",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x1877087b7",
+          "bytes": "48 8b cf",
+          "text": "mov rcx, rdi",
+          "write": {
+            "register": "rcx",
+            "value": "rdi"
+          }
+        },
+        {
+          "offset": 3,
+          "va": "0x1877087ba",
+          "bytes": "48 c7 07 00 00 00 00",
+          "text": "mov [rdi], 0x0",
+          "write": null,
+          "operandWidth": 64
+        },
+        {
+          "offset": 10,
+          "va": "0x1877087c1",
+          "bytes": "e8 9a bb 9f f8",
+          "text": "call 0x180104360",
+          "write": null
+        },
+        {
+          "offset": 15,
+          "va": "0x1877087c6",
+          "bytes": "90",
+          "text": "nop",
+          "write": null
+        },
+        {
+          "offset": 16,
+          "va": "0x1877087c7",
+          "bytes": "e9 b3 a2 ed fe",
+          "text": "jmp 0x1865e2a7f",
+          "write": null
+        }
+      ],
+      "instructions": [
+        [
+          106834320,
+          "48895C2418"
+        ],
+        [
+          106834325,
+          "57"
+        ],
+        [
+          106834326,
+          "4883EC30"
+        ],
+        [
+          106834330,
+          "803D968D140B00"
+        ],
+        [
+          106834337,
+          "488BFA"
+        ],
+        [
+          106834340,
+          "488BD9"
+        ],
+        [
+          106834343,
+          "0F84E3000000"
+        ],
+        [
+          106834349,
+          "488D542440"
+        ],
+        [
+          106834354,
+          "C644244000"
+        ],
+        [
+          106834359,
+          "488BCB"
+        ],
+        [
+          106834362,
+          "E8B1D39FFE"
+        ],
+        [
+          106834367,
+          "84C0"
+        ],
+        [
+          106834369,
+          "0F84F05D1201"
+        ],
+        [
+          106834375,
+          "4889742448"
+        ],
+        [
+          106834380,
+          "48833F00"
+        ],
+        [
+          106834384,
+          "0F84605D1201"
+        ],
+        [
+          106834390,
+          "0FB6742440"
+        ],
+        [
+          106834395,
+          "4080FE04"
+        ],
+        [
+          106834399,
+          "0F859A5D1201"
+        ],
+        [
+          106834405,
+          "837B3010"
+        ],
+        [
+          106834409,
+          "488B37"
+        ],
+        [
+          106834412,
+          "0F8C775D1201"
+        ],
+        [
+          106834418,
+          "488B4350"
+        ],
+        [
+          106834422,
+          "BA10000000"
+        ],
+        [
+          106834427,
+          "488BCB"
+        ],
+        [
+          106834430,
+          "0F1000"
+        ],
+        [
+          106834433,
+          "0F11442420"
+        ],
+        [
+          106834438,
+          "E845D49FFE"
+        ],
+        [
+          106834443,
+          "4885F6"
+        ],
+        [
+          106834446,
+          "747A"
+        ],
+        [
+          106834448,
+          "488B4610"
+        ],
+        [
+          106834452,
+          "4885C0"
+        ],
+        [
+          106834455,
+          "7471"
+        ],
+        [
+          106834457,
+          "0F10442420"
+        ],
+        [
+          106834462,
+          "488BCB"
+        ],
+        [
+          106834465,
+          "0F114020"
+        ],
+        [
+          106834469,
+          "488B37"
+        ],
+        [
+          106834472,
+          "E823CC9FFE"
+        ],
+        [
+          106834477,
+          "4885F6"
+        ],
+        [
+          106834480,
+          "7458"
+        ],
+        [
+          106834482,
+          "4533C0"
+        ],
+        [
+          106834485,
+          "8BD0"
+        ],
+        [
+          106834487,
+          "488BCE"
+        ],
+        [
+          106834490,
+          "E8312A2501"
+        ],
+        [
+          106834495,
+          "488B37"
+        ],
+        [
+          106834498,
+          "488BCB"
+        ],
+        [
+          106834501,
+          "E806CC9FFE"
+        ],
+        [
+          106834506,
+          "4885F6"
+        ],
+        [
+          106834509,
+          "743B"
+        ],
+        [
+          106834511,
+          "4533C0"
+        ],
+        [
+          106834514,
+          "8BD0"
+        ],
+        [
+          106834516,
+          "488BCE"
+        ],
+        [
+          106834519,
+          "E89C262501"
+        ],
+        [
+          106834524,
+          "488B3F"
+        ],
+        [
+          106834527,
+          "488BCB"
+        ],
+        [
+          106834530,
+          "E85903C1FE"
+        ],
+        [
+          106834535,
+          "4885FF"
+        ],
+        [
+          106834538,
+          "741E"
+        ],
+        [
+          106834540,
+          "4533C0"
+        ],
+        [
+          106834543,
+          "488BD0"
+        ],
+        [
+          106834546,
+          "488BCF"
+        ],
+        [
+          106834549,
+          "E80685C0FE"
+        ],
+        [
+          106834554,
+          "488B742448"
+        ],
+        [
+          106834559,
+          "488B5C2450"
+        ],
+        [
+          106834564,
+          "4883C430"
+        ],
+        [
+          106834568,
+          "5F"
+        ],
+        [
+          106834569,
+          "C3"
+        ],
+        [
+          106834570,
+          "E8B1BEAFF9"
+        ],
+        [
+          106834575,
+          "CC"
+        ],
+        [
+          106834576,
+          "488D0D911F0A0A"
+        ],
+        [
+          106834583,
+          "E804EAA5F9"
+        ],
+        [
+          106834588,
+          "488D0D951F0A0A"
+        ],
+        [
+          106834595,
+          "E8F8E9A5F9"
+        ],
+        [
+          106834600,
+          "488D0D991F0A0A"
+        ],
+        [
+          106834607,
+          "E8ECE9A5F9"
+        ],
+        [
+          106834612,
+          "488D0DFD95160A"
+        ],
+        [
+          106834619,
+          "E8E0E9A5F9"
+        ],
+        [
+          106834624,
+          "C605708C140B01"
+        ],
+        [
+          106834631,
+          "E9E1FEFFFF"
+        ],
+        [
+          124815158,
+          "488B0DFBC2F708"
+        ],
+        [
+          124815165,
+          "E8CED690F8"
+        ],
+        [
+          124815170,
+          "488BF0"
+        ],
+        [
+          124815173,
+          "4885C0"
+        ],
+        [
+          124815176,
+          "0F843CA3EDFE"
+        ],
+        [
+          124815182,
+          "33D2"
+        ],
+        [
+          124815184,
+          "488BC8"
+        ],
+        [
+          124815187,
+          "E8E8F829FF"
+        ],
+        [
+          124815192,
+          "488BCF"
+        ],
+        [
+          124815195,
+          "488937"
+        ],
+        [
+          124815198,
+          "E8FDBB9FF8"
+        ],
+        [
+          124815203,
+          "90"
+        ],
+        [
+          124815204,
+          "E96DA2EDFE"
+        ],
+        [
+          124815209,
+          "4533C0"
+        ],
+        [
+          124815212,
+          "BA10000000"
+        ],
+        [
+          124815217,
+          "488BCB"
+        ],
+        [
+          124815220,
+          "E837AD1B05"
+        ],
+        [
+          124815225,
+          "90"
+        ],
+        [
+          124815226,
+          "E973A2EDFE"
+        ],
+        [
+          124815231,
+          "488B0D32390409"
+        ],
+        [
+          124815238,
+          "488B1D9BC2F708"
+        ],
+        [
+          124815245,
+          "83B9E000000000"
+        ],
+        [
+          124815252,
+          "7505"
+        ],
+        [
+          124815254,
+          "E845DE90F8"
+        ],
+        [
+          124815259,
+          "33D2"
+        ],
+        [
+          124815261,
+          "488BCB"
+        ],
+        [
+          124815264,
+          "E8CB5289FD"
+        ],
+        [
+          124815269,
+          "4533C9"
+        ],
+        [
+          124815272,
+          "440FB6C6"
+        ],
+        [
+          124815276,
+          "B204"
+        ],
+        [
+          124815278,
+          "488BC8"
+        ],
+        [
+          124815281,
+          "E8CAE93BFF"
+        ],
+        [
+          124815286,
+          "CC"
+        ],
+        [
+          124815287,
+          "488BCF"
+        ],
+        [
+          124815290,
+          "48C70700000000"
+        ],
+        [
+          124815297,
+          "E89ABB9FF8"
+        ],
+        [
+          124815302,
+          "90"
+        ],
+        [
+          124815303,
+          "E9B3A2EDFE"
+        ]
+      ]
+    },
+    "paths": [
+      {
+        "selectedInstructions": [
+          6549285264,
+          6549285269,
+          6549285270,
+          6549285274,
+          6549285281,
+          6549285284,
+          6549285287,
+          6549285293,
+          6549285298,
+          6549285303,
+          6549285306,
+          6549285311,
+          6549285313,
+          6549285319,
+          6549285324,
+          6549285328,
+          6549285334,
+          6549285339,
+          6549285343,
+          6549285349,
+          6549285353,
+          6549285356,
+          6549285362,
+          6549285366,
+          6549285371,
+          6549285374,
+          6549285377,
+          6549285382,
+          6549285387,
+          6549285390,
+          6549285392,
+          6549285396,
+          6549285399,
+          6549285401,
+          6549285406,
+          6549285409,
+          6549285413,
+          6549285416,
+          6549285421,
+          6549285424,
+          6549285426,
+          6549285429,
+          6549285431,
+          6549285434,
+          6549285439,
+          6549285442,
+          6549285445,
+          6549285450,
+          6549285453,
+          6549285455,
+          6549285458,
+          6549285460,
+          6549285463,
+          6549285468,
+          6549285471,
+          6549285474,
+          6549285479,
+          6549285482,
+          6549285484,
+          6549285487,
+          6549285490,
+          6549285493,
+          6549285498,
+          6549285503,
+          6549285508,
+          6549285512,
+          6549285513
+        ],
+        "allocation": null,
+        "calls": {
+          "header": {
+            "offset": 42,
+            "va": "0x1865e29ba",
+            "bytes": "e8 b1 d3 9f fe",
+            "text": "call 0x184fdfd70",
+            "write": null
+          },
+          "advance": {
+            "offset": 63,
+            "va": "0x1865e2a06",
+            "bytes": "e8 45 d4 9f fe",
+            "text": "call 0x184fdfe50",
+            "write": null
+          },
+          "integer": {
+            "offset": 126,
+            "va": "0x1865e2a45",
+            "bytes": "e8 06 cc 9f fe",
+            "text": "call 0x184fdf650",
+            "write": null
+          },
+          "idRefSetter": {
+            "offset": 115,
+            "va": "0x1865e2a3a",
+            "bytes": "e8 31 2a 25 01",
+            "text": "call 0x187835470",
+            "write": null
+          },
+          "paramSourceSetter": {
+            "offset": 144,
+            "va": "0x1865e2a57",
+            "bytes": "e8 9c 26 25 01",
+            "text": "call 0x1878350f8",
+            "write": null
+          },
+          "pool": {
+            "offset": 155,
+            "va": "0x1865e2a62",
+            "bytes": "e8 59 03 c1 fe",
+            "text": "call 0x1851f2dc0",
+            "write": null
+          },
+          "pathSetter": {
+            "offset": 174,
+            "va": "0x1865e2a75",
+            "bytes": "e8 06 85 c0 fe",
+            "text": "call 0x1851eaf80",
+            "write": null
+          }
+        },
+        "allocated": false,
+        "null": false,
+        "refill": false,
+        "rawConstantBytes": 16,
+        "tailEncoding": "two-int32-and-pool-index",
+        "condition": "Initialized metadata, ordinary ABI and disjoint valid storage, normal compatible header/refill/advance/allocation/constructor/setter helpers. Cache/padding meaning, runtime selection and complete parent admission remain separate."
+      },
+      {
+        "selectedInstructions": [
+          6549285264,
+          6549285269,
+          6549285270,
+          6549285274,
+          6549285281,
+          6549285284,
+          6549285287,
+          6549285293,
+          6549285298,
+          6549285303,
+          6549285306,
+          6549285311,
+          6549285313,
+          6549285319,
+          6549285324,
+          6549285328,
+          6567266102,
+          6567266109,
+          6567266114,
+          6567266117,
+          6567266120,
+          6567266126,
+          6567266128,
+          6567266131,
+          6567266136,
+          6567266139,
+          6567266142,
+          6567266147,
+          6567266148,
+          6549285334,
+          6549285339,
+          6549285343,
+          6549285349,
+          6549285353,
+          6549285356,
+          6549285362,
+          6549285366,
+          6549285371,
+          6549285374,
+          6549285377,
+          6549285382,
+          6549285387,
+          6549285390,
+          6549285392,
+          6549285396,
+          6549285399,
+          6549285401,
+          6549285406,
+          6549285409,
+          6549285413,
+          6549285416,
+          6549285421,
+          6549285424,
+          6549285426,
+          6549285429,
+          6549285431,
+          6549285434,
+          6549285439,
+          6549285442,
+          6549285445,
+          6549285450,
+          6549285453,
+          6549285455,
+          6549285458,
+          6549285460,
+          6549285463,
+          6549285468,
+          6549285471,
+          6549285474,
+          6549285479,
+          6549285482,
+          6549285484,
+          6549285487,
+          6549285490,
+          6549285493,
+          6549285498,
+          6549285503,
+          6549285508,
+          6549285512,
+          6549285513
+        ],
+        "allocation": {
+          "offset": 0,
+          "va": "0x187708736",
+          "bytes": "48 8b 0d fb c2 f7 08",
+          "text": "mov rcx, [rip+0x8f7c2fb => 0x190684a38]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0x8f7c2fb => 0x190684a38]"
+          }
+        },
+        "calls": {
+          "header": {
+            "offset": 42,
+            "va": "0x1865e29ba",
+            "bytes": "e8 b1 d3 9f fe",
+            "text": "call 0x184fdfd70",
+            "write": null
+          },
+          "allocate": {
+            "offset": 7,
+            "va": "0x18770873d",
+            "bytes": "e8 ce d6 90 f8",
+            "text": "call 0x180015e10",
+            "write": null
+          },
+          "constructor": {
+            "offset": 29,
+            "va": "0x187708753",
+            "bytes": "e8 e8 f8 29 ff",
+            "text": "call 0x1869a8040",
+            "write": null
+          },
+          "barrier": {
+            "offset": 40,
+            "va": "0x18770875e",
+            "bytes": "e8 fd bb 9f f8",
+            "text": "call 0x180104360",
+            "write": null
+          },
+          "advance": {
+            "offset": 63,
+            "va": "0x1865e2a06",
+            "bytes": "e8 45 d4 9f fe",
+            "text": "call 0x184fdfe50",
+            "write": null
+          },
+          "integer": {
+            "offset": 126,
+            "va": "0x1865e2a45",
+            "bytes": "e8 06 cc 9f fe",
+            "text": "call 0x184fdf650",
+            "write": null
+          },
+          "idRefSetter": {
+            "offset": 115,
+            "va": "0x1865e2a3a",
+            "bytes": "e8 31 2a 25 01",
+            "text": "call 0x187835470",
+            "write": null
+          },
+          "paramSourceSetter": {
+            "offset": 144,
+            "va": "0x1865e2a57",
+            "bytes": "e8 9c 26 25 01",
+            "text": "call 0x1878350f8",
+            "write": null
+          },
+          "pool": {
+            "offset": 155,
+            "va": "0x1865e2a62",
+            "bytes": "e8 59 03 c1 fe",
+            "text": "call 0x1851f2dc0",
+            "write": null
+          },
+          "pathSetter": {
+            "offset": 174,
+            "va": "0x1865e2a75",
+            "bytes": "e8 06 85 c0 fe",
+            "text": "call 0x1851eaf80",
+            "write": null
+          }
+        },
+        "allocated": true,
+        "null": false,
+        "refill": false,
+        "rawConstantBytes": 16,
+        "tailEncoding": "two-int32-and-pool-index",
+        "condition": "Initialized metadata, ordinary ABI and disjoint valid storage, normal compatible header/refill/advance/allocation/constructor/setter helpers. Cache/padding meaning, runtime selection and complete parent admission remain separate."
+      },
+      {
+        "selectedInstructions": [
+          6549285264,
+          6549285269,
+          6549285270,
+          6549285274,
+          6549285281,
+          6549285284,
+          6549285287,
+          6549285293,
+          6549285298,
+          6549285303,
+          6549285306,
+          6549285311,
+          6549285313,
+          6567266231,
+          6567266234,
+          6567266241,
+          6567266246,
+          6567266247,
+          6549285503,
+          6549285508,
+          6549285512,
+          6549285513
+        ],
+        "allocation": null,
+        "calls": {
+          "header": {
+            "offset": 42,
+            "va": "0x1865e29ba",
+            "bytes": "e8 b1 d3 9f fe",
+            "text": "call 0x184fdfd70",
+            "write": null
+          },
+          "barrier": {
+            "offset": 10,
+            "va": "0x1877087c1",
+            "bytes": "e8 9a bb 9f f8",
+            "text": "call 0x180104360",
+            "write": null
+          }
+        },
+        "allocated": false,
+        "null": true,
+        "refill": false,
+        "rawConstantBytes": 16,
+        "tailEncoding": "two-int32-and-pool-index",
+        "condition": "Initialized metadata, ordinary ABI and disjoint valid storage, normal compatible header/refill/advance/allocation/constructor/setter helpers. Cache/padding meaning, runtime selection and complete parent admission remain separate."
+      },
+      {
+        "selectedInstructions": [
+          6549285264,
+          6549285269,
+          6549285270,
+          6549285274,
+          6549285281,
+          6549285284,
+          6549285287,
+          6549285293,
+          6549285298,
+          6549285303,
+          6549285306,
+          6549285311,
+          6549285313,
+          6549285319,
+          6549285324,
+          6549285328,
+          6549285334,
+          6549285339,
+          6549285343,
+          6549285349,
+          6549285353,
+          6549285356,
+          6567266153,
+          6567266156,
+          6567266161,
+          6567266164,
+          6567266169,
+          6567266170,
+          6549285362,
+          6549285366,
+          6549285371,
+          6549285374,
+          6549285377,
+          6549285382,
+          6549285387,
+          6549285390,
+          6549285392,
+          6549285396,
+          6549285399,
+          6549285401,
+          6549285406,
+          6549285409,
+          6549285413,
+          6549285416,
+          6549285421,
+          6549285424,
+          6549285426,
+          6549285429,
+          6549285431,
+          6549285434,
+          6549285439,
+          6549285442,
+          6549285445,
+          6549285450,
+          6549285453,
+          6549285455,
+          6549285458,
+          6549285460,
+          6549285463,
+          6549285468,
+          6549285471,
+          6549285474,
+          6549285479,
+          6549285482,
+          6549285484,
+          6549285487,
+          6549285490,
+          6549285493,
+          6549285498,
+          6549285503,
+          6549285508,
+          6549285512,
+          6549285513
+        ],
+        "allocation": null,
+        "calls": {
+          "header": {
+            "offset": 42,
+            "va": "0x1865e29ba",
+            "bytes": "e8 b1 d3 9f fe",
+            "text": "call 0x184fdfd70",
+            "write": null
+          },
+          "refill": {
+            "offset": 62,
+            "va": "0x187708774",
+            "bytes": "e8 37 ad 1b 05",
+            "text": "call 0x18c8c34b0",
+            "write": null
+          },
+          "advance": {
+            "offset": 63,
+            "va": "0x1865e2a06",
+            "bytes": "e8 45 d4 9f fe",
+            "text": "call 0x184fdfe50",
+            "write": null
+          },
+          "integer": {
+            "offset": 126,
+            "va": "0x1865e2a45",
+            "bytes": "e8 06 cc 9f fe",
+            "text": "call 0x184fdf650",
+            "write": null
+          },
+          "idRefSetter": {
+            "offset": 115,
+            "va": "0x1865e2a3a",
+            "bytes": "e8 31 2a 25 01",
+            "text": "call 0x187835470",
+            "write": null
+          },
+          "paramSourceSetter": {
+            "offset": 144,
+            "va": "0x1865e2a57",
+            "bytes": "e8 9c 26 25 01",
+            "text": "call 0x1878350f8",
+            "write": null
+          },
+          "pool": {
+            "offset": 155,
+            "va": "0x1865e2a62",
+            "bytes": "e8 59 03 c1 fe",
+            "text": "call 0x1851f2dc0",
+            "write": null
+          },
+          "pathSetter": {
+            "offset": 174,
+            "va": "0x1865e2a75",
+            "bytes": "e8 06 85 c0 fe",
+            "text": "call 0x1851eaf80",
+            "write": null
+          }
+        },
+        "allocated": false,
+        "null": false,
+        "refill": true,
+        "rawConstantBytes": 16,
+        "tailEncoding": "two-int32-and-pool-index",
+        "condition": "Initialized metadata, ordinary ABI and disjoint valid storage, normal compatible header/refill/advance/allocation/constructor/setter helpers. Cache/padding meaning, runtime selection and complete parent admission remain separate."
+      }
+    ],
+    "wrapperAllocation": {
+      "instructionRva": 124815158,
+      "instructionHex": "488B0DFBC2F708",
+      "usageCellRva": 275270200,
+      "usageRawHex": "F907032000000000",
+      "tag": 1,
+      "typeIndex": 99324,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+      "typeRawHex": "48C60000000000000000120000000000"
+    },
+    "parameterAllocation": {
+      "instructionRva": 110788690,
+      "instructionHex": "488B0D3FC9CD09",
+      "usageCellRva": 275270040,
+      "usageRawHex": "E5FA012000000000",
+      "tag": 1,
+      "typeIndex": 64882,
+      "typeName": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+      "typeRawHex": "D0C68C90010000000000150000000000"
+    },
+    "ownedMethods": {
+      ".ctor": {
+        "pointerRva": 110788672,
+        "windows": [
+          {
+            "startRva": 110788672,
+            "endRva": 110788771,
+            "sha256": "FBC4F5941E82E0B428F6C799FDDFCD720071A74E0B170FFABA8DBEA3C1EC885D"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x1869a8040",
+            "bytes": "40 53",
+            "text": "push rbx",
+            "write": null
+          },
+          {
+            "offset": 2,
+            "va": "0x1869a8042",
+            "bytes": "48 83 ec 20",
+            "text": "sub rsp, 0x20",
+            "write": {
+              "register": "rsp",
+              "value": "rsp sub 0x20"
+            }
+          },
+          {
+            "offset": 6,
+            "va": "0x1869a8046",
+            "bytes": "80 3d e8 36 d8 0a 00",
+            "text": "cmp [rip+0xad836e8 => 0x19172b735], 0x0",
+            "write": null
+          },
+          {
+            "offset": 13,
+            "va": "0x1869a804d",
+            "bytes": "48 8b d9",
+            "text": "mov rbx, rcx",
+            "write": {
+              "register": "rbx",
+              "value": "rcx"
+            }
+          },
+          {
+            "offset": 16,
+            "va": "0x1869a8050",
+            "bytes": "74 2a",
+            "text": "je 0x1869a807c",
+            "write": null
+          },
+          {
+            "offset": 18,
+            "va": "0x1869a8052",
+            "bytes": "48 8b 0d 3f c9 cd 09",
+            "text": "mov rcx, [rip+0x9cdc93f => 0x190684998]",
+            "write": {
+              "register": "rcx",
+              "value": "[rip+0x9cdc93f => 0x190684998]"
+            }
+          },
+          {
+            "offset": 25,
+            "va": "0x1869a8059",
+            "bytes": "e8 b2 dd 66 f9",
+            "text": "call 0x180015e10",
+            "write": null
+          },
+          {
+            "offset": 30,
+            "va": "0x1869a805e",
+            "bytes": "48 85 c0",
+            "text": "test rax, rax",
+            "write": null
+          },
+          {
+            "offset": 33,
+            "va": "0x1869a8061",
+            "bytes": "74 3a",
+            "text": "je 0x1869a809d",
+            "write": null
+          },
+          {
+            "offset": 35,
+            "va": "0x1869a8063",
+            "bytes": "c7 40 30 ff ff ff ff",
+            "text": "mov [rax+0x30], 0xffffffff",
+            "write": null,
+            "operandWidth": 32
+          },
+          {
+            "offset": 42,
+            "va": "0x1869a806a",
+            "bytes": "48 8d 4b 10",
+            "text": "lea rcx, [rbx+0x10]",
+            "write": {
+              "register": "rcx",
+              "value": "&[rbx+0x10]"
+            }
+          },
+          {
+            "offset": 46,
+            "va": "0x1869a806e",
+            "bytes": "48 89 43 10",
+            "text": "mov [rbx+0x10], rax",
+            "write": null
+          },
+          {
+            "offset": 50,
+            "va": "0x1869a8072",
+            "bytes": "48 83 c4 20",
+            "text": "add rsp, 0x20",
+            "write": {
+              "register": "rsp",
+              "value": "rsp add 0x20"
+            }
+          },
+          {
+            "offset": 54,
+            "va": "0x1869a8076",
+            "bytes": "5b",
+            "text": "pop rbx",
+            "write": {
+              "register": "rbx",
+              "value": "pop(rbx)"
+            }
+          },
+          {
+            "offset": 55,
+            "va": "0x1869a8077",
+            "bytes": "e9 e4 c2 75 f9",
+            "text": "jmp 0x180104360",
+            "write": null
+          },
+          {
+            "offset": 60,
+            "va": "0x1869a807c",
+            "bytes": "48 8d 0d 9d ca cd 09",
+            "text": "lea rcx, [rip+0x9cdca9d => 0x190684b20]",
+            "write": {
+              "register": "rcx",
+              "value": "&[rip+0x9cdca9d => 0x190684b20]"
+            }
+          },
+          {
+            "offset": 67,
+            "va": "0x1869a8083",
+            "bytes": "e8 18 94 69 f9",
+            "text": "call 0x1800414a0",
+            "write": null
+          },
+          {
+            "offset": 72,
+            "va": "0x1869a8088",
+            "bytes": "48 8d 0d 09 c9 cd 09",
+            "text": "lea rcx, [rip+0x9cdc909 => 0x190684998]",
+            "write": {
+              "register": "rcx",
+              "value": "&[rip+0x9cdc909 => 0x190684998]"
+            }
+          },
+          {
+            "offset": 79,
+            "va": "0x1869a808f",
+            "bytes": "e8 0c 94 69 f9",
+            "text": "call 0x1800414a0",
+            "write": null
+          },
+          {
+            "offset": 84,
+            "va": "0x1869a8094",
+            "bytes": "c6 05 9a 36 d8 0a 01",
+            "text": "mov [rip+0xad8369a => 0x19172b735], 0x1",
+            "write": null,
+            "operandWidth": 8
+          },
+          {
+            "offset": 91,
+            "va": "0x1869a809b",
+            "bytes": "eb b5",
+            "text": "jmp 0x1869a8052",
+            "write": null
+          },
+          {
+            "offset": 93,
+            "va": "0x1869a809d",
+            "bytes": "e8 9e 68 73 f9",
+            "text": "call 0x1800de940",
+            "write": null
+          },
+          {
+            "offset": 98,
+            "va": "0x1869a80a2",
+            "bytes": "cc",
+            "text": "int3",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            110788672,
+            "4053"
+          ],
+          [
+            110788674,
+            "4883EC20"
+          ],
+          [
+            110788678,
+            "803DE836D80A00"
+          ],
+          [
+            110788685,
+            "488BD9"
+          ],
+          [
+            110788688,
+            "742A"
+          ],
+          [
+            110788690,
+            "488B0D3FC9CD09"
+          ],
+          [
+            110788697,
+            "E8B2DD66F9"
+          ],
+          [
+            110788702,
+            "4885C0"
+          ],
+          [
+            110788705,
+            "743A"
+          ],
+          [
+            110788707,
+            "C74030FFFFFFFF"
+          ],
+          [
+            110788714,
+            "488D4B10"
+          ],
+          [
+            110788718,
+            "48894310"
+          ],
+          [
+            110788722,
+            "4883C420"
+          ],
+          [
+            110788726,
+            "5B"
+          ],
+          [
+            110788727,
+            "E9E4C275F9"
+          ],
+          [
+            110788732,
+            "488D0D9DCACD09"
+          ],
+          [
+            110788739,
+            "E8189469F9"
+          ],
+          [
+            110788744,
+            "488D0D09C9CD09"
+          ],
+          [
+            110788751,
+            "E80C9469F9"
+          ],
+          [
+            110788756,
+            "C6059A36D80A01"
+          ],
+          [
+            110788763,
+            "EBB5"
+          ],
+          [
+            110788765,
+            "E89E6873F9"
+          ],
+          [
+            110788770,
+            "CC"
+          ]
+        ]
+      },
+      "CreateInstance": {
+        "pointerRva": 206099256,
+        "windows": [
+          {
+            "startRva": 206099256,
+            "endRva": 206099353,
+            "sha256": "F30C7131B853C6F2856C229B0C40B4E7A269432853111854F2A42A30CC23CCA1"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x18c48d338",
+            "bytes": "40 53",
+            "text": "push rbx",
+            "write": null
+          },
+          {
+            "offset": 2,
+            "va": "0x18c48d33a",
+            "bytes": "48 83 ec 20",
+            "text": "sub rsp, 0x20",
+            "write": {
+              "register": "rsp",
+              "value": "rsp sub 0x20"
+            }
+          },
+          {
+            "offset": 6,
+            "va": "0x18c48d33e",
+            "bytes": "80 3d 5b bc 2c 05 00",
+            "text": "cmp [rip+0x52cbc5b => 0x191758fa0], 0x0",
+            "write": null
+          },
+          {
+            "offset": 13,
+            "va": "0x18c48d345",
+            "bytes": "48 8b d9",
+            "text": "mov rbx, rcx",
+            "write": {
+              "register": "rbx",
+              "value": "rcx"
+            }
+          },
+          {
+            "offset": 16,
+            "va": "0x18c48d348",
+            "bytes": "75 1f",
+            "text": "jne 0x18c48d369",
+            "write": null
+          },
+          {
+            "offset": 18,
+            "va": "0x18c48d34a",
+            "bytes": "48 8d 0d cf 77 1f 04",
+            "text": "lea rcx, [rip+0x41f77cf => 0x190684b20]",
+            "write": {
+              "register": "rcx",
+              "value": "&[rip+0x41f77cf => 0x190684b20]"
+            }
+          },
+          {
+            "offset": 25,
+            "va": "0x18c48d351",
+            "bytes": "e8 4a 41 bb f3",
+            "text": "call 0x1800414a0",
+            "write": null
+          },
+          {
+            "offset": 30,
+            "va": "0x18c48d356",
+            "bytes": "48 8d 0d 3b 76 1f 04",
+            "text": "lea rcx, [rip+0x41f763b => 0x190684998]",
+            "write": {
+              "register": "rcx",
+              "value": "&[rip+0x41f763b => 0x190684998]"
+            }
+          },
+          {
+            "offset": 37,
+            "va": "0x18c48d35d",
+            "bytes": "e8 3e 41 bb f3",
+            "text": "call 0x1800414a0",
+            "write": null
+          },
+          {
+            "offset": 42,
+            "va": "0x18c48d362",
+            "bytes": "c6 05 37 bc 2c 05 01",
+            "text": "mov [rip+0x52cbc37 => 0x191758fa0], 0x1",
+            "write": null,
+            "operandWidth": 8
+          },
+          {
+            "offset": 49,
+            "va": "0x18c48d369",
+            "bytes": "48 8b 0d 28 76 1f 04",
+            "text": "mov rcx, [rip+0x41f7628 => 0x190684998]",
+            "write": {
+              "register": "rcx",
+              "value": "[rip+0x41f7628 => 0x190684998]"
+            }
+          },
+          {
+            "offset": 56,
+            "va": "0x18c48d370",
+            "bytes": "e8 9b 8a b8 f3",
+            "text": "call 0x180015e10",
+            "write": null
+          },
+          {
+            "offset": 61,
+            "va": "0x18c48d375",
+            "bytes": "48 85 c0",
+            "text": "test rax, rax",
+            "write": null
+          },
+          {
+            "offset": 64,
+            "va": "0x18c48d378",
+            "bytes": "75 06",
+            "text": "jne 0x18c48d380",
+            "write": null
+          },
+          {
+            "offset": 66,
+            "va": "0x18c48d37a",
+            "bytes": "e8 c1 15 c5 f3",
+            "text": "call 0x1800de940",
+            "write": null
+          },
+          {
+            "offset": 71,
+            "va": "0x18c48d37f",
+            "bytes": "cc",
+            "text": "int3",
+            "write": null
+          },
+          {
+            "offset": 72,
+            "va": "0x18c48d380",
+            "bytes": "c7 40 30 ff ff ff ff",
+            "text": "mov [rax+0x30], 0xffffffff",
+            "write": null,
+            "operandWidth": 32
+          },
+          {
+            "offset": 79,
+            "va": "0x18c48d387",
+            "bytes": "48 8d 4b 10",
+            "text": "lea rcx, [rbx+0x10]",
+            "write": {
+              "register": "rcx",
+              "value": "&[rbx+0x10]"
+            }
+          },
+          {
+            "offset": 83,
+            "va": "0x18c48d38b",
+            "bytes": "48 89 43 10",
+            "text": "mov [rbx+0x10], rax",
+            "write": null
+          },
+          {
+            "offset": 87,
+            "va": "0x18c48d38f",
+            "bytes": "48 83 c4 20",
+            "text": "add rsp, 0x20",
+            "write": {
+              "register": "rsp",
+              "value": "rsp add 0x20"
+            }
+          },
+          {
+            "offset": 91,
+            "va": "0x18c48d393",
+            "bytes": "5b",
+            "text": "pop rbx",
+            "write": {
+              "register": "rbx",
+              "value": "pop(rbx)"
+            }
+          },
+          {
+            "offset": 92,
+            "va": "0x18c48d394",
+            "bytes": "e9 c7 6f c7 f3",
+            "text": "jmp 0x180104360",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            206099256,
+            "4053"
+          ],
+          [
+            206099258,
+            "4883EC20"
+          ],
+          [
+            206099262,
+            "803D5BBC2C0500"
+          ],
+          [
+            206099269,
+            "488BD9"
+          ],
+          [
+            206099272,
+            "751F"
+          ],
+          [
+            206099274,
+            "488D0DCF771F04"
+          ],
+          [
+            206099281,
+            "E84A41BBF3"
+          ],
+          [
+            206099286,
+            "488D0D3B761F04"
+          ],
+          [
+            206099293,
+            "E83E41BBF3"
+          ],
+          [
+            206099298,
+            "C60537BC2C0501"
+          ],
+          [
+            206099305,
+            "488B0D28761F04"
+          ],
+          [
+            206099312,
+            "E89B8AB8F3"
+          ],
+          [
+            206099317,
+            "4885C0"
+          ],
+          [
+            206099320,
+            "7506"
+          ],
+          [
+            206099322,
+            "E8C115C5F3"
+          ],
+          [
+            206099327,
+            "CC"
+          ],
+          [
+            206099328,
+            "C74030FFFFFFFF"
+          ],
+          [
+            206099335,
+            "488D4B10"
+          ],
+          [
+            206099339,
+            "48894310"
+          ],
+          [
+            206099343,
+            "4883C420"
+          ],
+          [
+            206099347,
+            "5B"
+          ],
+          [
+            206099348,
+            "E9C76FC7F3"
+          ]
+        ]
+      },
+      "GetValue": {
+        "pointerRva": 43147504,
+        "windows": [
+          {
+            "startRva": 43147504,
+            "endRva": 43147509,
+            "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x1829260f0",
+            "bytes": "48 8b 41 10",
+            "text": "mov rax, [rcx+0x10]",
+            "write": {
+              "register": "rax",
+              "value": "[rcx+0x10]"
+            }
+          },
+          {
+            "offset": 4,
+            "va": "0x1829260f4",
+            "bytes": "c3",
+            "text": "ret",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            43147504,
+            "488B4110"
+          ],
+          [
+            43147508,
+            "C3"
+          ]
+        ]
+      },
+      "set___constValue__": {
+        "pointerRva": 126070608,
+        "windows": [
+          {
+            "startRva": 126070608,
+            "endRva": 126070639,
+            "sha256": "2BABC5C889261F9E755748FC9B43F85A5D3C817C0C58DC7D2604273461C5F0A1"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x18783af50",
+            "bytes": "48 83 ec 28",
+            "text": "sub rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp sub 0x28"
+            }
+          },
+          {
+            "offset": 4,
+            "va": "0x18783af54",
+            "bytes": "48 8b 41 10",
+            "text": "mov rax, [rcx+0x10]",
+            "write": {
+              "register": "rax",
+              "value": "[rcx+0x10]"
+            }
+          },
+          {
+            "offset": 8,
+            "va": "0x18783af58",
+            "bytes": "48 85 c0",
+            "text": "test rax, rax",
+            "write": null
+          },
+          {
+            "offset": 11,
+            "va": "0x18783af5b",
+            "bytes": "75 06",
+            "text": "jne 0x18783af63",
+            "write": null
+          },
+          {
+            "offset": 13,
+            "va": "0x18783af5d",
+            "bytes": "e8 de 39 8a f8",
+            "text": "call 0x1800de940",
+            "write": null
+          },
+          {
+            "offset": 18,
+            "va": "0x18783af62",
+            "bytes": "cc",
+            "text": "int3",
+            "write": null
+          },
+          {
+            "offset": 19,
+            "va": "0x18783af63",
+            "bytes": "0f 10 02",
+            "text": "movups xmm0, [rdx]",
+            "write": {
+              "register": "xmm0",
+              "value": "[rdx]"
+            }
+          },
+          {
+            "offset": 22,
+            "va": "0x18783af66",
+            "bytes": "0f 11 40 20",
+            "text": "movups [rax+0x20], xmm0",
+            "write": null
+          },
+          {
+            "offset": 26,
+            "va": "0x18783af6a",
+            "bytes": "48 83 c4 28",
+            "text": "add rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp add 0x28"
+            }
+          },
+          {
+            "offset": 30,
+            "va": "0x18783af6e",
+            "bytes": "c3",
+            "text": "ret",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            126070608,
+            "4883EC28"
+          ],
+          [
+            126070612,
+            "488B4110"
+          ],
+          [
+            126070616,
+            "4885C0"
+          ],
+          [
+            126070619,
+            "7506"
+          ],
+          [
+            126070621,
+            "E8DE398AF8"
+          ],
+          [
+            126070626,
+            "CC"
+          ],
+          [
+            126070627,
+            "0F1002"
+          ],
+          [
+            126070630,
+            "0F114020"
+          ],
+          [
+            126070634,
+            "4883C428"
+          ],
+          [
+            126070638,
+            "C3"
+          ]
+        ]
+      },
+      "set___idRef__": {
+        "pointerRva": 126047344,
+        "windows": [
+          {
+            "startRva": 126047344,
+            "endRva": 126047371,
+            "sha256": "734A56FCA28224ACB02A22B3B407CC6537C2ACB0E041C34376756C3DFF9F0799"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x187835470",
+            "bytes": "48 83 ec 28",
+            "text": "sub rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp sub 0x28"
+            }
+          },
+          {
+            "offset": 4,
+            "va": "0x187835474",
+            "bytes": "48 8b 41 10",
+            "text": "mov rax, [rcx+0x10]",
+            "write": {
+              "register": "rax",
+              "value": "[rcx+0x10]"
+            }
+          },
+          {
+            "offset": 8,
+            "va": "0x187835478",
+            "bytes": "48 85 c0",
+            "text": "test rax, rax",
+            "write": null
+          },
+          {
+            "offset": 11,
+            "va": "0x18783547b",
+            "bytes": "75 06",
+            "text": "jne 0x187835483",
+            "write": null
+          },
+          {
+            "offset": 13,
+            "va": "0x18783547d",
+            "bytes": "e8 be 94 8a f8",
+            "text": "call 0x1800de940",
+            "write": null
+          },
+          {
+            "offset": 18,
+            "va": "0x187835482",
+            "bytes": "cc",
+            "text": "int3",
+            "write": null
+          },
+          {
+            "offset": 19,
+            "va": "0x187835483",
+            "bytes": "89 50 30",
+            "text": "mov [rax+0x30], edx",
+            "write": null
+          },
+          {
+            "offset": 22,
+            "va": "0x187835486",
+            "bytes": "48 83 c4 28",
+            "text": "add rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp add 0x28"
+            }
+          },
+          {
+            "offset": 26,
+            "va": "0x18783548a",
+            "bytes": "c3",
+            "text": "ret",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            126047344,
+            "4883EC28"
+          ],
+          [
+            126047348,
+            "488B4110"
+          ],
+          [
+            126047352,
+            "4885C0"
+          ],
+          [
+            126047355,
+            "7506"
+          ],
+          [
+            126047357,
+            "E8BE948AF8"
+          ],
+          [
+            126047362,
+            "CC"
+          ],
+          [
+            126047363,
+            "895030"
+          ],
+          [
+            126047366,
+            "4883C428"
+          ],
+          [
+            126047370,
+            "C3"
+          ]
+        ]
+      },
+      "set___paramSource__": {
+        "pointerRva": 126046456,
+        "windows": [
+          {
+            "startRva": 126046456,
+            "endRva": 126046483,
+            "sha256": "DC6B41838B5D15D97654EEA8C298225F58B42B73007367EDC36F11CDF19F0932"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x1878350f8",
+            "bytes": "48 83 ec 28",
+            "text": "sub rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp sub 0x28"
+            }
+          },
+          {
+            "offset": 4,
+            "va": "0x1878350fc",
+            "bytes": "48 8b 41 10",
+            "text": "mov rax, [rcx+0x10]",
+            "write": {
+              "register": "rax",
+              "value": "[rcx+0x10]"
+            }
+          },
+          {
+            "offset": 8,
+            "va": "0x187835100",
+            "bytes": "48 85 c0",
+            "text": "test rax, rax",
+            "write": null
+          },
+          {
+            "offset": 11,
+            "va": "0x187835103",
+            "bytes": "75 06",
+            "text": "jne 0x18783510b",
+            "write": null
+          },
+          {
+            "offset": 13,
+            "va": "0x187835105",
+            "bytes": "e8 36 98 8a f8",
+            "text": "call 0x1800de940",
+            "write": null
+          },
+          {
+            "offset": 18,
+            "va": "0x18783510a",
+            "bytes": "cc",
+            "text": "int3",
+            "write": null
+          },
+          {
+            "offset": 19,
+            "va": "0x18783510b",
+            "bytes": "89 50 10",
+            "text": "mov [rax+0x10], edx",
+            "write": null
+          },
+          {
+            "offset": 22,
+            "va": "0x18783510e",
+            "bytes": "48 83 c4 28",
+            "text": "add rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp add 0x28"
+            }
+          },
+          {
+            "offset": 26,
+            "va": "0x187835112",
+            "bytes": "c3",
+            "text": "ret",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            126046456,
+            "4883EC28"
+          ],
+          [
+            126046460,
+            "488B4110"
+          ],
+          [
+            126046464,
+            "4885C0"
+          ],
+          [
+            126046467,
+            "7506"
+          ],
+          [
+            126046469,
+            "E836988AF8"
+          ],
+          [
+            126046474,
+            "CC"
+          ],
+          [
+            126046475,
+            "895010"
+          ],
+          [
+            126046478,
+            "4883C428"
+          ],
+          [
+            126046482,
+            "C3"
+          ]
+        ]
+      },
+      "set___path__": {
+        "pointerRva": 85897088,
+        "windows": [
+          {
+            "startRva": 85897088,
+            "endRva": 85897124,
+            "sha256": "CE85982081BE3B661C6213E5F4306CF41CD2C51D86F020418D02E97689C6B43C"
+          }
+        ],
+        "rows": [
+          {
+            "offset": 0,
+            "va": "0x1851eaf80",
+            "bytes": "48 83 ec 28",
+            "text": "sub rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp sub 0x28"
+            }
+          },
+          {
+            "offset": 4,
+            "va": "0x1851eaf84",
+            "bytes": "48 8b 49 10",
+            "text": "mov rcx, [rcx+0x10]",
+            "write": {
+              "register": "rcx",
+              "value": "[rcx+0x10]"
+            }
+          },
+          {
+            "offset": 8,
+            "va": "0x1851eaf88",
+            "bytes": "48 85 c9",
+            "text": "test rcx, rcx",
+            "write": null
+          },
+          {
+            "offset": 11,
+            "va": "0x1851eaf8b",
+            "bytes": "74 11",
+            "text": "je 0x1851eaf9e",
+            "write": null
+          },
+          {
+            "offset": 13,
+            "va": "0x1851eaf8d",
+            "bytes": "48 89 51 18",
+            "text": "mov [rcx+0x18], rdx",
+            "write": null
+          },
+          {
+            "offset": 17,
+            "va": "0x1851eaf91",
+            "bytes": "48 83 c1 18",
+            "text": "add rcx, 0x18",
+            "write": {
+              "register": "rcx",
+              "value": "rcx add 0x18"
+            }
+          },
+          {
+            "offset": 21,
+            "va": "0x1851eaf95",
+            "bytes": "48 83 c4 28",
+            "text": "add rsp, 0x28",
+            "write": {
+              "register": "rsp",
+              "value": "rsp add 0x28"
+            }
+          },
+          {
+            "offset": 25,
+            "va": "0x1851eaf99",
+            "bytes": "e9 c2 93 f1 fa",
+            "text": "jmp 0x180104360",
+            "write": null
+          },
+          {
+            "offset": 30,
+            "va": "0x1851eaf9e",
+            "bytes": "e8 9d 39 ef fa",
+            "text": "call 0x1800de940",
+            "write": null
+          },
+          {
+            "offset": 35,
+            "va": "0x1851eafa3",
+            "bytes": "cc",
+            "text": "int3",
+            "write": null
+          }
+        ],
+        "instructions": [
+          [
+            85897088,
+            "4883EC28"
+          ],
+          [
+            85897092,
+            "488B4910"
+          ],
+          [
+            85897096,
+            "4885C9"
+          ],
+          [
+            85897099,
+            "7411"
+          ],
+          [
+            85897101,
+            "48895118"
+          ],
+          [
+            85897105,
+            "4883C118"
+          ],
+          [
+            85897109,
+            "4883C428"
+          ],
+          [
+            85897113,
+            "E9C293F1FA"
+          ],
+          [
+            85897118,
+            "E89D39EFFA"
+          ],
+          [
+            85897123,
+            "CC"
+          ]
+        ]
+      }
+    },
+    "integerSource": {
+      "pointerRva": 83752528,
+      "windows": [
+        {
+          "startRva": 83752528,
+          "endRva": 83752608,
+          "sha256": "C1D63B45B187409C02CE9DC3291CDDC2ED578D0B4080B37C62CD3333DC5B4A6B"
+        },
+        {
+          "startRva": 121754666,
+          "endRva": 121754711,
+          "sha256": "2D19BEA05EDD9F9748353642EF95B20B31076342043B770F1712392128A87AA9"
+        }
+      ],
+      "rows": [
+        {
+          "offset": 0,
+          "va": "0x184fdf650",
+          "bytes": "48 89 5c 24 08",
+          "text": "mov [rsp+0x8], rbx",
+          "write": null
+        },
+        {
+          "offset": 5,
+          "va": "0x184fdf655",
+          "bytes": "48 89 74 24 10",
+          "text": "mov [rsp+0x10], rsi",
+          "write": null
+        },
+        {
+          "offset": 10,
+          "va": "0x184fdf65a",
+          "bytes": "57",
+          "text": "push rdi",
+          "write": null
+        },
+        {
+          "offset": 11,
+          "va": "0x184fdf65b",
+          "bytes": "48 83 ec 20",
+          "text": "sub rsp, 0x20",
+          "write": {
+            "register": "rsp",
+            "value": "rsp sub 0x20"
+          }
+        },
+        {
+          "offset": 15,
+          "va": "0x184fdf65f",
+          "bytes": "83 79 30 04",
+          "text": "cmp [rcx+0x30], 0x4",
+          "write": null
+        },
+        {
+          "offset": 19,
+          "va": "0x184fdf663",
+          "bytes": "48 8b d9",
+          "text": "mov rbx, rcx",
+          "write": {
+            "register": "rbx",
+            "value": "rcx"
+          }
+        },
+        {
+          "offset": 22,
+          "va": "0x184fdf666",
+          "bytes": "0f 8c be dd 43 02",
+          "text": "jcc 0x18741d42a",
+          "write": null
+        },
+        {
+          "offset": 28,
+          "va": "0x184fdf66c",
+          "bytes": "48 8b 43 50",
+          "text": "mov rax, [rbx+0x50]",
+          "write": {
+            "register": "rax",
+            "value": "[rbx+0x50]"
+          }
+        },
+        {
+          "offset": 32,
+          "va": "0x184fdf670",
+          "bytes": "8b 30",
+          "text": "mov esi, [rax]",
+          "write": {
+            "register": "esi",
+            "value": "[rax]"
+          }
+        },
+        {
+          "offset": 34,
+          "va": "0x184fdf672",
+          "bytes": "8b 7b 30",
+          "text": "mov edi, [rbx+0x30]",
+          "write": {
+            "register": "edi",
+            "value": "[rbx+0x30]"
+          }
+        },
+        {
+          "offset": 37,
+          "va": "0x184fdf675",
+          "bytes": "83 c7 fc",
+          "text": "add edi, -0x4",
+          "write": {
+            "register": "edi",
+            "value": "edi add -0x4"
+          }
+        },
+        {
+          "offset": 40,
+          "va": "0x184fdf678",
+          "bytes": "0f 88 bf dd 43 02",
+          "text": "jcc 0x18741d43d",
+          "write": null
+        },
+        {
+          "offset": 46,
+          "va": "0x184fdf67e",
+          "bytes": "48 83 43 50 04",
+          "text": "add [rbx+0x50], 0x4",
+          "write": null
+        },
+        {
+          "offset": 51,
+          "va": "0x184fdf683",
+          "bytes": "83 43 40 04",
+          "text": "add [rbx+0x40], 0x4",
+          "write": null
+        },
+        {
+          "offset": 55,
+          "va": "0x184fdf687",
+          "bytes": "83 43 44 04",
+          "text": "add [rbx+0x44], 0x4",
+          "write": null
+        },
+        {
+          "offset": 59,
+          "va": "0x184fdf68b",
+          "bytes": "89 7b 30",
+          "text": "mov [rbx+0x30], edi",
+          "write": null
+        },
+        {
+          "offset": 62,
+          "va": "0x184fdf68e",
+          "bytes": "48 8b 5c 24 30",
+          "text": "mov rbx, [rsp+0x30]",
+          "write": {
+            "register": "rbx",
+            "value": "[rsp+0x30]"
+          }
+        },
+        {
+          "offset": 67,
+          "va": "0x184fdf693",
+          "bytes": "8b c6",
+          "text": "mov eax, esi",
+          "write": {
+            "register": "eax",
+            "value": "esi"
+          }
+        },
+        {
+          "offset": 69,
+          "va": "0x184fdf695",
+          "bytes": "48 8b 74 24 38",
+          "text": "mov rsi, [rsp+0x38]",
+          "write": {
+            "register": "rsi",
+            "value": "[rsp+0x38]"
+          }
+        },
+        {
+          "offset": 74,
+          "va": "0x184fdf69a",
+          "bytes": "48 83 c4 20",
+          "text": "add rsp, 0x20",
+          "write": {
+            "register": "rsp",
+            "value": "rsp add 0x20"
+          }
+        },
+        {
+          "offset": 78,
+          "va": "0x184fdf69e",
+          "bytes": "5f",
+          "text": "pop rdi",
+          "write": {
+            "register": "rdi",
+            "value": "pop(rdi)"
+          }
+        },
+        {
+          "offset": 79,
+          "va": "0x184fdf69f",
+          "bytes": "c3",
+          "text": "ret",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x18741d42a",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 3,
+          "va": "0x18741d42d",
+          "bytes": "ba 04 00 00 00",
+          "text": "mov edx, 0x4",
+          "write": {
+            "register": "edx",
+            "value": "0x4"
+          }
+        },
+        {
+          "offset": 8,
+          "va": "0x18741d432",
+          "bytes": "e8 79 60 4a 05",
+          "text": "call 0x18c8c34b0",
+          "write": null
+        },
+        {
+          "offset": 13,
+          "va": "0x18741d437",
+          "bytes": "90",
+          "text": "nop",
+          "write": null
+        },
+        {
+          "offset": 14,
+          "va": "0x18741d438",
+          "bytes": "e9 2f 22 bc fd",
+          "text": "jmp 0x184fdf66c",
+          "write": null
+        },
+        {
+          "offset": 19,
+          "va": "0x18741d43d",
+          "bytes": "ba 04 00 00 00",
+          "text": "mov edx, 0x4",
+          "write": {
+            "register": "edx",
+            "value": "0x4"
+          }
+        },
+        {
+          "offset": 24,
+          "va": "0x18741d442",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 27,
+          "va": "0x18741d445",
+          "bytes": "e8 ea 09 69 01",
+          "text": "call 0x188aade34",
+          "write": null
+        },
+        {
+          "offset": 32,
+          "va": "0x18741d44a",
+          "bytes": "84 c0",
+          "text": "test al, al",
+          "write": null
+        },
+        {
+          "offset": 34,
+          "va": "0x18741d44c",
+          "bytes": "0f 85 3c 22 bc fd",
+          "text": "jcc 0x184fdf68e",
+          "write": null
+        },
+        {
+          "offset": 40,
+          "va": "0x18741d452",
+          "bytes": "e9 27 22 bc fd",
+          "text": "jmp 0x184fdf67e",
+          "write": null
+        }
+      ],
+      "instructions": [
+        [
+          83752528,
+          "48895C2408"
+        ],
+        [
+          83752533,
+          "4889742410"
+        ],
+        [
+          83752538,
+          "57"
+        ],
+        [
+          83752539,
+          "4883EC20"
+        ],
+        [
+          83752543,
+          "83793004"
+        ],
+        [
+          83752547,
+          "488BD9"
+        ],
+        [
+          83752550,
+          "0F8CBEDD4302"
+        ],
+        [
+          83752556,
+          "488B4350"
+        ],
+        [
+          83752560,
+          "8B30"
+        ],
+        [
+          83752562,
+          "8B7B30"
+        ],
+        [
+          83752565,
+          "83C7FC"
+        ],
+        [
+          83752568,
+          "0F88BFDD4302"
+        ],
+        [
+          83752574,
+          "4883435004"
+        ],
+        [
+          83752579,
+          "83434004"
+        ],
+        [
+          83752583,
+          "83434404"
+        ],
+        [
+          83752587,
+          "897B30"
+        ],
+        [
+          83752590,
+          "488B5C2430"
+        ],
+        [
+          83752595,
+          "8BC6"
+        ],
+        [
+          83752597,
+          "488B742438"
+        ],
+        [
+          83752602,
+          "4883C420"
+        ],
+        [
+          83752606,
+          "5F"
+        ],
+        [
+          83752607,
+          "C3"
+        ],
+        [
+          121754666,
+          "4533C0"
+        ],
+        [
+          121754669,
+          "BA04000000"
+        ],
+        [
+          121754674,
+          "E879604A05"
+        ],
+        [
+          121754679,
+          "90"
+        ],
+        [
+          121754680,
+          "E92F22BCFD"
+        ],
+        [
+          121754685,
+          "BA04000000"
+        ],
+        [
+          121754690,
+          "488BCB"
+        ],
+        [
+          121754693,
+          "E8EA096901"
+        ],
+        [
+          121754698,
+          "84C0"
+        ],
+        [
+          121754700,
+          "0F853C22BCFD"
+        ],
+        [
+          121754706,
+          "E92722BCFD"
+        ]
+      ]
+    },
+    "advanceSource": {
+      "pointerRva": 83754576,
+      "window": {
+        "startRva": 83754576,
+        "endRva": 83754641,
+        "sha256": "798871A4E95E154AB0AAC0B29AA0682DFCFC6473976E7270D5C74FAAA3532ABA"
+      },
+      "fragmentWindows": [
+        {
+          "startRva": 83754596,
+          "endRva": 83754640,
+          "sha256": "D108697763A7CCE8BB7D1EBC367F2515321CFF391C7B7152AF651B86BF079111"
+        },
+        {
+          "startRva": 83754640,
+          "endRva": 83754641,
+          "sha256": "AE3F4619B0413D70D3004B9131C3752153074E45725BE13B9A148978895E359E"
+        },
+        {
+          "startRva": 120410922,
+          "endRva": 120410942,
+          "sha256": "16FBBADC19B00C2EB14CE33A7D3DDBFDEF95EFE35C0ED7D5DF9D234193733FBC"
+        }
+      ],
+      "instructions": [
+        [
+          83754576,
+          "85D2"
+        ],
+        [
+          83754578,
+          "743C"
+        ],
+        [
+          83754580,
+          "48895C2410"
+        ],
+        [
+          83754585,
+          "57"
+        ],
+        [
+          83754586,
+          "4883EC20"
+        ],
+        [
+          83754590,
+          "4863FA"
+        ],
+        [
+          83754593,
+          "488BD9"
+        ],
+        [
+          83754596,
+          "4889742430"
+        ],
+        [
+          83754601,
+          "8B7130"
+        ],
+        [
+          83754604,
+          "2BF7"
+        ],
+        [
+          83754606,
+          "0F88B6542F02"
+        ],
+        [
+          83754612,
+          "48017B50"
+        ],
+        [
+          83754616,
+          "017B40"
+        ],
+        [
+          83754619,
+          "017B44"
+        ],
+        [
+          83754622,
+          "897330"
+        ],
+        [
+          83754625,
+          "488B742430"
+        ],
+        [
+          83754630,
+          "488B5C2438"
+        ],
+        [
+          83754635,
+          "4883C420"
+        ],
+        [
+          83754639,
+          "5F"
+        ],
+        [
+          83754640,
+          "C3"
+        ]
+      ]
+    },
+    "headerSource": {
+      "pointerRva": 83754352,
+      "windows": [
+        {
+          "startRva": 83754352,
+          "endRva": 83754439,
+          "sha256": "F5D54185CAD8DFD22FDB3C92312594556C9ADB3126526D28898ECD14CC96159E"
+        },
+        {
+          "startRva": 120410862,
+          "endRva": 120410907,
+          "sha256": "ABFE56BA791497AF8176F8B0188567201629E2F468137ACA102AE2980BD50CF9"
+        }
+      ],
+      "rows": [
+        {
+          "offset": 0,
+          "va": "0x184fdfd70",
+          "bytes": "48 89 5c 24 08",
+          "text": "mov [rsp+0x8], rbx",
+          "write": null
+        },
+        {
+          "offset": 5,
+          "va": "0x184fdfd75",
+          "bytes": "48 89 74 24 10",
+          "text": "mov [rsp+0x10], rsi",
+          "write": null
+        },
+        {
+          "offset": 10,
+          "va": "0x184fdfd7a",
+          "bytes": "57",
+          "text": "push rdi",
+          "write": null
+        },
+        {
+          "offset": 11,
+          "va": "0x184fdfd7b",
+          "bytes": "48 83 ec 20",
+          "text": "sub rsp, 0x20",
+          "write": {
+            "register": "rsp",
+            "value": "rsp sub 0x20"
+          }
+        },
+        {
+          "offset": 15,
+          "va": "0x184fdfd7f",
+          "bytes": "83 79 30 01",
+          "text": "cmp [rcx+0x30], 0x1",
+          "write": null
+        },
+        {
+          "offset": 19,
+          "va": "0x184fdfd83",
+          "bytes": "48 8b fa",
+          "text": "mov rdi, rdx",
+          "write": {
+            "register": "rdi",
+            "value": "rdx"
+          }
+        },
+        {
+          "offset": 22,
+          "va": "0x184fdfd86",
+          "bytes": "48 8b d9",
+          "text": "mov rbx, rcx",
+          "write": {
+            "register": "rbx",
+            "value": "rcx"
+          }
+        },
+        {
+          "offset": 25,
+          "va": "0x184fdfd89",
+          "bytes": "0f 8c 5f 55 2f 02",
+          "text": "jcc 0x1872d52ee",
+          "write": null
+        },
+        {
+          "offset": 31,
+          "va": "0x184fdfd8f",
+          "bytes": "48 8b 43 50",
+          "text": "mov rax, [rbx+0x50]",
+          "write": {
+            "register": "rax",
+            "value": "[rbx+0x50]"
+          }
+        },
+        {
+          "offset": 35,
+          "va": "0x184fdfd93",
+          "bytes": "0f b6 08",
+          "text": "movzx ecx, [rax]",
+          "write": {
+            "register": "ecx",
+            "value": "modified"
+          },
+          "sourceWidth": 8,
+          "operandWidth": 32,
+          "sourceExtension": "zero extension",
+          "upperRegisterEffect": "zero upper 32 bits"
+        },
+        {
+          "offset": 38,
+          "va": "0x184fdfd96",
+          "bytes": "88 0f",
+          "text": "mov [rdi], cl",
+          "write": null
+        },
+        {
+          "offset": 40,
+          "va": "0x184fdfd98",
+          "bytes": "8b 73 30",
+          "text": "mov esi, [rbx+0x30]",
+          "write": {
+            "register": "esi",
+            "value": "[rbx+0x30]"
+          }
+        },
+        {
+          "offset": 43,
+          "va": "0x184fdfd9b",
+          "bytes": "83 ee 01",
+          "text": "sub esi, 0x1",
+          "write": {
+            "register": "esi",
+            "value": "esi sub 0x1"
+          }
+        },
+        {
+          "offset": 46,
+          "va": "0x184fdfd9e",
+          "bytes": "0f 88 5d 55 2f 02",
+          "text": "jcc 0x1872d5301",
+          "write": null
+        },
+        {
+          "offset": 52,
+          "va": "0x184fdfda4",
+          "bytes": "48 ff 43 50",
+          "text": "inc [rbx+0x50]",
+          "write": null,
+          "operandWidth": 64
+        },
+        {
+          "offset": 56,
+          "va": "0x184fdfda8",
+          "bytes": "ff 43 40",
+          "text": "inc [rbx+0x40]",
+          "write": null,
+          "operandWidth": 32
+        },
+        {
+          "offset": 59,
+          "va": "0x184fdfdab",
+          "bytes": "ff 43 44",
+          "text": "inc [rbx+0x44]",
+          "write": null,
+          "operandWidth": 32
+        },
+        {
+          "offset": 62,
+          "va": "0x184fdfdae",
+          "bytes": "89 73 30",
+          "text": "mov [rbx+0x30], esi",
+          "write": null
+        },
+        {
+          "offset": 65,
+          "va": "0x184fdfdb1",
+          "bytes": "80 3f ff",
+          "text": "cmp [rdi], -0x1",
+          "write": null
+        },
+        {
+          "offset": 68,
+          "va": "0x184fdfdb4",
+          "bytes": "48 8b 5c 24 30",
+          "text": "mov rbx, [rsp+0x30]",
+          "write": {
+            "register": "rbx",
+            "value": "[rsp+0x30]"
+          }
+        },
+        {
+          "offset": 73,
+          "va": "0x184fdfdb9",
+          "bytes": "48 8b 74 24 38",
+          "text": "mov rsi, [rsp+0x38]",
+          "write": {
+            "register": "rsi",
+            "value": "[rsp+0x38]"
+          }
+        },
+        {
+          "offset": 78,
+          "va": "0x184fdfdbe",
+          "bytes": "0f 95 c0",
+          "text": "setne al",
+          "write": {
+            "register": "al",
+            "value": "cc"
+          }
+        },
+        {
+          "offset": 81,
+          "va": "0x184fdfdc1",
+          "bytes": "48 83 c4 20",
+          "text": "add rsp, 0x20",
+          "write": {
+            "register": "rsp",
+            "value": "rsp add 0x20"
+          }
+        },
+        {
+          "offset": 85,
+          "va": "0x184fdfdc5",
+          "bytes": "5f",
+          "text": "pop rdi",
+          "write": {
+            "register": "rdi",
+            "value": "pop(rdi)"
+          }
+        },
+        {
+          "offset": 86,
+          "va": "0x184fdfdc6",
+          "bytes": "c3",
+          "text": "ret",
+          "write": null
+        },
+        {
+          "offset": 0,
+          "va": "0x1872d52ee",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 3,
+          "va": "0x1872d52f1",
+          "bytes": "ba 01 00 00 00",
+          "text": "mov edx, 0x1",
+          "write": {
+            "register": "edx",
+            "value": "0x1"
+          }
+        },
+        {
+          "offset": 8,
+          "va": "0x1872d52f6",
+          "bytes": "e8 b5 e1 5e 05",
+          "text": "call 0x18c8c34b0",
+          "write": null
+        },
+        {
+          "offset": 13,
+          "va": "0x1872d52fb",
+          "bytes": "90",
+          "text": "nop",
+          "write": null
+        },
+        {
+          "offset": 14,
+          "va": "0x1872d52fc",
+          "bytes": "e9 8e aa d0 fd",
+          "text": "jmp 0x184fdfd8f",
+          "write": null
+        },
+        {
+          "offset": 19,
+          "va": "0x1872d5301",
+          "bytes": "ba 01 00 00 00",
+          "text": "mov edx, 0x1",
+          "write": {
+            "register": "edx",
+            "value": "0x1"
+          }
+        },
+        {
+          "offset": 24,
+          "va": "0x1872d5306",
+          "bytes": "48 8b cb",
+          "text": "mov rcx, rbx",
+          "write": {
+            "register": "rcx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 27,
+          "va": "0x1872d5309",
+          "bytes": "e8 26 8b 7d 01",
+          "text": "call 0x188aade34",
+          "write": null
+        },
+        {
+          "offset": 32,
+          "va": "0x1872d530e",
+          "bytes": "84 c0",
+          "text": "test al, al",
+          "write": null
+        },
+        {
+          "offset": 34,
+          "va": "0x1872d5310",
+          "bytes": "0f 85 9b aa d0 fd",
+          "text": "jcc 0x184fdfdb1",
+          "write": null
+        },
+        {
+          "offset": 40,
+          "va": "0x1872d5316",
+          "bytes": "e9 89 aa d0 fd",
+          "text": "jmp 0x184fdfda4",
+          "write": null
+        }
+      ],
+      "instructions": [
+        [
+          83754352,
+          "48895C2408"
+        ],
+        [
+          83754357,
+          "4889742410"
+        ],
+        [
+          83754362,
+          "57"
+        ],
+        [
+          83754363,
+          "4883EC20"
+        ],
+        [
+          83754367,
+          "83793001"
+        ],
+        [
+          83754371,
+          "488BFA"
+        ],
+        [
+          83754374,
+          "488BD9"
+        ],
+        [
+          83754377,
+          "0F8C5F552F02"
+        ],
+        [
+          83754383,
+          "488B4350"
+        ],
+        [
+          83754387,
+          "0FB608"
+        ],
+        [
+          83754390,
+          "880F"
+        ],
+        [
+          83754392,
+          "8B7330"
+        ],
+        [
+          83754395,
+          "83EE01"
+        ],
+        [
+          83754398,
+          "0F885D552F02"
+        ],
+        [
+          83754404,
+          "48FF4350"
+        ],
+        [
+          83754408,
+          "FF4340"
+        ],
+        [
+          83754411,
+          "FF4344"
+        ],
+        [
+          83754414,
+          "897330"
+        ],
+        [
+          83754417,
+          "803FFF"
+        ],
+        [
+          83754420,
+          "488B5C2430"
+        ],
+        [
+          83754425,
+          "488B742438"
+        ],
+        [
+          83754430,
+          "0F95C0"
+        ],
+        [
+          83754433,
+          "4883C420"
+        ],
+        [
+          83754437,
+          "5F"
+        ],
+        [
+          83754438,
+          "C3"
+        ],
+        [
+          120410862,
+          "4533C0"
+        ],
+        [
+          120410865,
+          "BA01000000"
+        ],
+        [
+          120410870,
+          "E8B5E15E05"
+        ],
+        [
+          120410875,
+          "90"
+        ],
+        [
+          120410876,
+          "E98EAAD0FD"
+        ],
+        [
+          120410881,
+          "BA01000000"
+        ],
+        [
+          120410886,
+          "488BCB"
+        ],
+        [
+          120410889,
+          "E8268B7D01"
+        ],
+        [
+          120410894,
+          "84C0"
+        ],
+        [
+          120410896,
+          "0F859BAAD0FD"
+        ],
+        [
+          120410902,
+          "E989AAD0FD"
+        ]
+      ]
+    },
+    "pooledPath": {
+      "status": "validated",
+      "nativeInputs": {
+        "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+        "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+        "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+      },
+      "sourceHelpers": [
+        85929408
+      ],
+      "wireEncoding": "int32-pool-index",
+      "emptyIndex": -1,
+      "nullIndex": -2,
+      "evidenceBoundary": {
+        "exact": "Complete pdata/chained windows of the anonymous optimized reader and metadata-named BeyondReadString, plus the shared lookup helper.",
+        "direct": "On the pool-present branch, both consume an Int32 index, return the same empty-string literal for -1 and null for -2, and tail-forward the remaining index and identical pool instance to the same lookup helper.",
+        "conditional": "Selected initialized pool-present branch, compatible reader and pool, sufficient buffered index bytes and normal helpers. Pool-absent behavior and live pool selection are not admitted.",
+        "unresolved": "This proves a string-valued read, not inline MemoryPack string wire compatibility or current corpus admission."
+      }
+    },
+    "valueFields": [
+      [
+        "scriptId",
+        "ulong",
+        16
+      ],
+      [
+        "<levelId>k__BackingField",
+        "int",
+        24
+      ]
+    ],
+    "forwarder": {
+      "pointerRva": 106834224,
+      "windows": [
+        {
+          "startRva": 106834224,
+          "endRva": 106834317,
+          "sha256": "BC14BB9BE7D2A8CF7EA4EA8D32CCD9ACB97009C400C913BB7AC9191B24132C62"
+        }
+      ],
+      "rows": [
+        {
+          "offset": 0,
+          "va": "0x1865e2930",
+          "bytes": "48 89 5c 24 08",
+          "text": "mov [rsp+0x8], rbx",
+          "write": null
+        },
+        {
+          "offset": 5,
+          "va": "0x1865e2935",
+          "bytes": "57",
+          "text": "push rdi",
+          "write": null
+        },
+        {
+          "offset": 6,
+          "va": "0x1865e2936",
+          "bytes": "48 83 ec 20",
+          "text": "sub rsp, 0x20",
+          "write": {
+            "register": "rsp",
+            "value": "rsp sub 0x20"
+          }
+        },
+        {
+          "offset": 10,
+          "va": "0x1865e293a",
+          "bytes": "80 3d f7 8d 14 0b 00",
+          "text": "cmp [rip+0xb148df7 => 0x19172b738], 0x0",
+          "write": null
+        },
+        {
+          "offset": 17,
+          "va": "0x1865e2941",
+          "bytes": "49 8b d8",
+          "text": "mov rbx, r8",
+          "write": {
+            "register": "rbx",
+            "value": "r8"
+          }
+        },
+        {
+          "offset": 20,
+          "va": "0x1865e2944",
+          "bytes": "48 8b fa",
+          "text": "mov rdi, rdx",
+          "write": {
+            "register": "rdi",
+            "value": "rdx"
+          }
+        },
+        {
+          "offset": 23,
+          "va": "0x1865e2947",
+          "bytes": "74 28",
+          "text": "je 0x1865e2971",
+          "write": null
+        },
+        {
+          "offset": 25,
+          "va": "0x1865e2949",
+          "bytes": "48 8b 0d e8 20 0a 0a",
+          "text": "mov rcx, [rip+0xa0a20e8 => 0x190684a38]",
+          "write": {
+            "register": "rcx",
+            "value": "[rip+0xa0a20e8 => 0x190684a38]"
+          }
+        },
+        {
+          "offset": 32,
+          "va": "0x1865e2950",
+          "bytes": "83 b9 e0 00 00 00 00",
+          "text": "cmp [rcx+0xe0], 0x0",
+          "write": null
+        },
+        {
+          "offset": 39,
+          "va": "0x1865e2957",
+          "bytes": "74 2d",
+          "text": "je 0x1865e2986",
+          "write": null
+        },
+        {
+          "offset": 41,
+          "va": "0x1865e2959",
+          "bytes": "45 33 c0",
+          "text": "xor r8d, r8d",
+          "write": {
+            "register": "r8d",
+            "value": "0"
+          }
+        },
+        {
+          "offset": 44,
+          "va": "0x1865e295c",
+          "bytes": "48 8b d3",
+          "text": "mov rdx, rbx",
+          "write": {
+            "register": "rdx",
+            "value": "rbx"
+          }
+        },
+        {
+          "offset": 47,
+          "va": "0x1865e295f",
+          "bytes": "48 8b cf",
+          "text": "mov rcx, rdi",
+          "write": {
+            "register": "rcx",
+            "value": "rdi"
+          }
+        },
+        {
+          "offset": 50,
+          "va": "0x1865e2962",
+          "bytes": "48 8b 5c 24 30",
+          "text": "mov rbx, [rsp+0x30]",
+          "write": {
+            "register": "rbx",
+            "value": "[rsp+0x30]"
+          }
+        },
+        {
+          "offset": 55,
+          "va": "0x1865e2967",
+          "bytes": "48 83 c4 20",
+          "text": "add rsp, 0x20",
+          "write": {
+            "register": "rsp",
+            "value": "rsp add 0x20"
+          }
+        },
+        {
+          "offset": 59,
+          "va": "0x1865e296b",
+          "bytes": "5f",
+          "text": "pop rdi",
+          "write": {
+            "register": "rdi",
+            "value": "pop(rdi)"
+          }
+        },
+        {
+          "offset": 60,
+          "va": "0x1865e296c",
+          "bytes": "e9 1f 00 00 00",
+          "text": "jmp 0x1865e2990",
+          "write": null
+        },
+        {
+          "offset": 65,
+          "va": "0x1865e2971",
+          "bytes": "48 8d 0d c0 20 0a 0a",
+          "text": "lea rcx, [rip+0xa0a20c0 => 0x190684a38]",
+          "write": {
+            "register": "rcx",
+            "value": "&[rip+0xa0a20c0 => 0x190684a38]"
+          }
+        },
+        {
+          "offset": 72,
+          "va": "0x1865e2978",
+          "bytes": "e8 23 eb a5 f9",
+          "text": "call 0x1800414a0",
+          "write": null
+        },
+        {
+          "offset": 77,
+          "va": "0x1865e297d",
+          "bytes": "c6 05 b4 8d 14 0b 01",
+          "text": "mov [rip+0xb148db4 => 0x19172b738], 0x1",
+          "write": null,
+          "operandWidth": 8
+        },
+        {
+          "offset": 84,
+          "va": "0x1865e2984",
+          "bytes": "eb c3",
+          "text": "jmp 0x1865e2949",
+          "write": null
+        },
+        {
+          "offset": 86,
+          "va": "0x1865e2986",
+          "bytes": "e8 55 3c a3 f9",
+          "text": "call 0x1800165e0",
+          "write": null
+        },
+        {
+          "offset": 91,
+          "va": "0x1865e298b",
+          "bytes": "eb cc",
+          "text": "jmp 0x1865e2959",
+          "write": null
+        }
+      ],
+      "instructions": [
+        [
+          106834224,
+          "48895C2408"
+        ],
+        [
+          106834229,
+          "57"
+        ],
+        [
+          106834230,
+          "4883EC20"
+        ],
+        [
+          106834234,
+          "803DF78D140B00"
+        ],
+        [
+          106834241,
+          "498BD8"
+        ],
+        [
+          106834244,
+          "488BFA"
+        ],
+        [
+          106834247,
+          "7428"
+        ],
+        [
+          106834249,
+          "488B0DE8200A0A"
+        ],
+        [
+          106834256,
+          "83B9E000000000"
+        ],
+        [
+          106834263,
+          "742D"
+        ],
+        [
+          106834265,
+          "4533C0"
+        ],
+        [
+          106834268,
+          "488BD3"
+        ],
+        [
+          106834271,
+          "488BCF"
+        ],
+        [
+          106834274,
+          "488B5C2430"
+        ],
+        [
+          106834279,
+          "4883C420"
+        ],
+        [
+          106834283,
+          "5F"
+        ],
+        [
+          106834284,
+          "E91F000000"
+        ],
+        [
+          106834289,
+          "488D0DC0200A0A"
+        ],
+        [
+          106834296,
+          "E823EBA5F9"
+        ],
+        [
+          106834301,
+          "C605B48D140B01"
+        ],
+        [
+          106834308,
+          "EBC3"
+        ],
+        [
+          106834310,
+          "E8553CA3F9"
+        ],
+        [
+          106834315,
+          "EBCC"
+        ]
+      ]
+    },
+    "forwarderContext": {
+      "instructionRva": 106834249,
+      "instructionHex": "488B0DE8200A0A",
+      "usageCellRva": 275270200,
+      "usageRawHex": "F907032000000000",
+      "tag": 1,
+      "typeIndex": 99324,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_LevelScriptPtr_ForMemoryPack",
+      "typeRawHex": "48C60000000000000000120000000000"
+    },
+    "forwarderProgram": {
+      "completeOriginalForwarderChecked": true,
+      "localJoins": [
+        {
+          "name": "init",
+          "targetVA": 6549285233,
+          "predicate": "je"
+        },
+        {
+          "name": "classInit",
+          "targetVA": 6549285254,
+          "predicate": "je"
+        },
+        {
+          "name": "class",
+          "targetVA": 6549285193,
+          "predicate": "jmp"
+        },
+        {
+          "name": "forward",
+          "targetVA": 6549285209,
+          "predicate": "jmp"
+        }
+      ],
+      "actualReaderTailcall": {
+        "offset": 60,
+        "va": "0x1865e296c",
+        "bytes": "e9 1f 00 00 00",
+        "text": "jmp 0x1865e2990",
+        "write": null,
+        "target": 6549285264,
+        "predicate": "jmp"
+      },
+      "conditionalReaderAndOutputForwardingProved": true,
+      "selection": "normal initialization calls preserve saved reader/output and valid matched frame; default concrete formatter selected",
+      "runtimeFormatterProviderSelectionProved": false
+    },
+    "evidenceBoundary": {
+      "direct": "Current typed raw16 constant copy and stores, UInt64 scriptId/signed Int32 stored levelId, bindings/pool tail, null marker and reference factories/getter; registered concrete Param/wrapper declarations and forwarding program.",
+      "conditional": "Initialized metadata, valid disjoint readable storage and ordinary ABI-preserving helpers, normal compatible generated reference formatter/wrapper route and sufficient contiguous input.",
+      "unresolved": [
+        "refill helper effects",
+        "live provider/cache/override selection",
+        "effective script resolution and current-script inference",
+        "meaning of four trailing copied bytes",
+        "whole-owner execution"
+      ]
+    }
+  }
+}

@@ -5,6 +5,7 @@ describes identifier families only: it does not decode behaviour or upgrade a
 name to an observed consumer. Binary framing belongs to game_data.
 """
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, read_text_table
 
 from collections import defaultdict
 from functools import lru_cache
@@ -109,10 +110,12 @@ def load_catalog(export_root: Path) -> tuple[dict, dict]:
         buildings = _read_object(export_root / building_path)
         for language in ("CN", "EN"):
             try:
-                texts[language] = _read_object(export_root / f"game/Table/I18nTextTable_{language}.json")
+                texts[language] = read_text_table(export_root / f"game/Table/I18nTextTable_{language}.json", language)
             except (OSError, ValueError):
                 texts[language] = {}
         sources.update(wrapper=wrapper_path, building=building_path)
+        if (export_root / "game/Table" / HOTFIX_TABLE).is_file():
+            sources["localizationHotfix"] = f"game/Table/{HOTFIX_TABLE}"
         sources.update({lang: f"game/Table/I18nTextTable_{lang}.json"
                         for lang, values in texts.items() if values})
     except (OSError, ValueError) as exc:

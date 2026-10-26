@@ -13,6 +13,7 @@ from scripts.game_data.levelscript_template_binary import (
     LevelScriptTemplateFramingError,
     frame_levelscript_template,
 )
+from scripts.game_data.string_pool import export_string_pool
 from scripts.webui.data_inspector.contract import source_descriptor
 
 
@@ -26,7 +27,7 @@ def levelscript_template_record(path: Path, export_root: Path) -> dict[str, Any]
         base["source"] = source_descriptor(
             path, export_root=export_root, media_type="application/octet-stream",
         )
-        decoded = frame_levelscript_template(path.read_bytes())
+        decoded = frame_levelscript_template(path.read_bytes(), strings=export_string_pool(export_root / 'game/Json'))
     except (OSError, LevelScriptTemplateFramingError, ValueError) as exc:
         diagnostic = f"{relative}: {exc}"[:1200]
         return {
@@ -39,8 +40,7 @@ def levelscript_template_record(path: Path, export_root: Path) -> dict[str, Any]
     template_id = terminal.get("value") if isinstance(terminal, dict) else None
     opaque = decoded.get("opaqueMiddle")
     opaque_length = opaque.get("length") if isinstance(opaque, dict) else None
-    action_map = decoded.get("actionMap")
-    stop = action_map.get("unresolvedReason") if isinstance(action_map, dict) else None
+    stop = (decoded.get("diagnostics") or [{}])[0].get("detail")
     parts = [f"named fields={len(fields)}"]
     if template_id is not None:
         parts.append(f"templateId={template_id}")

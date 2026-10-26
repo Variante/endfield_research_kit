@@ -494,7 +494,7 @@ def build_report(
                 "actual": str(exc),
             })
             continue
-        records = extract_levelscript_uid_records(data)
+        records = extract_levelscript_uid_records(data, source_path=path)
         _action_map, membership = levelscript_action_map_membership(data, records)
         ordered = sorted(records, key=lambda row: int(row.get("start") or 0))
         next_starts = {

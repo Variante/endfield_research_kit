@@ -27,8 +27,23 @@ by type and method, and evaluates them against whichever build is installed:
                       clobbers, fragment gaps and high-byte aliases refuse
 ``storesInstanceByteArgumentAfterFalseCall`` complete incoming instance/byte
                       aliases reach a named field on a checked guard's false path
+``storesDialogFinishBeforeExitOnDefaultPath`` typed finish argument stores and
+                      original exit tail on the tested carrier/code-absent path
+``checksDialogFinishInfoOnDefaultPath`` typed player/cinematic history chain,
+                      original getter, lookup/sign/membership/result paths
 ``readsField``        reads a named field (any base register)
 ``writesField``       writes a named field (any base register, including SSE stores)
+``selectsProxyDialogByStoredOrdinal`` typed original proxy/list bounds and dialog output
+``normalizesExternalProxyIndex`` typed original external Int32 clamp/store/callback lanes
+``constructsStoresReferenceHandleBeforeCall`` typed incoming references initialize
+                      the handle stored before a call on the same manager;
+                      constructor/store dominance and owned control are checked
+``returnsArgumentFieldEqualityAfterCall`` a typed incoming reference's Int32 enum
+                      read returns an equality index after its named activation;
+                      complete owned ordinary CFG and value transfer are checked
+``returnsReferenceChainAfterFalseCall`` complete owned receiver and two selected
+                      reference-field reads reach the ordinary return after a
+                      false named Boolean guard; true returns null
 ``readsNestedField``  reads a named field through a previously loaded parent field
 ``passesFieldToCall`` loads a named field into a named register at a named call
 ``closedReferenceLayout`` a selected concrete witness proves its sole generic
@@ -101,6 +116,9 @@ by type and method, and evaluates them against whichever build is installed:
 ``loadsFloat32``      loads the named Single constant through a RIP-relative MOVSS
 ``zeroArgumentAt``    a named call receives zero in the given argument register
 ``branchesOnSign``    compares a named field with zero and branches on less-than
+``storesStackParameterInTypedFactoryField`` complete owned caller CFG joins an
+                      incoming stack reference to a closed typed factory return
+                      field under explicit ordinary-return/context conditions
 ``storesArgument``    writes an argument register (through register moves) into a
                       named field of any object
 ``bindsLiteralToCallback`` a selected IL2CPP Action<T> callback and string-key
@@ -171,13 +189,21 @@ _GENERIC = re.compile(r"<(?!\w*>g__|\w*>b__)([A-Z]\w*(?:\s*,\s*[A-Z]\w*)*)>")
 
 
 class BodyIndex:
-    """Name-addressed method bodies of one opened build."""
+    """Share immutable body indexes of one opened image; never cache claims."""
+
+    def __new__(cls, image: NativeImage):
+        if cls is BodyIndex and type(image) is NativeImage and (
+                cached := getattr(image, '_body_index_index', None)) is not None:
+            return cached
+        return super().__new__(cls)
 
     def __init__(self, image: NativeImage) -> None:
         self.image = image
         self.mapper = image.mapper
         self.pe = image.pe
         self.metadata = image.metadata
+        if type(self) is BodyIndex and type(image) is NativeImage:
+            image._body_index_index = self
 
     @cached_property
     def names_by_pointer(self) -> dict[int, list[dict[str, Any]]]:
@@ -327,20 +353,25 @@ class BodyIndex:
             ])
         return found
 
-    def matches_parameters(self,pointer: int,parameters: list[str]) -> bool:
-        """Resolve closed generic selectors without accepting an anonymous type index."""
-        signatures=self.parameter_types(pointer)
-        if list(parameters) in signatures:return True
-        if not any('<' in p for p in parameters) or not any(
-                p.startswith('<type-index:') for signature in signatures for p in signature):return False
-        from .reference_layouts import NativeReferenceContext
-        context=NativeReferenceContext(self.image,index=self)
-        for row in self.names_by_pointer.get(pointer,()):
-            method_index=row.get('methodIndex')
-            if not isinstance(method_index,int) or not 0<=method_index<len(self.metadata.methods):continue
-            method=self.metadata.methods[method_index]
-            resolved=[context.type_name(p.type_index) for p in self.metadata.parameters_for(method)]
-            if resolved==list(parameters):return True
+    def matches_parameters(self, pointer, parameters):
+        if any((p.startswith('<type-index:') for p in parameters)):
+            return False
+        wanted = [il2cpp.canonical_type_name(p) for p in parameters]
+        signatures = self.parameter_types(pointer)
+        if any(([il2cpp.canonical_type_name(p) for p in signature] == wanted for signature in signatures)):
+            return True
+        if not any((p.startswith('<type-index:') for signature in signatures for p in signature)):
+            return False
+        from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
+        context = NativeReferenceContext(self.image, index=self)
+        for row in self.names_by_pointer.get(pointer, ()):
+            method_index = row.get('methodIndex')
+            if not isinstance(method_index, int) or not 0 <= method_index < len(self.metadata.methods):
+                continue
+            method = self.metadata.methods[method_index]
+            resolved = [il2cpp.canonical_type_name(context.type_name(p.type_index)) for p in self.metadata.parameters_for(method)]
+            if resolved == wanted:
+                return True
         return False
 
     def parameter_location(self, pointer: int, symbol: str, parameter: str) -> tuple[str, int | str]:
@@ -776,41 +807,41 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
     if 'partitionsGuardedEmbeddedRvaTable' in claim:
         if claim['partitionsGuardedEmbeddedRvaTable'] is not True:
             return 'embedded RVA table partition requires explicit true claim'
-        from .embedded_rva_switch import check_embedded_rva_switch
+        from scripts.game_data.il2cpp.embedded_rva_switch import check_embedded_rva_switch
         return check_embedded_rva_switch(index,body)
     if 'iteratesDynamicBlackboardListWithCapturedBound' in claim:
         if claim['iteratesDynamicBlackboardListWithCapturedBound'] is not True:
             return 'dynamic list iteration requires explicit true claim'
-        from .blackboard_bulk_iteration import check_dynamic_list_iteration
+        from scripts.game_data.il2cpp.blackboard_bulk_iteration import check_dynamic_list_iteration
         return check_dynamic_list_iteration(index,body)
     if 'passesSpilledArgumentOnFalseCalls' in claim:
-        from .stack_argument_flow import check_spilled_argument
+        from scripts.game_data.il2cpp.stack_argument_flow import check_spilled_argument
         return check_spilled_argument(index,body,claim['passesSpilledArgumentOnFalseCalls'])
     if 'feedsReferenceResultToCall' in claim:
-        from .reference_result_flow import check_reference_result
+        from scripts.game_data.il2cpp.reference_result_flow import check_reference_result
         return check_reference_result(index,body,claim['feedsReferenceResultToCall'])
     if 'queriesFloatBlackboardDirectBeforeEntity' in claim:
         if claim['queriesFloatBlackboardDirectBeforeEntity'] is not True:
             return 'keyed Float lookup requires explicit true claim'
-        from .blackboard_query_flow import check_float_query_order
+        from scripts.game_data.il2cpp.blackboard_query_flow import check_float_query_order
         return check_float_query_order(index,body)
     if 'filtersDynamicBlackboardPairOnFalseGuard' in claim:
         if claim['filtersDynamicBlackboardPairOnFalseGuard'] is not True:
             return 'dynamic Blackboard filter requires explicit true claim'
-        from .blackboard_assignment import check_dynamic_pair_filter
+        from scripts.game_data.il2cpp.blackboard_assignment import check_dynamic_pair_filter
         return check_dynamic_pair_filter(index,body)
     if 'copiesBlackboardPairFieldsToDynamicCall' in claim:
         if claim['copiesBlackboardPairFieldsToDynamicCall'] is not True:
             return 'dynamic Blackboard field copy requires explicit true claim'
-        from .blackboard_vector_transfers import check_dynamic_pair_field_copy
+        from scripts.game_data.il2cpp.blackboard_vector_transfers import check_dynamic_pair_field_copy
         return check_dynamic_pair_field_copy(index,body)
     if 'replacesBlackboardPairAfterTrueComparison' in claim:
         if claim['replacesBlackboardPairAfterTrueComparison'] is not True:
             return 'matched Blackboard pair replacement requires explicit true claim'
-        from .blackboard_assignment import check_matched_pair_replacement
+        from scripts.game_data.il2cpp.blackboard_assignment import check_matched_pair_replacement
         return check_matched_pair_replacement(index,body)
     if 'passesBooleanConstantToCall' in claim:
-        from .boolean_call_arguments import check_boolean_constant
+        from scripts.game_data.il2cpp.boolean_call_arguments import check_boolean_constant
         return check_boolean_constant(index,body,claim['passesBooleanConstantToCall'])
     for operator, kind in (("comparesSignedInt32OnDefaultPath", "intComparison"),
                            ("comparesStateEventOnDefaultPath", "stateCallback"),
@@ -822,26 +853,26 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
                            ("looksUpQuestStateOnDefaultPath", "questLookup"),
                            ("propagatesConditionResultOnDefaultPath", "resultPropagation")):
         if operator in claim:
-            from .mission_condition_flow import check_condition_flow
+            from scripts.game_data.il2cpp.mission_condition_flow import check_condition_flow
             return check_condition_flow(index, body, claim[operator], kind)
     if "copiesObjectiveMapsOnDefaultPath" in claim:
-        from .mission_objective_copy import check_copy_loops
+        from scripts.game_data.il2cpp.mission_objective_copy import check_copy_loops
         return check_copy_loops(index, body, claim["copiesObjectiveMapsOnDefaultPath"])
     if "callsInterfacePairCurrentFastPaths" in claim:
-        from .packed_pair_current import check_pair_current_helpers
+        from scripts.game_data.il2cpp.packed_pair_current import check_pair_current_helpers
         return check_pair_current_helpers(index, body, claim["callsInterfacePairCurrentFastPaths"])
     if "passesInterfaceCurrentStringIntPairFastPath" in claim:
-        from .packed_pair_current import check_current_pair_fast_path
+        from scripts.game_data.il2cpp.packed_pair_current import check_current_pair_fast_path
         return check_current_pair_fast_path(index, body, claim["passesInterfaceCurrentStringIntPairFastPath"])
     if "passesPackedStringIntPair" in claim:
-        from .packed_pair import check_packed_pair_call
+        from scripts.game_data.il2cpp.packed_pair import check_packed_pair_call
         return check_packed_pair_call(index, body, claim["passesPackedStringIntPair"])
     if "closedReferenceLayout" in claim:
-        from .reference_layouts import check_closed_reference_layout
+        from scripts.game_data.il2cpp.reference_layouts import check_closed_reference_layout
         return check_closed_reference_layout(index, body, claim["closedReferenceLayout"])
     if ("readsClosedDataField" in claim or "passesClosedDataFieldToCall" in claim
             or "passesClosedByteFieldToCall" in claim):
-        from .closed_data_fields import check_closed_data_field
+        from scripts.game_data.il2cpp.closed_data_fields import check_closed_data_field
         byte_argument = "passesClosedByteFieldToCall" in claim
         forward = byte_argument or "passesClosedDataFieldToCall" in claim
         key = "passesClosedByteFieldToCall" if byte_argument else "passesClosedDataFieldToCall" if forward else "readsClosedDataField"
@@ -1261,11 +1292,19 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
         pattern = re.compile(rf"mov \[\w+\+0x{offset:x}\], 0x{value:x}$")
         return None if any(pattern.fullmatch(text) for text in texts) else f"no store of {value} at +0x{offset:x}"
     if "returnsClosedByteFieldAfterFalseCall" in claim:
-        from .owned_byte_returns import check_byte_return
+        from scripts.game_data.il2cpp.owned_byte_returns import check_byte_return
         return check_byte_return(index, body, claim["returnsClosedByteFieldAfterFalseCall"])
     if "storesInstanceByteArgumentAfterFalseCall" in claim:
-        from .byte_instance_stores import check_byte_instance_store
+        from scripts.game_data.il2cpp.byte_instance_stores import check_byte_instance_store
         return check_byte_instance_store(index, body, claim["storesInstanceByteArgumentAfterFalseCall"])
+    if "storesDialogFinishBeforeExitOnDefaultPath" in claim:
+        if set(claim) != {"storesDialogFinishBeforeExitOnDefaultPath"}: return "dialogInline.claim: unexpected claim keys"
+        from scripts.game_data.il2cpp.dialog_finish_paths import check_dialog_finish_claim
+        return check_dialog_finish_claim(index, body, claim["storesDialogFinishBeforeExitOnDefaultPath"], kind="finish")
+    if "checksDialogFinishInfoOnDefaultPath" in claim:
+        if set(claim) != {"checksDialogFinishInfoOnDefaultPath"}: return "dialogInline.claim: unexpected claim keys"
+        from scripts.game_data.il2cpp.dialog_finish_paths import check_dialog_finish_claim
+        return check_dialog_finish_claim(index, body, claim["checksDialogFinishInfoOnDefaultPath"], kind="check")
     if "readsField" in claim:
         offset = index.field_offset(claim["readsField"])
         pattern = re.compile(rf"\[\w+\+0x{offset:x}\]")
@@ -1348,6 +1387,55 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
                 if any(_condition(row) in {"jl", "js"} for row in rows[position + 1:position + 3]):
                     return None
         return f"no signed branch on +0x{offset:x}"
+    if "selectsFirstTrueOrNullDialogCondition" in claim:
+        from scripts.game_data.il2cpp.dialog_branch_selection import check_dialog_branch_selection
+        try:
+            check_dialog_branch_selection(index, body, claim["selectsFirstTrueOrNullDialogCondition"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
+    if "selectsProxyDialogByStoredOrdinal" in claim:
+        from scripts.game_data.il2cpp.npc_proxy_selection import check_npc_proxy_selection
+        try:
+            check_npc_proxy_selection(index, body, claim["selectsProxyDialogByStoredOrdinal"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
+    if "normalizesExternalProxyIndex" in claim:
+        from scripts.game_data.il2cpp.proxy_index import check_proxy_index_normalization
+        try:
+            check_proxy_index_normalization(index, body, claim["normalizesExternalProxyIndex"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
+    if "constructsStoresReferenceHandleBeforeCall" in claim:
+        from scripts.game_data.il2cpp.reference_handle_flow import check_reference_handle_flow
+        try:
+            check_reference_handle_flow(index, body, claim["constructsStoresReferenceHandleBeforeCall"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
+    if "returnsArgumentFieldEqualityAfterCall" in claim:
+        from scripts.game_data.il2cpp.field_equality_return import check_field_equality_return
+        try:
+            check_field_equality_return(index, body, claim["returnsArgumentFieldEqualityAfterCall"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
+    if "returnsReferenceChainAfterFalseCall" in claim:
+        from scripts.game_data.il2cpp.reference_chain_return import check_reference_chain_return
+        try:
+            check_reference_chain_return(index, body, claim["returnsReferenceChainAfterFalseCall"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
+    if "storesStackParameterInTypedFactoryField" in claim:
+        from scripts.game_data.il2cpp.allocated_stack_reference import check_allocated_stack_store
+        try:
+            check_allocated_stack_store(index, body, claim["storesStackParameterInTypedFactoryField"])
+        except (ValueError, RuntimeError, KeyError, IndexError, TypeError) as error:
+            return str(error)
+        return None
     if "storesArgument" in claim:
         offset = index.field_offset(claim["storesArgument"]["field"])
         aliases = _argument_aliases(texts, claim["storesArgument"]["argument"])

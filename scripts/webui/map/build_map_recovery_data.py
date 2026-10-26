@@ -41,6 +41,7 @@ invalidate only that checkpoint, and ``build_map_recovery_preview
 """
 
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, localize
 from scripts.common import require_export_layout
 from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path, unity_asset_rel
 
@@ -374,7 +375,8 @@ def _entity_display_name(detail_id: object, language: str) -> str:
     lang = language.upper()
     if lang not in _ENTITY_NAMES:
         table = _load_json(ROOT / ENEMY_TEMPLATE_DISPLAY_REL, {}) or {}
-        i18n = _load_json(ROOT / I18N_TEXT_REL.format(lang), {}) or {}
+        i18n = localize(_load_json(ROOT / I18N_TEXT_REL.format(lang), {}) or {},
+                        _load_json(EXPORT_LAYOUT.table_dir / HOTFIX_TABLE, {}), lang)
         names: dict[str, str] = {}
         for entity_id, row in table.items():
             if not isinstance(row, dict):
@@ -597,7 +599,7 @@ def _gender_select_casefold_trigger_markers(level_id: str, language: str) -> lis
         return []
     if hashlib.sha256(data).hexdigest().upper() != script.get("sourceSha256"):
         return []
-    summary = decode_levelscript_binary_summary(data, int(script["scriptId"]))
+    summary = decode_levelscript_binary_summary(data, int(script['scriptId']), source_path=ROOT / source_file)
     details = summary.get("triggerVolumesDetails") or {}
     volumes = [row for row in details.get("volumes") or [] if (
         isinstance(row, dict)
@@ -2960,7 +2962,8 @@ def _level_names(language: str) -> dict[str, str]:
     instead of printing a placeholder.
     """
     desc = _load_json(ROOT / LEVEL_DESC_REL, {}) or {}
-    i18n = _load_json(ROOT / I18N_TEXT_REL.format(language.upper()), {}) or {}
+    i18n = localize(_load_json(ROOT / I18N_TEXT_REL.format(language.upper()), {}) or {},
+                    _load_json(EXPORT_LAYOUT.table_dir / HOTFIX_TABLE, {}), language.upper())
     names: dict[str, str] = {}
     for level_id, row in desc.items():
         if not isinstance(row, dict):
@@ -3316,7 +3319,8 @@ def _map_text_lookup(language: str) -> dict[str, str]:
     if cache_key in _MAP_TEXT_LOOKUPS:
         return _MAP_TEXT_LOOKUPS[cache_key]
     text_table = _load_json(ROOT / TEXT_TABLE_REL, {}) or {}
-    i18n = _load_json(ROOT / I18N_TEXT_REL.format(language.upper()), {}) or {}
+    i18n = localize(_load_json(ROOT / I18N_TEXT_REL.format(language.upper()), {}) or {},
+                    _load_json(EXPORT_LAYOUT.table_dir / HOTFIX_TABLE, {}), language.upper())
     result: dict[str, str] = {}
     for key, row in text_table.items():
         if not isinstance(row, dict) or row.get("id") is None:

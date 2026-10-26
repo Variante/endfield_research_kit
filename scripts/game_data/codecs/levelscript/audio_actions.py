@@ -651,6 +651,10 @@ def _decode_audio_action(
             **field_detail,
         }
 
+    return _finish_audio_action_fields(payload, cursor, project_audio_bindings(action_name,fields))
+
+
+def project_audio_bindings(action_name,fields):
     event_roles = {
         "AnnounceAudioOnTarget": (("audioKey", "announceTarget"),),
         "EnterCustomMusicMode": (("audioEvent", "customMusic"),),
@@ -733,11 +737,27 @@ def _decode_audio_action(
                 "sourceField": field["sourceField"],
             })
 
-    return _finish_audio_action_fields(payload, cursor, _drop_empty({
+    return _drop_empty({
         "action": action_name,
         "fields": fields,
         "eventBindings": event_bindings,
         "voiceBindings": voice_bindings,
         "cueBindings": cue_bindings,
         "radioBindings": radio_bindings,
-    }))
+    })
+
+def project_typed_audio(node,own,payload_length):
+    layout=_audio_action_layouts().get((node['unionTag'],node['memberCount']))
+    if layout is None:return None
+    action,declared=layout
+    if set(own)!={name for name,_ in declared}:return None
+    fields={}
+    for name,_ in declared:
+        value=own[name]
+        if value is None:detail=dict(present=False,bindingKind='null')
+        elif isinstance(value,dict):
+            detail=dict(present=True,**value)
+            detail['bindingKind']=('constant' if value.get('paramSource')==0 else 'dynamic') if 'idRef' in value else 'output'
+        else:return None
+        fields[name]=dict(sourceField='_'+name,**detail)
+    return dict(project_audio_bindings(action,fields),consumedBytes=payload_length,payloadShape='audio-action-exact-current-build-memorypack-fields',nativeMappingId=LEVELSCRIPT_NATIVE_AUDIO_ACTION_MAPPING_ID)

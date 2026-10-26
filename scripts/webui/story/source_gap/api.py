@@ -8,6 +8,7 @@ from typing import Any
 from scripts.webui.story.mission_recovery import natural_key
 from scripts.webui.story.source_story_partial_order import (
     build_report as build_partial_order_report,
+    _NativeProofScope,
     load_mission_payload_with_variants,
 )
 from scripts.webui.story.source_gap.attachment_evidence import (
@@ -38,16 +39,15 @@ class SourceGapBuildResult:
     paths: GapReportPaths
 
 
-def build_source_gap_queue(
+def _build_source_gap_report(
     language: str = "CN",
     *,
-    reports_dir: Path | None = None,
     table_root: Path | None = None,
     game_assembly: Path | None = None,
-) -> SourceGapBuildResult:
-    """Build and publish the canonical queue without spawning another Python."""
+    native_scope=None,
+) -> dict[str, Any]:
+    """Construct the queue under its caller-owned native proof scope."""
     language = str(language or "CN").upper()
-    reports_dir = reports_dir or ROOT / "reports" / "mission_order"
     table_root = table_root or (ROOT / export_rel_path(EXPORT_LAYOUT.table_dir))
 
     partial_report = build_partial_order_report(language)
@@ -98,6 +98,7 @@ def build_source_gap_queue(
             game_assembly_path=game_assembly,
             native_playback_index=native_playback_index,
             action_story_occurrences=action_story_occurrences,
+            native_scope=native_scope,
         )
     )
     quest_index, quest_status = build_quest_attachment_diagnostic_index(
@@ -144,8 +145,20 @@ def build_source_gap_queue(
         story_trigger_manifest_status=story_trigger_manifest_status,
         project_authored_content=project_authored_content,
         project_authored_status=project_authored_status,
+        native_scope=native_scope,
     )
-    return SourceGapBuildResult(
-        report=report,
-        paths=publish_gap_report(report, reports_dir, language),
-    )
+    return report
+
+
+def build_source_gap_queue(language="CN", *, reports_dir=None, table_root=None, game_assembly=None):
+    """Build one source gap report; recheck native evidence before publication."""
+    language = str(language or "CN").upper()
+    reports_dir = reports_dir or ROOT / "reports" / "mission_order"
+    scope = _NativeProofScope()
+    try:
+        report = _build_source_gap_report(language, table_root=table_root,
+            game_assembly=game_assembly, native_scope=scope)
+        scope.finish()
+    finally:
+        scope._closed = True
+    return SourceGapBuildResult(report, publish_gap_report(report, reports_dir, language))

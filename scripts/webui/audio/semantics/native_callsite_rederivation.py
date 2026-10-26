@@ -59,6 +59,7 @@ from typing import Any, Iterable, Mapping
 
 from scripts.common import check_installed_native_inputs, write_canonical_json
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = "audioNativeCallsiteRederivation.v1"
 DEFAULT_REPORT = REPO_ROOT / "reports" / "audio" / "native_callsite_rederivation.json"
@@ -882,7 +883,7 @@ def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[di
         current["fieldContract"] = fields
     current["evidence"] = "rederivedByNameOnInstalledBuild"
     current["nativeRederivation"] = {
-        "status": "verified", "scope": "consumerCallsitesAndNamedFieldStore",
+        "status": "verified", "scope": "consumerCallsitesAndNamedFieldStore" if contract else "consumerCallsites",
         "claims": ["consumer identity", "each listed consumer callsite"],
         "unresolved": ["branch guards", "endpoint argument/return flow",
                        "managed adapter connection", "async preparation", "execution"],
@@ -1119,6 +1120,20 @@ def rederive_catalogs(
     return {"status": "validated", **result}
 
 
+def _positioned_recipe(path: Path = CONTRACTS_DIR / "audio_model_view_consumers.json") -> dict[str, Any]:
+    """Current named call interfaces, with no inherited guard or owner claims."""
+    fact = json.loads(Path(path).read_bytes())
+    if set(fact) != {"schema", "status", "methods", "evidenceBoundary"} or (fact["schema"], fact["status"]) != ("endfield.audio-native-consumer-claims.v1", "reviewed"):
+        raise ValueError("modelViewPositioned:invalid-claims-contract")
+    method, = fact["methods"].values()
+    if set(method) != {"type", "method", "contract", "claims"} or len(method["claims"]) != 1 or set(method["claims"][0]) != {"calls"}:
+        raise ValueError("modelViewPositioned:unsupported-claims")
+    calls = method["claims"][0]["calls"]
+    if not calls or len(set(calls)) != len(calls):raise ValueError("modelViewPositioned:empty-or-duplicate-calls")
+    return {"nativeMappingId": "model-view-positioned-current-call-interfaces", "consumer": {"type": method["type"], "method": method["method"]},
+            "directCalls": [{"targetType": _split(name)[0], "targetMethod": _split(name)[1]} for name in calls]}
+
+
 def reviewed_routes() -> dict[str, Mapping[str, Any]]:
     """The native routes and group catalogs this module re-derives, as reviewed."""
     from scripts.webui.audio.semantics import build_contracts, entity_contexts, mono_behaviour, native_evidence
@@ -1132,7 +1147,7 @@ def reviewed_routes() -> dict[str, Mapping[str, Any]]:
         "timelineContracts": build_contracts.TIMELINE_AUDIO_RUNTIME_CONTRACTS,
         "modelViewState": native_evidence.MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE,
         "musicTransitions": mono_behaviour.AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS,
-        "modelViewPositioned": native_evidence.MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE,
+        "modelViewPositioned": _positioned_recipe(),
         "customFootstep": {
             "nativeAnchors": entity_contexts.CUSTOM_FOOTSTEP_NATIVE_ANCHORS,
             "fieldAnchors": entity_contexts.CUSTOM_FOOTSTEP_FIELD_ANCHORS,

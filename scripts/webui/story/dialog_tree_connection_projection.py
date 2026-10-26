@@ -1,5 +1,5 @@
 from __future__ import annotations
-from scripts.game_data.story_native_consumers_native import cited_address, cited_token
+from collections.abc import Callable
 
 
 def dialog_tree_story_playback_connection(
@@ -11,6 +11,7 @@ def dialog_tree_story_playback_connection(
         parent_scope_key: str,
         story_kind_by_key: dict[str, str],
         story_owner_by_key: dict[str, str],
+        native_cited: Callable[[str], dict],
     ) -> dict:
         carrier_quest_state_context = scope.get("carrierQuestStateContext")
         quest_evidence = str(scope.get("questEvidence") or "none")
@@ -51,54 +52,18 @@ def dialog_tree_story_playback_connection(
         native_consumers = []
         if has_trunk_carrier:
             native_consumers.extend([
-                {
-                    "method": "DTTrunkNodeData.get_trunkId",
-                    "token": cited_token("DTTrunkNodeData.get_trunkId"),
-                    "address": cited_address("DTTrunkNodeData.get_trunkId"),
-                },
-                {
-                    "method": "DialogPlayTrunkActionData.get_trunkId",
-                    "token": cited_token("DialogPlayTrunkActionData.get_trunkId"),
-                    "address": cited_address("DialogPlayTrunkActionData.get_trunkId"),
-                },
-                {
-                    "method": "DialogTreeTrunkNode.DoExecute",
-                    "token": cited_token("DialogTreeTrunkNode.DoExecute"),
-                    "address": cited_address("DialogTreeTrunkNode.DoExecute"),
-                },
-                {
-                    "method": "DialogTreeTrunkNode.FindTrunkIdForReplacement",
-                    "token": cited_token("DialogTreeTrunkNode.FindTrunkIdForReplacement"),
-                    "address": cited_address("DialogTreeTrunkNode.FindTrunkIdForReplacement"),
-                },
-                {
-                    "method": "DialogTreeTrunkNode._DoPlayTrunk",
-                    "token": cited_token("DialogTreeTrunkNode._DoPlayTrunk"),
-                    "address": cited_address("DialogTreeTrunkNode._DoPlayTrunk"),
-                },
-                {
-                    "method": "DialogPlayTrunkActionData.SetOverrideTrunkId",
-                    "token": cited_token("DialogPlayTrunkActionData.SetOverrideTrunkId"),
-                    "address": cited_address("DialogPlayTrunkActionData.SetOverrideTrunkId"),
-                },
-                {
-                    "method": "DialogManager.PlayTrunkNode",
-                    "token": cited_token("DialogManager.PlayTrunkNode"),
-                    "address": cited_address("DialogManager.PlayTrunkNode"),
-                },
+                {key: native_cited("DTTrunkNodeData.get_trunkId").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogPlayTrunkActionData.get_trunkId").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogTreeTrunkNode.DoExecute").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogTreeTrunkNode.FindTrunkIdForReplacement").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogTreeTrunkNode._DoPlayTrunk").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogPlayTrunkActionData.SetOverrideTrunkId").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogManager.PlayTrunkNode").get(key) for key in ("method", "token", "address")},
             ])
         if has_dialog_carrier:
             native_consumers.extend([
-                {
-                    "method": "DialogTreeDialogNode.DoExecute",
-                    "token": cited_token("DialogTreeDialogNode.DoExecute"),
-                    "address": cited_address("DialogTreeDialogNode.DoExecute"),
-                },
-                {
-                    "method": "DialogManager.PlayNextDialog",
-                    "token": cited_token("DialogManager.PlayNextDialog"),
-                    "address": cited_address("DialogManager.PlayNextDialog"),
-                },
+                {key: native_cited("DialogTreeDialogNode.DoExecute").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("DialogManager.PlayNextDialog").get(key) for key in ("method", "token", "address")},
             ])
         connection = {
             "key": story_key,
@@ -239,6 +204,7 @@ def dialog_tree_narrative_connection(
         evidence_tier: str,
         story_kind_by_key: dict[str, str],
         story_owner_by_key: dict[str, str],
+        native_cited: Callable[[str], dict],
     ) -> dict:
         left_subtitle_only = bool(occurrence_rows) and all(
             str(row.get("actionKind") or "") == "left_subtitle"
@@ -327,21 +293,9 @@ def dialog_tree_narrative_connection(
             })
             connection["dialogTreeLeftSubtitleActions"] = occurrence_rows
             connection["nativeConsumers"] = [
-                {
-                    "method": "DialogLeftSubtitleAction.OnPlay",
-                    "token": cited_token("DialogLeftSubtitleAction.OnPlay"),
-                    "address": cited_address("DialogLeftSubtitleAction.OnPlay"),
-                },
-                {
-                    "method": "LangKey.GetText",
-                    "token": cited_token("LangKey.GetText"),
-                    "address": cited_address("LangKey.GetText"),
-                },
-                {
-                    "method": "UILeftSubtitle.SetLeftSubTitle",
-                    "token": cited_token("UILeftSubtitle.SetLeftSubTitle"),
-                    "address": cited_address("UILeftSubtitle.SetLeftSubTitle"),
-                },
+                {key: native_cited("DialogLeftSubtitleAction.OnPlay").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("LangKey.GetText").get(key) for key in ("method", "token", "address")},
+                {key: native_cited("UILeftSubtitle.SetLeftSubTitle").get(key) for key in ("method", "token", "address")},
             ]
             connection["serverEvidenceStatus"] = (
                 "DialogLeftSubtitleAction.OnPlay sends a local global UI event; "

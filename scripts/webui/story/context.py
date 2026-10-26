@@ -119,22 +119,6 @@ DEFAULT_LANGUAGE = "CN"
 BUILD_PROFILES = ("lean", "full")
 DEFAULT_BUILD_PROFILE = "lean"
 I18N_FILE_RE = re.compile(r"^I18nTextTable_([A-Z]+)\.json$")
-I18N_HOTFIX_TABLE = "I18nHotFix.json"
-I18N_HOTFIX_LANGUAGE_TYPES = {
-    "EN": 1,
-    "JP": 2,
-    "KR": 3,
-    "TC": 4,
-    "MX": 5,
-    "BR": 6,
-    "FR": 7,
-    "DE": 8,
-    "RU": 9,
-    "IT": 10,
-    "ID": 11,
-    "TH": 12,
-    "VN": 13,
-}
 LANGUAGE_INFO = {
     "BR": {
         "label": "Portuguese (Brazil)",

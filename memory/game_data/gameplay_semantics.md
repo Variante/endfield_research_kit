@@ -347,7 +347,12 @@ Current passive capture layouts use the named generated setter claims in
 store establish the physical BlackboardDouble cells without open generic
 instance offsets. This establishes no serialized-source transfer, Boolean
 normalization, runtime type selection or provider lookup; the installed-format
-validators keep those separate obligations.
+validators keep those separate obligations. Current HealDetail observations
+retain typed ProtoBuf property access, field numbers, raw message snapshots and
+full-width getter result identities without pointee reads. They are not whole
+message encode/parse intervals. The selected named IsPatched helper has no
+retained direct caller site in this scope, so its inactive hook is omitted;
+inline patch-table/delegate routes remain unobserved.
 
 The reviewed
 [`Buff paired recipe`](../../scripts/game_data/contracts/buff_runtime_paired_capture.json)

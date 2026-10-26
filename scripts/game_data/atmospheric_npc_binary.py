@@ -64,7 +64,7 @@ def _read_i32(data: bytes, offset: int) -> int:
 def decode_level_entity_data(
     data: bytes, start: int, end: int, *, strings: StringPool | None = None
 ) -> dict[str, Any]:
-    """Decode the inherited 14-field ``LevelEntityData`` prefix."""
+    """Decode the inherited prefix, preserving UInt64 IDs as decimal strings."""
     cursor = start
 
     def require(size: int, field: str) -> int:
@@ -80,8 +80,8 @@ def decode_level_entity_data(
     def i32(field: str) -> int:
         return struct.unpack_from("<i", data, require(4, field))[0]
 
-    def i64(field: str) -> int:
-        return struct.unpack_from("<q", data, require(8, field))[0]
+    def u64(field: str) -> str:
+        return str(struct.unpack_from("<Q", data, require(8, field))[0])
 
     def boolean(field: str) -> bool:
         value = data[require(1, field)]
@@ -116,14 +116,14 @@ def decode_level_entity_data(
     prefix_start = cursor
     fields = {
         "aoiRadiusType": i32("aoiRadiusType"),
-        "belongLevelScriptId": i64("belongLevelScriptId"),
+        "belongLevelScriptId": u64("belongLevelScriptId"),
         "createState": i32("createState"),
-        "dependencyGroupId": i64("dependencyGroupId"),
+        "dependencyGroupId": u64("dependencyGroupId"),
         "entityDataIdKey": string("entityDataIdKey"),
         "entityType": i32("entityType"),
         "forceLoad": boolean("forceLoad"),
         "keepCrossMap": boolean("keepCrossMap"),
-        "levelLogicId": i64("levelLogicId"),
+        "levelLogicId": u64("levelLogicId"),
         "overrideSendDieEvent": boolean("overrideSendDieEvent"),
         "position": vector3("position"),
         "rotation": vector3("rotation"),

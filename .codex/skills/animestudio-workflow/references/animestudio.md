@@ -123,8 +123,10 @@ publishes, per source:
 
 `summary.json` is the last-written commit marker. Loading fails closed on
 missing or malformed stage provenance, content-hash mismatches, stale current
-source/CLI provenance, incomplete parts, conflicting physical identities, or
-ambiguous external CAB-filename/PathID targets. CLI provenance covers the
+source/CLI provenance, incomplete parts or conflicting duplicate object bodies.
+Ambiguous external CAB-filename/PathID targets remain unresolved edges, including
+when a worker loaded a second physical identity outside the exported surface.
+CLI provenance covers the
 apphost and first-party `AnimeStudio*.dll` implementation assemblies; optional
 DummyDll provenance uses per-file content hashes. Story/all refreshes
 invalidate an old marker before carrier workers start. Asset-only and

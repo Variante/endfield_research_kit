@@ -133,7 +133,8 @@ from scripts.webui.story.source_gap.content_evidence import (
     _offline_radio_definition_validation_failure,
 )
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
-from scripts.game_data.story_native_consumers_native import cited_address, cited_token, consumer_rows
+from scripts.game_data.story_native_consumers_native import consumer_rows
+from scripts.webui.story.source_gap.data import cited_address, cited_token
 
 
 
@@ -1730,6 +1731,7 @@ def build_offline_exhaustion_index(
     reverse_pptr_audit_path: Path | None = None,
     native_playback_index: dict[str, list[dict[str, Any]]] | None = None,
     action_story_occurrences: dict[str, list[dict[str, Any]]] | None = None,
+    native_scope=None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Build hash-locked current-build deferrals for exhausted offline rows.
 
@@ -2641,9 +2643,7 @@ def build_offline_exhaustion_index(
                 f"missionTopologyPlayback:{mission_id}:{inventory_index}"
             )
             playback_data = source_paths[playback_source_name].read_bytes()
-            playback_records = extract_levelscript_uid_records(
-                playback_data
-            )
+            playback_records = extract_levelscript_uid_records(playback_data, source_path=source_paths[playback_source_name])
             _action_map, playback_membership = (
                 levelscript_action_map_membership(
                     playback_data,
@@ -2973,7 +2973,7 @@ def build_offline_exhaustion_index(
             {script_id},
         )
         brief = brief_dictionary.get(script_id) or {}
-        records = extract_levelscript_uid_records(levelscript_bytes)
+        records = extract_levelscript_uid_records(levelscript_bytes, source_path=levelscript_path)
         action_map, _membership = levelscript_action_map_membership(
             levelscript_bytes,
             records,
@@ -3111,7 +3111,7 @@ def build_offline_exhaustion_index(
             ):
                 property_values[name] = safe_key(atoms[0].get("text"))
 
-        records = extract_levelscript_uid_records(levelscript_bytes)
+        records = extract_levelscript_uid_records(levelscript_bytes, source_path=levelscript_path)
         _action_map, membership = levelscript_action_map_membership(
             levelscript_bytes,
             records,
@@ -3390,7 +3390,7 @@ def build_offline_exhaustion_index(
         post_dialog_action = declaration.get("postDialogAction")
         post_dialog_output = None
         if valid and isinstance(post_dialog_action, dict):
-            records = extract_levelscript_uid_records(data)
+            records = extract_levelscript_uid_records(data, source_path=source_paths[source_name])
             action_record = next(
                 (row for row in records if row.get("localId") == post_dialog_action["actionLocalId"]),
                 None,
@@ -3947,14 +3947,14 @@ def build_offline_exhaustion_index(
                 "carrierAuditTargetSetSha256": core_target_digest,
                 "nativeMappingId": NPC_PROXY_DIALOG_SELECTION_MAPPING_ID,
                 "gameAssemblySha256":
-                    npc_proxy_dialog_selection_sha256(),
+                    npc_proxy_dialog_selection_sha256(native_scope=native_scope),
                 "nativeConsumerMethods": [{
                     "method": (
                         "Beyond.Gameplay.NpcInteractComponent."
                         "_TryGetNpcProxyInteractDialogId"
                     ),
-                    "token": cited_token("Beyond.Gameplay.NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
-                    "address": cited_address("Beyond.Gameplay.NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
+                    "token": cited_token("Beyond.Gameplay.NpcInteractComponent._TryGetNpcProxyInteractDialogId", native_scope=native_scope),
+                    "address": cited_address("Beyond.Gameplay.NpcInteractComponent._TryGetNpcProxyInteractDialogId", native_scope=native_scope),
                     "selectionField": "activeCondIndex",
                 }],
                 "searchedConsumerKinds": [

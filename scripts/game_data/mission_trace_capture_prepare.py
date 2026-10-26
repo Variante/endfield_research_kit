@@ -509,10 +509,11 @@ class SelectedMethods:
                 'evidence':'selected undecorated enum value and Int32 value__ declaration; Win64 EAX return'}
 
     def reference_return_abi(self, type_index: int) -> dict[str, Any] | None:
-        """A direct declared CLASS returns a pointer without a hidden buffer.
+        """A direct declared CLASS/OBJECT returns a pointer without a hidden buffer.
 
         This admits no generic, decorated, byref, array or value-type return.
-        The observer does not read RAX or retain the returned reference.
+        This declaration proof does not select observation. A paired caller may
+        retain the raw reference identity without reading its pointee.
         """
         registration = self.image.registration
         if not 0 <= type_index < registration["typesCount"]:
@@ -522,8 +523,13 @@ class SelectedMethods:
         if not pointer:
             raise PreparationError("mission_trace.return: missing selected native type")
         raw = self.image.pe.bytes_at_va(pointer, 16)
-        if len(raw) != 16 or raw[10] != 0x12 or raw[11] != 0:
+        if len(raw) != 16 or raw[11] != 0:
             return None
+        if raw[10]==0x1c and self.type_name(type_index)=='object':
+            return {'mode':'directReference','returnType':'object','typeIndex':type_index,
+                    'evidence':'selected undecorated IL2CPP_TYPE_OBJECT; Win64 pointer return has no hidden buffer',
+                    'returnObserved':False}
+        if raw[10]!=0x12:return None
         definition_index = int.from_bytes(raw[:8], "little")
         name = self.type_name(type_index)
         td = self.index.types.get(name)
@@ -871,9 +877,10 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                 raise PreparationError('mission_trace.receiver: every value receiver path requires explicit unboxed size')
         if spec.get('observationMode') is not None:
             enum_return=selected.is_enum(spec['returnType'])
+            reference_return=spec['name'] in getattr(selected,'_return_abi_proofs',{})
             if (spec['observationMode'] != 'paired' or spec.get('genericEntry') or spec.get('anonymousEntry')
-                    or spec['returnType'] not in {'void','bool','float','double'} and not (enum_return and recipe.get('schema') in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA})):
-                raise PreparationError(f"{spec['name']}: paired observer requires unique nongeneric void/bool/float/double entry")
+                    or spec['returnType'] not in {'void','bool','float','double'} and not ((enum_return or reference_return) and recipe.get('schema') in {BUNDLE_RECIPE_SCHEMA,RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA})):
+                raise PreparationError(f"{spec['name']}: paired observer requires a unique nongeneric proved scalar/reference return")
             if spec['returnType'] in {'float', 'double'} and recipe.get('schema') not in {NUMERIC_RECIPE_SCHEMA, RESOLUTION_RECIPE_SCHEMA, BUNDLE_RECIPE_SCHEMA, RECEIVER_RECIPE_SCHEMA, IMAGE_RECIPE_SCHEMA, CALLER_RECIPE_SCHEMA}:
                 raise PreparationError(f"{spec['name']}: floating returns require recipe v9")
             count = len(spec['parameters']) + int(not spec['static']) + 1  # trailing IL2CPP MethodInfo
@@ -925,7 +932,7 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                         aggregate_arguments.append({"argument": p['name'],
                             **(selected.paired_indirect_value_argument(spec, p) if indirect else
                                selected.paired_inline_value_argument(t))})
-            storage_return="int" if enum_return else spec['returnType']
+            storage_return="int" if enum_return else 'pointer' if reference_return else spec['returnType']
             abi = f"win64.paired_gp_{storage_return}_{count}.v1"
             if scalar_inputs:
                 if len(scalar_inputs)!=1:raise PreparationError('mission_trace.recipe: sole mixed Double input required')
@@ -1017,7 +1024,8 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                 receiverIdentity={"arg": 1, "type": field_abi["parameters"][1]["type"],
                                   "source": "proved helper entry action register; not a returned action"})
         if entry is None and spec["name"] in getattr(selected, "_return_abi_proofs", {}):
-            hooks[-1]["returnAbiProof"] = selected._return_abi_proofs[spec["name"]]
+            hooks[-1]["returnAbiProof"] = {**selected._return_abi_proofs[spec["name"]],
+                'returnObserved':abi!=ABI_ID,'pointeeRead':False}
     return hooks
 
 

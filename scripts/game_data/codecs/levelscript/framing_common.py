@@ -13,6 +13,11 @@ class LevelScriptTopLevelFramingError(ValueError):
     """Raised when a strict partial top-level frame cannot be proved."""
 
 
+def bounded_diagnostic_rows(value: Any) -> list[Any]:
+    """Preserve one structured refusal or the first eight diagnostic rows."""
+    return list(value[:8]) if isinstance(value,(list,tuple)) else [value] if isinstance(value,dict) else []
+
+
 def _u64_offsets(data: bytes, value: int) -> list[int]:
     needle = struct.pack("<Q", value)
     offsets: list[int] = []

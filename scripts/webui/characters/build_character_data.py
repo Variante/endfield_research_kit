@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build the WebUI Characters (人物) name-and-evidence catalog."""
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, localize
 
 import argparse
 import hashlib
@@ -439,8 +440,9 @@ def build_language_payload(
     asset_index_path: Path,
 ) -> dict[str, Any]:
     catalog = CharacterCatalog(language)
-    fallback_i18n = load_merged_table(roots, f"I18nTextTable_{fallback_language}.json")
-    i18n = fallback_i18n if language == fallback_language else load_merged_table(roots, f"I18nTextTable_{language}.json")
+    hotfixes = load_merged_table(roots, HOTFIX_TABLE)
+    fallback_i18n = localize(load_merged_table(roots, f"I18nTextTable_{fallback_language}.json"), hotfixes, fallback_language)
+    i18n = fallback_i18n if language == fallback_language else localize(load_merged_table(roots, f"I18nTextTable_{language}.json"), hotfixes, language)
     text_table = load_merged_table(roots, "TextTable.json")
     character_table = load_merged_table(roots, "CharacterTable.json")
     npc_table = load_merged_table(roots, "NpcTable.json")

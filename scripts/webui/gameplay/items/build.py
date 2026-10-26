@@ -6,6 +6,7 @@ No installed data, other page publication or native/runtime inference is
 required. The page registry owns freshness checks.
 """
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, localize
 
 import argparse
 import hashlib
@@ -587,6 +588,10 @@ def main(argv: list[str] | None = None) -> int:
     for name in TABLE_NAMES:
         tables[name], receipt = read_table(layout.table_dir / f"{name}.json")
         inputs.append(receipt)
+    hotfixes = {}
+    if (layout.table_dir / HOTFIX_TABLE).is_file():
+        hotfixes, hotfix_receipt = read_table(layout.table_dir / HOTFIX_TABLE)
+        inputs.append(hotfix_receipt)
     localizations = {language: read_table(layout.table_dir / f"I18nTextTable_{language}.json") for language in languages}
     icon_ids = {str(row.get("iconId") or "") for row in tables["ItemTable"].values()}
     icon_ids.update(str(row.get("iconId") or "") for row in
@@ -607,7 +612,7 @@ def main(argv: list[str] | None = None) -> int:
                     icon_ids.add(token + "_plating")
     icons, icon_status = load_icons(layout, icon_ids - {""}, square_icon_ids=square_icon_ids)
     for language, (texts, receipt) in localizations.items():
-        catalog = build_catalog(tables, texts)
+        catalog = build_catalog(tables, localize(texts, hotfixes, language))
         catalog.update(icons=icons, iconStatus=icon_status)
         index = publish(catalog, language, args.out_dir / "lang" / language / "gameplay" / "items", inputs + [receipt])
         print(f"{language}: {json.dumps(index['stats'], ensure_ascii=False)}")

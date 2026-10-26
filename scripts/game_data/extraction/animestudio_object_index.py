@@ -433,13 +433,13 @@ def resolve_object_row(
         candidates = candidate_lookup(serialized_file, path_id)
         observed_keys = observations_by_edge.get(edge_index, set())
 
-        if len(candidates) == 1:
+        # A loaded dependency outside the exported surface is still evidence
+        # against uniqueness; never replace its conflicting physical identity.
+        runtime_conflict = bool(candidates and observed_keys - {key for key, _, _ in candidates})
+        if runtime_conflict:
+            resolution_counts["runtimeConflicts"] += 1
+        if len(candidates) == 1 and not runtime_conflict:
             candidate_key, candidate_kind, candidate = candidates[0]
-            if observed_keys and observed_keys != {candidate_key}:
-                raise MergeError(
-                    f"object {owner_key}: runtime external target conflicts with the "
-                    "unique global candidate"
-                )
             pptr["status"] = MERGED_RESOLUTION_STATUS
             pptr["target"] = target_from_candidate(candidate_kind, candidate)
             pptr["resolutionBasis"] = MERGED_RESOLUTION_BASIS

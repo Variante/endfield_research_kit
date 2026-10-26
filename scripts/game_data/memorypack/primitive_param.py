@@ -11,6 +11,7 @@ from pathlib import Path
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image,native_validation_failure
 from scripts.game_data.il2cpp.rgctx_symbols import validate_claims
+from scripts.game_data.il2cpp.protocol import native_enum_members
 
 from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
@@ -126,20 +127,27 @@ def object_header_source(image,record,offsets):
         scalar.need(LABEL,'headerColdGuardOutsideBufferedProgram',False,record['window']['startRva']<=target<record['window']['endRva'])
 
 
-def setter_call_program(image,record,setters,*,width=4,vector2=False,output=False,typed_enum=False):
+def setter_call_program(image,record,setters,*,width=4,vector2=False,output=False,typed_enum=False,typed_qword=False,integer_slots=None):
     """The buffered header/typed setter-call profile, including its null edge."""
     rows=record['instructions'];expected=[b'\x48\x89\x5c\x24\x18',b'\x57',b'\x48\x83\xec\x20',None,b'\x48\x8b\xda',b'\x48\x8b\xf9',None,
         b'\x48\x8d\x54\x24\x30',b'\xc6\x44\x24\x30\x00',b'\x48\x8b\xcf',None,b'\x84\xc0',None,b'\x48\x89\x74\x24\x38',
         b'\x48\x83\x3b\x00',None,b'\x0f\xb6\x74\x24\x30',b'\x40\x80\xfe\x04',None]
-    scalar.need(LABEL,'outputCallProfile',True,not output or (width==4 and not vector2 and not typed_enum))
-    scalar.need(LABEL,'typedEnumCallWidth',True,not typed_enum or (width==4 and not vector2))
-    typed=vector2 or typed_enum
+    scalar.need(LABEL,'outputCallProfile',True,not output or (width==4 and not vector2 and not typed_enum and not typed_qword))
+    scalar.need(LABEL,'typedEnumCallWidth',True,not typed_enum or (width in (1,4) and not vector2 and not typed_qword))
+    scalar.need(LABEL,'typedQwordProfile',True,not typed_qword or width==8 and not vector2 and not typed_enum)
+    inline=integer_slots is not None
+    scalar.need(LABEL,'inlineBindingProfile',True,not inline or typed_qword and not output and isinstance(integer_slots,dict) and set(integer_slots)=={'idRef','paramSource'} and all(type(v) is int and 16<=v<128 for v in integer_slots.values()) and abs(integer_slots['idRef']-integer_slots['paramSource'])>=4)
+    typed=vector2 or typed_enum or typed_qword
     if output:expected[17]=b'\x40\x80\xfe\x02'
     for _ in range(1 if output else 3):expected.extend([b'\x48\x8b\x33',b'\x48\x8b\xcf',None,b'\x48\x85\xf6',None,b'\x45\x33\xc0',b'\x8b\xd0',b'\x48\x8b\xce',None])
     expected.extend([b'\x48\x8b\x1b',b'\x48\x8b\xcf',None,b'\x48\x85\xdb',None,b'\x45\x33\xc0',b'\x48\x8b\xd0',b'\x48\x8b\xcb',None,
         b'\x48\x8b\x74\x24\x38',b'\x48\x8b\x5c\x24\x40',b'\x48\x83\xc4\x20',b'\x5f',b'\xc3',None,b'\xcc',None,None,None,None,None,None,None,None])
-    scalar.need(LABEL,'setterCallConstWidth',True,width in (4,8))
+    scalar.need(LABEL,'setterCallConstWidth',True,width in (4,8) or width==1 and typed_enum)
+    if width==1:expected[25]=b'\x0f\xb6\xd0'
     if width==8:expected[25]=b'\x48\x8b\xd0'
+    if inline:
+        expected[37:39]=[b'\x48\x8b\xcf',b'\x48\x8b\x33'];expected[46:48]=[b'\x48\x8b\xcf',b'\x48\x8b\x1b']
+        for start,name in ((33,'idRef'),(42,'paramSource')):expected[start:start+4]=[b'\x48\x8b\x4e\x10',b'\x48\x85\xc9',None,b'\x89\x41'+bytes((integer_slots[name],))]
     if typed:
         if vector2:scalar.need(LABEL,'vector2CallWidth',8,width)
         expected[68:68]=[None,None]
@@ -152,9 +160,11 @@ def setter_call_program(image,record,setters,*,width=4,vector2=False,output=Fals
         return rva+size+int.from_bytes(raw[len(opcode):],'little',signed=True)
     for n,dest in ((6,62),(23,60),*((() if output else ((32,60),(41,60)))),(50,60),(69,7)):
         scalar.need(LABEL,'setterCallBranchTarget',rows[at(dest)][0],target(n,b'\xe9' if n==69 else b'\x0f\x84' if n==6 else b'\x74'))
+    if inline:
+        for n in (35,44):scalar.need(LABEL,'inlineBindingNullGuard',rows[at(60)][0],target(n,b'\x74'))
     for n,opcode in ((15,b'\x0f\x84'),(18,b'\x0f\x85')):
         scalar.need(LABEL,'setterCallColdGuardOutsidePrimary',False,record['window']['startRva']<=target(n,opcode)<record['window']['endRva'])
-    for name,n in ((('paramTarget',27),('path',54)) if output else (('constValue',27),('idRef',36),('paramSource',45),('path',54))):
+    for name,n in ((('paramTarget',27),('path',54)) if output else (('constValue',27),('path',54)) if inline else (('constValue',27),('idRef',36),('paramSource',45),('path',54))):
         scalar.need(LABEL,'ownedSetterCall:'+name,setters[name],target(n,b'\xe8'))
     for n in (60,63,65,67):target(n,b'\xe8')
     scalar.need(LABEL,'setterCallSameInitializer',1,len({target(n,b'\xe8') for n in (63,65,67)}))
@@ -201,7 +211,7 @@ def vector2_setter(image,rows,slot):
     raw=bytes.fromhex(rows[5][1]);scalar.need(LABEL,'vector2SetterThrow',(5,b'\xe8'),(len(raw),raw[:1]))
 
 
-def enum_call_program(image,record,setters,constructor):
+def enum_call_program(image,record,setters,constructor,*,width=4):
     """Complete initialized-header enum caller; null and owned stores are explicit."""
     rows=record['instructions']
     expected=[b'\x48\x89\x5c\x24\x10',b'\x48\x89\x74\x24\x18',b'\x57',b'\x48\x83\xec\x20',None,
@@ -210,6 +220,8 @@ def enum_call_program(image,record,setters,constructor):
         b'\x48\x83\x3b\x00',None,None,None,b'\x48\x8b\xf8',b'\x48\x85\xc0',None,b'\x33\xd2',b'\x48\x8b\xc8',None,
         b'\x48\x8b\xcb',b'\x48\x89\x3b',None,b'\x80\x7c\x24\x30\x04',None,None,b'\x48\x8b\xce',b'\x48\x8b\x3b',None,
         b'\x48\x85\xff',None,b'\x45\x33\xc0',b'\x8b\xd0',b'\x48\x8b\xcf',None]
+    scalar.need(LABEL,'enumCallWidth',True,width in (1,4))
+    if width==1:expected[45]=b'\x8a\xd0'
     for _ in range(2):expected.extend([b'\x48\x8b\x3b',b'\x48\x8b\xce',None,b'\x48\x85\xff',None,b'\x45\x33\xc0',b'\x8b\xd0',b'\x48\x8b\xcf',None])
     expected.extend([b'\x48\x8b\x1b',b'\x48\x8b\xce',None,b'\x48\x85\xdb',None,b'\x45\x33\xc0',b'\x48\x8b\xd0',b'\x48\x8b\xcb',None,None,None,b'\xcc',None,None,None,b'\x33\xd2',b'\x48\x8b\xcb',None,
         b'\x44\x8a\x44\x24\x30',b'\x45\x33\xc9',b'\xb2\x04',b'\x48\x8b\xc8',None,b'\xcc',b'\x48\x8b\xcb',b'\x48\xc7\x03\x00\x00\x00\x00',None,
@@ -277,13 +289,15 @@ def initialized_enum_program(image,record,setters):
     return {name:target(n,b'\x0f\x84' if name=='null' else b'\xe8') for name,n in (('header',19),('null',21),('constValue',31),('idRef',42),('paramSource',51),('path',60))}
 
 
-def derive_parameter(image,inputs,primitive,*,value_type=None):
+def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False):
     """Derive current declarations; never reuse an old RVA or generic heap offset."""
     if primitive not in ('bool','int','string','float','uint','ulong','vector2','vector3'):raise ValueError(LABEL+'.unsupported-primitive:'+str(primitive))
     width,kind={'bool':(1,2),'int':(4,8),'string':(8,14),'float':(4,12),'uint':(4,9),'ulong':(8,11),'vector2':(8,17),'vector3':(12,17)}[primitive]
     reference=primitive=='string';floating=primitive=='float';vector2=primitive=='vector2';vector3=primitive=='vector3';called=primitive in ('uint','ulong','vector2')
     enum=value_type is not None
-    if enum and primitive!='int':raise ValueError(LABEL+'.enum-int32-profile-required')
+    if enum and primitive!='int':raise ValueError(LABEL+'.enum-integer-profile-required')
+    if enum_byte:
+        scalar.need(LABEL,'byteEnumProfile',True,enum);width=1
     typename=value_type if enum else 'UnityEngine.Vector'+primitive[-1] if vector2 or vector3 else primitive
     if enum:kind=17;called=True
     wrapped='Beyond.Gameplay.Actions.Param`1<'+typename+'>'
@@ -293,9 +307,9 @@ def derive_parameter(image,inputs,primitive,*,value_type=None):
     scalar.need(LABEL,'wrapperCount',1,len(matches));wrapper=matches[0]
     scalar.need(LABEL,'memberTypes',[('constValue',typename),('idRef','int'),('paramSource','int'),('path','string')],[(m.name,m.declared_type) for m in wrapper.members])
     if enum:
-        scalar.need(LABEL,'enumConstantKind',('enum','scalar32',4),(wrapper.members[0].kind,wrapper.members[0].underlying_kind,wrapper.members[0].width))
+        scalar.need(LABEL,'enumConstantKind',('enum','scalar8' if enum_byte else 'scalar32',width),(wrapper.members[0].kind,wrapper.members[0].underlying_kind,wrapper.members[0].width))
         definition=ctx.index.types[typename];backing=[f for f in md.fields_for(definition) if md.string(f.name_index)=='value__']
-        scalar.need(LABEL,'oneEnumBacking',1,len(backing));scalar.ordinary(image,ctx.type_pointer(backing[0].type_index),8,LABEL+'.enumBacking')
+        scalar.need(LABEL,'oneEnumBacking',1,len(backing));scalar.ordinary(image,ctx.type_pointer(backing[0].type_index),5 if enum_byte else 8,LABEL+'.enumBacking')
     scalar.need(LABEL,'wrapperHolder', (wrapper.name,wrapped,16),ctx.field(wrapper.name+'::__instance'))
     def record(pointer,size=None,*,owned=False):
         end=pointer+size if size is not None else index.extents[pointer]
@@ -340,7 +354,7 @@ def derive_parameter(image,inputs,primitive,*,value_type=None):
         initialized_enum=enum and len(methods['Deserialize']['instructions'])==72
         owned_setters={n:methods['set___'+n+'__']['pointerRva'] for n in slots}
         targets=(initialized_enum_program(image,methods['Deserialize'],owned_setters) if initialized_enum else
-            enum_call_program(image,methods['Deserialize'],owned_setters,methods['.ctor']['pointerRva']) if enum and not typed_enum else
+            enum_call_program(image,methods['Deserialize'],owned_setters,methods['.ctor']['pointerRva'],width=width) if enum and not typed_enum else
             setter_call_program(image,methods['Deserialize'],{n:methods['set___'+n+'__']['pointerRva'] for n in slots},width=width,vector2=vector2,typed_enum=typed_enum))
         extra['headerSource']=record(base+targets['header']);object_header_source(image,extra['headerSource'],offsets)
         if enum:
@@ -366,7 +380,9 @@ def derive_parameter(image,inputs,primitive,*,value_type=None):
         context=derive_typed_usage_context(image,methods['Deserialize']['instructions'][19 if vector2 else 26][0],label=LABEL)
         constant=(validate_vector2_source if vector2 else validate_vector3_source)(image,context,targets['constValue'])
     else:constant=pooled_source_helper.validate_on_image(image,base+targets['constValue'],inputs) if reference else record(base+targets['constValue'])
-    if primitive=='ulong':
+    if enum_byte:
+        scalar.raw_byte_source(image,constant,offsets)
+    elif primitive=='ulong':
         scalar.integer_source(image,constant,offsets,LABEL+'.constant',width=8)
     elif floating:single_source(image,constant,offsets)
     elif not reference and not (vector2 or vector3):(scalar.boolean_source if primitive=='bool' else scalar.integer_source)(image,constant,offsets,LABEL+'.constant')
@@ -383,7 +399,7 @@ def derive_parameter(image,inputs,primitive,*,value_type=None):
         scalar.need(LABEL,'sameConstantSetterBarrier',targets['barrier'],call[0]+5+int.from_bytes(raw[1:],'little',signed=True))
     return {'status':'validated','parameter':parameter,'booleanSource' if primitive=='bool' else 'constantSource':constant,'int32Source':integer,'readerFieldOffsets':offsets,'targets':targets,**extra,
             'evidenceBoundary':{'direct':{'bool':'Named typed wrapper, owned constructor/store slots, complete selected inline read/store/return program, normalized byte source, two Int32 reads and pooled path.',
-                'int':('Named typed signed-Int32 enum backing, owned constructor/setter slots, complete selected header/caller/null program, exact enum ReadUnmanaged context, three raw DWORD reads and pooled path.' if enum else 'Named typed Int32 wrapper, owned constructor/store slots, complete selected inline read/store/return program, three raw DWORD reads and pooled path.'),
+                'int':('Named typed unsigned-byte enum backing, owned constructor/setter slots, complete selected header/caller/null program, exact enum ReadUnmanaged context, one raw byte, two raw DWORD reads and pooled path.' if enum_byte else 'Named typed signed-Int32 enum backing, owned constructor/setter slots, complete selected header/caller/null program, exact enum ReadUnmanaged context, three raw DWORD reads and pooled path.' if enum else 'Named typed Int32 wrapper, owned constructor/store slots, complete selected inline read/store/return program, three raw DWORD reads and pooled path.'),
                 'float':'Named typed Single wrapper, owned constructor/store slots, complete selected inline read/store/return program, raw XMM Single transfer, two Int32 reads and pooled path.',
                 'uint':'Named typed UInt32 wrapper, owned constructor/setter slots, complete selected buffered-header/setter-call program and owned null branch, raw DWORD transfers and pooled path.',
                 'ulong':'Named typed UInt64 wrapper, owned constructor/setter slots, complete selected buffered-header/setter-call program and owned null branch, full QWORD transfer and eight-byte cursor accounting with pooled path.',
@@ -394,8 +410,9 @@ def derive_parameter(image,inputs,primitive,*,value_type=None):
                 'unresolved':['generic Param heap field layout independent of these owned setters','cold refill/allocation paths','live provider/holder selection','enclosing owner and corpus admission']}}
 
 
-def validate_contract(*,contract_path,schema,primitive,label,game_root=None,gameassembly=None,metadata=None,codec_kind=None,value_type=None):
+def validate_contract(*,contract_path,schema,primitive,label,game_root=None,gameassembly=None,metadata=None,codec_kind=None,value_type=None,enum_byte=False):
     try:
+        if enum_byte and value_type is None:raise ValueError(label+'.byte-enum-type-required')
         path=Path(contract_path);raw=path.read_bytes();fact=json.loads(raw);pins=fact['nativeInputs'];codec='Param<'+('Vector'+primitive[-1] if primitive in ('vector2','vector3') else primitive)+'>'
         if value_type is not None:
             codec=codec_kind
@@ -419,16 +436,18 @@ def validate_contract(*,contract_path,schema,primitive,label,game_root=None,game
         failed=pooled_source_helper.check_unity_input(gate.gameassembly,pins)
         if failed:return failed
         strings=pooled_source_helper.CONTRACT_PATH.read_bytes()
-        actual=derive_parameter(open_native_image(gate.gameassembly,gate.metadata),pins,primitive,**({'value_type':value_type} if value_type is not None else {}))
+        image=open_native_image(gate.gameassembly,gate.metadata)
+        actual=derive_parameter(image,pins,primitive,**({'value_type':value_type,**({'enum_byte':True} if enum_byte else {})} if value_type is not None else {}))
         if fact['evidenceBoundary']!=actual['evidenceBoundary']:raise ValueError(label+'.contract:evidence-boundary')
         validate_claims(declared,actual,label=label+'.proof');validate_claims(actual,declared,label=label+'.declaration')
+        enum_values=native_enum_members(image.metadata,image.body_index.enum_defaults,image.pe,image.registration,value_type) if value_type is not None else None
         after=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated':return {'status':after.status,'detail':'native inputs changed during validation: '+after.detail}
         failed=pooled_source_helper.check_unity_input(gate.gameassembly,pins)
         if failed:return failed
         if path.read_bytes()!=raw or pooled_source_helper.CONTRACT_PATH.read_bytes()!=strings:raise ValueError(label+'.contract:declaration changed during validation')
-        return {'status':'validated','codecKind':codec,'rawSize':{'bool':1,'int':4,'string':8,'float':4,'uint':4,'ulong':8,'vector2':8,'vector3':12}[primitive],'pathEncoding':'int32-pool-index',
-            **({'valueEncoding':'int32-pool-index'} if primitive=='string' else {}),'nativeInputs':pins,'evidenceBoundary':actual['evidenceBoundary']}
+        return {'status':'validated','codecKind':codec,'rawSize':1 if enum_byte else {'bool':1,'int':4,'string':8,'float':4,'uint':4,'ulong':8,'vector2':8,'vector3':12}[primitive],'pathEncoding':'int32-pool-index',
+            **({'valueEncoding':'int32-pool-index'} if primitive=='string' else {}),**({'enumValues':enum_values} if enum_values is not None else {}),'nativeInputs':pins,'evidenceBoundary':actual['evidenceBoundary']}
     except (ValueError,KeyError,IndexError,TypeError,OSError,RuntimeError) as error:
         return native_validation_failure(error,label=label,source_path=contract_path)
 

@@ -42,6 +42,7 @@ import hashlib
 import heapq
 import json
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -361,7 +362,7 @@ class ChangeAccumulator:
             new_line_count=scanned.line_count,
             text_diff=text_diff,
             text_diff_truncated=text_diff_truncated,
-            text_kind=scanned.text_kind,
+            text_kind=comparison_text_kind(scanned),
             text_diff_note=modified_diff_note(scanned, text_diff),
         )
         self._remember_sample(self.modified_examples, entry)
@@ -463,7 +464,9 @@ def textual_form(
     """
 
     try:
-        return raw.decode("utf-8-sig"), TEXT_KIND_PLAIN
+        text = raw.decode("utf-8-sig")
+        if not re.search(r"[\x00-\x08\x0b\x0c\x0e-\x1f]", text):
+            return text, TEXT_KIND_PLAIN
     except UnicodeDecodeError:
         pass
     decoded = render_decoded_payload(rel_path, raw, export_root=export_root)
@@ -477,21 +480,25 @@ def textual_form(
     return decoded.text, kind
 
 
-def modified_diff_note(scanned: "ScannedFile", text_diff: list[str] | None) -> str | None:
-    """Say why a changed file shows no diff, when the reason is not obvious.
+def comparison_text_kind(scanned: ScannedFile) -> str | None:
+    if TEXT_KIND_TOO_LARGE not in (scanned.old_text_kind, scanned.text_kind) and (
+            scanned.old_text_content is None or scanned.text_content is None):
+        return TEXT_KIND_BINARY
+    kinds = [kind for kind in (scanned.old_text_kind, scanned.text_kind)
+             if kind and kind != TEXT_KIND_TOO_LARGE]
+    return next((kind for kind in (TEXT_KIND_BINARY, TEXT_KIND_DECODED_PARTIAL) if kind in kinds),
+                kinds[-1] if kinds else scanned.text_kind)
 
-    A serialized payload can change in bytes a reader does not cover, or in
-    bytes no reader reads at all. Either way the file did change, so the page
-    must say what it is not showing instead of leaving an empty panel.
-    """
 
+def modified_diff_note(scanned: ScannedFile, text_diff: list[str] | None) -> str | None:
     if text_diff:
         return None
-    if scanned.text_kind == TEXT_KIND_BINARY:
-        return "binary_no_reader"
-    if scanned.text_kind == TEXT_KIND_TOO_LARGE:
+    kinds = (scanned.old_text_kind, scanned.text_kind)
+    if TEXT_KIND_TOO_LARGE in kinds:
         return "binary_too_large"
-    if scanned.text_kind in (TEXT_KIND_DECODED_WHOLE, TEXT_KIND_DECODED_PARTIAL):
+    if TEXT_KIND_BINARY in kinds or scanned.old_text_content is None or scanned.text_content is None:
+        return "binary_no_reader"
+    if any(kind in (TEXT_KIND_DECODED_WHOLE, TEXT_KIND_DECODED_PARTIAL) for kind in kinds):
         return "decoded_identical"
     return None
 

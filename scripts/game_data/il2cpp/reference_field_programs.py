@@ -150,10 +150,10 @@ def _setter_metadata(image,wrappers,member):
 def reader_setup(rows,read):
     i=rows.index(read)
     if i<2:raise ValueError('reader-output-setup:missing')
-    reader=preserved_argument(rows[:i],'rcx');output=preserved_argument(rows[:i],'rdx')
+    reader=preserved_argument(rows[:i-2],'rcx');output=preserved_argument(rows[:i-2],'rdx')
     setup={r['text'] for r in rows[i-2:i]}
     receiver=next((m[1] for text in setup if (m:=re.fullmatch(r'mov (rbx|rbp|rsi|rdi|r1[2-5]), \['+output+r'\]',text))),None)
-    if receiver is None or len({reader,output,receiver})!=3 or setup!={f'mov {receiver}, [{output}]',f'mov rcx, {reader}'}:
+    if receiver is None or reader in (output,receiver) or setup!={f'mov {receiver}, [{output}]',f'mov rcx, {reader}'}:
         raise ValueError('reader-output-setup:receiver-or-argument-drift')
     return i,reader,output,receiver
 

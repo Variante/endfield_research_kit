@@ -39,6 +39,7 @@ from scripts.game_data.il2cpp.context import (
 from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
+from scripts.game_data.levelscript_source_receipts import SourceReader
 
 
 SCHEMA = "endfield.levelscript-leader-enter-trigger-volume-native-contract.v1"
@@ -305,6 +306,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None,
 ) -> int:
     prefix = memorypack_union_header(contract["route"]["tag"], contract["route"]["serializedMemberCount"])
     summary = json.loads(summary_path.read_bytes())
@@ -326,6 +328,7 @@ def _validate_sources(
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
     route = contract["route"]
+    source=SourceReader(summary,export_root,contract['nativeInputs'],game_root=game_root)
     for path, digest, start, end, span_digest, id_offset, script_id in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (
@@ -340,11 +343,12 @@ def _validate_sources(
             or not Path(path).stem.isdecimal() or int(Path(path).stem) != script_id
         ):
             raise ValueError(f"{LABEL}.source:receipt={path}")
-        cursor = _Cursor(data, start + len(prefix))
+        cursor = source.cursor(data,start + len(prefix),route,source_path=path)
         for name, kind in route["fields"]:
             cursor.value(kind, "leaderEnterTriggerVolume." + name)
         if cursor.offset != end:
             raise ValueError(f"{LABEL}.source:end-offset={path}")
+    source.check()
     return len(contract["sourceReceipts"])
 
 
@@ -376,7 +380,7 @@ def validate_leader_enter_trigger_volume_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path), game_root=game_root)
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

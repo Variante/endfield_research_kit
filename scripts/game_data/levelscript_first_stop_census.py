@@ -33,7 +33,7 @@ first):
   for ``--expected-input-set-sha256`` whose ``exportRoot`` is ``--export-root``
   and whose ``provenance.outputFiles`` pins the ``--ledger`` bytes;
 - the ledger's LevelScript file and partial counts equal the summary's;
-- the installed build matches the reviewed action-map layout contract, since
+- the installed build matches the reviewed union-tag contract, since
   on any other build every reviewed node would refuse at the build gate and
   the census would rank that refusal instead of a format stop;
 - every partial file exists and matches its ledger length and SHA-256;
@@ -96,6 +96,7 @@ from scripts.game_data.codecs.levelscript.current_action_sequence import (
     frame_levelscript_current_action_sequence_leader_enter,
 )
 from scripts.game_data.corpus_common import atomic_write_text
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.levelscript_template_binary import frame_levelscript_template
 from scripts.repo_paths import REPO_ROOT
 
@@ -229,11 +230,14 @@ def _read_ledger(
 
 
 def _native_gate() -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """Gate the installed build against the reviewed action-map layout contract."""
-    contract = json.loads(LAYOUT_CONTRACT_PATH.read_bytes())
-    pins = contract["nativeInputs"]
-    native = check_installed_native_inputs(pins["gameAssembly"]["sha256"], pins["metadata"]["sha256"])
-    record = {"contract": LAYOUT_CONTRACT_PATH.name, "status": native.status}
+    """Gate the installed build against the reviewed current union-tag contract."""
+    pins = union_tags.contract_native_inputs()
+    hashes=(pins['gameAssemblySha256'],pins['metadataSha256'])
+    if any(not re.fullmatch(r'[0-9A-Fa-f]{64}',value) for value in hashes):
+        return {'contract':union_tags.DEFAULT_CONTRACT.name,'status':'validation_failed'}, [
+            _failure('native-contract-inputs',union_tags.DEFAULT_CONTRACT,'two SHA-256 values',pins)]
+    native = check_installed_native_inputs(*hashes)
+    record = {"contract": union_tags.DEFAULT_CONTRACT.name, "status": native.status}
     if native.status == "validated":
         return record, []
     return record, [_failure("native-inputs", getattr(native, "gameassembly", ""), "validated",

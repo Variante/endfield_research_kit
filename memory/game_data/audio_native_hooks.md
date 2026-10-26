@@ -2726,6 +2726,14 @@ possible media without claiming a complete current native path. Re-derivation
 requires the explicitly selected GameAssembly/metadata pair and never selects a
 different default installation.
 
+The positioned recipe in `audio_model_view_consumers.json` names only current
+state/custom-state, model-context object, transform, position and positioned-play
+interfaces. Its caller is re-proved from the selected native pair. These calls
+occur on different guarded paths; their presence establishes no argument binding,
+field write, endpoint chain, object/audio owner or playback execution. The removed
+Entity audio-ID accessor is not a current obligation. The projection retains
+`currentBuildCallsitesOnly` and leaves all stronger joins unproved.
+
 AI-bark re-derivation requires a named callsite for every adjacent pair in the
 displayed route, including the caller's owned fragments and bounded helpers.
 A shared ancestor or matching iFix patch marker alone does not prove that pair.

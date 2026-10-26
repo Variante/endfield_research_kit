@@ -1,70 +1,15 @@
-"""Validate reviewed LevelScript union Deserialize call order on a selected build.
+"""Validate reviewed union identities and generated readers on a selected build.
 
-The contract records a bounded native body and each read/setter call pair. A
-validated row proves the generated reader consumes the named fields in order;
-the shared ActionSerializedMap codec still owns the wire cursor and corpus gate.
+Name-keyed layouts own field order; native contracts own selected dispatcher,
+typed read, setter and source boundaries. Missing or mismatched inputs admit
+no rows. A selected-route audit narrows only its row loop: shared native,
+reader, enum, collection and child gates still run; full audits check all rows.
 
-It covers the promoted routes of `action_map_layouts.json` (ActionBase,
-GetterBase and ActionHeader), checking each selected reader's body hash and
-ordered read/setter calls. A missing or different installed build returns no
-validated rows. The audit is written to
-`reports/game_data/levelscript_route_deserialize_native.json` (`--report`).
-
-The selected union branch establishes wrapper identity; the generated
-`Deserialize` body establishes member count and read order. Rows named here
-include `ScriptEvent_OnScriptEnd`, which adds a `ScriptEndReason` parameter
-whose underlying value is a signed integer, and `NpcProxyGetter`, which adds
-one string parameter. The same contract schema is reused by
-`levelscript_entity_attach_native.json` and
-`levelscript_spawner_camera_native.json`, which the route codecs
-`codecs.levelscript.entity_attach` and `codecs.levelscript.spawner_camera`
-read. None of these rows proves evaluation, execution or event causality.
-
-The stored-route contract also covers shared decoration, transform,
-interactive-state, focus-toast, cinematic-control, bounty-registration and
-rolling-stone-launcher actions, plus the integer-subtraction getter's stored
-operands. It reuses reviewed Param grammars, including
-bounded entity/ID/blackboard lists and mask values; it does not widen their
-accepted child shapes. A newly admitted enum Param must additionally declare
-its underlying type, checked against the selected metadata's value__ field.
-V3 additionally requires a typed ReadPackable context and reviewed default
-collection composition for plain lists. The integer switch's List<int>
-registration, concrete list/primitive readers and symbolic generic contexts
-establish count-plus-Int32 storage independently of live provider replacement.
-Typed output parameters require their own selected ReadValue contexts, even
-when an established wire grammar is shared with another output type. The
-patrol-event header retains entity, key and patrol-ID outputs, while the
-camera-effect action retains an effect-ID output. Header filter/trigger enums
-additionally require an explicit signed-Int32 backing declaration. The stored
-footstep target enum has its own backing declaration and shares the proved
-Int32 reader; it establishes no resolved effect asset or runtime binding. The
-NPC name/proxy operands and challenge-banner action use existing Param and
-base-action grammars. None establishes a resolved output or an event firing.
-
-The property/proxy getter routes retain an interactive entity and saved-property
-key, a Vector3-property path and LevelScriptPtr, or an NPC proxy ID. The vector
-getter contains no serialized Vector3 result. Combo-skill headers retain an
-entity output, skill-ID filter and skill-ID output; the water-drone header
-retains target entity/list filters and an EntityPtr output, even though its
-field is named targetEntityListOutput. Each route authenticates its own typed
-ReadValue contexts and complete native reader before reusing existing codecs.
-These are stored inputs and destinations, not live property values or events.
-
-Encounter opera-signal actions retain a typed LsmPtr parameter and signal
-string. Spawner-wave-complete headers retain separate spawner/wave-key filters
-and their typed output parameters. A signal named finish is not a Story target,
-and those output paths are not observed wave values or event firings.
-
-Unlock-removal actions retain an authored system enum and independently prove
-their own generated reader. Enemy-patrol headers retain entity/key/patrol
-destinations and a key filter; pressure-board sequence-failure headers retain
-a module operand and a separately typed ParamOutput<LsmPtr> destination.
-The output is only source selector plus path, not a manual or resolved module.
-Each complete header reader and inherited member order keeps its own union
-domain and generic contexts. Stored definitions do not establish event firing,
-unlock changes or mission causality.
-
-Run as: python -m scripts.game_data.levelscript_route_deserialize_native
+Typed outputs retain independent contexts and child gates. Schema v5 records
+proved inlined base stores; v6 scopes literal integer lists to SwitchIntLarger
+and its independent current list gate. Parent proofs never admit an unproved
+child, runtime provider choice, execution, source owner or physical EOF.
+Validated CLI reports publish atomically under reports/ after input rechecks.
 """
 
 from __future__ import annotations
@@ -85,7 +30,7 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.context import generic_method_candidates, method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.formatter_composition import _vtable, validate_generic_contexts, validate_typed_usage_context
-from scripts.game_data.il2cpp.native_image import NativeImage
+from scripts.game_data.il2cpp.native_image import NativeImage, open_native_image
 from scripts.game_data.il2cpp.protocol import runtime_type_name
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
@@ -99,6 +44,8 @@ SCHEMA = "endfield.levelscript-route-deserialize-native.v1"
 TYPED_SCHEMA = "endfield.levelscript-route-deserialize-native.v2"
 COLLECTION_SCHEMA = "endfield.levelscript-route-deserialize-native.v3"
 CONDITION_SCHEMA = "endfield.levelscript-route-deserialize-native.v4"
+INLINE_SCHEMA = "endfield.levelscript-route-deserialize-native.v5"
+INT_LIST_SCHEMA = "endfield.levelscript-route-deserialize-native.v6"
 UNION_BASES = {
     "ActionBase": "Beyond_Gameplay_Actions_ActionBaseForMemoryPack",
     "GetterBase": "Beyond_Gameplay_Actions_PureGetterForMemoryPack",
@@ -209,7 +156,12 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
                 for member in members] != [[item["name"], item["declaredType"], item["declaringWrapper"], item["setterMethodIndex"]]
                                           for item in row["readOrder"]]):
         raise ValueError(f"levelscriptRouteDeserialize.native:wrapper-members={key}")
-    aliases = {'Beyond.GEnums.ScopeName': 'int32',
+    aliases = {'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.CameraControlState>': 'Param<CameraControlState>',
+'Beyond.Gameplay.Actions.Param`1<Beyond.CameraBlendCurveKey>': 'Param<CameraBlendCurveKey>',
+'Beyond.Gameplay.Actions.Param`1<Cinemachine.CinemachineBlendDefinition+Style>': 'Param<CinemachineBlendDefinition.Style>',
+'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.View.CameraControlState>': 'ParamOutput<CameraControlState>',
+'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.CameraControlStateInitialParam>': 'Param<CameraControlStateInitialParam>',
+'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Actions.NodeLookAtType>': 'Param<NodeLookAtType>','Beyond.GEnums.ScopeName': 'int32',
  'Beyond.Gameplay.Actions.FilterLevel': 'int32',
  'Beyond.Gameplay.Actions.FilterMask': 'int32',
  'Beyond.Gameplay.Actions.TriggerActiveDuring': 'int32',
@@ -266,6 +218,12 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
     'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.TweenManager+TweenEase>': 'Param<TweenManager.TweenEase>',
     'Beyond.Gameplay.Actions.ParamOutput`1<bool>': 'ParamOutput<bool>',
     'Beyond.Gameplay.Actions.ParamOutput`1<uint>': 'ParamOutput<uint>'}
+    aliases.update({
+        'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.BuffPtr>': 'ParamOutput<BuffPtr>',
+        'Beyond.Gameplay.Actions.ParamOutput`1<System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffPtr>>': 'ParamOutput<List<BuffPtr>>',
+        'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.ObjectPtr`1<Beyond.Gameplay.Core.GlobalBuff>>': 'ParamOutput<ObjectPtr<GlobalBuff>>',
+    })
+    aliases.update({'Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.PosRot>>': 'Param<List<PosRot>>', 'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.CommonBlendCamResetType>': 'Param<CommonBlendCamResetType>'})
     actual_fields = [[member.name.lstrip("_"), aliases.get(member.declared_type)] for member in members]
     if actual_fields != row["fields"]:
         differences = [(i,expected,actual) for i,(expected,actual) in enumerate(zip(row['fields'],actual_fields)) if expected != actual]
@@ -293,7 +251,9 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
             or not row["deserializeRva"] < instruction["rva"] < row["readOrder"][0]["readCallRva"]):
         raise ValueError(f"levelscriptRouteDeserialize.native:member-count-instruction={key}")
     previous = instruction["rva"]
-    for item in row["readOrder"]:
+    names={w.name:w for w in derive_from_image(image).values()} if any('setterInlineProof' in r for r in row['readOrder']) else {}
+    by_va={int(r['va'],16)-base:r for r in body.rows} if names else {}
+    for index,item in enumerate(row["readOrder"]):
         is_param = item["declaredType"].startswith((
             "Beyond.Gameplay.Actions.Param`1<", "Beyond.Gameplay.Actions.ParamOutput`1<",
         )) or item["declaredType"] == "System.Collections.Generic.List`1<int>"
@@ -301,7 +261,14 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
             raise ValueError(f"levelscriptRouteDeserialize.native:required-typed-context={key}/{item['name']}")
         if is_param:
             _typed_read_context(image, item, previous)
-        previous = item["setterCallRva"]
+        proof=item.get('setterInlineProof')
+        if proof:
+            if row['fields'][index][1] not in ('bool','int32'):
+                raise ValueError('levelscriptRouteDeserialize.contract:inline-base-wire-kind')
+            from scripts.game_data.il2cpp.reference_field_programs import inlined_base_setter
+            actual=inlined_base_setter(image,bodies,names,members[index],body.rows,by_va[item['readCallRva']],by_va[proof['storeRva']]);actual['memberIndex']=index
+            if actual!=proof:raise ValueError('levelscriptRouteDeserialize.native:inline-base-store='+item['name'])
+        previous = proof['storeRva'] if proof else item["setterCallRva"]
 
 
 def _validate_collection_readers(image: NativeImage, contract: dict[str, Any]) -> None:
@@ -310,6 +277,12 @@ def _validate_collection_readers(image: NativeImage, contract: dict[str, Any]) -
     needed = {kind for route in contract["routes"] for _, kind in route["fields"] if kind.startswith("List<")}
     if len(rows) != len(needed) or {row["codecKind"] for row in rows} != needed:
         raise ValueError("levelscriptRouteDeserialize.contract:collection-reader-set")
+    if contract['schema']==INT_LIST_SCHEMA:
+        if rows!=[{'codecKind':'List<int>','declaredType':'System.Collections.Generic.List`1<int>','sourceContract':'levelscript_int_list_native.json'}]:
+            raise ValueError('levelscriptRouteDeserialize.contract:int-list-source-shape')
+        if len(contract['routes'])!=1 or contract['routes'][0]['wrapperName']!='Beyond.MemoryPack.Beyond_Gameplay_Actions_SwitchIntLargerForMemoryPack' or contract['routes'][0]['family']!='ActionBase' or [(i,f[0]) for i,f in enumerate(contract['routes'][0]['fields']) if f[1]=='List<int>']!=[(8,'caseIDList'),(9,'caseValueList')]:
+            raise ValueError('levelscriptRouteDeserialize.contract:int-list-SwitchIntLarger-scope')
+        return
     for row in rows:
         if (row["codecKind"], row["declaredType"], row["elementType"], row["storedCountWidth"], row["storedElementWidth"], row["nullCount"]) != (
                 "List<int>", "System.Collections.Generic.List`1<int>", "int", 4, 4, -1):
@@ -425,11 +398,16 @@ def _validate(
     *, contract_path: Path = CONTRACT_PATH, layout_path: Path = LAYOUT_PATH,
     export_root: Path | None = None, ledger_path: Path | None = None, summary_path: Path | None = None,
     gameassembly: Path | None = None, metadata: Path | None = None,
+    selected_route: tuple[str, int] | None = None,
 ) -> dict[str, Any]:
+    if selected_route is not None and any(value is not None for value in (export_root,ledger_path,summary_path)):
+        raise ValueError('levelscriptRouteDeserialize.contract:selected-route-native-only')
     contract = json.loads(contract_path.read_bytes())
-    if contract.get("schema") not in (SCHEMA, TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA):
+    if contract.get("schema") not in (SCHEMA, TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA, INLINE_SCHEMA, INT_LIST_SCHEMA):
         raise ValueError("levelscriptRouteDeserialize.contract:unsupported-schema")
-    typed = contract["schema"] in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA)
+    typed = contract["schema"] in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA, INLINE_SCHEMA, INT_LIST_SCHEMA)
+    if contract['schema'] != INLINE_SCHEMA and any('setterInlineProof' in item for row in contract['routes'] for item in row['readOrder']):
+        raise ValueError('levelscriptRouteDeserialize.contract:inline-store-v5-required')
     if any(row.get('family') == 'GameCondition' for row in contract.get('routes', [])) and contract['schema'] != CONDITION_SCHEMA:
         raise ValueError('levelscriptRouteDeserialize.contract:condition-domain-v4-required')
     if typed and contract.get("status") != "exact-current-build":
@@ -447,6 +425,13 @@ def _validate(
     }
     if gate.status != "validated":
         return audit
+    if contract['schema']==INT_LIST_SCHEMA:
+        from scripts.game_data.levelscript_int_list_native import validate as validate_int_list
+        child=validate_int_list(gameassembly=gate.gameassembly,metadata=gate.metadata)
+        audit['childGates']={'intList':child}
+        if child.get('status')!='validated' or child.get('codecKinds')!=['List<int>']:
+            audit.update(status=child.get('status','unresolved') if child.get('status')!='validated' else 'unresolved',failedCheck='int-list-child-native',detail=str(child.get('detail',''))[:1000])
+            return audit
     if any(any(kind == 'Param<long>' for _, kind in row.get('fields', []))
            for row in contract['routes']):
         from scripts.game_data.levelscript_long_param_native import validate_long_param_native_contract
@@ -457,8 +442,8 @@ def _validate(
                          failedCheck='long-param-child-native', detail=str(child.get('detail', '')))
             return audit
 
-    image = NativeImage(gate.gameassembly, gate.metadata, label="levelscriptRouteDeserialize")
-    if contract["schema"] in (COLLECTION_SCHEMA, CONDITION_SCHEMA):
+    image = open_native_image(gate.gameassembly, gate.metadata)
+    if contract["schema"] in (COLLECTION_SCHEMA, CONDITION_SCHEMA, INT_LIST_SCHEMA):
         _validate_collection_readers(image, contract)
     elif any(kind.startswith("List<") for route in contract.get("routes", []) for _, kind in route.get("fields", [])):
         raise ValueError("levelscriptRouteDeserialize.contract:collection-reader-v3-required")
@@ -524,7 +509,15 @@ def _validate(
                     or actual_fragments != recorded_fragments):
                 raise ValueError(f"levelscriptRouteDeserialize.native:typed-reader-extent={window['startRva']:#x}")
     switches: dict[str, dict[str, Any]] = {}
-    for row in contract["routes"]:
+    routes=contract['routes']
+    if selected_route is not None:
+        if (not isinstance(selected_route,tuple) or len(selected_route)!=2
+                or type(selected_route[0]) is not str or type(selected_route[1]) is not int):
+            raise ValueError('levelscriptRouteDeserialize.contract:selected-route-shape')
+        routes=[row for row in routes if (row['family'],row['tag'])==selected_route]
+        if len(routes)!=1:raise ValueError(f'levelscriptRouteDeserialize.contract:selected-route-count={selected_route}:{len(routes)}')
+        audit['requestedRoute']={'family':selected_route[0],'tag':selected_route[1]}
+    for row in routes:
         key = row["family"], row["tag"]
         layout = selected.get((row["family"], row["wrapperName"]))
         if layout is None or layout["wrapperName"] != row["wrapperName"]:
@@ -572,7 +565,10 @@ def _validate(
         previous_setter = -1
         for item in order:
             read_call = item["readCallRva"]
-            setter_call = item["setterCallRva"]
+            inline = item.get('setterInlineProof')
+            if inline and (inline.get('transfer') != 'inlinedBaseStore' or item['setterCallRva'] is not None):
+                raise ValueError('levelscriptRouteDeserialize.contract:inline-base-store-shape')
+            setter_call = inline['storeRva'] if inline else item["setterCallRva"]
             if not (start <= read_call < setter_call < start + len(body)) or read_call <= previous_setter:
                 raise ValueError(f"levelscriptRouteDeserialize.native:read-order={key}/{item['name']}")
             if _relative_call_target(image, read_call) != item["readTargetRva"]:
@@ -580,7 +576,7 @@ def _validate(
             setter = image.metadata.methods[item["setterMethodIndex"]]
             if image.metadata.string(setter.name_index) != item["setterName"] or image.method_pointer_va(setter) != image.pe.image_base + item["setterTargetRva"]:
                 raise ValueError(f"levelscriptRouteDeserialize.native:setter={key}/{item['name']}")
-            if _relative_call_target(image, setter_call) != item["setterTargetRva"]:
+            if not inline and _relative_call_target(image, setter_call) != item["setterTargetRva"]:
                 raise ValueError(f"levelscriptRouteDeserialize.native:setter-call={key}/{item['name']}")
             parameters = image.metadata.parameters_for(setter)
             if len(parameters) != 1 or _runtime_parameter_name(image, parameters[0].type_index) != item["declaredType"]:
@@ -640,12 +636,13 @@ def validate(
     *, contract_path: Path = CONTRACT_PATH, layout_path: Path = LAYOUT_PATH,
     export_root: Path | None = None, ledger_path: Path | None = None, summary_path: Path | None = None,
     gameassembly: Path | None = None, metadata: Path | None = None,
+    selected_route: tuple[str, int] | None = None,
 ) -> dict[str, Any]:
     """V2 failures are actionable audit rows; keep V1's exception API intact."""
-    typed = json.loads(contract_path.read_bytes()).get("schema") in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA)
+    typed = json.loads(contract_path.read_bytes()).get("schema") in (TYPED_SCHEMA, COLLECTION_SCHEMA, CONDITION_SCHEMA, INLINE_SCHEMA, INT_LIST_SCHEMA)
     try:
         return _validate(contract_path=contract_path, layout_path=layout_path, export_root=export_root,
-                         ledger_path=ledger_path, summary_path=summary_path, gameassembly=gameassembly, metadata=metadata)
+                         ledger_path=ledger_path, summary_path=summary_path, gameassembly=gameassembly, metadata=metadata, selected_route=selected_route)
     except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
         if not typed:
             raise

@@ -3444,10 +3444,7 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                                 decode_embedded_action_serialized_map_audio,
                             )
                         template_action_map_audio = (
-                            decode_embedded_action_serialized_map_audio(
-                                data,
-                                _template_config_end,
-                            )
+                            decode_embedded_action_serialized_map_audio(data, _template_config_end, source_path=path)
                             or None
                         )
                         try:

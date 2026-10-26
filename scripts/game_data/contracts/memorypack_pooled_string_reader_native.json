@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.memorypack-pooled-string-reader-native.v1",
+  "schema": "endfield.memorypack-pooled-string-reader-native.v2",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
@@ -162,5 +162,107 @@
       "488B05D85EC9074883C4205BC333C04883C4205BC3",
       "named empty/null returns"
     ]
+  ],
+  "inlineSymbols": {
+    "pool": 275123120,
+    "empty": 276086552
+  },
+  "inlineSources": [
+    {
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.ParamKeyValue",
+      "fieldName": "key",
+      "readerMethod": [
+        244414,
+        "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack",
+        "Deserialize",
+        85922976
+      ],
+      "wrapperRegister": "r14",
+      "entryRva": 85923256,
+      "codeWindows": [
+        {
+          "startRva": 85922976,
+          "endRva": 85923196,
+          "sha256": "DC985BD9427A6FEA5F0DF35DD9284716DD464FB30D7F556EEC83F2B3A4282FDD",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85923196,
+          "endRva": 85923691,
+          "sha256": "117ECBCCF614814310B1CC96FF2D4AFB30905227A83A15D3692E7BA127E8AF5E",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85923691,
+          "endRva": 85923722,
+          "sha256": "C5F90E4434BE447BB6E63783FAF99768C708806DC0D3250510937E256048611C",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85923722,
+          "endRva": 85923746,
+          "sha256": "8649BB5A224F202A7C09365624DB1EABFEE63B178A325EBEA16872D71382DEA1",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85923746,
+          "endRva": 85923802,
+          "sha256": "65C15826B17783671234756D37DCA13C8D399C4B1F2E95F384EC0D589E6892C0",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        }
+      ],
+      "evidenceBoundary": {
+        "exact": "Selected reader identity, ABI, complete owned code bytes and current typed holder/field identity.",
+        "direct": "All three selected pooled branches consume the Int32 index and store the unchanged null/empty/lookup result in the declared string field.",
+        "conditional": "Source-site Reader/wrapper/original roles and valid disjoint storage, initialized coherent matching nonnull selected pool, buffered count and normal pool-helper ABI; prior hoisted stores and entry reachability are separate.",
+        "unresolved": "Complete caller/control, initialization/refill, pool-absent inline UTF8, bitmap/default/provider/array and whole-owner composition."
+      }
+    },
+    {
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamValueAtomForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.ParamValueAtom",
+      "fieldName": "valueString",
+      "readerMethod": [
+        259721,
+        "Beyond.MemoryPack.Beyond_Gameplay_ParamValueAtomForMemoryPack",
+        "Deserialize",
+        85926656
+      ],
+      "wrapperRegister": "rsi",
+      "entryRva": 85927025,
+      "codeWindows": [
+        {
+          "startRva": 85926656,
+          "endRva": 85926879,
+          "sha256": "A0F0922E7671D4A66FC258116ADB4C8DA869CF97BAE36DE3B7DCDB31DDFE4E85",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85926879,
+          "endRva": 85927299,
+          "sha256": "C46FC3D2D7CC0DF5F1BAB40E05F68CC6463CB6CEF582883C073418A368946EAC",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85927299,
+          "endRva": 85927361,
+          "sha256": "74C5F3E134B56875B5E481ED9EA6193A7F0C03B696DEF58D05285EB5C25D1EFB",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        },
+        {
+          "startRva": 85927361,
+          "endRva": 85927379,
+          "sha256": "0D35862C9B5D1628B69E395097955B017E496475A5A63A24283E8EBF55821DB3",
+          "boundary": "complete owned caller window; selected inline paths only, not complete caller control"
+        }
+      ],
+      "evidenceBoundary": {
+        "exact": "Selected reader identity, ABI, complete owned code bytes and current typed holder/field identity.",
+        "direct": "All three selected pooled branches consume the Int32 index and store the unchanged null/empty/lookup result in the declared string field.",
+        "conditional": "Source-site Reader/wrapper/original roles and valid disjoint storage, initialized coherent matching nonnull selected pool, buffered count and normal pool-helper ABI; prior hoisted stores and entry reachability are separate.",
+        "unresolved": "Complete caller/control, initialization/refill, pool-absent inline UTF8, bitmap/default/provider/array and whole-owner composition."
+      }
+    }
   ]
 }

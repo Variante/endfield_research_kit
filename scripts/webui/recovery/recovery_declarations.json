@@ -1392,16 +1392,16 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "The montage gate binds each identity by path, length and logical MD5 and requires exact EOF closure.",
-                "textZh": "蒙太奇校验按路径、长度与逻辑 MD5 绑定每个身份，并要求精确的 EOF 闭合。",
+                "state": "partial",
+                "text": "Current binary montage layouts require native/source migration; admitted rows do not close the remaining family.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated formatter setter order names the root, every NPCMontageAnim member and each nested record through EOF; runtime selection is not proven.",
-                "textZh": "生成的格式化器 setter 顺序为根、每个 NPCMontageAnim 成员及各嵌套记录命名直至 EOF；运行时选择未经证明。",
+                "text": "Only fields admitted by current native/source gates are named; historical declarations do not establish current byte ownership or runtime use.",
+                "textZh": "仅命名当前原生与源码门控通过的字段；旧声明不能证明当前字节归属或运行时用途。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1427,8 +1427,8 @@
               {
                 "level": 2,
                 "state": "closed",
-                "text": "Exact JSON schema readers validate every current PrefabInfo file and both NPC catalogs, refusing extra or reordered fields.",
-                "textZh": "精确的 JSON 模式读取器校验每个当前 PrefabInfo 文件与两个 NPC 目录，拒绝多余或重排的字段。",
+                "text": "Named JSON readers validate current prefab and catalog layouts through physical EOF; consumer meaning is assessed separately.",
+                "textZh": "命名 JSON 读取器已校验当前预制体与目录结构，读取至文件末尾；消费者语义另行评估。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1495,15 +1495,15 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Part of the family closes a named schema through EOF; the rest stays bounded partial at a recorded action-map refusal.",
-                "textZh": "该家族部分文件以命名模式闭合至 EOF；其余文件在记录的动作表拒绝点处保持有界部分。",
+                "text": "Current ownership requires selected native/source gates and one sequential cursor using the owning StringPool; historical inline suffixes do not establish EOF.",
+                "textZh": "当前归属需要所选原生与源码门控，并使用所属 StringPool 连续读取；旧内联字符串后缀不能证明 EOF。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Closed files are named by the shared action-map reader; bodies past the first unsupported union route are not named.",
-                "textZh": "已闭合文件由共享动作表读取器命名；第一个不支持的 union 路由之后的正文未命名。",
+                "text": "Generated field names are candidates; current root, collection and union ownership still requires native/source proof.",
+                "textZh": "生成字段名仅为候选；当前根对象、集合和 union 的归属仍需原生与源码证明。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
@@ -1528,16 +1528,16 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "The sequential reader closes the complete 43-field named schema through EOF on every current file; an unsupported future nested body stops at its field.",
-                "textZh": "顺序读取器在每个当前文件上以完整的 43 字段命名模式闭合至 EOF；未来不支持的嵌套正文会停在其字段处。",
+                "state": "partial",
+                "text": "The current 43-field owner advances a native-gated pooled-string cursor; unsupported positive children stop at their field.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated field order names every member, including patrol, attract-point and waypoint records; values are not proven against a consumer.",
-                "textZh": "生成的字段顺序为每个成员命名，包括巡逻、吸引点与路径点记录；取值未经消费者证明。",
+                "text": "Only fields admitted by current native/source gates are named; historical declarations do not establish current byte ownership or runtime use.",
+                "textZh": "仅命名当前原生与源码门控通过的字段；旧声明不能证明当前字节归属或运行时用途。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1631,8 +1631,8 @@
               {
                 "level": 2,
                 "state": "closed",
-                "text": "Named JSON schema readers validate every current main and meta body.",
-                "textZh": "命名 JSON 模式读取器校验每个当前的 main 与 meta 正文。",
+                "text": "Named JSON readers validate current main and meta layouts through physical EOF; activation and ordering require separate consumer evidence.",
+                "textZh": "命名 JSON 读取器已校验当前主资源与元数据结构，读取至文件末尾；激活与顺序仍需独立消费者证据。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1664,16 +1664,16 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "Exact readers close every current Interactive file through EOF; an unknown future variant fails closed.",
-                "textZh": "精确读取器使每个当前 Interactive 文件闭合至 EOF；未知的未来变体会失败关闭。",
+                "state": "partial",
+                "text": "Current readers close admitted Interactive variants; native, schema and pooled-child refusals remain bounded or unsupported.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated order names the fields of every current variant; values are not proven against a consumer.",
-                "textZh": "生成的顺序为每个当前变体的字段命名；取值未经消费者证明。",
+                "text": "Only fields admitted by current native/source gates are named; historical declarations do not establish current byte ownership or runtime use.",
+                "textZh": "仅命名当前原生与源码门控通过的字段；旧声明不能证明当前字节归属或运行时用途。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1732,16 +1732,16 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "The reviewed reader closes every current file, montage-bearing ones included, as a named schema through EOF.",
-                "textZh": "已审查的读取器把每个当前文件（包括含蒙太奇的文件）作为命名模式闭合至 EOF。",
+                "state": "partial",
+                "text": "Admitted AnimationConfig variants close through EOF; unsupported current roots and nested montage bodies retain their refusal.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated order names every current field, including curve keyframes and populated montage dictionaries; playback use is not proven.",
-                "textZh": "生成的顺序为每个当前字段命名，包括曲线关键帧与非空蒙太奇字典；播放用途未经证明。",
+                "text": "Only fields admitted by current native/source gates are named; historical declarations do not establish current byte ownership or runtime use.",
+                "textZh": "仅命名当前原生与源码门控通过的字段；旧声明不能证明当前字节归属或运行时用途。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1766,9 +1766,9 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "Each file is real JSON or closes an exact declared root.",
-                "textZh": "每个文件要么是真 JSON，要么闭合一个精确的已声明根。",
+                "state": "partial",
+                "text": "Current maintained readers close admitted JSON and MemoryPack variants; rejected variants remain unsupported.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1794,7 +1794,32 @@
             "description": "Per-level configuration roots.",
             "descriptionZh": "各关卡配置根。",
             "pathRegex": "Data/Json/LevelConfig/.+",
-            "stagesFrom": "json-gameplay-config"
+            "stages": [
+              {
+                "template": "l1VfsLocated"
+              },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The current LevelConfig reader closes its named pooled-string schema through EOF.",
+                "textZh": "当前 LevelConfig 读取器使用字符串池将命名模式闭合至 EOF。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "No field conclusion is recorded beyond the reader's own names.",
+                "textZh": "除读取器自身的名称外，没有记录字段结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
           },
           {
             "id": "json-atmospheric-npc",
@@ -1809,9 +1834,9 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "Every current owner closes the exact named root and NPC runtime-proxy rows through EOF. Future opaque rows retain their frame status instead of inheriting named-schema closure.",
-                "textZh": "每个当前根对象及 NPC 运行时代理记录均以精确命名模式闭合至 EOF。未来出现的不透明记录保留其框架状态，不继承命名模式闭合结论。",
+                "state": "partial",
+                "text": "Admitted owners close the named root and NPC proxy records; unresolved current variants do not inherit that closure.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {
@@ -1880,7 +1905,32 @@
             "description": "Plain-JSON UI level-map load configuration.",
             "descriptionZh": "纯 JSON 的界面关卡地图加载配置。",
             "pathRegex": "Data/Json/UILevelMapLoadConfig/.+",
-            "stagesFrom": "json-gameplay-config"
+            "stages": [
+              {
+                "template": "l1VfsLocated"
+              },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The named UILevelMapLoadConfig JSON reader validates every current variant.",
+                "textZh": "命名 UILevelMapLoadConfig JSON 读取器校验所有当前变体。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "No field conclusion is recorded beyond the reader's own names.",
+                "textZh": "除读取器自身的名称外，没有记录字段结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
           },
           {
             "id": "json-small-roots",
@@ -1895,9 +1945,9 @@
               },
               {
                 "level": 2,
-                "state": "closed",
-                "text": "Each root closes a named JSON schema or an exact MemoryPack reader through EOF, GPU UI DamageText included.",
-                "textZh": "每个根都以命名 JSON 模式或精确 MemoryPack 读取器闭合至 EOF，包括 GPU UI DamageText。",
+                "state": "partial",
+                "text": "Admitted roots retain their named schema or framing tier; rejected current variants remain unsupported.",
+                "textZh": "当前读取器仅闭合已通过校验的变体；未通过原生、模式或子记录校验的文件保留部分或不支持状态。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {

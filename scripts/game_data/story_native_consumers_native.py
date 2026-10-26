@@ -9,7 +9,7 @@ update re-proves them instead of failing a pinned token, address or hash.
 
 Opening the native index takes most of a minute, so the result is cached in a
 report keyed by the installed GameAssembly/metadata hashes and the contract's
-bytes; any change to either re-evaluates. A group whose claims fail, one marked
+bytes and complete reader inputs; a change re-evaluates. A group whose claims fail, one marked
 ``pendingReview`` because its code moved and the reviewed meaning was not
 re-checked, or a missing install yields a non-validated group, and consumers
 must publish no native conclusion from it.
@@ -43,13 +43,14 @@ from scripts.common import (
     write_canonical_json,
 )
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs, reader_input_changes
 from scripts.game_data.il2cpp.body_claims import BodyIndex, ClaimError
 from scripts.game_data.il2cpp.body_claims import evaluate as evaluate_claims
 from scripts.game_data.il2cpp.native_image import open_native_image
 
 
-SCHEMA = "endfield.story-native-consumers.v1"
-REPORT_SCHEMA = "storyNativeConsumersEvaluation.v1"
+SCHEMA = "endfield.story-native-consumers.v7"
+REPORT_SCHEMA = "storyNativeConsumersEvaluation.v7"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "story_native_consumers.json"
 DEFAULT_REPORT = STORY_RECOVERY_REPORTS_DIR / "story_native_consumers.json"
 
@@ -110,18 +111,20 @@ def _resolve_cited(contract: dict[str, Any], index: BodyIndex) -> dict[str, Any]
 def load_story_native_consumers(
     contract_path: Path = DEFAULT_CONTRACT,
     report_path: Path = DEFAULT_REPORT,
+    *, gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> dict[str, Any]:
     """Return every consumer group's status on the installed build."""
     raw = Path(contract_path).read_bytes()
     contract = json.loads(raw)
     if contract.get("schema") != SCHEMA:
         raise ValueError(f"{contract_path}: schema {contract.get('schema')!r}, expected {SCHEMA}")
-    native = check_installed_native_inputs()
+    native = check_installed_native_inputs(gameassembly=gameassembly, metadata=metadata)
     if not native.validated:
         return {"status": native.status, "detail": native.detail, "groups": {}}
     key = {
         "_schema": REPORT_SCHEMA,
         "contractSha256": hashlib.sha256(raw).hexdigest(),
+        "readerInputs": snapshot_complete_reader_inputs(),
         "gameAssemblySha256": native.gameassembly_sha256.upper(),
         "globalMetadataSha256": native.metadata_sha256.upper(),
     }
@@ -131,6 +134,11 @@ def load_story_native_consumers(
         if not after.validated:
             return {"status":after.status, "detail":"Story consumer native inputs changed during evaluation: " + after.detail,
                     "groups":{}, "failedGate":"selected_native_inputs_after_read"}
+        readers = snapshot_complete_reader_inputs()
+        if readers != key["readerInputs"]:
+            return {"status":"mismatched", "detail":"Story consumer reader inputs changed during evaluation",
+                    "groups":{}, "failedGate":"reader_inputs_after_read",
+                    "readerInputDrift":reader_input_changes(key["readerInputs"], readers)}
         return None
     try:
         cached = json.loads(Path(report_path).read_bytes())

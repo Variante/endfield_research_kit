@@ -84,7 +84,7 @@ def collect_interactive_component_contexts(
                     else None
                 ),
                 "embeddedActionMapAudioActions": (
-                    find_embedded_action_serialized_map_audio(data)
+                    find_embedded_action_serialized_map_audio(data, source_path=_path)
                 ),
             }}
 

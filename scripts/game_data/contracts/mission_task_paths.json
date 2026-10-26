@@ -1,95 +1,292 @@
 {
-  "schema": "missionTaskPaths.nativeContract.v1",
-  "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
+  "schema": "endfield.mission-task-path-claims.v2",
+  "status": "reviewed",
   "hooks": {
     "conditionResultChanged": {
-      "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition._OnConditionResultChanged",
-      "token": "0x060121fe",
-      "methodIndex": 74237,
-      "rva": "0x6fb0f9c",
-      "fieldOffsets": {
-        "scriptId": "0x18",
-        "sceneNumId": "0x28",
-        "taskId": "0x30",
-        "conditionId": "0x38"
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+      "method": "_OnConditionResultChanged",
+      "parameters": [
+        "System.Boolean"
+      ],
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress"
+          ]
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelScriptPtr",
+          "Beyond.Gameplay.Core.LevelScriptPtr"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelNum",
+          "int"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey",
+          "Beyond.Gameplay.Core.ScriptTaskPtr"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId",
+          "string"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted",
+          "bool"
+        ]
+      ],
+      "captureScope": "Named method entry only; inlined copies, replacements and execution are not inferred.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
       }
     },
     "sendProgress": {
-      "symbol": "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress",
-      "token": "0x06004d91",
-      "methodIndex": 19856,
-      "rva": "0x73825c8",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "SendLevelScriptUpdateTaskProgress",
+      "parameters": [
+        "System.UInt64",
+        "System.Int32",
+        "System.String",
+        "System.String",
+        "System.Int32"
+      ],
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.BaseNetworkSystem.SendMsgAndDispose"
+          ]
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [],
+      "captureScope": "Named method entry only; inlined copies, replacements and execution are not inferred.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
+      },
       "message": "CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS",
-      "messageId": 105
+      "messageId": 105,
+      "factory": {
+        "type": "Proto.ProtoBufFactory",
+        "method": "Allocate",
+        "results": [
+          "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS",
+          "Proto.SCRIPT_TASK_OBJECTIVE_VALUE_OP"
+        ]
+      }
     },
     "stateUpdate": {
-      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskStateUpdate",
-      "token": "0x06004dbc",
-      "methodIndex": 19899,
-      "rva": "0x3bd6fa0",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_LevelScriptTaskStateUpdate",
+      "parameters": [
+        "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE"
+      ],
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.LevelScriptManager.UpdateLevelScriptTaskState"
+          ]
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::<SceneNumId>k__BackingField",
+          "int"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::<ScriptId>k__BackingField",
+          "ulong"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::<TaskId>k__BackingField",
+          "string"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::<TaskState>k__BackingField",
+          "int"
+        ]
+      ],
+      "captureScope": "Named method entry only; inlined copies, replacements and execution are not inferred.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
+      },
       "message": "SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE",
-      "messageId": 813,
-      "fieldOffsets": {
-        "sceneNumId": "0x18",
-        "scriptId": "0x20",
-        "taskId": "0x28",
-        "taskState": "0x30"
-      }
+      "messageId": 813
     },
     "progressUpdate": {
-      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskProgressUpdate",
-      "token": "0x06004dbd",
-      "methodIndex": 19900,
-      "rva": "0x42ba410",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_LevelScriptTaskProgressUpdate",
+      "parameters": [
+        "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE"
+      ],
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted"
+          ]
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::<SceneNumId>k__BackingField",
+          "int"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::<ScriptId>k__BackingField",
+          "ulong"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::<TaskId>k__BackingField",
+          "string"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::<ConditionCompletedMap>k__BackingField",
+          "Proto.MapField`2<string,bool>"
+        ]
+      ],
+      "captureScope": "Named method entry only; inlined copies, replacements and execution are not inferred.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
+      },
       "message": "SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE",
-      "messageId": 815,
-      "fieldOffsets": {
-        "sceneNumId": "0x18",
-        "scriptId": "0x20",
-        "taskId": "0x28",
-        "conditionCompletedMap": "0x30"
-      }
+      "messageId": 815
     },
     "conditionCompletionChanged": {
-      "symbol": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition.InvokeOnIsCompleteChangeAction",
-      "token": "0x06012207",
-      "methodIndex": 74246,
-      "rva": "0x42bad00",
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+      "method": "InvokeOnIsCompleteChangeAction",
+      "parameters": [],
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::m_onIsCompleteChangeAction"
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelScriptPtr",
+          "Beyond.Gameplay.Core.LevelScriptPtr"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelNum",
+          "int"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey",
+          "Beyond.Gameplay.Core.ScriptTaskPtr"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId",
+          "string"
+        ],
+        [
+          "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted",
+          "bool"
+        ]
+      ],
+      "captureScope": "Named completion method only. The progress runtime inlines the completion callback and bypasses this hook; full notification coverage is not proved.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
+      },
       "message": "SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE",
-      "messageId": 815,
-      "captureScope": "only while progressUpdate is active on the same thread",
-      "fieldOffsets": {
-        "scriptId": "0x18",
-        "sceneNumId": "0x28",
-        "taskId": "0x30",
-        "conditionId": "0x38",
-        "isCompleted": "0x50"
-      }
+      "messageId": 815
     },
     "startFinish": {
-      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_LevelScriptTaskStartFinish",
-      "token": "0x06004dbe",
-      "methodIndex": 19901,
-      "rva": "0x45e7f50",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_LevelScriptTaskStartFinish",
+      "parameters": [
+        "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH"
+      ],
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.LevelScriptManager.UpdateLevelScriptTaskStartFinish"
+          ]
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH::<SceneNumId>k__BackingField",
+          "int"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH::<ScriptId>k__BackingField",
+          "ulong"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH::<TaskId>k__BackingField",
+          "string"
+        ]
+      ],
+      "captureScope": "Named method entry only; inlined copies, replacements and execution are not inferred.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
+      },
       "message": "SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH",
-      "messageId": 816,
-      "fieldOffsets": {
-        "sceneNumId": "0x18",
-        "scriptId": "0x20",
-        "taskId": "0x28"
-      }
+      "messageId": 816
     },
     "scriptSetDone": {
-      "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_SceneLevelScriptStateNotify",
-      "token": "0x06004db6",
-      "methodIndex": 19893,
-      "rva": "0x7386060",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_SceneLevelScriptStateNotify",
+      "parameters": [
+        "Proto.SC_SCENE_LEVEL_SCRIPT_SET_DONE"
+      ],
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptIsDone"
+          ]
+        }
+      ],
+      "contract": "Current named method identity; listed calls only, without runtime hook coverage or execution.",
+      "fields": [
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_SET_DONE::<SceneNumId>k__BackingField",
+          "int"
+        ],
+        [
+          "Proto.SC_SCENE_LEVEL_SCRIPT_SET_DONE::<ScriptId>k__BackingField",
+          "ulong"
+        ]
+      ],
+      "captureScope": "Named method entry only; inlined copies, replacements and execution are not inferred.",
+      "evidenceBoundary": {
+        "exact": "Current named method identity and explicitly typed parameters.",
+        "direct": "Only the listed body claims.",
+        "structuralOnly": "Declared field layouts do not prove a receiver read or live capture value.",
+        "unresolved": "Runtime receiver/dispatch selection, complete payload application and hook coverage."
+      },
       "message": "SC_SCENE_LEVEL_SCRIPT_SET_DONE",
-      "messageId": 823,
-      "fieldOffsets": {
-        "sceneNumId": "0x18",
-        "scriptId": "0x20"
-      }
+      "messageId": 823
     }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected-build named method and parameter identities; no recorded RVA, token or hash is reused.",
+    "direct": "Listed call or field-read claims only.",
+    "structuralOnly": "Declared storage layouts; value-type holders are not flattened into former scalar identities.",
+    "conditional": "Explicit typed factory caller and normal reference-result ABI; no live allocation/transport result.",
+    "unresolved": "Live execution, hook completeness, inlined callback coverage and mission/Story ownership."
   }
 }

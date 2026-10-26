@@ -60,6 +60,9 @@ def _levelsequence_fields_from_decoded_detail(detail: Any) -> list[dict[str, Any
 
     if not isinstance(detail, dict):
         return []
+    if 'typedFields' in detail:
+        value=detail.get('levelSequenceId')
+        return [dict(value=value,offset=str(detail.get('payloadStart') or ''))] if isinstance(value,str) and value.startswith('levelseq_') else []
     fields: list[dict[str, Any]] = []
     for field in detail.get("taggedFields") or []:
         if not isinstance(field, dict) or field.get("type") != "string":
@@ -100,7 +103,7 @@ def collect_levelsequence_play_actions(
         )
 
         def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
-            records = extract_levelscript_uid_records(data)
+            records = extract_levelscript_uid_records(data, source_path=_path)
             rows: list[dict[str, Any]] = []
             target_count = 0
             for index, record in enumerate(records):

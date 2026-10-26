@@ -20,7 +20,7 @@ def selected_qword_reference_candidates(image,cell_rvas):
     cells=set(values)
     result=[]
     for section in image.sections:
-        if section['name']!='.text':continue
+        if not section['characteristics']&0x20000000:continue
         raw=image.buf[section['rawPointer']:section['rawPointer']+section['rawSize']]
         for pattern in (_REG,_IMM):
             for match in pattern.finditer(raw):

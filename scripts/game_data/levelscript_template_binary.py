@@ -1,323 +1,85 @@
-"""Partial exact-range reader for ``LevelScriptTemplateData`` payloads.
-
-The root is the six-field generated wrapper ``actionMap``, ``maxStage``,
-``properties``, ``propertyIdToKeyMap``, ``taskMap``, ``templateId``.
-``actionMap`` is an ``ActionMapAssetRaw`` of two members: the three-list
-``ActionSerializedMap`` read by ``codecs.levelscript.action_map`` and the
-one-member ``ParamListForGraph`` blackboard. With empty lists and an empty
-blackboard the action map ends at byte 20; the serialized map alone ends at
-byte 15. A nonempty blackboard is admitted only while the
-``levelscript_param_list_native`` contract validates. An older byte-7
-framing covered only the first list count and is not a complete action map.
-
-After the action map, ``maxStage``, ``ParamKeyValue`` properties and the
-paired ``Dictionary<int, string>`` IDs are read sequentially. A null task map
-joins the terminal ``templateId`` directly; a positive task map reuses the
-LevelScript task-map entry and condition-union codec and must consume exactly
-to the ``templateId`` boundary, which is the unique UTF-8 field closing at
-physical EOF. Only then is a template ``named_exact``.
-
-Populated action maps use the same reviewed action/getter/header layouts as
-LevelScript and Interactive data. The ``LST_Sdg_*`` progression templates
-close through the ``ScriptEvent_OnCustomEvent`` header; ``LST_Test_1``
-closes its one-entry task map through the ``InteractiveCheckBool``
-condition (four common condition members, then ``compareValue``,
-``entityId``, ``key``, ``levelId``), whose switch branch and inheritance are
-checked by the reviewed task-condition contract. A template whose action map
-stops at an unreviewed record keeps only exact endpoint ranges around an
-opaque middle: the terminal ID does not make the intervening bytes exact.
-This proves stored layout, not server evaluation, entity resolution or the
-resulting interactive state.
-"""
-
+"""Current pooled LevelScript templates; stop at the first unproved child."""
 from __future__ import annotations
-
 import struct
-from typing import Any
+from scripts.game_data import serialization_roots_native as native
+from scripts.game_data.codecs.levelscript.action_map import ActionMapCodecError,decode_reviewed_node
+from scripts.game_data.string_pool import StringPool,resolve_string_pool_index
+from scripts.game_data.codecs.levelscript.param_graph import decode_param_blackboard,ParamGraphDecodeError
 
-from scripts.game_data.codecs.levelscript.action_map import (
-    ActionMapCodecError,
-    decode_action_serialized_map,
-)
-from scripts.game_data.codecs.levelscript.interactives import (
-    LevelInteractiveCodecError,
-    decode_param_key_value_list,
-)
-from scripts.game_data.levelscript_binary import (
-    LevelScriptTopLevelFramingError,
-    decode_levelscript_task_map_exact,
-    frame_levelscript_action_map_named_prefix,
-)
-from scripts.game_data.levelscript_param_list_native import (
-    load_param_list_for_graph_contract,
-)
-
-
-ROOT_MEMBER_COUNT = 6
-MAX_TEMPLATE_ID_BYTES = 512
-NULL_COUNT = 0xFFFFFFFF
-ROOT_FIELDS = (
-    "actionMap",
-    "maxStage",
-    "properties",
-    "propertyIdToKeyMap",
-    "taskMap",
-    "templateId",
-)
+ROOT_FIELDS=('actionMap','maxStage','properties','propertyIdToKeyMap','taskMap','templateId')
+ROOT_MEMBER_COUNT=len(ROOT_FIELDS)
 
 
 class LevelScriptTemplateFramingError(ValueError):
-    """Raised when the template root endpoints cannot be framed uniquely."""
+    """A selected template field cannot be read at its physical cursor."""
 
 
-def _read_i32_string(data: bytes, offset: int, field: str) -> tuple[str | None, int]:
-    if offset + 4 > len(data):
-        raise LevelScriptTemplateFramingError(f"{field}: truncated string length")
-    length = struct.unpack_from("<I", data, offset)[0]
-    offset += 4
-    if length == NULL_COUNT:
-        return None, offset
-    if length > 1 << 20 or offset + length > len(data):
-        raise LevelScriptTemplateFramingError(f"{field}: invalid string length {length}")
-    try:
-        value = data[offset:offset + length].decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise LevelScriptTemplateFramingError(f"{field}: invalid UTF-8") from exc
-    return value, offset + length
+def _need(data,cursor,size,field):
+    if cursor<0 or cursor+size>len(data):
+        raise LevelScriptTemplateFramingError(f'{field}: truncated offset={cursor} size={size} length={len(data)}')
 
 
-def _decode_property_id_map(data: bytes, offset: int) -> tuple[dict[int, str] | None, int]:
-    if offset + 4 > len(data):
-        raise LevelScriptTemplateFramingError("propertyIdToKeyMap: truncated count")
-    count = struct.unpack_from("<I", data, offset)[0]
-    offset += 4
-    if count == NULL_COUNT:
-        return None, offset
-    if count > 16_384:
-        raise LevelScriptTemplateFramingError(
-            f"propertyIdToKeyMap: implausible count {count}"
-        )
-    result: dict[int, str] = {}
-    for index in range(count):
-        if offset + 4 > len(data):
-            raise LevelScriptTemplateFramingError(
-                f"propertyIdToKeyMap[{index}]: truncated key"
-            )
-        key = struct.unpack_from("<i", data, offset)[0]
-        offset += 4
-        value, offset = _read_i32_string(data, offset, f"propertyIdToKeyMap[{index}].value")
-        if value is None or key in result:
-            raise LevelScriptTemplateFramingError(
-                f"propertyIdToKeyMap[{index}]: null value or duplicate key {key}"
-            )
-        result[key] = value
-    return result, offset
+def _count(data,cursor,field):
+    _need(data,cursor,4,field);value=struct.unpack_from('<i',data,cursor)[0]
+    if not -1<=value<=10000:raise LevelScriptTemplateFramingError(f'{field}: invalid count={value} offset={cursor}')
+    return value,cursor+4
 
 
-def _decode_action_map_exact(data: bytes) -> tuple[dict[str, Any], int]:
-    """Consume the two-member template ActionMap at its declared cursor."""
-    if len(data) < 3 or data[1] != 2:
-        actual = data[1] if len(data) > 1 else None
-        raise LevelScriptTemplateFramingError(
-            f"actionMap member count mismatch: expected=2 actual={actual}"
-        )
-    try:
-        data_map, cursor = decode_action_serialized_map(data, 2)
-    except ActionMapCodecError as exc:
-        raise LevelScriptTemplateFramingError(str(exc)) from exc
-    if data_map is None:
-        raise LevelScriptTemplateFramingError("actionMap.dataMap is null")
-    if cursor + 5 > len(data) or data[cursor] != 1:
-        actual = data[cursor:cursor + 5].hex(" ")
-        raise LevelScriptTemplateFramingError(
-            "actionMap.paramBlackboard header mismatch: "
-            f"expected memberCount=1 actual={actual}"
-        )
-    value_count = struct.unpack_from("<i", data, cursor + 1)[0]
-    if value_count != 0:
-        layout, audit = load_param_list_for_graph_contract()
-        if layout is None:
-            raise LevelScriptTemplateFramingError(
-                "actionMap.paramBlackboard.nativeContract: "
-                f"status={audit['status']}, count={value_count}, "
-                f"detail={audit.get('detail', '')}"
-            )
-    try:
-        values, end = decode_param_key_value_list(
-            data, cursor + 1, "actionMap.paramBlackboard.value"
-        )
-    except LevelInteractiveCodecError as exc:
-        raise LevelScriptTemplateFramingError(str(exc)) from exc
-    fields = {
-        "dataMap": {
-            "memberCount": data_map["memberCount"],
-            "rawListCounts": data_map["rawListCounts"],
-            "actionList": data_map.get("actions", []),
-            "getterList": data_map.get("getters", []),
-            "headerList": data_map.get("headers", []),
-        },
-        "paramBlackboard": {"value": values["values"]},
-    }
-    return {
-        "startOffset": 1,
-        "endOffset": end,
-        "status": "exact_named_action_map",
-        "fields": fields,
-    }, end
+def _empty_collection(data,cursor,field,empty):
+    count,end=_count(data,cursor,field)
+    if count>0:raise LevelScriptTemplateFramingError(f'{field}: positive count={count} offset={cursor}; current child composition is unproved')
+    return None if count==-1 else empty,end
 
 
-def frame_levelscript_template(data: bytes) -> dict[str, Any]:
-    """Frame the actionMap endpoint and final templateId through EOF.
+def _action_map(data,cursor,strings):
+    start=cursor;_need(data,cursor,1,'actionMap')
+    if data[cursor]==255:return None,cursor+1
+    if data[cursor]!=2:raise LevelScriptTemplateFramingError(f'actionMap: expected memberCount=2 actual={data[cursor]} offset={cursor}')
+    cursor+=1;_need(data,cursor,1,'actionMap.dataMap');data_map=None
+    if data[cursor]==255:cursor+=1
+    else:
+        if data[cursor]!=3:raise LevelScriptTemplateFramingError(f'actionMap.dataMap: expected memberCount=3 actual={data[cursor]} offset={cursor}')
+        cursor+=1;data_map={}
+        for field,family in (('actionList','ActionBase'),('getterList','GetterBase'),('headerList','ActionHeader')):
+            count,cursor=_count(data,cursor,'actionMap.dataMap.'+field);values=[]
+            for _ in range(max(0,count)):
+                value,cursor=decode_reviewed_node(data,cursor,family,strings=strings);values.append(value)
+            data_map[field]=None if count==-1 else values
+    try:blackboard,cursor=decode_param_blackboard(data,cursor,strings=strings)
+    except ParamGraphDecodeError as error:raise LevelScriptTemplateFramingError(str(error)) from error
+    return {'startOffset':start,'endOffset':cursor,'status':'exact_named_action_map','fields':{'dataMap':data_map,'paramBlackboard':blackboard}},cursor
 
-    The four intervening top-level members and any unclosed action-map bytes
-    remain one opaque range. The final UTF-8 field is selected only when its
-    signed length prefix closes at physical EOF and the candidate is unique.
-    """
-    if not data or data[0] != ROOT_MEMBER_COUNT:
-        actual = data[0] if data else None
-        raise LevelScriptTemplateFramingError(
-            f"template member count mismatch: expected={ROOT_MEMBER_COUNT} actual={actual}"
-        )
-    try:
-        action_map, prefix_end = _decode_action_map_exact(data)
-    except LevelScriptTemplateFramingError as exact_error:
+
+def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None):
+    """Read the current order sequentially; never scan an opaque suffix for an ID."""
+    gate=native.check_root_native_inputs()
+    if gate.status!='validated':raise LevelScriptTemplateFramingError(f'template.native:{gate.status}:{gate.detail}')
+    records=[r for r in native.read_contract()['records'] if r['typeName']=='Beyond.Gameplay.LevelScriptTemplateData']
+    if (len(records)!=1 or tuple(name for name,_ in records[0]['fields'])!=ROOT_FIELDS
+            or records[0]['fields'][-1][1]!='string'):
+        raise LevelScriptTemplateFramingError('template.native: current root declaration/source is unproved')
+    if not data or data[0]!=ROOT_MEMBER_COUNT:
+        raise LevelScriptTemplateFramingError(f'template member count mismatch: expected={ROOT_MEMBER_COUNT} actual={data[0] if data else None}')
+    cursor=1;fields={};spans={};diagnostic=None;stop=None
+    for field in ROOT_FIELDS:
+        start=cursor
         try:
-            prefix = frame_levelscript_action_map_named_prefix(
-                data, expected_member_count=ROOT_MEMBER_COUNT
-            )
-        except LevelScriptTopLevelFramingError as exc:
-            raise LevelScriptTemplateFramingError(str(exc)) from exc
-        prefix_end = int(prefix["bytesConsumed"])
-        action_map = {
-            "startOffset": 1,
-            "endOffset": prefix_end,
-            "status": prefix["status"],
-            "ranges": prefix.get("ranges"),
-            "unresolvedReason": str(exact_error),
-        }
-
-    candidates: list[tuple[int, str]] = []
-    for offset in range(max(prefix_end, len(data) - MAX_TEMPLATE_ID_BYTES - 4), len(data) - 3):
-        length = struct.unpack_from("<i", data, offset)[0]
-        if length <= 0 or length > MAX_TEMPLATE_ID_BYTES or offset + 4 + length != len(data):
-            continue
-        try:
-            value = data[offset + 4 :].decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        if any(ord(character) < 0x20 for character in value):
-            continue
-        candidates.append((offset, value))
-    if len(candidates) != 1:
-        raise LevelScriptTemplateFramingError(
-            f"templateId EOF field is not unique: candidates={len(candidates)}"
-        )
-    template_offset, template_id = candidates[0]
-    if template_offset < prefix_end:
-        raise LevelScriptTemplateFramingError("templateId overlaps the action-map prefix")
-    result = {
-        "status": "exact_endpoint_ranges_with_opaque_middle",
-        "schemaStatus": "partial",
-        "serializedMemberCount": ROOT_MEMBER_COUNT,
-        "bytesConsumed": len(data),
-        "actionMap": action_map,
-        "opaqueMiddle": {
-            "startOffset": prefix_end,
-            "endOffset": template_offset,
-            "length": template_offset - prefix_end,
-        },
-        "templateId": {
-            "startOffset": template_offset,
-            "endOffset": len(data),
-            "value": template_id,
-        },
-        "evidenceBoundary": (
-            "The six-member root, action-map prefix, and final templateId field close exact "
-            "ranges through EOF. The intervening properties, maps, and any remaining action-map "
-            "payload stay opaque."
-        ),
-    }
-    result["stopField"] = "actionMap" if action_map["status"] != "exact_named_action_map" else "topLevelContinuation"
-    if action_map["status"] == "exact_named_action_map":
-        try:
-            if prefix_end + 4 > template_offset:
-                raise LevelScriptTemplateFramingError("maxStage: truncated int32")
-            max_stage = struct.unpack_from("<i", data, prefix_end)[0]
-            cursor = prefix_end + 4
-            properties, cursor = decode_param_key_value_list(data, cursor, "properties")
-            property_map, cursor = _decode_property_id_map(data, cursor)
-            if cursor + 4 > template_offset:
-                raise LevelScriptTemplateFramingError("taskMap: truncated count")
-            task_count = struct.unpack_from("<I", data, cursor)[0]
-            cursor += 4
-        except (LevelInteractiveCodecError, LevelScriptTemplateFramingError) as exc:
-            result["stopField"] = "propertiesOrPropertyMapOrTaskMap"
-            result["diagnostics"] = [{"gate": "namedPrefix", "detail": str(exc)[:1000]}]
-        else:
-            result["namedPrefix"] = {
-                "maxStage": max_stage,
-                "properties": properties,
-                "propertyIdToKeyMap": property_map,
-                "taskMapCount": None if task_count == NULL_COUNT else task_count,
-                "endOffset": cursor,
-            }
-            result["stopField"] = "taskMap.entries"
-            result["diagnostics"] = [{"gate": "taskMapCountAndBoundary", "detail": (
-                f"taskMap: expected null at templateId or count<=128 with exact boundary; "
-                f"actual count={task_count}, offset={cursor}, templateIdOffset={template_offset}"
-            )}]
-            if task_count == NULL_COUNT and cursor == template_offset:
-                property_entries = properties.get("values")
-                result.update({
-                    "status": "exact_named_action_map_null_task_template",
-                    "schemaStatus": "named_exact",
-                    "fieldOrder": list(ROOT_FIELDS),
-                    "fields": {
-                        "actionMap": action_map["fields"],
-                        "maxStage": max_stage,
-                        "properties": property_entries,
-                        "propertyIdToKeyMap": property_map,
-                        "taskMap": None,
-                        "templateId": template_id,
-                    },
-                    "opaqueMiddle": None,
-                    "evidenceBoundary": (
-                        "All six generated wrapper fields are named and exactly consumed "
-                        "for a reviewed action map and null task map."
-                    ),
-                })
-            elif task_count <= 128:
-                try:
-                    tasks, task_end = decode_levelscript_task_map_exact(
-                        data, cursor, task_count, template_offset
-                    )
-                except LevelScriptTopLevelFramingError as exc:
-                    result["stopField"] = "taskMap.entries"
-                    result["diagnostics"] = [{"gate": "taskMapExactBoundary", "detail": str(exc)[:1000]}]
-                else:
-                    result.update({
-                        "status": "exact_named_action_map_task_template",
-                        "schemaStatus": "named_exact",
-                        "fieldOrder": list(ROOT_FIELDS),
-                        "fields": {
-                        "actionMap": action_map["fields"],
-                            "maxStage": max_stage,
-                            "properties": properties.get("values"),
-                            "propertyIdToKeyMap": property_map,
-                            "taskMap": tasks,
-                            "templateId": template_id,
-                        },
-                        "opaqueMiddle": None,
-                        "namedPrefix": {
-                            **result["namedPrefix"],
-                            "endOffset": task_end,
-                        },
-                        "evidenceBoundary": (
-                            "All six generated wrapper fields are named and exactly consumed; "
-                            "the counted task map closes at the terminal templateId boundary."
-                        ),
-                    })
-    if result["schemaStatus"] == "named_exact":
-        result.pop("stopField", None)
-        result.pop("diagnostics", None)
+            if field=='actionMap':value,end=_action_map(data,cursor,strings)
+            elif field=='maxStage':
+                _need(data,cursor,4,field);value=struct.unpack_from('<i',data,cursor)[0];end=cursor+4
+            elif field in ('properties','propertyIdToKeyMap','taskMap'):
+                value,end=_empty_collection(data,cursor,field,[] if field=='properties' else {})
+            else:
+                _need(data,cursor,4,field);value=resolve_string_pool_index(struct.unpack_from('<i',data,cursor)[0],strings,field);end=cursor+4
+        except (ActionMapCodecError,ValueError,IndexError,KeyError,struct.error) as error:
+            stop=field;diagnostic={'gate':'sequentialField','field':field,'offset':start,'detail':str(error)[:1200]};break
+        fields[field]=value;spans[field]={'startOffset':start,'endOffset':end};cursor=end
+    if stop is None and cursor!=len(data):
+        stop='physicalEOF';diagnostic={'gate':'physicalEOF','offset':cursor,'detail':f'expected EOF={cursor} actual length={len(data)}'}
+    result={'status':'exact_named_template' if stop is None else 'exact_named_template_prefix','schemaStatus':'named_exact' if stop is None else 'partial',
+            'serializedMemberCount':ROOT_MEMBER_COUNT,'bytesConsumed':cursor,'fieldOrder':list(fields),'fields':fields,'ranges':spans,
+            'actionMap':fields.get('actionMap'),'opaqueMiddle':None if stop is None else {'startOffset':cursor,'endOffset':len(data),'length':len(data)-cursor},
+            'evidenceBoundary':'Sequential current stored fields only. An unproved child stops the cursor and leaves all following bytes opaque; no runtime activation or graph execution is inferred.'}
+    if 'templateId' in fields:result['templateId']={**spans['templateId'],'value':fields['templateId']}
+    if stop is not None:result.update(stopField=stop,diagnostics=[diagnostic])
     return result

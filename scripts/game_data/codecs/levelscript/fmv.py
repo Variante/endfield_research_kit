@@ -127,3 +127,26 @@ def decode_fmv_action(
             "nativeMappingId": LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID,
         }
     return {}
+
+
+def project_typed_fmv(node, payload_start, payload_end):
+    """Project a selected stored ID from a complete, independently decoded Param.
+
+    The typed reader authenticates the parent and complete pooled string Param.
+    This projection proves no video naming, provider choice or playback route.
+    """
+    from scripts.game_data.levelscript_union_tags import short_name
+    action = short_name(node['wrapperName'])
+    field = {'PlayFmvAction': 'moviePath', 'StartFmvAndTeleportAction': 'fmvId'}.get(action)
+    if field is None or node.get('fieldTypes', {}).get(field) != 'Param<string>':return None
+    param = node['fields'].get(field)
+    span = node.get('fieldRanges', {}).get(field)
+    if (not isinstance(param, dict) or param.get('paramSource') != 0
+            or type(param.get('idRef')) is not int or param['idRef'] < -1
+            or not isinstance(param.get('value'), str) or not param['value']
+            or not isinstance(span, (list, tuple)) or len(span) != 2
+            or any(type(at) is not int for at in span)
+            or not payload_start <= span[0] < span[1] <= payload_end or span[1]-span[0] != 17):return None
+    return dict(action=action, fmvId=param['value'], sourceField='_'+field,
+                fieldOffset=hex(span[0]), valueOffset=hex(span[0]+1), fieldEndOffset=hex(span[1]),
+                payloadShape='fmv-stored-current-pooled-param', evidenceBoundary='structuralOnly')

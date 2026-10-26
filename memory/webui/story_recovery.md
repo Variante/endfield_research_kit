@@ -53,10 +53,41 @@ production builders must not import or execute recovery modules. Promote a
 recovery algorithm by moving its pure, tested core into `scripts/webui/story/`
 and leaving only report/CLI orchestration in `story_recovery`.
 
+The protocol registry publishes only after every required validator and the
+after-read selected-native gate pass. Refusals write a bounded `.failed.json`
+companion and leave the published JSON and Markdown untouched. An absent
+optional native event route retains its explicit ownership/transport gap.
+Reuse also binds the complete raw reader/contract snapshot and the registry
+script. Fresh and reused reports recheck both that recipe and the selected
+native pair before publication; unchanged game files do not excuse code drift.
+
+The language builder and its DialogTree connection projections use native
+citations and NPC consumers from one authenticated evaluation per language.
+The builder authenticates again before successful
+completion and refuses changed native inputs, claims, or complete raw-reader
+inputs. This keeps row generation consistent without a process-wide validation
+cache or repeated binary hashing for every row.
+
+The source-only partial-order report likewise owns one native evaluation for
+one build operation. Its nested projections share that proof; standalone
+helpers validate independently. Before returning a report, it rechecks its own
+source, selected native pair and complete raw-reader inputs. Drift aborts with
+a bounded structured diagnostic. No proof survives into another operation,
+and failed or pending native groups still contribute no native conclusion.
+The source Story gap queue also passes that explicit report-owned scope to
+proxy selectors and token/address citations. Revalidating the complete reader
+dependency graph for each row makes a full queue needlessly slow. Its final
+source/native/reader checks finish before the queue is published; standalone
+helpers retain their own validation, and no proof survives the report.
+
 ## Story structure and media
 
 - DialogTree and Timeline recover local line order and explicit option routes.
   A local branch does not imply a cross-Story continuation.
+- Unscoped narrative-carrier rows may aggregate several parent dialogs.
+  Validate each explicit action's parent, require complete declared-parent
+  coverage and retain every typed source/path check. This closes carrier
+  context only; parent ownership, activation and file order stay unresolved.
 - A shared-only option response remains an explicit frontend continuation even
   when no option has exclusive lines. An ancestor branch may already remove
   that response from the outer trunk; discarding its local shared lines then

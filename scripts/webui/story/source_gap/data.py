@@ -1,7 +1,7 @@
 
 from scripts.game_data.codecs.levelscript.record_hints import LEVELSCRIPT_ACTIONBASE_FORMATTER_TABLE_MAPPING_ID
 from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs, rel_path as export_rel_path
-from scripts.game_data.story_native_consumers_native import validated_group
+from scripts.webui.story.source_story_partial_order import _native_cited, _native_group
 """Build-locked declarations used by source Story gap evidence.
 
 This module intentionally contains data rather than recovery algorithms. Its
@@ -41,9 +41,9 @@ NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES = frozenset({
 NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP = "npcProxyDialogSelection"
 
 
-def npc_proxy_dialog_selection_sha256() -> str | None:
+def npc_proxy_dialog_selection_sha256(*, native_scope=None) -> str | None:
     """The build that proves the proxy selector claims, or None."""
-    group = validated_group(NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP)
+    group = _native_group(NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP, native_scope)
     return group["gameAssemblySha256"] if group else None
 
 
@@ -4177,3 +4177,11 @@ OFFLINE_EXHAUSTION_PATTERN_DIALOG_KEYS = frozenset({
     "misc_dlg_gm01m6_4d5",
     "misc_dlg_gm01m6_4d7",
 })
+
+
+def cited_token(display, *, native_scope=None):
+    return _native_cited(display, native_scope)['token']
+
+
+def cited_address(display, *, native_scope=None):
+    return _native_cited(display, native_scope)['address']

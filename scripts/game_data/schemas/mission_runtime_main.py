@@ -37,7 +37,7 @@ class MissionRuntimeMainDecodeError(ValueError):
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "mission_runtime_main_schema.json"
-CONTRACT_SCHEMA = "endfield.mission-runtime-main-json-schema.v1"
+CONTRACT_SCHEMA = "endfield.mission-runtime-main-json-schema.v2"
 _fail = make_fail(MissionRuntimeMainDecodeError)
 
 

@@ -1,20 +1,10 @@
-"""The ASCII/uid record scan that indexes a LevelScriptData blob.
-
-Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
-"""
-
-from __future__ import annotations
-
-import re
+"""Current pooled LevelScript records, consumed from the three declared lists."""
 import struct
-
-from scripts.game_data.codecs.levelscript.framing_common import _is_printable_ascii
-from scripts.game_data.codecs.levelscript.framing_common import _record_start
-from scripts.game_data.codecs.levelscript.primitives import i32 as _i32
-from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
+from pathlib import Path
 from typing import Any
-
-LEVELSCRIPT_HEX_UID_RE = re.compile(rb"[0-9a-f]{8}")
+from scripts.game_data.codecs.levelscript.framing_common import _is_printable_ascii
+from scripts.game_data.string_pool import export_string_pool
+from scripts.game_data.codecs.levelscript.action_map import ActionMapCodecError,decode_reviewed_node
 
 
 def _extract_levelscript_tagged_ascii_strings(
@@ -81,109 +71,107 @@ def _extract_levelscript_plain_ascii_strings(
     return hits
 
 
-def _decode_levelscript_uid_record(data: bytes, uid_off: int, uid: str) -> dict[str, Any] | None:
-    if uid_off >= 14:
-        start = uid_off - 14
-        if start + 32 <= len(data):
-            if (
-                data[start] == 0xFA
-                and data[start + 4] in (0, 1)
-                and data[start + 9] == 0
-                and _u32(data, start + 10) == 8
-            ):
-                local_id = _u32(data, start + 5)
-                if isinstance(local_id, int) and local_id <= 0x1000:
-                    return {
-                        "start": start,
-                        "layout": "fa",
-                        "code": struct.unpack_from("<H", data, start + 1)[0],
-                        "kind": data[start + 3],
-                        "unionTag": struct.unpack_from("<H", data, start + 1)[0],
-                        "serializedMemberCount": data[start + 3],
-                        "dontLog": bool(data[start + 4]),
-                        "unionTagEncoding": "memorypack-fa-u16",
-                        "localId": local_id,
-                        "uid": uid,
-                        "nextId": _i32(data, start + 28),
-                        "payloadStart": start + 32,
-                        "strings": [],
-                        "plainStrings": [],
-                    }
 
-    if uid_off >= 12:
-        start = uid_off - 12
-        if start + 30 <= len(data):
-            code = struct.unpack_from("<H", data, start)[0]
-            kind = data[start + 2]
-            local_id = _u32(data, start + 3)
-            if (
-                isinstance(local_id, int)
-                and data[start] < 0xFA
-                and data[start + 1] <= 0x40
-                and kind in (0, 1)
-                and local_id <= 0x1000
-                and data[start + 7] == 0
-                and _u32(data, start + 8) == 8
-            ):
-                return {
-                    "start": start,
-                    "layout": "plain",
-                    "code": code,
-                    "kind": kind,
-                    "unionTag": data[start],
-                    "serializedMemberCount": data[start + 1],
-                    "dontLog": bool(data[start + 2]),
-                    "unionTagEncoding": "memorypack-u8",
-                    "localId": local_id,
-                    "uid": uid,
-                    "nextId": _i32(data, start + 26),
-                    "payloadStart": start + 30,
-                    "strings": [],
-                    "plainStrings": [],
-                }
+LISTS=(('actionList','ActionBase'),('getterList','GetterBase'),('headerList','ActionHeader'))
 
-    return None
+class LevelScriptUidDecodeError(ValueError):
+ def __init__(self,gate,**detail):
+  self.diagnostics=dict(validator='levelscriptUidRecords',gate=gate,**detail)
+  super().__init__(','.join(f'{key}={value}' for key,value in self.diagnostics.items()))
+
+class LevelScriptUidRecords(list):
+ def __init__(self,records,action_map):super().__init__(records);self.action_map=action_map
 
 
-def extract_levelscript_uid_records(
-    data: bytes,
-    tagged_strings: list[dict[str, Any]] | None = None,
-    plain_strings: list[dict[str, Any]] | None = None,
-) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    seen_starts: set[int] = set()
-    tagged_strings = sorted(tagged_strings or [], key=lambda hit: int(hit.get("offset") or 0))
-    plain_strings = sorted(plain_strings or [], key=lambda hit: int(hit.get("offset") or 0))
+def typed_strings(node):
+ """Only proved string fields and selected constant/path operands become text hits."""
+ hits=[];spans=node.get('fieldRanges',node.get('fieldSpans',{}))
+ def add(text,field,offset):
+  if isinstance(text,str) and text:hits.append(dict(text=text,field=field,offset=offset,encoding='int32-pool-index'))
+ for name,kind in node.get('fieldTypes',{}).items():
+  span=spans.get(name);value=node['fields'].get(name)
+  if not span or name=='uid':continue
+  if kind=='string':add(value,name,span[0])
+  elif kind.startswith(('Param<','ParamOutput<')) and isinstance(value,dict):
+   if kind=='Param<string>' and value.get('paramSource')==0:add(value.get('value'),name+'.value',span[0]+1)
+   add(value.get('path'),name+'.path',span[1]-4)
+ return hits
 
-    for match in LEVELSCRIPT_HEX_UID_RE.finditer(data):
-        uid_off = match.start()
-        uid = match.group().decode("ascii")
-        record = _decode_levelscript_uid_record(data, uid_off, uid)
-        if record is None or int(record["start"]) in seen_starts:
-            continue
-        seen_starts.add(int(record["start"]))
-        records.append(record)
+def _map_start(data,offset):
+ if offset is None:
+  if len(data)<2 or data[0]!=28:raise LevelScriptUidDecodeError('levelScriptMemberCount',expected=28,actual=data[0] if data else None)
+  if data[1]==255:return None
+  if data[1]!=2:raise LevelScriptUidDecodeError('actionMapAssetMemberCount',expected=2,actual=data[1])
+  offset=2
+ if type(offset) is not int or not 0<=offset<len(data):raise LevelScriptUidDecodeError('mapOffset',offset=offset,bytes=len(data))
+ return offset
 
-    records.sort(key=_record_start)
-    if not records:
-        return records
+def extract_levelscript_uid_records(data,*,strings=None,source_path=None,game_root=None,map_offset=None):
+ """Refuse an unknown child instead of guessing its end or returning an empty graph."""
+ if source_path is not None and strings is None:
+  parents=[p for p in Path(source_path).parents if p.name=='Json']
+  if len(parents)!=1:raise LevelScriptUidDecodeError('sourceJsonRoot',source=str(source_path))
+  strings=export_string_pool(parents[0])
+ map_offset=_map_start(data,map_offset)
+ if map_offset is None:return LevelScriptUidRecords([],dict(status='null',serializedLists=[],listCounts={}))
+ marker=data[map_offset]
+ if marker==255:return LevelScriptUidRecords([],dict(status='null',serializedLists=[],listCounts={}))
+ if marker!=3:raise LevelScriptUidDecodeError('mapMemberCount',expected=3,actual=marker,offset=map_offset)
+ cursor=map_offset+1;records=[];lists=[]
+ for name,family in LISTS:
+  count_at=cursor
+  if cursor+4>len(data):raise LevelScriptUidDecodeError('listCountTruncated',family=family,offset=cursor)
+  count=struct.unpack_from('<i',data,cursor)[0];cursor+=4;first=len(records)
+  if not 0<=count<=10000:raise LevelScriptUidDecodeError('listCount',family=family,offset=count_at,expected='0..10000',actual=count)
+  for index in range(count):
+   start=cursor
+   try:node,cursor=decode_reviewed_node(data,cursor,family,strings=strings,game_root=game_root)
+   except (ActionMapCodecError,ValueError) as error:
+    raise LevelScriptUidDecodeError('typedNode',family=family,index=index,offset=start,detail=str(error)[:1000]) from error
+   if node.get('sourceOffset')!=start or node.get('endOffset')!=cursor or not start<cursor<=len(data):
+    raise LevelScriptUidDecodeError('nodeBoundary',family=family,index=index,offset=start,endOffset=cursor)
+   fields=node['fields'];tag=node['unionTag'];members=node['memberCount']
+   common=7 if family=='GetterBase' else 14 if family=='ActionHeader' else 8
+   ranges=node.get('fieldRanges',node.get('fieldSpans',{}))
+   common_name=list(fields)[common-1] if len(fields)>=common else None
+   if common_name not in ranges:raise LevelScriptUidDecodeError('commonFieldBoundary',family=family,index=index,offset=start)
+   payload_start=ranges[common_name][1]
+   records.append(dict(start=start,end=cursor,layout='pooled',code=tag,kind=members,unionTag=tag,
+    serializedMemberCount=members,unionTagEncoding='memorypack-fa-u16' if data[start]==250 else 'memorypack-u8',
+    dontLog=fields.get('dontLogWarning'),localId=fields.get('ID'),uid=fields.get('uid'),nextId=fields.get('nextID'),
+    listName=name,listIndex=index,family=family,typedNode=node,payloadStart=payload_start,
+    strings=typed_strings(node),plainStrings=[]))
+  lists.append(dict(name=name,status='present',count=count,countOffset=hex(count_at),countMarker=count,
+   recordIndexStart=first,recordIndexEnd=len(records),decodedRecordCount=count,source='sequentialTypedPooledRecords'))
+ return LevelScriptUidRecords(records,dict(status='present',serializedLists=lists,
+  listCounts={r['name']:r['count'] for r in lists},serializedListOrder=[r[0] for r in LISTS],
+  exactEmptyActionMap=not records,dataMapEndOffset=cursor))
 
-    tagged_index = 0
-    plain_index = 0
-    for index, record in enumerate(records):
-        next_start = _record_start(records[index + 1]) if index + 1 < len(records) else len(data)
-        payload_start = int(record.get("payloadStart") or 0)
-        while tagged_index < len(tagged_strings) and int(tagged_strings[tagged_index].get("offset") or 0) < payload_start:
-            tagged_index += 1
-        scan_index = tagged_index
-        while scan_index < len(tagged_strings) and int(tagged_strings[scan_index].get("offset") or 0) < next_start:
-            record["strings"].append(tagged_strings[scan_index])
-            scan_index += 1
-        while plain_index < len(plain_strings) and int(plain_strings[plain_index].get("offset") or 0) < payload_start:
-            plain_index += 1
-        scan_index = plain_index
-        while scan_index < len(plain_strings) and int(plain_strings[scan_index].get("offset") or 0) < next_start:
-            record["plainStrings"].append(plain_strings[scan_index])
-            scan_index += 1
-
-    return records
+def frame_uid_record_lists(data, records, *, map_offset=None):
+ """Recheck declared counts and exact cursors when callers copy or sort records."""
+ map_offset=_map_start(data,map_offset)
+ if map_offset is None:
+  if records:raise LevelScriptUidDecodeError('recordsOutsideNullMap',actual=len(records))
+  return dict(status='null',serializedLists=[],listCounts={})
+ if data[map_offset]==255:
+  if records:raise LevelScriptUidDecodeError('recordsOutsideNullMap',actual=len(records))
+  return dict(status='null',serializedLists=[],listCounts={})
+ if data[map_offset]!=3:raise LevelScriptUidDecodeError('mapMemberCount',offset=map_offset)
+ ordered=sorted(records,key=lambda r:r.get('start',-1));cursor=map_offset+1;index=0;lists=[]
+ for name,family in LISTS:
+  count_at=cursor
+  if cursor+4>len(data):raise LevelScriptUidDecodeError('listCountTruncated',family=family,offset=cursor)
+  count=struct.unpack_from('<i',data,cursor)[0];cursor+=4;first=index
+  if not 0<=count<=10000:raise LevelScriptUidDecodeError('listCount',family=family,offset=count_at,actual=count)
+  for ordinal in range(count):
+   row=ordered[index] if index<len(ordered) else {}
+   end=row.get('end')
+   if (row.get('start')!=cursor or row.get('family')!=family or row.get('listIndex')!=ordinal
+       or not isinstance(end,int) or not cursor<end<=len(data) or not row.get('typedNode')):
+    raise LevelScriptUidDecodeError('sequentialRecordBoundary',family=family,index=ordinal,offset=cursor,availableRecords=len(ordered))
+   cursor=end;index+=1
+  lists.append(dict(name=name,status='present',count=count,countOffset=hex(count_at),countMarker=count,
+   recordIndexStart=first,recordIndexEnd=index,decodedRecordCount=count,source='sequentialTypedPooledRecords'))
+ if index!=len(ordered):raise LevelScriptUidDecodeError('recordsOutsideMap',expected=index,actual=len(ordered))
+ return dict(status='present',serializedLists=lists,listCounts={r['name']:r['count'] for r in lists},
+  serializedListOrder=[r[0] for r in LISTS],exactEmptyActionMap=not ordered,dataMapEndOffset=cursor)

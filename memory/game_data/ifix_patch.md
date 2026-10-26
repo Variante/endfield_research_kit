@@ -25,6 +25,12 @@ a replacement target. Declarations alone do not prove the replacement's
 behavior, that the runtime loaded the file, or that any call entered the patch;
 a target name is not an execution trace.
 
+A patch-only update can change these records while the executable and metadata
+stay identical. Rebuild the target catalog from a fresh MD5-verified VFS dump
+and compare its patch digest before carrying a target-list conclusion forward.
+A native-input match alone does not authenticate the installed patch. Native
+proofs of an original body retain their stated IFix-selection conditions.
+
 The VM method index and the AOT wrapper's `IsPatched` id are **different
 identity domains**: `ifix_patch.py` reads the former from the file,
 [`body_claims.py`](../../scripts/game_data/il2cpp/body_claims.py) the latter

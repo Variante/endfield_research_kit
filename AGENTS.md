@@ -258,12 +258,11 @@ different shapes:
 
 A third set, the native facts the Story, Mission Pipeline and Map builders
 consume, is loaded by the `*_native.py` modules beside the readers, each from
-its JSON in `scripts/game_data/contracts/`. Every loader except
-`mission_task_paths_native` gates on the installed native inputs itself. That contract is validated by its
-consumers, the protocol registry and the mission trace hook manifest.
+its JSON in `scripts/game_data/contracts/`. These loaders gate on the installed
+native inputs themselves.
 
 A fourth shape records no build at all. **Claims contracts**
-(`dialog_finish_native.json`, `story_native_consumers.json`) name methods by
+(`dialog_finish_native.json`, `story_native_consumers.json`, `mission_task_paths.json`) name methods by
 type and method and state what each body does as checkable claims (`calls`,
 `readsField`, `comparesResult`, ...); `il2cpp/body_claims.py` proves them on
 whichever build is installed, and tokens and addresses are read from that

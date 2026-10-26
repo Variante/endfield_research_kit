@@ -5,7 +5,7 @@ field contracts.  This reader names the compact table families whose complete
 current shapes and cross-index relationships are understood.
 
 Together with ``schemas.gameplay_config_polymorphic`` (the five broad
-polymorphic tables) this closes every textual ``GameplayConfig`` JSON file;
+polymorphic tables), these readers validate the named textual tables;
 the binary GameplayConfig tables keep their MemoryPack readers
 (``scripts.game_data.gameplay_compact_binary`` and the table readers).  Each
 decoder in ``_DECODERS`` validates the explicit root, rows, vectors, curves,
@@ -204,11 +204,16 @@ def _teleport_perform(root: Any, source: str) -> dict[str, Any]:
     fields = ("$type", "performId", "vfxId", "startDuration", "endDuration")
     for key, row in root.items():
         path = f"{source}[{key!r}]"
-        row = _obj(row, fields, path)
-        if row["$type"] != "Beyond.Gameplay.FullScreenFxTeleportPerformCfg, Gameplay.Beyond":
+        movie = isinstance(row, dict) and row.get("$type") == "Beyond.Gameplay.CgTeleportPerformCfg, Gameplay.Beyond"
+        row = _obj(row, ("$type", "performId", "moviePath", "fallbackUIType") if movie else fields, path)
+        if not movie and row["$type"] != "Beyond.Gameplay.FullScreenFxTeleportPerformCfg, Gameplay.Beyond":
             _fail(path + ".$type", "FullScreenFxTeleportPerformCfg identity", row["$type"])
         if row["performId"] != key:
             _fail(path + ".performId", key, row["performId"])
+        if movie:
+            _type(row["moviePath"], str, path + ".moviePath")
+            _type(row["fallbackUIType"], int, path + ".fallbackUIType")
+            continue
         _type(row["vfxId"], str, path + ".vfxId")
         _number(row["startDuration"], path + ".startDuration")
         _number(row["endDuration"], path + ".endDuration")
@@ -242,6 +247,9 @@ def _condition(value: Any, path: str) -> None:
         _type(value["compareTarget"], int, path + ".compareTarget")
     elif identity == "Beyond.Gameplay.SimpleConditionPlayerInsideFriendShip, Gameplay.Beyond":
         _obj(value, ("$type",), path)
+    elif identity == "Beyond.Gameplay.SimpleConditionCheckGlobalTag, Gameplay.Beyond":
+        value = _obj(value, ("$type", "tag"), path)
+        _tag(value["tag"], path + ".tag")
     elif identity == "Beyond.Gameplay.SimpleConditionCheckGlobalVar, Gameplay.Beyond":
         value = _obj(value, ("$type", "globalVarName", "compareOperator", "compareTarget"), path)
         _type(value["globalVarName"], str, path + ".globalVarName")
@@ -444,16 +452,25 @@ def _atmospheric_clusters(root: Any, source: str) -> dict[str, Any]:
     if _dict(root["npcId2ClusterId"], source + ".npcId2ClusterId"):
         _fail(source + ".npcId2ClusterId", "empty deferred index", "nonempty")
     rows = _dict(root["dataTable"], source + ".dataTable")
-    fields_row = ("subDataParentId", "clusterId", "envTalkId", "levelId", "envTalkTriggerDistance", "position", "forceSyncMontage", "npcIds")
+    fields_row = ("subDataParentId", "clusterId", "envTalkId", "useMultipleEnvTalks", "dialogId", "levelId", "envTalkTriggerDistance", "dialogInteractDistance", "position", "forceSyncMontage", "npcIds")
+    shapes = (fields_row, fields_row[:4] + ("envTalkIds", "envTalkOdd") + fields_row[4:])
     for key, row in rows.items():
         path = f"{source}.dataTable[{key!r}]"
-        row = _obj(row, fields_row, path)
+        if not isinstance(row, dict) or tuple(row) not in shapes:
+            _fail(path + ".fields", shapes, list(row) if isinstance(row, dict) else type(row).__name__)
+        if "envTalkIds" in row:
+            ids = _strings(row["envTalkIds"], path + ".envTalkIds")
+            odds = _ints(row["envTalkOdd"], path + ".envTalkOdd")
+            if odds and len(ids) != len(odds):
+                _fail(path + ".envTalkParallel", len(ids), len(odds))
         _type(row["subDataParentId"], int, path + ".subDataParentId")
         if row["clusterId"] != key:
             _fail(path + ".clusterId", key, row["clusterId"])
-        for field in ("envTalkId", "levelId"):
+        for field in ("envTalkId", "dialogId", "levelId"):
             _type(row[field], str, path + "." + field)
         _number(row["envTalkTriggerDistance"], path + ".envTalkTriggerDistance")
+        _type(row["useMultipleEnvTalks"], bool, path + ".useMultipleEnvTalks")
+        _number(row["dialogInteractDistance"], path + ".dialogInteractDistance")
         _vector3(row["position"], path + ".position")
         _type(row["forceSyncMontage"], bool, path + ".forceSyncMontage")
         _strings(row["npcIds"], path + ".npcIds")
@@ -561,7 +578,7 @@ def _map_brief_info(root: Any, source: str) -> dict[str, Any]:
 
 def _multi_trigger(root: Any, source: str) -> dict[str, Any]:
     root = _dict(root, source)
-    trigger_fields = ("triggerId", "shape", "center", "radius", "size", "polyLineHeight", "isImportant", "interactiveDirectionCheck", "checkOffset", "checkRadius", "checkHeight", "checkAngle", "playerDirectionCheck", "inTriggerVolumePerformance")
+    trigger_fields = ("triggerId", "shape", "center", "radius", "size", "polyLinePoints", "polyLineHeight", "isImportant", "interactiveDirectionCheck", "checkOffset", "checkRadius", "checkHeight", "checkAngle", "playerDirectionCheck", "inTriggerVolumePerformance")
     count = 0
     for parent, rows in root.items():
         if not parent.isdecimal():
@@ -572,11 +589,15 @@ def _multi_trigger(root: Any, source: str) -> dict[str, Any]:
             _type(row["serverId"], int, path + ".serverId")
             for child_index, trigger in enumerate(_list(row["triggers"], path + ".triggers")):
                 child = f"{path}.triggers[{child_index}]"
-                trigger = _obj(trigger, trigger_fields, child)
+                shapes = (trigger_fields, tuple(f for f in trigger_fields if f != "polyLinePoints"))
+                if not isinstance(trigger, dict) or tuple(trigger) not in shapes:
+                    _fail(child + ".fields", shapes, list(trigger) if isinstance(trigger, dict) else type(trigger).__name__)
                 for field in ("triggerId", "shape"):
                     _type(trigger[field], int, child + "." + field)
                 for field in ("center", "size", "checkOffset"):
                     _vector3(trigger[field], child + "." + field)
+                for i, point in enumerate(_list(trigger.get("polyLinePoints", []), child + ".polyLinePoints")):
+                    _vector3(point, f"{child}.polyLinePoints[{i}]")
                 for field in ("radius", "polyLineHeight", "checkRadius", "checkHeight", "checkAngle"):
                     _number(trigger[field], child + "." + field)
                 for field in ("isImportant", "interactiveDirectionCheck", "playerDirectionCheck", "inTriggerVolumePerformance"):
@@ -734,21 +755,30 @@ def _npc_proxy_extra(root: Any, source: str) -> dict[str, Any]:
 
 
 _NPC_PROXY_FIELDS = (
-    "subDataParentId", "levelLogicId", "entityType", "createState", "position", "rotation", "scale", "forceLoad", "aoiRadiusType", "overrideSendDieEvent", "sendDieEvent", "keepCrossMap", "npcGroupId", "type", "doPatrol", "defaultActivePatrol", "patrolCfgType", "initPatrolIndex", "patrolId_New", "defaultMontage", "overrideMontageState", "montageState", "autoPreloadMontages", "preloadMontages", "defaultMontageMaskType", "collisionEnable", "overrideInteractRange", "interactRangeType", "disableEmotion", "defaultEmotion", "defaultFacialAnim", "lookAt", "enableDialogLookAtCapability", "doStim", "stimulateKey", "atmosphereStimulateCanMove", "isOverriderBlur", "needBlurCheck", "blurPriority", "confrontAnim", "battleAnim", "idleBreakTags", "overrideConfrontRot", "needConfrontRot", "overrideBattleRot", "needBattleRot", "ignoreBattleReturn", "hideHeadLabel", "hideHeadName", "aiCfg", "belongStoryZoneId", "ifOverrideNpcName", "overrideNpcNameId", "ifOverrideTitle", "overrideNpcTitleId", "ifOverrideFaction", "overrideNpcFactionId", "envTalkIds", "envTalkOdd", "hitData", "notifyInteractEvent", "controlByLevelScript", "overrideDefaultInteractText", "overrideDefaultInteractIcon", "defaultInteractText", "interactionIcon", "envTalkTriggerDistance", "envTalkOverrideNpc", "disableDowngrade", "enableMorph", "enableCloth", "overrideSpIdleConfig", "enableDownGradeSpIdle", "normalIdle2SpidleTime", "spIdle2normalIdleTime", "spIdleRandomWaitTimeMin", "spIdleRandomWaitTimeMax", "npcPatrolGroupId", "battleDataOverride", "linkedChairId", "proxyId", "levelId", "overrideLabel", "hideBubble", "clusterId", "hidePopupExpression", "ifOverrideHeadIcon", "overrideHeadIcon", "needWayPoint", "overrideTemplateAI", "overrideAbilitySo", "lazyDestroy", "lazyDestroyEnvTalkData", "lazyDestroyOverrideDialogId", "lazyDestroyStartPatrol", "lazyDestroyPatrolId", "overrideTemplateAi", "overrideGamePlayData", "overrideAudio", "overrideInitAudioId",
+    "subDataParentId", "levelLogicId", "entityType", "createState", "position", "rotation", "scale", "forceLoad", "aoiRadiusType", "overrideSendDieEvent", "sendDieEvent", "keepCrossMap", "npcGroupId", "type", "doPatrol", "defaultActivePatrol", "patrolCfgType", "initPatrolIndex", "patrolId_New", "defaultMontage", "overrideMontageState", "montageState", "autoPreloadMontages", "preloadMontages", "defaultMontageMaskType", "collisionEnable", "overrideInteractRange", "interactRangeType", "disableEmotion", "defaultEmotion", "defaultFacialAnim", "lookAt", "enableDialogLookAtCapability", "doStim", "stimulateKey", "atmosphereStimulateCanMove", "isOverriderBlur", "needBlurCheck", "blurPriority", "confrontAnim", "battleAnim", "idleBreakTags", "overrideConfrontRot", "needConfrontRot", "overrideBattleRot", "needBattleRot", "ignoreBattleReturn", "hideHeadLabel", "hideHeadName", "aiCfg", "restaurantRole", "belongStoryZoneId", "ifOverrideNpcName", "overrideNpcNameId", "ifOverrideTitle", "overrideNpcTitleId", "ifOverrideFaction", "overrideNpcFactionId", "envTalkIds", "envTalkOdd", "hitData", "notifyInteractEvent", "controlByLevelScript", "overrideDefaultInteractText", "overrideDefaultInteractIcon", "defaultInteractText", "interactionIcon", "envTalkTriggerDistance", "envTalkOverrideNpc", "disableDowngrade", "enableMorph", "enableCloth", "enableMaxPotentialOnCreate", "overrideSpIdleConfig", "enableDownGradeSpIdle", "normalIdle2SpidleTime", "spIdle2normalIdleTime", "spIdleRandomWaitTimeMin", "spIdleRandomWaitTimeMax", "npcPatrolGroupId", "battleDataOverride", "linkedChairId", "proxyId", "levelId", "overrideLabel", "hideBubble", "clusterId", "hidePopupExpression", "ifOverrideHeadIcon", "overrideHeadIcon", "needWayPoint", "overrideTemplateAI", "overrideAbilitySo", "lazyDestroy", "lazyDestroyEnvTalkData", "lazyDestroyOverrideDialogId", "lazyDestroyStartPatrol", "lazyDestroyPatrolId", "overrideTemplateAi", "overrideGamePlayData", "overrideAudio", "overrideInitAudioId",
 )
 
 
 def _npc_proxy_table(root: Any, source: str) -> dict[str, Any]:
     root = _obj(root, ("dataTable",), source)
     rows = _dict(root["dataTable"], source + ".dataTable")
-    int_fields = {"subDataParentId", "levelLogicId", "entityType", "createState", "aoiRadiusType", "type", "patrolCfgType", "initPatrolIndex", "patrolId_New", "montageState", "defaultMontageMaskType", "interactRangeType", "blurPriority", "belongStoryZoneId", "npcPatrolGroupId", "linkedChairId", "lazyDestroyPatrolId"}
+    int_fields = {"subDataParentId", "levelLogicId", "entityType", "createState", "aoiRadiusType", "type", "patrolCfgType", "initPatrolIndex", "patrolId_New", "montageState", "defaultMontageMaskType", "interactRangeType", "blurPriority", "belongStoryZoneId", "npcPatrolGroupId", "linkedChairId", "lazyDestroyPatrolId", "restaurantRole"}
     float_fields = {"envTalkTriggerDistance", "normalIdle2SpidleTime", "spIdle2normalIdleTime", "spIdleRandomWaitTimeMin", "spIdleRandomWaitTimeMax"}
     str_fields = {"npcGroupId", "stimulateKey", "aiCfg", "interactionIcon", "proxyId", "levelId", "clusterId", "overrideHeadIcon", "overrideAbilitySo", "lazyDestroyOverrideDialogId"}
     structured = {"position", "rotation", "scale", "defaultMontage", "preloadMontages", "defaultEmotion", "defaultFacialAnim", "confrontAnim", "battleAnim", "idleBreakTags", "overrideNpcNameId", "overrideNpcTitleId", "overrideNpcFactionId", "envTalkIds", "envTalkOdd", "hitData", "defaultInteractText", "lazyDestroyEnvTalkData", "overrideInitAudioId"}
     bool_fields = set(_NPC_PROXY_FIELDS) - int_fields - float_fields - str_fields - structured
+    slot = _NPC_PROXY_FIELDS.index("levelId") + 1
+    shapes=(_NPC_PROXY_FIELDS, _NPC_PROXY_FIELDS[:slot]+("sameShapeGroupId",)+_NPC_PROXY_FIELDS[slot:],
+            _NPC_PROXY_FIELDS[:slot]+("forceEnableMorph","sameShapeGroupId")+_NPC_PROXY_FIELDS[slot:],
+            tuple(f for f in _NPC_PROXY_FIELDS if f not in ("envTalkIds","envTalkOdd")))
     for key, row in rows.items():
         path = f"{source}.dataTable[{key!r}]"
-        row = _obj(row, _NPC_PROXY_FIELDS, path)
+        if not isinstance(row, dict) or tuple(row) not in shapes:
+            _fail(path + ".fields", shapes, list(row) if isinstance(row, dict) else type(row).__name__)
+        if "sameShapeGroupId" in row:
+            _type(row["sameShapeGroupId"], int, path + ".sameShapeGroupId")
+        if "forceEnableMorph" in row:
+            _type(row["forceEnableMorph"], bool, path + ".forceEnableMorph")
         if row["proxyId"] != key:
             _fail(path + ".proxyId", key, row["proxyId"])
         for field in int_fields:
@@ -769,8 +799,8 @@ def _npc_proxy_table(root: Any, source: str) -> dict[str, Any]:
             _fail(path + ".idleBreakTags", "empty current tag list", row["idleBreakTags"])
         for field in ("overrideNpcNameId", "overrideNpcTitleId", "overrideNpcFactionId", "defaultInteractText"):
             _localized_key(row[field], path + "." + field)
-        env_ids = _strings(row["envTalkIds"], path + ".envTalkIds")
-        env_odds = _ints(row["envTalkOdd"], path + ".envTalkOdd")
+        env_ids = _strings(row.get("envTalkIds",[]), path + ".envTalkIds")
+        env_odds = _ints(row.get("envTalkOdd",[]), path + ".envTalkOdd")
         if len(env_ids) != len(env_odds):
             _fail(path + ".envTalkParallel", len(env_ids), len(env_odds))
         hit = _obj(row["hitData"], ("canBeHit", "shape", "center", "extent", "height", "direction", "radius", "hitEffect"), path + ".hitData")
@@ -785,7 +815,7 @@ def _npc_proxy_table(root: Any, source: str) -> dict[str, Any]:
         lazy = _obj(row["lazyDestroyEnvTalkData"], ("envTalkIds", "envTalkOdd", "envTalkOverrideNpc"), path + ".lazyDestroyEnvTalkData")
         lazy_ids = _strings(lazy["envTalkIds"], path + ".lazyDestroyEnvTalkData.envTalkIds")
         lazy_odds = _ints(lazy["envTalkOdd"], path + ".lazyDestroyEnvTalkData.envTalkOdd")
-        if len(lazy_ids) != len(lazy_odds):
+        if lazy_odds and len(lazy_ids) != len(lazy_odds):
             _fail(path + ".lazyDestroyEnvTalkData.parallel", len(lazy_ids), len(lazy_odds))
         _type(lazy["envTalkOverrideNpc"], bool, path + ".lazyDestroyEnvTalkData.envTalkOverrideNpc")
         audio = _obj(row["overrideInitAudioId"], ("_id",), path + ".overrideInitAudioId")
@@ -863,6 +893,7 @@ def _focus_modes(root: Any, source: str) -> dict[str, Any]:
         ("subDataParentId", "id", "missionId", "presetTeamId", "radioIdInteractLocked", "customEnterFocusModeFadeOut", "skipEnterConfirm", "enterFadeMaskType", "airWallList", "worldEntityWhitelist", "npcHideMask"),
         ("subDataParentId", "id", "missionId", "presetTeamId", "customEnterFocusModeFadeOut", "skipEnterConfirm", "enterFadeMaskType", "worldEntityWhitelist", "npcHideMask"),
     )
+    shapes = tuple(shape + ("enableFacBuildingHide",) for shape in shapes)
     for key, row in rows.items():
         path = f"{source}.dataTable[{key!r}]"
         if not isinstance(row, dict) or tuple(row) not in shapes:
@@ -874,7 +905,7 @@ def _focus_modes(root: Any, source: str) -> dict[str, Any]:
         for field in ("missionId", "presetTeamId", "radioIdInteractLocked"):
             if field in row:
                 _type(row[field], str, path + "." + field)
-        for field in ("customEnterFocusModeFadeOut", "skipEnterConfirm"):
+        for field in ("customEnterFocusModeFadeOut", "skipEnterConfirm", "enableFacBuildingHide"):
             _type(row[field], bool, path + "." + field)
         for field in ("airWallList", "worldEntityWhitelist"):
             if field in row:

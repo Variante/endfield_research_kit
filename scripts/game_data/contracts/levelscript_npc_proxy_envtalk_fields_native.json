@@ -1,0 +1,277 @@
+{
+  "schema": "endfield.levelscript-route-deserialize-native.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "gameAssembly": {
+      "sha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C"
+    },
+    "metadata": {
+      "sha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
+    }
+  },
+  "routes": [
+    {
+      "family": "ActionBase",
+      "tag": 822,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      "typeName": "Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk",
+      "typeDefinition": 53424,
+      "memberCount": 11,
+      "inheritedMemberCount": 8,
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "envTalks",
+          "Param<List<NpcProxyOverrideEnvTalk.EnvTalkStruct>>"
+        ],
+        [
+          "npcProxyId",
+          "Param<string>"
+        ],
+        [
+          "overrideNpc",
+          "Param<bool>"
+        ]
+      ],
+      "nativeIdentity": {
+        "dispatcherVa": "0x184a325e0",
+        "switchTableVa": "0x184a9e008",
+        "switchTargetVa": "0x184a4075a",
+        "branchBodyVa": "0x184a775be",
+        "usageCellVa": "0x1906adbd8",
+        "registeredTypeIndex": 99159,
+        "typeDefinition": 53424,
+        "branchCodeHex": "488B8424D055010048898424E0EF0000488B8424E0EF0000488B0048898424E8EF0000488B15F065C30B",
+        "usageRawHex": "AF06032000000000"
+      },
+      "deserializeMethodIndex": 285670,
+      "deserializeRva": 207836344,
+      "normalBodyLength": 690,
+      "normalBodySha256": "D4AF8448188A944B2EC03172C57F339262D33BF78830B861C8B79A4CCEA138AF",
+      "deserializeFragmentWindows": [],
+      "memberCountInstruction": {
+        "rva": 207836557,
+        "hex": "807C24380B"
+      },
+      "readOrder": [
+        {
+          "name": "dontLogWarning",
+          "declaredType": "bool",
+          "setterMethodIndex": 268354,
+          "setterName": "set____dontLogWarning__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836574,
+          "readTargetRva": 83754448,
+          "setterCallRva": 207836596,
+          "setterTargetRva": 126050396
+        },
+        {
+          "name": "ID",
+          "declaredType": "int",
+          "setterMethodIndex": 268355,
+          "setterName": "set____ID__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836607,
+          "readTargetRva": 83752528,
+          "setterCallRva": 207836629,
+          "setterTargetRva": 126046456
+        },
+        {
+          "name": "releaseWhenExecutionFinished",
+          "declaredType": "bool",
+          "setterMethodIndex": 268356,
+          "setterName": "set____releaseWhenExecutionFinished__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836640,
+          "readTargetRva": 83754448,
+          "setterCallRva": 207836662,
+          "setterTargetRva": 126050312
+        },
+        {
+          "name": "uid",
+          "declaredType": "string",
+          "setterMethodIndex": 268357,
+          "setterName": "set____uid__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836673,
+          "readTargetRva": 85929408,
+          "setterCallRva": 207836696,
+          "setterTargetRva": 85897088
+        },
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 268358,
+          "setterName": "set___scopeMask__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836714,
+          "readTargetRva": 83752528,
+          "setterCallRva": 207836736,
+          "setterTargetRva": 126046772
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 268359,
+          "setterName": "set___useCurrentScope__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836747,
+          "readTargetRva": 83754448,
+          "setterCallRva": 207836769,
+          "setterTargetRva": 126062720
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 268360,
+          "setterName": "set___useGraphScope__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+          "readCallRva": 207836780,
+          "readTargetRva": 83754448,
+          "setterCallRva": 207836802,
+          "setterTargetRva": 126059964
+        },
+        {
+          "name": "nextID",
+          "declaredType": "int",
+          "setterMethodIndex": 258720,
+          "setterName": "set____nextID__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ActionBaseForMemoryPack",
+          "readCallRva": 207836813,
+          "readTargetRva": 83752528,
+          "setterCallRva": 207836831,
+          "setterTargetRva": 94578288
+        },
+        {
+          "name": "envTalks",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct>>",
+          "setterMethodIndex": 285665,
+          "setterName": "set____envTalks__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+          "readCallRva": 207836849,
+          "readTargetRva": 83900608,
+          "setterCallRva": 207836868,
+          "setterTargetRva": 207837460,
+          "typedReadContext": {
+            "instructionRva": 207836836,
+            "instructionHex": "488B1515C5D904",
+            "usageRawHex": "B9B713C000000000",
+            "methodSpecIndex": 646108,
+            "methodSpec": [
+              550348,
+              -1,
+              12647
+            ],
+            "cellVa": 6731668416,
+            "argumentRawHex": "F0D18C90010000000000150000000000",
+            "argumentType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct>>",
+            "readerType": "MemoryPack.MemoryPackReader",
+            "readerMethod": "ReadValue"
+          }
+        },
+        {
+          "name": "npcProxyId",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<string>",
+          "setterMethodIndex": 285666,
+          "setterName": "set____npcProxyId__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+          "readCallRva": 207836886,
+          "readTargetRva": 83900608,
+          "setterCallRva": 207836905,
+          "setterTargetRva": 207837512,
+          "typedReadContext": {
+            "instructionRva": 207836873,
+            "instructionHex": "488B1508CE1404",
+            "usageRawHex": "7FB813C000000000",
+            "methodSpecIndex": 646207,
+            "methodSpec": [
+              550348,
+              -1,
+              12746
+            ],
+            "cellVa": 6718760152,
+            "argumentRawHex": "C0CB8C90010000000000150000000000",
+            "argumentType": "Beyond.Gameplay.Actions.Param`1<string>",
+            "readerType": "MemoryPack.MemoryPackReader",
+            "readerMethod": "ReadValue"
+          }
+        },
+        {
+          "name": "overrideNpc",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<bool>",
+          "setterMethodIndex": 285667,
+          "setterName": "set____overrideNpc__",
+          "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+          "readCallRva": 207836923,
+          "readTargetRva": 83900608,
+          "setterCallRva": 207836942,
+          "setterTargetRva": 207837564,
+          "typedReadContext": {
+            "instructionRva": 207836910,
+            "instructionHex": "488B150BCA1404",
+            "usageRawHex": "CFB713C000000000",
+            "methodSpecIndex": 646119,
+            "methodSpec": [
+              550348,
+              -1,
+              12658
+            ],
+            "cellVa": 6718759168,
+            "argumentRawHex": "70D28C90010000000000150000000000",
+            "argumentType": "Beyond.Gameplay.Actions.Param`1<bool>",
+            "readerType": "MemoryPack.MemoryPackReader",
+            "readerMethod": "ReadValue"
+          }
+        }
+      ],
+      "sourceReceipts": []
+    }
+  ],
+  "typedReaderWindows": [
+    {
+      "startRva": 83900608,
+      "endRva": 83902061,
+      "sha256": "CF5CF3E415A3B966CEF2130CFCA2FD74012AA746A6434D135BAB04B73CF23A4D",
+      "boundary": "Selected typed reference reader; child grammar and live provider selection remain separate.",
+      "fragmentWindows": [
+        {
+          "startRva": 120421436,
+          "endRva": 120421525,
+          "sha256": "447FF4A44F83682B84C9FC9D2FB842144A2CC2F7D787124C2F2F98B467BC47DC"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": "exact selected union identity, complete generated reader, member count, typed read contexts and ordered setters; source receipts are historical and separately hash-gated; default provider selection, current owner EOF and runtime effects remain unresolved"
+}

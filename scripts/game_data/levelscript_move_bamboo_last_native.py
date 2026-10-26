@@ -29,6 +29,7 @@ from scripts.game_data.il2cpp.context import (
 from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
+from scripts.game_data.levelscript_source_receipts import SourceReader
 
 
 SCHEMA = "endfield.levelscript-move-bamboo-last-native-contract.v1"
@@ -301,6 +302,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None,
 ) -> int:
     summary = json.loads(summary_path.read_bytes())
     output = summary.get("provenance", {}).get("outputFiles", {})
@@ -322,6 +324,7 @@ def _validate_sources(
 
     route = contract["route"]
     prefix = b"\xFA" + struct.pack("<H", route["tag"]) + bytes((route["serializedMemberCount"],))
+    source=SourceReader(summary,export_root,contract['nativeInputs'],game_root=game_root)
     for path, digest, start, end, span_digest in contract["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         actual_digest = hashlib.sha256(data).hexdigest().upper()
@@ -335,7 +338,7 @@ def _validate_sources(
         actual_span_digest = hashlib.sha256(data[start:end]).hexdigest().upper()
         if actual_span_digest != span_digest.upper():
             raise ValueError(f"{LABEL}.source:span-hash={path}@{start}:expected={span_digest}:actual={actual_span_digest}")
-        cursor = _Cursor(data, start + len(prefix))
+        cursor = source.cursor(data,start + len(prefix),route,source_path=path)
         for name, kind in route["fields"]:
             try:
                 cursor.value(kind, "moveBambooLast." + name)
@@ -343,6 +346,7 @@ def _validate_sources(
                 raise ValueError(f"{LABEL}.source:field={path}@{cursor.offset}:{name}:{exc}") from exc
         if cursor.offset != end:
             raise ValueError(f"{LABEL}.source:end-offset={path}")
+    source.check()
     return len(contract["sourceReceipts"])
 
 
@@ -374,7 +378,7 @@ def validate_move_bamboo_last_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path), game_root=game_root)
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

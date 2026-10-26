@@ -37,6 +37,8 @@ from scripts.common import (
     write_text_if_changed,
 )
 
+from scripts.webui.story.protocol_contracts import REGISTRY_SCHEMA
+
 from scripts.webui.story.mission_recovery import (
     STRONG_ORDER_EDGE_KINDS,
     WEAK_ORDER_EDGE_KINDS,
@@ -79,8 +81,108 @@ from scripts.webui.story.unity_documents import (
 from scripts.common import EXPORT_LAYOUT
 from scripts.game_data.story_native_consumers_native import validated_group
 
+from functools import wraps
+from scripts.common import check_installed_native_inputs
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs, reader_input_changes
+from scripts.game_data.story_native_consumers_native import load_story_native_consumers
 
-SCHEMA = "sourceStoryPartialOrder.v46"
+
+class _NativeProofScope:
+    """One report's native proof, authenticated again before any report returns.
+
+    This state never survives the operation. Standalone evidence helpers retain
+    their own live validation. No result is memoized or reused by another run.
+    """
+    def __init__(self):
+        self._source = Path(__file__).read_bytes()
+        self._evaluation = load_story_native_consumers()
+        self._closed = False
+        if self._evaluation.get('status') == 'validated' and not isinstance(self._evaluation.get('readerInputs'), dict):
+            self._fail('reader-inputs-before-report', 'authenticated reader snapshot', 'missing')
+
+    def _fail(self, gate, expected, actual):
+        diagnostic = dict(validator='sourceStoryPartialOrder', gate=gate, sourceFile=__file__,
+                          expected=expected, actual=actual)
+        path = ROOT / 'reports/mission_order/source_story_partial_order_native.failed.json'
+        write_report_json(path, dict(status='validation_failed', failures=[diagnostic]))
+        error = ValueError('sourceStoryPartialOrder.' + gate + ': expected=' + str(expected)[:500]
+                           + ' actual=' + str(actual)[:500] + ' report=' + str(path))
+        error.diagnostics = diagnostic
+        raise error
+
+    def group(self, name):
+        if self._closed:
+            raise ValueError('sourceStoryPartialOrder.native-proof-scope-closed')
+        evaluation = self._evaluation
+        group = (evaluation.get('groups') or {}).get(name)
+        if evaluation.get('status') != 'validated' or not group or group.get('status') != 'validated':
+            return None
+        return {**group, 'gameAssemblySha256': evaluation['gameAssemblySha256'],
+                'globalMetadataSha256': evaluation['globalMetadataSha256']}
+
+    def cited(self, display):
+        if self._closed:
+            raise ValueError('sourceStoryPartialOrder.native-proof-scope-closed')
+        evaluation = self._evaluation
+        row = (evaluation.get('cited') or {}).get(display)
+        if evaluation.get('status') != 'validated' or not row:
+            return dict(method=display, token=None, address=None, fallbackPatchId=None)
+        return dict(row)
+
+    def finish(self):
+        self._closed = True
+        if self._source != Path(__file__).read_bytes():
+            self._fail('source-code-after-report', hashlib.sha256(self._source).hexdigest(),
+                       hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+        evaluation = self._evaluation
+        if evaluation.get('status') != 'validated':
+            return
+        expected = {k: evaluation[k] for k in ('gameAssemblySha256', 'globalMetadataSha256')}
+        native = check_installed_native_inputs(expected['gameAssemblySha256'], expected['globalMetadataSha256'])
+        if native.status != 'validated':
+            self._fail('selected-native-inputs-after-report', expected,
+                       dict(status=native.status, detail=native.detail[:1000]))
+        current = snapshot_complete_reader_inputs()
+        if current != evaluation['readerInputs']:
+            self._fail('reader-inputs-after-report', evaluation['readerInputs'].get('schema'),
+                       reader_input_changes(evaluation['readerInputs'], current, limit=2))
+
+
+def _native_group(name, native_scope):
+    if native_scope is None:
+        return validated_group(name)
+    if type(native_scope) is not _NativeProofScope:
+        raise ValueError('sourceStoryPartialOrder.unowned-native-proof-scope')
+    return native_scope.group(name)
+
+
+def _native_cited(display, native_scope):
+    if native_scope is None:
+        from scripts.game_data.story_native_consumers_native import cited
+        return cited(display)
+    if type(native_scope) is not _NativeProofScope:
+        raise ValueError('sourceStoryPartialOrder.unowned-native-proof-scope')
+    return native_scope.cited(display)
+
+
+def _with_native_proof(function):
+    @wraps(function)
+    def run(*args, **kwargs):
+        if 'native_scope' in kwargs:
+            raise ValueError('sourceStoryPartialOrder.report-owns-native-proof-scope')
+        scope = _NativeProofScope()
+        try:
+            report = function(*args, **kwargs, native_scope=scope)
+            scope.finish()
+            return report
+        finally:
+            scope._closed = True
+    return run
+
+
+
+
+SCHEMA = "sourceStoryPartialOrder.v47"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     union_tags.action("Branch")
 ]
@@ -245,17 +347,17 @@ DIALOG_TREE_IF_BINARY_CONTRACT = {
 # Current-build binary authority for every serialized DialogTreeBranchNode.
 # The contract is deliberately value/mission independent: the original
 # DialogManager scans DialogBranchData.conditions in serialized order, returns
-# the first condition whose GameCondition.result is 1, and falls back to
+# the first null condition or GameCondition.result of 1, and falls back to
 # outgoing ordinal 0 when no condition is true.  This maps internal arm
 # selection only; it never promotes a file-order or mission-ownership edge.
 DIALOG_TREE_BRANCH_BINARY_CONTRACT = {
     "nativeGroup": "dialogTreeBranchNextIndex",
-    "mappingId": "gameassembly-2026-08-02-dialog-tree-branch-next-index-v1",
+    "mappingId": "dialog-tree-first-true-or-null-native-v2",
     "conditionResultTrue": 1,
     "defaultConnectionOrdinal": 0,
     "selectionRule": (
-        "first serialized condition whose GameCondition.result equals 1; "
-        "no true condition returns outgoing ordinal 0"
+        "first serialized null condition or GameCondition.result equal to 1; "
+        "no matching condition returns outgoing ordinal 0"
     ),
 }
 
@@ -387,7 +489,7 @@ def _dialog_tree_branch_conditions(node: dict[str, Any]) -> list[dict[str, Any]]
     return [_dialog_tree_normalize_condition(value) for value in values]
 
 
-def _binary_contract(base: dict[str, Any]) -> dict[str, Any]:
+def _binary_contract(base: dict[str, Any], *, native_scope: _NativeProofScope | None = None) -> dict[str, Any]:
     """A reviewed binary contract bound to the build that proves its claims.
 
     The hashes, consumer rows and field offsets come from the named claim
@@ -395,7 +497,7 @@ def _binary_contract(base: dict[str, Any]) -> dict[str, Any]:
     installed build. When the group does not hold they are None/empty, which
     no installed hash equals, so every gate on the contract fails closed.
     """
-    group = validated_group(base["nativeGroup"])
+    group = _native_group(base["nativeGroup"], native_scope)
     contract = {key: value for key, value in base.items() if key != "nativeGroup"}
     contract["nativeClaimStatus"] = "validated" if group else "unvalidated"
     contract["gameAssemblySha256"] = group["gameAssemblySha256"] if group else None
@@ -408,9 +510,9 @@ def _binary_contract(base: dict[str, Any]) -> dict[str, Any]:
     return contract
 
 
-def _branch_sequence_native() -> tuple[str | None, list[dict[str, Any]]]:
+def _branch_sequence_native( *, native_scope: _NativeProofScope | None = None) -> tuple[str | None, list[dict[str, Any]]]:
     """The build hash and consumer rows proving Branch.Execute's list order."""
-    group = validated_group(BRANCH_SEQUENCE_NATIVE_GROUP)
+    group = _native_group(BRANCH_SEQUENCE_NATIVE_GROUP, native_scope)
     if group is None:
         return None, []
     return group["gameAssemblySha256"], [
@@ -449,7 +551,7 @@ def _source_file_sha256(path: Path) -> str:
     return digest
 
 
-def _dialog_timeline_option_evidence(risk: dict[str, Any]) -> dict[str, Any]:
+def _dialog_timeline_option_evidence(risk: dict[str, Any], *, native_scope: _NativeProofScope | None = None) -> dict[str, Any]:
     """Attach Timeline tracks and the generic original-binary option contract.
 
     Runtime Jump/clip rows are accepted only from the existing exact
@@ -457,7 +559,7 @@ def _dialog_timeline_option_evidence(risk: dict[str, Any]) -> dict[str, Any]:
     the binary gate auditable; it never turns an option index into a line or
     Story target by itself.
     """
-    contract = _binary_contract(DIALOG_TIMELINE_OPTION_BINARY_CONTRACT)
+    contract = _binary_contract(DIALOG_TIMELINE_OPTION_BINARY_CONTRACT, native_scope=native_scope)
     related_files: list[dict[str, Any]] = []
     missing_tracks: list[str] = []
     track_files = _string_list(risk.get("assetTracks"))
@@ -1132,6 +1234,7 @@ def _is_timeline_clip_option_index_branch_risk(risk: dict[str, Any]) -> bool:
 def collect_dialog_line_option_branches(
     conv: dict[str, Any],
     conversation_file: str,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Collect strictly source-backed intra-dialog option-to-line routes.
 
@@ -1208,7 +1311,7 @@ def collect_dialog_line_option_branches(
                     "branchLineIds": branch_lines,
                 })
             if complete and runtime_options:
-                timeline_evidence = _dialog_timeline_option_evidence(risk)
+                timeline_evidence = _dialog_timeline_option_evidence(risk, native_scope=native_scope)
                 allowed.append({
                     **base,
                     "provenance": {
@@ -1279,7 +1382,7 @@ def collect_dialog_line_option_branches(
                     runtime_option["continuationLineId"] = common_continuation
                 runtime_options.append(runtime_option)
             if complete and runtime_options:
-                timeline_evidence = _dialog_timeline_option_evidence(risk)
+                timeline_evidence = _dialog_timeline_option_evidence(risk, native_scope=native_scope)
                 allowed.append({
                     **base,
                     "provenance": {
@@ -2199,6 +2302,7 @@ def _dialog_tree_cross_story_conditional_edges(
     flow: dict[str, Any],
     candidate_keys: set[str],
     dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Recover typed DialogTree If-node Story branches from the corpus.
 
@@ -2288,7 +2392,7 @@ def _dialog_tree_cross_story_conditional_edges(
         if game_assembly_path is not None
         else ""
     )
-    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT)
+    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT, native_scope=native_scope)
 
     for row in _story_connection_rows(flow):
         if not isinstance(row, dict):
@@ -2534,6 +2638,7 @@ def _dialog_tree_cross_story_conditional_edges(
 
 def _dialog_tree_local_conditional_branches(
     dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Audit every same-Story DialogTreeIfNode route in the corpus.
 
@@ -2556,7 +2661,7 @@ def _dialog_tree_local_conditional_branches(
         if game_assembly_path is not None
         else ""
     )
-    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT)
+    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT, native_scope=native_scope)
 
     def source_file_for(
         conv: dict[str, Any],
@@ -2915,6 +3020,7 @@ def _dialog_tree_target_type_map(
 
 def _dialog_tree_local_branch_nodes(
     dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Census every serialized DialogTreeBranchNode in candidate Story files.
 
@@ -2938,7 +3044,7 @@ def _dialog_tree_local_branch_nodes(
         if game_assembly_path is not None
         else ""
     )
-    contract = _binary_contract(DIALOG_TREE_BRANCH_BINARY_CONTRACT)
+    contract = _binary_contract(DIALOG_TREE_BRANCH_BINARY_CONTRACT, native_scope=native_scope)
     branch_node_type = "Beyond.Gameplay.DialogTreeBranchNode"
 
     for conversation_file, conv in dialog_payloads or []:
@@ -3044,6 +3150,7 @@ def _dialog_tree_local_branch_nodes(
                     connection_index, target_node_id = outgoing[ordinal]
                     arms.append({
                         "conditionOrdinal": ordinal,
+                        "unconditionalWhenReached": raw_conditions[ordinal] is None,
                         "connectionOrdinal": ordinal,
                         "connectionIndex": connection_index,
                         "condition": condition,
@@ -3115,6 +3222,7 @@ def _dialog_tree_local_branch_nodes(
 
 def _dialog_tree_local_if_nodes(
     dialog_payloads: list[tuple[str, dict[str, Any]]] | None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Census every serialized DialogTreeIfNode in candidate Story sources.
 
@@ -3136,7 +3244,7 @@ def _dialog_tree_local_if_nodes(
         if game_assembly_path is not None
         else ""
     )
-    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT)
+    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT, native_scope=native_scope)
     node_type = "Beyond.Gameplay.DialogTreeIfNode"
     advertised_types = {"DialogTreeIfNode", node_type}
 
@@ -3896,14 +4004,15 @@ def _parallel_action_names(
 
 def load_current_parallel_fanout_authority(
     audit_path: Path = PROTOCOL_REGISTRY_AUDIT_PATH,
+    *, gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> dict[str, Any]:
-    """Fail closed unless the scheduler contract matches its original inputs."""
+    """Authenticate the current scheduler shape and selected native build."""
     validator = "parallel_fanout_authority"
     audit = read_json(audit_path, {})
-    if audit.get("_schema") != "endfieldProtocolRegistryAudit.v20":
+    if audit.get("_schema") != REGISTRY_SCHEMA:
         raise RuntimeError(
             f"validator={validator} gate=auditSchema "
-            "expected='endfieldProtocolRegistryAudit.v20' "
+            f"expected={REGISTRY_SCHEMA!r} "
             f"actual={audit.get('_schema')!r} source={audit_path}"
         )
     contract = dict(audit.get("actionExtraThreadSchedulerCensus") or {})
@@ -3917,7 +4026,20 @@ def load_current_parallel_fanout_authority(
             f"actual={failure.get('actual')!r} "
             f"source={failure.get('sourceFile') or audit_path}"
         )
+    shape = contract.get('schema'), contract.get('classification')
+    expected_shape = 'actionExtraThreadSchedulerCensus.v1', 'typed_children_launch_as_parallel_extra_threads'
+    if shape != expected_shape:
+        raise RuntimeError(f"validator={validator} gate=schedulerShape expected={expected_shape!r} actual={shape!r} source={audit_path}")
+    if (gameassembly is None) != (metadata is None):
+        raise RuntimeError(f"validator={validator} gate=selectedNativePair expected=both-paths actual=partial source={audit_path}")
     source = audit.get("source") or {}
+    hashes = source.get('gameAssemblySha256') or '', source.get('metadataSha256') or ''
+    def selected_gate(name, assembly, meta):
+        result = check_installed_native_inputs(*hashes,gameassembly=assembly,metadata=meta)
+        if result.status != 'validated':
+            raise RuntimeError(f"validator={validator} gate={name} expected=validated actual={result.status} detail={str(result.detail)[:300]} source={audit_path}")
+        return result
+    selected = selected_gate('selectedNativeInputs',gameassembly,metadata)
     related_files: list[dict[str, Any]] = []
     for path_key, hash_key, kind in (
         ("gameAssembly", "gameAssemblySha256", "original_game_binary"),
@@ -3946,6 +4068,7 @@ def load_current_parallel_fanout_authority(
             "sha256": actual,
             "relationship": "native_action_extra_thread_scheduler_authority",
         })
+    selected_gate('selectedNativeInputsAfterRead',selected.gameassembly,selected.metadata)
     contract["source"] = (
         audit_path.relative_to(ROOT).as_posix()
         if audit_path.is_relative_to(ROOT)
@@ -5121,6 +5244,7 @@ def _spawner_wave_group_part_killed_story_edges(
 def _native_ordered_sequence_contexts(
     topology: dict[str, Any],
     routes: Iterable[tuple[tuple[str, str, int, str], str, tuple[tuple[Any, ...], ...]]],
+    *, native_scope: _NativeProofScope | None = None,
 ) -> list[dict[str, Any]]:
     """Project exact Story-path coverage onto serialized Branch sequence slots.
 
@@ -5131,7 +5255,7 @@ def _native_ordered_sequence_contexts(
     order edges; the separate ``_native_ordered_branch_sequences`` gate owns
     that stricter admission.
     """
-    branch_sha256, branch_consumers = _branch_sequence_native()
+    branch_sha256, branch_consumers = _branch_sequence_native( native_scope=native_scope)
     action_by_local = {
         int(action.get("localId")): action
         for action in topology.get("actions") or []
@@ -5290,6 +5414,7 @@ def _native_related_action_topologies(
     mission: str = "",
     original_binary_contract: dict[str, Any] | None = None,
     active_overlay_index: dict[str, Any] | None = None,
+    native_scope: _NativeProofScope | None = None,
 ) -> list[dict[str, Any]]:
     """Attach compact graphs only for exact Story-bearing native paths.
 
@@ -5327,7 +5452,7 @@ def _native_related_action_topologies(
         if cache_key not in _NATIVE_ACTION_TOPOLOGY_CACHE:
             try:
                 _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key] = (
-                    decode_levelscript_native_action_topology(source_path.read_bytes())
+                    decode_levelscript_native_action_topology(source_path.read_bytes(), source_path=source_path)
                 )
             except OSError:
                 continue
@@ -5335,6 +5460,7 @@ def _native_related_action_topologies(
         route_contexts = _native_ordered_sequence_contexts(
             topology,
             context["routes"],
+            native_scope=native_scope,
         )
         selected_header_ids = {
             int(signature[2])
@@ -5777,6 +5903,7 @@ def _native_ordered_branch_sequences(
     flow: dict[str, Any],
     candidate_keys: set[str],
     active_overlay_index: dict[str, Any] | None = None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Recover Branch._idList order from the installed Branch.Execute loop.
 
@@ -5786,7 +5913,7 @@ def _native_ordered_branch_sequences(
     files reached inside the same item remain unordered here. Without the
     installed build proving that loop, no sequence or edge is emitted.
     """
-    branch_sha256, branch_consumers = _branch_sequence_native()
+    branch_sha256, branch_consumers = _branch_sequence_native( native_scope=native_scope)
     if branch_sha256 is None:
         return [], []
     route_type = tuple[
@@ -6538,9 +6665,7 @@ def _full_native_branch_arm_context(
             if cache_key not in _NATIVE_ACTION_TOPOLOGY_CACHE:
                 try:
                     _NATIVE_ACTION_TOPOLOGY_CACHE[cache_key] = (
-                        decode_levelscript_native_action_topology(
-                            source_path.read_bytes()
-                        )
+                        decode_levelscript_native_action_topology(source_path.read_bytes(), source_path=source_path)
                     )
                 except OSError as error:
                     source_failures.append({
@@ -7249,7 +7374,7 @@ def _native_serialized_branch_inventory(
         })
         if digest not in topology_by_hash:
             topology_by_hash[digest] = (
-                decode_levelscript_native_action_topology(blob)
+                decode_levelscript_native_action_topology(blob, source_path=source_path)
             )
 
     playback_by_hash_local: dict[tuple[str, int], set[str]] = defaultdict(set)
@@ -7773,6 +7898,7 @@ def build_mission_partial_order(
     extra_thread_scheduler_contract: dict[str, Any] | None = None,
     callserver_callback_audit: dict[str, Any] | None = None,
     active_overlay_index: dict[str, Any] | None = None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> dict[str, Any]:
     """Build one source-only mission partial order from generated source evidence."""
     mission_payload = mission_payload if isinstance(mission_payload, dict) else {}
@@ -7882,6 +8008,7 @@ def build_mission_partial_order(
             flow,
             candidate_keys,
             active_overlay_index,
+            native_scope=native_scope,
         )
     )
     direct_edges.extend(native_ordered_sequence_edges)
@@ -7905,19 +8032,20 @@ def build_mission_partial_order(
         flow,
         candidate_keys,
         dialog_payloads,
+        native_scope=native_scope,
     )
     (
         dialog_local_conditional_branches,
         dialog_local_conditional_warnings,
-    ) = _dialog_tree_local_conditional_branches(dialog_payloads)
+    ) = _dialog_tree_local_conditional_branches(dialog_payloads, native_scope=native_scope)
     (
         dialog_tree_branch_nodes,
         dialog_tree_branch_node_warnings,
-    ) = _dialog_tree_local_branch_nodes(dialog_payloads)
+    ) = _dialog_tree_local_branch_nodes(dialog_payloads, native_scope=native_scope)
     (
         dialog_tree_if_nodes,
         dialog_tree_if_node_warnings,
-    ) = _dialog_tree_local_if_nodes(dialog_payloads)
+    ) = _dialog_tree_local_if_nodes(dialog_payloads, native_scope=native_scope)
     (
         dialog_tree_static_port_controls,
         dialog_tree_static_port_control_warnings,
@@ -8188,6 +8316,7 @@ def build_mission_partial_order(
         mission=mission,
         original_binary_contract=extra_thread_scheduler_contract,
         active_overlay_index=active_overlay_index,
+        native_scope=native_scope,
     )
     native_named_predicates = sum(
         1
@@ -8232,7 +8361,7 @@ def build_mission_partial_order(
     for conversation_file, conv in dialog_payloads or []:
         if not isinstance(conv, dict):
             continue
-        dialog_routes = collect_dialog_line_option_branches(conv, conversation_file)
+        dialog_routes = collect_dialog_line_option_branches(conv, conversation_file, native_scope=native_scope)
         dialog_line_options.extend(dialog_routes["dialogLineOptions"])
         excluded_dialog_line_options.extend(dialog_routes["excludedDialogLineOptions"])
         no_explicit_route_groups.extend(dialog_routes["noExplicitRouteGroups"])
@@ -8733,6 +8862,7 @@ def _expand_levelscript_playback_context_candidates(
     return expanded, context_keys
 
 
+@_with_native_proof
 def build_report(
     language: str,
     selected_missions: set[str] | None = None,
@@ -8740,6 +8870,7 @@ def build_report(
     quest_succeed_lifecycle_contract: dict[str, Any] | None = None,
     extra_thread_scheduler_contract: dict[str, Any] | None = None,
     callserver_callback_audit: dict[str, Any] | None = None,
+    *, native_scope: _NativeProofScope | None = None,
 ) -> dict[str, Any]:
     lang_root = (story_data_root or (ROOT / "webui" / "data" / "lang")) / language
     index_path = lang_root / "index.json"
@@ -8883,6 +9014,7 @@ def build_report(
             extra_thread_scheduler_contract,
             callserver_callback_audit,
             active_overlay_index,
+            native_scope=native_scope,
         )
         row["missionData"] = (
             mission_path.relative_to(ROOT).as_posix() if mission_path.is_file() else ""

@@ -26,11 +26,17 @@ _WRITERS={'mov','movzx','movsx','movsxd','lea','xor','and','or','add','sub','imu
 
 
 def control_transfer(row):
-    raw=bytes.fromhex(row['bytes'])
-    if raw==b'\xff\xd0':return {'kind':'registerCall','register':'rax'}
-    if raw==b'\xcc':return {'kind':'trap','normalContinuation':False}
+    raw = bytes.fromhex(row['bytes'])
+    rex = raw[0] if len(raw) == 3 and raw[0] in (0x40, 0x41, 0x48, 0x49) else 0
+    opcode = raw[1:] if rex else raw
+    if len(opcode) == 2 and opcode[0] == 0xff and 0xd0 <= opcode[1] <= 0xd7:
+        register = ('rax','rcx','rdx','rbx','rsp','rbp','rsi','rdi','r8','r9','r10','r11','r12','r13','r14','r15')[(opcode[1]&7) + (8 if rex&1 else 0)]
+        if row['text'] != 'call ' + register:
+            raise ValueError('registerCall.byte-text-mismatch')
+        return {'kind': 'registerCall', 'register': register}
+    if raw == b'\xcc':
+        return {'kind': 'trap', 'normalContinuation': False}
     return transfer(row)
-
 
 def memory_effect(row):
     if row.get('memoryOperation',{}).get('direction')=='store':

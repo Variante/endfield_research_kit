@@ -844,59 +844,19 @@
       }
     },
     {
-      "name": "buff.IFix.IsPatched",
-      "type": "IFix.WrappersManagerImpl",
-      "method": "IsPatched",
-      "returnType": "bool",
-      "static": true,
-      "parameters": [
-        {
-          "name": "id",
-          "type": "int"
-        }
-      ],
-      "fields": [
-        {
-          "label": "patchId",
-          "argument": "id",
-          "type": "int"
-        }
-      ],
-      "observationMode": "paired",
-      "captureScope": "paired-ancestor",
-      "semanticRole": "Bundled Buff mutation, patch guard and settlement observation",
-      "evidenceBoundary": {
-        "direct": "Completed named call results, raw numeric bits, submitted pairs and protocol field snapshots.",
-        "conditional": "Selected ABI/field layout; scoped helpers are recorded only inside an already recorded paired invocation.",
-        "unresolved": "No whole collection enumeration, pointer lifetime, complete inline IFix selection or server acknowledgement. Protocol encode/parse observations do not alone identify transport direction."
-      },
-      "declaringImage": "Gameplay.Beyond.dll",
-      "captureCallerHooks": [
-        "buff.Skill._OnCreate",
-        "buff.Skill.AssignSourceBlackboard",
-        "buff.Ability.AssignSourceBlackboard",
-        "buff.SkillUtil._CalculatePotentialTalentEffect",
-        "buff.CompareFloat.ExecuteInternal",
-        "buff.CheckHp.ExecuteInternal",
-        "buff.HealAction.ExecuteInternal",
-        "buff.HealPackData.GetFinalHealValue",
-        "buff.BattleFormula.CalculateHeal",
-        "buff.AbilitySystem._OnHealed",
-        "buff.HealPackData._DumpAttributes",
-        "buff.Attributes.GetValue",
-        "buff.AbilitySystem.TriggerEvent"
-      ]
-    },
-    {
-      "name": "buff.HealDetail.InternalWriteTo",
+      "name": "buff.HealDetail.PropertyGet",
       "type": "Proto.BATTLE_HEAL_ACTION_DETAIL",
-      "method": "pb::Google.Protobuf.IBufferMessage.InternalWriteTo",
-      "returnType": "void",
+      "method": "global::ProtoBuf.Internal.Serializers.IProtoPropertyAccessor.GetValue",
+      "returnType": "object",
       "static": false,
       "parameters": [
         {
-          "name": "output",
-          "type": "Google.Protobuf.WriteContext"
+          "name": "fieldNumber",
+          "type": "int"
+        },
+        {
+          "name": "forRead",
+          "type": "bool"
         }
       ],
       "fields": [
@@ -914,7 +874,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::sourceId_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<SourceId>k__BackingField",
               "type": "ulong",
               "mode": "reference"
             }
@@ -927,7 +887,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::targetId_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<TargetId>k__BackingField",
               "type": "ulong",
               "mode": "reference"
             }
@@ -940,7 +900,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::value_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<Value>k__BackingField",
               "type": "double",
               "mode": "reference"
             }
@@ -953,34 +913,47 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::curHp_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<CurHp>k__BackingField",
               "type": "double",
               "mode": "reference"
             }
           ]
+        },
+        {
+          "label": "fieldNumber",
+          "argument": "fieldNumber",
+          "type": "int",
+          "role": "observation"
+        },
+        {
+          "label": "forRead",
+          "argument": "forRead",
+          "type": "bool",
+          "role": "observation"
         }
       ],
-      "semanticRole": "Bundled Buff mutation, patch guard and settlement observation",
+      "semanticRole": "Current typed ProtoBuf property access; raw HealDetail snapshots",
       "evidenceBoundary": {
-        "direct": "Completed named call results, raw numeric bits, submitted pairs and protocol field snapshots.",
+        "direct": "Named typed property access entry/return, field number and raw HealDetail backing fields; getter result is a raw boxed-object identity.",
         "conditional": "Selected ABI/field layout; scoped helpers are recorded only inside an already recorded paired invocation.",
-        "unresolved": "No whole collection enumeration, pointer lifetime, complete inline IFix selection or server acknowledgement. Protocol encode/parse observations do not alone identify transport direction."
+        "unresolved": "Per-property access is not a whole-message encode/parse boundary. No collection completeness, packet direction, source-transfer meaning or server acknowledgement."
       },
-      "observationMode": "paired",
-      "opaqueByRefArguments": [
-        "output"
-      ]
+      "observationMode": "paired"
     },
     {
-      "name": "buff.HealDetail.InternalMergeFrom",
+      "name": "buff.HealDetail.PropertySet",
       "type": "Proto.BATTLE_HEAL_ACTION_DETAIL",
-      "method": "pb::Google.Protobuf.IBufferMessage.InternalMergeFrom",
+      "method": "global::ProtoBuf.Internal.Serializers.IProtoPropertyAccessor.SetValue",
       "returnType": "void",
       "static": false,
       "parameters": [
         {
-          "name": "input",
-          "type": "Google.Protobuf.ParseContext"
+          "name": "fieldNumber",
+          "type": "int"
+        },
+        {
+          "name": "value",
+          "type": "object"
         }
       ],
       "fields": [
@@ -998,7 +971,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::sourceId_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<SourceId>k__BackingField",
               "type": "ulong",
               "mode": "reference"
             }
@@ -1011,7 +984,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::targetId_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<TargetId>k__BackingField",
               "type": "ulong",
               "mode": "reference"
             }
@@ -1024,7 +997,7 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::value_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<Value>k__BackingField",
               "type": "double",
               "mode": "reference"
             }
@@ -1037,23 +1010,26 @@
           "role": "reported-value",
           "path": [
             {
-              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::curHp_",
+              "field": "Proto.BATTLE_HEAL_ACTION_DETAIL::<CurHp>k__BackingField",
               "type": "double",
               "mode": "reference"
             }
           ]
+        },
+        {
+          "label": "fieldNumber",
+          "argument": "fieldNumber",
+          "type": "int",
+          "role": "observation"
         }
       ],
-      "semanticRole": "Bundled Buff mutation, patch guard and settlement observation",
+      "semanticRole": "Current typed ProtoBuf property access; raw HealDetail snapshots",
       "evidenceBoundary": {
-        "direct": "Completed named call results, raw numeric bits, submitted pairs and protocol field snapshots.",
+        "direct": "Named typed property access entry/return, field number and raw HealDetail backing fields; getter result is a raw boxed-object identity.",
         "conditional": "Selected ABI/field layout; scoped helpers are recorded only inside an already recorded paired invocation.",
-        "unresolved": "No whole collection enumeration, pointer lifetime, complete inline IFix selection or server acknowledgement. Protocol encode/parse observations do not alone identify transport direction."
+        "unresolved": "Per-property access is not a whole-message encode/parse boundary. No collection completeness, packet direction, source-transfer meaning or server acknowledgement."
       },
-      "observationMode": "paired",
-      "opaqueByRefArguments": [
-        "input"
-      ]
+      "observationMode": "paired"
     },
     {
       "name": "buff.Skill._OnCreate",
@@ -1972,13 +1948,13 @@
     "Int32-backed application enums retain all 32 return bits; they are never observed through a Boolean ABI.",
     "Assign/AddRange/list restoration intervals and their reached per-item submissions are distinct from a final collection snapshot. Empty AddRange and inlined mutations may have no per-item records.",
     "Healing encode/parse phase snapshots preserve populated fields when present. Source/target/amount/HP zeros remain values, not proof of a completed settlement or transport direction.",
-    "Public protobuf WriteTo/Input MergeFrom bodies are folded across message types and are omitted. Only uniquely owned internal codec entries may observe HealDetail fields; context byrefs remain opaque pointers.",
+    "Current ProtoBuf typed property access replaces the removed Google.Protobuf internal codec entries. Field numbers and raw message snapshots do not establish a whole-message encode/parse boundary or transport direction.",
     "Normal concrete value-type method receivers point at unboxed data, not boxed objects. Explicit receiver size/field witnesses prevent a second object header offset.",
     "IFix.WrappersManagerImpl occurs in multiple metadata images. Gameplay observers bind Gameplay.Beyond.dll explicitly; an idle same-name helper from another image is not live patch evidence.",
     "CompareFloat uses GetValueOrDefault/GetDoubleValueOrDefault and generic TryGetValue, bypassing the named GetDouble route. Helper entries preserve expression fields but do not observe XMM2 default input, helper return or generic success.",
     "OnCreate captures data/patch/extra object identities and output identities. Closed generic base/patch List identities are omitted rather than admitted through an unproved reference witness.",
-    "Named IFix decisions are recorded only under a paired ancestor and at selected direct caller return sites in initialization, comparison and healing bodies. Other callers and inline guards remain unobserved; absence outside this filter is collection policy.",
-    "Healing attribute snapshot reads and interest/dispatch/action-container entries are observed at named filtered sites. Generic delegate subscriber enumeration, full attribute modifier sources and server acknowledgement remain separate."
+    "Healing attribute snapshot reads and interest/dispatch/action-container entries are observed at named filtered sites. Generic delegate subscriber enumeration, full attribute modifier sources and server acknowledgement remain separate.",
+    "Current selected initialization/comparison/healing callers have no retained direct call to the named IsPatched helper; their inline patch-table/delegate routes remain unobserved. The inactive named hook is omitted. No absence-of-patch conclusion follows."
   ],
   "evidenceBoundary": {
     "direct": "Completed named call results, raw numeric bits, submitted pairs and protocol field snapshots.",

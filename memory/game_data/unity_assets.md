@@ -13,6 +13,146 @@ the binding evidence order that several pages and the source graph reuse.
 
 ## Current status
 
+A stable texture name and PPtr do not preserve its image data or mip chain
+across builds. Reuse must compare the independently extracted selected native
+payload, dimensions and complete mip layout as well as the sampled view. A
+smaller captured texture establishes residency only when its bytes equal the
+corresponding original source mip tail. The reconstruction Lab's shared
+refraction investigation found a changed authored chain under the same texture
+identity; prefab, material and Shader agreement alone missed that stale source.
+
+Renderer getter observations and GPU publication need separate joins.
+`isVisible` may refer to another camera, and equal cached/Transform matrices
+do not prove that a particle vertex buffer was generated or submitted in that
+frame. A buffer-upload observer must state which bind classes and anchor window
+it covers: a constant-buffer history cannot establish vertex upload timing.
+Map/Unmap identity and caller stacks are API chronology, not proof of written
+byte ranges, object lifetime, deferred execution or earlier CPU field writers.
+An observed vertex Map/Unmap after a camera can coexist with an earlier CPU
+mesh. A native output join needs its own system-data identity, task/header and
+invocation/query intervals, followed by actual GPU byte comparison. Named
+static consumer/read paths and a successful build establish no live callback
+ABI or exclusion of other writers. Native observations stay offline comparison
+inputs, never source-renderer geometry.
+An exact returned-native-output/GPU byte match does not make a different Play’s
+camera or particle query comparable. Keep each Play anchor and failed lifecycle
+window explicit; camera ordering is unavailable on a mismatch. Same-named
+effects may play before the selected entrance, so observer enrollment and GPU
+arming must share the authenticated actor selection. A first query after
+selection is not an after-Play observation and proves no earlier coverage.
+A byte-equal native output and its upload may both precede the same Play’s
+first camera. That observation rules out a universal unpublished-mesh delay;
+it does not retime an older movie. Keep original Play and later journal-start
+Presents separate. A failed window closure does not erase independently
+checked retained outputs and must not be silently made complete. Particle
+queries can straddle simulation updates; snapshot native channels around the
+matched producer before attributing residual geometry to arithmetic. Separate
+before/after copies, even when equal, establish no global atomic state.
+Match channel semantics to the getter's destination fields, not a declaration's
+names: the particle-input investigation found colour and random-seed labels
+reversed while their captured offsets and bytes were sound. Preserve the raw
+declaration and correct the analysis mapping using the selected getter body.
+The matching later public query can agree in position, velocity and converted
+lifetime while an earlier query names a different simulation update. An
+own-matrix camera-space roundtrip can also change a float32 head-anchor verdict;
+keep that as a conditional arithmetic control until the executed native branch
+and complete attributes are established. Neither result supplies the clock or
+first-frame input ownership of an older movie. A new reference must combine its
+own movie, pose, particle inputs, native output and GPU/camera anchors.
+The reviewed particle matrix contract and
+[`endminf_particle_matrix_native`](../../scripts/game_data/endminf_particle_matrix_native.py)
+now authenticate the getter's packed branch flag and complete selected native
+unwind families. Under the recorded unsorted, zero-pivot mode and stable
+bracketing query flags, the general builder constructs its own scaled affine
+inverse from camera-to-world. Reusing the stored world-to-view matrix changes
+float32 results. Ordered instruction interpretation reproduces retained head
+anchors exactly, but this is conditional numeric replay: full quad attributes,
+source simulation, exact live branch execution and runtime calibration remain
+separate. The reciprocal-square-root correction has a runtime initializer and
+zero-fill storage; a virtual-tail RVA has no installed-file value. Use the
+strict raw-backed PE reader and an explicit initializer/current-CPU condition,
+never bytes accidentally addressed in the following file section. Keep raw
+runtime operands separate from source renderer inputs.
+
+The reviewed [quad contract](../../scripts/game_data/contracts/endminf_particle_quad_native.json)
+and [loader](../../scripts/game_data/endminf_particle_quad_native.py) extend that
+boundary to complete getter/unpack families and selected non-freeform stages.
+Public StartSize copies the start-size arrays; the renderer independently
+selects evaluated current-size arrays under another data flag. The selected
+non-freeform helper does not read rotation. Replaying its ordered operations
+with public birth sizes and a mathematical weighted-curve evaluator reproduces
+the head corners but retains tail failures. This proves neither the engine
+curve evaluator nor full geometry. The consolidated runtime recording now
+retains actual active size arrays, optional velocity multiplier, flags,
+runtime calibration and returned job parameters together with its movie.
+These observed operands close all retained quad POSITION words exactly,
+including the unique same-Play first-frame native-output/GPU-stream match.
+Before/after channel equality is an observation, not an atomicity guarantee.
+The numeric replay still conditions reciprocal-square-root estimates on the
+current CPU; complete other vertex attributes, source curve evaluation and
+source simulation remain unproved. The new movie preserves its actual capture
+stall and missing closing palettes and has no transferred image scores.
+An isolated Unity curve evaluation greatly reduces the mathematical weighted
+curve's size discrepancy under the same observed birth/age inputs. The public
+particle getter remains a separate comparison with retained failures. Neither
+experiment proves exact native curve evaluation or source simulation, and
+observed ages/birth values remain diagnostic operands, not renderer inputs.
+A first retained Present can associate distinct current and previous source
+Ticks. Preserve that own palette comparison instead of assuming the initial
+shared-bank alias seen in another visit. Source initialization may be computed
+in the authored world frame and transported as source-only local transforms;
+moving the whole comparison scene into large coordinates changes float32
+translation precision and must retain its separate numerical verdict.
+Retained full-movie banks and earlier producer/Forward stages can independently
+confirm that relationship; a missing closing bank remains missing even when
+every retained bank matches. A movie that retains its first Present at/after
+the deadline must keep the final palette interval open through that same
+Present. A fixed QPC cutoff can otherwise retain a real final image without
+its current pose. Do not substitute a predicted or different-visit bank.
+The combined follow-up observes complete final-image banks with that corrected
+policy. A change in recorded first-root duration still requires a fresh source
+initialization computation; completeness does not authorize carrying prior
+local startup transforms into the new visit.
+The shared particle burst initializer has the same visit boundary. A fixed
+defer from an earlier first update can preserve birth lifetimes and XY bounds
+yet change age, depth extent and later alive count. Compare this visit's own
+first root step and body/root offset before attributing an opening image gap
+to geometry arithmetic. A bounded scalar initialization experiment is separate
+from an observed particle-state replay and still needs its own image verdict.
+Source-only pose validation is separate from render-pipeline completeness.
+Public particle getter colour is distinct from the renderer's packed vertex
+colour. Compare each with its corresponding consumer: a source GPU draw can
+match native packed colour while a public getter comparison differs. Input
+layout aliases also require actual IA offsets and VS reads; a semantic name
+or shader comment alone cannot assign a custom-data stream. Likewise, an
+original CoC kernel reproducing the source CoC from source depth localizes a
+difference to depth input rather than proving a shader arithmetic defect.
+These bounded checks do not establish full source image or hidden-history parity.
+An isolated Unity project must physically retain root Generated pipeline assets
+as well as selected subtrees, and resolve GraphicsSettings' custom pipeline GUID.
+Repairing that clone can pass bounded render gates without retroactively
+changing an earlier failed report or establishing full movie image parity.
+Keep raw native observations offline and retain earlier failed arithmetic controls.
+Native callback cleanup must also retain borrowed clock/context owners when
+bounded quiescence fails; keeping only a trampoline and byte storage does not
+preserve those dependencies. Report that failure rather than publishing an
+apparently complete observation window.
+Combined observers must also preserve the accepted movie epoch when a later
+Play is refused. Retain sibling image and geometry reservations for every copy
+phase, including a sibling that opens later in the frame. A saved receipt with
+dropped draws/images/operands or unobserved bound vertex layout is diagnostic,
+not complete. EndfieldCapture's graphics controller and post-body sidecar now
+enforce those rules. A bounded public-sidecar WARP example establishes local
+completion/failure preservation only, not injected execution or live coverage.
+The previous combined recording request is held after these repairs; reuse
+retained observations and require a specific remaining observable gap before
+asking for a new consolidated visit. Historical runtime preparations must not
+be reused for rebuilt binaries.
+Texture freshness therefore belongs in the same source closure. Captured GPU
+bytes remain comparison evidence and must not replace installed source bytes in
+the renderer. The durable example and its boundary are owned by the Lab's
+`docs/rendering-effects-and-post.md`.
+
 Stored collision geometry has a direct prefab-binding lane beside render
 assets. [`unity_scene.py`](../../scripts/game_data/unity_scene.py) reads the
 observed Endfield player GameObject, Transform and MeshCollider bodies through
@@ -1076,6 +1216,302 @@ programs changed, so old arithmetic replay results cannot be promoted to the
 current shader bytes. The owning contract records current declarations and
 instruction witnesses; historical saved-session readers keep their own scope.
 
+
+The capture presets select the installed native declarations, including
+post-process shader identities and synchronous solver observations. The Lab M27
+verifier now uses `endminf_m27_selected_draw_native` and its reviewed ABI contract
+for current native inputs and candidate shader selection. It checks named
+camera methods/fields and re-derives DXBC declarations, output registers and
+executable constant-buffer read lanes. The fragment global buffer has grown
+and reads an additional complete register beyond the former prefix; historical
+source coverage cannot close those lanes.
+
+The current character-screen shadow program uses inverse atlas width for both
+Poisson UV axes. A collapsed source tile must preserve the logical atlas aspect
+in its sampling footprint; treating the physical tile as the original atlas
+widens the vertical filter. The Lab's explicit topology control improves the
+complete same-visit comparison with source-generated caster depth, while the
+actual fullscreen constant join remains conditional. The complete first-camera
+capture now includes the selected RG8 producer's direct operands and before/after
+colour/depth-stencil transaction; the earlier HDR/LDR-only selection omitted it.
+Build success does not establish live coverage, and later lighting snapshots
+do not retroactively supply the missing original draw's constants.
+
+Character-screen receiver depth also belongs to its stage. The Lab's private
+PreGBuffer copy precedes depth outlines; both that copy and the retained native
+copy match their respective attachments exactly. The source control now copies
+the current canonical owner depth immediately after those outlines and before
+Forward, while retaining source selector/normal/stencil. Its selected GPU
+operand is independently matched to the source canonical snapshot. A later
+DOF primary depth worsens the shadow result and is not interchangeable. The
+complete source comparison passes unchanged pose/initialization/pacing bounds
+and has no image regressions, but component G improvement is much larger than
+final-colour improvement; it does not establish face-SDF or temporal parity.
+
+The receiver's later scene HGBuffer writers also matter. Foreground LitEffect
+stones can replace depth and clear character stencil before G while covering
+an earlier actor selector. Attribute a residual to the last observed writer,
+not an earlier material coverage mask. The Lab's canonical scene-normal/depth
+channel is an explicit launcher selection; a viewer configuration value alone
+does not enable it in measured movie renders. Canonical-stencil observation is
+separate from the private producer's unchanged selector/stencil checks. Correct
+attachment ownership can leave selected pixels unchanged and is not itself an
+image-improvement claim. Repeated receiver-state checks must include foreground
+depth/stencil, since actor transforms alone cannot establish static visibility.
+
+The received direct fullscreen character-shadow transaction now closes the
+previous missing-operand boundary: own constants, SRV views/payloads, samplers,
+RG8 before/after and depth/stencil reproduce exactly with the original program.
+The source G helper also matches in an offline direct-operand example after an
+explicit actor-slot representation join and equivalent atlas-tile mapping.
+Native packed floor-log selectors can carry lower bits; the source private
+producer emits a one-hot selector. Preserve that distinction and the private
+validation rather than feeding native packed selectors into the source shader.
+These results isolate observed arithmetic, not independently generated source
+depth, normals, caster content, fit bounds or complete image parity. Capture
+operands remain comparison targets and do not enter the source renderer.
+
+An armed source-only observation now exports the actual character atlas depth,
+selector and receiver/shadow matrices before G, with camera/frame ownership.
+Its disabled/enabled control preserves all existing raw stages, beauty and
+ordinary frame data byte-for-byte. Offline operand decomposition must retain
+its small compiler residual and explicit native-to-local coordinate mapping;
+rebasing large-world matrices can itself change filtering results. Original
+operands in the original world frame still replay exactly. Keep authored-world
+source initialization separate from the local render frame: relocating the
+whole renderer can introduce public Transform quantization and fail unchanged
+pose bounds. Do not weaken those bounds or replace source inputs with captures.
+
+Original G replay does not close the preceding atlas generator. The current
+camera prefix begins after those depth-only draws; an earlier first-Play packet
+contains their metadata but no own inputs or depth outputs. Source-only world-
+coordinate fit controls regress and were removed. The next bounded first-Play
+extension therefore retains each original D16 caster's declared operands and
+full before/after depth, with exact content continuity into the later G atlas
+view. Keep its original-program replay separate from source caster/fit parity.
+An observer's pipeline-completeness condition must cover a fully described
+DSV-only draw independently of its stricter fullscreen-colour validity flag.
+
+Consolidated shadow capture must also retain skinned normal writers before the
+exact camera nomination and material variants without the body's texture-slot
+ABI. Eye normal programs can omit the second PS resource; an Eye Forward variant
+can omit the body's screen-shadow slot. Those omissions do not make a draw
+input-free. Keep full own MRT/depth/stencil before/after for these variants and
+character materials, with explicit reader/replay scope and same-visit post/history
+joins. Cropped colour outputs and metadata-only earlier writers cannot establish
+complete face/material parity. Forecast retained bytes from existing draw censuses
+before requesting a consolidated supplement; future live coverage remains separate.
+
+CharEffect Play can occur in the LDR/UI tail of a Present whose 3D rendering
+has already finished. The first observed draw after Play therefore does not
+identify the first character-camera frame. An atlas recovery transaction must
+open on the actual matching character-atlas caster, then join the exact camera
+and G consumer in that same Present. Pre-atlas/UI draws remain explicitly
+unretained. Keep an incomplete UI-tail attempt separate from a game crash and
+from capacity failure; clean host collection does not make its GPU lanes complete.
+
+An atlas-anchored transaction can authenticate the full caster-to-receiver byte
+chain and independently replay complete normal/material MRTs alongside depth/
+stencil. This establishes original draw operands, not independently generated
+source geometry or shadow fitting. The original caster VS uses an object
+constant slot different from the surface VS; prove the selected slot's dynamic
+declaration and palette addressing rather than decoding every draw with the
+surface convention. Keep source arithmetic and original-executable parity
+separate in the review UI and preserve the movie's actual scored version.
+
+Source pose comparisons also need an initialization boundary. A source engine's
+public world Transform at a distant authored origin can differ by a float32
+code before any cloth solver stage. Compare the first inputs before changing
+solver arithmetic or widening identity bounds. A local-TRS composition followed
+by authored-origin addition is an explicit source-only arithmetic candidate;
+numerical agreement on retained visits does not establish the original native
+Transform implementation or justify copying observed world positions.
+
+Character shadow bounds have an additional producer boundary: the camera
+GetBounds overload reads a per-camera cache. Its earlier bounds-update methods
+must be observed separately from the later GetMatrices call. A successful
+caster-to-receiver GPU replay cannot establish the pose or camera used when
+that cache was populated. Retain the cache dictionary/fallback identity and
+byte-equal output join, plus sphere/renderer and camera snapshots at the update
+boundary. Getter snapshots do not by themselves prove the internal producer's
+arithmetic inputs. The maintained Lab CPU shadow declaration generator and
+sidecar reader keep that boundary explicit, and independently generated source
+geometry remains separate from original-program and CPU-input correspondence.
+
+The character helper's sphere and renderer-info collections store inline value
+types. Their metadata field offsets describe boxed values; array addressing
+must use the unboxed field offsets and the selected native element size, not
+an object-pointer stride. Retain element addresses separately from Transform
+and Renderer identities. A forwarding example needs independently declared
+native struct fixtures: constructing fixtures with the observer's own offsets
+can reproduce its mistake while passing the example.
+
+Static evidence that the named GetMatrices method implements a fit does not
+prove that the active render path calls it. A received observer recorded cache
+updates but no calls to that fit entry. Keep that absence explicit. Observe
+the engine's original matrix publication APIs and standalone cache reads too;
+an exact matrix-to-caster byte join and a cache-read-to-producer byte join do
+not by themselves prove a cache-to-matrix dependency. Stack snapshots help
+locate the active caller, with source computation still independently gated.
+
+A shader's used constant range is not the backing buffer's allocation size.
+Inspect the recorded buffer byte width, constant offset and Map generation
+before requesting more runtime observation. A small matrix can already be a
+slice of a retained pooled-buffer upload. Require original Unmap completion
+and exact slice bytes for that join, and keep an upload caller distinct from
+the earlier arithmetic/field writer. Valid cache snapshots can be inspected
+independently of extra managed/API probes; an unobserved optional entry alone
+does not justify repeating a recording.
+
+The corrected inline snapshots can reproduce the original per-camera sphere
+union byte-for-byte and agree with the first actor getter matrices, while the
+independent source pose still produces a different shadow projection. Keep
+these checks separate: source bounds agreement does not admit the fit. A
+TransformPoint getter may differ from applying its exported world matrix by a
+world-coordinate float32 step, so a matrix multiply is not an exact replacement
+for that getter. Same-schema actor sidecars also contain timeline link rows;
+only before/after rows carry pose fields.
+
+An original cache-read stack identifies HGCamera.BeforeCullingCPP as a caller.
+That is direct evidence for the getter call, not for a later caster-matrix
+writer. Selected UnityPlayer code contains a separate fit taking camera data,
+bounds and the native character-shadow input structure; layout/callgraph and
+arithmetic controls remain conditional until its own arguments/results are
+observed or independently closed against the draw. Do not replace that
+boundary with the absence of calls to the similarly named managed fit.
+
+The reviewed [native CPP shadow-fit contract](../../scripts/game_data/contracts/character_shadow_cpp_native.json)
+owns the selected native camera fields, unboxed shadow settings, function ABIs
+and code windows. Its loader gates explicit GameAssembly, metadata and
+UnityPlayer inputs and withholds declarations on a missing or different build.
+The CPP camera is an opaque native structure, not a managed Camera pointer.
+Original fit outputs, scoped matrix/quaternion intermediates and MXCSR are
+separate runtime requirements; a forwarding example proves neither live path
+coverage nor an exclusive cache-to-matrix writer. Generic hot math kernels need
+not be globally hooked when their operations can use retained parent operands.
+
+The repaired observer has now recorded the actual native fit. Own inline cache
+bounds match its input bytes; its original view/projection produce the retained
+caster matrix, and every used upload slice matches. This is direct transaction
+evidence, while an exclusive earlier cache-field writer remains unproved.
+The native camera view can equal the GPU per-view view while its camera-to-world
+differs from the GPU's general inverse-view: an orthonormal inverse reproduces
+the retained native camera snapshots exactly. Its earlier field writer is not
+established by that numerical equality. Do not substitute a similarly named camera matrix without
+checking that arithmetic. A matrix point-transform convenience API may also
+use different intermediate precision from the selected native scalar SSE path;
+explicit float32 operation boundaries matter at the authored world origin.
+These source-arithmetic controls are separate from renderer/image admission.
+The authored world origin also affects GPU rounding. A CPU-rebased shadow
+matrix can be algebraically equivalent while producing different caster depth
+or receiver coordinates. The qualified source control keeps the world-space
+fit and adds the authored origin before both GPU transforms. Its enabled shader
+variant is scoped to the matching caster and screen-shadow producer; the
+disabled variant must preserve the established baseline bytes. A single-frame
+mask improvement does not establish a complete movie or material-shading gain.
+
+Stored mesh blend weights also need a format boundary. A four-component
+UNorm16 channel contains all four weights explicitly. Recomputing its first
+component as a complement changes float32 rounding and can lose signed zero;
+doing that again when reading indices compounds the error. Preserve explicit
+four-component weights, while retaining complement reconstruction for the
+smaller/missing-weight formats that need it. The raw selected body channel,
+original GPU input conversion and isolated corrected exporter establish this
+format defect independently of any image improvement. The corrected trial
+does not improve the qualified shadow mask and is not promoted to the movie.
+
+Rounded public world matrices do not uniquely identify their original local
+TRS. Initialization cloth locals may precede later solver changes and cannot
+be substituted for a later actor world snapshot. The actor observer's bounded
+local sidecar records the first two active Tick pairs, ancestor/parent identity,
+local TRS and repeated world matrices. Join it to its own world-pose identity
+and query range; select stable nodes explicitly. Equal repeated world reads
+are a stability control, not proof of an atomic snapshot or source parity.
+Local getter failures retain an independent failed lane and preserve existing
+world rows. Convert observation-invoked native faults before they cross C++
+pin owners so cleanup runs; this includes direct object-identity getters and
+boxed-value validation/copies, plus final checks after the collector returns.
+An outer SEH collector guard alone can skip intermediate C++ destructors.
+Use bounded native-fault examples with the actual Pin implementation to check
+cleanup. Original game invocation forwarding stays outside observation guards.
+Intake must match request/preparation runtime identities and pair before/after
+by lifetime plus Tick number, rather than by active index alone. A summary with
+only one active pair is incomplete even if its row count is internally even.
+
+A different archived observer DLL must not silently satisfy an exact-binary
+request, even when every selected archived source file matches. A separate
+observational review may authenticate the raw sidecars, preparation source
+capsule, selected native inputs and recorded getter prefixes while retaining
+`strictRequestFulfilled=false` and the unresolved compiled-binary provenance.
+Withdraw a redundant recording request explicitly instead of relabeling it as
+passed or asking for another visit solely to erase the version difference.
+If a declaration was not archived, use an explicit frozen preparation copy
+whose bytes match the prepared reference; never call that copy captured source.
+Include the getter declaration in future local-sidecar source capsules.
+
+Local comparison also needs a parent-frame boundary. A source scene can place
+the authored world origin on the actor root while the client places it on an
+ancestor. Preserve that root's measured local values separately; matching world
+positions does not make these root locals comparable. Descendant local TRS,
+world positions and rotations, and the source cloth first-step publication
+remain separate checks. An ACL-only baseline cannot diagnose the omission of
+the independently computed initialization step as an unknown solver failure.
+
+Compose source skin palettes from the local hierarchy before adding the large
+authored world origin when testing float32 precision. Multiplying rounded world
+matrices and then removing that origin loses precision even with matching local
+poses. The relative composition passes the existing palette identity bounds for
+the reviewed first-Play visit; this is a conditional arithmetic candidate, not
+proof of the client's internal Transform algorithm. Keep local-pose, GPU-palette,
+actual source upload, shadow-image and complete-movie checks separate. The
+relative cloth upload has its own versioned representation with an explicit
+renderer-to-world matrix; world-palette readers must not reinterpret it.
+
+A complete retained opaque material group does not imply colour continuity to
+the next retained group. Check its actual endpoint bytes. If intervening draws
+changed colour, compare against the independently retained next boundary and
+keep those changed pixels separate from earlier material attribution. A large
+background write can leave all previously changed character pixels untouched;
+missing individual inputs alone then do not justify a new character capture.
+Exhaust retained same-program packets before asking for another visit.
+
+Native fit completeness is also bounded by retention policy. A complete,
+quiescent prefix can join the selected first caster while omitting most later
+fit calls. Inspect retained ordinals against the call census; a long first-to-
+last QPC span does not establish continuous movie coverage, particularly when
+large graphics readbacks stall the first observed frame. Preserve that first-
+fit admission independently of any later request for moving shadow inputs.
+
+Exhausting retained local-pose evidence includes before/after initialization
+and before-ReadBone phases, joined by Transform plus instance identity and the
+selected root, with their query intervals compared against the actor Tick.
+Do not count a matching hierarchy path as identity coverage, or cached rest
+values and anonymous job arrays as missing public local TRS. The retained
+phase inventory is separate from admitting source operands. A coverage summary
+must bind the accepted session's full path, rather than its directory name.
+
+Shared native math helpers can have a stronger machine-level contract than the
+public Win64 volatile-register rules suggest: selected engine callers retain a
+register across a small callee that never writes it. An ordinary C++ detour may
+clobber it even while forwarding every declared parameter and return correctly;
+this caused a captured startup access violation and is reproduced with archived
+observer source and actual MinHook installation. Selected entry interception
+therefore preserves original input/output machine state around observations.
+Outside the parent fit, shared helpers tail-jump without entering C++; within
+the selected SSE path, retain volatile integers, flags and x87/SSE/MXCSR state,
+and preserve native exception unwinding and observer scope cleanup. A typed
+forwarding example alone is not sufficient validation. Actual patched-hook
+register/state regression and an explicit live-coverage boundary remain required.
+
+Current CLI reports separate selected native/program validation from unresolved
+generative admission. Old material/renderer IDs, Unity shell pins and source
+publisher proofs retain their original-build scope through explicitly named
+historical helper APIs. The current pair was observed on smaller LitEffect
+draws; this does not establish the current burst renderer or its source joins.
+Neither a matching input-requirement vector nor the native gate admits a
+generative draw. Current source joins and synchronized draw evidence remain
+required for that independent claim; no repeat capture is requested solely by
+the offline port.
 
 The Dijiang world recovery keeps three identities separate: the original
 multi-part Base01 Mesh resources, their name-family candidate join to stored

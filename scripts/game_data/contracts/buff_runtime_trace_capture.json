@@ -483,6 +483,10 @@
         {
           "name": "target",
           "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+EventContext"
         }
       ],
       "fields": [
@@ -583,6 +587,10 @@
         {
           "name": "reason",
           "type": "Beyond.Gameplay.Core.Buff+FinishReason"
+        },
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+EventContext"
         }
       ],
       "fields": [

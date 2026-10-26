@@ -110,35 +110,30 @@ gates (conclusions in the `world_chunk_*.md` files):
 | Family | Reader | Current boundary | Stops at |
 | --- | --- | --- | --- |
 | LipSync | `memorypack.lipsync`, `memorypack.lipsync_corpus`, `lipsync_native` | strict 15-member float-array framing through EOF on available language files; selected channel names, typed reads and setter order | current Keyframe consumer semantics, live formatter and playback selection |
-| NPC MontageNew | `memorypack.npc_montage`, `memorypack.npc_montage_corpus` | complete named schema through EOF (3-member root, 24-member body, nested records) | runtime selection, playback |
+| NPC MontageNew | `memorypack.npc_montage`, `memorypack.npc_montage_corpus` | binary layouts are withheld by current native/source gates; admitted JSON rows retain their own scope | current formatter/root migration, runtime selection, playback |
 | NPC PrefabInfo, catalogs | `schemas.npc_prefab_info`, `schemas.npc_catalog` | exact JSON schemas; extra or reordered fields refused | consumers |
 | MissionRuntimeAsset | `schemas.mission_runtime_main`, `schemas.mission_runtime_meta` | exact JSON schemas | Story semantics: [`../webui/story_recovery.md`](../webui/story_recovery.md) |
 | MapConfig, UILevelMapLoadConfig, textual roots, LevelMountPoint, compact GameplayConfig JSON | `schemas.*` | exact named JSON schemas | consumers |
-| LevelData | `leveldata_binary`, `leveldata_bezier_knot_corpus` | complete 43-field named schema through EOF on every current file, spline knots as raw 56-byte values; an unsupported future nested body stops at its field | runtime selection (which point, which patrol); knots are local to each row's transform (`leveldata_spline_runtime_native`: `direct` for the normal branch, `conditional` at runtime) |
-| LevelScriptData | `levelscript_binary` sequential owners | most files close a complete named schema at EOF; the residue is bounded partial, keeping an action-map named prefix or the five-member terminal suffix, stopped at its first unsupported action-map union route | per-route codecs (recovery order below) |
-| LevelScriptTemplateData | `levelscript_template_binary` | part of the family closes named exact; the rest is bounded partial at a recorded action-map refusal | same union-route work |
-| SkillData | `memorypack.skill_corpus` | most files whole-schema exact through native-gated readers and replayed live cursor receipts; the residue keeps a named prefix and an authenticated terminal | distinct unsupported nested action tags; provider/cache selection |
-| BuffData | `memorypack.buff_corpus`, `memorypack.buff` | every file has a named 30-field outer frame through EOF; a native-gated subset (no-positive, positive-damage, sole CreateBuffAction roots) is whole-schema exact | interior action and icon bodies of the rest |
-| Interactive | `interactive_binary`, `memorypack.interactive` | every current table, template and ModelViewStateController file exact | future variants fail closed |
-| SpawnerConfig | `spawner_binary` | generated five-field cursor closes the inline-string corpus; the six-field indexed-string root is refused | current root/preprocessList and nested enemy-library framing migration; positive unsupported routes still fail closed |
-| AnimationConfig, CharInteractPerformCfgs, AtmosphericNpcData | `animation_config_binary`, `char_interact_perform_binary`, `atmospheric_npc_binary` | exact on every current file | runtime selection and use (stored, authored data only) |
-| GPUISystemConfig | `gpu_ui_binary` | ExtendedPrefabGroup roots and DamageText close complete named schemas | prefab selection, GPU addressing, texture-hash identity |
+| LevelData | `leveldata_binary`, `leveldata_bezier_knot_corpus` | current 43-field root and selected pooled-string children advance a named cursor; unsupported positive children stop at their field | remaining child/source migration, whole-owner EOF and runtime selection |
+| LevelScriptData | `levelscript_binary` sequential owners | current 28-member root; admitted owners close a named schema at EOF, while unsupported children retain a bounded cursor and diagnostic | per-route and positive-child codecs (recovery order below) |
+| LevelScriptTemplateData | `levelscript_template_binary` | current ownership requires selected native/source gates and a sequential pooled-string cursor; historical inline suffixes do not establish EOF | prove current root, collections and union routes |
+| SkillData | `memorypack.skill_corpus` | old native layouts and saved receipts are withheld on the selected build | current timeline/action/source migration, provider/cache selection |
+| BuffData | `memorypack.buff_corpus`, `memorypack.buff` | old native layouts and saved receipts are withheld on the selected build | current icon, action and root/source migration |
+| Interactive | `interactive_binary`, `memorypack.interactive` | admitted variants retain exact or bounded coverage; current native/schema/pooled-child refusals remain unsupported | remaining current variants and child sources |
+| SpawnerConfig | `spawner_binary` | current six-field pooled-string root, twelve-field waves and thirteen-field groups close through EOF in the selected corpus | positive born/preprocess routes outside the proved grammar remain bounded |
+| AnimationConfig, CharInteractPerformCfgs, AtmosphericNpcData | `animation_config_binary`, `char_interact_perform_binary`, `atmospheric_npc_binary` | admitted variants retain their named or bounded tier; current rejected roots and children remain unsupported | current root/child migration, runtime selection and use |
+| GPUISystemConfig | `gpu_ui_binary` | supported ExtendedPrefabGroup and DamageText variants retain their named or framing tier | remaining variants, prefab selection, GPU addressing, texture-hash identity |
 | StringPool | `string_pool` | every `USPC` page exact: one LZ4 block to EOF, offset table, length-prefixed UTF-8; global index = page x shared page size + slot; `StringPool0` carries a last-page prefix | `StringPoolHashIndex` (`SHPI`) and `StringPoolCounting.json` unread |
 | LevelConfig, NavMesh, TeleportValidation, DialogId, AetherEnergyLock, MatrixShockWave, BambooRaft, MissionArea, SubGame, WorldEntityRegistry | `levelconfig_binary`, `navmesh_binary`, `teleport_validation_binary`, `memorypack.tables`, `aether_energy_lock_binary`, `matrix_shockwave_binary`, `gameplay_compact_binary` | exact | consumers |
 
 Since the StringPool build, LevelConfig stores every string member as an
 `i32` global pool index (`-1` empty, `-2` null; `direct` by corpus
-correspondence with the previous build). The member layout is unchanged, so
-`levelconfig_binary` reads either encoding and the caller selects it by passing
-the export's pool; a reader never guesses. The same holds for every JsonData
-family: the table readers above, `gpu_ui_binary`, and `interactive_binary`
-(InteractiveTable, physics audio, ModelViewStateController) take the pool and
-decode both encodings exactly. A pooled string slot that is null reads `-2`
-where the inline encoding has length `-1`, so a fixed sentinel check is itself
-encoding-dependent. A family still reading inline bytes shows up as an invalid
-string length; a family failing on member counts (LevelScript, LevelData,
-Spawner, NPC, AnimationConfig, SubGameInstance, ModelView behaviours) is
-schema drift, not pooling, and stays fail-closed until re-proven natively.
+correspondence with the previous build). Current consumers supply the owning
+export's pool; a missing pool never proves an inline layout. Pool migration
+and schema migration are separate: matching a root's member count does not
+prove its child reads, and historical inline-string closure does not establish
+current EOF. The full JsonData receipt and Recovery consistency check own the
+current per-family disposition; unsupported rows retain their gate diagnostic.
 
 The selected Lizhiyan combo and Pograni ultimate SkillData copies now close as
 whole stored records through source-specific static and executed-cursor joins.

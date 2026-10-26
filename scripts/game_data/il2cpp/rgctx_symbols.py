@@ -5,15 +5,20 @@ referenced declarations are checked; initialized runtime slots are not observed.
 """
 from __future__ import annotations
 
-from .context import method_parameter_owner, type_parameter_owner, method_spec_record, select_rgctx_range, rgctx_range_entries
-from .protocol import runtime_type_name
+from scripts.game_data.il2cpp.context import method_parameter_owner, type_parameter_owner, method_spec_record, select_rgctx_range, rgctx_range_entries
+from scripts.game_data.il2cpp.protocol import runtime_type_name
+from scripts.game_data.il2cpp.native_image import NativeImage
 
 
 class ContextSymbols:
     def __init__(self, image):
         self.image = image
-        self.type_containers = [t.generic_container_index for t in image.metadata.types]
-        self.method_containers = [m.generic_container_index for m in image.metadata.methods]
+        native = type(image) is NativeImage
+        rows = getattr(image, '_parameter_container_index', None) if native else None
+        if rows is None:
+            rows = ([t.generic_container_index for t in image.metadata.types], [m.generic_container_index for m in image.metadata.methods])
+            if native:rows = tuple(map(tuple, rows));image._parameter_container_index = rows
+        self.type_containers, self.method_containers = rows
 
     def type(self, pointer, trail=()):
         image = self.image; pe = image.pe; md = image.metadata
@@ -41,7 +46,7 @@ class ContextSymbols:
     def arguments(self, index):
         return [] if index<0 else [self.type(a.type_pointer_va) for a in self.image.instantiations.resolve(index).arguments]
 
-    def context(self, definition, *, is_method=False):
+    def context(self, definition, *, is_method=False, slots=None):
         image = self.image; pe = image.pe; md = image.metadata
         owners = md.methods if is_method else md.types
         if type(is_method) is not bool or type(definition) is not int or not 0<=definition<len(owners):raise ValueError('rgctxSymbol.owner: invalid owner kind or index')
@@ -54,11 +59,19 @@ class ContextSymbols:
         result = {'definition':definition,'isMethod':is_method,'token':owner.token,'image':image_name,
                   'typeName':image.type_name(type_index),'methodName':md.string(owner.name_index) if is_method else None,
                   'start':start,'count':count,'entries':[]}
+        if slots is not None:
+            if (type(slots) is not list or not slots or any(type(slot) is not int or not 0 <= slot < count for slot in slots)
+                    or slots != sorted(set(slots))):
+                raise ValueError('rgctxSymbol.selection: expected sorted unique relative slots within the selected range')
+            result['selectedSlots'] = list(slots)
         raw = pe.bytes_at_va(entries+start*16,count*16)
         decoded = rgctx_range_entries(raw,0,count,source=str(image.gameassembly),offset=entries+start*16)
         for item in decoded:
-            kind = item['kindRaw']; index = pe.u32_at_va(item['dataPointerVa'])
-            if item['opaquePaddingHex']!='00000000' or kind not in (1,2,3):raise ValueError('rgctxSymbol.entry: unsupported kind or padding')
+            if slots is not None and item['relativeIndex'] not in slots:
+                continue
+            kind = item['kindRaw']
+            if item['opaquePaddingHex']!='00000000' or kind not in (1,2,3):raise ValueError(f'rgctxSymbol.entry: unsupported kind or padding: source={image.gameassembly} owner={definition} relativeSlot={item["relativeIndex"]} entryVa={item["entryVa"]:#x} kind={kind} padding={item["opaquePaddingHex"]} raw={item["rawHex"]}')
+            index = pe.u32_at_va(item['dataPointerVa'])
             row = {'relativeSlot':item['relativeIndex'],'moduleEntryIndex':start+item['relativeIndex'],
                    'entryVa':item['entryVa'],'rawHex':item['rawHex'],'kind':kind,'index':index}
             if kind in (1,2):

@@ -47,6 +47,9 @@ row and category/direction row share label widths and spacing across pages,
 including all Gameplay datasets, Characters and Data's file browser. Dynamic
 sidebars preserve their source controls and visibility; reset synchronization
 runs after page-owned reset handlers.
+Saved dynamic controls notify their page only when restoration changes their
+value; recreated sort controls must settle without another render. Initial
+controls still notify controllers once after DOM readiness.
 Explicit Story/Assets sorting uses flat filtered results so mission/source
 headings cannot reorder them. Story, Assets and Updates reserve multi-word
 relevance ranking for their default sort. Assets variant groups sum published
@@ -244,9 +247,20 @@ loaded rows by their exact source key. Audio and Assets share linked-file
 status aggregation; Map uses the displayed group's combined variant status.
 Unavailable comparisons hide the facets without changing the published data.
 
+Semantic text must apply the selected language's `I18nHotFix` rows over its
+base localization table. Chinese is a valid language selection even though
+its enum value is zero. Use a separate dictionary for each language and export
+so an override cannot mutate cached raw tables or another language's fallback.
+Updates must apply this rule independently to both compared exports. Data's
+raw table view retains the base and hotfix records separately.
+
 ## Export flow
 
 Choose the smallest workflow that owns the changed input:
+
+Story retains the published shared manifest while rebuilding its language
+bundles and replaces it after success. A failed bundle must not remove the
+entry point that every page loads.
 
 | Situation | Command |
 | --- | --- |

@@ -396,7 +396,7 @@ def _blackbox_subgame_task_topology(
         bind_script_id,
         diagnostics=diagnostics,
     )
-    summary = decode_levelscript_binary_summary(data, bind_script_id)
+    summary = decode_levelscript_binary_summary(data, bind_script_id, source_path=script_path)
     task_map = decoded[0] if len(decoded) == 1 else None
     tasks = (
         task_map.get("tasks") or []
@@ -624,7 +624,7 @@ def _blackbox_subgame_action_topology(
     type to be named by the installed GameAssembly formatter mapping.
     """
     data = script_path.read_bytes()
-    topology, diagnostic = decode_levelscript_native_action_topology(data)
+    topology, diagnostic = decode_levelscript_native_action_topology(data, source_path=script_path)
     source_file = _repo_source_path(script_path)
     topology.update({
         "scriptId": str(bind_script_id),

@@ -115,7 +115,7 @@ def main(argv: list[str] | None = None) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     LANG_DIR.mkdir(parents=True, exist_ok=True)
     shutil.rmtree(OUT_DIR / "conv", ignore_errors=True)
-    for stale_file in ("manifest.json", "index.json", "actors.json"):
+    for stale_file in ("index.json", "actors.json"):
         (OUT_DIR / stale_file).unlink(missing_ok=True)
 
     print("Building localized web UI bundles...")

@@ -7,7 +7,7 @@ def selected_direct_call_candidates(image,target_rvas):
     if any(type(v) is not int or not 0<=v<1<<32 for v in targets):raise ValueError('nativeCallReferences.target-rva-domain')
     targets=set(targets);rows=[]
     for section in image.sections:
-        if section['name']!='.text':continue
+        if not section['characteristics']&0x20000000:continue
         raw=image.buf[section['rawPointer']:section['rawPointer']+section['rawSize']];pos=0
         while True:
             pos=raw.find(b'\xe8',pos)

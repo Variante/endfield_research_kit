@@ -36,6 +36,7 @@ from scripts.game_data.il2cpp.context import (
 from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
+from scripts.game_data.levelscript_source_receipts import SourceReader
 
 
 SCHEMA = "endfield.levelscript-enable-typhoea-archery-stage-native-contract.v1"
@@ -298,6 +299,7 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 
 def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: Path,
+    *, game_root: Path | None = None,
                       summary_path: Path) -> int:
     from scripts.game_data.codecs.levelscript.action_map import _Cursor
 
@@ -314,6 +316,7 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
                 ledger[row["exportRelativePath"]] = row
     route = contract["route"]
     prefix = memorypack_union_header(route["tag"], route["memberCount"])
+    source=SourceReader(summary,export_root,contract['nativeInputs'],game_root=game_root)
     for path,digest,start,end,span_digest in route["sourceReceipts"]:
         data = (export_root / path).read_bytes()
         if (
@@ -324,13 +327,14 @@ def _validate_sources(contract: dict[str, Any], export_root: Path, ledger_path: 
             or ledger.get(path, {}).get("length") != len(data)
         ):
             raise ValueError(f"{LABEL}.source:receipt={path},offset={start}")
-        cursor = _Cursor(data, start + len(prefix))
+        cursor = source.cursor(data,start + len(prefix),route,source_path=path)
         decoded = {
             name: cursor.value(kind, f"{LABEL}.source.{name}")
             for name, kind, _native in route["fields"]
         }
         if cursor.offset != end or set(decoded) != {row[0] for row in route["fields"]}:
             raise ValueError(f"{LABEL}.source:cursor={path},offset={start},end={cursor.offset}")
+    source.check()
     return len(route["sourceReceipts"])
 
 
@@ -363,7 +367,7 @@ def validate_archery_stage_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-summary-and-ledger-required")
-            checked=_validate_sources(contract,Path(export_root),Path(ledger_path),Path(summary_path))
+            checked=_validate_sources(contract,Path(export_root),Path(ledger_path),Path(summary_path), game_root=game_root)
         route=contract["route"]
         return {"status":"validated","evidenceBoundary":"exact",
                 "route":{"family":route["family"],"tag":route["tag"],

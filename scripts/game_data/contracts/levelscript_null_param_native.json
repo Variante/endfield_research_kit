@@ -1,0 +1,319 @@
+{
+  "schema": "endfield.levelscript-null-param-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "components": [
+    {
+      "codecKind": "Param<CameraBlendCurveKey>",
+      "valueType": "Beyond.CameraBlendCurveKey",
+      "proof": {
+        "schema": "endfield.memorypack-null-class-param-proof.v1",
+        "wrappedType": "Beyond.Gameplay.Actions.Param`1<Beyond.CameraBlendCurveKey>",
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+        "nullableMarker": 255,
+        "positiveAdmitted": false,
+        "wireBytes": 1,
+        "callerMethod": [
+          307598,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+          "Deserialize",
+          210116036
+        ],
+        "ownedWindows": [
+          {
+            "startRva": 210116036,
+            "endRva": 210116421,
+            "sha256": "EB596154C209469A3BF3B0B97D08473EAE393EAB351700BA327CE0A39D591199"
+          }
+        ],
+        "program": {
+          "profile": "called-header",
+          "selectedInstructions": [
+            6652566980,
+            6652566985,
+            6652566990,
+            6652566991,
+            6652566995,
+            6652567002,
+            6652567005,
+            6652567008,
+            6652567065,
+            6652567070,
+            6652567075,
+            6652567078,
+            6652567083,
+            6652567085,
+            6652567334,
+            6652567337,
+            6652567344,
+            6652567349,
+            6652567354,
+            6652567359,
+            6652567363,
+            6652567364
+          ],
+          "headerCall": {
+            "offset": 98,
+            "va": "0x18c861e26",
+            "bytes": "e8 45 df 77 f8",
+            "text": "call 0x184fdfd70",
+            "write": null
+          },
+          "nullStore": {
+            "offset": 357,
+            "va": "0x18c861f29",
+            "bytes": "48 c7 03 00 00 00 00",
+            "text": "mov [rbx], 0x0",
+            "write": null,
+            "operandWidth": 64
+          },
+          "barrier": {
+            "offset": 364,
+            "va": "0x18c861f30",
+            "bytes": "e8 2b 24 8a f3",
+            "text": "call 0x180104360",
+            "write": null
+          }
+        },
+        "headerSource": {
+          "window": {
+            "startRva": 83754352,
+            "endRva": 83754439,
+            "sha256": "F5D54185CAD8DFD22FDB3C92312594556C9ADB3126526D28898ECD14CC96159E"
+          },
+          "instructions": [
+            [
+              83754352,
+              "48895C2408"
+            ],
+            [
+              83754357,
+              "4889742410"
+            ],
+            [
+              83754362,
+              "57"
+            ],
+            [
+              83754363,
+              "4883EC20"
+            ],
+            [
+              83754367,
+              "83793001"
+            ],
+            [
+              83754371,
+              "488BFA"
+            ],
+            [
+              83754374,
+              "488BD9"
+            ],
+            [
+              83754377,
+              "0F8C5F552F02"
+            ],
+            [
+              83754383,
+              "488B4350"
+            ],
+            [
+              83754387,
+              "0FB608"
+            ],
+            [
+              83754390,
+              "880F"
+            ],
+            [
+              83754392,
+              "8B7330"
+            ],
+            [
+              83754395,
+              "83EE01"
+            ],
+            [
+              83754398,
+              "0F885D552F02"
+            ],
+            [
+              83754404,
+              "48FF4350"
+            ],
+            [
+              83754408,
+              "FF4340"
+            ],
+            [
+              83754411,
+              "FF4344"
+            ],
+            [
+              83754414,
+              "897330"
+            ],
+            [
+              83754417,
+              "803FFF"
+            ],
+            [
+              83754420,
+              "488B5C2430"
+            ],
+            [
+              83754425,
+              "488B742438"
+            ],
+            [
+              83754430,
+              "0F95C0"
+            ],
+            [
+              83754433,
+              "4883C420"
+            ],
+            [
+              83754437,
+              "5F"
+            ],
+            [
+              83754438,
+              "C3"
+            ]
+          ]
+        },
+        "readerOffsets": {
+          "currentPtr": 80,
+          "bufferLength": 48,
+          "advancedCount": 64,
+          "consumed": 68
+        },
+        "getter": {
+          "methodIndex": 307590,
+          "pointerRva": 43147504,
+          "bytes": "488B4110C3",
+          "returnedReferenceBits": 64
+        },
+        "evidenceBoundary": {
+          "direct": "Typed reference Param/wrapper, initialized caller aliases, one-byte header, FF output clear and complete ordinary return/tail; the nonnull getter has the declared reference return.",
+          "conditional": "Initialized metadata; valid disjoint buffer, reader, byref output, frame and saved-register slots; one contiguous byte, nonoverflowing counters, ordinary ABI-preserving header/barrier and compatible normal reference formatter/wrapper route.",
+          "unresolved": [
+            "every positive Param or nested value representation",
+            "cold metadata initialization/refill and live formatter/cache selection",
+            "owning action execution"
+          ]
+        }
+      }
+    },
+    {
+      "codecKind": "Param<EntityPtr>",
+      "valueType": "Beyond.Gameplay.Core.EntityPtr",
+      "proof": {
+        "schema": "endfield.memorypack-null-class-param-proof.v1",
+        "wrappedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>",
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack",
+        "nullableMarker": 255,
+        "positiveAdmitted": false,
+        "wireBytes": 1,
+        "callerMethod": [
+          267488,
+          "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack",
+          "Deserialize",
+          102165504
+        ],
+        "ownedWindows": [
+          {
+            "startRva": 102165504,
+            "endRva": 102165890,
+            "sha256": "FCCC7FC54EF3AF0384D2A41C22ACF6369D227E2B4AC96BC6D25B5EDE888FAADC"
+          },
+          {
+            "startRva": 124296470,
+            "endRva": 124296625,
+            "sha256": "1B56FD7C67885ADA0BB935907600C205348B29938B45E6368005C93F6A2AEC56"
+          }
+        ],
+        "program": {
+          "profile": "inline-header",
+          "selectedInstructions": [
+            6544616448,
+            6544616453,
+            6544616458,
+            6544616463,
+            6544616464,
+            6544616468,
+            6544616475,
+            6544616478,
+            6544616481,
+            6544616487,
+            6544616491,
+            6544616497,
+            6544616501,
+            6544616504,
+            6544616507,
+            6544616510,
+            6544616516,
+            6544616520,
+            6544616523,
+            6544616526,
+            6544616529,
+            6544616533,
+            6544616756,
+            6544616763,
+            6544616766,
+            6544616731,
+            6544616736,
+            6544616741,
+            6544616746,
+            6544616750,
+            6544616751
+          ],
+          "headerCall": null,
+          "nullStore": {
+            "offset": 308,
+            "va": "0x18616ed34",
+            "bytes": "48 c7 07 00 00 00 00",
+            "text": "mov [rdi], 0x0",
+            "write": null,
+            "operandWidth": 64
+          },
+          "barrier": {
+            "offset": 303,
+            "va": "0x18616ed2f",
+            "bytes": "e9 2c 56 f9 f9",
+            "text": "jmp 0x180104360",
+            "write": null
+          }
+        },
+        "headerSource": null,
+        "readerOffsets": {
+          "currentPtr": 80,
+          "bufferLength": 48,
+          "advancedCount": 64,
+          "consumed": 68
+        },
+        "getter": {
+          "methodIndex": 267480,
+          "pointerRva": 43147504,
+          "bytes": "488B4110C3",
+          "returnedReferenceBits": 64
+        },
+        "evidenceBoundary": {
+          "direct": "Typed reference Param/wrapper, initialized caller aliases, one-byte header, FF output clear and complete ordinary return/tail; the nonnull getter has the declared reference return.",
+          "conditional": "Initialized metadata; valid disjoint buffer, reader, byref output, frame and saved-register slots; one contiguous byte, nonoverflowing counters, ordinary ABI-preserving header/barrier and compatible normal reference formatter/wrapper route.",
+          "unresolved": [
+            "every positive Param or nested value representation",
+            "cold metadata initialization/refill and live formatter/cache selection",
+            "owning action execution"
+          ]
+        }
+      }
+    }
+  ]
+}

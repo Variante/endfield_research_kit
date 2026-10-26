@@ -1,0 +1,505 @@
+{
+  "schema": "endfield.endminf-particle-matrix-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
+  },
+  "functions": [
+    {
+      "role": "dispatcher",
+      "kind": "unwindFamily",
+      "entryRva": 921376,
+      "ranges": [
+        {
+          "rva": 921376,
+          "bytes": 414,
+          "sha256": "395a4df6a968ce4dc5e323695e695c4e3da5f44a3871d4729242b9e8b9b6582d"
+        }
+      ]
+    },
+    {
+      "role": "prepareParameters",
+      "kind": "unwindFamily",
+      "entryRva": 922016,
+      "ranges": [
+        {
+          "rva": 922016,
+          "bytes": 783,
+          "sha256": "75aac7177ba7f8d8536a7cf18fe8b5895f05482af5e4036612ee83018555a2f9"
+        }
+      ]
+    },
+    {
+      "role": "prepareTemporary",
+      "kind": "unwindFamily",
+      "entryRva": 921792,
+      "ranges": [
+        {
+          "rva": 921792,
+          "bytes": 46,
+          "sha256": "7a2a86ef438070e4af9cb5dada76165df15a0e887bf6f0bdea7a8592136359b6"
+        },
+        {
+          "rva": 921838,
+          "bytes": 11,
+          "sha256": "1d2232a82b37ad4de4dca52ced1d81053be5322940577039cdf306da25688b04"
+        },
+        {
+          "rva": 921849,
+          "bytes": 101,
+          "sha256": "6687d899f381bd0cf279bc27ae45138cc8531459d65554b949714c6c340834c5"
+        },
+        {
+          "rva": 921950,
+          "bytes": 21,
+          "sha256": "0060cc203dd717cda20e8309acb548607adb679d4d31175931a9343e6cf227e7"
+        },
+        {
+          "rva": 921971,
+          "bytes": 14,
+          "sha256": "9b73b39bae75d1350ddea2b3d48f02b60c1649db1c226927b9aa4a808fff65a5"
+        },
+        {
+          "rva": 921985,
+          "bytes": 6,
+          "sha256": "d6aec5f1e93f3d28f82cff8407489f08f44c4cefa9a5629b9452f735677655e8"
+        },
+        {
+          "rva": 921991,
+          "bytes": 23,
+          "sha256": "5d9a4c85891d92ff0042a9739d990c36ede84bb82472a13f6c78719ccaaffdea"
+        }
+      ]
+    },
+    {
+      "role": "prepareColours",
+      "kind": "unwindFamily",
+      "entryRva": 922800,
+      "ranges": [
+        {
+          "rva": 922800,
+          "bytes": 13,
+          "sha256": "f34963223cb47f2405c8359e54c787cac34ea350fd6ff824e79485d65e1b4722"
+        },
+        {
+          "rva": 922813,
+          "bytes": 205,
+          "sha256": "6b314cc5f8143c7ec36a4e3f91d957865f21e65bf7d3ed8a0c6590476d67048b"
+        },
+        {
+          "rva": 923018,
+          "bytes": 9,
+          "sha256": "305ec25e19d39f4d1d3d5741a9101b42f01e7b675737eac23f67d253d89a0e92"
+        },
+        {
+          "rva": 923027,
+          "bytes": 513,
+          "sha256": "bc59b995bb1e9c1996c09838bbdd4920313290f8e0a55f3c55f92c5ac5f08843"
+        },
+        {
+          "rva": 923540,
+          "bytes": 33,
+          "sha256": "e165c19fed5b3f463c5a25b80958b557fbd4f61914a35eb3748910affac7fc47"
+        },
+        {
+          "rva": 923573,
+          "bytes": 112,
+          "sha256": "8a7ca04fc12bffb7fafae3196da9121f55e62fdf02e6d6bbc73da43173c7f114"
+        }
+      ]
+    },
+    {
+      "role": "prepareSorting",
+      "kind": "unwindFamily",
+      "entryRva": 928832,
+      "ranges": [
+        {
+          "rva": 928832,
+          "bytes": 19,
+          "sha256": "25879eea5b992934616f2ac699b51a73d0064666d5b7ac45c97e35d06555b0a0"
+        },
+        {
+          "rva": 928851,
+          "bytes": 352,
+          "sha256": "ff8d26001db5bc2481100698e56513ce17b926678ea7344b17d114d5be3f9290"
+        },
+        {
+          "rva": 929203,
+          "bytes": 71,
+          "sha256": "36c314b924d244dc6f47614b79d5aa71c68b96578a9f4cc04f9212bb0a61a17e"
+        },
+        {
+          "rva": 929274,
+          "bytes": 343,
+          "sha256": "873f49d7f8a8fd16f440d1d7fbb6552f8369d1cf7d5b43097fcde5285a217f59"
+        },
+        {
+          "rva": 929617,
+          "bytes": 398,
+          "sha256": "6dea6f60d4ff06215b5cad8a4cad787a338bec494c03df6bf160ba1da8a3bfaa"
+        },
+        {
+          "rva": 930015,
+          "bytes": 91,
+          "sha256": "6ea87f6f997cc1064eefdd82b458409307389d72fd528e86a55f22f21f466d98"
+        },
+        {
+          "rva": 930106,
+          "bytes": 548,
+          "sha256": "1ac5f6c60563857e9403022e89c7fddee23847747e8a7482e18ab395ce1feb35"
+        },
+        {
+          "rva": 930654,
+          "bytes": 30,
+          "sha256": "bbc74327d37c8ceea48d8ee4f97bac4300b34a585cfcd99d3a5ae4eab8235a82"
+        },
+        {
+          "rva": 930684,
+          "bytes": 59,
+          "sha256": "8af4363fae7f64aee3a9988f7b83aca601e855210b481b8d929655d54be478ae"
+        }
+      ]
+    },
+    {
+      "role": "chooseBuilder",
+      "kind": "unwindFamily",
+      "entryRva": 926960,
+      "ranges": [
+        {
+          "rva": 926960,
+          "bytes": 183,
+          "sha256": "27e777fb33d365c7886b820decd71eff1202c4c2295537f7bd57a752aae2c3e6"
+        }
+      ]
+    },
+    {
+      "role": "chooseGeneralMode",
+      "kind": "unwindFamily",
+      "entryRva": 928432,
+      "ranges": [
+        {
+          "rva": 928432,
+          "bytes": 176,
+          "sha256": "7fcb155143cfe46b20f25546f7770449415bb1a79166387ad1127a71ee178a50"
+        },
+        {
+          "rva": 15777738,
+          "bytes": 137,
+          "sha256": "3239b911c847e6381e580c11eba1c2a59ba56c9ecc2c5a3f344f9025f033b22d"
+        }
+      ]
+    },
+    {
+      "role": "chooseSimpleMode",
+      "kind": "unwindFamily",
+      "entryRva": 930752,
+      "ranges": [
+        {
+          "rva": 930752,
+          "bytes": 233,
+          "sha256": "07c398f8170fd3febe419e5866814e54cf8a52488671df709c63ce1df4b77d22"
+        },
+        {
+          "rva": 15777876,
+          "bytes": 22,
+          "sha256": "242ee48dbb6eb9726635f4647f566cd48a614352f995a5bf7887f7bd6f7c1d67"
+        }
+      ]
+    },
+    {
+      "role": "generalBuilder",
+      "kind": "unwindFamily",
+      "entryRva": 866336,
+      "ranges": [
+        {
+          "rva": 866336,
+          "bytes": 5816,
+          "sha256": "e3377b2980cf525f86b0b70b8a3c5f1e42860a38ee5e766dbed52efc4c4dbaee"
+        },
+        {
+          "rva": 15767682,
+          "bytes": 481,
+          "sha256": "886a2e21faaf8637e2de2f0283d00308f9b9f9f7be65b92288442eaa2a7e3bf0"
+        }
+      ]
+    },
+    {
+      "role": "simpleBuilder",
+      "kind": "unwindFamily",
+      "entryRva": 3839968,
+      "ranges": [
+        {
+          "rva": 3839968,
+          "bytes": 4600,
+          "sha256": "e1800d9937b5fa2fdb973970ac1a961972c2e776a9a2fb5a08a67e35dedb4583"
+        },
+        {
+          "rva": 16366056,
+          "bytes": 1460,
+          "sha256": "636c13c92070bde079d46877a12a3ff2f236f70e0f3b613ecd5824dcec4dc6b7"
+        }
+      ]
+    },
+    {
+      "role": "generalQuad",
+      "kind": "unwindFamily",
+      "entryRva": 864928,
+      "ranges": [
+        {
+          "rva": 864928,
+          "bytes": 1404,
+          "sha256": "9c26fecf4de0aaf81dcb71396e443fbc3001bc52e055c88534d120675dbd2fa9"
+        }
+      ]
+    },
+    {
+      "role": "simpleQuad",
+      "kind": "unwindFamily",
+      "entryRva": 3844576,
+      "ranges": [
+        {
+          "rva": 3844576,
+          "bytes": 1147,
+          "sha256": "641c690c89a403a133fcab24b0ca0b6321094734b5fa3791d13c8c9b55b76fa1"
+        }
+      ]
+    },
+    {
+      "role": "packVertices",
+      "kind": "unwindFamily",
+      "entryRva": 1523536,
+      "ranges": [
+        {
+          "rva": 1523536,
+          "bytes": 71,
+          "sha256": "93f1499beae1e205b7d361b20ec5465113c5863428b2dbb9d907806d239b4dec"
+        },
+        {
+          "rva": 1523607,
+          "bytes": 817,
+          "sha256": "dd58f7cb4329542c30aaaaddae8468733240d32ca5179dd34f7a86d1c393ce4f"
+        },
+        {
+          "rva": 1524424,
+          "bytes": 1408,
+          "sha256": "ab5922dc672060bf12ff114ac3ec728d12785c0fd7d5c9dc365a0fa27a3b9c5a"
+        },
+        {
+          "rva": 15900648,
+          "bytes": 340,
+          "sha256": "8922bcf563a236181934835a34aa55e314ae4f93f89a093be020de83b8b07080"
+        }
+      ]
+    },
+    {
+      "role": "getterCopy",
+      "kind": "codeWindow",
+      "entryRva": 2517552,
+      "ranges": [
+        {
+          "rva": 2517552,
+          "bytes": 675,
+          "sha256": "cfcad4eaa587aaa5041cdc3421cae694ae7eb7d3b781fef93f808dff580a5220"
+        }
+      ]
+    },
+    {
+      "role": "calibrationInitializer",
+      "kind": "codeWindow",
+      "entryRva": 149232,
+      "ranges": [
+        {
+          "rva": 149232,
+          "bytes": 22,
+          "sha256": "0708be6a9c8f165581d520fdef59bb8dc0a3bd272cff64d5de6582c79d8cf9c4"
+        }
+      ]
+    }
+  ],
+  "constants": [
+    {
+      "role": "xyzMask",
+      "rva": 28692640,
+      "bytes": 16,
+      "hex": "000000000000000000000000ffffffff",
+      "loadRva": 867151
+    },
+    {
+      "role": "meanWeight",
+      "rva": 28693088,
+      "bytes": 16,
+      "hex": "9faaaa3e9faaaa3e9faaaa3e9faaaa3e",
+      "loadRva": 867757
+    },
+    {
+      "role": "absMask",
+      "rva": 28692832,
+      "bytes": 16,
+      "hex": "ffffff7fffffff7fffffff7fffffff7f",
+      "loadRva": 871063
+    },
+    {
+      "role": "determinantThreshold",
+      "rva": 28693000,
+      "bytes": 4,
+      "hex": "bd378635",
+      "loadRva": 871073
+    },
+    {
+      "role": "one",
+      "rva": 28692660,
+      "bytes": 4,
+      "hex": "0000803f",
+      "loadRva": 871017
+    },
+    {
+      "role": "signMask",
+      "rva": 28692688,
+      "bytes": 16,
+      "hex": "00000080000000800000008000000080",
+      "loadRva": 867805
+    },
+    {
+      "role": "fallbackOne",
+      "rva": 28692528,
+      "bytes": 16,
+      "hex": "0000803f0000803f0000803f0000803f",
+      "loadRva": 871120
+    },
+    {
+      "role": "calibrationOne",
+      "rva": 28692528,
+      "bytes": 16,
+      "hex": "0000803f0000803f0000803f0000803f",
+      "loadRva": 149232
+    }
+  ],
+  "stages": [
+    {
+      "role": "mean",
+      "beginRva": 867607,
+      "endRva": 867764
+    },
+    {
+      "role": "cofactors",
+      "beginRva": 870848,
+      "endRva": 871073
+    },
+    {
+      "role": "finishTransposeDup",
+      "beginRva": 871084,
+      "endRva": 871087
+    },
+    {
+      "role": "finishTransposeLow",
+      "beginRva": 871090,
+      "endRva": 871093
+    },
+    {
+      "role": "scaleCofactors",
+      "beginRva": 871130,
+      "endRva": 871141
+    },
+    {
+      "role": "storeScaledAxes",
+      "beginRva": 871258,
+      "endRva": 871288
+    },
+    {
+      "role": "storeInverse",
+      "beginRva": 867805,
+      "endRva": 867918
+    }
+  ],
+  "runtimeCalibration": {
+    "storageRva": 32136256,
+    "bytes": 16,
+    "fileBacked": false,
+    "initializerRole": "calibrationInitializer",
+    "expression": "float32(one / rsqrtps(one)); estimate is then float32(rsqrtps(mean) * calibration). The current-machine intrinsic is an offline condition; no runtime global value was captured."
+  },
+  "layout": {
+    "jobBytes": 2128,
+    "matrices": {
+      "worldToView": 16,
+      "viewToWorld": 80,
+      "localToWorld": 144
+    },
+    "sortCountOffset": 352,
+    "maskOffset": 344,
+    "settingsOffset": 1760,
+    "settingsModeOffset": 0,
+    "sortModeOffset": 3,
+    "pivotOffset": 40,
+    "freeformOffset": 68,
+    "vertexStride": 60,
+    "verticesPerParticle": 4,
+    "headVertices": [
+      0,
+      3
+    ],
+    "simdPadding": "Fourth lanes may duplicate z; they are not a homogeneous bottom row.",
+    "requiredClearMask": 369098752,
+    "renderMode": 1
+  },
+  "getterFlag": {
+    "dataFlagOffset": 1972,
+    "publicFlagsOffset": 128,
+    "publicMask": 1,
+    "recordStride": 132,
+    "expression": "bit0 = (data[0x7b4] != 0); bit1 = (data[0x7b3] != 0) * 2. The getter base is public-record +24 when it stores +0x68."
+  },
+  "witnesses": {
+    "getterFlag": [
+      "cmp byte ptr [rbx + 0x7b4], al",
+      "setne al",
+      "or eax, ecx",
+      "mov dword ptr [rdi + 0x68], eax"
+    ],
+    "dispatcher": [
+      "cmp dword ptr [r14], 0",
+      "jle 0xe0ffe",
+      "call 0xe24f0"
+    ],
+    "builderChoice": [
+      "cmp byte ptr [r9 + 0x7b4], 0",
+      "je 0xe2551",
+      "call 0xe2ab0"
+    ],
+    "generalMode": [
+      "cmp ax, 1",
+      "jmp 0xd3820"
+    ],
+    "generalQuad": [
+      "cmp byte ptr [rbp], 0",
+      "je 0xd47e1",
+      "call 0xd32a0"
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Pinned native files, complete selected unwind-family membership, code windows and file-backed constants.",
+    "direct": "Getter flag encoding, builder branch conditions, private inverse construction and head point transform order.",
+    "conditional": "Recorded unsorted mode-one zero-pivot jobs and bracketing public flags select the reviewed path under stable configuration. Offline current-CPU rsqrt calibration and reconstructed affine inverse are compared with own returned native head anchors.",
+    "unresolved": "Exact live branch execution, runtime calibration value, global atomicity, complete corners/attributes, source simulation and transfer to another movie are not established. Captured operands never become renderer inputs."
+  },
+  "inverseProgram": {
+    "scratchBytes": 4096,
+    "translationOffset": 48,
+    "resultOffset": 1840,
+    "resultBytes": 64,
+    "axisRegisters": [
+      "xmm14",
+      "xmm15",
+      "xmm7"
+    ],
+    "maskRegister": "xmm8",
+    "meanRegister": "xmm1",
+    "scaleRegister": "xmm6",
+    "determinantRegister": "xmm0",
+    "reciprocalRegister": "xmm2",
+    "factorRegister": "xmm0",
+    "translationRegister": "xmm2"
+  }
+}

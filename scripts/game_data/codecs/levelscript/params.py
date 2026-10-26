@@ -90,76 +90,8 @@ def decode_levelscript_ptr_param(
     payload: bytes,
     cursor: int,
 ) -> tuple[dict[str, Any], int] | None:
-    """Decode a present ``Param<LevelScriptPtr>`` at an exact cursor."""
-    if cursor < 0 or cursor + 29 > len(payload) or payload[cursor] != 0x04:
-        return None
-    script_id, reserved = struct.unpack_from("<QQ", payload, cursor + 1)
-    # LevelScriptPtr stores the identifier as an unsigned 64-bit value.  Its
-    # framing does not impose a decimal-width policy: current template and
-    # Interactive data legitimately use both short local IDs and long IDs.
-    if reserved != 0:
-        return None
-    tail = decode_param_tail(payload, cursor + 17)
-    if tail is None:
-        return None
-    detail, end = tail
-    mode = "explicit_script" if script_id else "dynamic_or_unresolved"
-    if not script_id and detail == {
-        "idRef": -1,
-        "paramSource": 1002,
-        "path": None,
-    }:
-        mode = "current_script"
-    return {
-        "mode": mode,
-        "scriptId": str(script_id) if script_id else "",
-        **detail,
-    }, end
-
-
-def decode_camera_blend_curve_key(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    """Read the mc1 CameraBlendCurveKey value, leaving Param tails to callers."""
-    if cursor < 0 or cursor + 5 > len(payload) or payload[cursor] != 1:
-        return None
-    size = struct.unpack_from("<i", payload, cursor + 1)[0]
-    cursor += 5
-    if size == -1:
-        key = None
-    elif 0 <= size <= 1 << 20 and cursor + size <= len(payload):
-        try:
-            key = payload[cursor:cursor + size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += size
-    else:
-        return None
-    return {"key": key}, cursor
-
-
-def decode_camera_blend_curve_key_param(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    """Read the typed mc4 Param and its mc1 nullable UTF-8 key wrapper.
-
-    This is a bounded wire reader. Camera callers authenticate its formatter
-    through levelscript_camera_look_at_native before admitting named fields.
-    The ordinary idRef/source/path tail retains its shared refusal rules.
-    """
-    if cursor < 0 or cursor >= len(payload) or payload[cursor] != 4:
-        return None
-    value = decode_camera_blend_curve_key(payload, cursor + 1)
-    if value is None:
-        return None
-    key, cursor = value
-    tail = decode_param_tail(payload, cursor)
-    if tail is None:
-        return None
-    binding, end = tail
-    return {"value": key, **binding}, end
+    """Refuse until the current raw16 constant and pooled tail are authenticated."""
+    return None
 
 
 def decode_constant_string_param(
@@ -321,70 +253,13 @@ def decode_constant_entity_ptr_param(
     payload: bytes,
     cursor: int,
 ) -> tuple[dict[str, Any], int] | None:
-    """Decode the installed constant ``Param<EntityPtr>`` form.
-
-    ``0x04`` is the outer Param member count and ``0x03`` is the nested
-    EntityPtr member count; neither byte is a ScriptEntityPtr union tag.
-    """
-    if cursor + 27 > len(payload) or payload[cursor : cursor + 2] != b"\x04\x03":
-        return None
-    logic_id = struct.unpack_from("<Q", payload, cursor + 2)[0]
-    slot_id = struct.unpack_from("<I", payload, cursor + 10)[0]
-    use_slot_id = payload[cursor + 14]
-    if use_slot_id not in (0, 1):
-        return None
-    id_ref = struct.unpack_from("<i", payload, cursor + 15)[0]
-    param_source = struct.unpack_from("<i", payload, cursor + 19)[0]
-    path_size = struct.unpack_from("<i", payload, cursor + 23)[0]
-    cursor += 27
-    if path_size == -1:
-        path = None
-    elif 0 <= path_size <= 256 and cursor + path_size <= len(payload):
-        try:
-            path = payload[cursor : cursor + path_size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += path_size
-    else:
-        return None
-    return {
-        "logicId": logic_id,
-        "slotId": slot_id,
-        "useSlotId": bool(use_slot_id),
-        "idRef": id_ref,
-        "paramSource": param_source,
-        "path": path,
-    }, cursor
+    """Refuse until the current positive/array composition is authenticated."""
+    return None
 
 
 def decode_entity_ptr_getter_ref_array(
     payload: bytes,
     cursor: int,
 ) -> tuple[list[dict[str, Any]] | None, int] | None:
-    """Read a counted Param<EntityPtr> array with getter-reference children.
-
-    The selected ListMakeEntityPtr sources reach one getter-reference child
-    each. Other child framings remain unsupported and fail closed.
-    """
-    if cursor + 4 > len(payload):
-        return None
-    count = struct.unpack_from("<i", payload, cursor)[0]
-    cursor += 4
-    if count == -1:
-        return None, cursor
-    if count < 0 or count > 10_000 or count > (len(payload) - cursor) // 27:
-        return None
-    values: list[dict[str, Any]] = []
-    for _ in range(count):
-        child = decode_constant_entity_ptr_param(payload, cursor)
-        if child is None:
-            return None
-        value, cursor = child
-        if (
-            value["logicId"] != 0 or value["slotId"] != 0 or value["useSlotId"]
-            or not 0 <= value["idRef"] <= 0x10000
-            or value["paramSource"] != -1 or value["path"] is not None
-        ):
-            return None
-        values.append(value)
-    return values, cursor
+    """Refuse until the current positive/array composition is authenticated."""
+    return None

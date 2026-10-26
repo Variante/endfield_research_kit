@@ -121,7 +121,7 @@ def summarize(events,hooks,enums=None):
                     'boundary':'Transparent helper entry fields only; generic success, XMM2 default and numeric return are not observed.'})
             if name.startswith('buff.HealDetail.'):
                 trace.require(len(packets)<65536,'Buff values: protocol snapshot budget')
-                packets.append({'entry':brief(row),'phase':'entry-only','boundary':'Protocol object fields at a named codec boundary; transport direction, pointer lifetime and acknowledgement remain unresolved.'})
+                packets.append({'entry':brief(row),'phase':'entry-only','boundary':'Protocol object fields at a named property-access boundary; no whole-message codec boundary, transport direction, pointer lifetime or acknowledgement.'})
             if name=='buff.AbilitySystem.SetHpInternal':
                 trace.require(len(hp_events)<65536,'Buff values: HP entry budget')
                 action=nearest(stack,lambda h:h in {'buff.HealAction.ExecuteInternal','buff.AbilityAction.Execute'})
@@ -270,7 +270,7 @@ def summarize(events,hooks,enums=None):
         if name.startswith('buff.HealDetail.'):
             trace.require(len(packets)<65536,'Buff values: protocol snapshot budget')
             packets.append({'entry':brief(entry),'returnFields':fields(row),'phase':'completed-pair',
-                'boundary':'Named codec boundary snapshots; object equality does not prove lifetime or packet origin/direction.'})
+                'boundary':'Named property-access snapshots; no whole-message codec boundary. Object equality does not prove lifetime or packet origin/direction.'})
         if name==EFFECT:
             trace.require(len(effects)<65536,'Buff values: effect interval budget')
             effects.append({'entry':brief(entry),'queries':current['effectQueries'],
@@ -331,7 +331,7 @@ def summarize(events,hooks,enums=None):
                 'abilityInitCandidate':current['abilityInitCandidate'],
                 'stages':sorted(current['healStages'],key=lambda r:r['entry']['sequence']),
                 'hpEntries':current['hpEntries'],
-                'boundary':'Completed same-thread HealAction descendants only. Outside codec calls are kept separate; pointer equality is not a lifetime or server acknowledgement.'})
+                'boundary':'Completed same-thread HealAction descendants only. Outside property-access calls are kept separate; pointer equality is not a lifetime or server acknowledgement.'})
         # Numeric reads enclosed by a condition are retained independently of
         # the broader action enclosure; never bind them merely by timestamp.
         if name in NUMERIC:

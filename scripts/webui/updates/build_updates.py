@@ -1944,7 +1944,7 @@ def main(argv: list[str] | None = None) -> int:
         previous_source_root=previous_export_root,
         source_root=export_root,
     )
-    page_updates = build_page_updates(previous_export_root, export_root)
+    page_updates = build_page_updates(previous_export_root, export_root, scan_entries=webui_payload["entries"])
 
     prune_result: dict[str, Any] | None = None
     if prune_requested:

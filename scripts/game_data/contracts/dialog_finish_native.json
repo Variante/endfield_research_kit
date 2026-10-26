@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.dialog-finish-native-claims.v1",
+  "schema": "endfield.dialog-finish-native-claims.v2",
   "status": "reviewed",
   "methods": {
     "DialogTree.ImportFromJson": {
@@ -244,25 +244,23 @@
     "DialogManager.FinishDialog": {
       "type": "Beyond.Gameplay.Core.DialogManager",
       "method": "FinishDialog",
-      "contract": "records the supplied finishId before exiting the dialog",
+      "contract": "On the ordinary tested carrier/code-absent path, stores supplied finish type and finishId directly, then tail-exits with the original dialog string and stored skip byte; no SetFinishId call or replacement dispatch is inferred.",
       "claims": [
         {
-          "calls": [
-            "Beyond.Gameplay.Core.DialogManager.SetFinishId",
-            "Beyond.Gameplay.Core.DialogManager.ExitDialog"
-          ],
-          "ordered": true
+          "storesDialogFinishBeforeExitOnDefaultPath": true
         }
       ]
     },
     "CheckTalkOptionFinish.Check": {
       "type": "Beyond.Gameplay.CheckTalkOptionFinish",
       "method": "Check",
-      "contract": "accepts any recorded finish for a negative operand and requires exact dialogFinishInfos membership for a nonnegative operand",
+      "contract": "On the initialized ordinary carrier/code-absent path, reads the player cinematic history directly through the original getter field; missing dialog is False, a negative finish operand accepts an existing entry, otherwise list membership sets the exact result enum. Live history and replacement selection remain unobserved.",
       "claims": [
         {
+          "checksDialogFinishInfoOnDefaultPath": true
+        },
+        {
           "calls": [
-            "Beyond.Gameplay.CinematicSystem.get_dialogFinishInfos",
             "System.Collections.Generic.Dictionary`2.TryGetValue",
             "System.Collections.Generic.List`1.Contains"
           ],
@@ -287,5 +285,5 @@
       "_hasExOption"
     ]
   },
-  "evidenceBoundary": "Each method's claims are checked against the installed binary by name; field offsets come from its MetadataRegistration. The claims prove how finish numbers are produced and tested. They do not reveal which option a player selected, which successor the server started, or a total Story-file chronology."
+  "evidenceBoundary": "conditional: Named body claims are checked on the selected native image. Inlined dialog source paths require initialized metadata, the tested carrier/code-absent branches, valid stable disjoint objects and frames, matching helper MethodInfos and ordinary helper returns. Replacement/cold/exceptional paths, live finish-history contents, selected options, server successors and total Story chronology remain unresolved."
 }

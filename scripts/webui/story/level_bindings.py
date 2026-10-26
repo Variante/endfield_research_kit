@@ -35,7 +35,6 @@ from scripts.webui.story.anime_assets import (
 from scripts.webui.story.context import (
     DATA_JSON_DIR,
     GAMEPLAY_CONFIG_DIR,
-    HEX_UID_RE,
     LEVELDATA_DIR,
     LEVELSCRIPT_DIR,
     LT_BINDING_RE,
@@ -897,7 +896,7 @@ def resolve_dynamic_hp_spawner_context(
             data,
             tagged_offsets={int(row.get("offset") or 0) for row in tagged},
         )
-        records = extract_levelscript_uid_records(data, tagged, plain)
+        records = extract_levelscript_uid_records(data, source_path=source_path)
         _action_map, membership = levelscript_action_map_membership(data, records)
         decoded_records: list[dict] = []
         for index, record in enumerate(records):
@@ -1350,7 +1349,9 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
                 data,
                 registry_by_script.get(int(script_id)) or [],
             )
-            records = list(file_info.get("records") or [])
+            records = file_info.get("records")
+            if records is None:
+                continue
             _action_map, membership = levelscript_action_map_membership(data, records)
             for record in records:
                 if (
@@ -2313,7 +2314,7 @@ def _levelscript_native_control_paths_to_record(
 
 
 def decode_levelscript_native_action_topology(
-    data: bytes,
+    data: bytes, *, strings=None, source_path: Path | None = None,
 ) -> tuple[dict, dict | None]:
     """Decode one complete serialized LevelScript action/event graph.
 
@@ -2344,11 +2345,11 @@ def decode_levelscript_native_action_topology(
         data,
         tagged_offsets={int(row.get("offset") or 0) for row in tagged_strings},
     )
-    records = extract_levelscript_uid_records(
-        data,
-        tagged_strings,
-        plain_strings,
-    )
+    try:
+        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+    except ValueError as error:
+        diagnostic = {**getattr(error, 'diagnostics', {'validator': 'levelScriptNativeActionTopology', 'gate': 'typedPooledRecords', 'detail': str(error)[:1000]}), 'sourceFile': str(source_path) if source_path else None, 'sourceSha256': hashlib.sha256(data).hexdigest()}
+        return {'schema': 'levelScriptNativeActionTopology.v4', 'status': 'unavailable_fail_closed', 'validatorDiagnostic': diagnostic, 'actionControlFlowEvidence': False, 'storyOrderEvidence': False}, diagnostic
     action_map, membership = levelscript_action_map_membership(data, records)
     action_records = [
         record
@@ -2964,7 +2965,7 @@ def build_levelscript_header_action_index(
                 })
                 continue
 
-            topology, diagnostic = decode_levelscript_native_action_topology(data)
+            topology, diagnostic = decode_levelscript_native_action_topology(data, source_path=path)
             if diagnostic is not None or not str(topology.get("status") or "").startswith(
                 "exact_"
             ):
@@ -3041,9 +3042,7 @@ def build_levelscript_header_action_index(
                     and path.stem.isdigit()
                 ):
                     if binary_summary is None:
-                        binary_summary = decode_levelscript_binary_summary(
-                            data, int(path.stem)
-                        )
+                        binary_summary = decode_levelscript_binary_summary(data, int(path.stem), source_path=path)
                     local_trigger_context = classify_local_trigger_volume_context(
                         binary_summary,
                         [trigger_slot_id],
@@ -3109,7 +3108,9 @@ def build_levelscript_native_black_action_index(
                 data = read_bytes_cached(ROOT / source_file)
             except OSError:
                 continue
-            records = list(file_info.get("records") or [])
+            records = file_info.get("records")
+            if records is None:
+                continue
             _action_map, membership = levelscript_action_map_membership(data, records)
             control_context: dict | None = None
             for record in records:
@@ -3273,114 +3274,10 @@ def _extract_length_prefixed_ascii_strings(
     return hits
 
 
-def _decode_uid_record(data: bytes, uid_off: int, uid: str) -> dict | None:
-    if uid_off >= 14:
-        start = uid_off - 14
-        if start + 32 <= len(data):
-            if (
-                data[start] == 0xFA
-                and data[start + 4] in (0, 1)
-                and data[start + 9] == 0
-                and _u32(data, start + 10) == 8
-            ):
-                local_id = _u32(data, start + 5)
-                if local_id <= 0x1000:
-                    return {
-                        "start": start,
-                        "layout": "fa",
-                        "code": _u16(data, start + 1),
-                        "kind": data[start + 3],
-                        "unionTag": _u16(data, start + 1),
-                        "serializedMemberCount": data[start + 3],
-                        "dontLog": bool(data[start + 4]),
-                        "unionTagEncoding": "memorypack-fa-u16",
-                        "localId": local_id,
-                        "uid": uid,
-                        "nextId": _i32(data, start + 28),
-                        "payloadStart": start + 32,
-                        "strings": [],
-                        "plainStrings": [],
-                    }
-
-    if uid_off >= 12:
-        start = uid_off - 12
-        if start + 30 <= len(data):
-            code = _u16(data, start)
-            kind = data[start + 2]
-            local_id = _u32(data, start + 3)
-            if (
-                data[start] < 0xFA
-                and data[start + 1] <= 0x40
-                and kind in (0, 1)
-                and local_id <= 0x1000
-                and data[start + 7] == 0
-                and _u32(data, start + 8) == 8
-            ):
-                return {
-                    "start": start,
-                    "layout": "plain",
-                    "code": code,
-                    "kind": kind,
-                    "unionTag": data[start],
-                    "serializedMemberCount": data[start + 1],
-                    "dontLog": bool(data[start + 2]),
-                    "unionTagEncoding": "memorypack-u8",
-                    "localId": local_id,
-                    "uid": uid,
-                    "nextId": _i32(data, start + 26),
-                    "payloadStart": start + 30,
-                    "strings": [],
-                    "plainStrings": [],
-                }
-
-    return None
 
 
-def _extract_uid_records(data: bytes, string_hits: list[dict]) -> list[dict]:
-    records: list[dict] = []
-    seen_starts: set[int] = set()
-    sorted_hits = sorted(string_hits, key=lambda hit: hit["offset"])
-
-    for match in HEX_UID_RE.finditer(data):
-        uid_off = match.start()
-        uid = match.group().decode("ascii")
-        record = _decode_uid_record(data, uid_off, uid)
-        if record is None or record["start"] in seen_starts:
-            continue
-        seen_starts.add(record["start"])
-        records.append(record)
-
-    records.sort(key=lambda record: record["start"])
-    if not records:
-        return records
-
-    hit_idx = 0
-    for idx, record in enumerate(records):
-        next_start = records[idx + 1]["start"] if idx + 1 < len(records) else len(data)
-        while hit_idx < len(sorted_hits) and sorted_hits[hit_idx]["offset"] < record["payloadStart"]:
-            hit_idx += 1
-        scan_idx = hit_idx
-        while scan_idx < len(sorted_hits) and sorted_hits[scan_idx]["offset"] < next_start:
-            record["strings"].append(sorted_hits[scan_idx])
-            scan_idx += 1
-
-    return records
 
 
-def _attach_hits_to_records(records: list[dict], hits: list[dict], field: str) -> None:
-    if not records or not hits:
-        return
-    sorted_hits = sorted(hits, key=lambda hit: hit["offset"])
-    hit_idx = 0
-    for idx, record in enumerate(records):
-        next_start = records[idx + 1]["start"] if idx + 1 < len(records) else 10**18
-        record.setdefault(field, [])
-        while hit_idx < len(sorted_hits) and sorted_hits[hit_idx]["offset"] < record["payloadStart"]:
-            hit_idx += 1
-        scan_idx = hit_idx
-        while scan_idx < len(sorted_hits) and sorted_hits[scan_idx]["offset"] < next_start:
-            record[field].append(sorted_hits[scan_idx])
-            scan_idx += 1
 
 
 def _build_unique_record_target_map(records: list[dict]) -> dict[int, dict]:
@@ -3518,6 +3415,7 @@ def _load_levelscript_binding_data(
 
     out = {
         "uidPayloads": {},
+        "decodeDiagnostics": [],
         "files": [],
     }
     level_dir = root / level_id
@@ -3536,42 +3434,21 @@ def _load_levelscript_binding_data(
         except OSError:
             continue
 
-        string_hits = _extract_tagged_ascii_strings(data, 0x04)
-        plain_string_hits = _extract_length_prefixed_ascii_strings(
-            data,
-            tagged_offsets={hit["offset"] for hit in string_hits},
-        )
-        records = _extract_uid_records(data, string_hits)
-        _attach_hits_to_records(records, plain_string_hits, "plainStrings")
-        if not records and not string_hits and not plain_string_hits:
+        try:
+            records = extract_levelscript_uid_records(data, source_path=path)
+        except ValueError as error:
+            out['decodeDiagnostics'].append({'sourceFile': repo_rel(path), 'sourceSha256': hashlib.sha256(data).hexdigest(),
+                'diagnostic': getattr(error, 'diagnostics', {'detail': str(error)[:1000]})})
             continue
         _action_map, membership = levelscript_action_map_membership(data, records)
-
-        sorted_hits = sorted(string_hits, key=lambda hit: hit["offset"])
-        sorted_plain_hits = sorted(plain_string_hits, key=lambda hit: hit["offset"])
+        hits = [hit for record in records for hit in record['strings']]
         for record in records:
-            for hit in record["strings"]:
-                add_payload(record["uid"], hit["text"])
-
-        for match in HEX_UID_RE.finditer(data):
-            uid_off = match.start()
-            uid = match.group().decode("ascii")
-            for hit in sorted_hits:
-                if hit["offset"] <= uid_off:
-                    continue
-                if hit["offset"] - uid_off > 80:
-                    break
-                add_payload(uid, hit["text"])
-                break
-
-        out["files"].append({
-            "file": repo_rel(path),
-            "fileStem": path.stem,
-            "records": records,
-            "actionMapMembership": membership,
-            "stringHits": sorted_hits,
-            "plainStringHits": sorted_plain_hits,
-        })
+            if isinstance(record['uid'], str) and record['uid']:
+                for hit in record['strings']:
+                    add_payload(record['uid'], hit['text'])
+        out['files'].append({'file': repo_rel(path), 'fileStem': path.stem,
+            'records': records, 'actionMapMembership': membership,
+            'stringHits': hits, 'plainStringHits': []})
 
     _LEVELSCRIPT_BINDING_CACHE[cache_key] = out
     return out
@@ -3602,6 +3479,7 @@ def build_levelscript_action_story_occurrences(
             if level_script_root is None
             else _load_levelscript_binding_data(level_dir.name, root)
         )
+        fmv_scan_failures.extend(info.get('decodeDiagnostics') or [])
         for file_info in info.get("files") or []:
             source_file = str(file_info.get("file") or "")
             if not source_file:
@@ -3630,7 +3508,9 @@ def build_levelscript_action_story_occurrences(
                 data = read_bytes_cached(ROOT / source_file)
             except OSError:
                 continue
-            records = list(file_info.get("records") or [])
+            records = file_info.get("records")
+            if records is None:
+                continue
             _action_map, membership = levelscript_action_map_membership(data, records)
             control_context: dict | None = None
             ordered_records = sorted(
@@ -5107,10 +4987,8 @@ def _resolve_levelscript_entityptr_getter(
                       "unionTag": pair[0], "serializedMemberCount": pair[1]}
     start = int(getter.get("start") or 0)
     payload_start = int(getter.get("payloadStart") or 0)
-    # The shared record scanner advances through eight ActionBase members;
-    # PureGetter has seven, so its first action-specific member starts four
-    # bytes before that ActionBase-oriented cursor.
-    member_start = payload_start - 4
+    # The typed record retains the exact seven-member GetterBase boundary.
+    member_start = payload_start
     end = int((prepared.get("nextStarts") or {}).get(start) or len(data))
     evidence = {
         "status": "validated_runtime_dependent",
@@ -7005,7 +6883,7 @@ def build_levelscript_mission_state_story_routes(
                 except OSError:
                     binary_cache[source_file] = (b"", [], {})
                 else:
-                    records = extract_levelscript_uid_records(data)
+                    records = extract_levelscript_uid_records(data, source_path=ROOT / source_file)
                     _action_map, membership = levelscript_action_map_membership(
                         data,
                         records,
@@ -10991,7 +10869,7 @@ def build_npc_patrol_checkpoint_mission_contexts(
             except OSError:
                 script_cache[pair] = {}
             else:
-                records = extract_levelscript_uid_records(data)
+                records = extract_levelscript_uid_records(data, source_path=path)
                 _action_map, membership = levelscript_action_map_membership(
                     data,
                     records,

@@ -512,6 +512,10 @@ outside `webui/overrides/`, and export tools never replace these files.
 
 ## Shared behavior
 
+Localized semantic pages apply the game's matching language hotfixes to their
+displayed text. Updates compares those effective localized values in each
+export. Data Files and SQL retain the base and hotfix tables separately.
+
 Range-slider thumbs share a circular theme-colored outline across pages,
 including custom range controls and visible media-player seek handles.
 

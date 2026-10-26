@@ -253,6 +253,7 @@ def analyze_runtime_contract(
 def analyze_npc_proxy_dialog_runtime_contract(
     catalog: dict[str, Any],
     body_map: dict[str, Any],
+    *, native_evaluation: dict[str, Any],
 ) -> dict[str, Any]:
     """Validate the general mission-scoped NPC dialog selection shape.
 
@@ -343,48 +344,34 @@ def analyze_npc_proxy_dialog_runtime_contract(
             continue
         selected[key] = row
 
-    change = selected.get(("Beyond.Gameplay.Core.NpcProxy", "ChangeActiveCondition")) or {}
-    change_accesses = (change.get("methodBodySummary") or {}).get("fieldAccesses") or []
-    one_based_read = any(
-        row.get("origin") == "param:newActiveCondIndex-0x1"
-        for row in change_accesses
-    )
-    active_index_writes = {
-        str(row.get("origin") or "")
-        for row in change_accesses
-        if row.get("kind") == "write"
-    }
-    getter = selected.get(("Beyond.Gameplay.Core.NpcProxy", "get_activeCondIndex")) or {}
-    getter_reads = {
-        str(row.get("origin") or "")
-        for row in (getter.get("methodBodySummary") or {}).get("fieldAccesses") or []
-        if row.get("kind") == "read"
-    }
-    shared_active_storage = sorted(active_index_writes & getter_reads)
-    if not one_based_read or not shared_active_storage:
-        fail(
-            "npc_proxy_one_based_active_row_selection",
-            {"subtractOne": True, "sharedStoredField": True},
-            {
-                "subtractOne": one_based_read,
-                "sharedStoredFieldOrigins": shared_active_storage,
-            },
-        )
-
-    interact = selected.get((
-        "Beyond.Gameplay.Core.NpcInteractComponent",
-        "_TryGetNpcProxyInteractDialogId",
-    )) or {}
-    interact_summary = interact.get("methodBodySummary") or {}
-    if not any(
-        row.get("origin") == "param:dialogId" and row.get("kind") == "write"
-        for row in interact_summary.get("fieldAccesses") or []
-    ):
-        fail(
-            "npc_proxy_dialog_output_flow",
-            "native write through dialogId output parameter",
-            interact_summary.get("fieldAccesses") or [],
-        )
+    groups = native_evaluation.get("groups")
+    group = groups.get("npcProxyDialogSelection") if isinstance(groups, dict) else None
+    group = group if isinstance(group, dict) else {}
+    if (native_evaluation.get("status") != "validated" or group.get("status") != "validated"
+            or not isinstance(group.get("mappingId"), str) or not group["mappingId"]):
+        fail("npc_proxy_typed_native_claims", "validated selected NPC claims", {
+            "evaluation": native_evaluation.get("status"), "group": group.get("status"),
+        })
+    source = body_map.get("metadata") or {}
+    for native_key, body_key in (("gameAssemblySha256", "gameAssemblySha256"), ("globalMetadataSha256", "metadataSha256")):
+        expected = native_evaluation.get(native_key)
+        actual = source.get(body_key)
+        if (not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected)
+                or not isinstance(actual, str) or actual.upper() != expected.upper()):
+            fail("npc_proxy_selected_native_inputs", {body_key: expected}, {body_key: actual})
+    proved = {row.get("method"): row for row in group.get("methods") or []
+              if isinstance(row, dict) and isinstance(row.get("method"), str)}
+    for key in method_specs:
+        row = selected.get(key) or {}
+        symbol = key[0].rsplit(".", 1)[-1] + "." + key[1]
+        # The typed selection claim checks the original getter internally;
+        # its separate citation authenticates this displayed getter address.
+        claim = ((native_evaluation.get("cited") or {}).get(symbol) if key[1] == "get_activeCondIndex"
+                 else proved.get(symbol)) or {}
+        if (not claim.get("address") or str(claim["address"]).lower() != str(row.get("methodPointerVa")).lower()
+                or not claim.get("token") or str(claim["token"]).lower() != str(row.get("token")).lower()):
+            fail("npc_proxy_typed_native_method_identity", {"method": ".".join(key), "address": claim.get("address"), "token": claim.get("token")},
+                 {"address": row.get("methodPointerVa"), "token": row.get("token")})
 
     conflict = selected.get(("Beyond.Gameplay.Core.NpcProxy", "_IsMissionConflict")) or {}
     conflict_calls = {
@@ -415,15 +402,15 @@ def analyze_npc_proxy_dialog_runtime_contract(
             "status": "validated" if not failures else "failed",
             "failures": failures,
         },
-        "nativeMappingId": "npc-proxy-dialog-selection-native-v2",
+        "nativeMappingId": group.get("mappingId") if not failures else None,
         "carrierType": "Beyond.Gameplay.Core.NpcRuntimeProxyExData",
         "carrierFields": sorted(expected_carrier_fields & carrier_fields),
         "activeIndexField": "m_activeCondIndex" if "m_activeCondIndex" in proxy_fields else "",
         "activeRowSelection": "one_based_external_index_stored_zero_based",
         "methods": compact_methods,
         "evidenceBoundary": {
-            "missionDialogConfigurationCarrier": True,
-            "oneBasedActiveRowSelection": True,
+            "missionDialogConfigurationCarrier": not failures,
+            "oneBasedActiveRowSelection": not failures,
             "serverSelectionObserved": False,
             "questActivation": False,
             "branchSelection": False,
@@ -2326,6 +2313,20 @@ def mapper_args(
     )
 
 
+def require_current_npc_claim_inputs(native_evaluation, *, gameassembly, metadata):
+    from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs, reader_input_changes
+    native_after = check_installed_native_inputs(
+        native_evaluation["gameAssemblySha256"], native_evaluation["globalMetadataSha256"],
+        gameassembly=gameassembly, metadata=metadata,
+    )
+    if not native_after.validated:
+        raise TimelineNativeUnavailable(native_after)
+    readers_after = snapshot_complete_reader_inputs()
+    if readers_after != native_evaluation["readerInputs"]:
+        raise RuntimeError("timeline NPC native reader inputs changed: " + json.dumps(
+            reader_input_changes(native_evaluation["readerInputs"], readers_after, limit=3)))
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if not args.gameassembly.is_file() or not args.metadata.is_file():
         raise RuntimeError(
@@ -2445,9 +2446,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             f"source={failure.get('sourceFile')}; expected={failure.get('expected')!r}; "
             f"actual={failure.get('actual')!r}"
         )
+    from scripts.game_data.story_native_consumers_native import load_story_native_consumers
+    native_evaluation = load_story_native_consumers(gameassembly=args.gameassembly, metadata=args.metadata)
     npc_proxy_contract = analyze_npc_proxy_dialog_runtime_contract(
-        npc_proxy_catalog,
-        control_body_map,
+        npc_proxy_catalog, control_body_map,
+        native_evaluation=native_evaluation,
     )
     if npc_proxy_contract["validation"]["status"] != "validated":
         failure = (npc_proxy_contract["validation"]["failures"] or [{}])[0]
@@ -2533,6 +2536,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             f"actual={failure.get('actual')!r}"
         )
     edges = local_order_edges(rows)
+    require_current_npc_claim_inputs(native_evaluation, gameassembly=args.gameassembly, metadata=args.metadata)
     return {
         "schemaVersion": "timelineEmbeddedStoryRuntimeAudit.v6",
         "source": {

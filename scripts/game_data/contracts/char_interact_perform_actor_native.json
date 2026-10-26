@@ -1,0 +1,686 @@
+{
+  "schema": "endfield.char-interact-perform-actor-source.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "typeName": "Beyond.Gameplay.Core.CharInteractPerform.CharInteractPerformActor",
+  "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharInteractPerform_CharInteractPerformActorForMemoryPack",
+  "memberCount": 13,
+  "readerMethod": [
+    245128,
+    "Beyond.MemoryPack.Beyond_Gameplay_Core_CharInteractPerform_CharInteractPerformActorForMemoryPack",
+    "Deserialize",
+    98866256
+  ],
+  "memberCountInstruction": [
+    98870427,
+    "4180FE0D"
+  ],
+  "fields": [
+    {
+      "name": "actorType",
+      "type": "Beyond.Gameplay.CharInteractPerformEnums+ActorType",
+      "wire": "enum32",
+      "wireBytes": 4,
+      "fieldOffset": 16,
+      "sourceCall": [
+        98870450,
+        "E8995119FF"
+      ],
+      "sourceTargetRva": 83752528,
+      "returnTransfer": [
+        [
+          98870455,
+          "4885DB"
+        ],
+        [
+          98870458,
+          "0F845F030000"
+        ],
+        [
+          98870464,
+          "488B4B10"
+        ],
+        [
+          98870468,
+          "4885C9"
+        ],
+        [
+          98870471,
+          "0F8452030000"
+        ],
+        [
+          98870477,
+          "894110"
+        ]
+      ]
+    },
+    {
+      "name": "charType",
+      "type": "Beyond.Gameplay.CharInteractPerformEnums+CharType",
+      "wire": "enum32",
+      "wireBytes": 4,
+      "fieldOffset": 20,
+      "sourceCall": [
+        98870493,
+        "E86E5119FF"
+      ],
+      "sourceTargetRva": 83752528,
+      "returnTransfer": [
+        [
+          98870498,
+          "4885DB"
+        ],
+        [
+          98870501,
+          "0F8434030000"
+        ],
+        [
+          98870507,
+          "488B4B10"
+        ],
+        [
+          98870511,
+          "4885C9"
+        ],
+        [
+          98870514,
+          "0F8427030000"
+        ],
+        [
+          98870520,
+          "894114"
+        ]
+      ]
+    },
+    {
+      "name": "decoId",
+      "type": "ulong",
+      "wire": "uint64",
+      "wireBytes": 8,
+      "fieldOffset": 72,
+      "sourceCall": [
+        98870529,
+        "E8DA803AFF"
+      ],
+      "sourceTargetRva": 85927392,
+      "returnTransfer": [
+        [
+          98870534,
+          "4885DB"
+        ],
+        [
+          98870537,
+          "0F8410030000"
+        ],
+        [
+          98870543,
+          "488B4B10"
+        ],
+        [
+          98870547,
+          "4885C9"
+        ],
+        [
+          98870550,
+          "0F8403030000"
+        ],
+        [
+          98870556,
+          "48894148"
+        ]
+      ]
+    },
+    {
+      "name": "effectPath",
+      "type": "string",
+      "wire": "pooledStringIndex",
+      "wireBytes": 4,
+      "fieldOffset": 56,
+      "sourceCall": [
+        98870566,
+        "E895883AFF"
+      ],
+      "sourceTargetRva": 85929408,
+      "returnTransfer": [
+        [
+          98870571,
+          "4885DB"
+        ],
+        [
+          98870574,
+          "0F84EB020000"
+        ],
+        [
+          98870580,
+          "4C8B4310"
+        ],
+        [
+          98870584,
+          "4D85C0"
+        ],
+        [
+          98870587,
+          "0F84DE020000"
+        ],
+        [
+          98870593,
+          "833DE83E8D0B00"
+        ],
+        [
+          98870600,
+          "49894038"
+        ]
+      ]
+    },
+    {
+      "name": "interactivePath",
+      "type": "string",
+      "wire": "pooledStringIndex",
+      "wireBytes": 4,
+      "fieldOffset": 32,
+      "sourceCall": [
+        98870674,
+        "E829883AFF"
+      ],
+      "sourceTargetRva": 85929408,
+      "returnTransfer": [
+        [
+          98870679,
+          "4885DB"
+        ],
+        [
+          98870682,
+          "0F847F020000"
+        ],
+        [
+          98870688,
+          "4C8B4310"
+        ],
+        [
+          98870692,
+          "4D85C0"
+        ],
+        [
+          98870695,
+          "0F8472020000"
+        ],
+        [
+          98870701,
+          "833D7C3E8D0B00"
+        ],
+        [
+          98870708,
+          "49894020"
+        ]
+      ]
+    },
+    {
+      "name": "interactiveType",
+      "type": "Beyond.Gameplay.CharInteractPerformEnums+InteractiveType",
+      "wire": "enum32",
+      "wireBytes": 4,
+      "fieldOffset": 24,
+      "sourceCall": [
+        98870792,
+        "E8435019FF"
+      ],
+      "sourceTargetRva": 83752528,
+      "returnTransfer": [
+        [
+          98870797,
+          "4885DB"
+        ],
+        [
+          98870800,
+          "0F8409020000"
+        ],
+        [
+          98870806,
+          "488B4B10"
+        ],
+        [
+          98870810,
+          "4885C9"
+        ],
+        [
+          98870813,
+          "0F84FC010000"
+        ],
+        [
+          98870819,
+          "894118"
+        ]
+      ]
+    },
+    {
+      "name": "npcId",
+      "type": "string",
+      "wire": "pooledStringIndex",
+      "wireBytes": 4,
+      "fieldOffset": 64,
+      "sourceCall": [
+        98870828,
+        "E88F873AFF"
+      ],
+      "sourceTargetRva": 85929408,
+      "returnTransfer": [
+        [
+          98870833,
+          "4885DB"
+        ],
+        [
+          98870836,
+          "0F84E5010000"
+        ],
+        [
+          98870842,
+          "4C8B4310"
+        ],
+        [
+          98870846,
+          "4D85C0"
+        ],
+        [
+          98870849,
+          "0F84D8010000"
+        ],
+        [
+          98870855,
+          "833DE23D8D0B00"
+        ],
+        [
+          98870862,
+          "49894040"
+        ]
+      ]
+    },
+    {
+      "name": "performEndNotDestroy",
+      "type": "bool",
+      "wire": "boolByte",
+      "wireBytes": 1,
+      "fieldOffset": 80,
+      "sourceCall": [
+        98870945,
+        "E82A5719FF"
+      ],
+      "sourceTargetRva": 83754448,
+      "returnTransfer": [
+        [
+          98870950,
+          "4885DB"
+        ],
+        [
+          98870953,
+          "0F8470010000"
+        ],
+        [
+          98870959,
+          "488B4B10"
+        ],
+        [
+          98870963,
+          "4885C9"
+        ],
+        [
+          98870966,
+          "0F8463010000"
+        ],
+        [
+          98870972,
+          "884150"
+        ]
+      ]
+    },
+    {
+      "name": "tmpObjectDelayDestroy",
+      "type": "bool",
+      "wire": "boolByte",
+      "wireBytes": 1,
+      "fieldOffset": 81,
+      "sourceCall": [
+        98870981,
+        "E8065719FF"
+      ],
+      "sourceTargetRva": 83754448,
+      "returnTransfer": [
+        [
+          98870986,
+          "4885DB"
+        ],
+        [
+          98870989,
+          "0F844C010000"
+        ],
+        [
+          98870995,
+          "488B4B10"
+        ],
+        [
+          98870999,
+          "4885C9"
+        ],
+        [
+          98871002,
+          "0F843F010000"
+        ],
+        [
+          98871008,
+          "884151"
+        ]
+      ]
+    },
+    {
+      "name": "tmpObjectDelayDestroyTime",
+      "type": "float",
+      "wire": "float32",
+      "wireBytes": 4,
+      "fieldOffset": 84,
+      "sourceCall": [
+        98871017,
+        "E8C25419FF"
+      ],
+      "sourceTargetRva": 83753904,
+      "returnTransfer": [
+        [
+          98871022,
+          "4885DB"
+        ],
+        [
+          98871025,
+          "0F8428010000"
+        ],
+        [
+          98871031,
+          "488B4310"
+        ],
+        [
+          98871035,
+          "4885C0"
+        ],
+        [
+          98871038,
+          "0F841B010000"
+        ],
+        [
+          98871044,
+          "488B1E"
+        ],
+        [
+          98871047,
+          "488BCD"
+        ],
+        [
+          98871050,
+          "F30F114054"
+        ]
+      ]
+    },
+    {
+      "name": "tmpObjectPath",
+      "type": "string",
+      "wire": "pooledStringIndex",
+      "wireBytes": 4,
+      "fieldOffset": 40,
+      "sourceCall": [
+        98871055,
+        "E8AC863AFF"
+      ],
+      "sourceTargetRva": 85929408,
+      "returnTransfer": [
+        [
+          98871060,
+          "4885DB"
+        ],
+        [
+          98871063,
+          "0F8402010000"
+        ],
+        [
+          98871069,
+          "4C8B4310"
+        ],
+        [
+          98871073,
+          "4D85C0"
+        ],
+        [
+          98871076,
+          "0F84F5000000"
+        ],
+        [
+          98871082,
+          "833DFF3C8D0B00"
+        ],
+        [
+          98871089,
+          "49894028"
+        ]
+      ]
+    },
+    {
+      "name": "tmpObjectPathHash",
+      "type": "long",
+      "wire": "int64",
+      "wireBytes": 8,
+      "fieldOffset": 48,
+      "sourceCall": [
+        98871169,
+        "E85A7E3AFF"
+      ],
+      "sourceTargetRva": 85927392,
+      "returnTransfer": [
+        [
+          98871174,
+          "4885DB"
+        ],
+        [
+          98871177,
+          "0F8490000000"
+        ],
+        [
+          98871183,
+          "488B4B10"
+        ],
+        [
+          98871187,
+          "4885C9"
+        ],
+        [
+          98871190,
+          "0F8483000000"
+        ],
+        [
+          98871196,
+          "48894130"
+        ]
+      ]
+    },
+    {
+      "name": "tmpObjectRegisterClothCollider",
+      "type": "bool",
+      "wire": "boolByte",
+      "wireBytes": 1,
+      "fieldOffset": 88,
+      "sourceCall": [
+        98871206,
+        "E8255619FF"
+      ],
+      "sourceTargetRva": 83754448,
+      "returnTransfer": [
+        [
+          98871211,
+          "4885DB"
+        ],
+        [
+          98871214,
+          "746F"
+        ],
+        [
+          98871216,
+          "488B4B10"
+        ],
+        [
+          98871220,
+          "4885C9"
+        ],
+        [
+          98871223,
+          "7466"
+        ],
+        [
+          98871225,
+          "884158"
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 98866256,
+      "endRva": 98866298,
+      "sha256": "1831FC094B171AE8A7DDC7155C32AC68BBE7E6E9A1A395D50A8CAC604DCD2A65"
+    },
+    {
+      "startRva": 98866298,
+      "endRva": 98869343,
+      "sha256": "F328070E07259C6A4D5D754AA8A6675F23BDAB62B18D1079A5D7A964C6E4971A"
+    },
+    {
+      "startRva": 98869343,
+      "endRva": 98869529,
+      "sha256": "7D75D742FC0FA7B401D71474DBEFE29FF83BEE969D4C7EEF8BB14C78A5401592"
+    },
+    {
+      "startRva": 98869529,
+      "endRva": 98869959,
+      "sha256": "4F7A066A3397C434CFDD4E303D65E46E0E6B7CB230B18C0EF39387B51B6A0100"
+    },
+    {
+      "startRva": 98869959,
+      "endRva": 98871576,
+      "sha256": "5E67F1C776BD4648CA68D10080009C893ED4FA55C6F60105128CDBBDD69ED471"
+    }
+  ],
+  "embeddedTables": [
+    {
+      "startRva": 98871380,
+      "endRva": 98871408,
+      "sha256": "60546F87B7AE86A25644CDE32490373BE01C9132420CA3AE2C6CAC612D85BCA1",
+      "dispatchRva": 98866369,
+      "targets": [
+        98866371,
+        98866385,
+        98866397,
+        98866410,
+        98866422,
+        98866397,
+        98866608
+      ]
+    },
+    {
+      "startRva": 98871408,
+      "endRva": 98871436,
+      "sha256": "F03146DE062DCB1CE3C070273DEE9DA300B39290BFA5C33F39C16AEF454D23A5",
+      "dispatchRva": 98866729,
+      "targets": [
+        98866731,
+        98866748,
+        98866763,
+        98866858,
+        98866873,
+        98866763,
+        98867060
+      ]
+    },
+    {
+      "startRva": 98871436,
+      "endRva": 98871464,
+      "sha256": "99D53B113787DEF9F820AB59A75ED45729D256F478337B0D9E3E8CC044FF02B9",
+      "dispatchRva": 98867350,
+      "targets": [
+        98867352,
+        98867369,
+        98867384,
+        98867479,
+        98867494,
+        98867384,
+        98867683
+      ]
+    },
+    {
+      "startRva": 98871464,
+      "endRva": 98871492,
+      "sha256": "AA2E549B53D5E06AE5F60A116AB52137B68E812F00DD293742FFC266C2C9C371",
+      "dispatchRva": 98867973,
+      "targets": [
+        98867975,
+        98867992,
+        98868007,
+        98868102,
+        98868117,
+        98868007,
+        98868307
+      ]
+    },
+    {
+      "startRva": 98871492,
+      "endRva": 98871520,
+      "sha256": "66A13C318CAB514A1825B102826E7803FFF9287BCB6459CAA142C32AE7B5777D",
+      "dispatchRva": 98868597,
+      "targets": [
+        98868599,
+        98868616,
+        98868631,
+        98868726,
+        98868741,
+        98868631,
+        98868931
+      ]
+    },
+    {
+      "startRva": 98871520,
+      "endRva": 98871548,
+      "sha256": "59EE366C286B32AB8DF9E8FED55504937518603CDF86F8D51FBCA2AC138D7AC6",
+      "dispatchRva": 98869217,
+      "targets": [
+        98869219,
+        98869233,
+        98869245,
+        98869529,
+        98869544,
+        98869245,
+        98869731
+      ]
+    },
+    {
+      "startRva": 98871548,
+      "endRva": 98871576,
+      "sha256": "D6C503407D8FE1CB285FBB24BF2FFF9F3BBA368F3A1E596061F9EB15C0236898",
+      "dispatchRva": 98869527,
+      "targets": [
+        98869959,
+        98869973,
+        98869985,
+        98869997,
+        98870009,
+        98869985,
+        98870192
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "Current ordered actor pooled/scalar sources, unchanged typed destination stores and complete owned code/table/source-origin checks.",
+    "conditional": "Selected initialized reader/contexts, sufficient contiguous input, valid nonnull typed holders, stable disjoint storage and ordinary ABI-preserving normal helper returns. Pooled indices use the selected export StringPool.",
+    "unresolved": [
+      "cold refill and error helper effects",
+      "default formatter/provider selection",
+      "enclosing action/list/configuration composition",
+      "runtime actor creation and effective values"
+    ]
+  }
+}

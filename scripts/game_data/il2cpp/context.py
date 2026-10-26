@@ -33,6 +33,7 @@ from __future__ import annotations
 import struct
 from dataclasses import asdict, dataclass
 from typing import Callable
+from types import MappingProxyType
 
 
 class ContextError(ValueError):
@@ -82,7 +83,11 @@ class GenericInstantiationTable:
             raise ContextError(source, table_va, "pointer count in [0, 1000000]", count)
         if type(max_arguments) is not int or not 0 <= max_arguments <= 1_000_000:
             raise ContextError(source, table_va, "bounded nonnegative argument limit", max_arguments)
-        self.pointer_bytes = self._read(table_va, count * 8) if count else b""
+        self.pointer_bytes = bytes(self._read(table_va, count * 8)) if count else b""
+        positions = {}
+        for index, (pointer,) in enumerate(struct.iter_unpack('<Q', self.pointer_bytes)):
+            positions.setdefault(pointer, []).append(index)
+        self._pointer_indices = MappingProxyType({pointer: tuple(indices) for pointer, indices in positions.items()})
 
     def _read(self, va: int, size: int) -> bytes:
         if type(va) is not int or not 0 < va < (1 << 64) or size < 0 or size > (1 << 64) - va:
@@ -121,8 +126,7 @@ class GenericInstantiationTable:
         """Join a carrier's raw pointer without silently choosing an alias."""
         if type(pointer) is not int or not 0 < pointer < 1 << 64:
             raise ContextError(self.source, self.table_va, 'non-null instantiation pointer', pointer)
-        candidates = [i for i, (value,) in enumerate(struct.iter_unpack('<Q', self.pointer_bytes))
-                      if value == pointer]
+        candidates = list(self._pointer_indices.get(pointer, ()))
         if len(candidates) != 1:
             raise ContextError(self.source, pointer, 'one registered instantiation identity',
                                {'candidateIndices': candidates})

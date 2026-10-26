@@ -5,6 +5,7 @@ This is the ``base`` stage of the Gameplay page command. Run from the repo root:
     python -m scripts.webui.gameplay.build_gameplay --stage base --languages CN EN JP --default-language CN
 """
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, localize
 
 import argparse
 import ast
@@ -3885,8 +3886,9 @@ def build_language_payload(
     skill_damage_context: dict[str, Any] | None = None,
     attribute_formula: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    fallback_i18n = load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {})
-    i18n = fallback_i18n if language == fallback_language else load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n)
+    hotfixes = load_merged_table(table_roots, HOTFIX_TABLE, {})
+    fallback_i18n = localize(load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {}), hotfixes, fallback_language)
+    i18n = fallback_i18n if language == fallback_language else localize(load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n), hotfixes, language)
     table_names = [
         "GlobalConst.json",
         "ItemTable.json",

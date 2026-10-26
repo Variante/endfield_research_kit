@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.mission-trace-capture-recipe.v8",
+  "schema": "endfield.mission-trace-capture-recipe.v10",
   "status": "reviewed",
   "hooks": [
     {
@@ -498,6 +498,10 @@
         {
           "name": "target",
           "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+EventContext"
         }
       ],
       "fields": [
@@ -603,6 +607,10 @@
         {
           "name": "reason",
           "type": "Beyond.Gameplay.Core.Buff+FinishReason"
+        },
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.Core.AbilitySystem+EventContext"
         }
       ],
       "fields": [

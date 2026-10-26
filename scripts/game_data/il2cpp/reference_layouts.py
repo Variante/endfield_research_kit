@@ -50,6 +50,12 @@ class NativeReferenceContext:
         if not pointer: raise ValueError("reference layout: missing declared native type")
         return pointer
 
+    def require_ordinary_kind(self, index: int, kind: int) -> None:
+        """Reject byrefs/modifiers even when their displayed type name matches."""
+        raw = self.image.pe.bytes_at_va(self.type_pointer(index), 16)
+        if len(raw) != 16 or raw[10] != kind or raw[11] & 0x7f:
+            raise ValueError(f"reference layout: ordinary native kind expected={kind:#x} actual={raw.hex()}")
+
     def type_name(self, index: int) -> str:
         return runtime_type_name(self.image.pe, self.image.metadata, self.type_pointer(index))
 

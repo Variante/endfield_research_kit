@@ -29,6 +29,7 @@ from scripts.game_data.il2cpp.context import (
 from scripts.game_data.il2cpp.native_image import open_native_image, NativeIdentityMismatch, native_validation_failure
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
+from scripts.game_data.levelscript_source_receipts import replay_sources
 
 
 SCHEMA = "endfield.levelscript-disable-hud-fade-native-contract.v1"
@@ -299,49 +300,9 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None,
 ) -> int:
-    summary = json.loads(summary_path.read_bytes())
-    output = summary.get("provenance", {}).get("outputFiles", {})
-    if (
-        summary.get("status") != "complete"
-        or output.get("length") != ledger_path.stat().st_size
-        or output.get("sha256", "").upper() != sha256_file(ledger_path).upper()
-    ):
-        raise ValueError(f"{LABEL}.source:summary-ledger-join")
-    ledger: dict[str, dict[str, Any]] = {}
-    with gzip.open(ledger_path, "rt", encoding="utf8") as stream:
-        for line in stream:
-            row = json.loads(line)
-            if row.get("family") == "LevelScriptData":
-                ledger[row["exportRelativePath"]] = row
-    if not ledger:
-        raise ValueError(f"{LABEL}.source:missing-LevelScript-ledger")
-    from scripts.game_data.codecs.levelscript.action_map import _Cursor
-
-    route = contract["route"]
-    prefix = bytes((route["tag"], route["serializedMemberCount"]))
-    for path, digest, start, end, span_digest in contract["sourceReceipts"]:
-        data = (export_root / path).read_bytes()
-        actual_digest = hashlib.sha256(data).hexdigest().upper()
-        if actual_digest != digest.upper():
-            raise ValueError(f"{LABEL}.source:source-hash={path}:expected={digest}:actual={actual_digest}")
-        if (ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
-                or ledger.get(path, {}).get("length") != len(data)):
-            raise ValueError(f"{LABEL}.source:ledger-row={path}:sha256={digest}:length={len(data)}")
-        if not 0 <= start < end <= len(data) or data[start:start+len(prefix)] != prefix:
-            raise ValueError(f"{LABEL}.source:union-prefix={path}@{start}:expected={prefix.hex().upper()}")
-        actual_span_digest = hashlib.sha256(data[start:end]).hexdigest().upper()
-        if actual_span_digest != span_digest.upper():
-            raise ValueError(f"{LABEL}.source:span-hash={path}@{start}:expected={span_digest}:actual={actual_span_digest}")
-        cursor = _Cursor(data, start + len(prefix))
-        for name, kind in route["fields"]:
-            try:
-                cursor.value(kind, "disableHudFade." + name)
-            except (ValueError, IndexError) as exc:
-                raise ValueError(f"{LABEL}.source:field={path}@{cursor.offset}:{name}:{exc}") from exc
-        if cursor.offset != end:
-            raise ValueError(f"{LABEL}.source:end-offset={path}")
-    return len(contract["sourceReceipts"])
+    return replay_sources(contract,export_root,ledger_path,summary_path,game_root=game_root)
 
 
 def validate_disable_hud_fade_native_contract(
@@ -372,7 +333,7 @@ def validate_disable_hud_fade_native_contract(
         if export_root is not None:
             if ledger_path is None or summary_path is None:
                 raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
-            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path), game_root=game_root)
         route = contract["route"]
         return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
                 "route": {"family": route["family"], "tag": route["tag"],

@@ -31,6 +31,8 @@ automatically publish Updates or advance a comparison baseline.
 5. Compare linked authored Story, Gameplay and Map source records with the
    same projection for both exports and publish their page sidecars
    ([`page_records`](../../scripts/webui/updates/page_records.py)).
+   Reuse completed file comparisons from that same scan; missing or capped
+   entries and oversized files retain the direct-reader fallback.
 6. Publish the feed; scanner cache and history remain under
    `.game-data-tracker/`.
 
@@ -47,6 +49,17 @@ actually diffed, and an unchanged decoded view of a changed file is reported as
 a change outside the reader's coverage, never as no change. Changing the
 routing or a reader's coverage changes cached text, so refresh the
 previous-export baseline afterwards.
+
+Decoded equality requires readable views on both sides. An unavailable old
+view is a missing-reader boundary, and old partial coverage remains partial
+even when the new side closes through EOF.
+
+Each export supplies its own StringPool to the current LevelData and named
+LevelScript readers. Missing pools do not select an inline fallback. Whole-file
+coverage requires the reader's exact named schema and physical EOF; endpoint
+ranges around an opaque middle remain partial.
+UTF-8 validity alone does not make a payload text: binary control bytes still
+route through its reader or remain opaque.
 
 **Relocation joins are fail-closed.** Unity exports whose generated
 `_p<PathID>` suffix differs pair only one-to-one by stable kind, extension, and

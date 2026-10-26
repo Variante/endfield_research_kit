@@ -72,7 +72,7 @@ def validate_primitive_source(image: Any, source: dict, member: dict, *, fail: C
         expected = [b'\x48\x89\x5c\x24\x08', b'\x57', b'\x48\x83\xec\x30',
             b'\x83\x79' + bytes((remaining, 4)), b'\x48\x8b\xd9', b'\x0f\x29\x74\x24\x20',
             _branch(actual[6], condition=12, fail=fail), b'\x48\x8b\x43' + bytes((pointer,)), b'\xf3\x0f\x10\x30',
-            b'\x8b\x7b' + bytes((remaining,)), b'\x83\xef\x04', _branch(actual[11], condition=8, fail=fail),
+            b'\x8b\x7b' + bytes((remaining,)), b'\x83\xc7\xfc', _branch(actual[11], condition=8, fail=fail),
             b'\x48\x83\x43' + bytes((pointer, 4)), b'\x83\x43' + bytes((advanced, 4)),
             b'\x83\x43' + bytes((consumed, 4)), b'\x89\x7b' + bytes((remaining,)), b'\x48\x8b\x5c\x24\x40',
             b'\x0f\x28\xc6', b'\x0f\x28\x74\x24\x20', b'\x48\x83\xc4\x30', b'\x5f', b'\xc3']

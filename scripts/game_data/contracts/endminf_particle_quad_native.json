@@ -1,0 +1,268 @@
+{
+  "schema": "endfield.endminf-particle-quad-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "unityPlayerSha256": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
+  },
+  "functions": [
+    {
+      "entryRva": 2517552,
+      "ranges": [
+        {
+          "rva": 2517552,
+          "bytes": 17,
+          "sha256": "d193b4a0597c5f89ab7946b938cb75659b7e11b0eaf199b10d5ecfbb6ed74cd0"
+        },
+        {
+          "rva": 2517569,
+          "bytes": 657,
+          "sha256": "8ea4947f733d3537e6eaba780d93f65160888cb18c355bc5a73102ff5ed4b00c"
+        },
+        {
+          "rva": 2518226,
+          "bytes": 1,
+          "sha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e"
+        },
+        {
+          "rva": 2518227,
+          "bytes": 155,
+          "sha256": "500b602cb65b92b697d791634aa40bbf3230d43095c9d3d5834b3fdb9e63317a"
+        },
+        {
+          "rva": 16077708,
+          "bytes": 205,
+          "sha256": "afd9ce43daecf464e3c8cbfea3a3dec9c6f25833a4214dbc502e3695d5df32b2"
+        }
+      ],
+      "role": "getter",
+      "kind": "unwindFamily"
+    },
+    {
+      "entryRva": 837792,
+      "ranges": [
+        {
+          "rva": 837792,
+          "bytes": 387,
+          "sha256": "a94222f999cb1401255e98b3d7c54da252aa062c04b87fb8f7016b5ea299eacb"
+        },
+        {
+          "rva": 838179,
+          "bytes": 440,
+          "sha256": "70b198d21961242504d0b2c19b4581b909b99b0db7cab360712c6eea501ad382"
+        },
+        {
+          "rva": 838619,
+          "bytes": 25,
+          "sha256": "c736fadab7c5ba22a40bb4ac20cd278a0484b30676407aacefcbfe8569bba8cb"
+        },
+        {
+          "rva": 838644,
+          "bytes": 17,
+          "sha256": "0818d32607e7c59815f82e252b212d005d9f938aea5058909a00182ea74daf49"
+        }
+      ],
+      "role": "unpack",
+      "kind": "unwindFamily"
+    }
+  ],
+  "stages": [
+    {
+      "role": "orientation",
+      "beginRva": 867853,
+      "endRva": 868174
+    },
+    {
+      "role": "particle",
+      "beginRva": 868782,
+      "endRva": 869261
+    },
+    {
+      "role": "clamp",
+      "beginRva": 869316,
+      "endRva": 869444
+    },
+    {
+      "role": "headThreshold",
+      "beginRva": 868350,
+      "endRva": 868359
+    },
+    {
+      "role": "half",
+      "beginRva": 868366,
+      "endRva": 868375
+    },
+    {
+      "role": "ageThreshold",
+      "beginRva": 868379,
+      "endRva": 868388
+    },
+    {
+      "role": "quad",
+      "beginRva": 864928,
+      "endRva": 866331
+    }
+  ],
+  "fileConstants": [
+    {
+      "instructionRva": 868350,
+      "rva": 28694416,
+      "bytes": 16,
+      "hex": "bd378635bd378635bd378635bd378635"
+    },
+    {
+      "instructionRva": 868366,
+      "rva": 28692752,
+      "bytes": 16,
+      "hex": "0000003f0000003f0000003f0000003f"
+    },
+    {
+      "instructionRva": 868379,
+      "rva": 28693264,
+      "bytes": 16,
+      "hex": "0000c8420000c8420000c8420000c842"
+    },
+    {
+      "instructionRva": 865061,
+      "rva": 28692944,
+      "bytes": 16,
+      "hex": "6042a20d6042a20d6042a20d6042a20d"
+    },
+    {
+      "instructionRva": 865399,
+      "rva": 28692736,
+      "bytes": 16,
+      "hex": "fdff7f3ffdff7f3ffdff7f3ffdff7f3f"
+    },
+    {
+      "instructionRva": 865546,
+      "rva": 28692704,
+      "bytes": 16,
+      "hex": "ffff7f7fffff7f7fffff7f7fffff7f7f"
+    },
+    {
+      "instructionRva": 865559,
+      "rva": 28692720,
+      "bytes": 16,
+      "hex": "01004040010040400100404001004040"
+    },
+    {
+      "instructionRva": 865573,
+      "rva": 28692752,
+      "bytes": 16,
+      "hex": "0000003f0000003f0000003f0000003f"
+    }
+  ],
+  "bindings": {
+    "jobBytes": 2128,
+    "recordStride": 132,
+    "seedOffset": 100,
+    "startSizeOffset": 84,
+    "flagsOffset": 128,
+    "rawFlags": 1,
+    "jobParameterOffset": 16,
+    "jobLocalMatrixOffset": 144,
+    "jobScaleOffset": 304,
+    "jobVelocityScaleOffset": 1776,
+    "jobLengthScaleOffset": 1780,
+    "viewToWorldOffset": 80,
+    "worldToViewOffset": 16,
+    "settingsOffset": 1760,
+    "requiredZeroSettings": [
+      12,
+      16,
+      40,
+      44,
+      48,
+      68
+    ],
+    "requiredClearJobMask": 369098752,
+    "jobMaskOffset": 344,
+    "positionChannels": [
+      0,
+      32,
+      64
+    ],
+    "velocityChannels": [
+      96,
+      128,
+      160
+    ],
+    "animatedVelocityChannels": [
+      192,
+      224,
+      256
+    ],
+    "seedChannel": 896,
+    "ageChannel": 960,
+    "stackBaseOffset": 8192,
+    "quadStackOffset": 5000,
+    "scratchBytes": 4096,
+    "particlePositionOffset": 528,
+    "particleVelocityOffset": 384,
+    "sizeOffset": 224,
+    "ageOffset": 256,
+    "worldCenterOffset": 336,
+    "inverseOffset": 1840,
+    "viewToWorldScratchOffset": 624,
+    "composedAxesOffset": 1408,
+    "cameraVelocityOffset": 1552,
+    "pivotOffset": 160,
+    "velocityScaleOffset": 288,
+    "lengthScaleOffset": 272,
+    "outputOffset": 688,
+    "outputBytes": 192,
+    "headCorners": [
+      0,
+      3
+    ],
+    "tailCorners": [
+      1,
+      2
+    ],
+    "quadRegisters": {
+      "rcx": 336,
+      "rdx": 1408,
+      "r8": 384,
+      "r9": 1552
+    },
+    "quadStackArguments": [
+      1840,
+      160,
+      480,
+      288,
+      272,
+      944,
+      624,
+      2304,
+      1792,
+      1744,
+      688
+    ]
+  },
+  "sizeReads": {
+    "currentFlagOffset": 1970,
+    "threeAxesFlagOffset": 1972,
+    "startSizePointers": [
+      672,
+      704,
+      736
+    ],
+    "currentSizePointers": [
+      768,
+      800,
+      832
+    ],
+    "rotationZPointer": 544,
+    "selectedWidthAxis": 0,
+    "selectedLengthAxis": 1,
+    "rotationUsedBySelectedQuad": false
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native windows and complete getter/unpack unwind families, stage membership and file-backed operands.",
+    "direct": "Current-size selection uses the independent data flag; public StartSize copies the start arrays, not the evaluated current arrays. The non-freeform quad consumes width and length without a rotation operand.",
+    "conditional": "Public seed/start-size consistency and recorded age carriers allow a declared weighted-curve experiment. Generic double-precision Bezier inversion is not claimed to equal the engine evaluator or its baked representation.",
+    "unresolved": "Runtime current-size arrays, exact prepared job state, actual branch and calibration, complete vertex attributes and source simulation remain unobserved. No captured operands become renderer inputs."
+  }
+}

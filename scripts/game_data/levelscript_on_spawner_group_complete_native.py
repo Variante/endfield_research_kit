@@ -32,6 +32,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 from scripts.game_data.codecs.levelscript.action_map import _Cursor
+from scripts.game_data.levelscript_source_receipts import replay_sources
 
 
 SCHEMA = "endfield.levelscript-on-spawner-group-complete-native.v1"
@@ -325,63 +326,9 @@ def _validate_native(image: Any, contract: dict[str, Any]) -> None:
 
 def _validate_sources(
     contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+    *, game_root: Path | None = None,
 ) -> int:
-    summary = json.loads(summary_path.read_bytes())
-    output = summary.get("provenance", {}).get("outputFiles", {})
-    ledger_digest = sha256_file(ledger_path).upper()
-    if (
-        summary.get("status") != "complete"
-        or ledger_path.stat().st_size != output.get("length")
-        or ledger_digest != output.get("sha256", "").upper()
-    ):
-        raise ValueError(
-            f"{LABEL}.source:summary-ledger-join={summary_path}:"
-            f"expected=complete/{output.get('length')}/{output.get('sha256')},"
-            f"actual={summary.get('status')}/{ledger_path.stat().st_size}/{ledger_digest}"
-        )
-    ledger = {}
-    with gzip.open(ledger_path, "rt", encoding="utf-8") as stream:
-        for line in stream:
-            row = json.loads(line)
-            if row.get("family") == "LevelScriptData":
-                ledger[row["exportRelativePath"]] = row
-    count = 0
-    for route in contract["routes"]:
-        prefix = memorypack_union_header(route["tag"], route["serializedMemberCount"])
-        for path, digest, start, end, span_digest in route["sourceReceipts"]:
-            data = (export_root / path).read_bytes()
-            actual_digest = hashlib.sha256(data).hexdigest().upper()
-            if actual_digest != digest.upper():
-                raise ValueError(f"{LABEL}.source:source-sha256={path}:expected={digest}:actual={actual_digest}")
-            row = ledger.get(path, {})
-            if row.get("logicalSha256", "").upper() != digest.upper() or row.get("length") != len(data):
-                raise ValueError(
-                    f"{LABEL}.source:ledger-row={path}:expected={digest}/{len(data)},"
-                    f"actual={row.get('logicalSha256')}/{row.get('length')}"
-                )
-            if not 0 <= start < end <= len(data):
-                raise ValueError(f"{LABEL}.source:span-bounds={path}:start={start},end={end},length={len(data)}")
-            if data[start:start + len(prefix)] != prefix:
-                raise ValueError(
-                    f"{LABEL}.source:union-prefix={path}@{start}:"
-                    f"expected={prefix.hex().upper()},actual={data[start:start + len(prefix)].hex().upper()}"
-                )
-            actual_span_digest = hashlib.sha256(data[start:end]).hexdigest().upper()
-            if actual_span_digest != span_digest.upper():
-                raise ValueError(
-                    f"{LABEL}.source:span-sha256={path}@{start}:{end}:"
-                    f"expected={span_digest},actual={actual_span_digest}"
-                )
-            cursor = _Cursor(data, start + len(prefix))
-            for name, kind in route["fields"]:
-                try:
-                    cursor.value(kind, "onSpawnerGroupComplete." + name)
-                except (ValueError, IndexError) as error:
-                    raise ValueError(f"{LABEL}.source:field={path}@{cursor.offset}:{name}:{error}") from error
-            if cursor.offset != end:
-                raise ValueError(f"{LABEL}.source:cursor={path}@{start},end={cursor.offset},expected={end}")
-            count += 1
-    return count
+    return replay_sources(contract,export_root,ledger_path,summary_path,game_root=game_root)
 
 
 def validate_levelscript_on_spawner_group_complete_native_contract(
@@ -411,7 +358,7 @@ def validate_levelscript_on_spawner_group_complete_native_contract(
         if any(value is not None for value in (export_root, ledger_path, summary_path)):
             if not all(value is not None for value in (export_root, ledger_path, summary_path)):
                 raise ValueError(f"{LABEL}.source:incomplete-paths")
-            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+            count = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path), game_root=game_root)
         return {"status": "validated", "evidenceBoundary": "exact",
                 "routeCount": len(contract["routes"]), "routes": contract["routes"],
                 "sourceReceiptCount": count}

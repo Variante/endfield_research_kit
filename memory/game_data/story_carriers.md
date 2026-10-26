@@ -30,6 +30,14 @@ covers the carriers Story reads, not the whole LevelScript family.
 - Native evidence is locked to exact `GameAssembly.dll` and metadata hashes.
   Registration order and code addresses never imply Story order.
 
+Protocol-registry listener coverage uses complete typed action-map lists only.
+A refused map retains its source hash, failed gate and cursor and contributes no
+candidate records. Reported listener counts therefore establish no absence in
+unavailable maps. The independent native/protobuf audit can remain validated
+while that serialized coverage is partial. Story parallel-fanout authority
+requires the shared current registry schema, the named scheduler proof shape,
+and matching selected native inputs before and after reading its source files.
+
 CallServer's hash-shaped event name can repeat its own action UID. That is a
 local correlation label, not an additional Story node or a resolved server
 handler. Resolve the reviewed action envelope by type name through
@@ -133,16 +141,82 @@ classifications; parser, shape, and nonempty-index failures stop publication.
   opening-window miss does not prove it absent. The inlined
   `TaskCondition.InvokeOnIsCompleteChangeAction` escapes a hook on the named
   method (`scripts/game_data/mission_task_paths_native.py`).
-- `withinActiveArea` is hysteresis, proved from `_CalcWithinAreaHysteresis`:
+- Task hooks are named claims in `mission_task_paths.json`, re-proved against
+  the selected native pair with source and native bookends. Missing inputs,
+  failed claims or drift publish no hook rows. The SET_DONE handler is selected
+  by its exact packet parameter because its method name is overloaded. Declared
+  storage stays typed: `levelScriptPtr` and `taskKey` are value holders, not the
+  former flat scalar identities. The dialog task audit joins the current
+  method's symbol, token, metadata index and RVA to the independently proved
+  lifecycle row instead of keeping a token in Python. These identities and
+  listed claims do not establish execution or complete hook coverage.
+- Register provenance must follow control-flow edges. An early replacement
+  return can restore saved registers before a later original block that an
+  earlier branch reaches directly; linear origin scans then invent packet-field
+  aliases. Such a scan cannot prove identity forwarding or control predicates.
+- Protocol discovery uses `protobuf_schema.message_fields` to join wire-tag
+  literals to pooled members or auto-property backing fields, preserving the
+  actual member spelling. Message audits resolve offsets through the same join;
+  stable logical audit keys are not physical storage names. A storage-name suffix
+  alone is not message evidence.
+- The protocol event-token claim follows the current inline store instead of
+  requiring a called setter. `storesStackParameterInTypedFactoryField` binds
+  the closed factory MethodInfo, registered shared-reference entry, declared
+  return ABI, unchanged incoming stack string and exact packet field. This is
+  `conditional` on ordinary returning callees and stable, disjoint storage;
+  allocator internals and runtime message delivery remain unproved. Native
+  claim receipt reuse binds the complete reader inputs before and after reads.
+- The current quest-enable handler consumes both the enable flag and previous
+  state. Enabled stores the packet state; disabled stores `Disabled`. Lifecycle
+  dispatch uses that effective state and the runtime pause flag; `DisableQuest`
+  receives the opposite selected prior-state source. The matrix covers declared
+  enum values, not arbitrary wire integers or server selection. Its owning
+  protocol registry withholds publication while other required native gates fail.
+- The current original active-area rule is conditional:
   `!rangeSensitive || hit(enterShapes) || (prevWithin &&
   !IsNullOrEmpty(exitShapes) && hit(exitShapes))`. The outside list is a hold
-  zone, not an exclusion zone ("outside hit clears" was the previous build).
-  The inlined call site is tied to it `conditional`ly (`protocol_registry.py`).
+  zone, not an exclusion zone. The caller selects an anonymous optimized body.
+  The reviewed `levelscript_area_rule_native` contract authenticates its typed
+  caller, original named outer branches, complete paired geometry control/value
+  transfer, protected outer slots and registered Quaternion buffer effects.
+  The shared `il2cpp/scalar_buffer_effects.py` proof rejects pointer bits,
+  undeclared inputs and uninitialized locals reaching those outputs; both scalar
+  dispatch paths and the selected order-four rotation adapter are covered.
+  This establishes the same stored Boolean on initialized original paths with
+  finite Euler inputs, selected original icall caches, no active named override,
+  stable disjoint storage and ordinary nontrapping floating-point behavior.
+  Cold initialization, nonfinite/error paths, exception/resumption entries,
+  replacements and live execution remain outside that claim. The registry keeps
+  those premises and exclusions in its current projection; the proof supplies
+  no mission owner, execution observation or ordering edge.
 - Consumer meanings the Story builders cite are claims about named bodies
   proved on the installed build (`contracts/story_native_consumers.json`,
   `contracts/dialog_finish_native.json`), not pinned tokens. The current
-  DialogTreeIfNode, Timeline option-index (a wider current-or-previous gate)
-  and `Branch.Execute` order readings are in
+  Timeline option-index claim proves a wider current-or-previous gate. The
+  director getter now proves its typed root-to-director field return after the
+  false Unity null guard, with a null return on the true guard; IFix replacement
+  results and runtime execution remain separate. The If-node index now proves
+  the activated condition's typed Int32 field read through the saved comparison
+  and equality return; reference/byref ABI, owned control and frame restoration
+  are checked. Trunk playback and NPC selection now use typed ordinary-path
+  claims, including the selected object, getter and stored-index joins. Timeline
+  authenticates the selected binary hashes and displayed method identities
+  against that evaluation, then rechecks native and reader inputs before return.
+  The current Branch dispatch reserves its own ID only before a nonfinal item.
+  A checked normal scheduler fragment replaces the current cursor with the
+  action's next ID when its reservation is negative; otherwise it stores the
+  reserved ID and retains the next ID for the following path. These components
+  do not establish an automatic Branch default-next continuation after the
+  final child. Whole executor origins, push/pop paths and error exits still
+  need proof before changing the withheld sequence projection.
+  The current dialog-branch claim separately proves first-match selection:
+  a null condition selects its arm when reached; otherwise activation precedes
+  the typed True-result comparison. No matching arm returns ordinal zero.
+  The complete selector and SafeCount clone are checked with their declared
+  contexts, and Story marks the null arm as unconditional only when reached.
+  Action-sequence admission remains withheld: item dispatch, reservation and
+  index reset do not themselves prove scheduler resumption at ActionBase.nextId.
+  Their owning loader is
   [`story_native_consumers_native.py`](../../scripts/game_data/story_native_consumers_native.py).
 - A generated artifact made on one build is current only when its recorded
   native hashes equal the installed build's. The reverse-PPtr audit (Story
@@ -169,8 +243,8 @@ every file's content.
   complete, member names stay `direct`. Changed LevelConfig files close under
   `decode_level_config`. Both MissionRuntimeAsset main and meta sets pass their
   named schema readers (`scripts/game_data/schemas/mission_runtime_main.py`);
-  the main contract's `currentCorpus` header still identifies the older
-  reviewed baseline and is not a current-corpus gate.
+  the current-corpus gate authenticates both readers and the selected file set.
+  The schema contract carries no generated corpus receipt.
 - The source path chain is LevelConfig's signed `levelDataPaths` int64 -> the
   authenticated `StringPathHash.bin` bucket/path-offset pair -> active LevelData
   logical path. LevelData `levelScriptBriefDataDict` stores a `dataPath.hash`;
@@ -765,6 +839,14 @@ native semantics but cannot manufacture these missing chronological facts.
   unresolved. Entry observations from the typed Mission trace recipe show that
   the supplied finish ID can differ from the cached field at `_SendServer`;
   retain both instead of substituting the cache for the outgoing argument.
+  On the current ordinary carrier/code-absent path, `FinishDialog` stores its
+  incoming finish ID and finish type directly before tail-exiting with the
+  original dialog string and stored skip byte. A `SetFinishId` hook alone
+  cannot observe that inlined write. `CheckTalkOptionFinish.Check` likewise
+  reads the player's cinematic history through the original getter field;
+  its typed lookup, signed operand, list-membership and result paths have
+  separate current body proofs. These are conditional source transfers,
+  without replacement, live-history or server-success claims.
   Sends have been observed in both `Exiting` and `Exited` states through
   different callers, which does not by itself identify their branch predicate.
   Dialogue wire identities have a separate explicit join: `DataManager` owns
@@ -891,6 +973,9 @@ native semantics but cannot manufacture these missing chronological facts.
   Its objective-kind argument is not a condition-map key; it does not expose
   unchanged map items or uniquely identify the source condition.
   Neither task IDs nor temporal proximity supply Mission quest ownership.
+  Registry packet fields use the current PascalCase C# property names,
+  joined to their field-number constants and backing storage. Mission Pipeline
+  checks those names exactly; older camelCase spellings are not aliases.
 
 The reusable entry/field declarations are in
 [`mission_trace_capture.json`](../../scripts/game_data/contracts/mission_trace_capture.json).
@@ -969,12 +1054,16 @@ VFS lookup). This is **conditional** name resolution: gender, iFix state,
 activation, playback, mission ownership and order are not proved. The
 per-source join is `reports/story/recovery/current_levelscript_fmv_video_join.json`.
 
-Check that contract's selected native inputs before using the route. The
-current candidate direct-call and gender-prefix literal checks do not establish
-the complete route; inlining or helper paths require new owned-body proofs,
-not replacement hashes. The legacy inline-string source receipt also cannot
-authenticate the pooled-string build. Current gender selection, fallback and
-source-to-video admission remain withheld until both sides are re-proved.
+Check that contract's selected native inputs before using the route. Current
+component proofs recover the pooled inherited prefix and typed movie Param
+read, plus the unpatched gender-prefix selection, missing-variant fallback and
+subpath-to-VFS call routing. The subpath helper receives a
+`Beyond.StringUtils.ZFormat<string>` context; its wrapper forwards through the
+reciprocal `ZString.Format<T>` generic slot. Do not interpret the original
+context as a direct Format MethodInfo or infer an anonymous tail's behavior
+from it. Complete source ownership, formatting and remaining consumer joins
+still gate source-to-video admission; the old inline-string receipt cannot
+authenticate this build. Runtime gender and patch selection remain unobserved.
 
 ## Spatial carriers
 
@@ -1014,6 +1103,13 @@ Numerically equal ids in unrelated domains are different identities:
   target) is accepted only at 0 (`npc_proxy_tracking_fields_are_exact` in
   `scripts/webui/story/source_gap/data.py`); any other value or new field fails
   closed until reviewed.
+  The external `activeCondIndex` and stored `m_activeCondIndex` also have
+  distinct meanings: the selected original `ChangeActiveCondition` path stores
+  minus one for negative inputs, otherwise the incoming index minus one.
+  `get_activeCondIndex` returns that stored ordinal, and the original interaction
+  path selects `exDatas[m_activeCondIndex].dialogId` after its count and
+  nonnegative bounds checks. Recover the conversion, getter and selected list
+  output together; row indexing supplies neither mission ownership nor chronology.
 - current-script slot actions resolve through the pinned
   [`entityptr_script_slot_native.py`](../../scripts/game_data/entityptr_script_slot_native.py)
   contract: the lookup is keyed by the current `LevelScriptRuntime` script id

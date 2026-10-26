@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from pathlib import Path
 
 from scripts.game_data.memorypack.core import memorypack_union_header
 
@@ -30,7 +31,8 @@ _OWN_FIELDS = [
 
 
 def decode_on_entity_cast_skill_header(
-    data: bytes, offset: int, route: dict[str, Any],
+    data: bytes, offset: int, route: dict[str, Any], *,
+    game_root: Path | None = None, strings: Any = None,
 ) -> tuple[dict[str, Any], int]:
     """Read one selected header from the native route's exact member order."""
     fields = route.get("fields") or []
@@ -48,13 +50,12 @@ def decode_on_entity_cast_skill_header(
     header = memorypack_union_header(route["tag"], route["serializedMemberCount"])
     if offset < 0 or data[offset:offset + len(header)] != header:
         raise ActionMapCodecError(f"onEntityCastSkillHeader:invalid-header,offset={offset}")
-    cursor = _Cursor(data, offset + len(header))
+    cursor = _Cursor(data, offset + len(header), route=route, game_root=game_root, strings=strings)
     values: dict[str, Any] = {}
     spans: dict[str, list[int]] = {}
     for name, kind in fields:
         start = cursor.offset
-        read_kind = "Param<int>" if kind == "Param<SkillTypeMask>" else kind
-        values[name] = cursor.value(read_kind, f"onEntityCastSkillHeader.{name}")
+        values[name] = cursor.value(kind, f"onEntityCastSkillHeader.{name}")
         spans[name] = [start, cursor.offset]
     return {
         "sourceOffset": offset,

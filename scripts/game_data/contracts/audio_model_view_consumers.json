@@ -1,0 +1,27 @@
+{
+  "schema": "endfield.audio-native-consumer-claims.v1",
+  "status": "reviewed",
+  "methods": {
+    "modelViewPositioned.Execute": {
+      "type": "Beyond.Gameplay.Core.ModelViewStateController.AudioPositionBehavior",
+      "method": "Execute",
+      "contract": "The selected original body contains direct calls to the named state/custom-state, model-context object, transform, position and positioned-event request interfaces. These calls occur on different guarded paths; their presence proves no path feasibility, argument binding, ownership or execution.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Actions.GameAction.TrySwitchAudioState",
+            "Beyond.Gameplay.Actions.GameAction.TrySwitchAudioCustomState",
+            "Beyond.Gameplay.Core.ModelViewStateController.ModelAnimatorContext.TryGetGameObject",
+            "UnityEngine.GameObject.get_transform",
+            "UnityEngine.Transform.get_position",
+            "Beyond.Gameplay.Audio.AudioManager.PlaySoundAtPosition"
+          ]
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Named current consumer call interfaces only.",
+    "unresolved": "Argument/return binding, branch conditions, object/audio ownership, callback selection and playback execution. The former Entity.get_AudioId claims are not retained."
+  }
+}

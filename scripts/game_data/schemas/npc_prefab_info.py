@@ -5,13 +5,11 @@ the current ``NPCPrefabInfo`` and nested wrapper shapes, validates every value,
 and rejects extra, reordered, or unsupported fields instead of treating a
 successful generic JSON parse as a schema claim.
 
-The current object has 42 fields; older rows without
-``correspondingCharId`` (41 fields) are admitted explicitly. Battle shape
-and vectors, accessories, born effects, water interaction, confront/battle
-tags, and every scalar and list type are validated exactly. The battle
-skill-blackboard (``SkillBBData``) list is empty in the current corpus and
-fails closed when populated; ``idleBreakTags`` rows are validated as
-one-field ``tagId`` objects. The PrefabInfo manifest and the
+The current corpus contains explicit compact, common and VFX-bearing root
+variants. Battle shapes, vectors, accessories, born effects, water interaction,
+animation tags, and scalar/list types are validated exactly. Skill-blackboard
+population remains unsupported. Tags carry an integer ID and optionally a
+preceding string name. The PrefabInfo manifest and the
 Montage hash map are separate catalogs in ``schemas.npc_catalog``. Stored
 configuration only; it does not prove which prefab a runtime NPC loads.
 """
@@ -44,6 +42,17 @@ ROOT_FIELDS = (
     "blurPriority", "confrontAnims", "battleAnims", "idleBreakTags",
 )
 
+COLLISION_FIELDS = ROOT_FIELDS[ROOT_FIELDS.index("enableMainCharCollisionDetect"):ROOT_FIELDS.index("blurPriority")]
+COMPACT_FIELDS = tuple(field for field in ROOT_FIELDS if field not in COLLISION_FIELDS)
+EXTENDED_FIELDS = tuple(field for field in ROOT_FIELDS if field != "correspondingCharId")
+EXTENDED_FIELDS = tuple(field for name in EXTENDED_FIELDS for field in
+                       ((name,"vfxAssets") if name == "accessories" else
+                        (name,"bornEffectsFollowNpcScale") if name == "bornEffectInfos" else (name,)))
+ROOT_SHAPES = (ROOT_FIELDS, tuple(field for field in ROOT_FIELDS if field != "correspondingCharId"),
+               EXTENDED_FIELDS, COMPACT_FIELDS,
+               tuple(field for field in COMPACT_FIELDS if field != "disableBlink"),
+               tuple(field for field in COMPACT_FIELDS if field not in ("disableBlink","gender")))
+
 BATTLE_DATA_FIELDS = ("battleShapeData", "activeSkillId", "passiveSkillId", "blackboard")
 BATTLE_SHAPE_FIELDS = (
     "_shape", "_rotationOffset", "_useExtentKey", "_extent",
@@ -57,7 +66,7 @@ BORN_EFFECT_FIELDS = ("effectKey", "npcEffectType", "mountPoint")
 WATER_FIELDS = ("effectKey", "rippleSize", "waterDepth")
 ANIM_FIELDS = ("confrontAnim", "overrideConfrontRot", "needConfrontRot")
 BATTLE_ANIM_FIELDS = ("battleAnim", "overrideBattleRot", "needBattleRot")
-TAG_FIELDS = ("tagId",)
+TAG_FIELDS = ("tagName", "tagId")
 
 
 def is_npc_prefab_info_path(relative: str) -> bool:
@@ -117,7 +126,8 @@ def _vector3(value: Any, path: str) -> None:
 
 
 def _tag(value: Any, path: str) -> None:
-    row = _object(value, TAG_FIELDS, path)
+    row = _object(value, TAG_FIELDS, path, optional="tagName")
+    if "tagName" in row:_typed(row["tagName"],str,path+".tagName")
     _typed(row["tagId"], int, path + ".tagId")
 
 
@@ -135,24 +145,25 @@ def decode_npc_prefab_info(data: bytes, *, source: str = "<bytes>") -> dict[str,
         root = json.loads(data.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise NpcPrefabInfoDecodeError(f"{source}: invalid UTF-8 JSON: {exc}") from exc
-    root = _object(root, ROOT_FIELDS, source, optional="correspondingCharId")
+    if not isinstance(root,dict) or tuple(root) not in ROOT_SHAPES:
+        _fail(source+".fields",ROOT_SHAPES,list(root) if isinstance(root,dict) else type(root).__name__)
 
     string_fields = (
         "avatarTempletName", "avatarMeshName", "cpuAnimationTempletName",
         "abilityTempletName", "camp", "career", "id",
         "facialMorphAvatarName", "earMorphAvatarName", "aiCfg",
-        "mainCharCollisionEffectKey",
+        "mainCharCollisionEffectKey", "vfxAssets",
     )
     for field in string_fields:
-        _typed(root[field], str, f"{source}.{field}")
+        if field in root:_typed(root[field], str, f"{source}.{field}")
     if "correspondingCharId" in root:
         _typed(root["correspondingCharId"], str, source + ".correspondingCharId")
     for field in ("sizeType", "templateType", "gender", "lodNum", "mainCharCollisionAction", "mainCharCollisionEffectMountPoint", "blurPriority"):
-        _typed(root[field], int, f"{source}.{field}")
-    for field in ("useHighResShadow", "hasCloth", "needBattle", "lookAt", "disableBlink", "enableBlurDetect", "enableMainCharCollisionDetect"):
-        _typed(root[field], bool, f"{source}.{field}")
+        if field in root:_typed(root[field], int, f"{source}.{field}")
+    for field in ("useHighResShadow", "hasCloth", "needBattle", "lookAt", "disableBlink", "enableBlurDetect", "enableMainCharCollisionDetect", "bornEffectsFollowNpcScale"):
+        if field in root:_typed(root[field], bool, f"{source}.{field}")
     for field in ("scale", "mainCharCollisionEnterDistance", "mainCharCollisionLeaveDistance", "mainCharCollisionReenterCd"):
-        _typed(root[field], float, f"{source}.{field}")
+        if field in root:_typed(root[field], float, f"{source}.{field}")
     for field in ("partNameIdList", "renders", "bornTag", "npcGamePlayDataList"):
         _strings(root[field], f"{source}.{field}")
     _integers(root["materialCodes"], source + ".materialCodes")

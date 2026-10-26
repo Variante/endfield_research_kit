@@ -40,6 +40,7 @@ from typing import Any
 
 from scripts.game_data.codecs.levelscript import active_shapes as levelscript_active_shapes
 from scripts.game_data.codecs.levelscript import action_map as levelscript_action_map
+from scripts.game_data.codecs.levelscript.framing_common import bounded_diagnostic_rows
 from scripts.game_data.codecs.levelscript import boolean_getters as levelscript_boolean_getters
 from scripts.game_data.codecs.levelscript import call_server as levelscript_call_server
 from scripts.game_data.codecs.levelscript import compact_property_gate as levelscript_property_gate
@@ -102,10 +103,11 @@ from scripts.game_data.codecs.levelscript.record_hints import (  # noqa: F401
     TRIGGER_VOLUME_RECORD_KEYS,
 )
 from scripts.game_data.codecs.levelscript.uid_records import (  # noqa: F401
-    LEVELSCRIPT_HEX_UID_RE,
     _extract_levelscript_tagged_ascii_strings,
     _extract_levelscript_plain_ascii_strings,
-    _decode_levelscript_uid_record,
+    LevelScriptUidRecords,
+    frame_uid_record_lists,
+    LevelScriptUidDecodeError,
     extract_levelscript_uid_records,
 )
 from scripts.game_data.codecs.levelscript.condition_params import (  # noqa: F401
@@ -185,23 +187,7 @@ from scripts.game_data.codecs.levelscript.anonymous_bodies import (  # noqa: F40
     _read_nullable_levelscript_param,
     _read_levelscript_node_envelope,
 )
-from scripts.game_data.codecs.levelscript.current_action_sequence import (  # noqa: F401
-    _CURRENT_SEQUENTIAL_ACTION_MEMBERS,
-    _read_current_action_envelope,
-    _read_current_bool_param,
-    _read_current_i32_param,
-    _read_current_u8_param,
-    _decode_current_common_mask_blend_param,
-    _read_current_camera_transform_fields,
-    _decode_current_air_wall_ptr_param,
-    _decode_current_event_args_ptr_param,
-    _read_current_action_fields,
-    _CURRENT_SEQUENTIAL_GETTER_MEMBERS,
-    _read_current_getter,
-    _read_current_leader_enter_header,
-    _read_reviewed_map_node,
-    frame_levelscript_current_action_sequence_leader_enter,
-)
+from scripts.game_data.codecs.levelscript.current_action_sequence import frame_levelscript_current_action_sequence_leader_enter
 from scripts.game_data.codecs.levelscript.native_event_detail import (  # noqa: F401
     _decode_named_native_event_detail,
     _extract_tail_local_refs,
@@ -424,232 +410,13 @@ def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = 
     )
 
 
-def decode_levelscript_action_map_lists(
-    data: bytes,
-    records: list[dict[str, Any]] | None = None,
-) -> dict[str, Any]:
-    """Decode the three `ActionSerializedMap` list boundaries.
-
-    IL2CPP metadata names the runtime fields as `headerList`, `actionList`,
-    and `getterList`. GameAssembly body recovery dispatches the generated
-    wrapper setters as `actionList`, `getterList`, then `headerList`, and
-    MetadataRegistration resolves those fields to `List<ActionBase>`,
-    `List<PureGetter>`, and `List<ActionHeader>`. The compact LevelScript
-    blobs follow the same physical order: the first count is in the actionMap
-    header, and later counts sit immediately before the next UID record. Some
-    two-block blobs omit an empty getter block and put a final header-shaped
-    block after actionList; those are labeled as `headerList` by a conservative
-    content check.
-    """
-    header = decode_levelscript_action_map_header(data)
-    if not header:
-        return {}
-    out = dict(header)
-    out["serializedListOrder"] = list(ACTION_SERIALIZED_MAP_LIST_ORDER)
-    out["serializedListOrderEvidence"] = ACTION_SERIALIZED_MAP_ORDER_EVIDENCE
-    if header.get("status") != "present":
-        return _drop_empty(out)
-
-    first_count = header.get("recordCount")
-    if not isinstance(first_count, int) or first_count < 0:
-        return _drop_empty(out)
-
-    sorted_records = sorted(records or [], key=_record_start)
-    record_count = len(sorted_records)
-    lists: list[dict[str, Any]] = []
-
-    def append_list(
-        name: str,
-        *,
-        count: int | None,
-        marker_offset: int | None,
-        marker_value: int | None,
-        start_index: int,
-        source: str,
-        status: str = "present",
-    ) -> int:
-        end_index = start_index
-        if isinstance(count, int) and count >= 0:
-            end_index = min(record_count, start_index + count)
-        row: dict[str, Any] = {
-            "name": name,
-            "status": status,
-            "count": count,
-            "countOffset": _offset_hex(marker_offset),
-            "countMarker": marker_value,
-            "recordIndexStart": start_index,
-            "recordIndexEnd": end_index,
-            "decodedRecordCount": max(0, end_index - start_index),
-            "source": source,
-        }
-        if isinstance(count, int) and record_count and start_index + count > record_count:
-            row["status"] = "count-exceeds-decoded-records"
-        lists.append(_drop_empty(row))
-        return end_index
-
-    index = append_list(
-        "actionList",
-        count=first_count,
-        marker_offset=3,
-        marker_value=first_count,
-        start_index=0,
-        source="actionMapHeader",
-    )
-
-    # An empty ActionSerializedMap is encoded as three consecutive zero list
-    # counts immediately after the top-level ``02 03`` object marker.  This is
-    # an exact corpus-wide shape in the current original export: every blob
-    # whose actionList count is zero has zero getterList/headerList words at
-    # offsets 7 and 11 as well.  Decode those words directly.  Looking for the
-    # next UID boundary in this case can cross the action-map boundary and
-    # misclassify unrelated LevelScript tail objects as executable records.
-    if (
-        first_count == 0
-        and len(data) >= 15
-        and _u32(data, 7) == 0
-        and _u32(data, 11) == 0
-    ):
-        index = append_list(
-            "getterList",
-            count=0,
-            marker_offset=7,
-            marker_value=0,
-            start_index=index,
-            source="consecutiveEmptyListCount",
-        )
-        index = append_list(
-            "headerList",
-            count=0,
-            marker_offset=11,
-            marker_value=0,
-            start_index=index,
-            source="consecutiveEmptyListCount",
-        )
-        out["exactEmptyActionMap"] = True
-        complete_asset = (
-            len(data) >= 20
-            and data[15] == 1
-            and _u32(data, 16) == 0
-        )
-        out["completeEmptyActionMapAsset"] = complete_asset
-        out["emptyMapBoundaryEndOffset"] = _offset_hex(20 if complete_asset else 15)
-        if complete_asset:
-            out["paramBlackboard"] = {
-                "status": "present",
-                "memberCount": 1,
-                "valueCount": 0,
-                "startOffset": "0xf",
-                "endOffset": "0x14",
-            }
-        if record_count:
-            lists.append({
-                "name": "outsideSerializedActionMap",
-                "status": "residual-uid-records-after-exact-empty-map",
-                "count": record_count,
-                "recordIndexStart": 0,
-                "recordIndexEnd": record_count,
-            })
-        out["serializedLists"] = lists
-        out["listCounts"] = {
-            str(row.get("name")): row.get("count")
-            for row in lists
-            if row.get("name") in ACTION_SERIALIZED_MAP_LIST_ORDER
-        }
-        return _drop_empty(out)
-
-    for name in ACTION_SERIALIZED_MAP_LIST_ORDER[1:]:
-        if not sorted_records:
-            lists.append({
-                "name": name,
-                "status": "records-not-provided",
-                "recordIndexStart": index,
-                "recordIndexEnd": index,
-            })
-            continue
-        if index >= record_count:
-            lists.append({
-                "name": name,
-                "status": "no-decoded-records-after-previous-list",
-                "recordIndexStart": index,
-                "recordIndexEnd": index,
-            })
-            continue
-        marker_offset = _record_start(sorted_records[index]) - 4
-        marker_value = _u32(data, marker_offset)
-        remaining = record_count - index
-        if marker_value == 0xFFFFFFFF:
-            lists.append({
-                "name": name,
-                "status": "null-marker-or-unanchored",
-                "countOffset": _offset_hex(marker_offset),
-                "countMarker": marker_value,
-                "recordIndexStart": index,
-                "recordIndexEnd": index,
-            })
-            break
-        if not _small_uid_list_count(marker_value, remaining):
-            lists.append({
-                "name": name,
-                "status": "unknown-marker",
-                "countOffset": _offset_hex(marker_offset),
-                "countMarker": marker_value,
-                "recordIndexStart": index,
-                "recordIndexEnd": index,
-            })
-            break
-        if (
-            name == "getterList"
-            and _block_looks_like_header_list(sorted_records[index : index + int(marker_value)])
-            and _next_uid_block_relation(
-                data,
-                sorted_records,
-                index + int(marker_value),
-            )
-            in {"none", "invalid-marker", "levelscript-tail-like"}
-        ):
-            lists.append({
-                "name": "getterList",
-                "status": "omitted-or-empty-before-headerList",
-                "count": 0,
-                "recordIndexStart": index,
-                "recordIndexEnd": index,
-                "decodedRecordCount": 0,
-                "source": "inferredEmptyFromFinalHeaderLikeBlock",
-            })
-            index = append_list(
-                "headerList",
-                count=int(marker_value),
-                marker_offset=marker_offset,
-                marker_value=marker_value,
-                start_index=index,
-                source="uidBoundaryMarkerInferredHeaderList",
-            )
-            break
-        index = append_list(
-            name,
-            count=int(marker_value),
-            marker_offset=marker_offset,
-            marker_value=marker_value,
-            start_index=index,
-            source="uidBoundaryMarker",
-        )
-
-    if record_count and index < record_count:
-        lists.append({
-            "name": "outsideSerializedActionMap",
-            "status": "residual-uid-records",
-            "count": record_count - index,
-            "recordIndexStart": index,
-            "recordIndexEnd": record_count,
-        })
-
-    out["serializedLists"] = lists
-    out["listCounts"] = {
-        str(row.get("name")): row.get("count")
-        for row in lists
-        if row.get("name") in ACTION_SERIALIZED_MAP_LIST_ORDER
-    }
-    return _drop_empty(out)
+def decode_levelscript_action_map_lists(data, records=None, *, strings=None, source_path=None):
+    """Return boundaries consumed sequentially by the selected typed readers."""
+    if records is None:
+        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+    action_map = records.action_map if isinstance(records, LevelScriptUidRecords) else frame_uid_record_lists(data, records)
+    return {**decode_levelscript_action_map_header(data), **action_map,
+            'serializedListOrderEvidence': ACTION_SERIALIZED_MAP_ORDER_EVIDENCE}
 
 
 def frame_levelscript_empty_action_map_top_level(
@@ -1064,6 +831,7 @@ def levelscript_action_map_membership(
 def decode_levelscript_active_shape_list(
     data: bytes,
     script_id: int,
+    *, strings: Any = None, source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Recover the authored active volume without an object-specific offset."""
     out: dict[str, Any] = {
@@ -1075,7 +843,11 @@ def decode_levelscript_active_shape_list(
         out["diagnostic"] = "topLevelMemberCountOrScriptId"
         return out
 
-    records = extract_levelscript_uid_records(data)
+    try:
+        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+    except LevelScriptUidDecodeError as error:
+        out['validatorDiagnostic'] = error.diagnostics
+        return out
     action_map = decode_levelscript_action_map_lists(data, records)
     sorted_records = sorted(records, key=_record_start)
     serialized_lists = [
@@ -1164,13 +936,14 @@ def decode_levelscript_action_map_details(
     *,
     sample_record_limit: int = 8,
     max_hint_records: int = 128,
+    strings: Any = None, source_path: Path | None = None,
 ) -> dict[str, Any]:
     tagged_strings = _extract_levelscript_tagged_ascii_strings(data)
     plain_strings = _extract_levelscript_plain_ascii_strings(
         data,
         tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
-    records = extract_levelscript_uid_records(data, tagged_strings, plain_strings)
+    records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
     action_map, memberships = levelscript_action_map_membership(data, records)
     list_status_counts: Counter[str] = Counter()
     for row in action_map.get("serializedLists") or []:
@@ -1260,6 +1033,7 @@ def decode_levelscript_action_map_details(
 def decode_embedded_action_serialized_map_audio(
     data: bytes,
     offset: int,
+    *, strings: Any = None, source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Decode exact audio actions from an embedded ``ActionSerializedMap``.
 
@@ -1278,11 +1052,7 @@ def decode_embedded_action_serialized_map_audio(
         adapted,
         tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
-    records = extract_levelscript_uid_records(
-        adapted,
-        tagged_strings,
-        plain_strings,
-    )
+    records = extract_levelscript_uid_records(adapted, strings=strings, source_path=source_path, map_offset=2)
     action_map, memberships = levelscript_action_map_membership(adapted, records)
     lists = action_map.get("serializedLists") or []
     list_rows = {
@@ -1394,6 +1164,7 @@ def find_embedded_action_serialized_map_audio(
     *,
     start_offset: int = 0,
     max_action_count: int = 10_000,
+    strings=None, source_path=None,
 ) -> list[dict[str, Any]]:
     """Find uniquely claimed exact audio actions in embedded action maps.
 
@@ -1417,7 +1188,7 @@ def find_embedded_action_serialized_map_audio(
             or action_count > max_action_count
         ):
             continue
-        decoded = decode_embedded_action_serialized_map_audio(data, candidate)
+        decoded = decode_embedded_action_serialized_map_audio(data, candidate, strings=strings, source_path=source_path)
         for action in decoded.get("audioActions") or []:
             if not isinstance(action, dict):
                 continue
@@ -1442,6 +1213,7 @@ def find_embedded_action_serialized_map_audio(
 def decode_levelscript_action_header_validation(
     data: bytes,
     header_local_id: int,
+    *, strings: Any = None, source_path: Path | None = None,
 ) -> dict[str, Any]:
     """Resolve one ActionHeader's exact serialized playback predicate.
 
@@ -1458,7 +1230,7 @@ def decode_levelscript_action_header_validation(
         data,
         tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
-    records = extract_levelscript_uid_records(data, tagged_strings, plain_strings)
+    records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
     _action_map, memberships = levelscript_action_map_membership(data, records)
     matching_headers = [
         (index, record)
@@ -1607,6 +1379,9 @@ def decode_levelscript_record_payload(
     formatter tags prove the class; observed rows still do not serialize
     literal levelId + scriptId targets in the action payload.
     """
+    if record and 'typedNode' in record:
+        from scripts.game_data.codecs.levelscript.typed_record_payload import project_record
+        return project_record(record)
     if not data or not record:
         return {}
     code = record.get("code")
@@ -2034,7 +1809,7 @@ def decode_levelscript_record_payload(
     return _drop_empty(out)
 
 
-def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, Any]:
+def decode_levelscript_binary_summary(data: bytes, script_id: int, *, strings=None, source_path=None) -> dict[str, Any]:
     """Decode stable top-level LevelScriptData facts from a raw blob.
 
     This intentionally handles only fields whose byte positions can be verified
@@ -2050,7 +1825,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int) -> dict[str, 
         for offset in offsets
     ]
     best = max(candidates, key=lambda item: int(item.get("score") or 0), default={})
-    active_shapes = decode_levelscript_active_shape_list(data, script_id)
+    active_shapes = decode_levelscript_active_shape_list(data, script_id, strings=strings, source_path=source_path)
     return {
         "serializedMemberCount": data[0],
         "expectedMemberCount": 28,
@@ -2102,7 +1877,7 @@ def decode_levelscript_binary_file(path: Path, script_id: int | str) -> dict[str
         data = read_bytes_cached(path)
     except OSError:
         return {}
-    return decode_levelscript_binary_summary(data, numeric_script_id)
+    return decode_levelscript_binary_summary(data, numeric_script_id, source_path=path)
 
 
 class LevelScriptNamedFramingError(LevelScriptTopLevelFramingError):
@@ -2146,7 +1921,7 @@ def frame_levelscript_named(data: bytes, *, source: str = "<payload>", strings: 
                 "source": source, "sourceSha256": source_hash,
                 "expected": "maintained stored owner profile",
                 "actual": str(exc)[:1500],
-                "diagnostics": getattr(exc, "diagnostics", [])[:8],
+                "diagnostics": bounded_diagnostic_rows(getattr(exc, "diagnostics", [])),
             })
             continue
         framed = {**result, "reader": f"scripts.game_data.levelscript_binary.{reader.__name__}"}

@@ -1,5 +1,6 @@
 """Publish authored combat dungeon catalogs, without inferring runtime waves."""
 from __future__ import annotations
+from scripts.webui.localization import HOTFIX_TABLE, read_text_table
 
 import json
 import re
@@ -130,10 +131,12 @@ def build(languages: list[str], *, export_root: Path = EXPORT_ROOT, output_root:
     tables = {name: json.loads((table_root / f"{name}.json").read_text(encoding="utf-8-sig")) for name in TABLES}
     for language in languages:
         language = language.upper()
-        i18n = json.loads((table_root / f"I18nTextTable_{language}.json").read_text(encoding="utf-8-sig"))
+        i18n = read_text_table(table_root / f"I18nTextTable_{language}.json", language)
         payload = project(tables, i18n, language)
         enrich(payload, tables, output_root.parent, root=output_root / language, export_root=export_root, game_root=game_root)
         payload["sources"] = [f"game/Table/{name}.json" for name in (*TABLES, f"I18nTextTable_{language}")]
+        if (table_root / HOTFIX_TABLE).is_file():
+            payload["sources"].append(f"game/Table/{HOTFIX_TABLE}")
         output = output_root / language / "gameplay" / "battle_stages.json"
         write_json(output, payload)
         print(f"{language}: {len(payload['entries'])} combat stages -> {output}")

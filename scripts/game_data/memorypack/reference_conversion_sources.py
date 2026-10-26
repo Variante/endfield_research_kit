@@ -15,6 +15,7 @@ from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
 from scripts.game_data.memorypack.buffered_owned_sources import _memory, _move, VOLATILE
 
 LOCAL_OPS = {
+    '66FFC0': 'inc ax', '66FFC1': 'inc cx',
     '32C0': 'xor al, al',
     'F6803801000001': 'test byte [rax+0x138], 1',
     '480307': 'add rax, [rdi]', '4803C9': 'add rcx, rcx',

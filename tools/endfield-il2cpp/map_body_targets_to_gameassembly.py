@@ -31,7 +31,7 @@ if hasattr(sys.stdout, "reconfigure") and not sys.stdout.closed:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 DEFAULT_GAMEASSEMBLY = Path(r"D:\Program Files\Endfield Game\GameAssembly.dll")
-DEFAULT_METADATA = Path("export_full/recovered/il2cpp/global-metadata.dat")
+DEFAULT_METADATA = DEFAULT_GAMEASSEMBLY.parent / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"
 DEFAULT_CATALOG = Path("reports/story/recovery/options/option_flow_runtime_metadata_focus.json")
 DEFAULT_JSON = Path("reports/story/recovery/options/option_flow_body_targets_gameassembly.json")
 DEFAULT_MD = Path("reports/story/recovery/options/option_flow_body_targets_gameassembly.md")
@@ -102,6 +102,7 @@ class PeImage:
                     "virtualSize": virtual_size,
                     "rawPointer": raw_pointer,
                     "rawSize": raw_size,
+                    "characteristics": self.u32_at_file(off + 36),
                 }
             )
 
@@ -1644,7 +1645,8 @@ REGISTER_DEST_RE = re.compile(
 
 def is_static_method(row: dict[str, Any]) -> bool:
     try:
-        flags = int(str(row.get("flags") or "0"), 16)
+        value = row.get("flags") or 0
+        flags = value if type(value) is int else int(str(value), 16)
     except ValueError:
         return False
     return bool(flags & 0x0010)
@@ -1675,7 +1677,7 @@ def param_origin_registers(row: dict[str, Any]) -> dict[str, str]:
 
 def memory_base_and_disp(expr: str) -> tuple[str, str]:
     clean = expr.split("=>", 1)[0].replace(" ", "")
-    match = re.match(r"([a-z][a-z0-9]*)([+-]0x[0-9a-f]+)?", clean)
+    match = re.fullmatch(r"([a-z][a-z0-9]*)([+-]0x[0-9a-f]+)?", clean)
     if not match:
         return "", ""
     base = canonical_register(match.group(1))
@@ -2956,6 +2958,198 @@ def extract_option_flow_facts(
     return facts
 
 
+def _origin_register_bits(register):
+    register = register.strip()
+    if not is_register_name(register) or register.startswith('xmm'):
+        return 0
+    if register == canonical_register(register):
+        return 64
+    if register.startswith('e') or register.endswith('d'):
+        return 32
+    return 8 if register.endswith(('b', 'l', 'h')) else 16
+
+
+def _advance_origins(instr, origins, stack_slots, stack_delta, method_by_pointer):
+    origins, stack_slots = dict(origins), dict(stack_slots)
+    spills, restores = [], []
+    text = str(instr.get('text') or '')
+    offset = int(instr.get('offset') or 0)
+    store = re.match(r'(mov|movss|movsd|movups|movaps|movdqa|movdqu) \[(rsp(?:[+-]0x[0-9a-f]+)?)\], (.+)$', text)
+    if store:
+        slot = stack_slot_for_memory_expr(store[2], stack_delta)
+        width = {'movss':4,'movsd':8,'movups':16,'movaps':16,'movdqa':16,'movdqu':16}.get(store[1], _origin_register_bits(store[3])//8)
+        stack_slots = {} if slot is None or not width else {
+            at:value for at,value in stack_slots.items() if not (at < slot+width and slot < at+8)}
+    if text.startswith('call '):
+        target = re.fullmatch(r'call 0x([0-9a-f]+)', text)
+        targets = method_by_pointer.get(int(target.group(1), 16), []) if target else []
+        returns = {str(row.get('returnTypeName') or '') for row in targets}
+        for register in ('rax', 'rcx', 'rdx', 'r8', 'r9', 'r10', 'r11'):
+            origins.pop(register, None)
+        stack_slots = {at:value for at,value in stack_slots.items() if not (at < stack_delta+32 and stack_delta < at+8)}
+        if len(returns) == 1 and not returns & {'', 'System.Void'}:
+            origins['rax'] = 'return:' + next(iter(returns))
+    stack_store = re.match(
+        r"mov \[(?P<slot>(?:rsp|esp)(?:[+-]0x[0-9a-f]+)?)\], (?P<source>.+)$",
+        text,
+    )
+    if stack_store:
+        slot = stack_slot_for_memory_expr(
+            stack_store.group("slot"), stack_delta
+        )
+        if slot is not None:
+            stored_origin = origin_for_value(
+                stack_store.group("source"),
+                origins,
+                stack_slots=stack_slots,
+                stack_delta=stack_delta,
+            )
+            if is_interesting_origin(stored_origin) and _origin_register_bits(stack_store.group("source")) == 64:
+                stack_slots[slot] = stored_origin
+                spills.append({
+                    "offset": offset,
+                    "slot": signed_hex(slot),
+                    "origin": stored_origin,
+                })
+            else:
+                stack_slots.pop(slot, None)
+
+    push_match = re.fullmatch(r"push ([a-z][a-z0-9]*)", text)
+    if push_match:
+        pushed_origin = origins.get(
+            canonical_register(push_match.group(1)), ""
+        )
+        pushed_slot = stack_delta - 8
+        if is_interesting_origin(pushed_origin):
+            stack_slots[pushed_slot] = pushed_origin
+            spills.append({
+                "offset": offset,
+                "slot": signed_hex(pushed_slot),
+                "origin": pushed_origin,
+            })
+        else:
+            stack_slots.pop(pushed_slot, None)
+
+    write = instr.get("write")
+    if write:
+        dst = canonical_register(str(write.get("register") or ""))
+        if dst in {"rsp", "rbp"}:
+            origins.pop(dst, None)
+        elif dst:
+            value_origin = origin_for_value(
+                str(write.get("value") or ""),
+                origins,
+                stack_slots=stack_slots,
+                stack_delta=stack_delta,
+            )
+            bits = _origin_register_bits(str(write.get("register") or ""))
+            if bits and bits < 64 and value_origin:
+                literal = re.fullmatch(r'-?(?:0x[0-9a-f]+|[0-9]+)', value_origin)
+                if value_origin.startswith(f'low{bits}(') and value_origin.endswith(')'):
+                    pass
+                elif bits != 32 or literal is None:
+                    value_origin = f'low{bits}({value_origin})'
+                elif int(value_origin, 0) < 0:
+                    value_origin = hex(int(value_origin, 0) & 0xffffffff)
+            if value_origin:
+                origins[dst] = value_origin
+                written_value = str(write.get("value") or "")
+                stack_restore_slot = (
+                    stack_slot_for_memory_expr(
+                        written_value[1:-1], stack_delta
+                    )
+                    if written_value.startswith("[")
+                    and written_value.endswith("]")
+                    else None
+                )
+                if (
+                    is_interesting_origin(value_origin)
+                    and stack_restore_slot is not None
+                ):
+                    restores.append({
+                        "offset": offset,
+                        "register": dst,
+                        "origin": value_origin,
+                    })
+            elif dst in origins:
+                origins.pop(dst, None)
+
+    pop_match = re.fullmatch(r"pop ([a-z][a-z0-9]*)", text)
+    if pop_match:
+        dst = canonical_register(pop_match.group(1))
+        restored_origin = stack_slots.get(stack_delta, "")
+        if is_interesting_origin(restored_origin):
+            origins[dst] = restored_origin
+            restores.append({
+                "offset": offset,
+                "register": dst,
+                "origin": restored_origin,
+            })
+        else:
+            origins.pop(dst, None)
+    return origins, stack_slots, spills, restores
+
+def _instruction_origin_states(instructions, start_va, initial, stack_deltas, method_by_pointer, *, selected_successors=None):
+    """Retain only origins shared by every ordinary predecessor; no EH/switch claim."""
+    if not instructions:
+        return {}
+    by_offset = {int(row.get('offset') or 0): row for row in instructions}
+    offsets = sorted(by_offset)
+    following = dict(zip(offsets, offsets[1:]))
+    selected_successors = selected_successors or {}
+    for offset, selected in selected_successors.items():
+        text = str((by_offset.get(offset) or {}).get('text') or '')
+        target = branch_target_from_text(text)
+        if (not text.startswith('j') or text.startswith('jmp ') or target is None
+                or selected not in {following.get(offset), int(target,16)-start_va} or selected not in by_offset):
+            raise ValueError('bodySummary.selected-ordinary-edge')
+    states = {offsets[0]: (dict(initial), {})}
+    poisoned = set()
+    pending = [offsets[0]]
+    while pending:
+        offset = pending.pop()
+        instr = by_offset[offset]
+        text = str(instr.get('text') or '')
+        # Unknown bytes and ambiguous frames cannot establish downstream origins.
+        if text.startswith('db') or offset not in stack_deltas:
+            poisoned.add(offset)
+        if offset in poisoned:
+            output = ({}, {})
+        else:
+            output = _advance_origins(instr, *states[offset], stack_deltas[offset], method_by_pointer)[:2]
+        target_text = branch_target_from_text(text)
+        target = int(target_text, 16) - start_va if target_text else None
+        successors = []
+        if text.startswith('jmp '):
+            if target in by_offset:
+                successors.append(target)
+        elif not text.startswith(('ret', 'int3')):
+            if offset in following:
+                successors.append(following[offset])
+            if text.startswith('j') and target in by_offset:
+                successors.append(target)
+        if offset in selected_successors:
+            successors = [selected_successors[offset]]
+        for successor in successors:
+            delta = stack_deltas.get(offset)
+            if delta is not None:
+                if text.startswith('push '): delta -= 8
+                elif text.startswith('pop '): delta += 8
+                adjust = re.fullmatch(r'(add|sub) rsp, (0x[0-9a-f]+)', text)
+                if adjust: delta += int(adjust[2],16) * (1 if adjust[1]=='add' else -1)
+            poison = offset in poisoned or delta != stack_deltas.get(successor)
+            newly_poisoned = poison and successor not in poisoned
+            if poison: poisoned.add(successor)
+            outgoing = ({}, {}) if poison else output
+            previous = states.get(successor)
+            joined = outgoing if previous is None else tuple(
+                {key: value for key, value in old.items() if new.get(key) == value}
+                for old, new in zip(previous, outgoing))
+            if previous != joined or newly_poisoned:
+                states[successor] = joined
+                pending.append(successor)
+    return states
+
 def build_method_body_summary(
     row: dict[str, Any],
     data: bytes,
@@ -2964,8 +3158,18 @@ def build_method_body_summary(
     pe: PeImage | None = None,
     *,
     max_instructions: int,
+    decoded_instructions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    instructions = decode_x64_subset(data, start_va, stop_offset=len(data))
+    instructions = decoded_instructions if decoded_instructions is not None else decode_x64_subset(data, start_va, stop_offset=len(data))
+    cursor = 0
+    for instruction in instructions:
+        raw = bytes.fromhex(instruction['bytes'])
+        if (not raw or int(instruction['offset']) != cursor or int(instruction['va'],16) != start_va+cursor
+                or raw != data[cursor:cursor+len(raw)]):
+            raise ValueError('bodySummary.instruction-byte-partition')
+        cursor += len(raw)
+    if cursor != len(data):
+        raise ValueError('bodySummary.instruction-byte-partition')
     unknown_count = sum(1 for instr in instructions if str(instr.get("text") or "").startswith("db "))
     ret_offset = next(
         (instr.get("offset") for instr in instructions if str(instr.get("text") or "").startswith("ret")),
@@ -2977,6 +3181,7 @@ def build_method_body_summary(
     stack_deltas, prologue_stack_delta = instruction_stack_deltas(
         instructions, start_va
     )
+    origin_states = _instruction_origin_states(instructions, start_va, initial_origins, stack_deltas, method_by_pointer)
     stack_spills: list[dict[str, Any]] = []
     stack_restores: list[dict[str, Any]] = []
     memory_counter: Counter[str] = Counter()
@@ -3001,6 +3206,7 @@ def build_method_body_summary(
         text = str(instr.get("text") or "")
         offset = int(instr.get("offset") or 0)
         stack_delta = stack_deltas.get(offset, prologue_stack_delta)
+        origins, stack_slots = (dict(part) for part in origin_states.get(offset, ({}, {})))
         used_origins = instruction_uses_origin(instr, origins)
         for origin in used_origins:
             remember_flow(origin, instr)
@@ -3035,11 +3241,10 @@ def build_method_body_summary(
             return_types = {
                 str(target.get("returnTypeName") or "")
                 for target in resolved_targets
-                if str(target.get("returnTypeName") or "") not in {"", "System.Void"}
             }
             return_origin = (
                 f"return:{next(iter(return_types))}"
-                if len(return_types) == 1
+                if len(return_types) == 1 and not return_types & {"", "System.Void"}
                 else ""
             )
             call_row = {
@@ -3058,15 +3263,6 @@ def build_method_body_summary(
                 call_row["returnOrigin"] = return_origin
             call_rows.append(call_row)
 
-            # Windows x64 calls may clobber these volatile general-purpose
-            # registers. Preserve the captured argument origins above, then
-            # seed RAX only when all resolved aliases agree on one non-void
-            # metadata return type. This makes later field-flow recovery
-            # generic instead of teaching consumers about individual getters.
-            for register in ("rax", "rcx", "rdx", "r8", "r9", "r10", "r11"):
-                origins.pop(register, None)
-            if return_origin:
-                origins["rax"] = return_origin
 
         is_control_flow = text.startswith(("cmp ", "test ", "j", "call ", "ret"))
         if is_control_flow and len(control_flow) < max_instructions * 2:
@@ -3108,95 +3304,14 @@ def build_method_body_summary(
                 row_out["memoryOrigins"] = memory_origins
             interesting.append(row_out)
 
-        stack_store = re.match(
-            r"mov \[(?P<slot>(?:rsp|esp)(?:[+-]0x[0-9a-f]+)?)\], (?P<source>.+)$",
-            text,
-        )
-        if stack_store:
-            slot = stack_slot_for_memory_expr(
-                stack_store.group("slot"), stack_delta
-            )
-            if slot is not None:
-                stored_origin = origin_for_value(
-                    stack_store.group("source"),
-                    origins,
-                    stack_slots=stack_slots,
-                    stack_delta=stack_delta,
-                )
-                if is_interesting_origin(stored_origin):
-                    stack_slots[slot] = stored_origin
-                    stack_spills.append({
-                        "offset": offset,
-                        "slot": signed_hex(slot),
-                        "origin": stored_origin,
-                    })
-                else:
-                    stack_slots.pop(slot, None)
+        _, _, spills, restores = _advance_origins(instr, origins, stack_slots, stack_delta, method_by_pointer)
+        stack_spills.extend(spills)
+        stack_restores.extend(restores)
 
-        push_match = re.fullmatch(r"push ([a-z][a-z0-9]*)", text)
-        if push_match:
-            pushed_origin = origins.get(
-                canonical_register(push_match.group(1)), ""
-            )
-            pushed_slot = stack_delta - 8
-            if is_interesting_origin(pushed_origin):
-                stack_slots[pushed_slot] = pushed_origin
-                stack_spills.append({
-                    "offset": offset,
-                    "slot": signed_hex(pushed_slot),
-                    "origin": pushed_origin,
-                })
-            else:
-                stack_slots.pop(pushed_slot, None)
-
-        write = instr.get("write")
-        if write:
-            dst = canonical_register(str(write.get("register") or ""))
-            if dst in {"rsp", "rbp"}:
-                origins.pop(dst, None)
-            elif dst:
-                value_origin = origin_for_value(
-                    str(write.get("value") or ""),
-                    origins,
-                    stack_slots=stack_slots,
-                    stack_delta=stack_delta,
-                )
-                if value_origin:
-                    origins[dst] = value_origin
-                    written_value = str(write.get("value") or "")
-                    stack_restore_slot = (
-                        stack_slot_for_memory_expr(
-                            written_value[1:-1], stack_delta
-                        )
-                        if written_value.startswith("[")
-                        and written_value.endswith("]")
-                        else None
-                    )
-                    if (
-                        is_interesting_origin(value_origin)
-                        and stack_restore_slot is not None
-                    ):
-                        stack_restores.append({
-                            "offset": offset,
-                            "register": dst,
-                            "origin": value_origin,
-                        })
-                elif dst in origins:
-                    origins.pop(dst, None)
-
-        pop_match = re.fullmatch(r"pop ([a-z][a-z0-9]*)", text)
-        if pop_match:
-            dst = canonical_register(pop_match.group(1))
-            restored_origin = stack_slots.get(stack_delta, "")
-            if is_interesting_origin(restored_origin):
-                origins[dst] = restored_origin
-                stack_restores.append({
-                    "offset": offset,
-                    "register": dst,
-                    "origin": restored_origin,
-                })
-            else:
-                origins.pop(dst, None)
+    returns = [origin_states[int(row.get("offset") or 0)][0] for row in instructions
+               if str(row.get("text") or "").startswith("ret") and int(row.get("offset") or 0) in origin_states]
+    origins = {key:value for key,value in (returns[0] if returns else {}).items()
+               if all(state.get(key) == value for state in returns)}
 
     window_specs: list[tuple[int, str]] = []
     seen_window_offsets: set[int] = set()
@@ -3784,7 +3899,7 @@ def summarize_instruction_window(window: list[dict[str, Any]], *, limit: int = 1
 
 
 def branch_target_from_text(text: str) -> str:
-    match = re.match(r"(?:jcc|je|jne|jmp|call) (0x[0-9a-f]+)$", text)
+    match = re.fullmatch(r"(?:j(?:cc|mp|e|ne|l|le|g|ge|a|ae|b|be|s|ns|o|no|p|np|z|nz|c|nc|pe|po|ecxz|rcxz)|call) (0x[0-9a-f]+)", text)
     return match.group(1) if match else ""
 
 

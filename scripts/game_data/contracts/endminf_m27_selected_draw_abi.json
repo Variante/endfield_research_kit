@@ -1,0 +1,343 @@
+{
+  "schema": "endfield.endminf-m27-selected-draw-abi.v1",
+  "status": "reviewed",
+  "captureDeclaration": "tools/EndfieldCapture/config/m27-mip-bias-native.json",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "programs": [
+    {
+      "stage": "vertex",
+      "path": "scratch/reverse_engineering/endfield_capture/endminf-build-discovery-20261016T061655488/graphics/shaders/ea49772c611f653b18c70199bb0dfcea284ea1f0af795fd8defc9f4d8e6e2b57-s0.dxbc",
+      "sha256": "ea49772c611f653b18c70199bb0dfcea284ea1f0af795fd8defc9f4d8e6e2b57",
+      "bytes": 8072,
+      "declarations": {
+        "cb0": {
+          "kind": "cb",
+          "index": 0,
+          "rows": 82,
+          "declaration": "dcl_constantbuffer CB0[82], immediateIndexed"
+        },
+        "cb1": {
+          "kind": "cb",
+          "index": 1,
+          "rows": 20,
+          "declaration": "dcl_constantbuffer CB1[20], immediateIndexed"
+        },
+        "cb2": {
+          "kind": "cb",
+          "index": 2,
+          "rows": 4091,
+          "declaration": "dcl_constantbuffer CB2[4091], dynamicIndexed"
+        },
+        "t0": {
+          "kind": "t",
+          "index": 0,
+          "declaration": "dcl_resource_structured t0, 16"
+        }
+      },
+      "constantBufferReads": {
+        "cb0": {
+          "byteOffsets": [
+            512,
+            516,
+            520,
+            524,
+            528,
+            532,
+            536,
+            540,
+            544,
+            548,
+            552,
+            556,
+            560,
+            564,
+            568,
+            572,
+            704,
+            708,
+            712,
+            912,
+            916,
+            924,
+            928,
+            932,
+            940,
+            944,
+            948,
+            956,
+            960,
+            964,
+            972,
+            1296,
+            1300,
+            1304
+          ],
+          "dynamicAddresses": []
+        },
+        "cb1": {
+          "byteOffsets": [
+            312,
+            316
+          ],
+          "dynamicAddresses": []
+        },
+        "cb2": {
+          "byteOffsets": [],
+          "dynamicAddresses": [
+            "r1.z + 0",
+            "r1.z + 1",
+            "r1.z + 10",
+            "r1.z + 2",
+            "r1.z + 3",
+            "r1.z + 4",
+            "r1.z + 5",
+            "r1.z + 6",
+            "r1.z + 7",
+            "r1.z + 8",
+            "r1.z + 9"
+          ]
+        }
+      },
+      "outputs": [
+        "o0.xyzw",
+        "o1.xyzw",
+        "o2.xyz",
+        "o3.xyzw",
+        "o4.xyzw",
+        "o5.xyz",
+        "o6.xyz",
+        "o7.x"
+      ]
+    },
+    {
+      "stage": "fragment",
+      "path": "scratch/reverse_engineering/endfield_capture/endminf-build-discovery-20261016T061655488/graphics/shaders/e1fd05743fd9a15fa24039c2499ac07c7825f1ee0a0d480118fa356bb9c22b6d-s4.dxbc",
+      "sha256": "e1fd05743fd9a15fa24039c2499ac07c7825f1ee0a0d480118fa356bb9c22b6d",
+      "bytes": 8364,
+      "declarations": {
+        "cb0": {
+          "kind": "cb",
+          "index": 0,
+          "rows": 45,
+          "declaration": "dcl_constantbuffer CB0[45], immediateIndexed"
+        },
+        "cb1": {
+          "kind": "cb",
+          "index": 1,
+          "rows": 108,
+          "declaration": "dcl_constantbuffer CB1[108], immediateIndexed"
+        },
+        "cb2": {
+          "kind": "cb",
+          "index": 2,
+          "rows": 4085,
+          "declaration": "dcl_constantbuffer CB2[4085], dynamicIndexed"
+        },
+        "cb3": {
+          "kind": "cb",
+          "index": 3,
+          "rows": 31,
+          "declaration": "dcl_constantbuffer CB3[31], immediateIndexed"
+        },
+        "cb4": {
+          "kind": "cb",
+          "index": 4,
+          "rows": 1,
+          "declaration": "dcl_constantbuffer CB4[1], immediateIndexed"
+        },
+        "s0": {
+          "kind": "s",
+          "index": 0,
+          "declaration": "dcl_sampler s0, mode_default"
+        },
+        "s1": {
+          "kind": "s",
+          "index": 1,
+          "declaration": "dcl_sampler s1, mode_default"
+        },
+        "s2": {
+          "kind": "s",
+          "index": 2,
+          "declaration": "dcl_sampler s2, mode_default"
+        },
+        "s3": {
+          "kind": "s",
+          "index": 3,
+          "declaration": "dcl_sampler s3, mode_default"
+        },
+        "s4": {
+          "kind": "s",
+          "index": 4,
+          "declaration": "dcl_sampler s4, mode_default"
+        },
+        "s5": {
+          "kind": "s",
+          "index": 5,
+          "declaration": "dcl_sampler s5, mode_default"
+        },
+        "t0": {
+          "kind": "t",
+          "index": 0,
+          "declaration": "dcl_resource_texture2d (float,float,float,float) t0"
+        },
+        "t1": {
+          "kind": "t",
+          "index": 1,
+          "declaration": "dcl_resource_texture2d (float,float,float,float) t1"
+        },
+        "t2": {
+          "kind": "t",
+          "index": 2,
+          "declaration": "dcl_resource_texture2d (float,float,float,float) t2"
+        },
+        "t3": {
+          "kind": "t",
+          "index": 3,
+          "declaration": "dcl_resource_texture2d (float,float,float,float) t3"
+        },
+        "t4": {
+          "kind": "t",
+          "index": 4,
+          "declaration": "dcl_resource_texture2d (float,float,float,float) t4"
+        },
+        "t5": {
+          "kind": "t",
+          "index": 5,
+          "declaration": "dcl_resource_texture2d (float,float,float,float) t5"
+        }
+      },
+      "constantBufferReads": {
+        "cb0": {
+          "byteOffsets": [
+            8,
+            24,
+            40,
+            384,
+            388,
+            392,
+            396,
+            400,
+            404,
+            408,
+            412,
+            416,
+            420,
+            424,
+            428,
+            432,
+            436,
+            440,
+            444,
+            704,
+            708,
+            712
+          ],
+          "dynamicAddresses": []
+        },
+        "cb1": {
+          "byteOffsets": [
+            8,
+            12,
+            76,
+            416,
+            420,
+            436,
+            1680,
+            1684,
+            1688,
+            1692,
+            1712,
+            1716,
+            1720,
+            1724
+          ],
+          "dynamicAddresses": []
+        },
+        "cb2": {
+          "byteOffsets": [],
+          "dynamicAddresses": [
+            "r0.y + 4",
+            "r1.y + 3"
+          ]
+        },
+        "cb3": {
+          "byteOffsets": [
+            0,
+            8,
+            12,
+            16,
+            28,
+            44,
+            48,
+            52,
+            60,
+            64,
+            68,
+            72,
+            112,
+            120,
+            128,
+            132,
+            136,
+            140,
+            176,
+            180,
+            184,
+            188,
+            192,
+            196,
+            200,
+            204,
+            352,
+            384,
+            388,
+            392,
+            396,
+            400,
+            404,
+            408,
+            412,
+            416,
+            420,
+            424,
+            428,
+            432,
+            436,
+            440,
+            452,
+            460,
+            464,
+            468,
+            472,
+            480,
+            484,
+            488
+          ],
+          "dynamicAddresses": []
+        },
+        "cb4": {
+          "byteOffsets": [
+            0,
+            12
+          ],
+          "dynamicAddresses": []
+        }
+      },
+      "outputs": [
+        "o0.xyzw",
+        "o1.xyzw",
+        "o2.xyzw",
+        "o3.xyzw",
+        "o4.xyzw"
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Current retained DXBC stage, declarations and executable constant-buffer byte-read inventory. Native capture declarations are checked independently against selected managed inputs.",
+    "conditional": "The selected pair was observed on smaller indexed LitEffect draws in discovery. It remains a candidate filter for M27; equal declarations do not establish the old subprogram index, renderer, source material or 1080-index burst.",
+    "unresolved": "Current ParticleSystemRenderer ownership, current material/source publisher closure, Unity compiler substitution and a synchronized generative exact draw. Historical shell/renderer/texture/source contracts are not current proof."
+  }
+}

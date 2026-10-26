@@ -3,14 +3,15 @@
   "status": "validated",
   "sources": {
     "virtualPath": "Persistent VFS/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes",
-    "patchBytes": 10545,
-    "patchSha256": "A5BB5B3B4A4C7C0F3BD59685D809772F0A3FD73AD3E02A1CB28FFFA05FB98A5C",
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "patchBytes": 9960,
+    "patchSha256": "3F017F8D8A7FC3A1FD9C03D7EAACBB51A84E950B3CB6E2AC447D3B9F92BEA256",
+    "gameAssemblySha256": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "globalMetadataSha256": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA"
   },
   "fixedMethodSignatures": [
-    "Beyond.Network.NetClientManager::Launch()",
-    "Beyond.Gameplay.MapManager::_InitLoader()"
+    "Beyond.Gameplay.ResourcePreferencesManager::NeedDownload()",
+    "Beyond.Gameplay.ResourcePreferencesManager::ApplyVoiceResourceGroupCompatibilityBeforeDiff()",
+    "Beyond.Gameplay.Core.NpcProxy::SwapProxyData(Beyond.Gameplay.Core.ProxyInfo, Beyond.Gameplay.Core.NpcRuntimeProxyData)"
   ],
   "classifications": {
     "taskCompletionFixMatches": [],

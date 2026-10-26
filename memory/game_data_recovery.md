@@ -140,7 +140,11 @@ builder failure, and matching pins or bytes still require the owning semantic pr
 not paths alone. Newly opened PE/metadata buffers must match that cache key;
 an opening-time change refuses the image. Named body indexes belong to that
 immutable image. Callers still authenticate selected inputs before and after
-their proof, including UnityPlayer where required.
+their proof, including UnityPlayer where required. After changing reader or
+claim code, run admission proofs in a fresh Python process. Hashing current
+source files cannot authenticate older module objects already loaded in an
+inspection interpreter; immutable native bytes do not make those validators
+current.
 Public native results and source-receipt validations must not be cached by
 paths or arguments alone: every call checks the selected build and sources.
 Parsed union tables cache by their actual bytes; body and immutable wrapper
