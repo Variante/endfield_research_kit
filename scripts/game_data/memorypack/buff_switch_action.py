@@ -2,6 +2,15 @@
 
 Original byte spans remain authoritative; stored configuration does not prove
 live provider selection, branch execution or resulting game state.
+
+Evidence and admission boundary:
+
+Exact storage keeps alwaysNext, BlackboardDouble choice and nullable Option
+list separate. Every Option owns a recursively named actionData sequence and
+independent value operand. Unsupported descendants or excessive nesting refuse.
+No evaluated choice, selected Option or live sequence identity is established.
+CustomReturnType policy and the separate Boolean AlwaysReturnTrue method's
+owned alwaysNext return are distinct consumer claims.
 """
 from __future__ import annotations
 

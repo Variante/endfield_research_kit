@@ -2,6 +2,17 @@
 
 Closed unmanaged source reads authenticate GameplayTag storage. Flags and
 raw tag bits do not establish gains, costs, live targets or Blackboard values.
+
+Evidence and admission boundary:
+
+Exact ObtainCost storage needs explicit unmanagedSource witnesses for
+GameplayTag atbGainTag/uspRecoverTag: closed MethodSpec, actual DWORD source,
+cursor and destination plus independently derived extent, not arbitrary
+value-type scalar inference. Registered helper and optimized direct entry are
+authenticated separately, one calling Advance(4), the other updating slots
+inline. Short-segment/provider parity is unproved. coefficient/costValue,
+source/target and raw selectors/flags retain independent original spans; no
+resource arithmetic, selected receiver or sound/effect dispatch is established.
 """
 from __future__ import annotations
 

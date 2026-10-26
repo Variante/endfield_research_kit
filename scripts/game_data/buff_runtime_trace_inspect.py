@@ -1,4 +1,61 @@
-"""Join retained Buff entry observations without promoting pointers to ownership."""
+"""Join retained Buff entry observations without promoting pointers to ownership.
+
+Evidence and admission boundary:
+
+Direct sampled entry fields are accepted only from a complete, healthy,
+lossless journal, with each interpreted field checked against its raw/profile
+row. Generic preparation authenticates methods, typed fields and bounded read
+programs; pointer reads invoke no getters or collection enumeration. Supplied
+Buff IDs, stored IDs, instance carriers and environment references stay
+separate. Registered generic AssignData identity proves an entry, not a live
+closed receiver, MethodInfo or generic field layout. Unobserved entries prove
+no absence of assignment; ReAssign has no supplied data reference.
+Conditional joins require unique earlier initialization/factory entries,
+matching references and thread, confirmed Reset identity windows and no action/
+Buff reset or conflicting stored/reference evidence. Later initializer, thread
+or identity conflicts invalidate earlier joins and clear identity claims while
+retaining raw observations and rejection reasons. Shared data in distinct
+environments is permitted; null/missing fields and repeated factories refuse.
+SkillHighlightEnvironment constructors and Ability.Init are separate carriers.
+An Ability.Init receiver plus consistent supplied/stored skill IDs is an entry
+association, not Buff/skill ownership. Probability occurs in both contexts;
+its formatter's presence in BuffData cannot assign it a Buff owner.
+A proved closed reference slot permits bounded stored-data reads on selected
+consumers. Named Data/inherited serverActionIndex, flags, enums and keys retain
+the recipe's field/indirection limits; string comparison additionally needs
+source-hash/span-checked valid UTF-8 helper evidence. Invalid bytes refuse;
+replacement parity is unproved. Accepted factory/consumer index and payload
+agreement is sampled evidence, not index conservation or unchanged object
+storage. Unique admitted type/index/field matches give only source-node
+candidates; preserve all ambiguous/absent Skill/Buff matches. Partial Skill
+profiles and anonymous EOF frames provide no recursively named node proof.
+Reset entry can mix old definition/data IDs with already changed instance UID
+and client-instance ID. Do not call the entire entry the previous instance or
+attribute those changes to Reset's body. Cached execute-result fields precede
+the consumer and are not its return. Missing Reset, unconfirmed identity and
+thread mismatch remain distinct diagnostics.
+The anonymous action/data/environment observer is withdrawn after a Capture-only
+scene-load crash. Its preparation proved argument/dispatch programs, not live
+hook safety or throughput; a startup attempt also lost records. The aborted
+recordings supply no admitted association even if surviving references match.
+The same runtime binary/retained hooks with only that observer removed passed
+a healthy, complete, lossless user scene-load check. That check sampled named
+initializers but no selected consumer/assignment, so adds no such association.
+The crash had remaining commit capacity and reached shader-property string
+marshaling with abnormal length-derived allocation; ordinary exhaustion and
+a recorder corruption mechanism are unproved. Do not repeat an identical
+combat sample to fill the disabled hook gap. Game-exit diagnostics preserve
+logs/incomplete context without weakening completeness rules.
+A dispatch triplet, if admissibly recorded, needs the same action/environment/
+thread and no intervening resets or conflicts; old recordings gain no synthetic
+helper/data fields. All associations remain conditional reference agreement,
+not factory return, assignment completion, lifetime, file loading or physical
+node selection. Canonical schema joins separately authenticate archived bytes,
+selected native/reader inputs and full receipts before/after; failure empties
+only the schema join and preserves valid observations. Offline format closure
+does not add runtime evidence. Per-frame triggering, action returns, evaluated
+providers/targets, writes, IFix/server selection and gameplay effects are open.
+"""
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,18 @@
-"""Current pooled LevelScript templates; stop at the first unproved child."""
+"""Current pooled LevelScript templates; stop at the first unproved child.
+
+Evidence and admission boundary:
+
+Exact whole-template naming requires one sequential cursor and the matching
+StringPool through physical EOF; the former inline terminal-suffix scan is
+removed. Positive unsupported blackboard/property/task children stop before
+contents and keep later bytes opaque, including apparent terminal IDs.
+Bounded continuation diagnostics disappear only on named EOF. The selected
+root fact proves declared order and terminal pooled source/owned setter;
+reviewed nodes still need their own child gates. A final setup may reuse the
+holder register for its pointee: preserve argument identity to that load and
+prove the exact setup moves, not the dead old holder. Historical closures and
+isolated children do not admit current owners or runtime provider choice.
+"""
 from __future__ import annotations
 import struct
 from scripts.game_data import serialization_roots_native as native

@@ -1,4 +1,20 @@
-"""Authenticate the action-source helper and its named caller composition."""
+"""Authenticate the action-source helper and its named caller composition.
+
+Evidence and admission boundary:
+
+Conditional caller/helper composition forwards abilityAction and reads its
+named actionEnvironment; complete real code ranges and return pointers are
+checked without invented fallthrough. One raw discriminator forwards that
+reference to the independently proved Fill callee under valid-Ability,
+unpatched normal-return conditions; it does not prove class identity. Another
+case copies an anonymous interval (structuralOnly, no SkillCastInfo field
+names); three literal cases zero the output. Fallback/patch results stay opaque.
+The caller extracts the unchanged low DWORD and tests zero to select Clear;
+only the independent owner-skill fallback can rejoin that test. Clear's handle
+guard remains required. Class discriminator construction, receiver selection,
+opaque effects and actual invocation are unresolved; all proofs are freshly
+authenticated together on the selected image.
+"""
 import hashlib
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

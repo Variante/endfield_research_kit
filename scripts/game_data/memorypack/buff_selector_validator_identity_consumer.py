@@ -1,4 +1,21 @@
-"""Authenticate selected named cast identity fields and static branch claims."""
+"""Authenticate selected named cast identity fields and static branch claims.
+
+Evidence and admission boundary:
+
+Conditional field/branch joins follow locked AbilitySystem through
+BaseComponent.entity and Entity.abilityEntityCtrl to inline m_skillCastInfo.
+Only its first UInt32 skillCastId is compared, not originSkill/cost. Inline
+layout uses the selected boxed declarations/size under the explicit Win64
+two-pointer object-header condition. Null Lock skips removal; non-AbilityEntity
+or unequal cast ID selects RemoveTarget; zero expected ID selects Clear.
+Null action uses owner.curSkill; null skill selects Clear, otherwise the
+unpatched getter reads Skill.m_ability.skillCastId. Clear still checks its
+handle and can enter the null exception path. A DWORD decrement/sign backedge
+proves no bounds, counts or termination. Non-null action helper, patched
+returns, actual Selector dispatch and live removal stay unresolved. Resolve
+methods by their metadata rows, not the first/last repeated full type name;
+both dynamic metadata/decoder helpers belong to the validation input closure.
+"""
 from pathlib import Path
 import hashlib
 from scripts.common import check_installed_native_inputs

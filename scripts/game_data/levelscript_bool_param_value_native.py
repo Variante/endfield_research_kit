@@ -1,4 +1,17 @@
-"""Evaluate named closed Boolean Param consumer claims on the explicitly selected build."""
+"""Evaluate named closed Boolean Param consumer claims on the explicitly selected build.
+
+Evidence and admission boundary:
+
+Conditional initialized/ready Boolean evaluation copies one source byte through
+explicit output and returns separate low-byte success; caller zero-extends
+output or fallback without proving value normalization. Exact concrete Param,
+registered caller targets, reciprocal class/method ownership/arity and byref
+output declarations join the compatible one-byte wrapper slot. Unlike stored
+Boolean source normalization, this evaluator's byte transfer proves no 0/1
+normalization. Unchanged compatible storage is required; predicate server
+markers add no serialized alternatives. Runtime receiver/context/provider,
+nonconstant paths and stored-cursor integration remain unresolved.
+"""
 from __future__ import annotations
 
 import argparse

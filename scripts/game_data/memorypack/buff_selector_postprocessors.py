@@ -2,6 +2,45 @@
 
 Each selected processor owns independently proved recursive children. Raw
 enum/blackboard fields do not establish that target processing executed.
+
+Evidence and admission boundary:
+
+Exact stored order is finderData, postProcessorData, validatorData. The owned
+closed list context admits reviewed CircularOrderSort, Projection,
+ExcludeTarget, NavMeshPathPositionProcessor, PriorityFilter and ShuffleTarget.
+Projection composes ShapeData; ShuffleTarget keeps processTargetType and typed
+BlackboardInt; ExcludeTarget joins the actual owned TargetSettings wrapper;
+PriorityFilter joins independent BuffFilterSettings/query. Recursion shares
+the bounded target depth and strict contained endpoints. Null list/union/
+wrapper/Blackboard and empty list differ; other processor subtypes refuse.
+CircularOrderSort's desireCount is BlackboardInt; heightOffset, rangeThreshold
+and reverseFlag are BlackboardDouble, with separate raw indexKey and target.
+NavMesh radius is BlackboardDouble, maxDistance raw Single and flags stored
+bytes. Raw flag preservation is not a claim that normalized runtime bytes
+remain raw. Conditional generated transfers preserve RDI reader/RBX byref
+wrapper until the final member dereferences RBX; the coherent getter checks
+cached derived Data against inherited instance. Actual typed MethodInfo calls
+remain proved without inventing absent unique registered generic entries.
+Isolated consumer probes remain outside maintained consumer claims: Circular
+scalars and NavMesh radius forward to GetValue (Double overload returns Single);
+reverseFlag compares that return with zero. _GetRealLandPos owns checkMaxDistance/
+maxDistance reads and its zero-byte branch, with hidden Nullable<Vector3>
+result buffer in RCX and Data in RDX. The Boolean straight-line helper instead
+receives Data in RCX, retains maximum distance across a shared coordinate-square
+sum entry, then squares/compares it. The shared entry has static and instance
+declarations, not one unique method name. These are conditional compiled
+operations, not vector provenance, floating exception behavior or navigation.
+Other isolated probes prove PriorityFilter's buffFilterSettings,
+onlyReserveMaxPriorityTargets and processTargetType forwarding to Wrap under
+false IsPatched/ordinary x64 calls. Wrap's own hidden-buffer constructor/retry
+program and full typed stores are proved separately; they supply no general
+ABI rule for GetTargetsView, whose caller saves RAX directly. maxNum reaches
+Filter's register argument and filterType its outgoing stack argument after
+Wrap restores nonvolatiles; Filter returns Int32 with no hidden result buffer.
+These prototype observations prove no feasible predicates, environment origin,
+filter order/result, count enforcement or target mutation. Stored enum modes
+(Targets/HittableTargets; distance/HP/Buff-stack/screen-position) are declarations,
+not execution. Full family and canonical root replay remain required.
 """
 from __future__ import annotations
 import hashlib,json,struct

@@ -1,4 +1,18 @@
-"""Current named consumer claims plus complete static control/frame checks."""
+"""Current named consumer claims plus complete static control/frame checks.
+
+Evidence and admission boundary:
+
+The admitted direct static consumer is SkillCastIdValidator.Data.Validate,
+returning void with owner/center/direction/blackboard/target handle/action/input
+target arguments. The fieldless outer Validator and return-only constructor do
+not implement an always-passing predicate. Named get_targets/Lock/objectType/
+Skill.get_skillCastId/RemoveTarget/Clear calls require complete owned control,
+closed branch targets, loop backedge and Win64 frames. Both outcomes are
+conditional static paths, not live invocation, feasibility or target removal.
+Selector dispatch, patched results, the non-null action helper's class/source
+and opaque callee effects remain independent. Unity/native drift at either
+validation bookend withholds the proof.
+"""
 from __future__ import annotations
 from pathlib import Path
 import hashlib

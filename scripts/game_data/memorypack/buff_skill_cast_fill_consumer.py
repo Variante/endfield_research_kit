@@ -1,4 +1,17 @@
-"""Authenticate the named cast-info callee without selecting a caller class."""
+"""Authenticate the named cast-info callee without selecting a caller class.
+
+Evidence and admission boundary:
+
+Conditional complete hidden-output Win64 return flow retains Ability in incoming
+RDX and writable output in RCX. On false first IsPatched and normal return,
+skillCastId supplies UInt32, castOriginSkill supplies originSkill and
+nonReturnedAtbCost supplies unchanged Single bits; padding is zero. Selected
+boxed layout/object-header, full temporaries/copies/returned-pointer and both
+optional marking-loop edges are checked, without proving termination or global
+effects. Valid readable receiver, writable/disjoint output/frame/barrier storage
+and ordinary calls are conditions. Patch returns, anonymous caller class,
+receiver selection and invocation remain unresolved; no root admission follows.
+"""
 from pathlib import Path
 import hashlib
 from scripts.common import check_installed_native_inputs

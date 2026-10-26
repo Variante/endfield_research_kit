@@ -3,6 +3,16 @@
 The two maps share a sequence element type, not a read order. Every positive
 action must return its own recursive named receipt. Unknown actions refuse the
 map even when the structural reader happens to know their byte length.
+
+Evidence and admission boundary:
+
+Exact stored order differs: AbilityActionMap reads event then sequence list;
+BuffActionMap reads sequence list then event. Shared SequenceActionData owns
+the positive recursive action receipts, bounded inputs and sibling lists.
+Selected fixture names do not limit this reusable grammar. Unknown nested
+unions refuse the composition; every enclosing root still needs thirty fields,
+source identity and EOF. Historical shared-event/AttributeModifier sweeps
+broadened earlier fixture coverage only within their authenticated epochs.
 """
 from __future__ import annotations
 import hashlib

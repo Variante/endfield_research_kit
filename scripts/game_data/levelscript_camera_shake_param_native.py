@@ -5,6 +5,15 @@ reader/provider/adapter/conversion paths, allocation, null routes and formatter
 registration. Current operations bind an explicit installed root and the exact
 StringPool object through exit bookends. Live formatter selection and camera
 execution remain conditional; no historical owner receipt is admitted here.
+
+Evidence and admission boundary:
+
+Conditional current CameraShakeConfigPtr proves its managed eight-byte one-
+key value, actual return/adapter/conversion, owned nested value/string store
+and final receiver program. This supersedes the earlier owned-slot/final-
+receiver refusal; marshal-size sentinels and matching widths alone remain
+insufficient. Selected native/pool exit checks and outer owner/effect gates
+are separate.
 """
 import json,struct
 from contextlib import contextmanager

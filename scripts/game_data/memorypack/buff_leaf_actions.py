@@ -2,6 +2,18 @@
 
 Four inherited fields still do not establish a no-op or sequence behavior.
 Every named action requires its independent source and dispatcher proof.
+
+Evidence and admission boundary:
+
+Exact nonrecursive layouts cover inherited-only NotNextCheck and
+RefreshBuffAttrModifierValue, PauseBuffTime's isPaused, OnSpellAbnormalStartFinish's
+abnormalType/isStart, CheckSquadInFight's inversion and CheckDamageType's raw
+DamageType DWORD. OnSpell's serialized order differs from runtime placement;
+actual source/setter/field joins decide it. CheckDamageType joins both enum
+contexts and all setters without normalizing unknown bits. Extended physical
+unions retain their identity; reserved lead bytes, truncation, wrong counts
+and trailing bytes refuse. Four inherited members never establish a no-op,
+next-check suppression, a result, a pause or an attribute/event update.
 """
 from __future__ import annotations
 import hashlib,json,struct

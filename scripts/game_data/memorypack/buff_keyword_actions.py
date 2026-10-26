@@ -2,6 +2,17 @@
 
 Stored counts, enums, flags and provider bytes do not evaluate gameplay effects.
 Every child receipt must close its own original source span.
+
+Evidence and admission boundary:
+
+Exact keyword/infliction layouts retain each parent's own suffix bound.
+Vulnerable owns BlackboardString id, independent duration/rate, two targets
+and subtype; KeywordEnhanceEdit owns buffIds/operationType/value. Null/empty
+lists, null elements and required following fields stay distinct.
+SpellInflictionOnChar retains counts/type/immunity/key/source/target and flags;
+the separate shorter SpellInfliction parent owns energy-shard enum and extra
+flag before its own source/target. Neither inherits the other's grammar.
+These are stored operands, not keyword arithmetic or infliction delivery.
 """
 from __future__ import annotations
 import hashlib, json, struct

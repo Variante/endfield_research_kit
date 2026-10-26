@@ -1,6 +1,16 @@
 """Named debug-print storage with a proved inline color copy.
 
 Raw color bits and stored strings do not establish log output or color meaning.
+
+Evidence and admission boundary:
+
+Exact storage separates nullable bbKey/identifier, inline color, logType and
+target. Color has no nested source MethodSpec: the parent copies sixteen bytes,
+advances sixteen and copies the same temporary to its owned field through an
+explicit inlineSource proof. That does not waive typed proofs for arbitrary
+objects. The separate direct consumer claim proves that false from IFix falls
+through to AL=1 and a plain return with no print call. Patched selection,
+short-segment/refill behavior, rendered color and live logging stay unresolved.
 """
 from __future__ import annotations
 

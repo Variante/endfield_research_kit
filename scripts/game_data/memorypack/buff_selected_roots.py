@@ -5,6 +5,25 @@ corpus may attach a receipt after the current ledger has authenticated logical
 bytes. The registry independently repeats these same reads and compares the
 canonical receipt. No anonymous nested storage, live behavior or provider
 selection is promoted here.
+
+Evidence and admission boundary:
+
+Exact stored-schema compositions are source scoped: the claymore positive-heal
+route joins CheckHealTag/query and tag-zero attribute processor; BreakPassing
+joins the inherited-only action and BuffActionMap sequence terminals; the
+empty-condition/tag-ten route requires the positive root AttributeModifier
+before its empty condition and two BlackboardDouble processor operands; sword
+joins the recursively named six-action condition, tag-five processor and
+stored enableSide. Each selected path/length/SHA and native/reader dependency
+is checked before and after family and registry replay. The sword's JSON-safe
+certificate is regenerated against private reader context, never a cached
+parser object. Raw queries, events, enums and scalars prove no healing/damage.
+Historical gradual and two-direction damage roots remain distinct: the former
+joins CheckDamageDecorateMask, SaveBuffStackNumAdvanced,
+ModifyDynamicBlackboard and SimpleCalcBBAction to its damage-scale processor;
+the latter joins two CheckTwoDirectionAngle conditions and processors [5, 6].
+Neither isolated child closure nor a prior-build complete report admits a
+current root. Unsupported nested bodies still refuse.
 """
 from __future__ import annotations
 

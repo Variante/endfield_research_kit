@@ -1,4 +1,13 @@
-"""BindBountyEnemy storage with an independently bounded BlackboardString."""
+"""BindBountyEnemy storage with an independently bounded BlackboardString.
+
+Evidence and admission boundary:
+
+Exact inherited byte/three-DWORD prefix is followed by independently typed
+BlackboardString bountyKey. Short/extended physical tag encodings preserve
+original spans; null parent/child and null/empty payloads differ. Arbitrary
+payload bytes, including invalid UTF-8, stay raw. No bounty/enemy identity,
+evaluated binding or whole-root admission follows from this child receipt.
+"""
 from __future__ import annotations
 import hashlib,json
 from pathlib import Path

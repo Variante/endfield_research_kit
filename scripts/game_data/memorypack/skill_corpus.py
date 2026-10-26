@@ -96,6 +96,24 @@ outer/ledger and raw chunk-selection pins before and after, rejoins every
 stored identity to the complete current ledger, and rejects partial or already
 selected bases. Existing overlays run unchanged; no second VFS stream and no
 new capture are produced. Any reader/input drift requires a fresh full basis.
+
+Evidence and admission boundary:
+
+Legacy wholeSchemaExact means top-level stored framing/EOF, not recursively
+named interiors. The registry preserves familyWholeSchemaExact separately from
+storedFrameExact and keeps namedSchemaStatus=unproved until an owner supplies
+recursive naming; compact profiles may omit child receipts, so absence of an
+anonymous marker is not proof. Existing terminal observations need no repeat
+capture for this distinction. Current pooled 49-member operation and historical
+48-member terminal line retain independent admission gates.
+The historical target-set verification/rebind summaries were retained while
+the primary capture receipt was missing at its recorded local path. A validated
+summary cannot replay that input: restore a hash-identical receipt and all
+required dependencies before canonical registry publication. Buff success does
+not repair this cross-family acceptance obligation. A frozen complete-report
+rebind also needs current VFS chunk-selection/fingerprint evidence, not just
+old logical hashes. Sparse missingOld counts describe unselected rows, not
+deleted installed files. Rebinding is inference transfer, never a new sample.
 """
 
 from __future__ import annotations

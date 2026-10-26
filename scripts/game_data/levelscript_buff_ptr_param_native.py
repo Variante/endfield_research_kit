@@ -6,6 +6,14 @@ registration. Current operations bind an explicit installed root and the exact
 StringPool object through exit bookends. Only the nested Buff reference null
 path and concrete Buff MC1/string-list path are admitted. Live formatter selection and gameplay use remain conditional;
 no historical owner receipt is admitted here.
+
+Evidence and admission boundary:
+
+Conditional BuffPtr storage uses a hidden sixteen-byte result and nested
+ObjectPtr<Buff>; only FF/null object references are admitted.
+Source/adapter/conversion/owned stores and null/default branches need
+independent proof. Matching widths/marshal-size sentinels prove no ABI, live
+Buff resolution or positive object grammar.
 """
 import json,struct
 from contextlib import contextmanager

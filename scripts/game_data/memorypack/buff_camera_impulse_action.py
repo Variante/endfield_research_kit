@@ -2,6 +2,18 @@
 
 Raw vectors, flags and enum bits remain stored values. Provider selection,
 curve evaluation and the resulting camera impulse remain separate obligations.
+
+Evidence and admission boundary:
+
+Exact stored composition distinguishes the parent's inline eight-plus-four
+Vector3 copy from SpawnAbilityEntity's unmanaged helper return. The envelope
+uses a typed hidden result whose two sixteen-byte halves reach its named
+field; that managed extent is not serialized width. value_wrapper_sources
+proves inline members from the exact byref wrapper argument, preserving source
+and returned reference/float/byte ownership; coincident boxed offsets and
+partial stores are insufficient. ImpulseDefinition, Envelope, curve and target
+children remain independent. Stored mount/signal/flag values prove no impulse,
+camera ownership, curve evaluation or screen motion.
 """
 from __future__ import annotations
 import hashlib

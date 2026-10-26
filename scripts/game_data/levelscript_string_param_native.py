@@ -1,4 +1,13 @@
-"""Authenticate the current String Param's owned references and pooled reads."""
+"""Authenticate the current String Param's owned references and pooled reads.
+
+Evidence and admission boundary:
+
+Conditional current String Param proves both pooled reads and owned
+reference barriers; value/path each consume signed pool index, preserving
+empty -1 and null -2. Native admission precedes both null and present
+values. A matching inline UTF-8 reader or string name supplies no current
+source proof.
+"""
 from __future__ import annotations
 if not __package__:
     raise SystemExit('Run with python -m scripts.game_data.levelscript_string_param_native')

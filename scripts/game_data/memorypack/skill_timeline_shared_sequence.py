@@ -83,6 +83,20 @@ refuses while any route is pending.  A failed check citing only same-build
 sources still raises.  The literal tags above are the pinned build's; they
 are re-derived only when this contract and its sub-contracts are repinned
 together, never renumbered from a name match.
+
+Evidence and admission boundary:
+
+Exact stored action reuse from Buff additionally requires Skill's own dispatcher,
+wrapper, read order and nested contexts; numeric tag equality alone admits
+nothing. CheckPartTagMatch's TargetSettings is followed by value-type
+GameplayTagQuery, not a reference wrapper. CheckSkillHasHit, Dispel and
+SetIgnoreGlobalTimeScale keep their independent native/domain dependencies;
+selected ActionGroup closure does not replace family/source-terminal gates.
+An independently named replay preserves original archive hash/span/bytes;
+consumer comparisons additionally need accepted same-reference initializer/
+environment evidence and supplied skill identity. Repeated physical nodes
+remain candidates; partial profiles are coverage gaps. An indirect/anonymous
+initializer caller does not reveal a factory return or assignment branch.
 """
 from __future__ import annotations
 

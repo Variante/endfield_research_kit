@@ -1,4 +1,14 @@
-"""Authenticate pooled mask Params; positive masks require a null stored curve."""
+"""Authenticate pooled mask Params; positive masks require a null stored curve.
+
+Evidence and admission boundary:
+
+Conditional CommonMaskBlendData storage admits a positive six-member value
+with preserved managed audio extent/padding, null AnimationCurve, two
+Singles, Int32 mask and normalized Boolean. Even an empty positive curve
+refuses this profile. Factory/compatible formatter joins prove no live
+default or playback/mask effect; PlayFmv parent, whole EOF and video mapping
+remain separate.
+"""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

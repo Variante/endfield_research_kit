@@ -2,6 +2,16 @@
 
 Stored configuration does not establish a camera change, lifecycle or custom
 action result. Shared string bytes retain their conditional decoder boundary.
+
+Evidence and admission boundary:
+
+Exact parent storage is selected by union header, not an object-header-only
+inventory. Each custom curve independently joins the selected formatter base's
+AnimationCurve argument and bounded child receipt. inheritSkillIds uses the
+same closed List<string> context/actual source as BuffFindSettings.buffIdList;
+null/empty lists/elements and arbitrary byte payloads stay distinct. Decoding
+and provider choice remain conditional. Addition/inheritance/cleanup calls are
+consumer leads; CustomReturnType policy proves neither result nor camera effect.
 """
 from __future__ import annotations
 import hashlib,json,struct

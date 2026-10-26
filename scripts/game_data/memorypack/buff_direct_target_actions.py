@@ -1,4 +1,16 @@
-"""Shared adapter for reviewed direct fields plus one TargetSettings."""
+"""Shared adapter for reviewed direct fields plus one TargetSettings.
+
+Evidence and admission boundary:
+
+Exact stored parents ShowHideActor, PlaySound, FinishOwner and
+CheckMainCharacterCondition each retain their own read order/count/typed target
+source. A nested finder's context cannot stand in for its parent member.
+Physical extended unions keep their decoded identity even for numeric 255;
+only literal one-byte null is null. Shared direction/selector composition needs
+every reached child proof and strict endpoint, including independently named
+zero-member/query validators and finders. Cursor-only children refuse. Stored
+PlaySound proves no audio ownership/playback or complete root EOF.
+"""
 from __future__ import annotations
 import hashlib
 import json

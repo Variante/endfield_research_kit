@@ -1,4 +1,14 @@
-"""Authenticate the current bounded generated Param<List<LangKey>> source."""
+"""Authenticate the current bounded generated Param<List<LangKey>> source.
+
+Evidence and admission boundary:
+
+Conditional bounded LangKey list proof admits null, empty and single-element
+only, with prior-empty Clear, requested capacity, exact managed16 Add/store,
+provider callback/conversion and nominal child. Each child serializes
+header/key; nonserialized rawText is omitted. Counts above one, positive
+old-size Clear/growth, live inflated/cache/default contexts, text resolution
+and execution remain unproved.
+"""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

@@ -1,4 +1,17 @@
-"""Evaluate named closed Int64 Param consumer claims on the explicitly selected build."""
+"""Evaluate named closed Int64 Param consumer claims on the explicitly selected build.
+
+Evidence and admission boundary:
+
+Conditional selected Int64 paths preserve full QWORD output/fallback and write
+output before success. Branch-linked fragments stay in the owned authenticated
+range; adjacent bytes cannot supply control flow. The small predicate has its
+own bounded entry-to-return proof without an inferred unwind range. Compatible
+wrapper slots must share the exact concrete Param definition and reciprocal
+sole class/method arities/byref declarations; names alone do not suffice.
+Current addresses/hashes belong in the generated report, claims in the contract.
+Runtime receiver/MethodInfo/provider selection and stored cursor joins remain
+unresolved; stored formatter and enclosing owner proofs are separate.
+"""
 from __future__ import annotations
 
 import argparse

@@ -43,6 +43,19 @@ Recorded corrections, kept so they are not repeated:
 Field names beyond the proved cursors are labels, not serialization
 semantics; icon presentation, UI ownership and gameplay behavior do not
 follow from the recovered field names.
+
+Evidence and admission boundary:
+
+The outer frame is structuralOnly until all recursive interiors have named
+ownership. Complete exact stored-schema admission requires a forward byte-zero
+receipt through all thirty fields, source-stem/id equality and physical EOF,
+then the authenticated complete-family gate and canonical original-byte replay.
+Selected child/root diagnostics remain selectedOnly and publicationEligible:false.
+Historical complete sweeps describe their own native/reader epoch; they do not
+migrate old child contracts onto a new client. Current pooled strings and the
+20-member icon do not by themselves refresh attribute/stacking/DataPair/global,
+event or damage windows. Prefer build-derived names/order and claims-style read
+proofs to re-pinning historical windows. This establishes no live Buff behavior.
 """
 
 from __future__ import annotations

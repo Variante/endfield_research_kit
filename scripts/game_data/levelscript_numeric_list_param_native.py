@@ -1,4 +1,13 @@
-"""Authenticate independently typed Int32/UInt32/Single list Params and pooled paths."""
+"""Authenticate independently typed Int32/UInt32/Single list Params and pooled paths.
+
+Evidence and admission boundary:
+
+Conditional independent Int32/UInt32 proofs join collection headers, element
+reads, typed parent transfers and pooled tails. Null Param/list and empty
+list differ; signed bindings stay raw. UInt32 growth requires fresh
+requested-capacity construction or sufficient reused capacity. Float lists
+receive no grammar from either proof.
+"""
 from __future__ import annotations
 
 import argparse

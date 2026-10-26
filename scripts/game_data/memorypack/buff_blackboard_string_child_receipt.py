@@ -2,6 +2,14 @@
 
 Raw payload bytes and the original flag byte are retained. This stored child
 receipt does not decode text or choose a runtime Blackboard provider.
+
+Evidence and admission boundary:
+
+Exact stored key/use-key/value ownership comes from source stores and generated
+setters; raw flag/payload bytes retain their representation. CheckSkillId lists,
+RaiseTrainLevelEvent and other parents require independent typed joins. Fresh
+contract bytes are read even after an earlier successful decode. Encoding,
+runtime provider selection and interpreted keys stay unresolved.
 """
 from __future__ import annotations
 from functools import lru_cache

@@ -1,4 +1,16 @@
-"""Evaluate named closed Single Param consumer claims on the explicitly selected build."""
+"""Evaluate named closed Single Param consumer claims on the explicitly selected build.
+
+Evidence and admission boundary:
+
+Conditional selected Single caller paths join actual primary/chained-cold
+partitions, branch targets and common unwind ownership. They return current
+local or fallback's low Single bits and restore integers/XMM6. The constant
+callee copies a DWORD unchanged then returns separate Boolean success, with
+no arithmetic/conversion. Same concrete Param, ordinary declarations,
+reciprocal sole class/method ownership and explicit byref output join the
+compatible setter slot. Runtime receiver/MethodInfo/provider selection and
+stored formatter-to-evaluator integration remain unresolved.
+"""
 from __future__ import annotations
 
 import argparse

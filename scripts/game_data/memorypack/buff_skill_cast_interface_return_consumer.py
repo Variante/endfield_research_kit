@@ -1,4 +1,20 @@
-"""Authenticate the declared interface and its actual return adapter bytes."""
+"""Authenticate the declared interface and its actual return adapter bytes.
+
+Evidence and admission boundary:
+
+The direct static join identifies IActionEnvironment.FillSkillCastInfo's slot,
+not an initialized runtime class. Conditional adapter bytes/PE-family proof
+uses unsigned word lookup counts, doubled stride and wrapping DWORD slot sum
+then sign extension to derive a function/MethodInfo pair. Invocation supplies
+the original environment, MethodInfo and local result buffer, copying the
+returned value to caller output; lookup-path pairs remain opaque. Compatible
+readable tables, initialized interface class and ordinary returning callees
+are conditions; signed offsets supply no bounds. The named default body zeros
+the entire result and returns its buffer, with no receiver reads/child calls.
+Only if the actual implementation pointer selects it does zero reach the
+caller's Clear selection. Class discriminator, initialized cell, target pointer,
+lookup/preparation effects and live invocation remain unresolved.
+"""
 import hashlib
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

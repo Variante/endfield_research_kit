@@ -1,4 +1,13 @@
-"""Gate distinct current pooled nominal Params without claiming source ownership."""
+"""Gate distinct current pooled nominal Params without claiming source ownership.
+
+Evidence and admission boundary:
+
+Conditional LangKey storage serializes pooled key and bindings only. Managed
+rawText is not serialized and may survive wrapper reuse. Typed factories,
+full source/adapters/owned stores and value-return ABI remain gated. This
+component admits neither GlobalBuffId nor text resolution/default provider
+selection or enclosing EOF.
+"""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

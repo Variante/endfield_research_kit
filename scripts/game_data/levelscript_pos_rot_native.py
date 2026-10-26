@@ -1,4 +1,14 @@
-"""Authenticate current PosRot wire grammar on a matching generated route."""
+"""Authenticate current PosRot wire grammar on a matching generated route.
+
+Evidence and admission boundary:
+
+Conditional PosRot stores Euler then position as raw Float32 triples with
+positive header or FF zero/default. Its independent Param-list proof joins
+requested capacity/Add/store, conversion and actual provider transfers;
+BlendToCameraTransform retains its own typed parent. Initialized coherent
+contexts/successful Type-cache hits are conditions; cold/miss/growth, live
+default selection and camera behavior remain unresolved.
+"""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

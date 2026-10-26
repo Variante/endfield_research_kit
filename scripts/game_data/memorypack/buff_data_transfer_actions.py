@@ -6,6 +6,21 @@ nullable lists, null elements and independently null targets and blackboards.
 Stored keys remain bytes; evaluated blackboards, skill-setting lookup/output
 writes, battle-signal dispatch and mission ownership are unresolved. A parent
 action never establishes whole BuffData EOF.
+
+Evidence and admission boundary:
+
+Exact parent distinctions include ReadSkillSettingData's column/dataKey/
+enhanceAttributeSource/storeKey, SendBattleSignal's doubleValue/signalId,
+GetTargetBuffBBAdvanced's blackboardKey/desiredKey/finder/target,
+StoreAttributeValue's independent base/divisor/multiplier providers,
+SaveBuffStackNumAdvanced's finder/type/target/key/limitSkillCastId and
+SimpleCalcBBAction's output key/operation/two operands. GetAITransData keeps
+aiTransKey and saveTo independently nullable with both length words required.
+Its separate compiled consumer sends aiTransKey to TryGetAITransData.key and
+saveTo to UpdateTargetGroup.key around SetTarget: saveTo is a target-group key
+in that flow, not proof of a Blackboard save. Raw payload bytes, null elements
+and original child endpoints remain intact; lookups, arithmetic, assignment,
+battle delivery and ownership stay unresolved.
 """
 from __future__ import annotations
 import hashlib

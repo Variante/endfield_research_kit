@@ -1,4 +1,17 @@
-"""Decode node string fields through their owning route and proved source helper."""
+"""Decode node string fields through their owning route and proved source helper.
+
+Evidence and admission boundary:
+
+Exact stored UID/string ownership requires the actual reviewed route/read-order
+binding and selected pooled source helper, native inputs and matching pool.
+Unbound UIDs refuse; pool index zero is not empty inline text. Legacy ASCII UID
+scanning proves no current boundary: zero hits with positive list count means
+unavailable topology. The three sequential node lists must agree with every
+count/cursor; getter/action/header common prefixes have seven/eight/fourteen
+members, and header filter level is not next-action ID. Typed projections keep
+explicit getter references and operands. Unproved children block topology;
+no resolved getter value or whole-owner EOF follows from a node cursor.
+"""
 from __future__ import annotations
 import hashlib
 import json

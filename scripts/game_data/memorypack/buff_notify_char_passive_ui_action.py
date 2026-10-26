@@ -1,4 +1,12 @@
-"""Named passive UI action storage; live indicator behavior remains unresolved."""
+"""Named passive UI action storage; live indicator behavior remains unresolved.
+
+Evidence and admission boundary:
+
+Exact six-member storage joins independent TargetSettings and BlackboardDouble
+contexts and original spans; null target and null provider are distinct.
+Compiled target selection, evaluation and set_charPassiveNum calls do not
+prove a field's argument flow, a selected entity, a write or a visible indicator.
+"""
 from __future__ import annotations
 
 import hashlib

@@ -2,6 +2,17 @@
 
 Every field closes on its original byte span. Explicit raw12 output-buffer and
 inline raw16 programs prove stored bytes; spawning and lifetime stay unresolved.
+
+Evidence and admission boundary:
+
+Exact stored composition keeps targets, direction targets, duration,
+assignments and nullable string lists independently owned. Vector3 uses the
+actual typed hidden-result helper and subsequent getter: direct and registered
+readers separately prove eight-plus-four input bytes and twelve-byte cursor
+accounting. Quaternion instead copies sixteen inline bytes and updates the
+parent cursor. Both complete temporary-to-field transfers preserve reader and
+wrapper-reference aliases. Runtime extent alone proves neither wire read;
+short-segment/provider paths, spawning, navigation and lifetime stay unresolved.
 """
 from __future__ import annotations
 

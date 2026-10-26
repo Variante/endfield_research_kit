@@ -1,4 +1,18 @@
-"""Compose the selected stored Int64 constant with its named ordinary consumer."""
+"""Compose the selected stored Int64 constant with its named ordinary consumer.
+
+Evidence and admission boundary:
+
+Conditional CONST storage/evaluator composition joins exact wrapper/closed
+holder/getter/setter identities and disjoint complete field intervals. CONST
+takes the predicate's false path, bypasses reference-id guarding and selects
+full QWORD output/success before the caller returns current output. Reloaded
+wrapper/holder must remain identical and selector/constant storage unchanged
+apart from proved writes. Disjoint fields do not prove opaque sources,
+barriers or concurrent writers noninterfering. Actual pooled-string/Unity,
+native and proof dependencies are checked before/after; refusal clears the
+association and preserves prior publication. Other selector paths, live
+selection, positive owners/lists and execution remain unproved.
+"""
 from __future__ import annotations
 
 import argparse

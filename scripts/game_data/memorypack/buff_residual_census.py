@@ -9,6 +9,21 @@ separate future family replay obligation. Nothing here admits a new schema.
 Only the unique marker candidate accepted by the recorded reader through EOF
 supplies named obligations and owned unions. Rejected marker probes remain a
 separate inventory; their absent receipts are not additional root gaps.
+
+Evidence and admission boundary:
+
+Exact-root flags are authenticated per source and checked against canonical
+registry totals; an absent optional summary exact counter is not zero. Only
+one accepted EOF candidate supplies named child obligations: rejected embedded
+filename markers stay separate diagnostics. Missing/competing accepted frames
+remain root-frame obligations; named physicalEof must equal original logical
+length, not another projection's readerEndOffset. Historical one-DataPair and
+GlobalModifier co-occurrence filters were candidates, not native presence rules.
+Shared-event replay rereads eligible unresolved bytes and checks root/event
+native and reader/contract closure before/after; it never publishes coverage.
+Recorded first-stop grouping normalizes source positions but preserves union
+and structural expectations and counts unique residual sources. Missing
+refusals give no closure; overlapping cohorts predict no complete-root gain.
 """
 from __future__ import annotations
 

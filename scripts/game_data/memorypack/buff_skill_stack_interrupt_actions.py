@@ -15,6 +15,21 @@ states; scalars retain arbitrary raw bits. Unsupported targets, malformed
 children or unconsumed tails refuse the parent. Evaluated blackboards, enum
 meaning, interrupt execution and whole-root completeness remain unresolved
 here; only the owning Buff root receipt can establish physical EOF.
+
+Evidence and admission boundary:
+
+Exact stored routes keep CheckObtainAtbType's checkObtainMethod/checkObtainType
+flags and independent GainAtbMethod/GainAtbType lists. List element contexts and
+actual four-byte sources, not enum names, establish their widths. SetSkillCdAtOnce
+retains function, percentage/type-selection flags, skill id/type mask, target
+and scalar. SwitchMode keeps mode id and separate start/end interruption/reset
+flags. SetBuffDuration's operation enum is declared by ModifyDynamicBlackboard
+without changing its parent identity; finder/query/target/value stay independent.
+InterruptCurSkill owns skillOwner; RecoverLockOnEndIfNoLock owns its own target.
+CheckOriginSkillType retains attack mask and nullable SkillType list independently
+of CheckSkillType's parent. All original child extents and later fields must
+close; null parent, null child and empty collection differ. No skill/mode,
+interrupt, timer arithmetic, Buff lifetime or evaluated event follows.
 """
 from __future__ import annotations
 import hashlib

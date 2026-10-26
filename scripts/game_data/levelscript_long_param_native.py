@@ -1,4 +1,14 @@
-"""Prove the selected default Param<Int64> buffered storage composition."""
+"""Prove the selected default Param<Int64> buffered storage composition.
+
+Evidence and admission boundary:
+
+Conditional default stored Int64 proof uses its own buffered QWORD
+read/cursor and owned signed-long setter, not a claimed closed registered
+unmanaged helper. Four-field order, typed allocation and pooled path remain
+gated. Normal allocator/initialization/barrier, compatible storage and no
+interference are required; live provider/refill/evaluation and whole-owner
+admission remain unresolved.
+"""
 from __future__ import annotations
 import argparse
 import json

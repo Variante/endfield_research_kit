@@ -2,6 +2,15 @@
 
 Stored counts, enums, flags and provider bytes do not evaluate gameplay effects.
 Every child receipt must close its own original source span.
+
+Evidence and admission boundary:
+
+The exact parent composes four independently proved inline Vector3 transfers,
+each with its own register/cursor/temporary/destination program. PresetPointDef
+owns target and nullable key separately; assignments reuse the AssignPair
+owner. Null parent, null/empty lists and null elements stay distinct and later
+fields remain mandatory. These stored receipts prove no emitted entity,
+trajectory, weapon calculation or projectile delivery.
 """
 from __future__ import annotations
 import hashlib, json, struct

@@ -1,4 +1,13 @@
-"""Authenticate closed ParamOutput storage components on the selected build."""
+"""Authenticate closed ParamOutput storage components on the selected build.
+
+Evidence and admission boundary:
+
+Conditional closed outputs serialize signed Int32 paramTarget and pooled
+path only, with independent complete callers, typed setters and null exits
+before any shortcut. No T value is stored. Specialized event headers retain
+their own native root/pool and enum gates; source destinations prove no
+delivered output or runtime selection.
+"""
 from __future__ import annotations
 import argparse,json
 from pathlib import Path

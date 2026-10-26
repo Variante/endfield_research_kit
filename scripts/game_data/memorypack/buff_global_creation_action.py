@@ -2,6 +2,15 @@
 
 Original byte spans remain authoritative; stored configuration does not prove
 live provider selection, branch execution or resulting game state.
+
+Evidence and admission boundary:
+
+Exact stored creation retains count, finish flag, GlobalBuffInput list and
+source target. Each input independently owns assignment flag, AssignPair list
+and GlobalBuffId. The latter's inline id follows the complete wrapper-reference
+and string-return store program; managed reference size does not supply wire
+framing. Null wrapper/string/list and empty states stay distinct. Creation,
+assignment and finish remain consumer obligations.
 """
 from __future__ import annotations
 

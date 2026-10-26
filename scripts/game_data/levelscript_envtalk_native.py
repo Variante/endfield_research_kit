@@ -1,4 +1,15 @@
-"""Authenticate the current pooled EnvTalk Param/list/value stored representation."""
+"""Authenticate the current pooled EnvTalk Param/list/value stored representation.
+
+Evidence and admission boundary:
+
+Conditional stored proof separately authenticates all three concrete four-
+member EnvTalk-list Params. Each positive value serializes header, pooled id
+and Int32 odds; FF gives null id/zero odds. Managed16 hidden result/stride
+is not wire width. Owned factory/setter, list capacity/Add/store,
+adapter/forwarder/conversion and initialized typed contexts join
+independently; effective live cache/default, inflation, scheduling and outer
+EOF remain unproved.
+"""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

@@ -1,4 +1,13 @@
-"""Authenticate the current pooled CameraBlendCurveKey Param route."""
+"""Authenticate the current pooled CameraBlendCurveKey Param route.
+
+Evidence and admission boundary:
+
+Conditional CameraBlendCurveKey storage is a header plus one pooled string
+index; managed output contains a reference. The independent typed return
+ABI/source/adapter/conversion/owned stores precede two signed bindings and
+pooled path. FF/default differs from null Param; key lookup/evaluation and
+live provider choice stay open.
+"""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs

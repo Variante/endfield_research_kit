@@ -1,6 +1,16 @@
 """Named IgniteBuffText storage, including an explicit raw Vector2 transfer.
 
 Raw bytes do not evaluate energy, target selection or displayed text.
+
+Evidence and admission boundary:
+
+The exact raw Vector2 source reads two Singles, advances eight and packs their
+unchanged words into RAX. The distinct selected registration independently
+checks its source/cursor helper. The parent forwards full RAX to its setter,
+whose saved argument and typed __realInstance getter reach both owned stores.
+This explicit program, not runtime size or a nearby DWORD source, proves the
+stored offset. Targets, flags, enums and final nullable text close separately;
+slow/error/provider paths and displayed text/energy effects remain unresolved.
 """
 from __future__ import annotations
 import hashlib,json

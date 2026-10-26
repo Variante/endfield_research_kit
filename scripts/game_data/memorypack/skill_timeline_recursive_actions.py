@@ -4,6 +4,16 @@ The two native routes compose independently reviewed Int, Double and sequence
 children. Double's scalar occupies four wire bytes. Lists retain null/empty
 states and each child's own framing; runtime repetition and weakness effects
 are outside this stored-format evidence.
+
+Evidence and admission boundary:
+
+Exact stored native joins require each MethodSpec/context and reviewed RGCTX
+propagation even where direct shared consumers have no closed generic-table
+entry. Missing entries cannot select another child/provider. Repeat and
+SetMultiTimesWeakness preserve arbitrary four-byte Double bits, including
+nonfinite values; null/empty/positive lists stay distinct under shared depth
+bounds. No source-name exception, runtime repetition, weakness effect or
+whole-file admission follows; the family/terminal gates remain independent.
 """
 from __future__ import annotations
 

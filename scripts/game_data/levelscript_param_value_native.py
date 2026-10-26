@@ -1,4 +1,18 @@
-"""Authenticate selected Int32 Param evaluation and conditional constant transfer."""
+"""Authenticate selected Int32 Param evaluation and conditional constant transfer.
+
+Evidence and admission boundary:
+
+Conditional selected initialized/ready Int32 paths transfer unchanged DWORD
+constant bits through explicit byref output before a distinct low-byte success
+return. The caller returns current output or incoming fallback. Actual closed
+registered targets, reciprocal class/method ownership, sole arity, ordinary
+return/default/byref declarations and matching wrapper holder/setters precede
+interpretation. Compatible unchanged storage/frame/call conditions remain
+explicit. Getter negative markers authorize no new serialized source cases;
+receiver/MethodInfo identity, nonconstant provider selection and stored-cursor
+integration remain unresolved. Native/proof inputs are checked at both ends;
+refusal clears rows and preserves prior publication.
+"""
 from __future__ import annotations
 
 import argparse

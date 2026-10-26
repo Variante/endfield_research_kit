@@ -2,6 +2,18 @@
 
 This is a selected-image component proof, not an enclosing owner admission.
 Generic heap layout and live formatter/holder selection remain conditional.
+
+Evidence and admission boundary:
+
+Conditional scalar components each prove actual source, complete typed owned
+store/allocation and pooled path before any null shortcut. Boolean
+normalizes the source byte, Int32/UInt32 preserve their signed/unsigned
+bits, Single preserves precision/signed zero, and UInt64 proves its own
+inline counter program. Spline uses its own saved-reader/factory/null-guard
+profile; tag and volume wrappers have independent DWORD/QWORD sources.
+Ordinary allocation type records exclude byref/pinned/modifier/value
+markers. Enum/Byte shortcuts are not admitted by scalar width. Generic heap
+layout, live provider and enclosing EOF are separate.
 """
 from __future__ import annotations
 import hashlib

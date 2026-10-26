@@ -23,6 +23,70 @@ establish the flag branch outcome or selected animator. The two nested
 configuration operands, their helper/receiver ownership and actual parameter
 writes still require independent flow proofs; a return-policy enum is not an
 observed animation result.
+
+Evidence and admission boundary:
+
+The contract is the route inventory. Each admitted group is direct static call,
+owned Data read, typed argument forwarding or conditional return evidence as
+explicitly claimed; none implies a later rung. Missing claims empty that group
+as pendingReview; selected native drift empties all groups. Ordinary paths
+retain IFix, returning-callee, storage and noninterference conditions.
+Field ownership needs the incoming receiver's independently proved closed Data
+slot. Fieldless concrete witnesses or explicit contiguous scalar/reference
+suffixes are permitted; open-generic offsets, padding and ObjectPtr value
+suffixes are not. LaunchProjectile's string suffix supports emitPos/id/source/
+target reads and the proved source/target argument transfers. CreateGlobalBuff
+and Switch have separately proved closed List-reference suffixes; generic
+callee forwarding is not inferred. Unknown instructions/partial pointers erase
+provenance. Complete CMP operands prove reads only, not forwarded registers,
+flags or branch outcomes. Bounded local branch paths establish compiled
+reachability, not predicate feasibility; exact local forward jumps preserve
+aliases only to owned instruction boundaries.
+CheckHp/Poise, skill-setting, battle-signal, cooldown/mode, armor/time dilation,
+hurt/marker/tag/infliction, target/interrupt, entity/projectile/impulse, Buff
+lifecycle and server-projection groups keep their independently named sinks.
+Call presence never supplies argument ownership, handle identity or effects.
+The time-dilation stop call is proved while finishByAction's instantiated Data
+layout remains a separate gap. OnSpell's isStart byte is owned while its
+abnormalType chain remains interrupted. Weapon visibility/VFX call and policy
+claims do not repair its noncontiguous configuration suffix. RecoverLock's
+ObjectPtr field cannot use the reference suffix witness. HitStop owns target
+reads but not its curve's live argument. Keyword inherited execution, event
+payload identity and target/filter quantifiers remain separate joins.
+GetAITransData's aiTransKey reaches TryGetAITransData.key; saveTo reaches
+UpdateTargetGroup.key around SetTarget, not a proved Blackboard assignment.
+CreateGlobalBuff count/source and SetBuffDuration finder/target/value reach
+their named evaluation/selection arguments; operation/early-finish reads and
+lifetime sinks do not prove arithmetic or accepted writes. Switch owns choice/
+options and forwards choice, but does not identify a live Option sequence.
+PauseBuffTime supplies its owned isPaused byte to Buff.SetPaused.isPaused;
+the independent callee proof stores that byte into its own m_isPaused after
+false IFix. This compiled field-to-field path leaves the returned/cast Buff
+receiver, serialized assignment and timer/tick effects unresolved.
+SpellInflictionOnChar and the shorter SpellInfliction independently forward
+source to GetFirstTarget and target to GetTargets_Dispose; crossed mappings
+refuse. CharHurtAnim's attacker/defender and Ignite's target have independent
+selection arguments. Bit-test decoding preserves CheckSpell's saved receiver
+but proves no bit-test result or saved-key sink argument.
+NotNextCheck, HitStop, RefreshBuffAttrModifierValue, global creation and duration
+have typed AlwaysReturnTrue policy getters on their checked false-IFix paths.
+Switch, CheckTargetsEqual, Vulnerable, SpellInflictionOnChar and the explicitly
+contracted other actions have their own CustomReturnType getters. These enum
+policies are not action/sequence results. Switch's separate Boolean
+AlwaysReturnTrue returns the owned alwaysNext byte on false-IFix/non-null Data;
+normalization and caller use remain unresolved. Complete literal/zero return
+programs, guards and epilogues are required. DebugPrint's false-IFix path
+returns AL=1 without a print call; the patched path remains opaque.
+Buff.Reset/load/start/execute claims establish compiled loading stages.
+ConvertToServer/_ConvertAction project into BUFF_RES on the client; they prove
+no transport, server processing or parity. Initialization claims separately
+join SequenceAction.Init to NewAction and environment forwarding. The anonymous
+helper compares the metadata-derived AssignData virtual slot with its shared
+generic implementation: equal can inline nongeneric environment/state writes;
+unequal forwards receiver/data/environment/MethodInfo through the checked
+virtual dispatch. This conditionally explains why named AssignData entries can
+be absent; it observes no selected branch, completed assignment, generic data
+slot, cast, returned action or consumer association.
 """
 from __future__ import annotations
 

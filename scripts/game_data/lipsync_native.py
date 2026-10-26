@@ -1,4 +1,13 @@
-"""Authenticate the selected LipSync channel reader and typed array reads."""
+"""Authenticate the selected LipSync channel reader and typed array reads.
+
+Evidence and admission boundary:
+
+Exact stored channel admission independently authenticates
+declarations/count/complete reader windows, typed arrays and ordered
+setters. Corpus language selection requires exact ID/name/path namespace;
+wholly absent languages are explicit exclusions. EOF proves no provider
+selection, Keyframe consumer meaning or playback.
+"""
 from __future__ import annotations
 if __name__=='__main__' and not __package__:
     raise SystemExit('Run python -m scripts.game_data.lipsync_native')

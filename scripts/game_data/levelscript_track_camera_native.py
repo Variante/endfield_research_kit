@@ -1,4 +1,13 @@
-"""Authenticate the current stored camera read/store component; owner admission is separate."""
+"""Authenticate the current stored camera read/store component; owner admission is separate.
+
+Evidence and admission boundary:
+
+Direct selected parent read/store proof includes inserted custom name,
+target-type argument positions and move-state CustomPrefab enum. The move-
+state and camera-target Params keep independent signed-Int32/pooled-source
+gates. Historical removed cursor spans cannot establish current owner
+closure, default selection or camera effects.
+"""
 from __future__ import annotations
 import json
 if __name__=="__main__" and not __package__:

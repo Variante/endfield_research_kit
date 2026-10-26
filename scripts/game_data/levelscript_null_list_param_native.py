@@ -1,4 +1,17 @@
-"""Authenticate reviewed closed List Params; named EntityPtr, UInt64 and string kinds admit count0."""
+"""Authenticate reviewed closed List Params; named EntityPtr, UInt64 and string kinds admit count0.
+
+Evidence and admission boundary:
+
+Conditional capabilities are per closed kind, gated even before outer null:
+EntityPtr/UInt64/string constants admit count -1 or zero; Vector3 count -1
+only. Signed bindings and pooled path remain separate. Each zero path
+independently proves new/existing constructor/Clear and normal
+noninterfering pre-loop provider return, whose result is unused. String
+existing Clear needs prior count zero; positive lists, old-size clearing and
+provider-body equivalence are not inferred. Root/pool-bound operations
+freshly check native/Unity/reader/pool entry and exit; leaked capabilities
+refuse.
+"""
 import json
 from contextlib import contextmanager
 from pathlib import Path

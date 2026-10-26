@@ -1,4 +1,16 @@
-"""Authenticate named target-mutation argument claims on the selected build."""
+"""Authenticate named target-mutation argument claims on the selected build.
+
+Evidence and admission boundary:
+
+Conditional whole-CFG argument flow proves Clear receives the incoming handle,
+true for clearEntity/clearPosition/clearSlot and null MethodInfo; RemoveTarget
+receives that handle and the named Lock return as AbilitySystem, also with
+null MethodInfo. Full references/nonvolatile aliases survive every branch and
+loop join; partial overwrites and opaque volatile returns erase provenance.
+No path may bypass literal setup. Ordinary returning Win64 callees, stable
+incoming stack slots and disjoint/noninterfering storage remain conditions;
+branch selection, invocation and removal are unobserved.
+"""
 from pathlib import Path
 import hashlib
 from scripts.common import check_installed_native_inputs

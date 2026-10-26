@@ -4,6 +4,15 @@ The selected formatter copies two wrap words and seven words per Keyframe.
 Callback resolution names establish stored destinations, not evaluation or
 execution of Unity callbacks. The explicit stored-profile adapter retains
 source-named headerless Keyframe words; callers prove each parent typed join.
+
+Evidence and admission boundary:
+
+The exact stored curve separates null curve, null key array, empty array and
+positive array. Closed allocation, indexed stride, actual source/cursor copies
+and typed array stores prove time/value, in/out tangents, weighted mode and
+in/out weights; native size alone does not prove that grammar. Original float
+and enum bits remain intact. Each parent must independently prove its typed
+curve field and bounded original span. Callback names prove no interpolation.
 """
 from __future__ import annotations
 

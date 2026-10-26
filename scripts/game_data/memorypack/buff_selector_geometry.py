@@ -1,4 +1,14 @@
-"""Native-proved HitBox/ShapeData values and their FindTarget parent joins."""
+"""Native-proved HitBox/ShapeData values and their FindTarget parent joins.
+
+Evidence and admission boundary:
+
+Exact ShapeData/HitBoxFinder children independently prove Double and Vector3
+members. BlackboardVector3 consists of three nullable variable-width
+BlackboardDouble children, not a fixed raw triple; EffectAction shares that
+value reader. InFight's zero-member finder has its own proof. FindTarget
+separately authenticates its DirectionSettings/SelectorData parent fields;
+cursor traversal alone supplies neither names nor target selection.
+"""
 from __future__ import annotations
 import hashlib
 import json

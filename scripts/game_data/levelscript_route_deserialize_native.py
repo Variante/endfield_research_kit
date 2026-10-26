@@ -10,6 +10,39 @@ proved inlined base stores; v6 scopes literal integer lists to SwitchIntLarger
 and its independent current list gate. Parent proofs never admit an unproved
 child, runtime provider choice, execution, source owner or physical EOF.
 Validated CLI reports publish atomically under reports/ after input rechecks.
+
+Evidence and admission boundary:
+
+Exact reviewed layouts and direct derived setter-order declarations stay
+separate. Admission joins the dereferenced registration type (not the table
+cell), complete ordinary wrapper/count/owned reader, union branch, ordered
+actual reads/stores, closed Param contexts and authenticated source-span digest.
+Historical receipts without span digests are withheld. GameCondition has its
+own dispatcher; GameConditionServer is separate. Signed Int32 enum declarations
+are proved per closed kind, never inferred from width. ParamOutput independently
+names its output type and stores selector/path only, without a T value.
+The reviewed contract/layout inventories own individual action/getter/header
+operands: authored input flags, strings, numbers, enums and references remain
+stored inputs; event outputs and save IDs are destination paths, not delivered
+values. ListGetValue/GetLength's Param<List<int>> need their own child proof;
+Switch's literal list grammar does not admit them. Freeze input handles differ
+from Freeze output destinations. Inherited-only UI/reset/condition records
+acquire no extra fields from their display names. PreloadCutscene additionally
+requires selected/catalog/reviewed/serialized counts and its inserted typed
+option controls. Water-drone targetEntityListOutput is ParamOutput<EntityPtr>
+despite its list-shaped name. Each enum, child and parent retains its own gate,
+including before null shortcuts. Matching names, historical EOF or source
+identity alone cannot supply current owner closure, runtime actions, event
+firing, getter results, visible state or mission order.
+Typed-route v5 records metadata-owned inlined Boolean/Int32 stores from complete
+reader transfers instead of inventing setter calls. Complete actual string
+source/read-order binding and matching export pool are required. Late native
+refusals clear every validated row; semantic successes are never cached.
+Selected-route audits keep shared checks; only immutable native indexes may be
+shared. Atomic publication checks initial and late resolve/samefile aliases of
+all native/contract/layout/proof/reader/config/source inputs. Missing,
+mismatched, unresolved or exceptional audits preserve the previous report and
+emit a structured nonzero diagnostic, never an empty current replacement.
 """
 
 from __future__ import annotations

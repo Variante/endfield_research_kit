@@ -2,6 +2,21 @@
 
 Curves, lists, directional values and Blackboard providers must close on their
 original spans. This module does not evaluate curves or execute the actions.
+
+Evidence and admission boundary:
+
+Exact stored parents cover TimeDilation, EnemyHurtAnim, HitStop and CharHurtAnim.
+TimeDilation keeps effect/ignore lists, duration and cooldown providers, tags,
+layer and curve choices separate. Hurt parents keep independent attacker and
+defender, distance curve, direction, impact/pushback and transition operands.
+HitStop keeps independent attacker/target, direct curve/key, duration, affect
+type and priority. Its GameplayTag needs an actual DWORD read/cursor/return
+proof, not a native-size inference. The independently owned impact child is
+not borrowed from a SetSuperArmor parent receipt. The later shared
+buff_direction_target_children composition supersedes the literal-null-only
+direction restriction: every positive source/target must independently close
+recursively on its original span. Unsupported children still refuse. Stored
+flags/curves do not establish facing, animation, displacement or time effects.
 """
 from __future__ import annotations
 

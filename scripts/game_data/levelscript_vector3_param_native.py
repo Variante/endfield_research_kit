@@ -1,4 +1,12 @@
-"""Authenticate the current Vector3 Param's source, stack and owned transfers."""
+"""Authenticate the current Vector3 Param's source, stack and owned transfers.
+
+Evidence and admission boundary:
+
+Conditional Vector3 component joins actual MethodInfo/raw typed reader to
+disjoint hidden twelve-byte result and both owned copies, then pooled tail.
+It admits no PosRot list/default path or enclosing owner solely from shared
+vector layout.
+"""
 from __future__ import annotations
 if not __package__:
     raise SystemExit('Run with python -m scripts.game_data.levelscript_vector3_param_native')

@@ -1,4 +1,15 @@
-"""Recursive control actions composed through independently proved typed children."""
+"""Recursive control actions composed through independently proved typed children.
+
+Evidence and admission boundary:
+
+Exact composition independently owns IfElse's recursive sequences,
+CompareFloat's two providers, ModifyDynamicBlackboard's target/scalars and
+CheckBuffStackNumAdvanced's children. Physical parent spans close before child
+composition; anonymous interiors refuse root naming. CheckDamageDecorateMask
+also reuses its reviewed standalone event-map plan, preserving all eight mask
+bytes without claiming predicate evaluation. Recursive condition receipts and
+actual branch results remain distinct.
+"""
 import hashlib
 from scripts.game_data.memorypack.buff_actions import Reader,SEQUENCE_RECURSION_LIMIT
 from scripts.game_data.memorypack import buff_if_else_action_receipt as conditional

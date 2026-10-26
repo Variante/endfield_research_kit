@@ -1,4 +1,13 @@
-"""Authenticate the current Vector2 Param's source, stack and owned transfers."""
+"""Authenticate the current Vector2 Param's source, stack and owned transfers.
+
+Evidence and admission boundary:
+
+Conditional Vector2 proof independently checks two Single loads, low-lane
+packing, full QWORD return and both SIMD restores in actual/registered
+readers. Matching live MethodInfo and typed setter split the same XY bits
+into owned fields; vector extent alone supplies no source program or
+default/provider/owner admission.
+"""
 from __future__ import annotations
 if not __package__:
     raise SystemExit('Run with python -m scripts.game_data.levelscript_vector2_param_native')

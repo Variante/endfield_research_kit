@@ -33,6 +33,22 @@ for other nonempty or null action maps: it names ``actionMap``, ``dataMap``,
 the ``actionList`` count and the first record's union header and leaves
 every later byte opaque.  Evidence tier: ``exact`` stored layout; nothing
 here proves runtime graph execution.
+
+Evidence and admission boundary:
+
+Exact current LevelScript naming needs the supported owner plus triggerVolumes
+at physical EOF. Root interactiveActiveRiskEntityIdList precedes interactiveLocks;
+the Brief inserts it after dataPath. Root count/byref/holder/store and typed
+UInt64-list identity proofs do not establish positive lists or Brief children.
+Sparse interactives separately gate inherited/derived holder coherence, typed
+K/V factory, ParamGraph and bounded components. Unsupported positive children
+retain named stops; older inline readers cannot admit current pooled owners.
+Source/pool/native inputs are checked after decode or cache reuse, and selected
+native paths propagate to children. Native registration, initialized generated
+provider paths and constructors remain conditional static composition, not
+observed default selection. Suffix/first-record fallbacks remain partial and
+retain earlier exact-lane refusals. Old task-map closure is source/epoch scoped;
+new earlier routes can expose later task/module/trigger stops, requiring rerank.
 """
 
 from __future__ import annotations

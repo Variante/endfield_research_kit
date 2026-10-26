@@ -1,4 +1,14 @@
-"""Authenticate the selected current camera-target enum Param component."""
+"""Authenticate the selected current camera-target enum Param component.
+
+Evidence and admission boundary:
+
+Conditional target enum storage proves initialized raw Int32 source,
+pointer/counter widths, atomic retry edges, typed allocation/getter/owned
+stores and bitmap marking, not width from enum backing. The gate precedes
+null and needs the matching pool. Cold initialization/refill, live provider
+selection, independent EntityPtr arrays and current owner EOF remain
+separate.
+"""
 from __future__ import annotations
 if __name__=='__main__' and not __package__:raise SystemExit('Run python -m scripts.game_data.levelscript_camera_target_param_native')
 import json

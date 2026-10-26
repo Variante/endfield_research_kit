@@ -1,4 +1,13 @@
-"""Named DistanceValidator storage, distinct from evaluated distance predicates."""
+"""Named DistanceValidator storage, distinct from evaluated distance predicates.
+
+Evidence and admission boundary:
+
+The exact selected union and source/destination proof names clampToXZ,
+compareType and BlackboardDouble value. Shared selector-list composition needs
+that provider's independently exact original boundary, including null wrapper
+handling. Live entity positions, projection, evaluated distance and predicate
+results remain unresolved; whole-root EOF/family/registry gates are separate.
+"""
 from __future__ import annotations
 
 import hashlib

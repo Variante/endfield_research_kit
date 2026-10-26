@@ -2,6 +2,18 @@
 
 Targets, Blackboard values and queries close on their original byte spans.
 Stored masks and flags do not establish a runtime predicate or marker lifetime.
+
+Evidence and admission boundary:
+
+Exact parent receipts cover marker duration/id/target and finish/time-dilation
+flags, target/query and object/infliction masks, saved keys, and the two
+independent CheckTargetsEqual targets. CheckSpellInflictionType keeps its own
+mask/key read order and payload-kind spelling. CheckTagMatch's managed query
+uses a hidden stack result, then an instance getter and full owned-field copy;
+providerOutputSource proves that complete transfer rather than selecting the
+nearest call. Managed copy extent is not wire width or live provider choice.
+Each child still needs its same-build original-span receipt. No predicate,
+marker registration/expiration, lifetime or selected entity follows.
 """
 from __future__ import annotations
 

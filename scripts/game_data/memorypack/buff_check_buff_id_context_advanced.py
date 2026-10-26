@@ -3,6 +3,15 @@
 BlackboardBuffId inherits BlackboardString's three members. Its own source
 reader must independently prove the same ordered source-helper/setter calls
 before the shared value decoder can name an element of this different list.
+
+Evidence and admission boundary:
+
+Exact typed-list composition joins BlackboardBuffId's own ordered payload/byte/
+payload source calls to inherited setters before using BlackboardString's
+value decoder. Inheritance alone is insufficient. Null/empty lists and null
+elements remain distinct; the query has its own proof. This three-member
+subtype is not the one-member BuffId wrapper and proves no condition/provider
+execution or enclosing Buff completeness.
 """
 from __future__ import annotations
 

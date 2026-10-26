@@ -1,4 +1,20 @@
-"""Authenticate the original global-variable callback's conditional request flow."""
+"""Authenticate the original global-variable callback's conditional request flow.
+
+Evidence and admission boundary:
+
+Conditional complete original CheckClientGlobalVar callback paths preserve
+receiver/frame through initialization and fresh comparer/target loads. The
+loaded CompareOperator context and separately registered Int32Enum physical
+entry require ordinary backing and shared-implementation compatibility;
+entry equality alone is insufficient. The anonymous EventData<long,long>
+QWORD has no inferred field name from generic offsets. Its signed value and
+target Int64 return are separately converted to Single before DoCompare under
+explicit MXCSR rounding/exception conditions: this is not exact integer
+comparison or a known converted value. The low return byte is zero-extended
+into ConditionResult setter request without claiming normalization, semantics
+or setter effects. Native/actual proof inputs and publication aliases are
+checked at entry/exit; event/provider selection and ordering remain unresolved.
+"""
 from __future__ import annotations
 import argparse
 import json
