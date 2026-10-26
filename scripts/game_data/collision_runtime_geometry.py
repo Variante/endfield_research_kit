@@ -2,6 +2,36 @@
 
 Header agreement is separate from captured vertex/index equality. Repeated
 reference slots and descriptor index/scale evidence retain their own boundaries.
+
+Evidence and admission boundary
+-------------------------------
+Admitted query/ECS/getter records are recomputed before cached projections are
+trusted. Frozen source layouts require selected native authentication; cooked
+payloads require independently authenticated source receipts and raw/cooked hashes.
+The original triangle getter's pointer may directly match a typed Unity Mesh held
+cache with repeated instance ID, CAB/PathID and source ownership. This is sampled
+identity, not continuous lifetime or an atomic snapshot. Repeated mesh slots and
+equal scale bits remain descriptor aliases; ordinary shape-index/scale selection
+is conditional on constructor and attachment history.
+
+Header/count agreement is not runtime-array equality. Complete vertex and ordered
+triangle-index extents, or authenticated contiguous prefixes, are compared exactly
+only inside their own original getter/cache observation with repeated typed header,
+CAB/PathID and ECS identity. Missing tails stay absent: another callback, role,
+deduplicated payload or stored source cannot complete the snapshot. Independent
+unchanged source receipts may be combined without extracting the source again.
+Collision-only assets can have no render vertices but complete stored and live
+collision surfaces. Earlier header-only captures retain their missing-array gap.
+
+Repeated static actor-global and shape-local poses support conditional numerical
+face placement; source poses remain a separate assumption. Valid-position samples
+agree with stored faces and remap, while zero-distance hits lack an admitted
+surface point even if copied bytes are nonzero. Face/remap evidence survives that
+gap. Dynamic poses, runtime BVH equality and continuous attachment are unresolved.
+Assets consumes this audit with physical/serialized identity and hashes, publishing
+query use, movement/filter candidates, pose comparisons, complete arrays and
+prefixes separately; none becomes solver-contact evidence. Body-class count keys
+remain strings across JSON round trips so recomputation agrees with saved data.
 """
 from __future__ import annotations
 

@@ -1,4 +1,23 @@
-"""Decode original activation stages without inferring a physical outcome."""
+"""Decode original activation stages without inferring a physical outcome.
+
+Evidence and admission boundary
+-------------------------------
+Direct admitted original load, break-request, attack-preparation/callback and
+manager-submission records keep manager Boolean returns separate from acceptance
+or solving. Separately timed timers, handles, counts and serialized Mono identity
+identify stage coverage, not an unobserved IFix/budget branch. Per-stage budgets
+prevent scene loading from exhausting later requests. Callback body operations
+can select rooted rechecks without inventing a missing final break call.
+
+Open List<T> placeholder offsets do not establish a concrete count coordinate.
+The activation native contract independently proves receiver -> settings -> items
+and the integer size read; older records preserve raw words but withhold itemCount.
+Collider count, original stage calls and Mono identity remain independently useful.
+Some saved sessions have only kinematic setters, no break/force entries and no
+awake activation control. Later awake transitions outside destruction ancestry do
+not retroactively supply a bomb-break route. ABI/build success alone proves neither
+that generic coordinate nor live activation coverage.
+"""
 import struct
 
 

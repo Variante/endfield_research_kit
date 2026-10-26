@@ -4,6 +4,15 @@ Callers authenticate the query records and field layouts. Equal copied values
 are conditional candidates, never pointer identity or an inferred native copy.
 UV bytes are retained as a separate comparison, not part of the physical hit
 key used for point/normal/face/distance and collider identity.
+
+Evidence and admission boundary
+-------------------------------
+Same-owner/thread floor-return candidates compare point, normal, face, distance
+and collider identity bitwise; UV is independent. Unique matching returns and
+uniquely joined accepted proxy-filter candidates supply sampled gameplay-use
+evidence for collision-only cooked assets, independently of contact solving.
+Repeated equal candidates and ambiguous proxies remain explicit. A stack-copy
+value match is conditional and never establishes pointer identity or native copy.
 """
 from collections import defaultdict
 

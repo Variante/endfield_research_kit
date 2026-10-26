@@ -1,4 +1,21 @@
-"""Recover copied solver-side geometry and keep cooked-Mesh joins explicit."""
+"""Recover copied solver-side geometry and keep cooked-Mesh joins explicit.
+
+Evidence and admission boundary
+-------------------------------
+Admitted stage/ECS and response records are recomputed before interpreting the
+same-solve-call contact-manager shape-core prefix. Selected getter/type predicates
+support complete finite capsule radius/half-height and box half-extents, consistent
+with the primitive ABI; these are candidate geometry, not a Unity Mesh identity.
+Positive response samples classify as capsule/box. A separately observed triangle
+preparation lacks a matching solve and its Mesh pointer lies beyond the saved
+prefix. Another call cannot fill it, and no match does not prove it was never solved.
+
+Stored-source selection requires the same actor, masked userdata, physics version,
+Entity and earlier original source callback; equal dimensions or reused addresses
+are insufficient. Current observations therefore establish positive physical
+response, but no physical solving for the recovered cooked Mesh assets. Their
+query/getter/cache/array and gameplay-use evidence remains independently valid.
+"""
 from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict

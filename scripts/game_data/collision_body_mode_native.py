@@ -9,6 +9,13 @@ and copies the resulting bit into the cached isKinematic property.
 This proves original compiled flag semantics on selected binaries. It neither
 executes the setter nor proves live registration, IFix selection, awake-body
 participation or contact solving. Live body snapshots are a separate input.
+
+Evidence and admission boundary
+-------------------------------
+The selected registration loop uses its authenticated compiled count; the adjacent
+word is separate data, not a sentinel. This exact original compiled association
+does not establish a live cached registration, setter invocation or IFix choice.
+Typed dynamic flag buffering is independent of static pose getter buffering.
 """
 from __future__ import annotations
 

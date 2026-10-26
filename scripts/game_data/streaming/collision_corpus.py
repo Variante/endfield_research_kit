@@ -3,6 +3,15 @@
 Run after streaming.corpus with the VFS audit's input-set SHA256. Output is a
 receipt plus a gzip JSONL file containing one source file per row. Neither is
 runtime evidence or a published WebUI collision preview.
+
+Evidence and admission boundary
+-------------------------------
+The exact source gate replays current root directories, VFS hashes, full
+table-local keys, counted bodies and native-selected layouts. It authenticates
+the VFS audit catalog/build fingerprints before and after scanning: individual
+MD5 matches cannot make a stale catalog current. The exporter input-set token
+is not the game build; re-audit instead of editing it. Stored projections remain
+structuralOnly with conditional default-callback compatibility, not live loads.
 """
 from __future__ import annotations
 

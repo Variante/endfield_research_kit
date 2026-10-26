@@ -2,6 +2,18 @@
 
 Resource spans are native reads, not complete target extents or Unity PPtrs.
 Only reviewed default callback paths are interpreted; no live selection follows.
+
+Evidence and admission boundary
+-------------------------------
+The exact entry, extent and code-byte join between independently authenticated
+marker-17 and ECS decoder roles gives stored bodies their collision-definition
+interpretation. Selected default callbacks are conditional; registration, runtime
+root pairing, load and scene activation are unresolved. Mesh count/ordered keys
+and the separate fixed terrain key consume resource spans whose first qword is
+the full lookup key; following words stay explicit. Read width is not allocation
+extent. Terrain supplies the decoder's heightmap argument, not an ordered Mesh.
+A newer Collision observer's independent constructor/selector/resource proofs do
+not validate an older field-2/marker contract or stored Streaming projection.
 """
 from __future__ import annotations
 

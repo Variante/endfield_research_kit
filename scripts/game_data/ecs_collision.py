@@ -3,6 +3,22 @@
 This is the byte-array format consumed by the ECS decoder, not a cooked PhysX
 mesh. Mesh slots refer to the caller's ordered mesh list. Native authentication
 is owned by ecs_collision_native; raw projections do not assert live selection.
+
+Evidence and admission boundary
+-------------------------------
+The stored projection is structuralOnly until ecs_collision_native authenticates
+its selected header, primitive/mesh/multi/terrain cases and descriptor strides.
+Bounded counts, ordered mesh-list consistency and exact EOF are defensive reader
+gates, stronger than the native decoder's own bounds checks. Disabled ordinary
+attachments still consume their record and mesh slot. Complex meshes use a
+separate flag profile without the ordinary bit-zero attachment gate. Anonymous
+words, capsule dimension lanes and unknown flag bits retain raw values.
+
+decode_prefix derives a self-sized definition from authenticated kind/counts,
+then applies the strict reader to that exact slice. Trailing bytes stay opaque;
+a clipped definition is unavailable even if its header is complete. An unbound
+decoder argument supplies neither length units nor file/resource ownership, and
+a prefix projection cannot replace an owned definition or missing mesh-ID span.
 """
 from __future__ import annotations
 

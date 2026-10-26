@@ -3,6 +3,22 @@
 Uses admitted immutable bytes. Coverage is a byte-range fact, not a type or
 lifetime proof. Empty notifications, scene linkage and query blocking never
 establish solver-contact absence or participation.
+
+Evidence and admission boundary
+-------------------------------
+The exact address-union census distinguishes missing bytes from decoder failure;
+coverage elsewhere is censused without borrowing another checkpoint's snapshot.
+A nonsentinel hit face witnesses the original geometry-getter/remap path, not an
+uncopied pointer or concrete vtable. The auxiliary pointer differing from the
+ordinary query shape reinforces separate index domains without exposing geometry.
+
+Typed scene reads after a completed core may join a preceding report guard only
+under that same original core and scene. Guards after the read, other scenes or
+missing windows do not join. Empty reports, unentered builders/finalizers and
+sampled dispatch guards remain distinct from absent touching pairs or solving.
+Query blocking, kinematic population and lack of exported Rigidbody rows cannot
+establish awake islands, constraints or absence of installed physical bodies.
+Later positive solve observations do not retroactively fill older archives.
 """
 from __future__ import annotations
 

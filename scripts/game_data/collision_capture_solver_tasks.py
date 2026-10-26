@@ -1,4 +1,22 @@
-"""Admit original PGS scheduling chains without a nearest-context/time join."""
+"""Admit original PGS scheduling chains without a nearest-context/time join.
+
+Evidence and admission boundary
+-------------------------------
+Exact selected PGS declarations distinguish context-owned UpdateContinuationTask
+and solver start/partition/setup/preparation/solve/end tasks from Scene-owned
+broadphase tasks. The update supplies the exact context, island manager,
+continuation and auxiliary arguments. The common run wrapper ends before the
+base-task release decrements its continuation, outside the worker scope.
+
+Direct generation admission requires original manager release, zero decision and
+typed run plus an unchanged same-thread completed-task witness at original base
+release. Only that continuation inherits completion; nested releases may inherit
+their active worker cause. New release/run invalidates stale addresses, contention
+invalidates route epochs and missing budgets leave routes unbound. Raw headers,
+typed manager, intervals and continuation equality are independently checked.
+Prepared adapters do not supply unobserved live task routes, a public simulation
+core, asset owner or continuous actor lifetime from context equality or timing.
+"""
 from collections import Counter
 import struct
 

@@ -1,4 +1,26 @@
-"""Authenticate packed ECS collider framing and separate physics/entity identities."""
+"""Authenticate packed ECS collider framing and separate physics/entity identities.
+
+Evidence and admission boundary
+-------------------------------
+Selected native inputs establish exact packed framing and direct userdata reads,
+not a live actor. The current port independently re-derives ordinary/complex
+trailing anonymous words and surface/secondary userdata coordinates; terrain
+retains its framing. Unreadable userdata is a gap, never a zero parameter.
+The first descriptor parameter is gameplayOptionsWord, the second tagConfigWord;
+surfaceTypeByte comes from packed flags, shifted by two for ordinary records and
+one for complex records. Complex secondary selection is independent. Metadata
+F0 default escapes decode as little-endian DWORDs: AirWall and
+IgnoreFromBakeNavmesh remain distinct, with all genuine enum aliases retained.
+Capsule dimension normalization, tag lookup and high flag semantics are unresolved.
+
+The versioned physics ID and packed owning Entity are different lanes. Hit writers
+read masked actor userdata; the registry resolver separately validates physics
+ID/version and reads Entity's global-index/version pair. Covered native producers
+write Entity after decoder return; managed RecordEntity alone misses those writes.
+Covered length-prefixed producers skip the prefix and convert byte length to
+words; this unit is not inherited by arbitrary decoder callers. Getter labels
+require registration evidence, not just paired name/function table framing.
+"""
 from __future__ import annotations
 
 import hashlib

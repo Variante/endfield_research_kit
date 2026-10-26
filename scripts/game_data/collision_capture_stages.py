@@ -2,6 +2,26 @@
 
 Pointer equality is sampled evidence. A preparation route candidate does not
 prove continuous lifetime or the owning scene/step on another worker thread.
+
+Evidence and admission boundary
+-------------------------------
+Direct original getter observations copy consumed output fields, excluding
+unwritten padding, within hit conversion. Repeated typed Mesh vtable, instance,
+held-cache and CAB/PathID identity may join its triangle pointer to an enrolled
+source; missing/busy/expired/changed references stay gaps. No new game query is
+issued. The selected native adapter proves its Boolean/output-pointer ABI and
+inline/buffered paths, not universal live coverage.
+
+Regular/temporal contact preparation and original solve entry/return, including
+batched and temporal extended contacts, retain bounded descriptor, context,
+contact-manager, body and constraint windows. Preparation replaces the manager
+pointer with a constraint pointer. Before forwarding the original solve, a
+matching descriptor/body/writeback route is frozen, then manager provenance and
+versioned actor identity are rechecked. A shape-core/public-shape conversion is
+a typed candidate, never an untyped subtraction. Observed solving is separate
+from positive response, scene/step ownership, continuous lifetime and asset source;
+a prepared manifold or empty notification report proves none of those joins.
+Complete native unwind/dispatch/ABI checks establish adapters, not live coverage.
 """
 from __future__ import annotations
 import struct

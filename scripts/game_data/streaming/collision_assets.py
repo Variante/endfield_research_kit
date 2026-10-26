@@ -2,6 +2,17 @@
 
 Full-key equality is retained as a candidate relation. Resource-map population
 and actual asset selection require separate native/runtime evidence.
+
+Evidence and admission boundary
+-------------------------------
+The plaintext manifest must match its current VFS row and native layout before
+full-width numeric keys join authored path/Bundle candidates. This is an exact
+numeric relation with ambiguous candidates preserved, not a proved resource
+namespace or selected object. Selected Bundle main-asset PPtrs and complete
+cooked Meshes need their independent gates. Names, preload membership and
+##subasset suffixes never choose a Mesh. Collision-only Meshes may have complete
+cooked geometry, zero render vertices and no ordinary MeshCollider in the Bundle;
+Streaming ECS definitions are therefore another legitimate empty-OBJ source.
 """
 from __future__ import annotations
 

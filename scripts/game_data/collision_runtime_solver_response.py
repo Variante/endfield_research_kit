@@ -1,4 +1,23 @@
-"""Read observed PGS response without inventing source, lifetime or step joins."""
+"""Read observed PGS response without inventing source, lifetime or step joins.
+
+Evidence and admission boundary
+-------------------------------
+Direct positive accumulated normal response is established by admitted same-call
+post-original-solve windows through the selected PGS scalar consumer, wrapper/core,
+dispatch tag and descriptor/header/count/point-to-array proof. It may include warm
+starting or earlier iterations: it is not newly generated impulse, force in world
+units or a source/step owner. Clipped arrays stay unknown. Archive chunks can cover
+a complete scalar only under the same call/root, with each read time retained;
+no other callback repairs a missing word or makes the sample atomic.
+
+Only proved body vector lanes participate in response classification; the older
+larger prefix may include padding/neighbors. Without recorded read-success flags,
+vector differences remain conditional even when archived constraint response is
+direct. New per-side actor/shape prefixes, larger response windows and before/after
+copy-success bits do not upgrade historical samples. Missing same-lifetime owners,
+reused actor versions and nonzero updates without original task generations leave
+the positive source/step join unresolved, rather than absence of physical work.
+"""
 from __future__ import annotations
 import argparse
 from collections import Counter

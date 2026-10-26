@@ -2,6 +2,19 @@
 
 Declarations are reviewed data. Validation supplies no live body mode, flags,
 pair policy or solver-contact claim.
+
+Evidence and admission boundary
+-------------------------------
+Direct selected compiled rules make true secondary options clear simulation and
+retain scene query, with a separate setting selecting trigger versus query-only.
+False secondary clears trigger and retains queries; mesh simulation also depends
+on original actor kind and the typed dynamic body-flag bit. Static actors take the
+ordinary simulation-enabled branch. Stored flags do not identify a live branch or
+final API flags. collision_body_mode_native independently names the kinematic bit
+through managed setter/cache, bounded same-index registration, bool forwarding,
+typed getter and cached-property comparison. Adjacent registration data is not a
+sentinel; exact compiled semantics do not prove live registration or IFix choice.
+Final actor type address points exclude same-name intermediate construction tables.
 """
 from pathlib import Path
 from scripts.game_data.contracts import CONTRACTS_DIR

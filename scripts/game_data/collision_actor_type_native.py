@@ -1,4 +1,14 @@
-"""Authenticate actor concrete-type name leaves; infer no pose or simulation state."""
+"""Authenticate actor concrete-type name leaves; infer no pose or simulation state.
+
+Evidence and admission boundary
+-------------------------------
+Exact selected pure type-name getters distinguish PxRigidStatic and PxRigidDynamic,
+with final constructor/factory address points excluding intermediate construction
+tables sharing the same getter. A dynamic class name supplies neither its unread
+global pose nor dynamic/kinematic mode, awake state or contact response. Local
+shape pose alone does not place it in world space. Current native declaration
+ports do not change historical captures' missing-byte or live-state boundaries.
+"""
 import hashlib,json,struct
 from pathlib import Path
 from scripts.common import check_installed_native_inputs,sha256_file

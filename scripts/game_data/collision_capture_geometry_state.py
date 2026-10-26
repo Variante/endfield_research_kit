@@ -1,4 +1,18 @@
-"""Decode admitted array, pose, original-hit and task-generation observations."""
+"""Decode admitted array, pose, original-hit and task-generation observations.
+
+Evidence and admission boundary
+-------------------------------
+Direct admitted records keep bounded arrays within the original getter/cache
+sample and repeat header, physical identity and ECS ownership. Static global and
+local poses are separately timed; unsupported dynamic poses remain unread.
+The native hit prefix preserves consumed face/position/normal/distance fields
+before and after conversion. Adjacent validity-word/mask candidates remain
+conditional; they cannot validate a zero-distance surface point by themselves.
+Original scene generation, manager zero decrement and typed worker run are
+checked independently of completed-core scene projection. Lock contention,
+stale addresses, missing phases or changed generations withhold ownership;
+compilation/native adapter checks supply no unobserved live records.
+"""
 from collections import Counter
 import math
 import struct

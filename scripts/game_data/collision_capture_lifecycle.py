@@ -1,4 +1,31 @@
-"""Admit observed task producers and body activation without repairing gaps."""
+"""Admit observed task producers and body activation without repairing gaps.
+
+Evidence and admission boundary
+-------------------------------
+Direct task admission requires original producer/release/zero-decrement/run phases
+and typed owner domains at every handoff. Unbound producers retain zero generations
+and caller diagnostics. Filter tasks require their observed creator; a new release
+invalidates an older queued generation. A single raw prefix supplies base/type/owner
+to avoid mixing heap epochs. Missing completed-core projection withholds a step.
+Expanded admitted records close selected producer chains through pair filters,
+including trigger pairs, without proving a solver-eligible physical pair.
+
+Body-operation records keep passive native component, InstanceID, typed actor,
+registration, sleeping scalar, buffered request and committed mode distinct. A
+bounded pinned Rigidbody set is rechecked at pair/solver boundaries. Repeated live
+identity plus an original non-kinematic setter can select a registered committed
+awake body outside destruction ancestry, including ScenePhysicsObject simulation;
+that is not an invented break call. Operation/handle/enrollment times remain
+explicit. Workers use pinned addresses, destruction withholds ownership and handles
+end after quiescence; a reused actor cannot select a stale body. Original-call
+observation issues no physics query/force/simulation. A sampling burst after
+activation does not guarantee contacts or turn population reads into branch proof.
+
+Original contact reports may use a bounded declared guard nested below the
+simulation. Header/pair owner and retained-object enrollment are checked against
+that original simulation entry; later guards cannot repair late enrollment or
+absent ancestry. Quiet reports remain independent of physical solve evidence.
+"""
 from collections import Counter
 import struct
 

@@ -2,6 +2,29 @@
 
 These are versioned runtime identities. Stored definitions or numeric resource
 matches alone do not establish a currently loaded subasset or solver contact.
+
+Evidence and admission boundary
+-------------------------------
+Direct observations require immutable session admission, complete paired calls,
+selected native/source identity and explicit completion/loss gates. Generic
+decoder sampling is independent of retained light colliders; reviewed Streaming
+callbacks archive exact terminal source chunks in proved word units and ordered
+mesh IDs, then snapshot actors after inline Entity writes. Arbitrary callers do
+not inherit those units. Separate RecordEntity/native setter samples keep their
+own boundaries. Query userdata and registry reads are repeated to expose drift,
+not to make an atomic snapshot. Resource objects and instance maps are independent
+physical-identity joins. Missing/busy/drifting fields remain gaps.
+
+Larger bounded queues, worker allocation, compact default omission and batched
+writes do not weaken admission. Only declared defaults are restored; required
+identity/argument fields remain mandatory. Queue capacity/peak/full drops/retry
+contention, unreadable memory, abandoned originals and identity gaps are distinct.
+Quiescence/final drain preserves retained records after health failure, but an
+incomplete/lossy session remains inadmissible even if useful rows survive. Saved
+format equivalence does not establish live throughput, and initial console
+coverage is not the final census. Later complete sessions do not repair earlier
+failed source-capable captures. Cached consumers expand the admitted current
+format before native-memory framing checks.
 """
 from __future__ import annotations
 

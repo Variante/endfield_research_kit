@@ -1,4 +1,17 @@
-"""Authenticate CPU solver selection, scene dispatch and island-work gates."""
+"""Authenticate CPU solver selection, scene dispatch and island-work gates.
+
+Evidence and admission boundary
+-------------------------------
+Exact selected unwind families and operands distinguish the named rigid-body
+solver task from actual CPU dynamics. The CPU simulation-controller factory
+installs an empty delegated task slot; the scene separately dispatches its held
+dynamics context. Constructor solver-type selection chooses PGS or TGS factories.
+Both CPU update bodies copy accurate-island active count and return before task
+allocation on zero. Body, kinematic, articulation, contact-manager and constraint
+counts are separate. Task names or a shared run-wrapper return address do not
+identify an executed backend, branch or task generation; live operands need
+original-call observations rather than later checkpoint counts.
+"""
 import struct
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.collision_runtime_mesh_native import load_layout, validate_layout

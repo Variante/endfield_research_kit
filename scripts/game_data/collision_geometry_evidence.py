@@ -3,6 +3,19 @@
 Callers own capture/native/source authentication. Stored creation poses and
 separately timed current poses keep their own conditions; numerical comparisons
 do not recover a geometry pointer, prove lifetime or classify solver contacts.
+
+Evidence and admission boundary
+-------------------------------
+Plane distance, normal agreement, barycentric coordinates and face-remap aliases
+are conditional numerical comparisons under each source or current-pose hypothesis.
+They may discriminate ordinary and auxiliary inputs or equal-scale aliases without
+closing strict scale-only selection. Edge/vertex sphere or capsule sweep normals
+need not equal the facet normal. Positive-distance support-feature comparisons use
+original direction, distance, radius and hit point without normalizing direction
+or claiming the engine's feature-selection branch. Initial overlap/nonpositive
+distance and unproved validity masks withhold surface-point evidence. Current
+pose reads are separately timed; floating-point quaternion agreement and matching
+creation positions do not make an atomic query snapshot or prove mesh attachment.
 """
 from __future__ import annotations
 

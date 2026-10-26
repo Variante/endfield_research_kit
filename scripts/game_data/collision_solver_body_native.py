@@ -1,4 +1,27 @@
-"""Reprove named original physics-body activation claims on selected binaries."""
+"""Reprove named original physics-body activation claims on selected binaries.
+
+Evidence and admission boundary
+-------------------------------
+Named compiled claims are direct conditional activation routes: destruction init
+sets kinematic, break clears it and applies force, and kickable launch enables
+simulation, wakes a present body and forces that frame's simulation. IFix, body
+presence, budgets, scene/filter flags and eventual solving remain unresolved.
+
+The tracked stored-source interpretation is a bombable breakable-box postmodel:
+current Bundle prefab-root/TRS and reciprocal enabled non-trigger convex collider
+joins accompany dormant Rigidbody positive mass, gravity and unfrozen constraints.
+Missing production Rigidbody exports were a scope omission, not game absence.
+Authenticated external MonoScript identity and the independent destructible
+physics-settings prefix identify selected debris colliders; effect/curve tails
+stay opaque. The full resource-path model join and exact detail-keyed Interactive
+variant select that model and override the physics node to the authenticated Mono.
+Authored defaults allow bomb damage but disable physical/interactive damage, with
+no variant override; a freeze interval is requested. These structuralOnly stored
+defaults and conditional compiled requests select a better activation control
+than disappearing loot crates, without proving live damage policy or accessibility.
+The Interactive format/union remains owned by memorypack.interactive; these claims
+do not widen it. Runtime level overrides, changes and actual branch need observation.
+"""
 from __future__ import annotations
 import argparse,hashlib,json
 from pathlib import Path

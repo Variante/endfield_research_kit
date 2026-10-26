@@ -3,6 +3,22 @@
 This proves task types, owner coordinates and original calls on selected bytes.
 It does not assign an archived pair to a simulation generation. That requires
 observed original production, reference release and run for the same task.
+
+Evidence and admission boundary
+-------------------------------
+Exact constructor/continuation wiring gives postBroadPhase and postBroadPhaseCont
+separate embedded Scene-owner tasks. The continuation enters the general pair
+packet, which constructs OverlapFilterTask for the batch shader; its NPhaseCore
+owner must first rejoin Scene. Complete unwind families include downstream flags.
+A protected/indirect dependency entry is not a proved direct public-simulation call.
+
+The separate narrowphase task contract proves rigidBodyNarrowPhase's Scene-owner
+tail-call to that dependency program, and the extended public execution/native
+phase/collide/narrowphase producers. A declared collide task cannot replace the
+original scene guard's execution seed. Zero/unordered native simulation inputs do
+not seed work. Compiled membership, shared scene or nearby completion never supply
+missing headers/enqueue/generation. Older dynamics-only archives cannot be repaired
+by the expanded adapter's later coverage; unresolved cores propagate to descendants.
 """
 from __future__ import annotations
 

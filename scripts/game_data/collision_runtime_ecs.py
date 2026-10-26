@@ -4,6 +4,42 @@ The actor's ordered mesh inputs are proved separately from a hit shape's
 geometry. Descriptor candidates use the proved auxiliary/ordinary native index
 domains; constructor success and attachment history remain conditions. Names
 and equal parameter tuples never select geometry.
+
+Evidence and admission boundary
+-------------------------------
+Direct sampled ownership requires admitted immutable capture bytes and selected
+native layouts. Same-callback definitions/mesh IDs, post-callback Entity writes,
+and repeated query-time actor userdata/registry rows must agree on actor,
+userdata address, physics ID/version and packed Entity in causal order. Ordinary
+Unity Collider results have no ECS identity; absent registry checks are not loss.
+Covered FactoryUnitConfigAsset ownership claims separately read colliderData and
+colliderMeshes in CreateBusRender and record the returned physics owner; authored
+MonoScript/PPtr/freshness witnesses do not establish retail execution.
+
+An independent original Entity-setter route requires decoder < setter < query,
+matching copied Entity and before/after userdata/registry identity. Multiple
+setters, address reuse, changed versions or missing argument reads withhold a
+unique route. It may join an unbound schema-sized prefix to an Entity/query,
+without file ownership, known length units, shape selection or continuous lifetime.
+Owned Streaming definitions require exact EOF and captured ordered mesh IDs;
+unbound inputs remain unbound_decoder_input with structuralOnly prefix evidence.
+Failures identify decoder, producer, expected span and captured source hash.
+
+Same-original-callback resource handles, returned native objects, decoder IDs and
+serialized instance-ID map results may join physical inputs. Repeated observations
+must agree; map contention and absent lookups remain gaps. Full-key resources,
+mesh slots and CAB/PathID are separate joins. No name, position, suffix or later
+ID lookup repairs them. Compact records are expanded before native framing checks;
+only declared defaults may be restored, never missing required identity fields.
+Current admitted event contexts are reused rather than reparsed by obsolete
+format-version lists; native freshness and immutable source gates remain intact.
+
+Auxiliary complex shape index zero is separate from positive ordinary actor-shape
+enumeration. Positive candidates exclude complex and disabled ordinary records.
+The earlier Stairs mutation inference compared different index domains; corrected
+ordinary candidates already carry Stairs and match sampled option/tag/surface
+values. Equal tuples do not prove geometry, constructor success or attachment
+history, and stored record order cannot assume live shape order.
 """
 from __future__ import annotations
 

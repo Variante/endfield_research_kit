@@ -5,6 +5,16 @@ same-scene core whose interval encloses a worker update is only a candidate;
 reused task addresses, equal step bits and timing do not establish its origin.
 Expanded captures additionally retain the original producer/decrement/task-run
 chain, which may close sampled worker updates and their saved island decisions.
+
+Evidence and admission boundary
+-------------------------------
+Direct worker-step admission requires observed original producer, zero-reference
+decrement and typed run, with matching scene generation and step bits. A dispatch
+token must precede submission. Reused continuation addresses, same scene/context,
+equal bits, prior completions and timing alone leave conditional candidates.
+Changed generations, missing phases and closure contention invalidate joins.
+Expanded samples close selected cross-thread chains; unobserved generations and
+later nonzero-island updates remain unbound rather than borrowing those results.
 """
 from __future__ import annotations
 

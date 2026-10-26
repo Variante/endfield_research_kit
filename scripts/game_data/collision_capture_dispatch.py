@@ -1,4 +1,23 @@
-"""Decode original dynamics updates and their saved island-count operands."""
+"""Decode original dynamics updates and their saved island-count operands.
+
+Evidence and admission boundary
+-------------------------------
+Direct original scene/update nesting and typed scene-held context/island manager
+identify a sampled backend. The reviewed flush return site copies the caller's
+saved active-island operand, repeats it after unchanged forwarding and requires a
+normal original update return. This proves the selected zero/nonzero comparison,
+not a later manager count. Zero returns precede solver-task allocation; a nonzero
+gate still does not establish contact preparation or solve. Population fields
+are independent reads. Some admitted PGS samples have varying kinematics but no
+active islands, rigid bodies, articulations, contact managers or constraints;
+positive queries coexist with that idle solver. Later nonzero decisions and
+solver calls need their own generation join and cannot inherit an older core.
+
+Adapters preserve positional/stack arguments, returns and LastError. Missing
+fields, unbound updates and sampling limits have separate diagnostics. Worker
+scene/context ownership does not establish a physics-core step; only the typed
+completed public-scene projection or original generation chain can supply it.
+"""
 import struct
 
 

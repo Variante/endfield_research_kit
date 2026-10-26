@@ -10,6 +10,25 @@ dispatch evidence. A repeated public-scene pointer can relate scene observations
 conditionally; it is not a body-to-step, pair-filter execution or contact join.
 The separate original compiled isKinematic route names the observed mode bit
 only when its native gate validates; absent semantics leave the raw flags alone.
+
+Evidence and admission boundary
+-------------------------------
+Direct stable native body/shape reads survive absent ECS ownership, but do not
+invent CAB/PathID provenance. Query-converter Unity Collider InstanceIDs with zero
+ECS identity remain native-only records. Shape type uses the independently read
+inline geometry tag even when the buffered triangle getter returns false.
+Static/dynamic registration coordinates and internal/public scene pointer domains
+are independently proved; public scene equality remains conditional, not a step.
+Missing fields remain missing and drift withholds a stable join. Historical
+profiles retain missing-byte boundaries. The observer adds no getter/physics call.
+
+Sampled shapes have scene query/simulation enabled, trigger disabled and in-scene
+registration; sampled typed dynamic modes carry the independently authenticated
+kinematic bit. Neither class name nor these fields proves awake participation.
+The dynamic flag getter uses its own inline/buffer mask and clears a high bit;
+static-pose buffering cannot substitute for it. Configuration pointers, non-null
+callbacks and layer data are not executed filter or contact decisions. Body-state
+sampling covers query hits, not every solver body or the whole scene population.
 """
 from __future__ import annotations
 

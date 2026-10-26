@@ -2,6 +2,13 @@
 
 Only local PPtrs with the exact CAB and unsigned PathID identify an input.
 Container aliases are retained; they do not select a hit shape's geometry.
+
+Evidence and admission boundary
+-------------------------------
+Exact CAB and unsigned local PathID equality joins observed physical inputs to
+current exported container paths only after export freshness and selected stored
+hash checks. External-file PPtrs do not join by PathID alone. Aliases survive;
+a container relation neither proves Unity class nor decodes raw/cooked geometry.
 """
 from __future__ import annotations
 

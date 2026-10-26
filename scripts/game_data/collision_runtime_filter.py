@@ -2,6 +2,37 @@
 
 Never manufacture a pair from separately timed query-hit shapes. The original
 compiled rules and their required inputs are reported separately from execution.
+
+Evidence and admission boundary
+-------------------------------
+The selected compiled pair shader and hidden-result ABI are distinct from pair
+and notification callbacks. Layer matrix, sorted nonzero-untagged object keys,
+shape exclusions, stored contributions, trigger attributes and mutual notification
+formula determine selected outputs. Tagged keys bypass only object-list lookup.
+Exclusions preserve incoming pair flags; the cold invalid-layer diagnostic does
+not exclude. Scene modes and committed body-core override bits may exclude
+non-trigger kinematic/static or kinematic/kinematic pairs upstream; the ordinary
+two-kinematic downstream route clears the first pair-flag bit. Public buffered
+body flags cannot substitute for committed cores or make shader output solving.
+
+Direct admitted original general-pair/dispatcher/shader/layer/ignore calls retain
+unchanged inputs/results, repeated typed owners and scene policy. Selected results
+agree with recovered rules: most exclusions follow layer decisions, the others
+forced-shape predicates; sampled ignore helpers do not exclude. Complete empty
+lists differ from tagged/null bypasses. Stable sampled policy permits kinematic
+pairs and excludes ordinary kinematic/static pairs, while sampled permitted
+trigger pairs bypass that exclusion and provide no positive solving control.
+Other shader callers lack pair owners; compiled caller membership cannot repair
+those missing invocations. These are samples, not a whole-scene pair census.
+
+ECS identity must match the pair actor/shape and remain arrays through JSON.
+Fixed transport slots are interpreted by event role, not all as ECS records.
+Policy offsets use the internal scene; public interface displacement is separate.
+Older address gaps remain absent even when inline policy observations exist.
+Ignore-list prefixes cannot fill missing tails; original helper results have
+their own decision boundary. Original lifecycle generations can close sampled
+pair-step joins; older unbound calls stay unbound. No pair is made from separately
+timed hits or equal pointers. Native-only owners do not acquire ECS provenance.
 """
 from __future__ import annotations
 
