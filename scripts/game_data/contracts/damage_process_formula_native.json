@@ -1,0 +1,151 @@
+{
+  "schema": "endfield.damage-process-formula-native-contract.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "evidenceBoundary": "conditional",
+  "methods": [
+    {
+      "type": "Beyond.Gameplay.Core.DamageAction",
+      "method": "_ProcessDamage",
+      "rva": "0x55f4f70"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "_GetDefResistanceValue",
+      "rva": "0x5354e80"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.BattleFormula",
+      "method": "_GetDamageTypeResistanceValue",
+      "rva": "0x5355070"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DamagePackData",
+      "method": "GetFinalAttackValue",
+      "rva": "0x5354f50"
+    }
+  ],
+  "windows": [
+    {
+      "name": "processArithmeticAndSelection",
+      "rva": "0x55f6475",
+      "byteCount": 620,
+      "sha256": "4484f9d4139d3d33dbaaca9df40ef020a204949e19f70af289af315f348c7a88"
+    },
+    {
+      "name": "zeroDefinition1",
+      "rva": "0x55f53ee",
+      "byteCount": 4,
+      "sha256": "b1bc861a6e8697dab6b627576a693103e18130703626579ae8034d910b6a5db7"
+    },
+    {
+      "name": "zeroDefinition2",
+      "rva": "0x55f5a7a",
+      "byteCount": 4,
+      "sha256": "b1bc861a6e8697dab6b627576a693103e18130703626579ae8034d910b6a5db7"
+    },
+    {
+      "name": "defNormal",
+      "rva": "0x5354e80",
+      "byteCount": 194,
+      "sha256": "d98a66ff4e31448f95f4778171a85d52d258c1bdfa15b7484befc19ff0ac83f1"
+    },
+    {
+      "name": "typeBodyAndTable",
+      "rva": "0x5355070",
+      "byteCount": 548,
+      "sha256": "b3135db424fd99f5412757e4067b74ecd5603ea823a6d84f24b966b25ff76449"
+    },
+    {
+      "name": "maxFiniteHelper",
+      "rva": "0x5a027f0",
+      "byteCount": 102,
+      "sha256": "dfc5888d55f75e8f132bebd082d7488c39051a08f514dc5e3bb9420965ccfee7"
+    },
+    {
+      "name": "typeDefaultCold",
+      "rva": "0x74a9277",
+      "byteCount": 13,
+      "sha256": "f964348206ef94a9f6eefb8b28e9d57e5ad9857d3e67f8c85f900de71d186d9c"
+    },
+    {
+      "name": "defType1Cold",
+      "rva": "0x74a9244",
+      "byteCount": 13,
+      "sha256": "ec67902ccd139ef1b489f639abe19b659fa35ddfd07855a531efc824598b1067"
+    }
+  ],
+  "literals": [
+    {
+      "rva": "0xda95588",
+      "bits": "000000000000f03f",
+      "kind": "Double"
+    },
+    {
+      "rva": "0xda956c0",
+      "bits": "00000080b5f8e4be",
+      "kind": "Double"
+    },
+    {
+      "rva": "0xda956b8",
+      "bits": "0000000000005940",
+      "kind": "Double"
+    }
+  ],
+  "expression": {
+    "normalFinite": "z=mul64(A[62],packFinal); z=mul64(z,add64(crit?A[10]:0,1)); z=mul64(z,defFactor); z=mul64(z,sub64(1,D[63])); z=mul64(z,max(0,typeFactor)); z=mul64(z,callbackFactor); if mask&0x0fd00038:z=mul64(z,A[49]); if mask&0x4001c000:z=mul64(z,A[25])",
+    "defNormal": "div64(1,add64(mul64(widen64(efficiencyOfDEF_Single),D[3]),1))",
+    "defNormalSelection": "damageType != 1; D[3] >= original Double -9.999999747378752e-06; finite operands; selected static/provider guards",
+    "typeNormal": "typeFactor=mul64(sub64(1,div64(D[resistanceIndex],100)),D[takenScalarIndex])",
+    "typeMap": {
+      "0": {
+        "resistanceIndex": 94,
+        "takenScalarIndex": 4
+      },
+      "2": {
+        "resistanceIndex": 98,
+        "takenScalarIndex": 5
+      },
+      "3": {
+        "resistanceIndex": 97,
+        "takenScalarIndex": 6
+      },
+      "4": {
+        "resistanceIndex": 96,
+        "takenScalarIndex": 7
+      },
+      "6": {
+        "resistanceIndex": 95,
+        "takenScalarIndex": 48
+      },
+      "7": {
+        "resistanceIndex": 99,
+        "takenScalarIndex": 60
+      }
+    },
+    "type1And5": "cold selected raw path loads original Double 1 then returns via shared footer; requires separate authenticated control proof",
+    "callback": "global anonymous carrier +0x50; callback +0x15e0 and receiver +0x15e8; null carrier or null function yields 1; otherwise callback(pack) return is independent required unknown"
+  },
+  "conditions": [
+    "This is a selected finite-number arithmetic fragment, not a complete ProcessDamage result rule.",
+    "The caller follows the shown non-raw, normal finite path and every selected guard/provider completes normally.",
+    "A and D denote assumed compatible raw Double-array views with payload at +0x20; typed ownership and live continuity are not established by this contract.",
+    "XMM14.low64 is positive zero and XMM2.low64 is one at the arithmetic fragment. Two reviewed earlier XORPS definitions do not establish control-flow dominance.",
+    "crit is the actual Dice return; mask is the actual raw stack carrier; callbackFactor is the actual callback/default selection.",
+    "Original code/data and normal Win64 register/frame preservation remain valid at execution."
+  ],
+  "unresolved": [
+    "No full normal path/CFG/entry-to-source dominance validator implemented by this reading.",
+    "XMM14 zero definition exists twice before caller fragment; every observed write in bounded process entry region is XORPS zero; full dominance remains conditional.",
+    "Pack attrs/mask source typed field join and live object continuity are separate conditions.",
+    "Crit Dice return unobserved: enumerate outcomes without selecting against final output.",
+    "Global callback presence/result unobserved: default1 cannot be assumed.",
+    "DEF cold negative path not recovered.",
+    "RawDamage and special actor shortcut paths excluded.",
+    "Subsequent optional actor Single scale, block and settlement operations lie after this arithmetic fragment.",
+    "Unsupported generic decoder opcodes were read from authenticated raw bytes. This validator authenticates the reviewed expression windows; it does not independently decode or prove whole-path control flow."
+  ]
+}

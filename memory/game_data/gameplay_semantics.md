@@ -1740,6 +1740,43 @@ those identities must not be merged into the boss's HP series or treated as
 proof of collider geometry. Per-session counts, numerical snapshots and native
 addresses remain in generated analysis reports.
 
+The [ProcessDamage arithmetic contract](../../scripts/game_data/contracts/damage_process_formula_native.json)
+now records a conditional, finite-number fragment of that actual caller. Its
+[validator](../../scripts/game_data/damage_process_formula_native.py) checks the
+selected native pair, opened bytes, named entries, reviewed windows and external
+literals, then rechecks the files. Missing inputs, drift or failed checks withhold
+the expression. This authenticates a reviewed disassembly interpretation; it
+does not prove full control-flow dominance, typed array ownership, live provider
+selection or an entire damage result. The earlier Pack contract remains separate.
+
+Within the stated branch, ordered Double operations apply the attack scalar,
+Pack return, critical bonus, DEF factor, damage reduction, nonnegative type
+factor, optional global callback factor and two mask-selected scalars. DEF uses
+the observed Single coefficient widened to Double; replacing it with its short
+decimal display changes the calculation. Type resistance and damage-taken scalar
+are separate operands. Exact indices, predicates and byte provenance belong to
+the contract. The conditional expression ends before a later optional Actor
+Single scale, block and settlement processing, so it is not final HP loss.
+
+The current capture does not observe the actual Dice Boolean, global callback
+selection/result or subsequent Actor-scale branch/value. A null callback can
+select the identity factor in the reviewed code, but an unobserved callback is
+not evidence of null. Do not back-solve those missing values from settled HP,
+choose critical outcomes by residual fit or label the fragment a full prediction.
+The next numerical capture needs proved observations of those selections plus
+an explicit Pack-to-target/modifier association; skill-instance ownership remains
+a separate requirement before a sample can represent a player action.
+
+The [calibration reader](../../scripts/game_data/damage_runtime_calibration.py)
+retains Pack returns, enclosing actions, dump calls, typed getter callers and
+outer modifier candidates without merging multiple targets into a hit. Unknown
+or zero pointers do not create joins; non-exact typed fields cannot supply
+numeric operands. It streams a source-bound attribute sidecar, verifies source
+fingerprints and counts before publishing, and leaves prior outputs intact on
+input-validation failure. Candidate identity equality still does not establish
+object lifetime or attack ownership. Critical/block/RNG/skill fields remain
+unknown; these diagnostic candidates are not Gym transitions or reward labels.
+
 ## Character attribute formula
 
 [`attribute_formula_native.json`](../../scripts/game_data/contracts/attribute_formula_native.json)
