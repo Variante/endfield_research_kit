@@ -95,6 +95,30 @@ and must not be treated as installed-build native evidence. Package-specific
 paths, sizes and inventories belong in `reports/launcher/`; the format and
 interpretation boundaries above remain the durable record.
 
+### The hot-update resource index
+
+`Endfield_Data/StreamingAssets/index_{initial,main}.json` ships with the client, and
+the larger `Endfield_Data/Persistent/index_{initial,main}.json` beside
+`pref_{initial,main}.json` is that lane's rewritten copy: the index of the client's
+two resource groups, `initial` and `main`. Those two names are also what the login
+container's resource-version field spells (`initial_<v>_main_<v>`, interpreted in
+the network viewer's `memory/login_protocol.md`), and the client assembles the string
+from the pair instead of copying a server reply: `Beyond.Cfg.ResVersionCfg.GetResVersion`
+holds exactly those two literals and matches them over its own config list, and
+`Beyond.Login.LoginHotUpdater`'s download coroutine is the lane that fills them
+(`Online Res Version:`/`Local Res Version:`, `REMOTE_CFG_RES_VERSION_ERROR`,
+`HOTUPDATE_LOCAL_RES_CHECK`, `package_seq`, `need_fix`, `c_client_res_version`, a
+`/cloud_res_version.txt` that is absent on this install, and
+`Beyond.Resource.HotUpdate.ResourceIndex.FormatFileName` building the
+`index_` + group + `.json` name).  All six index files are base64 over a body that is
+not a block multiple (2468 B decodes to 1850 B) and share one constant 15-byte
+prefix; they open under no key this repository holds, and that prefix occurs in no
+game-root module and no metadata literal, so no consumer may read them as JSON or as
+CBC ciphertext. The recovered per-build addresses, the prefix value and the open
+question (which member carries the group version) live in the viewer's note; reading
+this codec is the open step here, and until it is read the installed tree's group
+versions are unknown from disk alone.
+
 ## The VFS blocks
 
 The authenticated VFS audit locates every logical file by block, chunk, offset

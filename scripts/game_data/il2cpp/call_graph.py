@@ -129,7 +129,24 @@ def first_missing_in_order(calls: list[DirectCall], callees: list[str]) -> str |
 
 
 def loaded_literals(graph: CallGraph, start_va: int, size: int) -> set[str]:
-    """Literal cells read by MOV or conditional CMOV r64 RIP loads; execution is separate."""
+    """Every string literal a body can reach, decoded through the metadata.
+
+    IL2CPP 2022 keeps no UTF-16 copy of a string literal inside
+    ``GameAssembly.dll`` -- a byte search for a URL or a format string in the image
+    finds nothing -- so a body reaches its literals through a tagged ``.data``
+    cell: a qword with ``word & 1`` and ``word >> 29 == 5``, whose
+    ``index = (word >> 1) & 0x0FFFFFFF`` selects a ``stringLiteral`` row
+    ``{int32 length; int32 dataIndex}`` into ``stringLiteralData`` (UTF-8).
+    Scanning the body for RIP-relative ``MOV`` (``48/4C 8B``) and conditional CMOV
+    (``48/4C 0F 4x``) loads and decoding each target cell is the only way to read
+    what a function says, and it is what makes a producer lane attributable: a
+    config reader whose only two literals are the two names it matches is settled
+    by this, and by nothing else available offline.
+
+    Proves: this body loads a cell that decodes to this string.  Does NOT prove the
+    load executes or which branch reaches it -- a body with dead paths reports every
+    literal on them, so reachability and the CFG stay separate questions.
+    """
     image = graph.image
     pe, metadata = image.pe, image.metadata
     literal_section = metadata.sections["stringLiteral"]
