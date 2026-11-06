@@ -1,5 +1,7 @@
 """Build-locked offline exhaustion evidence and validators."""
 from __future__ import annotations
+
+from scripts.common import native_game_data_root
 from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.common import rel_path as export_rel_path
 
@@ -36,10 +38,10 @@ from scripts.webui.story.level_bindings import (
 from scripts.game_data.levelscript_binary import (
     decode_levelscript_record_payload,
     decode_levelscript_task_conditions,
-    extract_levelscript_uid_records,
     levelscript_action_map_membership,
     levelscript_record_semantic_key,
 )
+from scripts.webui.story.uid_batch import extract_uid_records as extract_levelscript_uid_records
 from scripts.webui.story.anime_assets import recover_dialog_tree_definition_evidence
 from scripts.webui.story.mission_recovery import natural_key
 from scripts.webui.story.unity_documents import (
@@ -1761,6 +1763,7 @@ def build_offline_exhaustion_index(
     global_metadata_path = (
         global_metadata_path or _configured_global_metadata_path()
     )
+    game_root = native_game_data_root(gameassembly=game_assembly_path, metadata=global_metadata_path)
     source_paths = {
         "radioTable": table_root / "RadioTable.json",
         "audioDialog": table_root / "AudioDialog.json",
@@ -2643,7 +2646,7 @@ def build_offline_exhaustion_index(
                 f"missionTopologyPlayback:{mission_id}:{inventory_index}"
             )
             playback_data = source_paths[playback_source_name].read_bytes()
-            playback_records = extract_levelscript_uid_records(playback_data, source_path=source_paths[playback_source_name])
+            playback_records = extract_levelscript_uid_records(playback_data, source_path=source_paths[playback_source_name], game_root=game_root)
             _action_map, playback_membership = (
                 levelscript_action_map_membership(
                     playback_data,
@@ -2973,7 +2976,7 @@ def build_offline_exhaustion_index(
             {script_id},
         )
         brief = brief_dictionary.get(script_id) or {}
-        records = extract_levelscript_uid_records(levelscript_bytes, source_path=levelscript_path)
+        records = extract_levelscript_uid_records(levelscript_bytes, source_path=levelscript_path, game_root=game_root)
         action_map, _membership = levelscript_action_map_membership(
             levelscript_bytes,
             records,
@@ -3111,7 +3114,7 @@ def build_offline_exhaustion_index(
             ):
                 property_values[name] = safe_key(atoms[0].get("text"))
 
-        records = extract_levelscript_uid_records(levelscript_bytes, source_path=levelscript_path)
+        records = extract_levelscript_uid_records(levelscript_bytes, source_path=levelscript_path, game_root=game_root)
         _action_map, membership = levelscript_action_map_membership(
             levelscript_bytes,
             records,
@@ -3390,7 +3393,7 @@ def build_offline_exhaustion_index(
         post_dialog_action = declaration.get("postDialogAction")
         post_dialog_output = None
         if valid and isinstance(post_dialog_action, dict):
-            records = extract_levelscript_uid_records(data, source_path=source_paths[source_name])
+            records = extract_levelscript_uid_records(data, source_path=source_paths[source_name], game_root=game_root)
             action_record = next(
                 (row for row in records if row.get("localId") == post_dialog_action["actionLocalId"]),
                 None,

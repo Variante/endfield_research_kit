@@ -44,7 +44,7 @@ from scripts.webui.map.map_recovery_sources import projection_streaming_scene
 
 DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
 # Lives beside `hlod_grid_index.json`, which keys its own cache the same way.
-OBJECT_HASH_INDEX = ROOT / "reports/assets/map_recovery/asset_object_hashes.json"
+OBJECT_HASH_INDEX = ROOT / 'webui/data/_build/map/asset_object_hashes.json'
 OBJECT_HASH_SCHEMA = 1
 
 # Only the object types the renderer actually consumes are indexed; indexing

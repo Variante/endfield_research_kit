@@ -5,6 +5,7 @@ identify a live instance, prove activation, or change mesh-local previews.
 Saved scene reports supply input paths only; their joins are recomputed.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 from collections import Counter
 import hashlib
@@ -130,8 +131,8 @@ def apply_authored_publication(payload: dict, *, root: Path, selection_path: Pat
     try:
         selection_bytes = None
         if receipts is not None:
-            if not selection_path.resolve().is_relative_to((root / "reports").resolve()):
-                raise ValueError("generated authored selections must stay under reports/")
+            if not selection_path.resolve().is_relative_to(ExportLayout.configured().evidence_dir.resolve()):
+                raise ValueError("generated authored selections must stay inside the selected export/meta/evidence/")
             selection = dict(schema=SELECTION_SCHEMA, receipts=[rel_path(p.resolve(), root) for p in receipts])
             if model_receipt is not None:
                 selection["modelReceipt"] = rel_path(model_receipt.resolve(), root)

@@ -34,7 +34,7 @@ workers and preview processes; maps sharing one exact Streaming scene stay
 together so their shared bounds and outputs cannot race.
 ``build_map_recovery_preview --refresh-exact-fallbacks-only`` cheaply
 refreshes registry/quest point fallbacks. Preview rendering checkpoints each exact streaming, point and
-inferred HLOD render under ``reports/assets/map_recovery/render_cache/``;
+inferred HLOD render under ``webui/data/_build/map/render_cache/``;
 matching inputs reuse the published PNG/sample set, changed or missing ones
 invalidate only that checkpoint, and ``build_map_recovery_preview
 --no-render-cache`` forces a rerender.
@@ -108,7 +108,7 @@ TEXT_TABLE_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "TextTable.json")
 MAP_UI_CONFIG_DIR = export_rel_path(EXPORT_LAYOUT.json_dir / "UILevelMapLoadConfig")
 MAP_TILE_DIR = export_rel_path(EXPORT_LAYOUT.unity_type_dir("Texture2D"))
 TERRAIN_HEIGHT_DIR = export_rel_path(EXPORT_LAYOUT.terrain_dir / "PC")
-TERRAIN_HEIGHT_INDEX_REL = "reports/assets/map_recovery/terrain_height_index.json"
+TERRAIN_HEIGHT_INDEX_REL = "webui/data/_build/map/terrain_height_index.json"
 ANIMESTUDIO_ASSET_MAP_REL = (
     export_rel_path(EXPORT_LAYOUT.asset_map_dir("StreamingAssets")) + "/"
     "endfield_streamingassets_assets.json"
@@ -124,7 +124,7 @@ FACTORY_BATTLE_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "FactoryBattleTab
 ENEMY_TEMPLATE_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "EnemyTemplateTable.json")
 ENEMY_TEMPLATE_DISPLAY_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "EnemyTemplateDisplayInfoTable.json")
 MISSION_AREA_TABLE_REL = f"{GAMEPLAY_CONFIG}/MissionAreaTable.json"
-NATIVE_TRIGGER_FRONTIER_REL = "reports/story/recovery/native_receiver_activation_frontier.json"
+NATIVE_TRIGGER_FRONTIER_REL = "webui/data/_build/story/recovery/native_receiver_activation_frontier.json"
 _NATIVE_TRIGGER_FRONTIER_CACHE: dict | None = None
 _NATIVE_TRIGGER_FRONTIER_CACHE_KEY: tuple[str, int, int] | None = None
 _NPC_PROXY_EX_STORY_INDEX_CACHE: dict[str, dict[str, list[dict]]] = {}
@@ -150,7 +150,7 @@ def _native_trigger_frontier() -> dict:
 CAMPFIRE_TELEPORT_DETAIL_IDS = {"int_campfire_v2", "int_campfire_v2_smaller"}
 
 OUT = ROOT / "webui/data/map_recovery"
-ACTION_BINDING_REPORT = ROOT / "reports/assets/map_recovery/action_binding_index.json"
+ACTION_BINDING_REPORT = ROOT / 'webui/data/_build/map/action_binding_index.json'
 MAP_LEVEL_ID = "indie_dg002"
 # Map recovery now advances in authored mainline order.  Keep the currently
 # recovered scene explicit rather than allowing the largest free-roam map to
@@ -624,7 +624,7 @@ def _leveldata_spawner_hosts(level_id: str, spawner_id: int) -> list[dict]:
             if not all(math.isfinite(value) for value in values):
                 continue
             hosts.append({
-                "sourceFile": path.relative_to(ROOT).as_posix(),
+                "sourceFile": export_rel_path(path, ROOT),
                 "sourceSha256": hashlib.sha256(data).hexdigest(),
                 "recordOffset": offset - 4,
                 "position": {"x": values[0], "y": values[1], "z": values[2]},
@@ -707,13 +707,13 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
             }),
             "relatedFiles": _sorted_related(_merge_related([], [
                 _related(host["sourceFile"], "level_data", "typed spawner host transform"),
-                _related(str(config_matches[0].relative_to(ROOT)).replace("\\", "/"), "spawner_config", "exact SpawnerConfig identity"),
+                _related(export_rel_path(config_matches[0], ROOT), "spawner_config", "exact SpawnerConfig identity"),
                 *[
                     _related(_conv_file_for_key(language, key), "story_exact_spawner", "Story played by exact SpawnerPtr event")
                     for key in story_keys
                 ],
             ])),
-            "sourceFiles": sorted({host["sourceFile"], str(config_matches[0].relative_to(ROOT)).replace("\\", "/")}),
+            "sourceFiles": sorted({host["sourceFile"], export_rel_path(config_matches[0], ROOT)}),
             "source": host["sourceFile"],
         })
     return markers
@@ -831,7 +831,7 @@ def _exact_story_encounter_markers(level_id: str, language: str) -> list[dict]:
             continue
         host = host_rows[0]
         story_keys = sorted({binding["storyKey"] for binding in bindings})
-        config_rel = str(config_matches[0].relative_to(ROOT)).replace("\\", "/")
+        config_rel = export_rel_path(config_matches[0], ROOT)
         markers.append({
             "kind": "trigger",
             "subKind": "exact_encounter_spawner_host",
@@ -1080,7 +1080,7 @@ def _leveldata_patrols_by_id(level_id: str) -> dict[int, list[dict]] | None:
             # An undecoded active file could hide a competing patrol id.
             return None
         try:
-            source_file = str(path.relative_to(ROOT)).replace("\\", "/")
+            source_file = export_rel_path(path, ROOT)
         except ValueError:
             source_file = str(path).replace("\\", "/")
         for patrol in decoded.get("patrols") or []:
@@ -1528,7 +1528,7 @@ def _collect_references(node, script_file_map: dict[str, str], file_refs: set[st
 def _script_file_for_id(script_id: str, level_id: str = MAP_LEVEL_ID) -> str | None:
     candidate = ROOT / f"{LEVEL_SCRIPT_DATA}/{level_id}/{script_id}.json"
     if candidate.exists():
-        return str(candidate.relative_to(ROOT)).replace("\\", "/")
+        return export_rel_path(candidate, ROOT)
     return None
 
 
@@ -1536,14 +1536,14 @@ def _level_script_files(level_id: str) -> list[str]:
     root = ROOT / f"{LEVEL_SCRIPT_DATA}/{level_id}"
     if not root.is_dir():
         return []
-    return sorted(str(path.relative_to(ROOT)).replace("\\", "/") for path in root.glob("*.json"))
+    return sorted(export_rel_path(path, ROOT) for path in root.glob("*.json"))
 
 
 def _level_data_files(level_id: str) -> list[str]:
     root = ROOT / f"{LEVEL_DATA}/{level_id}"
     if not root.is_dir():
         return []
-    return sorted(str(path.relative_to(ROOT)).replace("\\", "/") for path in root.glob("*.json"))
+    return sorted(export_rel_path(path, ROOT) for path in root.glob("*.json"))
 
 
 def _mission_runtime_asset(mission_id: str) -> str | None:
@@ -1623,7 +1623,7 @@ def _exact_npc_proxy_ex_story_index(language: str) -> dict[str, list[dict]]:
 
     def relative(path: Path) -> str:
         try:
-            return str(path.relative_to(ROOT)).replace("\\", "/")
+            return export_rel_path(path, ROOT)
         except ValueError:
             return str(path).replace("\\", "/")
 
@@ -1736,7 +1736,7 @@ def _exact_npc_proxy_env_talk_story_index(language: str) -> dict[str, list[dict]
 
     def relative(path: Path) -> str:
         try:
-            return str(path.relative_to(ROOT)).replace("\\", "/")
+            return export_rel_path(path, ROOT)
         except ValueError:
             return str(path).replace("\\", "/")
 
@@ -1932,7 +1932,7 @@ def _exact_atmospheric_env_talk_marker_index(language: str) -> dict[str, list[di
         return {}
 
     try:
-        source_file = str(table_path.relative_to(ROOT)).replace("\\", "/")
+        source_file = export_rel_path(table_path, ROOT)
     except ValueError:
         source_file = str(table_path).replace("\\", "/")
 

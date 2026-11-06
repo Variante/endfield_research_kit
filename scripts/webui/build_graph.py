@@ -11,6 +11,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 from collections import deque
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
@@ -78,29 +79,63 @@ def plan_lines(tasks: Sequence[TaskSpec]) -> list[str]:
     return lines
 
 
+def run_logged_command(command: CommandSpec, environment: dict, log_path: Path) -> tuple[int, str]:
+    """Stream merged output to the console and disk, retaining a bounded tail."""
+    tail = ""
+    environment = {**environment, "PYTHONIOENCODING": "utf-8"}
+    with log_path.open("w", encoding="utf-8") as log:
+        with subprocess.Popen(
+            command.argv, cwd=REPO_ROOT, env=environment,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding="utf-8", errors="replace",
+        ) as process:
+            for chunk in iter(lambda: process.stdout.readline(8192), ""):
+                log.write(chunk)
+                log.flush()
+                tail = (tail + chunk)[-8192:]
+                encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+                sys.stdout.write(chunk.encode(encoding, errors="backslashreplace").decode(encoding))
+                sys.stdout.flush()
+            return process.wait(), tail
+
+
 def run_task(task: TaskSpec) -> dict:
     started = time.perf_counter()
     command_results = []
     task_returncode = 0
     diagnostic = ""
-    for command in task.commands:
+    log_root = REPORT_DIR / "build_logs"
+    log_root.mkdir(parents=True, exist_ok=True)
+    task_log_dir = Path(tempfile.mkdtemp(prefix=f"{task.name}_", dir=log_root))
+    for command_index, command in enumerate(task.commands, 1):
         shown = display_command(command)
         print(f"[webui-build:{task.name}] {shown}", flush=True)
         command_started = time.perf_counter()
+        log_path = task_log_dir / f"{command_index:02d}.log"
+        log_label = log_path.relative_to(REPO_ROOT).as_posix() if log_path.is_relative_to(REPO_ROOT) else str(log_path)
         try:
             environment = os.environ.copy()
             environment.update(command.environment)
-            returncode = subprocess.run(command.argv, cwd=REPO_ROOT, check=False, env=environment).returncode
+            environment["PYTHONUNBUFFERED"] = "1"
+            environment["ENDFIELD_BUILD_INPUT_BOUNDARY"] = "1"
+            returncode, output_tail = run_logged_command(command, environment, log_path)
+            if returncode:
+                diagnostic = output_tail.strip() or f"command exited with code {returncode} without output"
         except OSError as exc:
             returncode = 1
             diagnostic = f"{type(exc).__name__}: {exc}"
+            with log_path.open("a", encoding="utf-8") as log:
+                log.write(diagnostic + "\n")
             print(f"[webui-build:{task.name}] {diagnostic}", file=sys.stderr, flush=True)
         command_results.append({
             "command": shown,
             "returnCode": returncode,
             "seconds": round(time.perf_counter() - command_started, 3),
+            "log": log_label,
         })
         if returncode:
+            command_results[-1]["diagnostic"] = diagnostic
+            print(f"[webui-build:{task.name}] failure log: {log_label}", file=sys.stderr, flush=True)
             task_returncode = returncode
             break
     seconds = round(time.perf_counter() - started, 3)
@@ -161,7 +196,14 @@ def run_graph(tasks: Sequence[TaskSpec], jobs: int) -> tuple[int, list[TaskRun]]
                 pending[executor.submit(run_task, run.spec)] = name
             if not pending:
                 break
-            done, _ = wait(pending, return_when=FIRST_COMPLETED)
+            done, _ = wait(pending, timeout=30, return_when=FIRST_COMPLETED)
+            if not done:
+                elapsed = time.perf_counter() - started
+                active = ", ".join(
+                    f"{name} {elapsed - runs[name].start_offset:.0f}s"
+                    for name in pending.values()
+                )
+                print(f"[webui-build] running: {active}", flush=True)
             for future in done:
                 name = pending.pop(future)
                 run = runs[name]
@@ -255,6 +297,16 @@ def write_reports(payload: dict) -> None:
                 result = "ok" if task["returnCode"] == 0 else f"failed ({task['returnCode']})"
             after = ", ".join(task["after"]) or "-"
             lines.append(f"| {phase['name']} | {task['name']} | {after} | {result} | {task['seconds']:.3f} |")
+    lines.extend(["", "## Command logs", ""])
+    for phase in payload["phases"]:
+        for task in phase["tasks"]:
+            for command in task.get("commands", []):
+                if command.get("log"):
+                    path = Path(command["log"])
+                    if not path.is_absolute():
+                        path = REPO_ROOT / path
+                    link = Path(os.path.relpath(path, REPORT_DIR)).as_posix()
+                    lines.append(f"- {task['name']}: [{command['command']}](<{link}>) (exit {command['returnCode']})")
     md_tmp = REPORT_MD.with_suffix(".md.tmp")
     md_tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.replace(md_tmp, REPORT_MD)

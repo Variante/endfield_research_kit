@@ -443,15 +443,60 @@ def npc_proxy_native_evidence(evaluation: dict) -> tuple[dict | None, str]:
     return {row["method"]: row for row in group.get("methods", [])}, evaluation["gameAssemblySha256"]
 
 
-def require_same_story_native_evaluation(before: dict, after: dict) -> None:
+def require_stable_story_native_evaluation(evaluation: dict, *, language: str, report_path: Path) -> None:
+    """An interrupted input proof cannot seed a multi-hour language build.
+
+    A stable missing installation still permits the existing degraded build;
+    only an explicit failed after-read gate aborts before outputs are touched.
+    """
+    if not evaluation.get("failedGate"):
+        return
+    diagnostic = {
+        "validator": "story-language-bundle", "failedGate": "nativeInputsBeforeBuild",
+        "language": language, "sourceFile": __file__, "expected": "stable input evaluation",
+        "actual": evaluation.get("status"), "evaluationGate": evaluation["failedGate"],
+        "detail": str(evaluation.get("detail") or "")[:1000],
+        "readerInputDrift": evaluation.get("readerInputDrift"),
+        "action": "Keep the selected native inputs, reader code and contracts unchanged during the build, then rerun Story.",
+    }
+    write_json(report_path, {"schemaVersion": 1, "status": "failed", **diagnostic}, indent=2, compact=False)
+    error = ValueError("story-language-bundle:nativeInputsBeforeBuild " + json.dumps(diagnostic, ensure_ascii=False))
+    error.diagnostic = diagnostic
+    raise error
+
+
+def require_same_story_native_evaluation(
+    before: dict, after: dict, *, language: str = "", report_path: Path | None = None,
+) -> None:
+    """Refuse build drift with bounded file identities and a failure receipt."""
+    from scripts.game_data.levelscript_reader_inputs import reader_input_changes
+
     keys = ("status", "gameAssemblySha256", "globalMetadataSha256", "contractSha256", "readerInputs")
     if any(before.get(key) != after.get(key) for key in keys):
-        raise ValueError("story-language-bundle:nativeInputsAfterBuild " + json.dumps({
+        diagnostic = {
+            "validator": "story-language-bundle",
+            "failedGate": "nativeInputsAfterBuild",
+            "language": language,
             "sourceFile": __file__,
             "expected": {key: before.get(key) for key in keys[:-1]},
             "actual": {key: after.get(key) for key in keys[:-1]},
             "rawReaderInputsChanged": before.get("readerInputs") != after.get("readerInputs"),
-        }, ensure_ascii=False))
+            "detail": str(after.get("detail") or "")[:1000],
+            "action": "Keep the selected native inputs, reader code and contracts unchanged during the build, then rerun Story.",
+        }
+        if diagnostic["rawReaderInputsChanged"]:
+            previous, current = before.get("readerInputs"), after.get("readerInputs")
+            if isinstance(previous, dict) and isinstance(current, dict):
+                diagnostic["readerInputDrift"] = reader_input_changes(previous, current)
+            elif after.get("readerInputDrift"):
+                diagnostic["readerInputDrift"] = after["readerInputDrift"]
+        if report_path is not None:
+            write_json(report_path, {"schemaVersion": 1, "status": "failed", **diagnostic}, indent=2, compact=False)
+        error = ValueError("story-language-bundle:nativeInputsAfterBuild " + json.dumps(diagnostic, ensure_ascii=False))
+        error.diagnostic = diagnostic
+        raise error
+    if report_path is not None:
+        report_path.unlink(missing_ok=True)
 
 
 def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
@@ -1908,6 +1953,10 @@ def build_language_bundle(
     i18n_table_name = f"I18nTextTable_{language_code}.json"
     i18n_table_key = i18n_table_name.removesuffix(".json")
     native_evaluation = load_story_native_consumers()
+    require_stable_story_native_evaluation(
+        native_evaluation, language=language_code,
+        report_path=REPORTS_DIR / f"story_native_inputs_{language_code}.failed.json",
+    )
     npc_native_rows, npc_native_hash = npc_proxy_native_evidence(native_evaluation)
     def native_cited(display):return story_native_citation(native_evaluation, display)
     t0 = time.time()
@@ -8341,7 +8390,6 @@ def build_language_bundle(
                         row_key,
                         {"table": table_name},
                         tableSource=collection_source_label(table_source),
-                        variantOf="StreamingAssets/Table" if variant else None,
                     ),
                     summary_rows=summary_rows,
                     tags=page_tags,
@@ -20004,6 +20052,10 @@ def build_language_bundle(
         conv_dir,
         rows=list(inferred_option_anchor_rows_by_key.values()),
     )
+    require_same_story_native_evaluation(
+        native_evaluation, load_story_native_consumers(), language=language_code,
+        report_path=REPORTS_DIR / f"story_native_inputs_{language_code}.failed.json",
+    )
     print(f"\n[{language_code}] Done in {time.time()-t0:.1f}s")
     print(f"  profile:       {profile}")
     print(f"  conversations: {len(index_entries)}")
@@ -20033,7 +20085,6 @@ def build_language_bundle(
     if reference_stats:
         print(f"  reference:     {reference_stats.get('bytes', 0)/1024/1024:.1f} MB across {reference_stats.get('tables', 0)} tables")
     print(f"  index:         {index_path.stat().st_size/1024:.1f} KB")
-    require_same_story_native_evaluation(native_evaluation, load_story_native_consumers())
     return {
         "language": language_code,
         "profile": profile,

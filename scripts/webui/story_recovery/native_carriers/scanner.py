@@ -45,8 +45,8 @@ CATALOG_PATH = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadat
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
-DEFAULT_JSON = ROOT / "reports" / "story" / "recovery" / "native_value_carrier_audit.json"
-DEFAULT_MARKDOWN = ROOT / "reports" / "story" / "recovery" / "native_value_carrier_audit.md"
+DEFAULT_JSON = ROOT / 'webui/data/_build/story/recovery/native_value_carrier_audit.json'
+DEFAULT_MARKDOWN = ROOT / 'webui/data/_build/story/recovery/native_value_carrier_audit.md'
 MAX_METHOD_BYTES = 0x10000
 MAX_CONTAINER_DEPTH = 2
 

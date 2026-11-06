@@ -208,7 +208,7 @@ NARRATIVE_VIDEO_DIRS = (
 )
 
 DEFAULT_OUTPUT = WEBUI_BUILD_DIR / "story" / "video_bindings.json"
-DEFAULT_REPORT = ROOT / "reports" / "story" / "build" / "video_bindings.md"
+DEFAULT_REPORT = ROOT / 'webui/data/_build/story/build/video_bindings.md'
 
 _DLGTL_FROM_CONTAINER = re.compile(
     r"timeline/(dlgtl_[a-z0-9]+(?:_[a-z0-9]+)*?_sub_\d+)/", re.IGNORECASE
@@ -727,11 +727,11 @@ def collect_levelscript_fmv_actions(
 ) -> list[dict[str, Any]]:
     """Return exact native LevelScript FMV target fields and Story keys."""
     if occurrences is None:
-        from scripts.webui.story.level_bindings import (  # noqa: PLC0415
-            build_levelscript_action_story_occurrences,
-        )
+        # The generic Story scan explicitly excludes play_fmv rows. Its whole
+        # ActionMap decode cannot contribute here; replay the FMV owner only.
+        from scripts.webui.story.level_bindings import LEVELSCRIPT_DIR
 
-        occurrences = build_levelscript_action_story_occurrences()
+        occurrences, _failures = current_pooled_levelscript_fmv_sources(LEVELSCRIPT_DIR)
     rows: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str, int]] = set()
     for story_key, story_occurrences in sorted(occurrences.items()):

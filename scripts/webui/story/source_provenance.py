@@ -179,7 +179,9 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
         return list(cached)
     candidates: list[Path] = []
     if reference.startswith("export_full/"):
-        candidates.append(root / Path(reference))
+        # Legacy logical references still belong to the selected export; never
+        # inspect a different checkout-local export merely because it exists.
+        candidates.append(_layout(root).root / reference[len("export_full/"):])
     else:
         candidates.append(root / Path(reference))
         # Older references may still carry an installed-layer prefix; the

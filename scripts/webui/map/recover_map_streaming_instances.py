@@ -9,6 +9,7 @@ are published.
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli
 
 import argparse
 import base64
@@ -28,7 +29,7 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.map.recover_map_streaming_instances"
     )
 
-from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR, rel_path
 
 from scripts.repo_paths import REPO_ROOT
 
@@ -43,7 +44,7 @@ from scripts.webui.map.map_recovery_sources import (
     authored_streaming_scene,
 )
 
-DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
+DEFAULT_CLI = configured_animestudio_cli()
 DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
 DEFAULT_MESH_ROOT = EXPORT_LAYOUT.unity_type_dir("Mesh")
 DEFAULT_OUTPUT_ROOT = WEBUI_BUILD_DIR / "map" / "world_placements"
@@ -243,7 +244,7 @@ def _mesh_candidates(
                     "source": entry.get("Source"),
                     "sourceOffset": entry.get("Offset"),
                     "container": entry.get("Container"),
-                    "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
+                    "obj": rel_path(obj, ROOT),
                     "rank": ENTITY_MESH_FAMILY_OVERRIDES[override_base].index(name),
                     "match": "explicit_static_asset_family_closure",
                     "identityEvidence": "name_family_candidate",
@@ -273,7 +274,7 @@ def _mesh_candidates(
                 "source": entry.get("Source"),
                 "sourceOffset": entry.get("Offset"),
                 "container": entry.get("Container"),
-                "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
+                "obj": rel_path(obj, ROOT),
                 "rank": rank,
                 "identityEvidence": "name_family_candidate",
             })
@@ -360,7 +361,7 @@ def _hlod_mesh_candidates(level_ids: set[str], asset_map: Path, mesh_root: Path)
             "source": entry.get("Source"),
             "sourceOffset": entry.get("Offset"),
             "container": entry.get("Container"),
-            "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
+            "obj": rel_path(obj, ROOT),
             "rank": 0,
             "match": "exact_hlod_level_grid_cluster_hash_identity",
             "identityEvidence": "exact_level_hlod_key",
@@ -474,8 +475,8 @@ def recover_hlod_region_levels(
 
 def _recover_transform_core(level_id: str, cli: Path, game_root: Path) -> dict:
     pattern = rf"^Data/Streaming/PC/{re.escape(level_id)}/Streaming/InitChunkData_.*[.]bytes$"
-    command = [str(cli), "stream", "--streaming-assets", str(game_root / "StreamingAssets"),
-               "--fallback-assets", str(game_root / "Persistent"), "--block-type", "streaming",
+    command = [str(cli), "stream", "--streaming-assets", str(game_root / "Persistent"),
+               "--fallback-assets", str(game_root / "StreamingAssets"), "--block-type", "streaming",
                "--file-regex", pattern]
     result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode:
@@ -560,7 +561,7 @@ def _finalize_payload(
         "schemaVersion": 2,
         "levelId": level_id,
         "coordinateSystem": "Unity column-major 4x4 matrices; translation at indices 12/13/14",
-        "source": {"method": "AnimeStudio.CLI stream / Streaming / InitChunkData", "cli": str(cli.relative_to(ROOT)),
+        "source": {"method": "AnimeStudio.CLI stream / Streaming / InitChunkData", "cli": rel_path(cli, ROOT),
                    "cliSha256": sha256_file(cli), "files": sources},
         "prefabIdentityContract": {
             "status": (

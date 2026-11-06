@@ -11,7 +11,7 @@ build:
    through a targeted reader that opens only Timeline roots and the objects
    they reference.
 4. Use a filtered AnimeStudio CLI `--filter_data` re-export, written under
-   tmp/, only for focused diagnostics or when the full export has no
+   the selected export's work directory, only for focused diagnostics or when the full export has no
    recoverable Timeline tracks.
 
 The main output is:
@@ -23,7 +23,7 @@ placement.
 """
 from __future__ import annotations
 from scripts.common import EXPORT_LAYOUT
-from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout, configured_animestudio_cli
 
 import argparse
 import hashlib
@@ -56,14 +56,14 @@ from scripts.webui.story.story_keys import line_stem, timeline_stem_to_dialog_ke
 from scripts.common import WEBUI_BUILD_DIR
 
 EXPORT_ROOT = EXPORT_LAYOUT.root
-# The focused CLI re-export is a disposable debugging aid; it never lives in
-# the export root. Normal runs read the published MonoBehaviour documents in
+# The focused CLI re-export belongs to the selected export's work directory.
+# Normal runs read the published MonoBehaviour documents in
 # the export's Unity object store.
 DEFAULT_EXTRACT_DIR = EXPORT_LAYOUT.work_dir / "timeline_extract"
 DEFAULT_ORDER_OUT = WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
 DEFAULT_DIALOG_REGISTRY = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 DEFAULT_PARENT_VALIDATION_REPORT = (
-    ROOT / "reports" / "story" / "build" / "timeline_parent_chain_validation.json"
+    ROOT / 'webui/data/_build/story/build/timeline_parent_chain_validation.json'
 )
 TIMELINE_RECOVERY_MODES = ("auto", "always", "never")
 
@@ -200,37 +200,16 @@ def log(message: str) -> None:
 
 
 def resolve_cli(cli: Path | None = None) -> Path:
-    if cli:
-        candidate = cli if cli.is_absolute() else ROOT / cli
-        if candidate.exists():
-            return candidate
+    if cli is None:
+        # The wrapper's selected CLI is authoritative, including when missing.
+        # Keep the standalone legacy environment option only below that choice.
+        legacy = os.environ.get("ANIMESTUDIO_CLI", "").strip().strip('"')
+        cli = (Path(legacy) if legacy and not os.environ.get("ENDFIELD_ANIMESTUDIO", "").strip()
+               else configured_animestudio_cli())
+    candidate = (cli if cli.is_absolute() else ROOT / cli).resolve()
+    if not candidate.is_file():
         raise FileNotFoundError(f"AnimeStudio CLI not found: {candidate}")
-
-    env_value = os.environ.get("ANIMESTUDIO_CLI")
-    if env_value:
-        candidate = Path(env_value)
-        if candidate.exists():
-            return candidate
-
-    cli_root = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin"
-    candidates = [
-        cli_root / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe",
-        cli_root / "Debug" / "net9.0-windows" / "AnimeStudio.CLI.exe",
-        *sorted((cli_root / "Release").glob("*/AnimeStudio.CLI.exe")),
-        *sorted((cli_root / "Debug").glob("*/AnimeStudio.CLI.exe")),
-    ]
-    seen: set[Path] = set()
-    for candidate in candidates:
-        resolved = candidate.resolve() if candidate.exists() else candidate
-        if resolved in seen:
-            continue
-        seen.add(resolved)
-        if candidate.exists():
-            return candidate
-    raise FileNotFoundError(
-        "AnimeStudio CLI not found. Build tools/AnimeStudio/AnimeStudio.CLI "
-        "or set ANIMESTUDIO_CLI."
-    )
+    return candidate
 
 
 def discover_asset_maps(export_root: Path = EXPORT_ROOT) -> list[Path]:
@@ -2899,7 +2878,7 @@ def csv_set(value: str) -> set[str]:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export-root", type=Path, default=EXPORT_ROOT)
-    parser.add_argument("--cli", type=Path, help="Path to AnimeStudio.CLI.exe. Defaults to ANIMESTUDIO_CLI or tools/AnimeStudio.")
+    parser.add_argument("--cli", type=Path, help="Path to AnimeStudio.CLI.exe. Defaults to ENDFIELD_ANIMESTUDIO, then standalone ANIMESTUDIO_CLI, then the maintained Release build.")
     parser.add_argument("--maps", type=Path, nargs="+", help="AssetMap JSON files. Defaults to discovered AnimeStudio-cli maps.")
     parser.add_argument("--extract-dir", type=Path, help="Where filtered Timeline exports should be written.")
     parser.add_argument("--out", type=Path, help="Output timeline_line_orders.json path.")

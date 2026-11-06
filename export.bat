@@ -16,7 +16,8 @@ rem   export.bat debug --from-game      every structured block and Unity class
 rem   export.bat --help                 every option
 
 rem endfield_paths.bat supplies ENDFIELD_GAME_ROOT and ENDFIELD_EXPORT_ROOT;
-rem --game-root still overrides the installed client for one run.
+rem --game-root and --export-root override the selected roots for one run.
+rem Missing/stale source and static collision evidence is prepared automatically.
 if exist "%~dp0endfield_paths.bat" call "%~dp0endfield_paths.bat"
 if errorlevel 1 exit /b %errorlevel%
 

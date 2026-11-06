@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 
+from scripts.common import resolve_installed_native_inputs
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -396,7 +397,7 @@ def _blackbox_subgame_task_topology(
         bind_script_id,
         diagnostics=diagnostics,
     )
-    summary = decode_levelscript_binary_summary(data, bind_script_id, source_path=script_path)
+    summary = decode_levelscript_binary_summary(data, bind_script_id, source_path=script_path, game_root=resolve_installed_native_inputs()[1].parents[2])
     task_map = decoded[0] if len(decoded) == 1 else None
     tasks = (
         task_map.get("tasks") or []

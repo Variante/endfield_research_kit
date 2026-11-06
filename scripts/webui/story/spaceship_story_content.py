@@ -49,7 +49,7 @@ SCHEMA = "spaceshipStoryContentAudit.v3"
 DEFAULT_TABLE_ROOT = (
     EXPORT_LAYOUT.table_dir
 )
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/recovery'
 
 SPACESHIP_OPTION_TYPES = frozenset({
     "Beyond.Gameplay.SpaceshipOptionGiftData",

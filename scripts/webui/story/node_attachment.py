@@ -53,10 +53,10 @@ SCHEMA = "nodeAttachmentCoverage.v4"
 
 DEFAULT_FLOW_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
 DEFAULT_COVERAGE_REPORT = (
-    ROOT / "reports" / "story" / "build" / "mission_pipeline_story_binding_coverage_CN.json"
+    ROOT / 'webui/data/_build/story/build/mission_pipeline_story_binding_coverage_CN.json'
 )
 DEFAULT_PIPELINE_MISSION_ROOT = ROOT / "webui" / "data" / "mission_pipeline" / "missions"
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/mission_graph'
 
 QUEST_STORY_FIELDS = ("storyFiles", "storyConnections")
 

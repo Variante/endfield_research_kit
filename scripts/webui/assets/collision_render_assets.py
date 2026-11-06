@@ -66,7 +66,7 @@ def publish(report,bodies,*,root,asset_dir,cli=None):
     if textures:
         try:
             if cli is None:raise ValueError('stored texture decode requires the admitted parent CLI')
-            decoded=unity_texture_decode.decode_textures(list(textures.values()),bodies,cli=cli,work_root=root/'tmp/animestudio/texture_previews')
+            decoded=unity_texture_decode.decode_textures(list(textures.values()),bodies,cli=cli,work_root=root/'webui/data/_build/assets/texture_previews')
             for value in decoded['textures']:
                 target=textures[scene_identity(value['source']['identity'])];name='texture_'+unity_texture_decode.texture_key(target['identity'])+'.png'
                 shutil.copyfile(value['pngPath'],stage/name)

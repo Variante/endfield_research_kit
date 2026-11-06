@@ -26,6 +26,7 @@ from typing import Any
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import configured_animestudio_cli
 
 ROOT = REPO_ROOT
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
@@ -64,13 +65,9 @@ DEFAULT_METADATA = (
 DEFAULT_STORY_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 DEFAULT_OUTPUT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_EXTRACT_DIR = EXPORT_LAYOUT.work_dir / "timeline_extract"
-DEFAULT_ANIMESTUDIO_CLI = (
-    ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin"
-    / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
-)
+DEFAULT_ANIMESTUDIO_CLI = configured_animestudio_cli()
 DEFAULT_JSON = (
-    ROOT / "reports" / "story" / "recovery"
-    / "timeline_embedded_story_runtime_audit.json"
+    ROOT / 'webui/data/_build/story/recovery/timeline_embedded_story_runtime_audit.json'
 )
 DEFAULT_MD = DEFAULT_JSON.with_suffix(".md")
 

@@ -55,11 +55,11 @@ from scripts.game_data.ifix_patch_native import (
 )
 from scripts.game_data.story_native_consumers_native import cited, validated_group
 from scripts.game_data.levelscript_binary import (
-    extract_levelscript_uid_records,
     levelscript_action_map_membership,
     levelscript_native_header_contract,
     summarize_levelscript_native_header_records,
 )
+from scripts.webui.story.uid_batch import load_current_uid_sources as load_uid_sources
 from scripts.game_data.mission_task_paths_native import (
     DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
     load_mission_task_paths,
@@ -74,7 +74,7 @@ METADATA_HELPER = ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_meta
 NATIVE_MAPPER_HELPER = (
     ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 )
-REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
+REPORT_ROOT = ROOT / 'webui/data/_build/story/recovery'
 MISSION_RUNTIME_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
 LEVELSCRIPT_ROOTS = (
     EXPORT_LAYOUT.json_dir / "LevelScriptData",
@@ -865,28 +865,37 @@ def mission_event_asset_coverage(
             raise RuntimeError(f"LevelScript source root not found: {root}")
         from scripts.game_data.string_pool import export_string_pool
         from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
-        paths=sorted(root.rglob("*.json"));strings=export_string_pool(root.parent);scanned={}
-        with current_null_list_params(game_root=game_root,strings=strings) as null_list_params:
+        paths = sorted(root.rglob('*.json'))
+        strings = export_string_pool(root.parent)
+        scanned = {}
+        with current_null_list_params(game_root=game_root, strings=strings):
+            if progress and paths:
+                print(f'[protocol-registry] LevelScript checked={levelscript_files} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} next={paths[0]}', file=sys.stderr, flush=True)
+            sources = load_uid_sources(paths, game_root=game_root,
+                progress=(lambda message: print(f'[protocol-registry] {message}', file=sys.stderr, flush=True)) if progress else None)
             for path in paths:
                 levelscript_files += 1
-                if progress and (levelscript_files-1)%16==0:
-                    print(f'[protocol-registry] LevelScript checked={levelscript_files-1} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} next={path}',file=sys.stderr,flush=True)
-                data = path.read_bytes()
-                scanned[path]=hashlib.sha256(data).hexdigest().upper()
+                source = sources[path.resolve()]
+                data, records, memberships = source.data, source.records, source.membership
+                scanned[path] = hashlib.sha256(data).hexdigest().upper()
+                if source.failure is not None:
+                    levelscript_failures.append(dict(status='unavailable_fail_closed',validator='protocolRegistryMissionEventAssets',
+                        gate='typedActionMap',sourceFile=str(path.resolve()),sourceHashes={'sha256':scanned[path]},
+                        expected='complete current typed action/getter/header lists',actual=source.failure['detail'],
+                        diagnostics=source.failure.get('diagnostics')))
+                    continue
                 try:
-                    records = extract_levelscript_uid_records(data, source_path=path,strings=strings,game_root=game_root,null_list_params=null_list_params)
-                    _action_map, memberships = levelscript_action_map_membership(data, records)
                     candidates = list(summarize_levelscript_native_header_records(records, memberships, names=target_header_names))
                 except ValueError as error:
                     levelscript_failures.append(dict(status='unavailable_fail_closed',validator='protocolRegistryMissionEventAssets',
-                        gate='typedActionMap',sourceFile=str(path.resolve()),sourceHashes={'sha256':hashlib.sha256(data).hexdigest().upper()},
+                        gate='typedActionMap',sourceFile=str(path.resolve()),sourceHashes={'sha256':scanned[path]},
                         expected='complete current typed action/getter/header lists',actual=str(error)[:1000],
                         diagnostics=getattr(error,'diagnostics',None)))
                     continue
                 levelscript_decoded += 1
                 for row in candidates:
                     row = dict(row)
-                    row["sourceFile"] = str(path.resolve())
+                    row['sourceFile'] = str(path.resolve())
                     levelscript_candidates.append(row)
         after=sorted(root.rglob("*.json"))
         changed=[str(path)for path,digest in scanned.items()if not path.is_file()or file_sha256(path).upper()!=digest]

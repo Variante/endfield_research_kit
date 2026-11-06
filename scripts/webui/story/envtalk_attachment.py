@@ -69,7 +69,7 @@ DEFAULT_GAMEPLAY_CONFIG_ROOT = (
     EXPORT_LAYOUT.json_dir / "GameplayConfig"
 )
 DEFAULT_MISSION_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/mission_graph'
 
 STORY_KEY_PREFIX = "env_"
 

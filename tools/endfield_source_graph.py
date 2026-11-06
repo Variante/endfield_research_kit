@@ -56,22 +56,22 @@ UNITY_CHARACTER_ROOT = (
     / "Generated"
     / "Characters"
 )
-GRAPH_DIR = ROOT / "reports" / "source_graph"
-STORY_BUILD_REPORTS_DIR = ROOT / "reports" / "story" / "build"
+GRAPH_DIR = ROOT / 'webui/data/_build/source_graph'
+STORY_BUILD_REPORTS_DIR = ROOT / 'webui/data/_build/story/build'
 DEFAULT_DB = GRAPH_DIR / "endfield_source_graph.sqlite"
 DEFAULT_SUMMARY_JSON = GRAPH_DIR / "summary.json"
 DEFAULT_SUMMARY_MD = GRAPH_DIR / "summary.md"
 TIMELINE_LINE_ORDERS_PATH = WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
 DIALOG_ID_TABLE_INDEX_PATH = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
-STORY_OPTION_REPORTS_DIR = ROOT / "reports" / "story" / "recovery" / "options"
+STORY_OPTION_REPORTS_DIR = ROOT / 'webui/data/_build/story/recovery/options'
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
-LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
-MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_latest.json"
-MONOBEHAVIOUR_FRONTIER_TAIL_AUDIT_PATH = ROOT / "reports" / "assets" / "diagnostics" / "monobehaviour_frontier_tail_audit.json"
+LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / 'webui/data/_build/story/mission_order/lua_consumer_reference_audit.json'
+MONOBEHAVIOUR_FRONTIER_REPORT_PATH = ROOT / "webui/data/_build" / "assets" / "diagnostics" / "monobehaviour_frontier_latest.json"
+MONOBEHAVIOUR_FRONTIER_TAIL_AUDIT_PATH = ROOT / "webui/data/_build" / "assets" / "diagnostics" / "monobehaviour_frontier_tail_audit.json"
 OPTION_FLOW_BODY_TARGETS_GAMEASSEMBLY_PATH = STORY_OPTION_REPORTS_DIR / "option_flow_body_targets_gameassembly.json"
 OPTION_FLOW_ACTIVE_CLIP_FIELD_ANALYSIS_PATH = STORY_OPTION_REPORTS_DIR / "option_flow_active_clip_field_analysis.json"
 TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = (
-    ROOT / "reports" / "assets" / "diagnostics" / "texture2d_raw_hash_collision_audit.json"
+    ROOT / "webui/data/_build" / "assets" / "diagnostics" / "texture2d_raw_hash_collision_audit.json"
 )
 ASSET_MAPS = {
     "StreamingAssets": (
@@ -3949,8 +3949,8 @@ class SourceGraphBuilder:
                 yield value, count if isinstance(count, int) else None
 
         audit_specs = (
-            ("StreamingAssets", self.root / "reports" / "mission_order" / "skipped_vfs_block_audit.json"),
-            ("Persistent", self.root / "reports" / "mission_order" / "skipped_vfs_block_audit_persistent.json"),
+            ("StreamingAssets", self.root / 'webui/data/_build/story/mission_order/skipped_vfs_block_audit.json'),
+            ("Persistent", self.root / 'webui/data/_build/story/mission_order/skipped_vfs_block_audit_persistent.json'),
         )
         source = "skipped_vfs_block_audit"
         dataset = self.add_node("dataset", "skipped_vfs_block_audits", name="Skipped VFS block audits", source=source)
@@ -4037,9 +4037,9 @@ class SourceGraphBuilder:
                         self.add_edge(signal_node, sample_node, "vfs_signal_sample_file", source=source, evidence=f"{root_label}:{block_name}:{sample_index}")
 
     def ingest_levelscript_property_flow_audit(self) -> None:
-        path = self.root / "reports" / "mission_order" / f"levelscript_property_flow_{self.language}.json"
+        path = self.root / 'webui/data/_build/story/mission_order' / f"levelscript_property_flow_{self.language}.json"
         if not path.exists() and self.language != "CN":
-            path = self.root / "reports" / "mission_order" / "levelscript_property_flow_CN.json"
+            path = self.root / 'webui/data/_build/story/mission_order/levelscript_property_flow_CN.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -4166,9 +4166,9 @@ class SourceGraphBuilder:
                         )
 
     def ingest_main_story_order_override_comparison(self) -> None:
-        path = self.root / "reports" / "mission_order" / f"main_story_order_vs_override_{self.language}.json"
+        path = self.root / 'webui/data/_build/story/mission_order' / f"main_story_order_vs_override_{self.language}.json"
         if not path.exists() and self.language != "CN":
-            path = self.root / "reports" / "mission_order" / "main_story_order_vs_override_CN.json"
+            path = self.root / 'webui/data/_build/story/mission_order/main_story_order_vs_override_CN.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -5017,7 +5017,7 @@ class SourceGraphBuilder:
                 self.add_decoded_config_entry(group_node, entry, subtype=family)
 
     def ingest_selector_formatter_tag_audit(self) -> None:
-        path = self.root / "reports" / "mission_order" / "selector_formatter_tag_audit.json"
+        path = self.root / 'webui/data/_build/story/mission_order/selector_formatter_tag_audit.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -5162,7 +5162,7 @@ class SourceGraphBuilder:
         return self.add_node("selector_chain_field", f"{owner_key}:{field_key}", name=field_key, source=source, data={"ownerType": owner_type, "field": field})
 
     def ingest_selector_targetsettings_chain_summary(self) -> None:
-        path = self.root / "reports" / "mission_order" / "selector_targetsettings_chain_summary.json"
+        path = self.root / 'webui/data/_build/story/mission_order/selector_targetsettings_chain_summary.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -5274,7 +5274,7 @@ class SourceGraphBuilder:
                     self.add_edge(call_node, callee_node, "selector_chain_direct_call_callee", source=source, evidence=str(callee_index), data=compact_payload(callee, depth=2))
 
     def ingest_findtarget_selector_payload_audit(self) -> None:
-        path = self.root / "reports" / "mission_order" / "findtarget_selector_payload_priority_audit.json"
+        path = self.root / 'webui/data/_build/story/mission_order/findtarget_selector_payload_priority_audit.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -5386,7 +5386,7 @@ class SourceGraphBuilder:
         return f"{family}:{tag}:{action_name}"
 
     def ingest_findtarget_selector_replay_audit(self) -> None:
-        path = self.root / "reports" / "mission_order" / "findtarget_selector_replay_audit.json"
+        path = self.root / 'webui/data/_build/story/mission_order/findtarget_selector_replay_audit.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -5514,7 +5514,7 @@ class SourceGraphBuilder:
                         self.add_edge(probe_node, boundary_node, "findtarget_boundary_probe_accepts_payload", source=source, evidence=f"steps[{step_index}]", data=compact_payload(step, depth=2))
 
     def ingest_findtarget_selector_boundary_audit(self) -> None:
-        path = self.root / "reports" / "mission_order" / "findtarget_selector_boundary_audit.json"
+        path = self.root / 'webui/data/_build/story/mission_order/findtarget_selector_boundary_audit.json'
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -13625,7 +13625,7 @@ class SourceGraphBuilder:
                     self.add_edge(audit_node, line_node, "option_flow_audit_window_line", source=source, evidence=str(line_index), data=audit_data)
 
     def ingest_runtime_metadata_focus_report(self) -> None:
-        path = self.root / "reports" / "buff_runtime_metadata.json"
+        path = self.root / "webui/data/_build" / "buff_runtime_metadata.json"
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -20304,9 +20304,9 @@ class SourceGraphBuilder:
                 self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id)
 
     def ingest_i18n_reference_index(self) -> None:
-        path = self.root / "reports" / f"i18n_reference_index_{self.language}.json"
+        path = self.root / "webui/data/_build" / f"i18n_reference_index_{self.language}.json"
         if not path.exists() and self.language != "CN":
-            path = self.root / "reports" / "i18n_reference_index_CN.json"
+            path = self.root / "webui/data/_build" / "i18n_reference_index_CN.json"
         payload = read_json(path, {})
         if not isinstance(payload, dict):
             return
@@ -25576,7 +25576,7 @@ class SourceGraphBuilder:
                 )
 
     def ingest_hotfix_audio_event_audit(self) -> None:
-        audit_path = self.root / "reports" / "mission_order" / "hotfix_audio_event_audit.json"
+        audit_path = self.root / 'webui/data/_build/story/mission_order/hotfix_audio_event_audit.json'
         payload = read_json(audit_path, {})
         if not isinstance(payload, dict):
             return

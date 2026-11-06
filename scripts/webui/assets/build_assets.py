@@ -22,6 +22,7 @@ Run from the repo root:
     python -m scripts.webui.assets.build_assets --mode default
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -52,7 +53,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Build the WebUI exported asset indexes.",
     )
     parser.add_argument(
-        "--collision-corpus", type=Path, default=ROOT / "reports/assets/cooked_collision_current_latest.json",
+        "--collision-corpus", type=Path, default=ExportLayout.configured().evidence_dir / 'assets/cooked_collision_current_latest.json',
         help="Optional authenticated selected-corpus receipt for separate collision previews (broad Assets index only).",
     )
     parser.add_argument(
@@ -60,14 +61,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="VFS audit summary for older collision receipts without outerSummaryPath.",
     )
     parser.add_argument("--collision-runtime-selection", type=Path,
-                        default=ROOT / "reports/assets/collision_runtime_selection.json",
+                        default=ExportLayout.configured().evidence_dir / 'assets/collision_runtime_selection.json',
                         help="Local runtime input selection; every publication revalidates its evidence.")
     parser.add_argument("--collision-runtime-session", type=Path, action="append",
                         help="Select a saved collision capture (repeatable); also select its stored receipts.")
     parser.add_argument("--collision-runtime-stored-receipt", type=Path, action="append",
                         help="Authenticated stored Mesh selection used by the runtime audit (repeatable).")
     parser.add_argument("--collision-authored-selection", type=Path,
-                        default=ROOT / "reports/assets/collision_authored_selection.json",
+                        default=ExportLayout.configured().evidence_dir / 'assets/collision_authored_selection.json',
                         help="Local scene-receipt selection; stored owner joins are revalidated each publication.")
     parser.add_argument("--collision-scene-receipt", type=Path, action="append",
                         help="Select an existing authenticated v4 scene extraction without exporting (repeatable).")

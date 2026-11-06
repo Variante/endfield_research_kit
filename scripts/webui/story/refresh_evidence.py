@@ -47,6 +47,7 @@ STEPS = (
 
 def run_step(step: EvidenceStep) -> EvidenceResult:
     started = time.time()
+    print(f"[story-evidence] start {step.name}", flush=True)
     proc = subprocess.run(
         [sys.executable, "-m", step.module, *step.argv],
         cwd=ROOT,
@@ -68,8 +69,8 @@ def run_step(step: EvidenceStep) -> EvidenceResult:
 def print_stream(label: str, text: str) -> None:
     if not text.strip():
         return
-    print(f"[story-evidence] {label}:")
-    print(text.rstrip())
+    print(f"[story-evidence] {label}:", flush=True)
+    print(text.rstrip(), flush=True)
 
 
 def main() -> int:
@@ -86,7 +87,7 @@ def main() -> int:
 
     print(
         "[story-evidence] refreshing dialog registry, video bindings, source "
-        "links, and spaceship Story content"
+        "links, and spaceship Story content", flush=True,
     )
     results_by_name: dict[str, EvidenceResult] = {}
     with ThreadPoolExecutor(max_workers=len(STEPS)) as executor:
@@ -100,13 +101,13 @@ def main() -> int:
                 status = "skipped"
             else:
                 status = "ok"
-            print(f"[story-evidence] {result.step.name}: {status} in {result.seconds:.3f}s")
+            print(f"[story-evidence] {result.step.name}: {status} in {result.seconds:.3f}s", flush=True)
+            print_stream(f"{result.step.name} stdout", result.stdout)
+            print_stream(f"{result.step.name} stderr", result.stderr)
 
     failed = False
     for step in STEPS:
         result = results_by_name[step.name]
-        print_stream(f"{step.name} stdout", result.stdout)
-        print_stream(f"{step.name} stderr", result.stderr)
         if result.returncode != 0:
             failed = True
 

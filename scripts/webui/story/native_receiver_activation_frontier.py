@@ -43,6 +43,7 @@ from scripts.common import (
     STORY_RECOVERY_REPORTS_DIR,
     md_escape,
     native_evidence_required,
+    resolve_installed_native_inputs,
     read_bytes_cached,
     read_json,
     rel_path,
@@ -689,6 +690,14 @@ def _original_file_kind(source_file: str) -> str:
 _SOURCE_FILE_HASH_CACHE: dict[Path, str] = {}
 
 
+def _selected_original_path(source_file: str) -> Path | None:
+    normalized = safe_text(source_file).replace("\\", "/")
+    if not normalized:
+        return None
+    path = (ROOT / Path(normalized)).resolve()
+    return path if path.is_relative_to(EXPORT_LAYOUT.game.resolve()) else None
+
+
 def _source_file_sha256(source_file: str) -> str:
     """Hash an exported original-data path when it is present.
 
@@ -697,12 +706,8 @@ def _source_file_sha256(source_file: str) -> str:
     publication fail.  The root and export boundary are explicit; arbitrary
     WebUI or scratch paths are never treated as original bytes.
     """
-    normalized = safe_text(source_file).replace("\\", "/")
-    if not normalized.startswith("export_full/"):
-        return ""
-    path = (ROOT / Path(normalized)).resolve()
-    export_root = EXPORT_LAYOUT.root.resolve()
-    if not path.is_file() or not path.is_relative_to(export_root):
+    path = _selected_original_path(source_file)
+    if path is None or not path.is_file():
         return ""
     cached = _SOURCE_FILE_HASH_CACHE.get(path)
     if cached:
@@ -729,7 +734,7 @@ def collect_related_original_files(*values: Any) -> list[dict[str, str]]:
             return
         path = safe_text(value).replace("\\", "/")
         if (
-            path.startswith("export_full/")
+            _selected_original_path(path) is not None
             and field.lower() in {
                 "source",
                 "sourcefile",
@@ -2569,7 +2574,7 @@ def build_story_trigger_zone_coverage(
                     if active_source not in binary_cache:
                         try:
                             data = read_bytes_cached(repo_path(active_source))
-                            binary_cache[active_source] = decode_levelscript_binary_summary(data, int(script_id), source_path=repo_path(active_source))
+                            binary_cache[active_source] = decode_levelscript_binary_summary(data, int(script_id), source_path=repo_path(active_source), game_root=resolve_installed_native_inputs()[1].parents[2])
                         except (OSError, ValueError, TypeError) as error:
                             binary_cache[active_source] = {
                                 "status": "unavailable",
@@ -4984,7 +4989,7 @@ def build_report(
         level_id = receiver["levelId"]
         script_id = receiver["scriptId"]
         script_path = levelscript_root / level_id / f"{script_id}.json"
-        levelscript = decode_levelscript_binary_file(script_path, script_id)
+        levelscript = decode_levelscript_binary_file(script_path, script_id, game_root=resolve_installed_native_inputs()[1].parents[2])
         try:
             script_data = read_bytes_cached(script_path)
         except OSError:

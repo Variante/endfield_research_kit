@@ -1158,7 +1158,7 @@ def build_from_paths(
     if source_graph_path is None:
         # The source graph is optional because the normal WebUI phase may run
         # before graph rebuild.  When present, it contributes proof only.
-        candidate_graph = REPO_ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
+        candidate_graph = REPO_ROOT / 'webui/data/_build/source_graph/endfield_source_graph.sqlite'
         source_graph_path = candidate_graph if candidate_graph.is_file() else None
     from scripts.source_paths import ExportLayout
     from scripts.webui.gameplay.factory_models import load_factory_models

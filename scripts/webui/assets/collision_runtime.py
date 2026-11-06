@@ -6,6 +6,7 @@ Name matches, accepted filter candidates and missing observations cannot prove
 movement selection or solver participation.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 from collections import Counter, defaultdict
 import hashlib
@@ -145,8 +146,8 @@ def apply_runtime_publication(payload: dict, *, root: Path, selection_path: Path
         explicit = sessions is not None or stored_receipts is not None
         selection_bytes = None
         if explicit:
-            if not selection_path.resolve().is_relative_to((root / "reports").resolve()):
-                raise ValueError("generated runtime selections must be saved under reports/")
+            if not selection_path.resolve().is_relative_to(ExportLayout.configured().evidence_dir.resolve()):
+                raise ValueError("generated runtime selections must be saved inside the selected export/meta/evidence/")
             if not sessions or not stored_receipts:
                 raise ValueError("select both runtime sessions and authenticated stored receipts")
             selection = {"schema": SELECTION_SCHEMA, "sessions": [rel_path(p.resolve(), root) for p in sessions],

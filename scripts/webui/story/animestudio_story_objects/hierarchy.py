@@ -302,6 +302,10 @@ def extract_game_objects(
                 "--block-type",
                 "bundle",
             ]
+            if source == "Persistent":
+                # The active catalog can retain unchanged chunks in the base
+                # layer. Keep its metadata primary while resolving those bytes.
+                dump_command.extend(["--fallback-assets", str(game_root / "StreamingAssets")])
             for logical_name in logical_batch:
                 dump_command.extend([
                     "--file-regex",

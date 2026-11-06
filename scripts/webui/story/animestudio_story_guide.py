@@ -9,10 +9,11 @@ Story order.
 
 Outputs:
 
-    reports/story/recovery/animestudio_story_guide_consumer_audit.json
-    reports/story/recovery/animestudio_story_guide_consumer_audit.md
+    webui/data/_build/story/recovery/animestudio_story_guide_consumer_audit.json
+    webui/data/_build/story/recovery/animestudio_story_guide_consumer_audit.md
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 from scripts.common import EXPORT_LAYOUT
 from scripts.source_paths import INSTALLED_LAYERS
 
@@ -42,12 +43,13 @@ from scripts.game_data.extraction.export_full_from_game import (
 
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row, iter_gzip_jsonl_objects
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
+from scripts.webui.published_source_inputs import output_source_fingerprints
 
 
 SCHEMA = "animestudioStoryGuideConsumerAudit.v2"
 DEFAULT_OUTPUT_ROOT = EXPORT_LAYOUT.root
-DEFAULT_EXPORT_SUMMARY = ROOT / "reports" / "export" / "export_full_summary.json"
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
+DEFAULT_EXPORT_SUMMARY = ExportLayout.configured().export_summary_path
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/recovery'
 # Both layers: with replaced-bundle rows filtered out, an updated object is
 # found only in the newer layer's index.
 DEFAULT_SOURCES = INSTALLED_LAYERS
@@ -305,9 +307,14 @@ def build_report(
     sources: Iterable[str],
     export_summary_path: Path,
 ) -> dict[str, Any]:
-    export_summary = read_json(export_summary_path, {})
-    if not isinstance(export_summary, dict):
-        raise AuditError(f"{export_summary_path}: invalid export summary")
+    try:
+        sources_fingerprint, authority = output_source_fingerprints(
+            output_root, (("unity", "MonoBehaviour"), ("unity", "PlayableDirector")),
+            summary_path=export_summary_path,
+        )
+    except (OSError, ValueError) as error:
+        raise AuditError(f"published Story source validation failed: {error}") from error
+    export_summary = {"source_sizes": sources_fingerprint}
     source_rows = [
         scan_source(output_root, source, export_summary)
         for source in sources
@@ -385,13 +392,13 @@ def build_report(
     ))
     return {
         "_schema": SCHEMA,
-        "exportSummary": str(export_summary_path),
+        "exportSummary": str(authority),
         "sources": source_rows,
         "evidenceBoundary": {
             "kind": "source_only_current_export",
             "detail": (
                 "Classifications use the selected export's complete object-index "
-                "stage signature, installed-source fingerprint, exact managed "
+                "stage signature, per-output extraction source fingerprint, exact managed "
                 "reference type, and same-action serialized fields. No historical "
                 "native hash, address, or field offset is used."
             ),
@@ -467,7 +474,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--export-summary",
         type=Path,
-        default=DEFAULT_EXPORT_SUMMARY,
+        default=None,
     )
     parser.add_argument(
         "--source",
@@ -485,7 +492,7 @@ def main(argv: list[str] | None = None) -> int:
         report = build_report(
             args.output_root.resolve(),
             tuple(args.sources or DEFAULT_SOURCES),
-            args.export_summary.resolve(),
+            (args.export_summary or ExportLayout(args.output_root).export_summary_path).resolve(),
         )
     except (AuditError, ValueError) as exc:
         raise SystemExit(
@@ -499,8 +506,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     write_report_json(json_path, report)
     write_text_if_changed(markdown_path, render_markdown(report))
-    print(f"AnimeStudio Story guide audit: {markdown_path.relative_to(ROOT)}")
-    print(f"AnimeStudio Story guide data: {json_path.relative_to(ROOT)}")
+    print(f"AnimeStudio Story guide audit: {markdown_path}")
+    print(f"AnimeStudio Story guide data: {json_path}")
     return 0
 
 

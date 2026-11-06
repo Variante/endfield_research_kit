@@ -103,7 +103,7 @@ class _NativeProofScope:
     def _fail(self, gate, expected, actual):
         diagnostic = dict(validator='sourceStoryPartialOrder', gate=gate, sourceFile=__file__,
                           expected=expected, actual=actual)
-        path = ROOT / 'reports/mission_order/source_story_partial_order_native.failed.json'
+        path = ROOT / 'webui/data/_build/story/mission_order/source_story_partial_order_native.failed.json'
         write_report_json(path, dict(status='validation_failed', failures=[diagnostic]))
         error = ValueError('sourceStoryPartialOrder.' + gate + ': expected=' + str(expected)[:500]
                            + ' actual=' + str(actual)[:500] + ' report=' + str(path))
@@ -210,7 +210,7 @@ READING_POPUP_TABLE_PATH = (
     EXPORT_LAYOUT.table_dir / "ReadingPopUpTable.json"
 )
 PROTOCOL_REGISTRY_AUDIT_PATH = (
-    ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
+    ROOT / 'webui/data/_build/story/recovery/protocol_registry_audit.json'
 )
 VARIANT_FLOW_LIST_FIELDS = (
     "missionStoryConnections",
@@ -9629,7 +9629,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=[],
         help="Limit to a mission id; comma-separated values and repeats are accepted.",
     )
-    parser.add_argument("--reports-dir", type=Path, default=ROOT / "reports" / "mission_order")
+    parser.add_argument("--reports-dir", type=Path, default=ROOT / 'webui/data/_build/story/mission_order')
     return parser.parse_args(argv)
 
 

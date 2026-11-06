@@ -1,4 +1,5 @@
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import copy
 import hashlib
@@ -16,6 +17,10 @@ from scripts.game_data.string_pool import (
     resolve_string_pool_index,
 )
 from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs, snapshot_complete_reader_inputs
+from scripts.webui.story.uid_batch import (
+    extract_uid_records as extract_levelscript_uid_records,
+    load_current_uid_sources as load_uid_sources,
+)
 from scripts.game_data.leveldata_airwalls_native import check_airwall_native_inputs
 
 from scripts.common import (
@@ -74,7 +79,6 @@ from scripts.game_data.levelscript_binary import (
     decode_levelscript_encounter_module_target,
     decode_levelscript_record_payload,
     decode_levelscript_task_mission_state_dependencies,
-    extract_levelscript_uid_records,
     levelscript_action_map_membership,
     levelscript_native_header_name,
     levelscript_record_semantic_key,
@@ -906,7 +910,10 @@ def resolve_dynamic_hp_spawner_context(
             data,
             tagged_offsets={int(row.get("offset") or 0) for row in tagged},
         )
-        records = extract_levelscript_uid_records(data, source_path=source_path)
+        records = extract_levelscript_uid_records(
+            data, source_path=source_path,
+            game_root=resolve_installed_native_inputs()[1].parents[2],
+        )
         _action_map, membership = levelscript_action_map_membership(data, records)
         decoded_records: list[dict] = []
         for index, record in enumerate(records):
@@ -1561,6 +1568,7 @@ def _prepare_levelscript_native_control_context(
     membership: dict[int, str],
     *,
     spawner_getter: tuple[dict, dict] | None = None,
+    reuse_successors: bool = False,
 ) -> dict:
     """Prepare immutable per-file facts reused by every Story action lookup."""
     ordered = sorted(records or [], key=lambda row: int(row.get("start") or 0))
@@ -1675,6 +1683,9 @@ def _prepare_levelscript_native_control_context(
     ) = indexed_runtime_slots(header_buckets, generic_signature)
     return {
         "ordered": ordered,
+        # Enabled only by an owner whose native/source exit checks also cover
+        # semantic traversal. Standalone callers retain fresh edge evaluation.
+        "successorsByStart": {} if reuse_successors else None,
         "actionBuckets": dict(action_buckets),
         "actionByLocal": action_by_local,
         "getterByLocal": getter_by_local,
@@ -1891,8 +1902,12 @@ def _levelscript_native_control_paths_to_record(
             records_by_uid[uid].append(candidate)
 
     def successors(record: dict) -> list[tuple[str, int]]:
+        cache = context.get("successorsByStart")
+        start = int(record.get("start") or 0)
+        if isinstance(cache, dict) and start in cache:
+            return list(cache[start])
         detail = decoded(record)
-        return list(dict.fromkeys([
+        edges = list(dict.fromkeys([
             *_levelscript_native_action_successors(record, detail),
             *_levelscript_native_callserver_callback_successors(
                 record,
@@ -1902,6 +1917,9 @@ def _levelscript_native_control_paths_to_record(
                 decode_record=decoded,
             ),
         ]))
+        if isinstance(cache, dict):
+            cache[start] = tuple(edges)
+        return edges
 
     getter_detail_kinds = (
         "booleanCompare",
@@ -2291,6 +2309,7 @@ def _levelscript_native_control_paths_to_record(
 
 def decode_levelscript_native_action_topology(
     data: bytes, *, strings=None, source_path: Path | None = None,
+    game_root: Path | None = None,
 ) -> tuple[dict, dict | None]:
     """Decode one complete serialized LevelScript action/event graph.
 
@@ -2322,7 +2341,10 @@ def decode_levelscript_native_action_topology(
         tagged_offsets={int(row.get("offset") or 0) for row in tagged_strings},
     )
     try:
-        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+        records = extract_levelscript_uid_records(
+            data, strings=strings, source_path=source_path,
+            game_root=game_root if game_root is not None else resolve_installed_native_inputs()[1].parents[2],
+        )
     except ValueError as error:
         diagnostic = {**getattr(error, 'diagnostics', {'validator': 'levelScriptNativeActionTopology', 'gate': 'typedPooledRecords', 'detail': str(error)[:1000]}), 'sourceFile': str(source_path) if source_path else None, 'sourceSha256': hashlib.sha256(data).hexdigest()}
         return {'schema': 'levelScriptNativeActionTopology.v4', 'status': 'unavailable_fail_closed', 'validatorDiagnostic': diagnostic, 'actionControlFlowEvidence': False, 'storyOrderEvidence': False}, diagnostic
@@ -3018,7 +3040,7 @@ def build_levelscript_header_action_index(
                     and path.stem.isdigit()
                 ):
                     if binary_summary is None:
-                        binary_summary = decode_levelscript_binary_summary(data, int(path.stem), source_path=path)
+                        binary_summary = decode_levelscript_binary_summary(data, int(path.stem), source_path=path, game_root=resolve_installed_native_inputs()[1].parents[2])
                     local_trigger_context = classify_local_trigger_volume_context(
                         binary_summary,
                         [trigger_slot_id],
@@ -3380,58 +3402,54 @@ def _load_levelscript_binding_data(
     level_id: str,
     level_script_root: Path | None = None,
 ) -> dict:
-    root = level_script_root or LEVELSCRIPT_DIR
-    cache_key = (
-        level_id
-        if level_script_root is None
-        else f"{root.resolve()}::{level_id}"
-    )
+    """Populate one selected family's binding cache after current owner exits."""
+    root = (level_script_root or LEVELSCRIPT_DIR).resolve()
+    cache_key = f"{root}::{level_id}"
     if cache_key in _LEVELSCRIPT_BINDING_CACHE:
         return _LEVELSCRIPT_BINDING_CACHE[cache_key]
 
-    out = {
-        "uidPayloads": {},
-        "decodeDiagnostics": [],
-        "files": [],
-    }
-    level_dir = root / level_id
-    if not level_dir.is_dir():
-        _LEVELSCRIPT_BINDING_CACHE[cache_key] = out
-        return out
+    def empty():
+        return dict(uidPayloads={}, decodeDiagnostics=[], files=[])
 
-    def add_payload(uid: str, payload: str) -> None:
-        bucket = out["uidPayloads"].setdefault(uid, [])
-        if payload not in bucket:
-            bucket.append(payload)
+    if not (root / level_id).is_dir():
+        return empty()
+    levels = sorted(path for path in root.iterdir() if path.is_dir())
+    staged = {level.name: empty() for level in levels}
+    paths = [path for level in levels
+        for path in sorted(level.glob('*.json'), key=_levelscript_file_sort_key)]
 
-    for path in sorted(level_dir.glob("*.json"), key=_levelscript_file_sort_key):
-        try:
-            data = read_bytes_cached(path)
-        except OSError:
-            continue
-
-        try:
-            records = extract_levelscript_uid_records(data, source_path=path)
-        except ValueError as error:
-            out['decodeDiagnostics'].append({'sourceFile': repo_rel(path), 'sourceSha256': hashlib.sha256(data).hexdigest(),
-                'diagnostic': getattr(error, 'diagnostics', {'detail': str(error)[:1000]})})
-            continue
-        _action_map, membership = levelscript_action_map_membership(data, records)
+    def project(path, source):
+        if source.failure is not None:
+            raise ValueError(f'current binding source refused: {path}: {source.failure}')
+        bucket = staged[path.parent.name]
+        records = source.records
         hits = [hit for record in records for hit in record['strings']]
         for record in records:
-            if isinstance(record['uid'], str) and record['uid']:
-                for hit in record['strings']:
-                    add_payload(record['uid'], hit['text'])
-        out['files'].append({'file': repo_rel(path), 'fileStem': path.stem,
-            'records': records, 'actionMapMembership': membership,
-            'stringHits': hits, 'plainStringHits': []})
+            uid = record.get('uid')
+            if not isinstance(uid, str) or not uid:
+                continue
+            values = bucket['uidPayloads'].setdefault(uid, [])
+            for hit in record['strings']:
+                if hit['text'] not in values:
+                    values.append(hit['text'])
+        bucket['files'].append(dict(file=repo_rel(path), fileStem=path.stem,
+            records=records, actionMapMembership=source.membership,
+            stringHits=hits, plainStringHits=[]))
 
-    _LEVELSCRIPT_BINDING_CACHE[cache_key] = out
-    return out
+    selected = resolve_installed_native_inputs()[1].parents[2]
+    load_uid_sources(paths, game_root=selected, project=project,
+        progress=lambda message: print(f"[story:levelscript] {message}", flush=True))
+    # A failed source/native/reader/pool bookend must leave every cache entry
+    # untouched. The root-wide scope amortizes proofs without persisting them.
+    for name, bucket in staged.items():
+        bucket['files'].sort(key=lambda row: _levelscript_file_sort_key(Path(row['file'])))
+        _LEVELSCRIPT_BINDING_CACHE[f"{root}::{name}"] = bucket
+    return _LEVELSCRIPT_BINDING_CACHE[cache_key]
 
 
 def _build_non_fmv_levelscript_action_story_occurrences(
     level_script_root: Path | None = None,
+    *, game_root=None,
 ) -> dict[str, list[dict]]:
     """Return exact tagged Story ids in decoded LevelScript actionList rows."""
     global _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE
@@ -3449,220 +3467,224 @@ def _build_non_fmv_levelscript_action_story_occurrences(
             _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE = []
         return {}
 
-    for level_dir in sorted(path for path in root.iterdir() if path.is_dir()):
-        info = (
-            _load_levelscript_binding_data(level_dir.name)
-            if level_script_root is None
-            else _load_levelscript_binding_data(level_dir.name, root)
-        )
-        fmv_scan_failures.extend(info.get('decodeDiagnostics') or [])
-        for file_info in info.get("files") or []:
-            source_file = str(file_info.get("file") or "")
-            if not source_file:
-                continue
-            source_missionish_refs: list[dict] = []
-            seen_source_refs: set[tuple[str, int | None]] = set()
-            for hit_kind, hits in (
-                ("tagged", file_info.get("stringHits") or []),
-                ("plain", file_info.get("plainStringHits") or []),
-            ):
-                for hit in hits:
-                    if not isinstance(hit, dict):
-                        continue
-                    text = str(hit.get("text") or "").strip()
-                    offset = hit.get("offset")
-                    signature = (text, offset if isinstance(offset, int) else None)
-                    if not LEVELSCRIPT_MISSIONISH_RE.fullmatch(text) or signature in seen_source_refs:
-                        continue
-                    seen_source_refs.add(signature)
-                    source_missionish_refs.append({
-                        "text": text,
-                        "offset": offset,
-                        "encoding": hit_kind,
-                    })
-            try:
-                data = read_bytes_cached(ROOT / source_file)
-            except OSError:
-                continue
-            records = file_info.get("records")
-            if records is None:
-                continue
-            _action_map, membership = levelscript_action_map_membership(data, records)
-            control_context: dict | None = None
-            ordered_records = sorted(
-                records,
-                key=lambda row: int(row.get("start") or 0),
-            )
-            next_starts = {
-                int(record.get("start") or 0): (
-                    int(ordered_records[index + 1].get("start") or len(data))
-                    if index + 1 < len(ordered_records)
-                    else len(data)
-                )
-                for index, record in enumerate(ordered_records)
-            }
-            for record in records:
-                action_name = levelscript_native_action_name(record)
-                record_class = classify_levelscript_record(record)
-                record_start = int(record.get("start") or 0)
-                action_map_role = str(membership.get(record_start) or "")
-                if not action_map_role.startswith("actionList#"):
+    def project(path, source):
+        if source.failure is not None:
+            raise ValueError(f'current action-graph source refused: {path}: {source.failure}')
+        if not source.records:
+            return
+        level_dir = path.parent
+        source_file = repo_rel(path)
+        data = source.data
+        records = source.records
+        file_info = dict(file=source_file, fileStem=path.stem, records=records,
+            stringHits=[hit for record in records for hit in record['strings']],
+            plainStringHits=[])
+        source_missionish_refs: list[dict] = []
+        seen_source_refs: set[tuple[str, int | None]] = set()
+        for hit_kind, hits in (
+            ("tagged", file_info.get("stringHits") or []),
+            ("plain", file_info.get("plainStringHits") or []),
+        ):
+            for hit in hits:
+                if not isinstance(hit, dict):
                     continue
-                fmv_id_candidates = sorted({
-                    str(hit.get("text") or "").strip()
-                    for hit in (record.get("strings") or [])
-                    if isinstance(hit, dict)
-                    and re.fullmatch(
-                        r"cs_video_[A-Za-z0-9][A-Za-z0-9_]*",
-                        str(hit.get("text") or "").strip(),
-                    )
+                text = str(hit.get("text") or "").strip()
+                offset = hit.get("offset")
+                signature = (text, offset if isinstance(offset, int) else None)
+                if not LEVELSCRIPT_MISSIONISH_RE.fullmatch(text) or signature in seen_source_refs:
+                    continue
+                seen_source_refs.add(signature)
+                source_missionish_refs.append({
+                    "text": text,
+                    "offset": offset,
+                    "encoding": hit_kind,
                 })
-                if fmv_id_candidates and not record_class:
-                    fmv_scan_failures.append({
-                        "gate": "recognized_levelscript_fmv_action_opcode",
-                        "source": source_file,
-                        "sourceSha256": hashlib.sha256(data).hexdigest(),
-                        "recordOffset": record_start,
-                        "localId": record.get("localId"),
-                        "code": f"0x{int(record.get('code') or 0):04x}",
-                        "kind": f"0x{int(record.get('kind') or 0):02x}",
-                        "fmvIdCandidates": fmv_id_candidates,
-                    })
-                story_hits: dict[str, list[int]] = defaultdict(list)
-                for hit in record.get("strings") or []:
-                    story_key = str(
-                        hit.get("text") if isinstance(hit, dict) else hit or ""
-                    ).strip()
-                    if story_key.startswith(LEVELSCRIPT_STORY_KEY_PREFIXES):
-                        offset = hit.get("offset") if isinstance(hit, dict) else None
-                        if isinstance(offset, int) and offset not in story_hits[story_key]:
-                            story_hits[story_key].append(offset)
-                if record_class == "play_fmv":continue
-                reading_popup_action: dict = {}
-                if record_class == "play_reading_popup":
-                    reading_popup_action = (
-                        match_levelscript_native_reading_popup_record(
-                            level_dir.name,
-                            str(file_info.get("fileStem") or ""),
-                            record,
-                            levelscript_root=root,
-                        )
-                        or {}
+        membership = source.membership
+        control_context: dict | None = None
+        ordered_records = sorted(
+            records,
+            key=lambda row: int(row.get("start") or 0),
+        )
+        next_starts = {
+            int(record.get("start") or 0): (
+                int(ordered_records[index + 1].get("start") or len(data))
+                if index + 1 < len(ordered_records)
+                else len(data)
+            )
+            for index, record in enumerate(ordered_records)
+        }
+        for record in records:
+            action_name = levelscript_native_action_name(record)
+            record_class = classify_levelscript_record(record)
+            record_start = int(record.get("start") or 0)
+            action_map_role = str(membership.get(record_start) or "")
+            if not action_map_role.startswith("actionList#"):
+                continue
+            fmv_id_candidates = sorted({
+                str(hit.get("text") or "").strip()
+                for hit in (record.get("strings") or [])
+                if isinstance(hit, dict)
+                and re.fullmatch(
+                    r"cs_video_[A-Za-z0-9][A-Za-z0-9_]*",
+                    str(hit.get("text") or "").strip(),
+                )
+            })
+            if fmv_id_candidates and not record_class:
+                fmv_scan_failures.append({
+                    "gate": "recognized_levelscript_fmv_action_opcode",
+                    "source": source_file,
+                    "sourceSha256": hashlib.sha256(data).hexdigest(),
+                    "recordOffset": record_start,
+                    "localId": record.get("localId"),
+                    "code": f"0x{int(record.get('code') or 0):04x}",
+                    "kind": f"0x{int(record.get('kind') or 0):02x}",
+                    "fmvIdCandidates": fmv_id_candidates,
+                })
+            story_hits: dict[str, list[int]] = defaultdict(list)
+            for hit in record.get("strings") or []:
+                story_key = str(
+                    hit.get("text") if isinstance(hit, dict) else hit or ""
+                ).strip()
+                if story_key.startswith(LEVELSCRIPT_STORY_KEY_PREFIXES):
+                    offset = hit.get("offset") if isinstance(hit, dict) else None
+                    if isinstance(offset, int) and offset not in story_hits[story_key]:
+                        story_hits[story_key].append(offset)
+            if record_class == "play_fmv":continue
+            reading_popup_action: dict = {}
+            if record_class == "play_reading_popup":
+                reading_popup_action = (
+                    match_levelscript_native_reading_popup_record(
+                        level_dir.name,
+                        str(file_info.get("fileStem") or ""),
+                        record,
+                        levelscript_root=root,
                     )
-                    popup_story_key = str(
-                        reading_popup_action.get("key") or ""
-                    )
-                    if not popup_story_key:
-                        continue
-                    popup_id_offsets = [
-                        int(hit.get("offset"))
-                        for hit in [
-                            *(record.get("strings") or []),
-                            *(record.get("plainStrings") or []),
-                        ]
-                        if isinstance(hit, dict)
-                        and hit.get("text")
-                        == reading_popup_action.get("readingPopupId")
-                        and isinstance(hit.get("offset"), int)
+                    or {}
+                )
+                popup_story_key = str(
+                    reading_popup_action.get("key") or ""
+                )
+                if not popup_story_key:
+                    continue
+                popup_id_offsets = [
+                    int(hit.get("offset"))
+                    for hit in [
+                        *(record.get("strings") or []),
+                        *(record.get("plainStrings") or []),
                     ]
-                    if not popup_id_offsets:
-                        continue
-                    story_hits = {popup_story_key: popup_id_offsets}
-                all_story_keys = sorted(story_hits)
-                for story_key, string_offsets in story_hits.items():
-                    signature = (
-                        story_key,
-                        source_file,
-                        record_start,
+                    if isinstance(hit, dict)
+                    and hit.get("text")
+                    == reading_popup_action.get("readingPopupId")
+                    and isinstance(hit.get("offset"), int)
+                ]
+                if not popup_id_offsets:
+                    continue
+                story_hits = {popup_story_key: popup_id_offsets}
+            all_story_keys = sorted(story_hits)
+            for story_key, string_offsets in story_hits.items():
+                signature = (
+                    story_key,
+                    source_file,
+                    record_start,
+                )
+                if signature in seen:
+                    continue
+                seen.add(signature)
+                out[story_key].append({
+                    "levelId": level_dir.name,
+                    "scriptId": str(file_info.get("fileStem") or ""),
+                    "sourceFile": source_file,
+                    "actionMapRole": action_map_role,
+                    "recordOffset": record_start,
+                    "stringOffsets": sorted(string_offsets),
+                    "allStoryKeysInRecord": all_story_keys,
+                    "sourceMissionishRefs": source_missionish_refs,
+                    "actionCode": f"0x{int(record.get('code') or 0):04x}",
+                    "actionKind": f"0x{int(record.get('kind') or 0):02x}",
+                    "localId": record.get("localId"),
+                    "nextId": record.get("nextId"),
+                })
+                if action_name and record_class:
+                    execution_role = _levelscript_story_action_execution_role(
+                        action_name,
+                        record_class,
                     )
-                    if signature in seen:
-                        continue
-                    seen.add(signature)
-                    out[story_key].append({
-                        "levelId": level_dir.name,
-                        "scriptId": str(file_info.get("fileStem") or ""),
-                        "sourceFile": source_file,
-                        "actionMapRole": action_map_role,
-                        "recordOffset": record_start,
-                        "stringOffsets": sorted(string_offsets),
-                        "allStoryKeysInRecord": all_story_keys,
-                        "sourceMissionishRefs": source_missionish_refs,
-                        "actionCode": f"0x{int(record.get('code') or 0):04x}",
-                        "actionKind": f"0x{int(record.get('kind') or 0):02x}",
-                        "localId": record.get("localId"),
-                        "nextId": record.get("nextId"),
+                    out[story_key][-1].update({
+                        "actionName": action_name,
+                        "recordClass": record_class,
+                        "playbackExecutionRole": execution_role,
+                        "triggerPlaybackBindingEligible": (
+                            execution_role == "direct_playback"
+                        ),
+                        "nativeMappingId": LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
                     })
-                    if action_name and record_class:
-                        execution_role = _levelscript_story_action_execution_role(
-                            action_name,
-                            record_class,
+                    if action_name == "Play3DRadio":
+                        native_detail = decode_levelscript_record_payload(
+                            data,
+                            record,
+                            next_start=next_starts.get(record_start),
+                            action_map_role=action_map_role,
+                        ).get("play3DRadio") or {}
+                        # Only attach the typed target fields to the Story
+                        # occurrence whose id is the exact native radioId.
+                        if native_detail.get("radioId") == story_key:
+                            out[story_key][-1]["play3DRadio"] = native_detail
+                    if (
+                        record_class == "play_reading_popup"
+                        and reading_popup_action
+                        and story_key == reading_popup_action.get("key")
+                    ):
+                        out[story_key][-1]["readingPopupAction"] = (
+                            reading_popup_action
                         )
-                        out[story_key][-1].update({
-                            "actionName": action_name,
-                            "recordClass": record_class,
-                            "playbackExecutionRole": execution_role,
-                            "triggerPlaybackBindingEligible": (
-                                execution_role == "direct_playback"
-                            ),
-                            "nativeMappingId": LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
-                        })
-                        if action_name == "Play3DRadio":
-                            native_detail = decode_levelscript_record_payload(
-                                data,
-                                record,
-                                next_start=next_starts.get(record_start),
-                                action_map_role=action_map_role,
-                            ).get("play3DRadio") or {}
-                            # Only attach the typed target fields to the Story
-                            # occurrence whose id is the exact native radioId.
-                            if native_detail.get("radioId") == story_key:
-                                out[story_key][-1]["play3DRadio"] = native_detail
-                        if (
-                            record_class == "play_reading_popup"
-                            and reading_popup_action
-                            and story_key == reading_popup_action.get("key")
-                        ):
-                            out[story_key][-1]["readingPopupAction"] = (
-                                reading_popup_action
-                            )
-                        if control_context is None:
-                            control_context = _prepare_levelscript_native_control_context(
-                                data,
-                                records,
-                                membership,
-                            )
-                        control_paths = _levelscript_native_control_paths_to_record(
+                    if control_context is None:
+                        control_context = _prepare_levelscript_native_control_context(
                             data,
                             records,
                             membership,
-                            record,
-                            prepared=control_context,
+                            reuse_successors=True,
                         )
-                        if control_paths and execution_role == "direct_playback":
-                            for control_path in control_paths:
-                                event_detail = control_path.get("eventDetail") or {}
-                                if (
-                                    control_path.get("headerName")
-                                    == "LevelEvent_OnEncounterBattlePartBegin"
-                                    and isinstance(
-                                        event_detail.get("lsmPtrFilter"),
-                                        int,
+                    control_paths = _levelscript_native_control_paths_to_record(
+                        data,
+                        records,
+                        membership,
+                        record,
+                        prepared=control_context,
+                    )
+                    if control_paths and execution_role == "direct_playback":
+                        for control_path in control_paths:
+                            event_detail = control_path.get("eventDetail") or {}
+                            if (
+                                control_path.get("headerName")
+                                == "LevelEvent_OnEncounterBattlePartBegin"
+                                and isinstance(
+                                    event_detail.get("lsmPtrFilter"),
+                                    int,
+                                )
+                            ):
+                                runtime_target = (
+                                    decode_levelscript_encounter_module_target(
+                                        data,
+                                        event_detail["lsmPtrFilter"],
+                                        file_info.get("fileStem") or "",
                                     )
-                                ):
-                                    runtime_target = (
-                                        decode_levelscript_encounter_module_target(
-                                            data,
-                                            event_detail["lsmPtrFilter"],
-                                            file_info.get("fileStem") or "",
-                                        )
-                                    )
-                                    if runtime_target:
-                                        runtime_target["sourceFile"] = source_file
-                                        control_path["runtimeTarget"] = runtime_target
-                            out[story_key][-1]["nativeEventOwnerStatus"] = (
-                                "exact_serialized_control_path"
-                            )
-                            out[story_key][-1]["nativeEventOwners"] = control_paths
+                                )
+                                if runtime_target:
+                                    runtime_target["sourceFile"] = source_file
+                                    control_path["runtimeTarget"] = runtime_target
+                        out[story_key][-1]["nativeEventOwnerStatus"] = (
+                            "exact_serialized_control_path"
+                        )
+                        out[story_key][-1]["nativeEventOwners"] = control_paths
+
+    paths = [path
+        for level_dir in sorted(path for path in root.iterdir() if path.is_dir())
+        for path in sorted(level_dir.glob('*.json'), key=_levelscript_file_sort_key)]
+    # Decoding and every typed control-flow projection share one operation.
+    # No result or cache entry becomes public until all exit proofs succeed.
+    load_uid_sources(paths, game_root=game_root,
+        project=project,
+        progress=lambda message: print(f"[story:action-graph] {message}", flush=True))
 
     result = dict(out)
     if use_default_cache:
@@ -3675,7 +3697,7 @@ def build_levelscript_action_story_occurrences(level_script_root: Path | None = 
     """Keep generic stored carriers separate from freshly replayed pooled FMV names."""
     global _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE
     from scripts.webui.story.video_bindings import current_pooled_levelscript_fmv_sources
-    base=_build_non_fmv_levelscript_action_story_occurrences(level_script_root)
+    base=_build_non_fmv_levelscript_action_story_occurrences(level_script_root,game_root=game_root)
     pooled,failures=current_pooled_levelscript_fmv_sources(level_script_root or LEVELSCRIPT_DIR,game_root=game_root)
     result={key:list(rows)for key,rows in base.items()}
     for key,rows in pooled.items():result.setdefault(key,[]).extend(rows)
@@ -3850,7 +3872,7 @@ def _levelscript_binary_summary(source_file: str, script_id: str) -> dict:
     cache_key = (str(source_path.resolve()), script_id)
     if cache_key not in _LEVELSCRIPT_BINARY_SUMMARY_CACHE:
         _LEVELSCRIPT_BINARY_SUMMARY_CACHE[cache_key] = (
-            decode_levelscript_binary_file(source_path, script_id)
+            decode_levelscript_binary_file(source_path, script_id, game_root=resolve_installed_native_inputs()[1].parents[2])
         )
     summary = _LEVELSCRIPT_BINARY_SUMMARY_CACHE[cache_key]
     _LEVELSCRIPT_BINARY_SUMMARY_SOURCE_CACHE[lookup_key] = summary
@@ -6752,6 +6774,7 @@ def decode_levelscript_mission_state_control_gates(
 
 def build_levelscript_mission_state_story_routes(
     native_playback_index: dict[str, list[dict]],
+    *, game_root: Path | None = None,
 ) -> list[dict]:
     """Return exact native mission-state gates for Story playback paths.
 
@@ -6760,26 +6783,30 @@ def build_levelscript_mission_state_story_routes(
     narrower case where every path selects one identical ``not_completed``
     mission. Completed missions earlier in a nested path remain explicit
     prerequisites rather than being discarded or mislabeled as ownership.
+    The Story boundary selects the native build explicitly for every nested
+    UID decoder, including positive string lists. Reader refusals stay fatal.
     """
+    source_files = sorted({str(occurrence.get('sourceFile') or '')
+        for occurrences in native_playback_index.values() for occurrence in occurrences} - {''})
     binary_cache: dict[str, tuple[bytes, list[dict], dict[int, str]]] = {}
+    if source_files:
+        if game_root is None:
+            game_root = resolve_installed_native_inputs()[1].parents[2]
+        paths = {name: (ROOT / name).resolve() for name in source_files}
+        try:
+            sources = load_uid_sources(paths.values(), game_root=game_root,
+                progress=lambda message: print(f'[story:mission-state] {message}', flush=True))
+        except ValueError as error:
+            error.add_note('Story mission-state sources: ' + ', '.join(source_files[:4]))
+            raise
+        binary_cache = {name: (sources[path].data, sources[path].records, sources[path].membership)
+                        for name, path in paths.items()}
     routes_by_story: dict[str, list[dict]] = defaultdict(list)
     for story_key, occurrences in native_playback_index.items():
         for occurrence in occurrences:
             source_file = str(occurrence.get("sourceFile") or "")
             if not source_file:
                 continue
-            if source_file not in binary_cache:
-                try:
-                    data = read_bytes_cached(ROOT / source_file)
-                except OSError:
-                    binary_cache[source_file] = (b"", [], {})
-                else:
-                    records = extract_levelscript_uid_records(data, source_path=ROOT / source_file)
-                    _action_map, membership = levelscript_action_map_membership(
-                        data,
-                        records,
-                    )
-                    binary_cache[source_file] = (data, records, membership)
             data, records, membership = binary_cache[source_file]
             if not records:
                 continue
@@ -8858,7 +8885,7 @@ def _build_historical_levelscript_interactive_narrative_story_contexts(
                 # and ActionMap work in the general summary decoder.
                 if not data or data[0] != 27:
                     continue
-                summary = decode_levelscript_binary_file(path, script_id)
+                summary = decode_levelscript_binary_file(path, script_id, game_root=resolve_installed_native_inputs()[1].parents[2])
                 script_id_offset = summary.get("probableScriptIdOffset")
                 if (
                     summary.get("serializedMemberCount") != 27
@@ -8984,8 +9011,8 @@ def build_levelscript_interactive_narrative_story_contexts(
         rows,audit=build(available_story_keys=available_story_keys,levelscript_root=levelscript_root,
             reading_popup_path=reading_popup_path,interactive_table_parser=_parse_interactive_object_template_index,
             gameassembly=gameassembly,metadata=metadata,
-            source_summary_path=source_summary_path or ROOT/"reports/animestudio/jsondata_current_latest.json",
-            source_ledger_path=source_ledger_path or ROOT/"reports/animestudio/jsondata_current_files_latest.jsonl.gz")
+            source_summary_path=source_summary_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_current.json',
+            source_ledger_path=source_ledger_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz')
     except (OSError,ValueError,KeyError,TypeError) as error:
         rows=[];audit=dict(status="validation_failed",narrativeConfigurationRows=0,
             runtimeNarrativeConsumerProved=False,playbackProved=False,absenceProved=False,
@@ -10723,8 +10750,8 @@ def build_leveldata_npc_patrol_radio_story_contexts(
             raise ValueError("storyNpcPatrol.explicit-native-pair:both paths required")
         if gameassembly is None:
             gameassembly, metadata = resolve_installed_native_inputs()
-        summary = Path(source_summary_path or ROOT / "reports/animestudio/jsondata_current_latest.json")
-        ledger = Path(source_ledger_path or ROOT / "reports/animestudio/jsondata_current_files_latest.jsonl.gz")
+        summary = Path(source_summary_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_current.json')
+        ledger = Path(source_ledger_path or ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz')
         if not summary.is_file() or not ledger.is_file():
             raise ValueError("storyNpcPatrol.authenticated-jsondata-receipt-required:" + str(summary) + ":" + str(ledger))
         with CurrentNpcPatrolSource(leveldata_root.parent, gameassembly=gameassembly,
@@ -11025,7 +11052,10 @@ def build_npc_patrol_checkpoint_mission_contexts(
             except OSError:
                 script_cache[pair] = {}
             else:
-                records = extract_levelscript_uid_records(data, source_path=path)
+                records = extract_levelscript_uid_records(
+                    data, source_path=path,
+                    game_root=resolve_installed_native_inputs()[1].parents[2],
+                )
                 _action_map, membership = levelscript_action_map_membership(
                     data,
                     records,

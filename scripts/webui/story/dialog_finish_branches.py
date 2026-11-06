@@ -111,10 +111,10 @@ DEFAULT_METADATA = (
     DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_JSON = (
-    ROOT / "reports" / "story" / "recovery" / "dialog_finish_branch_audit.json"
+    ROOT / 'webui/data/_build/story/recovery/dialog_finish_branch_audit.json'
 )
 DEFAULT_MARKDOWN = (
-    ROOT / "reports" / "story" / "recovery" / "dialog_finish_branch_audit.md"
+    ROOT / 'webui/data/_build/story/recovery/dialog_finish_branch_audit.md'
 )
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 

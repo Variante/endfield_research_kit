@@ -136,6 +136,7 @@ class BuildOptions:
     #: `build_assets --mode`; the debug build indexes every exported class.
     asset_mode: str = "default"
     full_source_graph: bool = False
+    animestudio: Path | None = None
 
 
 def _environment(options: BuildOptions) -> tuple[tuple[str, str], ...]:
@@ -144,6 +145,8 @@ def _environment(options: BuildOptions) -> tuple[tuple[str, str], ...]:
         values["ENDFIELD_EXPORT_ROOT"] = str(options.export_root.resolve())
     if options.game_root:
         values["ENDFIELD_GAME_ROOT"] = str(options.game_root.resolve())
+    if options.animestudio:
+        values["ENDFIELD_ANIMESTUDIO"] = str(options.animestudio.resolve())
     return tuple(sorted(values.items()))
 
 
@@ -240,7 +243,9 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     # Optional authenticated Model-source evidence reads existing raw inputs.
     tasks.append(TaskSpec(
         "assets",
-        (module("scripts.webui.assets.build_assets", "--mode", options.asset_mode, "--publish", "index"),),
+        (module("scripts.webui.assets.build_assets", "--mode", options.asset_mode, "--publish", "index",
+                "--collision-scene-receipt", str(ExportLayout(options.export_root or ExportLayout.configured().root).evidence_dir
+                                                / "assets/collision_scene_current.json")),),
         optional=of(
             ("table", "video", "audit-video", "dynamic-streaming", "bundle-manifest"),
             ("Material",),
@@ -337,6 +342,8 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     # (webui/data/_build/map/world_placements) enrich its contexts when present.
     audio_args: list[str] = [] if options.decode_audio else ["--skip-decode"]
     audio_args += ["--decode-jobs", str(max(1, options.jobs))]
+    if options.animestudio:
+        audio_args += ["--audio-dumper", str(options.animestudio)]
     if options.game_root:
         audio_args += ["--game-root", str(options.game_root)]
     if options.export_root:
@@ -424,6 +431,18 @@ class BuildPlan:
     requirements: Requirements
     #: Tasks outside this build whose last publication a selected task reads.
     published: tuple[str, ...] = ()
+
+    @property
+    def evidence_families(self) -> tuple[str, ...]:
+        """Shared extraction evidence, prepared once before page publications."""
+        families = []
+        if "json-data" in self.scope.structured:
+            families.append("jsondata-source")
+        if "data" in self.pages:
+            families.append("jsondata-classified")
+        if "assets" in self.pages:
+            families.append("collision")
+        return tuple(families)
 
 
 def plan_build(pages: tuple[str, ...], options: BuildOptions) -> BuildPlan:

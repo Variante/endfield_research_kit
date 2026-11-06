@@ -499,7 +499,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         "source": {
             "jsonRoot": json_root.relative_to(ROOT).as_posix() if json_root.is_relative_to(ROOT) else str(json_root),
             "textureRoot": texture_root.relative_to(ROOT).as_posix() if texture_root.is_relative_to(ROOT) else str(texture_root),
-            "assetClosure": "reports/assets/map_recovery/region3d_asset_closure.json",
+            "assetClosure": "webui/data/_build/map/region3d_asset_closure.json",
             "luaController": "game/Lua/Data/LuaScripts/UI/Panels/RegionMap3D/RegionMap3DCtrl.lua",
         },
     }

@@ -93,7 +93,7 @@ def build(*,available_story_keys,levelscript_root,reading_popup_path,interactive
         popup_path=Path(reading_popup_path);popup_before=popup_path.read_bytes()if popup_path.is_file()else None
         reading_rows=json.loads(popup_before)if popup_before is not None else{}
         if not isinstance(reading_rows,dict):raise ValueError('storyCurrentNarrative.reading-popup-table-object-required')
-        with CurrentLevelScriptSource(root.parent,gameassembly=gameassembly,metadata=metadata,
+        with CurrentLevelScriptSource.from_receipt(root.parent,gameassembly=gameassembly,metadata=metadata,
                 summary_path=Path(source_summary_path),ledger_path=Path(source_ledger_path))as source:
             table_path,table_bytes=source.read_interactive_table()
             interactive_index=interactive_table_parser(table_bytes,strings=source.strings)

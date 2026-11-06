@@ -36,7 +36,7 @@ from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs
 from scripts.source_paths import ExportLayout, configured_export_root
 from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
 
-REPORT_DIR = ROOT / "reports" / "mission_order"
+REPORT_DIR = ROOT / 'webui/data/_build/story/mission_order'
 DEFAULT_INDEX = REPORT_DIR / "lua_consumer_reference_audit.json"
 DEFAULT_MD = REPORT_DIR / "lua_consumer_reference_audit.md"
 SCHEMA_VERSION = "luaConsumerReferenceAudit.v6"

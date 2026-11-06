@@ -83,7 +83,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.repo_paths import REPO_ROOT
-from scripts.common import EXPORT_LAYOUT, unity_asset_rel
+from scripts.common import EXPORT_LAYOUT, unity_asset_rel, rel_path
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.map_water_surface_join import validate_map_water_surface_join
 
@@ -118,9 +118,9 @@ MATERIAL_ROOT = EXPORT_LAYOUT.unity_type_dir("Material")
 RENDERER_INDEX = EXPORT_LAYOUT.renderer_index_dir("StreamingAssets") / "renderers.jsonl"
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
-HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
-RENDER_CACHE_ROOT = ROOT / "reports/assets/map_recovery/render_cache"
-STREAMING_SCENE_COST_CACHE = ROOT / "reports/assets/map_recovery/streaming_scene_costs.json"
+HLOD_INDEX = ROOT / 'webui/data/_build/map/hlod_grid_index.json'
+RENDER_CACHE_ROOT = ROOT / 'webui/data/_build/map/render_cache'
+STREAMING_SCENE_COST_CACHE = ROOT / 'webui/data/_build/map/streaming_scene_costs.json'
 STREAMING_SCENE_COST_SCHEMA = 1
 ASSET_INDEX = ROOT / "webui/data/assets/index.json"
 ASSET_RELATIONS = ROOT / "webui/data/assets/relations.json"
@@ -1693,7 +1693,7 @@ def install_hlod_material_json_bindings(
     return installed, unresolved
 
 
-TEXTURE_BINDING_TABLE_CACHE = ROOT / "reports/assets/map_recovery/texture_binding_tables.json"
+TEXTURE_BINDING_TABLE_CACHE = ROOT / 'webui/data/_build/map/texture_binding_tables.json'
 TEXTURE_BINDING_TABLE_SCHEMA = 1
 
 
@@ -5102,7 +5102,7 @@ def main(argv: list[str] | None = None) -> int:
                         "sceneId": scene_id,
                         "mappingMethod": projection["method"],
                         "mapConfigSource": projection["source"],
-                        "instanceSource": str(Path(projection["instanceSource"]).relative_to(ROOT)).replace("\\", "/"),
+                        "instanceSource": rel_path(Path(projection["instanceSource"]), ROOT),
                         "cropMethod": (
                             "authoritative_member_minimap_world_bounds_with_128m_instance_collar"
                             if exact_minimap_bounds else

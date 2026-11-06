@@ -38,7 +38,7 @@ from scripts.common import read_json_strict as load_json
 ROOT = REPO_ROOT
 EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
-DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
+DEFAULT_GRAPH = ROOT / 'webui/data/_build/source_graph/endfield_source_graph.sqlite'
 SCHEMA_VERSION = 7
 
 GRAPH_EDGE_TYPES = {
@@ -872,7 +872,7 @@ class PayloadBuilder:
                     self.add_node(
                         target_id,
                         "target_settings",
-                        f"{owner_class} · {target_path.rsplit('.', 1)[-1]}",
+                        f"{owner_class} 路 {target_path.rsplit('.', 1)[-1]}",
                         key=f"{character_key}:{rid}:{index}",
                         semanticStatus="exact byte structure; enum/hash names and runtime evaluator behavior remain qualified",
                         source={"file": relative_path, "ownerRid": rid, "ownerClass": owner_class, "path": target_path},
@@ -1162,7 +1162,7 @@ class PayloadBuilder:
             },
             "graph": {
                 "available": graph_available,
-                "source": "reports/source_graph/endfield_source_graph.sqlite" if graph_available else None,
+                "source": "webui/data/_build/source_graph/endfield_source_graph.sqlite" if graph_available else None,
                 "degradedMode": not graph_available,
                 "stale": bool(self.graph_stale_reason),
                 "staleReason": self.graph_stale_reason or None,

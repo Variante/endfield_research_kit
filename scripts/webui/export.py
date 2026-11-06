@@ -32,15 +32,16 @@ from scripts.game_data.extraction.export_changed_game_data import exclusive_work
 from scripts.game_data.extraction.export_sync import SyncError, sync_root
 from scripts.game_data.extraction.verify_export_freshness import verify
 from scripts.repo_paths import REPO_ROOT
-from scripts.source_paths import configured_export_root
+from scripts.source_paths import configured_export_root, configured_animestudio_cli
 from scripts.webui.build_graph import (
     REPORT_MD,
     phase_payloads,
     plan_lines,
     run_graph,
+    run_task,
     write_reports,
 )
-from scripts.webui.pages import PAGE_ALIASES, PAGES, BuildOptions, BuildPlan, extraction_scope, plan_build, resolve_pages
+from scripts.webui.pages import PAGE_ALIASES, PAGES, BuildOptions, BuildPlan, CommandSpec, TaskSpec, extraction_scope, plan_build, resolve_pages
 
 DEBUG = "debug"
 ALL = "all"
@@ -49,7 +50,7 @@ HELP_TOKENS = {"-h", "--help", "/?", "/h", "help"}
 #: The Story MonoBehaviour name filter the first-time setup passes through.
 STORY_NAME_FILTER = "--animestudio-story-monobehaviour-names"
 OWN_FLAGS = {"--from-game", "--skip-freshness", "--full-source-graph", "--show-plan"}
-OWN_VALUE_OPTIONS = {"--game-root", "--webui-jobs"}
+OWN_VALUE_OPTIONS = {"--game-root", "--export-root", "--output", "--animestudio", "--webui-jobs"}
 
 USAGE = """\
 Usage: export.bat [PAGE ...] [--from-game] [options]
@@ -86,8 +87,15 @@ Where the data comes from:
                     build.
   --from-game       Re-extract the pages' inputs from the installed client.
 
+Both modes prepare missing or stale source evidence from the selected client
+before page builds. Evidence and replay inputs stay in export/meta/evidence.
+
 Options:
   --game-root PATH  Installed Endfield_Data folder (default: endfield_paths.bat).
+  --export-root PATH
+                    Selected export for extraction, evidence and every page.
+                    --output is an alias; default: ENDFIELD_EXPORT_ROOT.
+  --animestudio PATH Selected AnimeStudio CLI for extraction and evidence.
   --skip-freshness  Skip the freshness check for this run. It does not refresh
                     anything; use it only with an export known to be compatible.
   --webui-jobs N    Concurrent builders, and Map's own worker count. Default 4.
@@ -161,6 +169,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("targets", nargs="*", type=str.lower)
     parser.add_argument("--from-game", action="store_true")
     parser.add_argument("--game-root", type=Path)
+    parser.add_argument("--export-root", "--output", dest="export_root", type=Path)
+    parser.add_argument("--animestudio", type=Path)
     parser.add_argument("--skip-freshness", action="store_true")
     parser.add_argument("--webui-jobs", type=int, default=4)
     parser.add_argument("--full-source-graph", action="store_true")
@@ -168,6 +178,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     # Pages may come before or after options.
     args = parser.parse_intermixed_args(own)
     args.exporter_args = exporter
+    # Even after --, selection options must not silently override just the
+    # extractor while freshness checks and page consumers use another root.
+    if any(token.split("=", 1)[0] in {"--game-root", "--export-root", "--output", "--animestudio"}
+           for token in exporter):
+        parser.error("put directory/tool selection options before -- so every stage uses them")
 
     def fail(message: str) -> None:
         parser.exit(2, f"export.bat: {message}\n")
@@ -214,6 +229,7 @@ def build_options(args: argparse.Namespace, game_root: Path, export_root: Path) 
         decode_audio=args.from_game,
         asset_mode="debug" if args.debug else "default",
         full_source_graph=args.full_source_graph,
+        animestudio=args.animestudio or configured_animestudio_cli(),
     )
 
 
@@ -225,6 +241,8 @@ def exporter_command(plan: BuildPlan, args: argparse.Namespace, game_root: Path,
         "--game-root", str(game_root),
         "--output", str(export_root),
     ]
+    if args.animestudio:
+        command += ["--animestudio", str(args.animestudio.resolve())]
     # The object index is merged from the carrier JSON jobs, so every run that
     # re-exports them republishes it; Story and Audio read it.
     if scope.exports_object_index_types:
@@ -238,6 +256,9 @@ def exporter_command(plan: BuildPlan, args: argparse.Namespace, game_root: Path,
 
 def print_plan(plan: BuildPlan, args: argparse.Namespace) -> None:
     print(f"pages: {', '.join(plan.pages)}")
+    print(f"game root: {(args.game_root or resolve_installed_game_data_root()).resolve()}")
+    print(f"export root: {(args.export_root or configured_export_root()).resolve()}")
+    print(f"AnimeStudio: {(args.animestudio or configured_animestudio_cli()).resolve()}")
     if args.from_game:
         print(f"extraction: {extraction_scope(plan, everything=args.debug).describe()}")
     else:
@@ -250,6 +271,8 @@ def print_plan(plan: BuildPlan, args: argparse.Namespace) -> None:
     if plan.published:
         print(f"reads the last publication of: {', '.join(plan.published)}")
     print("build tasks:")
+    if plan.evidence_families:
+        print("  prepare evidence: " + ", ".join(plan.evidence_families))
     for line in plan_lines(plan.tasks):
         print(f"  {line}")
 
@@ -261,7 +284,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     args = parse_args(argv)
     game_root = (args.game_root or resolve_installed_game_data_root()).resolve()
-    export_root = configured_export_root().resolve()
+    export_root = (args.export_root or configured_export_root()).resolve()
     plan = plan_build(args.pages, build_options(args, game_root, export_root))
     name_filtered = any(token.split("=", 1)[0] == STORY_NAME_FILTER for token in args.exporter_args)
     if name_filtered and "MonoBehaviour" not in plan.requirements.partial_ok:
@@ -295,6 +318,8 @@ def execute_export(args: argparse.Namespace, plan: BuildPlan, game_root: Path, e
     # --game-root run agrees across every stage.
     os.environ["ENDFIELD_GAME_ROOT"] = str(game_root)
     os.environ["ENDFIELD_EXPORT_ROOT"] = str(export_root)
+    cli = (args.animestudio or configured_animestudio_cli()).resolve()
+    os.environ["ENDFIELD_ANIMESTUDIO"] = str(cli)
 
     stage("Resolved export plan")
     log(f"pages: {', '.join(plan.pages)}")
@@ -322,11 +347,27 @@ def execute_export(args: argparse.Namespace, plan: BuildPlan, game_root: Path, e
             return code
     require_export_layout(export_root)
 
-    stage(f"Building {', '.join(PAGES[page].title for page in plan.pages)}")
     started = time.perf_counter()
-    returncode, runs = run_graph(plan.tasks, args.webui_jobs)
+    evidence_phases = []
+    returncode = 0
+    if plan.evidence_families:
+        stage("Preparing current source evidence")
+        command = [sys.executable, "-m", "scripts.game_data.extraction.build_evidence",
+                   "--game-root", str(game_root), "--export-root", str(export_root),
+                   "--animestudio", str(cli)]
+        for family in plan.evidence_families:
+            command += ["--family", family]
+        result = run_task(TaskSpec("build_evidence", (CommandSpec(tuple(command)),)))
+        returncode = result["returnCode"]
+        evidence_phases.append({"name": "evidence", "tasks": [{"name": "build_evidence", "seconds": 0,
+            **result, "after": [], "status": "failed" if returncode else "ok"}]})
+
+    runs = []
+    if not returncode:
+        stage(f"Building {', '.join(PAGES[page].title for page in plan.pages)}")
+        returncode, runs = run_graph(plan.tasks, args.webui_jobs)
     wall_seconds = round(time.perf_counter() - started, 3)
-    phases = phase_payloads(runs)
+    phases = evidence_phases + phase_payloads(runs)
     serial = round(sum(task["seconds"] for phase in phases for task in phase["tasks"]), 3)
     write_reports({
         "schemaVersion": 3,

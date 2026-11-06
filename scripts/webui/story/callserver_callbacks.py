@@ -20,6 +20,8 @@ from scripts.game_data.callserver_callback_native import load_callserver_callbac
 from scripts.common import (
     STORY_RECOVERY_REPORTS_DIR,
     md_escape,
+    native_game_data_root,
+    resolve_installed_native_inputs,
     read_bytes_cached,
     rel_path,
     write_report_json,
@@ -37,9 +39,9 @@ from scripts.webui.story.level_bindings import (
 from scripts.game_data.levelscript_binary import (
     compact_callserver_serialized_contract,
     decode_levelscript_record_payload,
-    extract_levelscript_uid_records,
     levelscript_action_map_membership,
 )
+from scripts.webui.story.uid_batch import load_current_uid_sources as load_uid_sources
 
 
 SCHEMA = "levelScriptCallServerCallbackAudit.v3"
@@ -458,6 +460,11 @@ def build_report(
     gameassembly: Path | None = None,
     metadata: Path | None = None,
 ) -> dict[str, Any]:
+    if gameassembly is None or metadata is None:
+        default_assembly, default_metadata = resolve_installed_native_inputs()
+        gameassembly = gameassembly or default_assembly
+        metadata = metadata or default_metadata
+    game_root = native_game_data_root(gameassembly=gameassembly, metadata=metadata)
     contract_audit = load_callserver_callback_contract(gameassembly=gameassembly, metadata=metadata)
     native_contract = dict(contract_audit.get("nativeContract") or {})
     native_contract.setdefault("schema", contract_audit.get("schema", ""))
@@ -487,20 +494,13 @@ def build_report(
     trailing_bytes_distribution: Counter[str] = Counter()
 
     files = sorted(level_script_root.rglob("*.json"))
+    sources = load_uid_sources(files, game_root=game_root,
+        progress=lambda message: print(f'[story:callserver] {message}', flush=True))
     for path in files:
         source_file = rel_path(path)
         normalized_source = source_file.replace("\\", "/")
-        try:
-            data = read_bytes_cached(path)
-        except OSError as exc:
-            validation_failures.append({
-                "gate": "read_levelscript",
-                "source": source_file,
-                "actual": str(exc),
-            })
-            continue
-        records = extract_levelscript_uid_records(data, source_path=path)
-        _action_map, membership = levelscript_action_map_membership(data, records)
+        source = sources[path.resolve()]
+        data, records, membership = source.data, source.records, source.membership
         ordered = sorted(records, key=lambda row: int(row.get("start") or 0))
         next_starts = {
             int(record.get("start") or 0): (

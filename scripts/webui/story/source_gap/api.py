@@ -82,10 +82,7 @@ def _build_source_gap_report(
         )
     )
     coverage_path = (
-        ROOT
-        / "reports"
-        / "story"
-        / "build"
+        ROOT / 'webui/data/_build/story/build'
         / f"mission_pipeline_story_binding_coverage_{language}.json"
     )
     story_trigger_manifest, story_trigger_manifest_status = (
@@ -153,7 +150,7 @@ def _build_source_gap_report(
 def build_source_gap_queue(language="CN", *, reports_dir=None, table_root=None, game_assembly=None):
     """Build one source gap report; recheck native evidence before publication."""
     language = str(language or "CN").upper()
-    reports_dir = reports_dir or ROOT / "reports" / "mission_order"
+    reports_dir = reports_dir or ROOT / 'webui/data/_build/story/mission_order'
     scope = _NativeProofScope()
     try:
         report = _build_source_gap_report(language, table_root=table_root,

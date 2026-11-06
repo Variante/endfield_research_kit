@@ -14,6 +14,7 @@ action-bridge audit) were deleted when it was frozen in commit ``74a263c7``,
 so refreshing it means restoring and porting them from history.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 from scripts.common import EXPORT_LAYOUT
 
 import hashlib
@@ -37,7 +38,7 @@ SCHEMA = "dynamicSceneStoryContext.v1"
 AUDIT_SCHEMA = "dynamicSceneStoryContextValidation.v1"
 DEFAULT_ARTIFACT = Path(__file__).with_name("dynamic_scene.json")
 DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
-DEFAULT_EXPORT_SUMMARY = ROOT / "reports" / "export" / "export_full_summary.json"
+DEFAULT_EXPORT_SUMMARY = ExportLayout.configured().export_summary_path
 
 DYNAMIC_STREAM_SHA256 = (
     "1702E7F78D19E43F30208BC8A5CE1CAEDC16994DA9A7360FEFDD5F404E900320"
@@ -355,8 +356,9 @@ def validate_dynamic_scene_context(
             reject(f"levelscript_source_{index}_unique_path", {"uniqueNonempty": True}, relative)
             continue
         seen_sources.add(relative)
-        source_paths.add(f"export_full/{relative}")
         resolved = _resolved_export_source(export_root, relative)
+        if resolved is not None:
+            source_paths.add(_source_file(resolved))
         if resolved is None or not resolved.is_file():
             reject(
                 f"levelscript_source_{index}_exists",

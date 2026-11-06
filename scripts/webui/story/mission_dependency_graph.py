@@ -79,7 +79,7 @@ from scripts.common import EXPORT_LAYOUT
 SCHEMA = "missionDependencyGraph.v1"
 
 DEFAULT_MISSION_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
-DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
+DEFAULT_REPORT_ROOT = ROOT / 'webui/data/_build/story/mission_graph'
 
 # Condition ``$type`` short names that name another mission, and the field that
 # carries the reference. Both the full gameplay condition and its "Simple"

@@ -36,8 +36,8 @@ TOOLS = ROOT / "tools" / "endfield-il2cpp"
 DEFAULT_GAMEASSEMBLY = (
     resolve_installed_game_data_root().parent / "GameAssembly.dll"
 )
-DEFAULT_JSON = ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.json"
-DEFAULT_MD = ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.md"
+DEFAULT_JSON = ROOT / 'webui/data/_build/story/recovery/cinematic_queue_runtime_audit.json'
+DEFAULT_MD = ROOT / 'webui/data/_build/story/recovery/cinematic_queue_runtime_audit.md'
 
 
 

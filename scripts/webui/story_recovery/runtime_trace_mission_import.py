@@ -23,7 +23,7 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 EVENT_SCHEMA = "missionRuntimeTrace.event.v1"
 BUNDLE_SCHEMA = "missionRuntimeTrace.v1"
-DEFAULT_OUTPUT = ROOT / "reports" / "story" / "recovery" / "mission_runtime_trace.json"
+DEFAULT_OUTPUT = ROOT / 'webui/data/_build/story/recovery/mission_runtime_trace.json'
 EVENT_KINDS = {
     "session_start",
     "mission_state",

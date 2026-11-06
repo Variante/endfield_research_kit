@@ -33,6 +33,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.il2cpp import static_dictionary
 from scripts.game_data.il2cpp.protocol import read_compressed_int32
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import configured_animestudio_cli
 
 ROOT = REPO_ROOT
 from scripts.common import (
@@ -49,10 +50,7 @@ from scripts.game_data.ifix_patch_native import (
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
 DEFAULT_METADATA = DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
-DEFAULT_ANIMESTUDIO_CLI = (
-    ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release"
-    / "net9.0-windows" / "AnimeStudio.CLI.exe"
-)
+DEFAULT_ANIMESTUDIO_CLI = configured_animestudio_cli()
 
 RUNTIME_PRIMITIVES = {
     0x01: "void", 0x02: "bool", 0x03: "char", 0x04: "sbyte",
@@ -1006,7 +1004,7 @@ def recover_installed_lua_external_result_router(
             f"validator={validator} gate=animestudio_cli expected=file actual=missing "
             f"source={animestudio_cli}"
         )
-    streaming_assets = game_root / "StreamingAssets"
+    streaming_assets = game_root / "Persistent"
     if not streaming_assets.is_dir():
         raise ContractError(
             f"validator={validator} gate=streaming_assets expected=directory actual=missing "
@@ -1017,7 +1015,7 @@ def recover_installed_lua_external_result_router(
         command = [
             str(animestudio_cli), "dump",
             "--streaming-assets", str(streaming_assets),
-            "--fallback-assets", str(game_root),
+            "--fallback-assets", str(game_root / "StreamingAssets"),
             "--output", str(output),
             "--block-type", "lua",
             "--file-regex", r"\.lua$",

@@ -33,7 +33,7 @@ from scripts.game_data.extraction.animestudio_index_io import EffectiveObjectRow
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (
-    ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
+    ROOT / 'webui/data/_build/story/mission_order/source_story_gap_queue_CN.json'
 )
 DEFAULT_SOURCES = ("StreamingAssets", "Persistent")
 

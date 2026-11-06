@@ -7,6 +7,7 @@ import re
 import struct
 import time
 from collections import Counter, defaultdict
+from contextlib import nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -20,11 +21,12 @@ from scripts.source_paths import (
     resolve_material_source_roots,
 )
 from scripts.game_data import sprite_crops
-from scripts.game_data.fbx_normalize import FBX_CONTENT_SCHEMA, FBX_VARIANT_SCHEMA, fbx_content_fingerprints
+from scripts.game_data.fbx_normalize import FBX_CONTENT_SCHEMA, FBX_VARIANT_SCHEMA
 from scripts.webui.assets.obj_geometry import obj_has_drawable_faces
 from scripts.game_data.extraction.unity_overlay import asset_map_containers
 from scripts.webui.assets.fbx_root import read_fbx_root_names, read_fbx_root_names_from_bytes
 from scripts.game_data.unity_store import open_store_if_present
+from scripts.webui.assets.fbx_cache import FbxMetadataCache, read_fbx_metadata
 from scripts.common import (
     path_id_export_base_stem,
     path_id_export_path_id,
@@ -707,6 +709,13 @@ def scan_exported_media_assets(
     build_fbx_content: bool = True,
 ) -> AssetScanResult:
     """Scan exported media once and derive image/model/video indexes from it."""
+    cache = FbxMetadataCache(root / 'webui/data/_build/assets/fbx_metadata.sqlite') if build_fbx_content else nullcontext(None)
+    with cache as fbx_cache:
+        return _scan_exported_media_assets(root=root, export_root=export_root,
+            build_fbx_content=build_fbx_content, fbx_cache=fbx_cache)
+
+
+def _scan_exported_media_assets(*, root, export_root, build_fbx_content, fbx_cache):
     asset_entries: list[dict] = []
     video_entries: list[dict] = []
     counts = defaultdict(int)
@@ -752,7 +761,7 @@ def scan_exported_media_assets(
     # container memberships, including shared Mesh objects.
     model_containers = asset_map_containers(export_root, (STORED_MODEL_TYPE, "Mesh"))
     stored_sha_by_rel: dict[str, str] = {}
-    fbx_fingerprints: dict[tuple[str, str], tuple[str, str]] = {}
+    fbx_fingerprints: dict[tuple[str, str], tuple[str, str, str]] = {}
 
     def add_image_entry(entry: dict, asset_rel: str, stem: str, path_id: str, dimensions: tuple[int, int] | None) -> None:
         nonlocal material_like_image_count
@@ -796,7 +805,11 @@ def scan_exported_media_assets(
         pending_sprites.clear()
 
     def add_stored_models() -> None:
-        for row in pending_stored_models:
+        total = len(pending_stored_models)
+        started = last_progress = time.monotonic()
+        if total >= 1000:
+            print(f"[assets:models] scanning {total} stored models", flush=True)
+        for completed, row in enumerate(pending_stored_models, 1):
             asset_rel = f"{ASSET_SOURCE_UNITY}/{STORED_MODEL_TYPE}/{row.name}"
             stored_sha_by_rel[asset_rel] = row.sha256
             add_asset_file(
@@ -805,6 +818,11 @@ def scan_exported_media_assets(
                 path=Path(ASSET_SOURCE_UNITY, STORED_MODEL_TYPE, row.name),
                 stored_row=row,
             )
+            now = time.monotonic()
+            if total >= 1000 and (completed == total or now - last_progress >= 15):
+                hits = fbx_cache.hits if fbx_cache is not None else 0
+                print(f"[assets:models] {completed}/{total}; persistent cache hits={hits}; {now-started:.1f}s", flush=True)
+                last_progress = now
         pending_stored_models.clear()
 
     def add_asset_file(
@@ -850,28 +868,39 @@ def scan_exported_media_assets(
             if suffix == ".obj":
                 entry["nd"] = not obj_has_drawable_faces(path)
             fbx_data = None
+            metadata = None
             if suffix == ".fbx":
-                try:
-                    fbx_data = sprite_store.read_bytes(STORED_MODEL_TYPE, stored_row.name) if stored_row is not None else path.read_bytes()
-                except OSError:
-                    pass
-                if fbx_data is not None and build_fbx_content:
-                    cache_key = (stored_row.sha256, stem) if stored_row is not None else None
-                    if cache_key is not None and cache_key in fbx_fingerprints:
-                        fingerprint, variant = fbx_fingerprints[cache_key]
-                    else:
-                        fingerprint, variant = fbx_content_fingerprints(fbx_data, stem)
-                        if cache_key is not None:
-                            fbx_fingerprints[cache_key] = fingerprint, variant
+                cache_key = (stored_row.sha256.lower(), stem) if stored_row is not None and build_fbx_content else None
+                if cache_key is not None:
+                    metadata = fbx_fingerprints.get(cache_key)
+                    if metadata is None:
+                        metadata = fbx_cache.get(*cache_key)
+                if metadata is None:
+                    try:
+                        fbx_data = sprite_store.read_bytes(STORED_MODEL_TYPE, stored_row.name) if stored_row is not None else path.read_bytes()
+                    except OSError:
+                        pass
+                    if fbx_data is not None and build_fbx_content:
+                        # Loose files cannot use timestamps; a changed stored
+                        # digest likewise misses the earlier cached result.
+                        cache_key = (hashlib.sha256(fbx_data).hexdigest(), stem)
+                        metadata = fbx_fingerprints.get(cache_key)
+                        if metadata is None:
+                            metadata = fbx_cache.get(*cache_key)
+                        if metadata is None:
+                            metadata = read_fbx_metadata(fbx_data, stem)
+                            fbx_cache.put(*cache_key, metadata)
+                if metadata is not None:
+                    fbx_fingerprints[cache_key] = metadata
+                    fingerprint, variant, _scene_root = metadata
                     if fingerprint:
                         entry["fc"] = fingerprint
                         entry["fv"] = variant
-            scene_root = _animator_fbx_scene_root(
-                asset_rel,
-                path,
-                stem,
-                fbx_data,
-            )
+            if metadata is not None:
+                candidate = metadata[2]
+                scene_root = candidate if asset_rel.startswith(ANIMATOR_FBX_PREFIX) and candidate.lower() != stem.lower() else ''
+            else:
+                scene_root = _animator_fbx_scene_root(asset_rel, path, stem, fbx_data)
             if scene_root:
                 entry["fr"] = scene_root
             unity_type = "Mesh" if asset_rel.startswith("Unity/Mesh/") else STORED_MODEL_TYPE
