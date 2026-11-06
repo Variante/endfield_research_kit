@@ -115,7 +115,7 @@ DIALOG_LIFECYCLE_RUNTIME_CONSUMER = {
     "type": "Beyond.Gameplay.Audio.AudioGameplayStatusSystem",
     "image": "Gameplay.Beyond.dll",
     "typeToken": "0x02001a6f",
-    "source": "reports/story/recovery/options/option_flow_runtime_metadata.json",
+    "source": "webui/data/_build/story/recovery/options/option_flow_runtime_metadata.json",
     "fields": [
         "m_currentDialogId",
         "m_dialogEventStatus",

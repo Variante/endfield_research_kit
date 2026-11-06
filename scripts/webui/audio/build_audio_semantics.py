@@ -26,6 +26,8 @@ explicitly selected native pair, then published outside Event/media rows.
 
 from __future__ import annotations
 
+from scripts.common import native_game_data_root
+
 import copy
 import hashlib
 import importlib.util
@@ -1158,6 +1160,7 @@ def build_audio_semantic_data(
                 runtime_model,
                 cue_semantics=cue_semantics,
                 global_controls=global_controls,
+                game_root=native_game_data_root(gameassembly=gameassembly_path, metadata=metadata_path),
             ),
             cutscene_contexts(cutscene_events),
             lua_audio_contexts(audio_index),

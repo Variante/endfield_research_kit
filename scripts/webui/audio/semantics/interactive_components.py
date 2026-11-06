@@ -26,11 +26,66 @@ from scripts.game_data.levelscript_binary import (
 )
 
 
+def _current_action_map_audio(value: dict[str, Any]) -> dict[str, Any]:
+    from scripts.game_data.codecs.levelscript.audio_actions import project_typed_audio
+
+    actions = []
+    for index, node in enumerate(value["fields"]["actionList"] or []):
+        fields = node["fields"]
+        common = list(fields)[:8]
+        spans = node.get("fieldRanges", node.get("fieldSpans", {}))
+        payload_start = spans[common[-1]][1]
+        audio = project_typed_audio(
+            node, dict(list(fields.items())[8:]), node["endOffset"] - payload_start,
+        )
+        if audio is None or not audio.get("eventBindings"):
+            continue
+        actions.append({
+            **audio,
+            "actionMapRole": f"actionList#{index}",
+            "actionMapOffset": hex(value["sourceOffset"]),
+            "actionMapListCounts": value["rawListCounts"],
+            "recordOffset": hex(node["sourceOffset"]),
+            "payloadOffset": hex(payload_start),
+            "unionTag": f"0x{node['unionTag']:04x}",
+            "serializedMemberCount": node["memberCount"],
+            "localId": fields["ID"],
+            "uid": fields["uid"],
+            "nextId": fields["nextID"],
+        })
+    return {"offset": hex(value["sourceOffset"]), "audioActions": actions}
+
+
+def _current_audio_maps(fields: dict[str, Any]) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+    root = fields["dataMap"]
+    seen = {root["sourceOffset"]} if root is not None else set()
+    embedded = []
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            if value.get("completeCurrentMap") is True:
+                offset = value["sourceOffset"]
+                if offset not in seen:
+                    seen.add(offset)
+                    embedded.extend(_current_action_map_audio(value)["audioActions"])
+            for key, child in value.items():
+                if key not in {"currentNativeValue", "serializedRawHex"}:
+                    visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(fields)
+    return _current_action_map_audio(root) if root is not None else None, embedded
+
+
 def collect_interactive_component_contexts(
     export_root: Path,
     *,
     decoder: Any | None = None,
     table_decoder: Any | None = None,
+    game_root: Path | None = None,
+    _current_reader: Any | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Decode per-entity InteractiveAudioData state maps from MemoryPack.
 
@@ -42,6 +97,15 @@ def collect_interactive_component_contexts(
     identities to each context.  A missing or ambiguous table mapping stays an
     explicit association gap rather than being guessed from the file stem.
     """
+
+    if decoder is None and _current_reader is None and ExportLayout(export_root).layout_file.is_file():
+        from scripts.game_data.memorypack.interactive_current_source import complete_interactive_reader
+
+        with complete_interactive_reader(export_root, game_root=game_root) as current_reader:
+            return collect_interactive_component_contexts(
+                export_root, table_decoder=table_decoder, game_root=game_root,
+                _current_reader=current_reader,
+            )
 
     if decoder is None:
         def decoder(_path: Path, data: bytes, _size: int) -> dict[str, Any]:
@@ -64,7 +128,21 @@ def collect_interactive_component_contexts(
                     "sourceOffset": candidate,
                     **parsed,
                 })
-            template = decode_interactive_template_memorypack(_path, data, len(data))
+            if _current_reader is not None:
+                exact_fields = _current_reader(_path, data)["fields"]
+                template_audio, embedded_audio = _current_audio_maps(exact_fields)
+                template = decode_interactive_template_memorypack(
+                    _path, data, len(data), game_root=game_root, decode_action_audio=False,
+                )
+            else:
+                template = decode_interactive_template_memorypack(
+                    _path, data, len(data), game_root=game_root,
+                )
+                body = template.get("decoded") if isinstance(template, dict) else None
+                template_audio = body.get("templateActionMapAudio") if isinstance(body, dict) else None
+                embedded_audio = find_embedded_action_serialized_map_audio(
+                    data, source_path=_path, game_root=game_root,
+                )
             template_body = template.get("decoded") if isinstance(template, dict) else None
             return {"decoded": {
                 "componentAudioComponents": components,
@@ -78,14 +156,8 @@ def collect_interactive_component_contexts(
                     if isinstance(template_body, dict)
                     else None
                 ),
-                "templateActionMapAudio": (
-                    template_body.get("templateActionMapAudio")
-                    if isinstance(template_body, dict)
-                    else None
-                ),
-                "embeddedActionMapAudioActions": (
-                    find_embedded_action_serialized_map_audio(data, source_path=_path)
-                ),
+                "templateActionMapAudio": template_audio,
+                "embeddedActionMapAudioActions": embedded_audio,
             }}
 
     # InteractiveTable is an exact serialized ownership index.  Keep this

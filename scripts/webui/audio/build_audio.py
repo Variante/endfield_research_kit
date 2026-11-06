@@ -36,6 +36,9 @@ back to a module-global game path.
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli
+
+from scripts.common import native_game_data_root
 
 import argparse
 import base64
@@ -106,7 +109,7 @@ from scripts.source_paths import ExportLayout
 
 ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
-DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
+DEFAULT_ANIMESTUDIO = configured_animestudio_cli()
 DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
@@ -3975,7 +3978,12 @@ def build_audio(args: argparse.Namespace) -> int:
     if not conv_dir.is_dir():
         # Audio reads Story's published conversations but never builds them.
         print(f"Story is not published ({conv_dir} is missing); no Story voice lines are linked")
-    table_event_names, table_event_hashes = collect_table_audio_events(args.export_root)
+    table_event_names, table_event_hashes = collect_table_audio_events(
+        args.export_root, game_root=native_game_data_root(
+            gameassembly=args.game_root.parent / "GameAssembly.dll",
+            metadata=args.metadata or args.game_root / "il2cpp_data/Metadata/global-metadata.dat",
+        ),
+    )
     stage.mark("collectTableAudioEvents")
     # Level, interactive and spawner payloads ship the same length-prefixed
     # au_* literals SkillData/BuffData do, and they must be in the name pool

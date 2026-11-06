@@ -55,6 +55,7 @@ child lists, with no disagreement.
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli, ExportLayout
 
 import argparse
 import gzip
@@ -73,14 +74,14 @@ from scripts.repo_paths import REPO_ROOT
 from scripts.common import sha256_file_upper as sha256_file
 
 ROOT = REPO_ROOT
-DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
+DEFAULT_OUTER = ExportLayout.configured().evidence_dir / "animestudio/vfs_understanding_latest.json"
 DEFAULT_LEDGER = ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
-DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
+DEFAULT_CLI = configured_animestudio_cli()
 DEFAULT_OUTPUT = ROOT / "reports/animestudio/hirc_action_current_latest.json"
 DEFAULT_TYPE02_OUTPUT = ROOT / "reports/animestudio/hirc_type02_prefix_current_latest.json"
 DEFAULT_TYPE04_OUTPUT = ROOT / "reports/animestudio/hirc_type04_u32_vector_current_latest.json"
 DEFAULT_TYPE02_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type02_body_current_latest.json"
-DEFAULT_TEMP_AUDIT = ROOT / "tmp/audio/hirc_action_current/audio_audit.json"
+DEFAULT_TEMP_AUDIT = ROOT / "webui/data/_build/audio/hirc_action_current/audio_audit.json"
 INPUT_SET_RE = re.compile(r"^[0-9A-F]{64}$")
 HIRC_OBJECT_ID_BYTES = 4
 TYPE04_FRAME_FIELDS = (

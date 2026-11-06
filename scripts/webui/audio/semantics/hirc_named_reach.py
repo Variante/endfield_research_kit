@@ -60,6 +60,7 @@ music family (``the_unparsed_sections_name_only_buses``).
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli, ExportLayout
 
 import argparse
 import hashlib
@@ -80,10 +81,10 @@ from scripts.webui.audio.semantics.identifiers import (
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
+DEFAULT_OUTER = ExportLayout.configured().evidence_dir / "animestudio/vfs_understanding_latest.json"
 DEFAULT_OUTPUT = ROOT / "reports/animestudio/hirc_named_reach_current_latest.json"
-DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
-DEFAULT_TEMP_AUDIT = ROOT / "tmp/audio/hirc_named_reach/audio_audit.json"
+DEFAULT_CLI = configured_animestudio_cli()
+DEFAULT_TEMP_AUDIT = ROOT / "webui/data/_build/audio/hirc_named_reach/audio_audit.json"
 
 # The type that every current literal hash match lands on. Kept as a number: the
 # identification is "managed code addresses this type by name", not a Wwise label.

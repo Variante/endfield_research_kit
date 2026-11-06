@@ -1,4 +1,5 @@
 """Compact static package inventory; no runtime or decoded-media joins."""
+from scripts.source_paths import ExportLayout
 import json
 import re
 from pathlib import Path
@@ -94,8 +95,8 @@ def project(report):
 def collect(*, expected_input_set_sha256, outer_path=None, ledger_path=None):
     """Run the raw gate once and publish its complete local report plus summary."""
     try:
-        report = build(outer_path or ROOT / 'reports/animestudio/vfs_understanding_latest.json',
-                       ledger_path or ROOT / 'reports/animestudio/vfs_understanding_files_latest.jsonl.gz',
+        report = build(outer_path or ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_latest.json',
+                       ledger_path or ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_files_latest.jsonl.gz',
                        expected_input_set_sha256)
         _atomic_write_json(ROOT / 'reports/audio/package_corpus_current.json', report)
         return project(report)

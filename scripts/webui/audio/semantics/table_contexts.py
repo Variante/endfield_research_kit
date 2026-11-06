@@ -318,13 +318,14 @@ def _audio_global_config_from_object_index(
 def collect_authored_runtime_config_contexts(
     export_root: Path,
     runtime_model: dict[str, Any] | None = None,
+    *, game_root: Path | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     """Recover exact interactive-state and global lifecycle Event requests."""
 
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     for event_id, rows in interactive_components.collect_interactive_component_contexts(
-        export_root
+        export_root, game_root=game_root
     ).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
@@ -1299,6 +1300,7 @@ def collect_table_contexts(
     *,
     cue_semantics: dict[str, Any] | None = None,
     global_controls: dict[str, Any] | None = None,
+    game_root: Path | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
@@ -1377,7 +1379,7 @@ def collect_table_contexts(
     for event_id, rows in global_controls.get("eventContexts", {}).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
-    for event_id, rows in collect_authored_runtime_config_contexts(export_root, runtime_model).items():
+    for event_id, rows in collect_authored_runtime_config_contexts(export_root, runtime_model, game_root=game_root).items():
         for row in rows:
             _append_context(contexts, seen, event_id, row)
     # RemoteCommon audioId is an authored Wwise Event request, unlike the
@@ -1390,10 +1392,10 @@ def collect_table_contexts(
     return dict(contexts)
 
 
-def collect_table_audio_events(export_root: Path) -> tuple[set[str], set[int]]:
+def collect_table_audio_events(export_root: Path, *, game_root: Path | None = None) -> tuple[set[str], set[int]]:
     """Return authored Event names and hashes from one table/config scan."""
 
-    contexts = collect_table_contexts(export_root)
+    contexts = collect_table_contexts(export_root, game_root=game_root)
     hashes: set[int] = set()
     for key in contexts:
         if not key.startswith("#0x"):

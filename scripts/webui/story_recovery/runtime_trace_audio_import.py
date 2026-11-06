@@ -103,7 +103,7 @@ EVENT_KINDS = {
     "audio_native_result",
     "session_end",
 }
-DEFAULT_OUTPUT = ROOT / "reports" / "story" / "recovery" / "audio_runtime_trace.json"
+DEFAULT_OUTPUT = ROOT / 'webui/data/_build/story/recovery/audio_runtime_trace.json'
 DEFAULT_INDEX = EXPORT_LAYOUT.audio_dir / "CN" / "index.json"
 DEFAULT_TRIGGER_CONTEXTS = ROOT / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
 MAX_TRIGGER_CONTEXT_SAMPLES = 12
