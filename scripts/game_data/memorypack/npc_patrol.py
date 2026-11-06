@@ -1,6 +1,7 @@
 """One freshly proved current pooled NPC Patrol decode operation."""
 import hashlib
 from pathlib import Path
+from scripts.source_paths import ExportLayout
 from contextlib import contextmanager
 from scripts.game_data import leveldata_npc_patrol_native as native
 from scripts.game_data.codecs.leveldata.patrol import _decode_npc_patrol_list,NpcPatrolFramingError
@@ -35,12 +36,12 @@ def npc_patrol_decoder(*,strings,game_root=None,gameassembly=None,metadata=None)
 
 class CurrentNpcPatrolSource:
  """Current pooled Patrol projection of the shared whole LevelData operation."""
- def __init__(self,json_root,*,gameassembly,metadata,summary_path=Path('reports/animestudio/jsondata_current_latest.json'),ledger_path=Path('reports/animestudio/jsondata_current_files_latest.jsonl.gz')):
+ def __init__(self,json_root,*,gameassembly,metadata,summary_path=ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_current.json',ledger_path=ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz'):
   self.root=Path(json_root).resolve();self.gameassembly=gameassembly;self.metadata=metadata;self.summary=Path(summary_path);self.ledger=Path(ledger_path);self.active=False
  def __enter__(self):
   if self.active:raise NpcPatrolFramingError('operation-active','npcPatrol',None)
   if self.gameassembly is None or self.metadata is None:raise NpcPatrolFramingError('explicit-native-pair-required','npcPatrol',None)
-  self.scope=CurrentLevelScriptSource(self.root,gameassembly=self.gameassembly,metadata=self.metadata,
+  self.scope=CurrentLevelScriptSource.from_receipt(self.root,gameassembly=self.gameassembly,metadata=self.metadata,
    summary_path=self.summary,ledger_path=self.ledger)
   self.owner=self.scope.__enter__();self.strings=self.owner.strings;self.game_root=self.owner.game_root
   self.active=True;return self

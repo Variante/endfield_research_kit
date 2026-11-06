@@ -10,6 +10,7 @@ import json
 SCHEMA='endfield.story-condition-storage-param-sources.v1'
 POINTER_TYPES=(
  'Beyond.Gameplay.Core.LsmPtr','Beyond.Gameplay.Core.SpawnerPtr','Beyond.Gameplay.Core.WaterVolumePtr',
+ 'Beyond.Gameplay.Core.EnvironmentVolumePtr','Beyond.Gameplay.Core.FunctionAreaPtr',
 )
 SCRIPT='Beyond.Gameplay.Core.LevelScriptPtr'
 TASK='Beyond.Gameplay.Core.ScriptTaskPtr'

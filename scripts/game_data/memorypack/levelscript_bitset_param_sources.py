@@ -1,4 +1,4 @@
-"""Finite initialized-metadata Bitset Param source, including inline raw4.
+"""Finite initialized-metadata inline Int32 enum Params, including raw4.
 
 The selected warm paths are proved from their real entries. Cold metadata
 initializers, enabled collectors and refill/error paths are not admitted.
@@ -11,6 +11,8 @@ from scripts.game_data.il2cpp.formatter_value_paths import BytesPath
 
 TYPE='Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.BitsetType>'
 VALUE='Beyond.GEnums.BitsetType'
+VALUES=(VALUE,'Beyond.Gameplay.View.ETrackCameraTargetType')
+TYPES=tuple('Beyond.Gameplay.Actions.Param`1<'+value+'>'for value in VALUES)
 LABEL='levelscriptBitsetParam'
 SCHEMA='endfield.levelscript-bitset-param-source.v1'
 
@@ -150,7 +152,7 @@ def _disabled_collector(image,pins):
     return proof,ec.CONTRACT_PATH,raw
 
 
-def derive(image,pins):
+def derive(image,pins,*,type_name=TYPE):
     """Fresh finite warm source; no ordinary adapter or outer field admission."""
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
@@ -160,13 +162,15 @@ def derive(image,pins):
     from scripts.game_data.memorypack import scalar_param_native as scalar
     from scripts.game_data.memorypack.vector_layout import vector_recorder
     _publication_gate(image,pins)
+    need('explicit-finite-inline-enum-selection',type_name in TYPES)
+    value_type=type_name[len('Beyond.Gameplay.Actions.Param`1<'):-1]
     base=image.pe.image_base;ctx=NativeReferenceContext(image);md=image.metadata
-    nominal=enums._nominal(image,ctx,TYPE)
-    need('exact-nominal-Int32-Bitset',nominal['valueType']==VALUE and nominal['isEnum']is True
+    nominal=enums._nominal(image,ctx,type_name)
+    need('exact-nominal-Int32-Bitset',nominal['valueType']==value_type and nominal['isEnum']is True
          and nominal['constantWireKind']=='i32'and nominal['constantWireBytes']==4)
-    wrapper,=[w for w in image.memorypack_wrappers.values()if w.wrapped_type==TYPE]
+    wrapper,=[w for w in image.memorypack_wrappers.values()if w.wrapped_type==type_name]
     need('four-current-owned-members',[(m.name,m.declared_type)for m in wrapper.members]==
-         [('constValue',VALUE),('idRef','int'),('paramSource','int'),('path','string')])
+         [('constValue',value_type),('idRef','int'),('paramSource','int'),('path','string')])
     collector,collector_path,collector_raw=_disabled_collector(image,pins)
     disabled=base+collector['result']['disabledFlagRva']
     pool_raw=pooled_source_helper.CONTRACT_PATH.read_bytes()
@@ -179,9 +183,9 @@ def derive(image,pins):
         method=choices[0];target=image.method_pointer_va(method)
         if name=='Deserialize':primitive_param.reader_abi(image,ctx,method,wrapper)
         else:
-            result=(TYPE,21,True)if name=='GetValue'else('void',1,False)
+            result=(type_name,21,True)if name=='GetValue'else('void',1,False)
             member=name[6:-2]if name.startswith('set___')else None
-            arguments=[]if member is None else [dict(constValue=(VALUE,17,False),
+            arguments=[]if member is None else [dict(constValue=(value_type,17,False),
                 idRef=('int',8,False),paramSource=('int',8,False),path=('string',14,True))[member]]
             scalar.owned_method_abi(image,ctx,method.index,wrapper.type_definition,result,arguments,LABEL+'.'+name)
             if member=='constValue':
@@ -216,7 +220,7 @@ def derive(image,pins):
     for name in('.ctor','CreateInstance'):
         body=bodies[name];program=factory_program(body['regions'],body['pointer'],disabled=disabled,image_base=base)
         usage=derive_typed_usage_context(image,program['allocation']['site']-base,label=LABEL+'.'+name+'.ParamAllocation')
-        need('own-closed-Param-allocation:'+name,usage['tag']==1 and usage['typeName']==TYPE)
+        need('own-closed-Param-allocation:'+name,usage['tag']==1 and usage['typeName']==type_name)
         need('same-current-allocation-cell:'+name,usage['usageCellRva']==program['allocation']['cell']-base)
         scalar.ordinary(image,ctx.type_pointer(usage['typeIndex']),21,LABEL+'.ParamAllocation',reference=True)
         need('own-idRef-default-slot:'+name,program['idRefOffset']==slots['idRef'])
@@ -247,13 +251,13 @@ def derive(image,pins):
     need('collector-declaration-stable',collector_path.read_bytes()==collector_raw)
     need('pooled-source-declaration-stable',pooled_source_helper.CONTRACT_PATH.read_bytes()==pool_raw)
     return json.loads(json.dumps(dict(schema=SCHEMA,status='validated',nativeInputs=pins,
-        sourceProfile='bitset-inline-enum-raw4',typeName=TYPE,valueType=VALUE,nominal=nominal,
+        sourceProfile='bitset-inline-enum-raw4',typeName=type_name,valueType=value_type,nominal=nominal,
         parameter=dict(methods=selected,ownedFieldSlots=slots,allocationContext=allocation_contexts['.ctor'],
             allocationContexts=allocation_contexts,wrapperAllocationContext=wrapper_allocation,
             setterPrograms=setters,factoryPrograms=factories,programs=programs),
         constantSource=dict(mode='inline-buffered-enum-raw4',wireBytes=4,resultRegister='ebp',
             program=positive['inlineConstantSource'],selectedWithinOwnedReader=True,
-            readUnmanagedMethodInfoClaimed=False,nominalType=VALUE,enumBacking=nominal['enumDeclaration']),
+            readUnmanagedMethodInfoClaimed=False,nominalType=value_type,enumBacking=nominal['enumDeclaration']),
         int32Source=integer,readerFieldOffsets=offsets,targets=targets,pooledSource=strings,collector=collector,
         canonicalAdapterAdmitted=False,parentFieldAdmitted=False,wholeOwnerAdmitted=False,
         evidenceBoundary=dict(exact='Current closed Param carrier and own Int32 enum backing, declared setter/getter/reader ABI, complete selected warm factory and four reader paths, inline raw4 constant, named disjoint stores, auxiliary Int32 and pooled path sources.',

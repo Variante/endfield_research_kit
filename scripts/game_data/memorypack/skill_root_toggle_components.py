@@ -44,19 +44,23 @@ def bind_list(pins,read,usage,child,capability):
 
 
 def derive(image,pins,*,buffs=None):
+    return _derive_on_double(image,pins,buffs=buffs)
+
+
+def _derive_on_double(image,pins,*,buffs=None,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.memorypack.generated_reader_sources import derive as record_source
     from scripts.game_data.memorypack.skill_root_generated_reference import derive as reference_source
     from scripts.game_data.memorypack.skill_root_buff_input_components import derive_list as buff_lists
-    from scripts.game_data.memorypack.skill_root_condition_components import derive_list as condition_lists
+    from scripts.game_data.memorypack.skill_root_condition_components import _derive_list_on_double as condition_lists
     wrapper,=[w for w in image.memorypack_wrappers.values()if w.wrapped_type==TYPE]
     source=record_source(image,pins,wrapper.name);reads=source['orderedSourceReads'];base=image.pe.image_base
     need('Toggle-exact-owned-member-order',[('buffs','System.Collections.Generic.List`1<'+BUFF_TYPE+'>'),
         ('conditions','System.Collections.Generic.List`1<'+CONDITION+'>')],[(r['fieldName'],r['declaredType'])for r in reads])
     requests=[derive_typed_usage_context(image,r['context']['instructionRva'],label='Toggle.list')for r in reads]
     buffs=buff_lists(image,pins,typed_request=requests[0],call_target=base+reads[0]['sourceTargetRva'])if buffs is None else buffs
-    conditions=condition_lists(image,pins,typed_request=requests[1],call_target=base+reads[1]['sourceTargetRva'])
+    conditions=condition_lists(image,pins,typed_request=requests[1],call_target=base+reads[1]['sourceTargetRva'],double=double)
     bindings=[bind_list(pins,read,usage,child,order['childCapability'])for read,usage,child,order in
         zip(reads,requests,(buffs,conditions),ORDER,strict=True)]
     reference=reference_source(image,pins,source);caps=dict(buffs['capabilities'])
@@ -74,9 +78,14 @@ def derive(image,pins,*,buffs=None):
 
 
 def derive_list(image,pins,*,typed_request,call_target,count_limit=10000,buffs=None):
+    return _derive_list_on_double(image,pins,typed_request=typed_request,call_target=call_target,
+        count_limit=count_limit,buffs=buffs)
+
+
+def _derive_list_on_double(image,pins,*,typed_request,call_target,count_limit=10000,buffs=None,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack.reference_list_induction_sources import derive as list_source
-    child=derive(image,pins,buffs=buffs)
+    child=_derive_on_double(image,pins,buffs=buffs,double=double)
     collection=list_source(image,pins,typed_request=typed_request,call_target=call_target,element_type=TYPE,count_limit=count_limit)
     witness=collection['witnessComponent'];caps=dict(child['capabilities'])
     caps[LIST_CAP]=dict(elementType=TYPE,elementValueType=False,closedListType='System.Collections.Generic.List`1<'+TYPE+'>',

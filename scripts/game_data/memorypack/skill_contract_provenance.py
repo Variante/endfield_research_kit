@@ -17,6 +17,7 @@ grants no native or grammar admission; the owner freshly derives full proofs.
 import copy
 import bisect
 import json
+import math
 import re
 
 SCHEMA='endfield.skill-contract-provenance.v1'
@@ -113,39 +114,98 @@ def _forbidden_digest(role):
         and('sha256'in low or low.endswith('hash')))
 
 
+
+def _normalize_json_graph(value):
+    """JSON-equivalent plain graph normalization, preserving container aliases.
+
+    Tuples become lists. Ordinary Int32/RVA-style integer keys become decimal
+    strings, preserving JSON duplicate-key overwrite and insertion ordering.
+    Exotic values/keys, nonfinite numbers, cycles or recursion fallback to the
+    entire original JSON roundtrip rather than silently widening admission.
+    """
+    class Fallback(Exception):pass
+    memo={};active=set()
+    def clone(item):
+        kind=type(item)
+        if kind in(dict,list,tuple):
+            identity=id(item)
+            if identity in active:raise Fallback()
+            if identity in memo:return memo[identity]
+            active.add(identity)
+            if kind is dict:
+                result={};memo[identity]=result
+                for key,child in item.items():
+                    if type(key)is str:normalized=key
+                    elif type(key)is int:normalized=str(key)
+                    else:raise Fallback()
+                    result[normalized]=clone(child)
+            else:
+                result=[];memo[identity]=result
+                result.extend(clone(child)for child in item)
+            active.remove(identity);return result
+        if item is None or kind in(str,bool):return item
+        if kind is int:
+            # Respect the interpreter's integer-to-JSON digit limit too.
+            str(item);return item
+        if kind is float:
+            if not math.isfinite(item):raise Fallback()
+            return item
+        raise Fallback()
+    try:return clone(value)
+    except(Fallback,RecursionError):return json.loads(json.dumps(value))
+
+
 def project_proof(proof,*,image_base=None):
     """Retain all nontrace semantics; catalogs contain native evidence only."""
     _need('proof-object',isinstance(proof,dict))
     _need('selected-image-base',image_base is None or type(image_base)is int and image_base>=0)
-    windows={};boundaries={};methods={};slices={};active=set();omitted={}
+    windows={};boundaries={};methods={};slices={};active=set();inspect_memo={}
     def inspect(value,role='',depth=0):
         _need('bounded-json-depth',depth<=256)
-        if _forbidden_digest(role):return
+        if not isinstance(value,(dict,list)):
+            if _forbidden_digest(role):return(0,{},False)
+            _need('json-scalar',value is None or type(value)in(str,int,float,bool))
+            if(type(value)is float and not math.isfinite(value))or(type(value)is int and value.bit_length()>64):
+                _key(value)
+            return(0,{},False)
+        container=True;cache_key=(id(value),role)
+        if cache_key in inspect_memo:
+            height,traces,recursive=inspect_memo[cache_key]
+            if recursive:_need('acyclic-json',id(value)not in active)
+            _need('bounded-json-depth',depth+height<=256)
+            return height,traces,recursive
+        def finish(height=0,traces=None,recursive=False):
+            result=(height,{}if traces is None else traces,recursive)
+            if cache_key is not None:inspect_memo[cache_key]=result
+            return result
+        if _forbidden_digest(role):return finish()
         trace=_trace(value,role)
         if trace:
-            omitted[trace]=omitted.get(trace,0)+1
             if trace=='selected-code-slices':
                 for row in value:
                     pair=_slice(row);slices[pair]=None
-            return
+            return finish(traces={trace:1})
         window=_window(value)
         if window is not None:
             a,z,h=window;_need('conflicting-native-window-hash',(a,z)not in windows or windows[a,z]==h)
             windows[a,z]=h
             if 'boundary'in value:boundaries.setdefault((a,z),set()).add(value['boundary'])
-            return
-        if _method(value,role):methods[_key(value)]=copy.deepcopy(value);return
-        if isinstance(value,(dict,list)):
+            return finish()
+        if _method(value,role):methods[_key(value)]=copy.deepcopy(value);return finish()
+        if container:
             _need('acyclic-json',id(value)not in active);active.add(id(value))
             if isinstance(value,dict):
                 _need('string-object-keys',all(isinstance(k,str)for k in value))
-                for key in sorted(value):inspect(value[key],key,depth+1)
-            else:
-                for item in value:inspect(item,role,depth+1)
-            active.remove(id(value));return
+                children=(inspect(value[key],key,depth+1)for key in sorted(value))
+            else:children=(inspect(item,role,depth+1)for item in value)
+            height=0;traces={}
+            for child_height,child_traces,_ in children:
+                height=max(height,child_height+1)
+                for kind,count in child_traces.items():traces[kind]=traces.get(kind,0)+count
+            active.remove(id(value));return finish(height,traces,True)
         _need('json-scalar',value is None or type(value)in(str,int,float,bool))
-        _key(value)
-    inspect(proof)
+        _key(value);return finish()
+    omitted=inspect(proof)[1]
     window_keys=sorted(windows);window_ids={key:i for i,key in enumerate(window_keys)}
     method_keys=sorted(methods);method_ids={key:i for i,key in enumerate(method_keys)}
     covered=[]
@@ -168,8 +228,16 @@ def project_proof(proof,*,image_base=None):
         return a,h,basis,reason
     normalized={pair:slice_fact(pair)for pair in slices}
     slice_keys=sorted({fact for fact in normalized.values()if fact is not None});slice_ids={key:i for i,key in enumerate(slice_keys)}
-    nodes=[];intern={}
+    nodes=[];intern={};encode_memo={}
     def encode(value,role=''):
+        if not isinstance(value,(dict,list)):
+            return {'$omittedNonNativeDigest':True}if _forbidden_digest(role)else value
+        cache_key=(id(value),role)
+        if cache_key in encode_memo:return encode_memo[cache_key]
+        result=encode_uncached(value,role)
+        if cache_key is not None:encode_memo[cache_key]=result
+        return result
+    def encode_uncached(value,role=''):
         if _forbidden_digest(role):return {'$omittedNonNativeDigest':True}
         trace=_trace(value,role)
         if trace:
@@ -201,8 +269,8 @@ def project_proof(proof,*,image_base=None):
         evidenceBoundary='Lossless nontrace proof semantics with unique existing native byte-window hashes and named metadata methods. Selected trace slices covered by those exact native windows are omitted. Only uncovered or explicitly unresolved observed slices remain; VA normalization uses the explicit selected image base and 32-bit RVA range. Graph references are structural indices, never digests. Ordered traces remain report-only; no native/grammar admission follows.')
 
 
-def expand_proof(projection):
-    """Validate and expand semantic nodes; omitted traces stay explicit markers."""
+def _validate_proof(projection, *, materialize):
+    """Share every admission rule between expansion and compact validation."""
     _need('projection-object',isinstance(projection,dict))
     _need('projection-shape',set(projection)=={'schema','nativeAdmissionGranted','fullInstructionTracesRetained','selectedImageBase',
         'root','nodes','nativeCodeWindows','metadataMethods','nativeCodeSlices','omittedTraceCounts','evidenceBoundary'})
@@ -246,30 +314,51 @@ def expand_proof(projection):
     _need('root-node-reference',isinstance(projection['root'],dict)and set(projection['root'])=={'$node'})
     _need('unique-semantic-nodes',len({_key(node)for node in nodes})==len(nodes))
     used_nodes=set();used_windows=set();used_methods=set();used_slices=set();actual_counts={}
+    # A structural DAG can encode exponentially many expanded paths. Validate
+    # each node once, retaining its longest remaining depth and trace counts.
+    # Counts are summed for every incoming occurrence (not just unique nodes);
+    # cached depth is checked at every reference, including deeper later paths.
+    # Catalog use is a set union, so visiting each reachable node once suffices.
+    summaries={}
+    def summary(children, *, object_root=False):
+        height=0; traces={}
+        for child_height, child_traces, _ in children:
+            height=max(height,child_height+1)
+            for kind,count in child_traces.items():traces[kind]=traces.get(kind,0)+count
+        return height,traces,object_root
     def index(value,array):
         _need('literal-catalog-reference',type(value)is int and 0<=value<len(array));return value
     def decode(value,parent=None,depth=0):
         _need('bounded-graph-depth',depth<=256)
         if not isinstance(value,dict):
-            _need('encoded-json-scalar',value is None or type(value)in(str,int,float,bool));_key(value);return value
+            _need('encoded-json-scalar',value is None or type(value)in(str,int,float,bool));_key(value);return value if materialize else (0,{},False)
         if '$node'in value:
             _need('node-reference-shape',set(value)=={'$node'});i=index(value['$node'],nodes)
-            _need('acyclic-node-order',parent is None or i<parent);node=nodes[i];used_nodes.add(i)
+            _need('acyclic-node-order',parent is None or i<parent)
+            if not materialize and i in summaries:
+                cached=summaries[i]
+                _need('bounded-graph-depth',depth+cached[0]<=256)
+                return cached
+            node=nodes[i];used_nodes.add(i)
             _need('semantic-node-object',isinstance(node,dict))
             if node.get('kind')=='object':
                 _need('object-node-shape',set(node)=={'kind','members'}and isinstance(node['members'],list)
                     and all(isinstance(pair,list)and len(pair)==2 and isinstance(pair[0],str)for pair in node['members']))
                 keys=[pair[0]for pair in node['members']];_need('ordered-distinct-object-keys',keys==sorted(set(keys)))
-                return {key:decode(item,i,depth+1)for key,item in node['members']}
+                if materialize:return {key:decode(item,i,depth+1)for key,item in node['members']}
+                result=summary((decode(item,i,depth+1)for key,item in node['members']),object_root=True)
+                summaries[i]=result;return result
             _need('array-node-shape',set(node)=={'kind','items'}and node['kind']=='array'and isinstance(node['items'],list))
-            return [decode(item,i,depth+1)for item in node['items']]
+            if materialize:return [decode(item,i,depth+1)for item in node['items']]
+            result=summary(decode(item,i,depth+1)for item in node['items'])
+            summaries[i]=result;return result
         if '$window'in value:
             _need('window-reference-shape',set(value)<={'$window','boundary'})
             i=index(value['$window'],windows);used_windows.add(i);row=windows[i];out={k:row[k]for k in('startRva','endRva','sha256')}
             if 'boundary'in value:_need('selected-window-boundary',value['boundary']in row['boundaries']);out['boundary']=value['boundary']
-            return out
+            return out if materialize else (0,{},True)
         if '$method'in value:
-            _need('method-reference-shape',set(value)=={'$method'});i=index(value['$method'],methods);used_methods.add(i);return copy.deepcopy(methods[i])
+            _need('method-reference-shape',set(value)=={'$method'});i=index(value['$method'],methods);used_methods.add(i);return copy.deepcopy(methods[i]) if materialize else (0,{},False)
         if '$omittedTrace'in value:
             kind=value['$omittedTrace'];_need('omitted-trace-shape',kind in('decoded-rows','raw-regions','selected-code-slices')
                 and set(value)==({'$omittedTrace','itemCount','selectedSliceIds','windowCoveredItemCount'}if kind=='selected-code-slices'else{'$omittedTrace','itemCount'})
@@ -282,16 +371,22 @@ def expand_proof(projection):
                     and 0<=value['windowCoveredItemCount']<=value['itemCount']
                     and len(ids)<=value['itemCount']-value['windowCoveredItemCount'])
                 for i in ids:used_slices.add(index(i,slices))
-            return copy.deepcopy(value)
-        _need('omitted-digest-shape',set(value)=={'$omittedNonNativeDigest'}and value['$omittedNonNativeDigest']is True);return dict(value)
+            return copy.deepcopy(value) if materialize else (0,{kind:1},True)
+        _need('omitted-digest-shape',set(value)=={'$omittedNonNativeDigest'}and value['$omittedNonNativeDigest']is True);return dict(value) if materialize else (0,{},True)
     result=decode(projection['root'])
-    _need('proof-root-object',isinstance(result,dict))
+    if not materialize:actual_counts=result[1]
+    _need('proof-root-object',isinstance(result,dict) if materialize else result[2])
     _need('no-orphan-semantic-nodes',used_nodes==set(range(len(nodes))))
     _need('no-orphan-native-windows',used_windows==set(range(len(windows))))
     _need('no-orphan-methods',used_methods==set(range(len(methods))))
     _need('no-orphan-slices',used_slices==set(range(len(slices))))
     _need('exact-trace-counts',actual_counts==counts)
     return result
+
+
+def expand_proof(projection):
+    """Validate and expand semantic nodes; omitted traces stay explicit markers."""
+    return _validate_proof(projection,materialize=True)
 
 
 def project_contract(contract,*,image_base=None):
@@ -303,7 +398,7 @@ def project_contract(contract,*,image_base=None):
 
 def validate_projection(projection):
     """Validate complete graph/catalog closure; this grants no native admission."""
-    expand_proof(projection)
+    _validate_proof(projection,materialize=False)
     return dict(schema=SCHEMA,status='validated-structural-projection',nativeAdmissionGranted=False,
         semanticNodes=len(projection['nodes']),nativeCodeWindows=len(projection['nativeCodeWindows']),
         metadataMethods=len(projection['metadataMethods']),nativeCodeSlices=len(projection['nativeCodeSlices']))

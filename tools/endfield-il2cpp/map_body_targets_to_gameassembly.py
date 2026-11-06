@@ -24,6 +24,7 @@ import sys
 from collections import Counter
 from bisect import bisect_right
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any
 
 
@@ -126,25 +127,50 @@ class PeImage:
                 f"fileLength={len(self.buf)}"
             )
 
-    def file_offset_for_rva(self, rva: int) -> tuple[int | None, str]:
+    def _seal_sections(self) -> None:
+        """Index a selected immutable image; ordinary mutable PE users stay unchanged."""
+        sections = tuple(MappingProxyType(dict(row)) for row in self.sections)
+        rows = sorted(((s['virtualAddress'], s['virtualAddress'] + max(s['virtualSize'], s['rawSize']), i)
+                       for i, s in enumerate(sections)), key=lambda row: (row[0], row[2]))
+        ends = []; maximum = -1
+        for start, end, ordinal in rows:
+            maximum = max(maximum, end); ends.append(maximum)
+        self.sections = sections
+        self._section_index = (sections, rows, [row[0] for row in rows], ends)
+
+    def _section_for_rva(self, rva: int):
+        index = getattr(self, '_section_index', None)
         matches = []
-        for section in self.sections:
-            start = section["virtualAddress"]
-            size = max(section["virtualSize"], section["rawSize"])
-            if start <= rva < start + size:
-                matches.append(section)
+        if index is not None and self.sections is index[0]:
+            sections, rows, starts, ends = index
+            at = bisect_right(starts, rva) - 1
+            while at >= 0 and ends[at] > rva:
+                start, end, ordinal = rows[at]
+                if rva < end: matches.append(sections[ordinal])
+                at -= 1
+        else:
+            for section in self.sections:
+                relative = rva - section['virtualAddress']
+                if relative >= 0 and (relative < section['virtualSize'] or relative < section['rawSize']):
+                    matches.append(section)
         if len(matches) > 1:
             raise ValueError(f"{self.path}: RVA=0x{rva:x} expected=one section actual={len(matches)}")
-        if not matches:
+        return matches[0] if matches else None
+
+    def file_offset_for_rva(self, rva: int) -> tuple[int | None, str]:
+        section = self._section_for_rva(rva)
+        if section is None:
             return None, ""
-        section = matches[0]
+        return self._section_offset(rva, section), section['name']
+
+    def _section_offset(self, rva, section):
         relative = rva - section["virtualAddress"]
         offset = section["rawPointer"] + relative
         # A virtual-only tail (BSS) has no on-disk byte. Do not manufacture a
         # file offset that reads the next section's unrelated raw data.
         if relative >= section["rawSize"] or offset >= len(self.buf):
-            return None, section["name"]
-        return offset, section["name"]
+            return None
+        return offset
 
     def file_offset_for_va(self, va: int) -> tuple[int | None, str, int]:
         rva = va - self.image_base
@@ -158,14 +184,15 @@ class PeImage:
         return struct.unpack("<Q", self.bytes_at_va(va, 8))[0]
 
     def bytes_at_va(self, va: int, size: int) -> bytes:
-        offset, name, rva = self.file_offset_for_va(va)
+        rva = va - self.image_base
+        section = self._section_for_rva(rva)
+        name = section['name'] if section is not None else ''
+        offset = self._section_offset(rva, section) if section is not None else None
         if offset is None:
             raise ValueError(
                 f"{self.path}: VA=0x{va:x} RVA=0x{rva:x} section={name!r} "
                 f"expected={size} raw-backed bytes actual=unbacked"
             )
-        section = next(s for s in self.sections if s["name"] == name
-                       and s["virtualAddress"] <= rva < s["virtualAddress"] + max(s["virtualSize"], s["rawSize"]))
         remaining = min(section["rawSize"] - (rva - section["virtualAddress"]), len(self.buf) - offset)
         if size < 0 or size > remaining:
             raise ValueError(
@@ -1092,19 +1119,25 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
         pos += 1
         return result(f"mov {dst}, 0x{imm:x}", (dst, f"0x{imm:x}"), pos)
 
-    if opcode == 0x33 and pos < len(data):
+    if opcode == 0x33:
+        if pos >= len(data):
+            raise IndexError("truncated XOR ModRM")
         modrm = data[pos]
         pos += 1
         mod, reg, rm = decode_modrm(modrm)
         reg_code = reg | (rex_r << 3)
         rm_code = rm | (rex_b << 3)
         dst = reg_name(reg_code, width=width)
+        end = address_end(pos, mod, rm)
         if 0x67 in prefixes:
-            end = address_end(pos, mod, rm)
             return result(f"db {data[offset:end].hex(' ')}", (canonical_register(dst), "modified"), end)
         if mod == 3 and reg_code == rm_code:
             return result(f"xor {dst}, {dst}", (dst, "0"), pos)
-        return result(f"xor {dst}, {reg_name(rm_code, width=width) if mod == 3 else 'mem'}", None, pos)
+        src, pos = rm_operand(
+            data, pos, mod, rm, rex_b,
+            width=width, start_va=start_va, offset=offset, rex_x=(rex >> 1) & 1,
+        )
+        return result(f"xor {dst}, {src}", None, pos)
 
     if opcode in (0x80, 0x81, 0x83) and pos < len(data):
         modrm = data[pos]

@@ -112,19 +112,33 @@ def bind_root_query(pins,event,usage,query,provider,*,base):
 
 
 def derive(image,pins):
+    return _derive_on_children(image,pins)
+
+
+def _normalize_result(value, *, preserve_json_graph):
+    """Copy JSON values without expanding shared child proofs in compositions."""
+    if type(preserve_json_graph) is not bool:
+        raise ValueError(LABEL+'.publication:preserve-json-graph-must-be-bool')
+    if preserve_json_graph:
+        from scripts.game_data.memorypack.skill_contract_provenance import _normalize_json_graph
+        return _normalize_json_graph(value)
+    return json.loads(json.dumps(value))
+
+
+def _derive_on_children(image,pins,*,double=None,cost_profile=None,cost_proof=None,_preserve_json_graph=False):
     """Reprove the caller and the currently closed contiguous child prefix."""
     from scripts.game_data.memorypack.skill_root_prefix_sources import derive as prefix_source
     from scripts.game_data.memorypack.skill_root_tail_sources import derive as tail_source
     from scripts.game_data.memorypack.skill_root_value_lists import derive as pair_lists
     from scripts.game_data.memorypack.skill_root_buff_input_components import derive_list as buff_lists
     from scripts.game_data.memorypack.skill_root_buff_input_union import derive as buff_union
-    from scripts.game_data.memorypack.skill_root_attribute_components import derive as attribute_source
-    from scripts.game_data.memorypack.skill_root_cast_components import derive as cast_source
+    from scripts.game_data.memorypack.skill_root_attribute_components import _derive_on_double as attribute_source
+    from scripts.game_data.memorypack.skill_root_cast_components import _derive_on_children as cast_source
     from scripts.game_data.memorypack.skill_root_gameplay_tag_list_components import derive as tags_source
     from scripts.game_data.memorypack.skill_root_buff_find_components import derive as find_source
     from scripts.game_data.memorypack.skill_root_buff_id_lists import derive as id_list_source
     from scripts.game_data.memorypack.skill_root_switch_components import derive as switch_source
-    from scripts.game_data.memorypack.skill_root_toggle_components import derive_list as toggle_lists
+    from scripts.game_data.memorypack.skill_root_toggle_components import _derive_list_on_double as toggle_lists
     from scripts.game_data.memorypack.skill_root_ui_range_components import derive_list as ui_lists
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.il2cpp.generic_entries import GenericEntries
@@ -135,13 +149,14 @@ def derive(image,pins):
     need('first-tail-field',(5,'buffs'),(event['memberIndex'],event['fieldName']))
     buffs=buff_lists(image,pins,typed_request=tail['contexts']['buffs'],call_target=event['sourceCall']['target'])
     union=buff_union(image,pins)
-    attributes=attribute_source(image,pins);cast=cast_source(image,pins)
+    attributes=attribute_source(image,pins,double);cast=cast_source(image,pins,
+        double=double,cost_profile=cost_profile,cost_proof=cost_proof)
     tags=tags_source(image,pins);find=find_source(image,pins)
     id_event=next(e for e in tail['program']['orderedFields']if e['memberIndex']==40)
     ids=id_list_source(image,pins,typed_request=tail['contexts'][id_event['fieldName']],call_target=id_event['sourceCall']['target'])
     switch=switch_source(image,pins,buffs=buffs)
     toggle_event=next(e for e in tail['program']['orderedFields']if e['memberIndex']==46)
-    toggles=toggle_lists(image,pins,typed_request=tail['contexts'][toggle_event['fieldName']],call_target=toggle_event['sourceCall']['target'],buffs=buffs)
+    toggles=toggle_lists(image,pins,typed_request=tail['contexts'][toggle_event['fieldName']],call_target=toggle_event['sourceCall']['target'],buffs=buffs,double=double)
     ui_event=next(e for e in tail['program']['orderedFields']if e['memberIndex']==47)
     ui=ui_lists(image,pins,typed_request=tail['contexts'][ui_event['fieldName']],call_target=ui_event['sourceCall']['target'])
     binding=bind_root_list(pins,event,tail['contexts']['buffs'],buffs,
@@ -185,7 +200,7 @@ def derive(image,pins):
         need('same-proved-Boolean-helper',tail['primitiveSources']['boolean']['targetRva'],event['sourceCall']['target']-image.pe.image_base)
     capabilities['SkillDataContinuation']=dict(memberCount=49,startMemberIndex=1,lastMemberIndex=last,
         orderedReads=reads[:last],wholeSkillDataAdmitted=False)
-    return json.loads(json.dumps(dict(schema='endfield.skill-root-components.v2',nativeInputs=pins,
+    return _normalize_result(dict(schema='endfield.skill-root-components.v2',nativeInputs=pins,
         status='validated-conditional-root-prefix-components',capabilities=capabilities,orderedReads=reads,
         proof=dict(prefix=prefix,rootTail=tail,dataPair=pair,buffInput=buffs,buffInputUnion=union,rootBuffsBinding=binding,
             attributeModifiers=attributes,castData=cast,rootReferenceBindings=reference_bindings,
@@ -201,4 +216,4 @@ def derive(image,pins):
             for r in reads[last:]if r['childCapability']is not None],
         evidenceBoundary=dict(exact='Complete root49 existing caller source and native return, root fields1 through48 selected child source joins, including DataPair32, BuffInput/AssignPair40, AttributeModifier arrays, concrete BlackboardDouble/Cast/Cost, generated GameplayTag lists, BuffFind/Query/BuffId, Switch, Toggle/Condition and UIRange/SkillHint/Vector2. Sequence and TargetSettings require separately admitted grammar/lifecycle capabilities and exact nominal reader identities.',
             conditional=__doc__,structuralOnly='Stored Skill configuration; no live execution or event semantics.',
-            unresolved=['external Sequence/Target source admission','root field0/action graph','new/null root','runtime selection','whole SkillData/physical EOF']))))
+            unresolved=['external Sequence/Target source admission','root field0/action graph','new/null root','runtime selection','whole SkillData/physical EOF'])),preserve_json_graph=_preserve_json_graph)

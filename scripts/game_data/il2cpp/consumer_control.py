@@ -79,7 +79,24 @@ def build_consumer_control_graph(rows,*,entry,owned_ranges,computed_jump_targets
         elif kind=='return':returns.append(at)
         elif kind=='trap':traps.append(at)
         elif kind not in ('next','jump','conditional','computedJump','tailExit'):raise ValueError(LABEL+'.unsupported-transfer')
-        if any(target not in by_at for target in targets):raise ValueError(LABEL+'.edge-outside-instruction-boundary')
+        missing=sorted(target for target in targets if target not in by_at)
+        if missing:
+            import hashlib,json
+            owned=next(((a,b)for a,b in ordered if a<=at<b),None)
+            encoded=b''.join(bytes.fromhex(r['bytes'])for site,r in sorted(by_at.items())
+                             if owned is not None and owned[0]<=site<owned[1])
+            neighbors=[]
+            for target in missing[:4]:
+                nearby=sorted(by_at,key=lambda site:(abs(site-target),site))[:3]
+                neighbors.append(dict(target=target,insideOwnedRange=any(a<=target<b for a,b in ordered),
+                    nearestInstructions=[dict(site=site,bytes=by_at[site]['bytes'],text=by_at[site]['text'][:180])
+                                         for site in sorted(nearby)]))
+            raise ValueError(LABEL+'.edge-outside-instruction-boundary:'+json.dumps(dict(
+                validator=LABEL,failedGate='edge-outside-instruction-boundary',entry=entry,
+                sourceInstruction=dict(site=at,bytes=row['bytes'],text=row['text'][:180]),
+                expected='every direct edge targets an owned decoded instruction boundary',
+                actual=neighbors,sourceOwnedRange=owned,
+                sourceRangeSha256=hashlib.sha256(encoded).hexdigest().upper()),sort_keys=True))
         edges[at]=set(targets)
     reached=set();pending=deque((entry,))
     while pending:

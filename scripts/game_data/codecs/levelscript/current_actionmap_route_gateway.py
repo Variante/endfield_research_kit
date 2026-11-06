@@ -37,6 +37,7 @@ def decode(data, offset, *, family, tag, field, current_owner, strings):
     audit = validate_native(native.validate, family=family, tag=tag, game_root=current_owner.game_root)
     if not isinstance(audit, dict) or audit.get('status') != 'validated':
         detail = {k: audit[k] for k in ('status', 'detail', 'reason', 'pending', 'diagnostic') if k in audit} if isinstance(audit, dict) else type(audit).__name__
-        raise ValueError('currentActionMapRoute.fresh-source-required:'+json.dumps(detail, sort_keys=True)[:2400])
+        raise ValueError('currentActionMapRoute.fresh-source-required:'+json.dumps(
+            dict(family=family,tag=tag,sourceOffset=offset,**detail), sort_keys=True)[:2400])
     cap = _owned_audit(current_owner, audit, family, tag)
     return codec.decode(data, offset, field=field, capability=cap, strings=strings)

@@ -20,11 +20,12 @@ def need(check,condition,detail=None):
 def return_abi(event):
     kind=event['kind']
     if kind in('byte','raw-byte'):return'byte'
+    if kind=='scalar16':return'ax'
     if kind=='scalar32'or kind.startswith('value4:'):return'eax'
     if kind in('raw4','float64'):return'xmm0'
     if kind in('scalar64','byte-payload','value8:UnityEngine.Vector2','value8:UnityEngine.Vector2Int',
             'value8:Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo',
-            'value8:Beyond.Gameplay.Core.CharInteractPerform.HandIKParams')or kind.startswith('reference:'):return'rax'
+            'value8:Beyond.Gameplay.Core.CharInteractPerform.HandIKParams','value8:Beyond.Resource.StringPathHash')or kind.startswith('reference:'):return'rax'
     raise ValueError(LABEL+'.unsupported-return-kind:'+kind)
 
 
@@ -189,7 +190,10 @@ def base_setter_program(rows,*,holder,field,mode,barrier):
     """Complete ordinary base setters with either exact null-guard direction."""
     from scripts.game_data.il2cpp.program_grammar import ProgramGrammar
     from scripts.game_data.il2cpp.zero_wrapper_programs import Joins,_branch,_exact
-    modes={'normalized-byte-return':('dl','8850'),'int32-return':('edx','8950'),
+    # The subset decoder currently renders 66 89's source as edx. The exact
+    # operand-size prefix below, plus the independently checked enum ABI and
+    # storedBytes=2, proves the low word; its display text grants no width.
+    modes={'normalized-byte-return':('dl','8850'),'int16-return':('edx','668950'),'int32-return':('edx','8950'),
         'qword-return':('rdx','488950'),'single-return':('xmm1','f30f1148'),
         'double-return':('xmm1','f20f1148')}
     need('base-setter-mode',mode in modes or mode=='reference-return')
@@ -354,11 +358,16 @@ def inline_predicate_getter_refresh_program(regions,entry,*,base_slot,cache_slot
         prefix=('74'if code==4 else'75')if first in(b'\x74',b'\x75')else('0f84'if code==4 else'0f85')
         g.branch(prefix,fact if code==4 else not fact,1 if len(prefix)==2 else 4)
     eq(refresh=='empty')
-    if refresh=='different':g.take('488b4310','483943'+c);eq(False)
+    if refresh=='different':
+        g.take('488b4310','483943'+c);eq(False)
+        # The short split path has its own exact byte prover. Keep profiles
+        # disjoint so two successful interpretations remain a real refusal.
+        if g.bytes.get(g.at)==0xe9:g.jump('e9')
     g.take('48897c2430','488b7b10','4885ff');eq(False)
     first=g.relative('488b15');g.take('488b0f');g.call(predicate);g.take('84c0');eq(False)
     g.take('488bc7','488943'+c);second=g.relative('488b15');g.take('488b0f');g.call(predicate)
-    g.take('488d4b'+c);g.call(barrier);g.take('488b7c2430');g.jump('eb',1)if g.bytes.get(g.at)==0xeb else g.jump('e9')
+    g.take('488d4b'+c);g.call(barrier);g.take('488b7c2430')
+    if g.bytes.get(g.at)in(0xeb,0xe9):g.jump('eb',1)if g.bytes[g.at]==0xeb else g.jump('e9')
     g.take('488b43'+c,'4883c420','5b','c3');need('inline-refresh-same-class',first==second)
     return dict(selectedBytes=g.seen,initializedFlag=flag,baseSlot=base_slot,cacheSlot=cache_slot,refresh=refresh,
         sameBaseReferenceCachedAndReturned=True,normalReturn=True,entryRspRestored=True,
@@ -372,7 +381,7 @@ def _getter_refresh(image,body,*,base_slot,cache_slot,original,barrier):
     base=image.pe.image_base;calls={control_transfer(r)['target']for r in body['rows']if ec.raw(r)[:1]==b'\xe8'}
     candidates=[]
     for cast in sorted(calls-{barrier}):
-        for profile in('rbx','rdi','inline-predicate-rbx','split-comparison-rbx','split-short-backward-rbx','split-initialized-short-backward-rbx','split-predicate-rbx'):
+        for profile in('rbx','rdi','inline-predicate-rbx','split-comparison-rbx','split-short-backward-rbx','split-initialized-short-backward-rbx','split-initialized-cache32-backward-rbx','split-predicate-rbx'):
             programs=[]
             try:
                 for refresh in('empty','different'):
@@ -390,6 +399,9 @@ def _getter_refresh(image,body,*,base_slot,cache_slot,original,barrier):
                     elif profile=='split-initialized-short-backward-rbx':
                         from scripts.game_data.memorypack.generated_split_cache_refresh_sources import initialized_short_backward_program
                         proof=initialized_short_backward_program(body['regions'],body['pointer'],base_slot=base_slot,cache_slot=cache_slot,cast=cast,barrier=barrier,refresh=refresh)
+                    elif profile=='split-initialized-cache32-backward-rbx':
+                        from scripts.game_data.memorypack.generated_split_cache_refresh_sources import initialized_cache32_backward_program
+                        proof=initialized_cache32_backward_program(body['regions'],body['pointer'],base_slot=base_slot,cache_slot=cache_slot,cast=cast,barrier=barrier,refresh=refresh)
                     elif profile=='split-predicate-rbx':
                         from scripts.game_data.memorypack.generated_split_predicate_cache_refresh_sources import program
                         proof=program(body['regions'],body['pointer'],base_slot=base_slot,cache_slot=cache_slot,predicate=cast,barrier=barrier,refresh=refresh)
@@ -522,6 +534,12 @@ def direct_field_binding(image,member,wrappers):
 
 
 def _derive_setter(image,member,wrappers,barrier,getter_cache,*,pins=None):
+    from scripts.game_data.memorypack import interactive_managed_optional_sources as optional
+    if member.declared_type in optional.TYPES:
+        return optional.derive_setter(image,pins,member,wrappers,barrier)
+    from scripts.game_data.memorypack import interactive_value_wrapper_sources as embedded
+    if wrappers[member.declaring_wrapper].wrapped_type in embedded.TYPES:
+        return embedded.derive_setter(image,pins,member,wrappers,barrier)
     if member.declared_type=='Beyond.PosRot':
         from scripts.game_data.memorypack.generated_posrot_field_sources import derive_setter
         return derive_setter(image,pins,member,wrappers,barrier,getter_cache)
@@ -583,7 +601,15 @@ def _derive_setter(image,member,wrappers,barrier,getter_cache,*,pins=None):
     need('nongeneric-member-setter',method.generic_container_index<0)
     body=_body(image,image.method_pointer_va(method),pins=pins);mm=pointer.methods(image,wrapper)
     getter=mm.get('get___instance');getter_proof=None;proof=None;profile=None;inline_refresh=None;inline_collector=None
-    if member.kind=='bool'or member.width==1:mode='normalized-byte-return';stored_bytes=1
+    from scripts.game_data.memorypack import interactive_value_layouts as optional_layouts
+    raw_optional=member.declared_type in {optional_layouts.OPTIONAL+t+'>'for t in optional_layouts.RAW}
+    if raw_optional:
+        need('own-closed-Optional-value-setter',kind==21 and raw[11]==128 and not reference)
+        layout=optional_layouts.derive(image,pins,member.declared_type,barrier=image.pe.image_base+barrier)
+        need('raw-Optional-has-no-reference-lane',layout['referenceLaneOffsets']==[])
+        stored_bytes=layout['managedBytes'];mode='int16-return'if stored_bytes==2 else'qword-return'
+    elif member.kind=='bool'or member.width==1:mode='normalized-byte-return';stored_bytes=1
+    elif member.kind=='enum'and member.width==2:mode='int16-return';stored_bytes=2
     elif member.kind in('scalar32','enum')and member.width==4:mode='int32-return';stored_bytes=4
     elif member.kind=='float32':mode='single-return';stored_bytes=4
     elif member.kind=='float64':mode='double-return';stored_bytes=8
@@ -606,15 +632,29 @@ def _derive_setter(image,member,wrappers,barrier,getter_cache,*,pins=None):
         from scripts.game_data.memorypack.char_hand_ik_sources import layout as hand_layout
         need('own-HandIK-ordinary-value-setter',kind==17 and not reference)
         layout=hand_layout(image,ctx);mode='qword-return';stored_bytes=8
+    elif member.declared_type=='Beyond.Resource.StringPathHash':
+        from scripts.game_data.memorypack.nominal_qword_value_sources import layout as qword_layout
+        need('ordinary-QWORD-value-setter',kind==17 and not reference)
+        layout=qword_layout(image,member.declared_type);mode='qword-return';stored_bytes=8
     elif member.declared_type in('UnityEngine.Vector3','UnityEngine.Quaternion'):
         from scripts.game_data.memorypack import generated_vector_member_sources as vectors
         need('named-vector-value-setter',kind==17 and not reference)
         layout=vectors.layout(image,ctx,member.declared_type);stored_bytes=layout['managedBytes'];mode='value-pointer-'+str(stored_bytes)
+    elif member.declared_type=='Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData':
+        from scripts.game_data.memorypack import generated_vector_member_sources as vectors
+        from scripts.game_data.memorypack.interactive_plunging_layout import layout as plunging_layout
+        need('own-PlungingAttackData-ordinary-value',kind==17 and not reference)
+        layout=plunging_layout(image,ctx);stored_bytes=16;mode='value-pointer-16'
     elif member.declared_type=='UnityEngine.Color':
         from scripts.game_data.memorypack import generated_vector_member_sources as vectors
         from scripts.game_data.memorypack.unity_color_sources import layout as color_layout
         need('owned-Color-ordinary-value-setter',kind==17 and not reference)
         layout=color_layout(image,ctx);stored_bytes=layout['managedBytes'];mode='value-pointer-16'
+    elif member.declared_type=='UnityEngine.Vector4':
+        from scripts.game_data.memorypack import generated_vector_member_sources as vectors
+        from scripts.game_data.memorypack.unity_vector4_sources import layout as vector4_layout
+        need('ordinary-Vector4-value-setter',kind==17 and not reference)
+        layout=vector4_layout(image,ctx);stored_bytes=16;mode='value-pointer-16'
     elif member.declared_type=='Beyond.AABB':
         from scripts.game_data.memorypack import generated_vector_member_sources as vectors
         from scripts.game_data.memorypack.generated_aabb_field_sources import owns_member,layout as aabb_layout
@@ -649,7 +689,11 @@ def _derive_setter(image,member,wrappers,barrier,getter_cache,*,pins=None):
             else:
                 try:proof=prove_cached_field_setter(body['rows'],field_offset=offset,mode=mode,symbols=symbols,label=LABEL+'.cached')
                 except(ValueError,KeyError,IndexError):
-                    if mode!='reference-return'or getter_proof['program'].get('getterProfile')!='rsi-zero-rbp-image-base-inline-collector':raise
+                    # The setter owns this exact full getter call followed by
+                    # its null check, unchanged reference store and disabled
+                    # collector path. The independently proved getter may
+                    # have a different coherent-cache implementation.
+                    if mode!='reference-return':raise
                     from scripts.game_data.memorypack.generated_large_cached_sources import reference_setter_program
                     from scripts.game_data.memorypack.skill_passive_map_sources import _barrier
                     inline_collector=_barrier(image,image.pe.image_base+barrier)
@@ -691,7 +735,7 @@ def _derive_setter(image,member,wrappers,barrier,getter_cache,*,pins=None):
                     proof=vectors.base_vector_setter_program(body['regions'],body['pointer'],holder=holder[2],field=offset,width=12)
                 elif member.declared_type=='UnityEngine.Quaternion'and mode=='value-pointer-16':
                     proof=vectors.base_vector_setter_program(body['regions'],body['pointer'],holder=holder[2],field=offset,width=16)
-                elif member.declared_type=='UnityEngine.Color'and mode=='value-pointer-16':
+                elif member.declared_type in('UnityEngine.Color','UnityEngine.Vector4')and mode=='value-pointer-16':
                     proof=vectors.base_vector_setter_program(body['regions'],body['pointer'],holder=holder[2],field=offset,width=16)
                 elif member.declared_type=='Beyond.AABB'and mode=='value-pointer-16':
                     proof=vectors.base_vector_setter_program(body['regions'],body['pointer'],holder=holder[2],field=offset,width=16)
@@ -708,7 +752,7 @@ def _derive_setter(image,member,wrappers,barrier,getter_cache,*,pins=None):
         evidenceBoundary='Current named metadata-owned field and ordinary setter ABI; complete selected store/return with compatible nonnull holder or independently checked coherent getter. Child framing, construction, noncoherent refresh and runtime invocation are not admitted.')
     if inline_refresh is not None:result['inlineCompatibleRefresh']=inline_refresh
     if inline_collector is not None:result['inlineDisabledCollectorSource']=inline_collector
-    if member.declared_type in('UnityEngine.Color','UnityEngine.Vector2Int','Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo','Beyond.Gameplay.Core.CharInteractPerform.HandIKParams','Beyond.AABB'):result['nominalValueLayout']=layout
+    if raw_optional or member.declared_type in('UnityEngine.Color','UnityEngine.Vector4','UnityEngine.Vector2Int','Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo','Beyond.Gameplay.Core.CharInteractPerform.HandIKParams','Beyond.AABB','Beyond.Resource.StringPathHash','Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData'):result['nominalValueLayout']=layout
     if member.declared_type=='UnityEngine.Vector2Int':
         result['ordinarySourceRows']=body['rows']
         result['ordinarySourceRegions']=[[at,raw.hex().upper()]for at,raw in body['regions']]

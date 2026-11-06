@@ -361,7 +361,9 @@ def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False,un
         if name.startswith('set___'):
             member=name[6:-2];instructions=methods[name]['instructions'];is_reference=member=='path' or (reference and member=='constValue')
             nonnull_reference=is_reference and bytes.fromhex(instructions[3][1])==b'\x75\x06'
-            slots[member]=bytes.fromhex(instructions[(8 if vector3 else 9) if (vector2 or vector3) and member=='constValue' else (6 if nonnull_reference else 4) if is_reference else 6][1])[-1]
+            scalar_null_after=(not is_reference and not((vector2 or vector3)and member=='constValue')
+                and bytes.fromhex(instructions[3][1])[:1]==b'\x74')
+            slots[member]=bytes.fromhex(instructions[(8 if vector3 else 9) if (vector2 or vector3) and member=='constValue' else (6 if nonnull_reference else 4) if is_reference else 4 if scalar_null_after else 6][1])[-1]
             if vector3 and member=='constValue':vector3_setter(image,instructions,slots[member])
             elif vector2 and member=='constValue':vector2_setter(image,instructions,slots[member])
             else:scalar.parameter_setter(image,instructions,name='path' if is_reference else member,slot=slots[member],width=width,label=LABEL+'.'+member,floating=floating and member=='constValue')

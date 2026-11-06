@@ -7,6 +7,16 @@
     "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "domains": {
+    "interactive-enums": {
+      "nominalEnums": [
+        "Beyond.Gameplay.Core.EGameplayEvents",
+        "Beyond.Gameplay.Core.InteractiveAudioComponent+EAudioTriggerState"
+      ],
+      "collectionEnums": [
+        "Beyond.Gameplay.Core.EGameplayEvents"
+      ],
+      "countLimit": 4096
+    },
     "animation-enemy-hurt-lists": {
       "nominalEnums": [
         "Beyond.Gameplay.Core.EnemyHurtAnim"

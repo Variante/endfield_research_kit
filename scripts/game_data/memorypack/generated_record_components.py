@@ -241,6 +241,9 @@ def compile_member_program(source,pins,*,wrapper_name,type_name,value4,value8=No
         elif kind=='value8:Beyond.Gameplay.Core.CharInteractPerform.HandIKParams':
             from scripts.game_data.memorypack.char_hand_ik_components import compile_member
             wire=compile_member(source,scope,read,pins)
+        elif read.get('mode')=='buffered-called-advance-raw16'and read.get('declaredType')=='Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData':
+            from scripts.game_data.memorypack.interactive_plunging_components import compile_member
+            wire=compile_member(source,scope,read,pins)
         elif read.get('mode')=='buffered-called-advance-color16':
             from scripts.game_data.memorypack.generated_color_components import compile_member
             wire=compile_member(source,scope,read,pins)
@@ -249,6 +252,9 @@ def compile_member_program(source,pins,*,wrapper_name,type_name,value4,value8=No
             wire=compile_member(source,scope,read,pins)
         elif read.get('mode')=='buffered-called-advance-scalar':
             from scripts.game_data.memorypack.generated_called_advance_components import compile_member
+            wire=compile_member(source,scope,read,pins)
+        elif(read.get('mode')=='buffered-inline-value'and read.get('declaredType','').startswith('Beyond.Optional`1<')):
+            from scripts.game_data.memorypack.interactive_raw_optional_components import compile_member
             wire=compile_member(source,scope,read,pins)
         elif read.get('mode')=='buffered-inline-scalar'or read.get('mode')=='buffered-inline-value'and'inlineSourceProgram'in read:
             from scripts.game_data.memorypack.generated_inline_record_components import compile_inline_member
@@ -402,6 +408,14 @@ def compile_member_program(source,pins,*,wrapper_name,type_name,value4,value8=No
             need('finite-owned-Extra-Int32-array-operation:'+str(index),
                 (capability,wire,child)==(int_array.CAPABILITY,int_array.WIRE,int_array.CAPABILITY))
             binding=int_array.bind_member(source,scope,read,pins,typed_requests.get(index,{}),array_children[index],capability)
+            bindings.append(binding);requirements.add(child)
+        elif(kind=='reference:Beyond.Gameplay.Actions.Param`1<bool>[]'
+                and read.get('mode')=='typed-Param-reference-array'and read['declaredType']in arrays and index in array_children):
+            from scripts.game_data.memorypack import levelscript_boolean_param_array_sources as boolean_params
+            capability,wire,child=arrays[read['declaredType']]
+            need('finite-owned-Boolean-Param-array-operation:'+str(index),
+                (capability,wire,child)==(boolean_params.CAPABILITY,boolean_params.WIRE,boolean_params.CAPABILITY))
+            binding=boolean_params.bind_member(source,scope,read,pins,typed_requests.get(index,{}),array_children[index],capability)
             bindings.append(binding);requirements.add(child)
         elif(kind=='reference:Beyond.Gameplay.Actions.Param`1<UnityEngine.Vector3>[]'
                 and read.get('mode')=='typed-Param-reference-array'and read['declaredType']in arrays and index in array_children):

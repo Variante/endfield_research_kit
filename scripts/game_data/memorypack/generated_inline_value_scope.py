@@ -13,6 +13,9 @@ def need(k,condition,detail=None):
 
 def nominal_layout(image,ctx,name):
     from scripts.game_data.memorypack import generated_vector_member_sources as vectors,scalar_param_native as scalar
+    if name=='Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData':
+        from scripts.game_data.memorypack.interactive_plunging_layout import layout
+        return layout(image,ctx)
     if name=='Beyond.AABB':
         from scripts.game_data.memorypack.generated_aabb_field_sources import layout
         return layout(image,ctx)
@@ -22,6 +25,9 @@ def nominal_layout(image,ctx,name):
     if name in('Beyond.Gameplay.TrackingBounds','Beyond.Gameplay.Core.TriggerShapeData'):
         from scripts.game_data.memorypack.generated_outer_value_field_sources import layout
         return layout(image,ctx,name)
+    if name=='UnityEngine.Vector4':
+        from scripts.game_data.memorypack.unity_vector4_sources import layout
+        return layout(image,ctx)
     if name=='UnityEngine.Color':
         from scripts.game_data.memorypack.unity_color_sources import layout
         return layout(image,ctx)
@@ -121,9 +127,13 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
             candidates.append((i,row,None))
     need('exact-member-source-bijection',len(candidates)==len(wrapper.members),(len(candidates),len(wrapper.members)))
     primitive_modes={'byte':'bool','raw-byte':'raw-byte','scalar32':'int32','scalar64':'int64','raw4':'float32','float64':'float64'}
-    inline_widths={'raw-byte':1,'scalar32':4,'scalar64':8,'raw4':4,'float64':8,'value4:Beyond.Gameplay.Core.GameplayTag':4,'value4:UnityEngine.LayerMask':4,
-        'value8:UnityEngine.Vector2':8,'value12:UnityEngine.Vector3':12,'value12:UnityEngine.Vector3Int':12,'value16:UnityEngine.Quaternion':16,'value16:UnityEngine.Color':16,
+    inline_widths={'raw-byte':1,'scalar16':2,'scalar32':4,'scalar64':8,'raw4':4,'float64':8,'value4:Beyond.Gameplay.Core.GameplayTag':4,'value4:UnityEngine.LayerMask':4,
+        'value8:UnityEngine.Vector2':8,'value12:UnityEngine.Vector3':12,'value12:UnityEngine.Vector3Int':12,'value16:UnityEngine.Quaternion':16,'value16:UnityEngine.Color':16,'value16:UnityEngine.Vector4':16,
         'value24:Beyond.Gameplay.View.CameraControlStateInitialParam':24,'value24:Beyond.PosRot':24,'value36:Beyond.Montage.AnimationClipAsyncInfo':36}
+    from scripts.game_data.memorypack import interactive_value_layouts as optional_layouts
+    raw_optionals={optional_layouts.OPTIONAL+t+'>':spec[1]for t,spec in optional_layouts.RAW.items()}
+    inline_widths.update({'value'+str(width)+':'+name:width for name,width in raw_optionals.items()})
+    inline_widths['value16:Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData']=16
     events=[];requirements=[];primitive_sources={};inline_sources={};array_sources={};values={};managed_values={};constructed_values={};static_references={};used=set()
     for n,((position,row,macro),member,kind)in enumerate(zip(candidates,wrapper.members,claim['anonymousReadOrder'],strict=True)):
         event=dict(memberIndex=n,fieldName=member.name,declaredType=member.declared_type,kind=kind,instruction=ec.site(row,base))
@@ -132,14 +142,16 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
             event.update(mode='buffered-inline-value'if kind.startswith('value')else'buffered-inline-scalar',wireBytes=macro['wireBytes'],inlineSourceProgram=macro)
             if macro.get('independentAdvanceSourceRequired'):
                 from scripts.game_data.memorypack.generated_called_advance_sources import derive as derive_advance
-                color=kind=='value16:UnityEngine.Color'
+                plunging=kind=='value16:Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData'
+                color=kind in('value16:UnityEngine.Color','value16:UnityEngine.Vector4')or plunging
                 vector=kind=='value12:UnityEngine.Vector3'
                 integer_vector=kind=='value12:UnityEngine.Vector3Int'
                 initial24=kind=='value24:Beyond.Gameplay.View.CameraControlStateInitialParam'
                 posrot24=kind=='value24:Beyond.PosRot'
                 clip36=kind=='value36:Beyond.Montage.AnimationClipAsyncInfo'
                 need('finite-called-advance-kind',kind in('scalar32','value4:Beyond.Gameplay.Core.GameplayTag','value4:UnityEngine.LayerMask')and macro['wireBytes']==4
-                    or color and macro['wireBytes']==16 and macro.get('completeSourceBitsSpilledBeforeAdvance')is True
+                    or color and macro['wireBytes']==16 and (macro.get('completeSourceBitsSpilledBeforeAdvance')is True
+                        or(kind=='value16:UnityEngine.Vector4'or plunging)and macro.get('preservedCaptureRegistersRequired')==['xmm6'])
                     or vector and macro['wireBytes']==12 and(macro.get('preservedCaptureRegistersRequired')==['xmm6','r14']
                         or macro.get('preservedCaptureRegistersRequired')==['xmm6','rsi']and macro.get('actualReaderArgument')=='rdi'
                             and macro.get('wrapperLoad',{}).get('outputRegister')=='r14')
@@ -151,7 +163,7 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
                     or clip36 and macro['wireBytes']==36 and macro.get('preservedCaptureRegistersRequired')==['xmm6','rbp','xmm7'])
                 cache=targets.setdefault('_actualAdvanceCache',{});target=macro['advanceTargetVa']
                 if target not in cache:cache[target]=derive_advance(image,pins,target=target,offsets=offsets)
-                event.update(mode='buffered-called-advance-posrot24'if posrot24 else'buffered-called-advance-clip36'if clip36 else'buffered-called-advance-color16'if color else'buffered-called-advance-value12'if vector else'buffered-called-advance-int-vector12'if integer_vector else'buffered-called-advance-initial24'if initial24 else'buffered-called-advance-scalar',actualSourceProved=True,inlineAdvanceSource=cache[target])
+                event.update(mode='buffered-called-advance-raw16'if plunging else'buffered-called-advance-posrot24'if posrot24 else'buffered-called-advance-clip36'if clip36 else('buffered-called-advance-color16'if kind=='value16:UnityEngine.Color'else'buffered-called-advance-float4')if color else'buffered-called-advance-value12'if vector else'buffered-called-advance-int-vector12'if integer_vector else'buffered-called-advance-initial24'if initial24 else'buffered-called-advance-scalar',actualSourceProved=True,inlineAdvanceSource=cache[target])
                 if posrot24:
                     from scripts.game_data.memorypack.generated_posrot_field_sources import validate_event
                     layout=nominal_layout(image,ctx,member.declared_type);event['inlineNominalLayout']=layout
@@ -167,7 +179,10 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
                 if color:
                     layout=nominal_layout(image,ctx,member.declared_type)
                     need('independent-current-Color-setter-layout',layout==setters[n].get('nominalValueLayout')and layout['managedBytes']==16
-                        and layout['referenceLaneOffsets']==layout['paddingByteRanges']==[])
+                        and layout['referenceLaneOffsets']==[]and(layout['paddingByteRanges']==[]or plunging and layout['paddingByteRanges']==[[9,3]]))
+                    if plunging:
+                        from scripts.game_data.memorypack.interactive_plunging_layout import require_event
+                        require_event(event,setters[n])
                     event['inlineNominalLayout']=layout
                 if vector:
                     layout=nominal_layout(image,ctx,member.declared_type)
@@ -191,11 +206,17 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
                         and setters[n]['parameterTypeRecordHex'][20:24].upper()=='1180'
                         and int.from_bytes(bytes.fromhex(setters[n]['parameterTypeRecordHex'])[:8],'little')==cap['typeDefinition'])
                     event['inlineNamedValueSource']=cap
-            if kind=='value16:UnityEngine.Color'or kind in('value12:UnityEngine.Vector3','value12:UnityEngine.Vector3Int','value24:Beyond.Gameplay.View.CameraControlStateInitialParam','value24:Beyond.PosRot','value36:Beyond.Montage.AnimationClipAsyncInfo')and macro.get('independentAdvanceSourceRequired'):
+            if kind in('value16:UnityEngine.Color','value16:UnityEngine.Vector4','value16:Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData')or kind in('value12:UnityEngine.Vector3','value12:UnityEngine.Vector3Int','value24:Beyond.Gameplay.View.CameraControlStateInitialParam','value24:Beyond.PosRot','value36:Beyond.Montage.AnimationClipAsyncInfo')and macro.get('independentAdvanceSourceRequired'):
                 values[str(n)]=dict(typeName=member.declared_type,layout=layout,sourceProgram=macro,advanceSource=event['inlineAdvanceSource'],
                     actualSourceProved=True,wireBytes=macro['wireBytes'],resultAbi='inline-bits-to-owned-field')
             elif kind.startswith('value')and not macro.get('independentAdvanceSourceRequired'):
-                layout=nominal_layout(image,ctx,member.declared_type)
+                if member.declared_type in raw_optionals:
+                    layout=setters[n].get('nominalValueLayout',{});raw=bytes.fromhex(setters[n]['parameterTypeRecordHex'])
+                    need('own-closed-Optional-source-and-setter',layout.get('typeName')==member.declared_type
+                        and layout.get('managedBytes')==raw_optionals[member.declared_type]
+                        and layout.get('referenceLaneOffsets')==[]and layout.get('wireGrammarAdmitted')is False
+                        and len(raw)==16 and raw[10:12]==bytes((21,128)))
+                else:layout=nominal_layout(image,ctx,member.declared_type)
                 need('separate-source-layout-width',macro['wireBytes']==layout['managedBytes'])
                 values[str(n)]=dict(typeName=member.declared_type,layout=layout,sourceProgram=macro,actualSourceProved=True,wireBytes=macro['wireBytes'],resultAbi='inline-bits-to-owned-field')
             else:
@@ -203,22 +224,27 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
                 if 'inlineNamedValueSource'in event:inline_sources[str(n)]['namedValueSource']=event['inlineNamedValueSource']
             events.append(event);continue
         target=members.control_transfer(row)['target'];event['sourceTargetRva']=target-base
-        hidden=kind in('value12:UnityEngine.Vector3','value16:UnityEngine.Quaternion','value16:Beyond.AABB','value24:Beyond.Gameplay.View.CameraControlStateInitialParam','managed:Beyond.LangKey','managed:Beyond.Gameplay.Core.GameplayTagQuery','managed:Beyond.Gameplay.Core.SmartTargetSelectSetting','managed:Cinemachine.CinemachineImpulseManager+EnvelopeDefinition','managed:Beyond.Gameplay.BodyTypeDef','managed:Beyond.Gameplay.View.Animation.AlphaBlend','managed:Beyond.FAnimationCurve','value36:Beyond.Montage.AnimationClipAsyncInfo','managed:Beyond.Gameplay.Core.EntityPtr','value36:Beyond.Gameplay.TrackingBounds','value44:Beyond.Gameplay.Core.TriggerShapeData','managed:Beyond.Gameplay.Core.SkMorphPlaySetting')
+        hidden=kind in('value12:UnityEngine.Vector3','value16:UnityEngine.Quaternion','value16:Beyond.AABB','value24:Beyond.Gameplay.View.CameraControlStateInitialParam','managed:Beyond.LangKey','managed:Beyond.Gameplay.Core.GameplayTagQuery','managed:Beyond.Gameplay.Core.SmartTargetSelectSetting','managed:Cinemachine.CinemachineImpulseManager+EnvelopeDefinition','managed:Beyond.Gameplay.BodyTypeDef','managed:Beyond.Gameplay.View.Animation.AlphaBlend','managed:Beyond.FAnimationCurve','value36:Beyond.Montage.AnimationClipAsyncInfo','managed:Beyond.Gameplay.Core.EntityPtr','value36:Beyond.Gameplay.TrackingBounds','value44:Beyond.Gameplay.Core.TriggerShapeData','managed:Beyond.Gameplay.Core.SkMorphPlaySetting')or member.declared_type in optional_layouts.TYPES and member.declared_type not in raw_optionals
         from scripts.game_data.memorypack import skill_gait_dictionary_sources as gait,animation_extra_dictionary_sources as extra_static
-        static_owner=gait if member.declared_type==gait.TYPE else extra_static if member.declared_type in extra_static.TYPES else None
+        from scripts.game_data.memorypack import interactive_dictionary_sources as interactive_static
+        static_owner=gait if member.declared_type==gait.TYPE else extra_static if member.declared_type in extra_static.TYPES else interactive_static if member.declared_type in interactive_static.TYPES else None
         static_out=static_owner is not None
         argument=ec.last_write(path,position,'r8'if hidden or static_out else'rdx');context=by_context.get(ec.va(argument))if argument is not None else None
         reference_array=context is not None and context['methodName']=='ReadArray'and member.declared_type==context['fullTypeName']+'[]'
         from scripts.game_data.memorypack.module_unmanaged_array_sources import owns_member as owns_primitive_array
+        interactive_tags=(wrapper.wrapped_type=='Beyond.Gameplay.InteractiveTemplateData'and n==3
+            and member.name=='bornTag'and member.declared_type=='Beyond.Gameplay.Core.GameplayTag[]'
+            and context is not None and context['methodName']=='ReadUnmanagedArray'
+            and context['fullTypeName']=='Beyond.Gameplay.Core.GameplayTag'and context['typeKind']==17)
         primitive_array=(owns_primitive_array(wrapper.wrapped_type,n,member.name,member.declared_type)and context is not None
             and context['methodName']=='ReadUnmanagedArray'and member.declared_type in('int[]','bool[]')
             and member.declared_type==context['fullTypeName']+'[]')
         if context is not None:
-            need('exact-source-context-owner-type',context['methodOwner']==('Beyond.SerializeFieldDictionary`2'if static_out else'MemoryPack.MemoryPackReader')and(context['fullTypeName']==member.declared_type or reference_array or primitive_array),
+            need('exact-source-context-owner-type',context['methodOwner']==('Beyond.SerializeFieldDictionary`2'if static_out else'MemoryPack.MemoryPackReader')and(context['fullTypeName']==member.declared_type or reference_array or primitive_array or interactive_tags),
                 dict(memberIndex=n,fieldName=member.name,declaredType=member.declared_type,call=ec.site(row,base),context=context))
             event['context']=context;used.add(context['instructionRva'])
         if static_out:
-            expected_mode='owned-static-out-gait-dictionary'if static_owner is gait else'owned-static-out-animation-extra-dictionary'
+            expected_mode='owned-static-out-gait-dictionary'if static_owner is gait else interactive_static.MODE if static_owner is interactive_static else'owned-static-out-animation-extra-dictionary'
             need('explicit-owned-static-reference-context',context is not None and context.get('contextMode')==expected_mode
                 and kind=='reference:'+member.declared_type and setters[n]['storedBytes']==8)
             cap=static_owner.derive(image,pins,context=context,source_target=target)
@@ -279,6 +305,8 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
                 from scripts.game_data.memorypack.generated_beyond_curve_field_sources import read_source
             elif member.declared_type=='Beyond.Gameplay.View.Animation.AlphaBlend':
                 from scripts.game_data.memorypack.generated_alpha_blend_field_sources import read_source
+            elif member.declared_type in {optional_layouts.OPTIONAL+t+'>'for t in optional_layouts.REFERENCES}:
+                from scripts.game_data.memorypack.interactive_managed_optional_sources import read_source
             else:
                 from scripts.game_data.memorypack.generated_managed_value_sources import read_source
             if not(closed_query or closed_module or closed_body or closed_alpha):cap=read_source(image,pins,context=context,source_target=target)
@@ -395,6 +423,13 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
             need('same-own-marker-setter-layout',cap['wireBytes']==setters[n]['storedBytes']==8
                 and cap['proof']['layout']==setters[n].get('nominalValueLayout'))
             primitive_sources[str(n)]=cap;event['wireBytes']=8
+        elif kind=='value8:Beyond.Resource.StringPathHash':
+            from scripts.game_data.memorypack.nominal_qword_value_sources import derive as derive_qword
+            need('typed-QWORD-owned-context',context is not None)
+            cap=derive_qword(image,pins,context=context,source_target=target)
+            need('independent-QWORD-setter-layout',cap['wireBytes']==setters[n]['storedBytes']==8
+                 and cap['proof']['layout']==setters[n].get('nominalValueLayout'))
+            primitive_sources[str(n)]=cap;event.update(wireBytes=8,actualSourceProved=True,resultAbi='rax')
         elif kind=='value4:Beyond.Audio.AudioId':
             from scripts.game_data.memorypack.nominal_int32_value_sources import derive as derive_nominal4
             need('typed-nominal4-context',context is not None)
@@ -414,6 +449,23 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
             if context is not None:need('current-typed-primitive-method',context['methodName']=='ReadUnmanaged')
             elif ctx.is_enum(member.declared_type):raise ValueError(LABEL+'.enum-owned-context-missing:'+member.declared_type)
         elif kind=='byte-payload':need('current-pool-source',target==targets['string']);event['wireBytes']=4
+        elif interactive_tags:
+            from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
+            from scripts.game_data.memorypack.skill_gameplay_tag_array_sources import derive as tag_array_source
+            usage=derive_typed_usage_context(image,context['instructionRva'],label=LABEL+'.interactiveTags')
+            cap=tag_array_source(image,pins,typed_request=usage,call_target=target)
+            shape=cap['capabilities']['skill-root-gameplay-tag-array']
+            raw=bytes.fromhex(setters[n]['parameterTypeRecordHex'])
+            need('own-Interactive-tag-array-source-and-setter',cap['nativeInputs']==pins
+                and shape['elementType']=='Beyond.Gameplay.Core.GameplayTag'and shape['arrayReaderTargetRva']==target-base
+                and shape['arrayReaderMethodDefinition']==context['methodSpec'][0]and setters[n]['storedBytes']==8
+                and len(raw)==16 and raw[10:12]==bytes((29,0))
+                and image.pe.bytes_at_va(int.from_bytes(raw[:8],'little'),16)==bytes.fromhex(context['argumentRawHex']))
+            event.update(mode='typed-interactive-tag-array',actualSourceProved=True)
+            array_sources[str(n)]=cap
+            requirements.append(dict(memberIndex=n,fieldName=member.name,typeName=member.declared_type,
+                elementType=context['fullTypeName'],readMethod='ReadUnmanagedArray',methodDefinition=context['methodSpec'][0],
+                sourceTargetRva=target-base,context=context,countLimit=64,positiveGrammarAdmitted=False))
         elif primitive_array:
             from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
             from scripts.game_data.memorypack import module_unmanaged_array_sources as primitive_arrays
@@ -505,6 +557,49 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
             requirements.append(dict(memberIndex=n,fieldName=member.name,typeName=member.declared_type,
                 elementType=context['fullTypeName'],readMethod='ReadArray',methodDefinition=cap['arrayReaderMethodDefinition'],
                 sourceTargetRva=target-base,context=context,countLimit=4096,positiveGrammarAdmitted=False))
+        elif(reference_array and wrapper.wrapped_type in('Beyond.Gameplay.Actions.BoolGetterMultiAnd','Beyond.Gameplay.Actions.BoolGetterMultOr')
+                and n==7 and member.name=='_list'and member.declared_type=='Beyond.Gameplay.Actions.Param`1<bool>[]'):
+            from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
+            from scripts.game_data.memorypack import levelscript_vector_param_array_sources as param_arrays
+            need('own-Bool-Param-reference-array',context['typeKind']==21
+                and bytes.fromhex(context['argumentRawHex'])[10:12]==bytes((21,0)))
+            usage=derive_typed_usage_context(image,context['instructionRva'],label=LABEL+'.boolParamArray')
+            cap=param_arrays.derive_boolean_source(image,pins,typed_request=usage,call_target=target)
+            need('complete-independent-Bool-Param-array',param_arrays.validate_source(cap,pins)==base
+                and cap['typedRequest']==usage and cap['arrayReaderTargetRva']==target-base)
+            array_sources[str(n)]=cap;event.update(mode='typed-Param-reference-array',actualSourceProved=True)
+            requirements.append(dict(memberIndex=n,fieldName=member.name,typeName=member.declared_type,
+                elementType=context['fullTypeName'],readMethod='ReadArray',methodDefinition=cap['arrayReaderMethodDefinition'],
+                sourceTargetRva=target-base,context=context,countLimit=4096,positiveGrammarAdmitted=False))
+        elif(reference_array and wrapper.wrapped_type=='Beyond.Gameplay.Actions.ListMakeEntityPtr'
+                and n==7 and member.name=='_list'and member.declared_type=='Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>[]'):
+            from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
+            from scripts.game_data.memorypack import levelscript_entity_param_array_sources as entity_arrays
+            from scripts.game_data.codecs.levelscript.current_entity_param_array import validate
+            usage=derive_typed_usage_context(image,context['instructionRva'],label=LABEL+'.entityParamArray')
+            component=entity_arrays.derive(image,pins);cap=component['capabilities'][entity_arrays.CAPABILITY]
+            validate(cap)
+            need('own-complete-EntityPtr-Param-array',component['proof']['actualRequest']==usage
+                and cap['readerMethodDefinition']==context['methodSpec'][0]and cap['sourceTargetRva']==target-base
+                and component['proof']['actualInstruction']==event['instruction'])
+            array_sources[str(n)]=component;event.update(mode='typed-Param-reference-array',actualSourceProved=True)
+            requirements.append(dict(memberIndex=n,fieldName=member.name,typeName=member.declared_type,
+                elementType=context['fullTypeName'],readMethod='ReadArray',methodDefinition=cap['readerMethodDefinition'],
+                sourceTargetRva=target-base,context=context,countLimit=4096,positiveGrammarAdmitted=False))
+        elif reference_array and wrapper.wrapped_type=='Beyond.Gameplay.InteractiveTemplateData'and n==17 and member.name=='mountPoints'and context['fullTypeName']=='Beyond.Gameplay.View.NameMountPointDef':
+            from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
+            from scripts.game_data.memorypack.interactive_mount_array_sources import derive as mount_array_source
+            usage=derive_typed_usage_context(image,context['instructionRva'],label=LABEL+'.interactiveMounts')
+            cap=mount_array_source(image,pins,typed_request=usage,call_target=target)
+            raw=bytes.fromhex(setters[n]['parameterTypeRecordHex'])
+            need('own-Interactive-mount-array-setter',cap['nativeInputs']==pins and cap['arrayReaderTargetRva']==target-base
+                and cap['arrayReaderMethodDefinition']==context['methodSpec'][0]and setters[n]['storedBytes']==8
+                and len(raw)==16 and raw[10:12]==bytes((29,0))
+                and image.pe.bytes_at_va(int.from_bytes(raw[:8],'little'),16)==bytes.fromhex(context['argumentRawHex']))
+            event.update(mode='typed-interactive-value-array',actualSourceProved=True);array_sources[str(n)]=cap
+            requirements.append(dict(memberIndex=n,fieldName=member.name,typeName=member.declared_type,
+                elementType=context['fullTypeName'],readMethod='ReadArray',methodDefinition=context['methodSpec'][0],
+                sourceTargetRva=target-base,context=context,countLimit=4096,positiveGrammarAdmitted=False))
         elif reference_array:
             from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
             from scripts.game_data.memorypack.skill_reference_array_sources import derive as array_source
@@ -537,7 +632,10 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
             currentRspBytes=168,rspRelativeBaseOffset=73,baseAliasInstruction=address['baseAliasInstruction'],
             entryRspAliasInstruction=address['entryRspAliasInstruction'])
     if static_references:
-        if all(e['declaredType']==gait.TYPE for e in events if e.get('mode')=='typed-static-out-reference'):
+        if wrapper.wrapped_type in('Beyond.Gameplay.InteractiveTemplateData','Beyond.Gameplay.Core.SkillDataBundle','Beyond.Gameplay.Core.AbilitySystemForIntData','Beyond.Gameplay.Core.InteractiveTemplateVariant'):
+            from scripts.game_data.memorypack import interactive_dictionary_parent as interactive_parent
+            options['static_out_parent']=interactive_parent.parent_setup(image,rows,path,events,header_proof,base=base,parent_type=wrapper.wrapped_type)
+        elif all(e['declaredType']==gait.TYPE for e in events if e.get('mode')=='typed-static-out-reference'):
             options['static_out_parent']=gait.parent_setup(image,rows,path,events,header_proof,base=base)
         else:
             from scripts.game_data.memorypack import animation_extra_parent_sources as extra_parent
@@ -549,7 +647,7 @@ def derive_scope(image,pins,wrapper,targets,barrier,claim,enums,method,family,wi
         disabled_collector=base+targets['_disabledCollectorFlagRva'],**options)
     for event in events:
         n=event['memberIndex']
-        if str(n)in values and event.get('mode')in('buffered-inline-value','buffered-called-advance-color16','buffered-called-advance-value12','buffered-called-advance-int-vector12','buffered-called-advance-initial24','buffered-called-advance-posrot24'):
+        if str(n)in values and event.get('mode')in('buffered-inline-value','buffered-called-advance-color16','buffered-called-advance-float4','buffered-called-advance-raw16','buffered-called-advance-value12','buffered-called-advance-int-vector12','buffered-called-advance-initial24','buffered-called-advance-posrot24'):
             source=values[str(n)]['sourceProgram'];values[str(n)]['sourceProgram']=dict(source,sourceBytes=source['selectedBytes'],storedBytes=event['wireBytes'],
                 fullValueBitsStoredUnchanged=True,fieldStoreProgram=[s for s in program['fieldStores']if s['memberIndex']==n])
     result=dict(schema='endfield.generated-action-source-scope.v2',nativeInputs=dict(pins),wrapperName=wrapper.name,wrappedType=wrapper.wrapped_type,

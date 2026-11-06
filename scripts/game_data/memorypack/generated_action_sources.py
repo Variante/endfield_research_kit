@@ -7,6 +7,9 @@ entry/factory/setter implementation, an action union route or a whole owner.
 """
 from __future__ import annotations
 import json
+import copy
+from contextlib import contextmanager
+from contextvars import ContextVar
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
 from scripts.game_data.buff_frontiers_regenerate import _method_row,_static_usage_bytes
@@ -40,10 +43,18 @@ def _contexts(image,rows):
                 usage=derive_typed_usage_context(image,ec.va(row)-base,label=LABEL+'.context')
                 if(usage.get('typeName'),usage.get('methodName'))==('Beyond.SerializeFieldDictionary`2','DeserializeV2'):
                     from scripts.game_data.memorypack import animation_extra_dictionary_sources as extra
-                    if tuple(usage.get('classArguments',[]))in extra.DOMAINS:
+                    from scripts.game_data.memorypack import interactive_dictionary_sources as interactive
+                    if tuple(usage.get('classArguments',[]))in interactive.DOMAINS:
+                        request_context=interactive.request_context
+                    elif tuple(usage.get('classArguments',[]))in extra.DOMAINS:
                         request_context=extra.request_context
                     else:
-                        from scripts.game_data.memorypack.skill_gait_dictionary_sources import request_context
+                        from scripts.game_data.memorypack.skill_gait_dictionary_sources import request_context,KEY
+                        if tuple(usage.get('classArguments',[]))!=(KEY,'float'):
+                            raise ValueError(LABEL+'.unsupported-static-dictionary-context:'+str(dict(
+                                instructionRva=usage['instructionRva'],instructionHex=usage['instructionHex'],
+                                methodSpec=usage['methodSpec'],classArguments=usage.get('classArguments'),
+                                methodArguments=usage.get('methodArguments'))))
                     custom.append(request_context(image,ec.va(row)-base));continue
         chosen.append(row)
     return sorted(ec.contexts(image,chosen,allow_value_generic_arguments=True)+custom,key=lambda c:c['instructionRva']),skipped
@@ -65,18 +76,21 @@ def _claim(image,wrapper):
             fields=[f for f in image.metadata.fields_for(td)if not ctx.field_attributes(f.type_index)&16]
             need('enum-one-instance-backing',1,len(fields));field=fields[0]
             backing=ctx.type_name(field.type_index)
-            enum_kinds={'int':(8,'scalar32'),'uint':(9,'scalar32'),'long':(10,'scalar64'),
+            enum_kinds={'short':(6,'scalar16'),'ushort':(7,'scalar16'),'int':(8,'scalar32'),'uint':(9,'scalar32'),'long':(10,'scalar64'),
                 'ulong':(11,'scalar64'),'byte':(5,'raw-byte')}
             need('enum-owned-supported-backing',True,image.metadata.string(field.name_index)=='value__'and backing in enum_kinds)
             scalar.ordinary(image,ctx.type_pointer(field.type_index),enum_kinds[backing][0],LABEL+'.enum')
             enum_proofs.append(dict(typeName=declared,typeDefinition=td.index,backingType=backing,
                 backingTypeRawHex=image.pe.bytes_at_va(ctx.type_pointer(field.type_index),16).hex().upper()))
             kind=enum_kinds[backing][1]
+        elif declared in('Beyond.Optional`1<float>','Beyond.Optional`1<Beyond.Gameplay.Core.AoiRadiusEnum>',
+                'Beyond.Optional`1<Beyond.Gameplay.Core.FactionIndex>'):kind='value8:'+declared
+        elif declared=='Beyond.Optional`1<bool>':kind='value2:'+declared
         elif declared in('UnityEngine.LayerMask','Beyond.Gameplay.Core.GameplayTag','Beyond.Audio.AudioId'):kind='value4:'+declared
-        elif declared in('UnityEngine.Vector2','UnityEngine.Vector2Int','Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo','Beyond.Gameplay.Core.CharInteractPerform.HandIKParams'):kind='value8:'+declared
+        elif declared in('UnityEngine.Vector2','UnityEngine.Vector2Int','Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo','Beyond.Gameplay.Core.CharInteractPerform.HandIKParams','Beyond.Resource.StringPathHash'):kind='value8:'+declared
         elif declared in('UnityEngine.Vector3','UnityEngine.Vector3Int'):kind='value12:'+declared
-        elif declared=='UnityEngine.Quaternion':kind='value16:'+declared
-        elif declared=='UnityEngine.Color':kind='value16:'+declared
+        elif declared in('UnityEngine.Quaternion','Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData'):kind='value16:'+declared
+        elif declared in('UnityEngine.Color','UnityEngine.Vector4'):kind='value16:'+declared
         elif declared=='Beyond.AABB':
             from scripts.game_data.memorypack.generated_aabb_field_sources import owns_member
             need('exact-own-AABB-field',True,owns_member(wrapper.wrapped_type,name,declared))
@@ -84,7 +98,8 @@ def _claim(image,wrapper):
         elif declared in('Beyond.Gameplay.View.CameraControlStateInitialParam','Beyond.PosRot'):kind='value24:'+declared
         elif declared in('Beyond.Montage.AnimationClipAsyncInfo','Beyond.Gameplay.TrackingBounds'):kind='value36:'+declared
         elif declared=='Beyond.Gameplay.Core.TriggerShapeData':kind='value44:'+declared
-        elif declared in('Beyond.Gameplay.Core.BuffId','Beyond.Gameplay.Core.GlobalBuffId','Beyond.Gameplay.Core.GameplayTagQuery','Beyond.LangKey','Beyond.Gameplay.Core.SmartTargetSelectSetting','Cinemachine.CinemachineImpulseManager+EnvelopeDefinition','Beyond.Gameplay.BodyTypeDef','Beyond.Gameplay.View.Animation.AlphaBlend','Beyond.FAnimationCurve','Beyond.Gameplay.Core.EntityPtr','Beyond.Gameplay.Core.SkMorphPlaySetting'):kind='managed:'+declared
+        elif declared in('Beyond.Gameplay.Core.BuffId','Beyond.Gameplay.Core.GlobalBuffId','Beyond.Gameplay.Core.GameplayTagQuery','Beyond.LangKey','Beyond.Gameplay.Core.SmartTargetSelectSetting','Cinemachine.CinemachineImpulseManager+EnvelopeDefinition','Beyond.Gameplay.BodyTypeDef','Beyond.Gameplay.View.Animation.AlphaBlend','Beyond.FAnimationCurve','Beyond.Gameplay.Core.EntityPtr','Beyond.Gameplay.Core.SkMorphPlaySetting',
+                'Beyond.Optional`1<string>','Beyond.Optional`1<string[]>','Beyond.Optional`1<Beyond.Gameplay.Core.GameplayTag[]>','Beyond.Optional`1<Beyond.Gameplay.View.NameMountPointDef[]>'):kind='managed:'+declared
         elif declared=='System.Nullable`1<float>':kind='constructed:'+declared
         elif declared in('sbyte','short','ushort','char'):raise ValueError(LABEL+'.unsupported-primitive-source:'+declared)
         elif not ctx.is_value_type(declared):kind='reference:'+declared
@@ -146,7 +161,67 @@ def _events(image,claim,path,contexts,reader,targets):
     return events,requirements
 
 
+_PREPARATION=ContextVar('selected_generated_source_preparation',default=None)
+
+
+class _SourcePreparation:
+    """Initial small setup only; each consumer gets its own mutable caches.
+
+    Only validate_current_native_contract enters this scope, between its
+    complete reader-source entry snapshot and required exit snapshot. No
+    successful source/native admission escapes before those outer bookends.
+    """
+    def __init__(self,image,pins):
+        self.image=image;self.pins=copy.deepcopy(pins);self.value=None
+        self.producer=_prepare_fresh;self.code=getattr(self.producer,'__code__',None)
+        self.closed=False;self.hits=0;self.preparing=False
+
+    def check(self,image,pins):
+        need('preparation-scope-active',False,self.closed)
+        need('preparation-same-image',True,image is self.image)
+        need('preparation-same-inputs',self.pins,pins)
+        need('preparation-same-producer',True,_prepare_fresh is self.producer
+            and getattr(_prepare_fresh,'__code__',None)is self.code)
+
+    def prepare(self,image,pins):
+        self.check(image,pins);_publication_gate(image,pins)
+        if self.value is None:
+            need('preparation-not-recursive',False,self.preparing);self.preparing=True
+            try:
+                value=self.producer(image,pins)
+                self.check(image,pins);_publication_gate(image,pins)
+                self.value=copy.deepcopy(value)
+                return value
+            finally:self.preparing=False
+        self.hits+=1;value=copy.deepcopy(self.value)
+        self.check(image,pins);_publication_gate(image,pins)
+        return value
+
+    def close(self):
+        try:
+            self.check(self.image,self.pins);_publication_gate(self.image,self.pins)
+        finally:self.value=None;self.closed=True
+
+
+@contextmanager
+def _source_preparation_scope(image,pins):
+    # This private scope is intentionally not enabled by public derive() or
+    # validate_on_image(); its caller owns complete fresh source bookends.
+    scope=_SourcePreparation(image,pins);_publication_gate(image,pins)
+    token=_PREPARATION.set(scope)
+    try:yield scope
+    finally:
+        try:scope.close()
+        finally:_PREPARATION.reset(token)
+
+
 def _prepare(image,pins):
+    scope=_PREPARATION.get()
+    if scope is None or scope.closed:return _prepare_fresh(image,pins)
+    return scope.prepare(image,pins)
+
+
+def _prepare_fresh(image,pins):
     base=image.pe.image_base
     reference=json.loads((CONTRACTS_DIR/'skill_custom_root_motion_native.json').read_bytes())
     need('primitive-source-build',pins,reference['nativeInputs'])
@@ -186,8 +261,8 @@ def _primitive_sources(image,claim,path,reader,targets,offsets,*,contexts=None,p
     modes={'byte':'bool','raw-byte':'raw-byte','scalar32':'int32','scalar64':'int64','raw4':'float32','float64':'float64'}
     proved={};cache=targets['_primitiveCache']
     for index,(kind,row)in enumerate(zip(claim['anonymousReadOrder'],calls)):
-        if kind in('value8:UnityEngine.Vector2','value8:Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo','value4:Beyond.Audio.AudioId'):
-            from scripts.game_data.memorypack import skill_vector2_source,nominal_int32_value_sources,skill_ai_marker_value_sources
+        if kind in('value8:UnityEngine.Vector2','value8:Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo','value4:Beyond.Audio.AudioId','value8:Beyond.Resource.StringPathHash'):
+            from scripts.game_data.memorypack import skill_vector2_source,nominal_int32_value_sources,skill_ai_marker_value_sources,nominal_qword_value_sources
             position=next(i for i,r in enumerate(path)if ec.va(r)==ec.va(row))
             load=ec.last_write(path,position,'rdx')
             request=next((c for c in contexts or[]if load is not None and
@@ -195,7 +270,8 @@ def _primitive_sources(image,claim,path,reader,targets,offsets,*,contexts=None,p
             need('named-value-current-context',True,request is not None and pins is not None)
             target=control_transfer(row)['target']
             derive=(skill_vector2_source.derive if kind=='value8:UnityEngine.Vector2'else
-                skill_ai_marker_value_sources.derive if kind=='value8:'+skill_ai_marker_value_sources.TYPE else nominal_int32_value_sources.derive)
+                skill_ai_marker_value_sources.derive if kind=='value8:'+skill_ai_marker_value_sources.TYPE else
+                nominal_qword_value_sources.derive if kind=='value8:Beyond.Resource.StringPathHash' else nominal_int32_value_sources.derive)
             proved[index]=derive(image,pins,context=request,source_target=target)
             continue
         if kind not in modes:continue
@@ -242,24 +318,35 @@ def _derive_ec_rich_scope(image,pins,wrapper,targets,barrier,disabled_flag,claim
 
 
 def _derive(image,pins,wrapper_name,targets,barrier,disabled_flag):
+    result,_=_derive_with_source(image,pins,wrapper_name,targets,barrier,disabled_flag)
+    return result
+
+
+def _derive_with_source(image,pins,wrapper_name,targets,barrier,disabled_flag):
     base=image.pe.image_base;wrapper,=[w for w in image.memorypack_wrappers.values()if w.name==wrapper_name]
     claim,enums=_claim(image,wrapper);need('nonempty-byte-member-count',True,0<len(claim['members'])<250)
     targets=dict(targets);offsets=ec.source_offsets(image)
     method=_method_row(image,[0,wrapper_name,'Deserialize',1])
     primitive_param.reader_abi(image,NativeReferenceContext(image),image.metadata.methods[method[0]],wrapper)
     from scripts.game_data.memorypack.generated_owned_code_sources import source_family
-    family,windows,rows,partition=source_family(image,pins,entry_rva=method[3])
+    final=wrapper.members[-1]
+    setter=_method_row(image,[0,final.declaring_wrapper,'set___'+final.name+'__',1])
+    family,windows,rows,partition=source_family(image,pins,entry_rva=method[3],
+        tail_targets=tuple(dict.fromkeys((base+setter[3],base+barrier))))
     need('complete-family-decoded',False,any(r['text'].startswith('db ')for r in rows))
+    # A private same-call handoff of freshly decoded bytes, never a cached
+    # proof. Preserve fresh raw rows even if a source prover annotates rows.
+    selected_source=copy.deepcopy((family,windows,rows,partition))
     result=_derive_current_family(image,pins,wrapper,targets,barrier,disabled_flag,claim,enums,method,family,windows,rows,offsets,owned_partition=partition)
     if partition is not None:result['ownedCodePartition']=partition
-    return result
+    return result,selected_source
 
 
 def _derive_current_family(image,pins,wrapper,targets,barrier,disabled_flag,claim,enums,method,family,windows,rows,offsets,*,owned_partition=None):
     base=image.pe.image_base;wrapper_name=wrapper.name;count=len(claim['members'])
     header_proof,header=generated_header_sources.derive(image,rows,base+method[3],count,offsets,barrier,disabled_flag=disabled_flag,owned_partition=owned_partition)
     reader=header_proof['readerRegister']
-    if any(kind.startswith(('managed:','constructed:','value36:','value44:'))or kind in('value8:UnityEngine.Vector2Int','value24:Beyond.PosRot')
+    if any(kind.startswith(('managed:','constructed:','value36:','value44:'))or kind in('value8:UnityEngine.Vector2Int','value24:Beyond.PosRot','value16:Beyond.Gameplay.Core.AbilitySystemData+PlungingAttackData')
             or member['declaredType']=='Beyond.SerializeFieldDictionary`2<Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait,float>'
             for kind,member in zip(claim['anonymousReadOrder'],claim['members'],strict=True)):
         from scripts.game_data.memorypack.generated_inline_value_scope import derive_scope as inline_scope

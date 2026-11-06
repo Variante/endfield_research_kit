@@ -53,6 +53,10 @@ def bind_array(pins,join,array,element):
 
 
 def derive(image,pins):
+    return _derive_on_double(image,pins)
+
+
+def _derive_on_double(image,pins,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack.skill_root_record_sources import derive as plain_sources
     from scripts.game_data.memorypack.skill_root_additional_records import derive as additional_sources
@@ -61,7 +65,8 @@ def derive(image,pins):
     from scripts.game_data.memorypack.skill_root_children_codec import REFERENCE_RECORDS
     parent=plain_sources(image,pins,types=[PARENT])['records'][PARENT]
     child=additional_sources(image,pins,types=[ATTRIBUTE])['records'][ATTRIBUTE]
-    double=double_source(image,pins);bbjoin,=child['requiredChildJoins']
+    if double is None:double=double_source(image,pins)
+    need('same-attribute-double-inputs',pins,double['nativeInputs']);bbjoin,=child['requiredChildJoins']
     binding=bind_read_value(pins,bbjoin,double,'skill-blackboard-double')
     cabi=reference_record_abi(image,pins,child);pabi=reference_record_abi(image,pins,parent)
     order=lambda name:[dict(fieldName=n,kind=k,childCapability=c)for n,k,c in REFERENCE_RECORDS[name][1]]

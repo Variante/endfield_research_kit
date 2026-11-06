@@ -43,7 +43,7 @@ def _absolute(site,base):return[base+site[0],site[1]]
 
 def _inline_output_publication(g,*,base,disabled_flag,output,allocated):
     """Publish the whole fresh wrapper under the exact disabled collector flag."""
-    stores={('rsi','rbx'):'48891e',('r14','rdi'):'49893e',('rbx','rsi'):'488933',('rsi','rdi'):'48893e'}
+    stores={('rsi','rbx'):'48891e',('r14','rdi'):'49893e',('rbx','rsi'):'488933',('rsi','rdi'):'48893e',('rdi','rbx'):'48891f'}
     need('finite-inline-output-publication-roles',(output,allocated)in stores,
         dict(outputRegister=output,allocatedRegister=allocated))
     row=g.row();compare=row.get('memoryImmediateComparisonOperation',{});address=compare.get('sourceAddress',{})
@@ -159,7 +159,7 @@ def prefix_program(rows,entry,header,*,base,prehook,constructor,allocate,barrier
             else:
                 for _ in range(3):
                     row=g.row();need('direct-header-exact-arguments',row['text']in expected,row);expected.remove(row['text']);g.take()
-    elif g.row()['text']in(f'mov rdi, [{output}]',f'mov rbp, [{output}]',f'mov r15, [{output}]'):
+    elif g.row()['text']in(f'mov rdi, [{output}]',f'mov rbp, [{output}]',f'mov r15, [{output}]',f'mov rsi, [{output}]'):
         receiver=g.row()['text'].split()[1].rstrip(',')
         owned=prehook_source or{};program=owned.get('program',{})
         need('independent-own-inlined-prehook',not helper and type(owned.get('method'))is list and len(owned['method'])==4
@@ -183,26 +183,34 @@ def prefix_program(rows,entry,header,*,base,prehook,constructor,allocate,barrier
         if helper:expected.add(f'mov byte {local_operand}, 0x0')
         if header.get('ordinaryZeroFamily')is not None:
             g.take(f'mov rcx, [{output}]');expected.remove(f'mov rcx, [{output}]')
-            row=g.row();need('literal-ordinary-setup-EBP-zero',ec.raw(row)==bytes.fromhex('33ed')and row['text']=='xor ebp, ebp')
-            zero_entry=dict(register='rbp',instruction=ec.site(row,base));g.take()
+            row=g.row();r14_setup=ec.raw(row)==bytes.fromhex('4533f6')and row['text']=='xor r14d, r14d'
+            need('literal-ordinary-setup-zero',ec.raw(row)==bytes.fromhex('33ed')and row['text']=='xor ebp, ebp'
+                or r14_setup and(reader,output)==('rbx','rdi'))
+            zero_register='r14'if r14_setup else'rbp'
+            zero_entry=dict(register=zero_register,instruction=ec.site(row,base));g.take()
+            ability_zero_setup=(not r14_setup and(reader,output)==('rdi','rbx')and helper
+                and header.get('headerLocalDisplacement')==120 and header.get('nullFrameBytes')==104)
             while expected or g.row().get('memoryOperation',{}).get('direction')=='store':
                 row=g.row()
                 if row['text']in expected:expected.remove(row['text']);g.take();continue
                 move=row.get('memoryOperation',{});address=move.get('address',{});offset=address.get('displacement')
-                need('finite-owned-zero-stack-store',len(zero_locals)<4 and move.get('direction')=='store'
-                    and move.get('register')=='rbp'and move.get('memoryBytes')==8 and move.get('writesFlags')is False
+                long_home=ability_zero_setup and offset==136 and ec.raw(row)==bytes.fromhex('4889ac2488000000')
+                need('finite-owned-zero-stack-store',len(zero_locals)<(5 if ability_zero_setup else 4)and move.get('direction')=='store'
+                    and move.get('register')==zero_register and move.get('memoryBytes')==8 and move.get('writesFlags')is False
                     and address.get('base')=='rsp'and address.get('index')is None and not address.get('ripRelative')
-                    and type(offset)is int and 32<=offset<128 and offset not in[row['displacement']for row in zero_locals]
-                    and ec.raw(row)==bytes.fromhex('48896c24')+bytes((offset,)))
-                home=offset-header['nullFrameBytes'];header_home=local-header['nullFrameBytes']
+                    and type(offset)is int and(32<=offset<128 or long_home)and offset not in[row['displacement']for row in zero_locals]
+                    and(long_home or ec.raw(row)==bytes.fromhex('4c897424'if r14_setup else'48896c24')+bytes((offset,)))
+                    and(not r14_setup or offset in(32,104,120)))
+                home=offset-header['nullFrameBytes'];header_home=None if local is None else local-header['nullFrameBytes']
                 need('zero-stack-local-disjoint-owned-frame',(-header['nullFrameBytes']<=home and home+8<=0 or 8<=home and home+8<=40)
-                    and not home<=header_home<home+8
+                    and(header_home is None or not home<=header_home<home+8)
                     and all(home+8<=saved or saved+8<=home for saved in header['nullSavedHomes'].values())
                     and all(home+8<=old['entryRspOffset']or old['entryRspOffset']+8<=home for old in zero_locals))
                 from scripts.game_data.memorypack.generated_header_sources import _owned_zero_source
-                proof=_owned_zero_source(rows,entry,[ec.va(row)],'rbp',base,zero_graph)
+                proof=_owned_zero_source(rows,entry,[ec.va(row)],zero_register,base,zero_graph)
                 need('same-owned-setup-zero-definition',zero_entry['instruction'][0]in[at-base for at,h in proof['literalZeroInstructions']])
-                zero_locals.append(dict(instruction=ec.site(row,base),displacement=offset,entryRspOffset=home,zeroSource=proof));g.take()
+                zero_locals.append(dict(instruction=ec.site(row,base),displacement=offset,entryRspOffset=home,zeroSource=proof,
+                    **({'zeroProfile':'interactive-r14-null'}if r14_setup else{'zeroProfile':'interactive-rbp-null'}if ability_zero_setup else{})));g.take()
             need('complete-owned-initialized-zero-locals',bool(zero_locals))
         else:
             for _ in range(len(expected)):
@@ -227,7 +235,11 @@ def prefix_program(rows,entry,header,*,base,prehook,constructor,allocate,barrier
         g.call(base+header['helperTargetRva'])
         g.take('test al, al');g.branch(ff)
     else:
-        g.take(site=_absolute(header['bufferPredicate'],base));edge=g.row();flow=control_transfer(edge)
+        g.take(site=_absolute(header['bufferPredicate'],base))
+        for item in header.get('bufferSetup',[]):
+            from scripts.game_data.memorypack.interactive_dictionary_parent import validate_literal_zero
+            row=g.row();validate_literal_zero(row,item,base);g.take(site=_absolute(item['instruction'],base));zero_locals.append(item)
+        edge=g.row();flow=control_transfer(edge)
         need('same-inline-buffer-predicate',ec.site(edge,base)==header['bufferEdge']and flow['kind']=='conditional'and flow['conditionCode']in(12,13));g.take()
         if flow['conditionCode']==13:g.at=flow['target']
         for site in header['sourceProgram']:
@@ -491,7 +503,14 @@ def frame_program(path,*,header_local,source_locals=None,value_locals=None,hidde
         if text.startswith('add rsp, '):delta+=int(text.split(', ')[1],16);continue
         if zero_sites and ec.va(row)-local_base in zero_sites:
             item=zero_sites[ec.va(row)-local_base];displacement=item['displacement'];home=delta+displacement;proof=item.get('zeroSource',{})
-            if'literalZero'in item:
+            if item.get('zeroProfile')=='interactive-variant-literal-null':
+                from scripts.game_data.memorypack.interactive_dictionary_parent import validate_literal_zero
+                validate_literal_zero(row,item,base);need('same-variant-null-frame-home',home==item['entryRspOffset']==8)
+            elif item.get('zeroProfile')in('interactive-r14-null','interactive-rbp-null'):
+                from scripts.game_data.memorypack.interactive_dictionary_parent import validate_zero
+                validate_zero(row,item,base)
+                need('same-interactive-null-frame-home',home==item['entryRspOffset'])
+            elif'literalZero'in item:
                 from scripts.game_data.memorypack.animation_extra_parent_sources import validate_zero
                 validate_zero(row,item,base)
                 need('own-extra-prefix-zero-frame-home',home==item['entryRspOffset']
@@ -551,7 +570,8 @@ def frame_program(path,*,header_local,source_locals=None,value_locals=None,hidde
             named56=size==56 and item.get('nominalTypeName')=='Beyond.Gameplay.View.Animation.AlphaBlend'and type(item.get('nominalTypeDefinition'))is int
             from scripts.game_data.memorypack.skill_gait_dictionary_sources import TYPE as GAIT_DICTIONARY
             from scripts.game_data.memorypack.animation_extra_dictionary_sources import TYPES as EXTRA_DICTIONARIES
-            static8=size==8 and item.get('sourceAbi')=='void-byref-reference8'and item.get('nominalTypeName')in({GAIT_DICTIONARY}|set(EXTRA_DICTIONARIES))and type(item.get('nominalTypeDefinition'))is int and item.get('initiallyZeroLocalRequired')is True
+            from scripts.game_data.memorypack.interactive_dictionary_sources import TYPES as INTERACTIVE_DICTIONARIES
+            static8=size==8 and item.get('sourceAbi')=='void-byref-reference8'and item.get('nominalTypeName')in({GAIT_DICTIONARY}|set(EXTRA_DICTIONARIES)|set(INTERACTIVE_DICTIONARIES))and type(item.get('nominalTypeDefinition'))is int and item.get('initiallyZeroLocalRequired')is True
             if static8:
                 need('actual-static-output-local-was-initialized-null',home in zero_homes)
                 zero_homes.remove(home)
@@ -876,13 +896,16 @@ def _derive(image,pins,wrapper,wrappers,targets,barrier,disabled_flag,getter_cac
     base=image.pe.image_base
     if not wrapper.members:return _derive_zero(image,pins,wrapper,wrappers,barrier,getter_cache,
         formatter_prover=formatter_prover,direct_factory_prover=direct_factory_prover,typed_factory_prover=typed_factory_prover)
-    scope=actions._derive(image,pins,wrapper.name,targets,barrier,disabled_flag)
+    scope,selected_source=actions._derive_with_source(image,pins,wrapper.name,targets,barrier,disabled_flag)
     life=lifecycle._derive(image,pins,wrapper,wrappers,barrier,getter_cache,
         formatter_prover=formatter_prover,direct_factory_prover=direct_factory_prover,typed_factory_prover=typed_factory_prover)
     fields=scope['richSetters']if 'richProgram'in scope else[members._derive_setter(image,member,wrappers,barrier,getter_cache,pins=pins)for member in wrapper.members]
     construction=constructed_getter_join(life,fields)
     from scripts.game_data.memorypack.generated_owned_code_sources import source_family
-    family,windows,rows,partition=source_family(image,pins,entry_rva=scope['method'][3])
+    from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
+    _publication_gate(image,pins)
+    family,windows,rows,partition=selected_source
+    _publication_gate(image,pins)
     need('same-current-owned-reader-family',family==scope['family']and windows==scope['codeWindows'])
     need('same-fresh-code-table-partition',partition==scope.get('ownedCodePartition'))
     allocate=_wrapper_allocator(image,wrapper,life,rows)
@@ -943,18 +966,32 @@ def _derive_zero(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_pr
     headers=[]
     for i,row in enumerate(rows[:-1]):
         if ec.raw(row)[:1]==b'\xe8'and rows[i+1]['text']=='test al, al':headers.append(control_transfer(row)['target'])
-    need('zero-one-header-helper',len(headers)==1)
+    # A cold Advance return also has TEST AL,AL. Only a header's actual
+    # stack-output argument can identify an object-header helper.
+    headers=[target for target in headers if any(
+        control_transfer(row).get('target')==target
+        and (argument:=ec.last_write(rows,i,'rdx'))is not None
+        and argument['text'].startswith('lea rdx, [rsp+')
+        for i,row in enumerate(rows)if ec.raw(row)[:1]==b'\xe8')]
+    need('zero-at-most-one-header-helper',len(headers)<=1)
     symbols=dict(prehook=image.method_pointer_va(mm['OnDeserialized'])if 'OnDeserialized'in mm else None,constructor=image.method_pointer_va(mm['.ctor']),
         allocate=allocate,barrier=base+barrier,header=headers[0]if headers else None)
     header=None
     if headers:
         hf,hw,hr=ec.family(image,headers[0]-base);program=buff_profile_source.object_header_program(hr,headers[0],ec.source_offsets(image));by={ec.va(r):r for r in hr}
         header=dict(family=hf,codeWindows=hw,program=[ec.site(by[a],base)for a in program],wireBytes=1,nullMarker=255)
-    programs=[];zero_header=zero_header_program(rows,base+method[3],headers[0],base,barrier)
+    if headers:
+        zero_header=zero_header_program(rows,base+method[3],headers[0],base,barrier)
+    else:
+        from scripts.game_data.memorypack.generated_header_sources import derive as derive_header
+        zero_header,_=derive_header(image,rows,base+method[3],0,ec.source_offsets(image),barrier)
+        need('zero-exact-inline-header',zero_header['mode']=='inline')
+        header=dict(mode='inline',sourceProgram=zero_header['sourceProgram'],wireBytes=1,nullMarker=255)
+    programs=[]
     for existing,ff in((False,False),(True,False),(False,True),(True,True)):
         program=prefix_program(rows,base+method[3],zero_header,base=base,prehook=symbols['prehook'],constructor=symbols['constructor'],
             allocate=symbols['allocate'],barrier=symbols['barrier'],existing=existing,ff=ff,reader_reuse=True)
-        path=program.pop('selectedRows')+([]if ff else zero_return_program(rows,zero_header,base));frame=frame_program(path,header_local=zero_header['headerLocalDisplacement'])
+        path=program.pop('selectedRows')+([]if ff else zero_return_program(rows,zero_header,base));frame=frame_program(path,header_local=zero_header.get('headerLocalDisplacement'))
         typed=None
         if program['allocation']is not None:
             typed=derive_typed_usage_context(image,program['allocation']['usageInstruction'][0],label=LABEL+'.zeroWrapperAllocation');need('zero-exact-wrapper-allocation',(typed['tag'],typed['typeName'])==(1,wrapper.name))

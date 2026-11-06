@@ -264,7 +264,7 @@ def _managed_components(image,pins,complete):
     return derive_children(image,pins,complete)
 
 
-def _derive_with_transport(image,pins,transport,wrapper_names,*,reference_children=None,managed_value_children=None,selector_component=None):
+def _derive_with_transport(image,pins,transport,wrapper_names,*,reference_children=None,managed_value_children=None,selector_component=None,enum_component=None,_preserve_json_graph=False):
     """Internal same-image composition; public derive re-proves transport first."""
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack import generated_reader_sources as readers,pooled_source_helper
@@ -320,8 +320,8 @@ def _derive_with_transport(image,pins,transport,wrapper_names,*,reference_childr
     from scripts.game_data.memorypack import skill_gait_dictionary_components as gait
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.memorypack import skill_action_collection_sources as lists
-    enum_lists=None
-    if any(read['declaredType']in lists.ENUM_LISTS for proof in complete for read in proof['orderedSourceReads']):
+    enum_lists=enum_component
+    if enum_lists is None and any(read['declaredType']in lists.ENUM_LISTS for proof in complete for read in proof['orderedSourceReads']):
         from scripts.game_data.memorypack.enum_list_native_sources import derive as derive_enum_lists
         enum_lists=derive_enum_lists(image,pins)
     for owner in fresh['owners']:
@@ -380,7 +380,11 @@ def _derive_with_transport(image,pins,transport,wrapper_names,*,reference_childr
         for key in('typeName','referenceReaderMethodDefinition','referenceReaderTargetRva')}
         for typename,(capability,_,operation)in REFERENCES.items()if operation in used}
     _publication_gate(image,pins)
-    return json.loads(json.dumps(dict(schema=SCHEMA,status='validated-finite-current-action-components',nativeInputs=pins,
+    if _preserve_json_graph:
+        from scripts.game_data.memorypack.skill_contract_provenance import _normalize_json_graph
+        normalize=_normalize_json_graph
+    else:normalize=lambda value:json.loads(json.dumps(value))
+    return normalize(dict(schema=SCHEMA,status='validated-finite-current-action-components',nativeInputs=pins,
         selectedWrappers=names,programs=programs,routeRequirements=requirements,pendingRoutes=pending,
         requiredExternalCapabilities=sorted({cap for caps in requirements.values()for cap in caps}),
         requiredExternalCapabilityIdentities=identities,
@@ -396,7 +400,7 @@ def _derive_with_transport(image,pins,transport,wrapper_names,*,reference_childr
             conditional=__doc__+' Coherent initialized current contexts and selected matching callbacks, normal compatible allocation/cache/provider/collector/Win64 effects and stable disjoint buffered storage are required.',
             structuralOnly='Stored configuration; no action execution, ordering or gameplay effect follows.',
             unresolved=['unselected routes and pending children','runtime callback/provider/inflation selection',
-                'cold/refill/malformed/noncoherent paths','enclosing action lists/root/physical EOF']))))
+                'cold/refill/malformed/noncoherent paths','enclosing action lists/root/physical EOF'])))
 
 
 def derive(image,pins,*,wrapper_names=INITIAL_WRAPPERS):

@@ -82,8 +82,16 @@ def validate_eager_wrap_registration(image: Any, flow: dict, *, label: str) -> N
         from .formatter_constructed_guarded_registration import validate
         validate(image,flow,label=label)
         return
+    if flow.get('profile')=='direct-adapter-rbx-key-rcx-ready-statics.v1':
+        from .formatter_rbx_key_registration import validate
+        validate(image,flow,label=label)
+        return
     if flow.get('profile')=='direct-adapter-key-in-rcx-single-static-check.v1':
         from .formatter_key_receiver_registration import validate
+        validate(image,flow,label=label)
+        return
+    if flow.get('profile')=='direct-constructed-adapter-key-in-rcx-single-static-check.v1':
+        from .formatter_constructed_key_receiver_registration import validate
         validate(image,flow,label=label)
         return
     if flow.get('profile')=='stack-adapter-explicit-static-checks.v1':

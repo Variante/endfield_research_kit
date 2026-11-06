@@ -65,7 +65,7 @@ def compile_primitive_child(route,source,pins,*,value4,reference_children=None,t
     return dict(program=row,requiredCapabilities=result['requiredCapabilities'],childBindings=result['childBindings']),[]
 
 
-def _derive_with_dispatches(image,pins,dispatches,*,ec_component=None,buff_find_component=None,buff_filter_component=None,nested_component=None,geometry_component=None,wrapper_names=None):
+def _derive_with_dispatches(image,pins,dispatches,*,ec_component=None,buff_find_component=None,buff_filter_component=None,nested_component=None,geometry_component=None,wrapper_names=None,blackboard_components=None):
     """Internal same-image composition; the public entry derives dispatches fresh."""
     from scripts.game_data.memorypack import generated_reader_sources as readers
     from scripts.game_data.memorypack import buff_gameplay_tag_native,buff_layer_mask_native,pooled_source_helper
@@ -89,11 +89,18 @@ def _derive_with_dispatches(image,pins,dispatches,*,ec_component=None,buff_find_
     value4={}
     for owner in(buff_gameplay_tag_native,buff_layer_mask_native):
         proof=owner.validate_on_image(image,pins);value4[proof['typeName']]=proof
-    blackboard=skill_blackboard_double_sources.derive(image,pins)
-    reference_children={'Beyond.Blackboard+BlackboardDouble':blackboard,
-        'Beyond.Blackboard+BlackboardInt':skill_blackboard_int_sources.derive(image,pins),
-        'Beyond.Blackboard+BlackboardVector2':skill_blackboard_vector2_sources.derive(image,pins),
-        'Beyond.Blackboard+BlackboardVector3':skill_blackboard_vector3_sources.derive(image,pins)}
+    if blackboard_components is None:
+        blackboard_components={
+            'Beyond.Blackboard+BlackboardDouble':skill_blackboard_double_sources.derive(image,pins),
+            'Beyond.Blackboard+BlackboardInt':skill_blackboard_int_sources.derive(image,pins),
+            'Beyond.Blackboard+BlackboardVector2':skill_blackboard_vector2_sources.derive(image,pins),
+            'Beyond.Blackboard+BlackboardVector3':skill_blackboard_vector3_sources.derive(image,pins)}
+    need('same-finite-blackboard-component-scope',set(blackboard_components)=={
+        'Beyond.Blackboard+BlackboardDouble','Beyond.Blackboard+BlackboardInt',
+        'Beyond.Blackboard+BlackboardVector2','Beyond.Blackboard+BlackboardVector3'}
+        and all(component.get('nativeInputs')==pins for component in blackboard_components.values()))
+    reference_children=dict(blackboard_components)
+    blackboard=reference_children['Beyond.Blackboard+BlackboardDouble']
     if ec_component is None:
         from scripts.game_data.memorypack.skill_ec_components import derive
         ec_component=derive(image,pins)

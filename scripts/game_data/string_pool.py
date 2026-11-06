@@ -24,9 +24,9 @@ Page framing (exact on every page of the build that introduced it):
 Global index ``i`` resolves to page ``i // pageSize`` entry ``i % pageSize``,
 where ``pageSize`` is the shared count of every page but the last (direct:
 LevelConfig indices resolve to the old build's inline strings for the same
-level). ``StringPoolHashIndex.byte`` (``SHPI``) and ``StringPoolCounting.json``
-are not read; the hash index is an unresolved lookup accelerator and the
-counting file is developer statistics.
+level). The independent ``string_pool_aux`` reader closes the SHPI lookup
+index and counting statistics against these selected pages. Neither auxiliary
+file can replace a missing pool page or choose another string encoding.
 """
 
 from __future__ import annotations

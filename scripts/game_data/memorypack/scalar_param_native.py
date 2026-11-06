@@ -347,7 +347,10 @@ def parameter_setter(image: Any, instructions: list[list[Any]], *, name: str, sl
         if floating:need(label,'floatingStoreWidth',4,width)
         store = ((b'\xf3\x0f\x11\x48' if floating else b'\x88\x50' if width == 1 else b'\x48\x89\x50' if width == 8 else b'\x89\x50')
                  if name == 'constValue' else b'\x89\x50') + bytes((slot,))
-        expected = [b"\x48\x83\xec\x28", b"\x48\x8b\x41\x10", b"\x48\x85\xc0", None, None, b"\xcc", store, b"\x48\x83\xc4\x28", b"\xc3"]
+        null_after=bytes.fromhex(instructions[3][1])[:1]==b'\x74'
+        expected = [b"\x48\x83\xec\x28", b"\x48\x8b\x41\x10", b"\x48\x85\xc0", None,
+            *([store,b"\x48\x83\xc4\x28",b"\xc3",None,b"\xcc"] if null_after
+              else [None,b"\xcc",store,b"\x48\x83\xc4\x28",b"\xc3"])]
     program(image, instructions, expected, label + ".setter." + name)
     branch = bytes.fromhex(instructions[3][1])
     if name == "path":
@@ -357,9 +360,12 @@ def parameter_setter(image: Any, instructions: list[list[Any]], *, name: str, sl
         need(label, "pathBarrierTail", 0xE9, bytes.fromhex(instructions[9 if nonnull else 7][1])[0])
         need(label, "pathNullThrow", 0xE8, bytes.fromhex(instructions[4 if nonnull else 8][1])[0])
     else:
-        need(label, "nonNullStoreBranch", 0x75, branch[0])
-        need(label, "nonNullStoreTarget", instructions[6][0], instructions[3][0] + 2 + int.from_bytes(branch[1:], "little", signed=True))
-        need(label, "nullThrow", 0xE8, bytes.fromhex(instructions[4][1])[0])
+        need(label, "scalarGuardBranch", 0x74 if null_after else 0x75, branch[0])
+        need(label, "scalarGuardSize", 2, len(branch))
+        need(label, "scalarGuardTarget", instructions[7 if null_after else 6][0], instructions[3][0] + 2 + int.from_bytes(branch[1:], "little", signed=True))
+        throw=bytes.fromhex(instructions[7 if null_after else 4][1])
+        need(label,"scalarNullThrowOpcode",b'\xe8',throw[:1])
+        need(label,"scalarNullThrowSize",5,len(throw))
 
 
 def read_scalar_contract(path: Path, *, schema: str, type_name: str, codec_kind: str) -> dict[str, Any]:

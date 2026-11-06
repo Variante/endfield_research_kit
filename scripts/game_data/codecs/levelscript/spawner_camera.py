@@ -21,6 +21,7 @@ from typing import Any
 
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.levelscript_route_deserialize_native import validate
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "levelscript_spawner_camera_native.json"
@@ -42,7 +43,7 @@ def decode_route_at(
     """Decode one reviewed union at its exact cursor, bounded by ``limit``."""
     contract = _contract(contract_path)
     root = Path(game_root) if game_root is not None else None
-    audit = validate(contract_path=contract_path,
+    audit = validate_native(validate, contract_path=contract_path,
         gameassembly=root.parent/'GameAssembly.dll' if root else None,
         metadata=root/'il2cpp_data/Metadata/global-metadata.dat' if root else None)
     if audit.get('status') != 'validated':

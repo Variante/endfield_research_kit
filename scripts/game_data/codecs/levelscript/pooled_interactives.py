@@ -2,6 +2,7 @@
 import math
 from scripts.game_data.codecs.levelscript.param_graph import Reader as GraphReader,ParamGraphDecodeError
 from scripts.game_data.levelscript_interactive_native import validate
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 class LevelInteractiveCodecError(ValueError):pass
 class Reader(GraphReader):
  def key_value(self,field):
@@ -54,7 +55,7 @@ def decode_interactive_dictionary(data,cursor,*,strings=None,game_root=None,game
   if count==-1:return dict(status='null',count=None,entries=None),reader.offset
   if count not in(0,1):raise ParamGraphDecodeError(f'interactives:current-count-source-unproved,offset={start},actual={count},supported=0..1')
   if count:
-   audit=validate(game_root=game_root,gameassembly=gameassembly,metadata=metadata)
+   audit=validate_native(validate,game_root=game_root,gameassembly=gameassembly,metadata=metadata)
    if audit.get('status')!='validated':
     error=LevelInteractiveCodecError(f"interactives.nativeContract:offset={start},status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}");error.diagnostics=audit;raise error
   entries=[]

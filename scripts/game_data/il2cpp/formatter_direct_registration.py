@@ -32,8 +32,11 @@ def program(regions,entry):
         need('exact-warm-join',g.at,target)
         return cold
     allocation=usage('488b0d');g.take('48895c2430');allocate=g.relative('e8')
-    g.take('488bf8','4885c0');g.branch('74',False,1)
-    constructor=usage('488b15');g.take('488bc8');construct=g.relative('e8')
+    g.take('488bf8','4885c0')
+    direct_null=bytes(g.bytes.get(g.at+i,-1)for i in range(2))==bytes.fromhex('7506')
+    if direct_null:g.branch('75',True,1)
+    else:g.branch('74',False,1)
+    constructor=usage('488b15');g.take('488bcf'if direct_null else'488bc8');construct=g.relative('e8')
     system_type=usage('488b0d');key=usage('488b1d');type_init=initialized()
     g.take('33d2','488bcb');type_from_handle=g.relative('e8')
     provider=usage('488b0d');g.take('488bd8');provider_init=initialized()
@@ -75,9 +78,15 @@ def _derive_program(image,original,wrapper,start,helpers,source,*,profile,condit
     from scripts.game_data.memorypack.pointer_param import owned
     base=image.pe.image_base;md=image.metadata;ctx=NativeReferenceContext(image)
     need('literal-value-constructor-selection',bool,type(value_constructor))
-    need('explicit-static-class-roles',True,type(static_roles)is tuple and static_roles in(('systemType','provider'),('provider',)))
+    need('explicit-static-class-roles',True,type(static_roles)is tuple and static_roles in(('systemType','provider'),('provider',),()))
+    if not static_roles:
+        need('explicit-ready-statics-profile','direct-adapter-rbx-key-rcx-ready-statics.v1',profile)
+        need('explicit-ready-statics-conditions',True,source.get('explicitSystemTypeInitializedRequired')is True
+            and source.get('explicitProviderInitializedRequired')is True and source.get('staticRoles')==[]
+            and source.get('systemTypeClassUsagePresent')is False and source.get('providerClassUsagePresent')is False)
     if static_roles==('provider',):
-        need('single-static-class-explicit-profile','direct-adapter-key-in-rcx-single-static-check.v1',profile)
+        need('single-static-class-explicit-profile',True,profile in('direct-adapter-key-in-rcx-single-static-check.v1',
+            'direct-constructed-adapter-key-in-rcx-single-static-check.v1'))
         need('unobserved-System-Type-initialization-condition',True,source.get('explicitSystemTypeInitializedRequired'))
         need('single-static-class-owned-source-roles',['provider'],source.get('staticRoles'))
         need('no-fabricated-System-Type-class-usage',False,source.get('systemTypeClassUsagePresent'))
@@ -149,13 +158,14 @@ def derive(image,original,wrapper,candidates,helpers):
     found={};diagnostics=[]
     for candidate in candidates:
         if not candidate['rawHex'].lower().startswith('488b1d'):continue
-        start=candidate['siteRva']-47
-        if start<0:continue
-        try:
-            row=_derive(image,original,wrapper,start,helpers)
-            need('exact-selected-key-site',candidate['siteRva'],row['key']['instructionRva'])
-            found[start]=row
-        except(ValueError,KeyError,IndexError,TypeError)as error:diagnostics.append(str(error)[:600])
+        for distance in(47,53):
+            start=candidate['siteRva']-distance
+            if start<0:continue
+            try:
+                row=_derive(image,original,wrapper,start,helpers)
+                need('exact-selected-key-site',candidate['siteRva'],row['key']['instructionRva'])
+                found[start]=row
+            except(ValueError,KeyError,IndexError,TypeError)as error:diagnostics.append(str(error)[:600])
     if len(found)!=1:raise ValueError(LABEL+'.unique-source:matches='+str(len(found))+' diagnostics='+str(diagnostics[:4]))
     return next(iter(found.values()))
 

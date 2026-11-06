@@ -157,8 +157,9 @@ def base_setter_program(regions,entry,barrier):
 
 
 
-def dictionary_i32_program(regions,entry,s,offsets,*,count=2,new=True):
- if type(count)is not int or count not in(-1,0,1,2):raise ValueError('interactive.enum-dictionary-witness-count')
+def dictionary_i32_program(regions,entry,s,offsets,*,count=2,new=True,key_profile='int'):
+ if type(count)is not int or count not in(-1,0,1,2,3):raise ValueError('interactive.enum-dictionary-witness-count')
+ if key_profile not in('int','enum'):raise ValueError('interactive.enum-dictionary-key-profile')
  g=BytesPath(regions,entry);b=lambda v:bytes((v,)).hex();cur,rem,adv,used,total=(b(offsets[n])for n in('currentPtr','bufferLength','advancedCount','consumed','totalLength'))
  g.take('4c89442418','53','55','56','57','4154','4155','4157','4883ec60','4533ff','498bf1','837a'+rem+'04','4d8be0','488bda','4c897c2440','488be9','4489bc24a8000000','4c897c2438');g.branch('0f8c',False);g.take('488b43'+cur,'4c6328','44896c2430','8b7b'+rem,'83c7fc');g.branch('0f88',False);g.take('488343'+cur+'04','8343'+adv+'04','8343'+used+'04','897b'+rem,'486343'+used,'488b4b'+total,'482bc8','493bcd');g.branch('0f8c',False);g.take('4183fdff');g.branch('0f84',count==-1)
  if count==-1:
@@ -177,14 +178,18 @@ def dictionary_i32_program(regions,entry,s,offsets,*,count=2,new=True):
    if g.relative('488d3d')!=s['intCallback']:raise ValueError('Interactive.enum-key-callback')
    secondary=g.relative('488d2d');g.take('660f1f840000000000')
   for i in range(max(count,0)):
-   g.take('488b4620','488b88c0000000','488b4940','4883793800');g.branch('0f84',False);g.take('0f57c0','0f11442448','33c0','898424a8000000','4889442438','4d85f6');g.branch('0f84',False);g.take('498b0e');g.call(s['prepare']);g.take('498b06','4c8b9090010000','4c8b8898010000','4c3bd7');g.branch('0f85',False);g.take('837b'+rem+'04');g.branch('0f8c',False);g.take('488b43'+cur,'8b00','898424a8000000','8b7b'+rem,'83c7fc');g.branch('0f88',False);g.take('488343'+cur+'04','8343'+adv+'04','8343'+used+'04','897b'+rem,'4d85ed');g.branch('0f84',False);g.take('b905000000','4c8d4c2438','4c8bc3','498bd5');g.call(s['referenceDispatcher']);g.take('498b2c24','448bbc24a8000000','4c8b642438','4885ed');g.branch('0f84',False);g.take('488b4620','488b88c0000000','488b4148','4883782000');g.branch('0f84',False);g.take('488b4620','488b88c0000000','488b7948','488b4720','488b88c0000000','488b81c0000000','4883782000');g.branch('0f84',False);g.take('488b4720','4d8bc4','418bd7','488bcd','4c8b88c0000000','498b81c0000000','41b102','4889442420');g.call(s['enumTryInsert']);g.take('4c8b7c2440')
+   g.take('488b4620','488b88c0000000','488b4940','4883793800');g.branch('0f84',False);g.take('0f57c0','0f11442448','33c0','898424a8000000','4889442438','4d85f6');g.branch('0f84',False);g.take('498b0e');g.call(s['prepare']);g.take('498b06','4c8b9090010000','4c8b8898010000','4c3bd7');g.branch('0f85',key_profile=='enum')
+   if key_profile=='enum':g.take('4c3bd5');g.branch('0f84',True)
+   g.take('837b'+rem+'04');g.branch('0f8c',False);g.take('488b43'+cur,'8b00','898424a8000000','8b7b'+rem,'83c7fc');g.branch('0f88',False);g.take('488343'+cur+'04','8343'+adv+'04','8343'+used+'04','897b'+rem,'4d85ed');g.branch('0f84',False);g.take('b905000000','4c8d4c2438','4c8bc3','498bd5');g.call(s['referenceDispatcher']);g.take('498b2c24','448bbc24a8000000','4c8b642438','4885ed');g.branch('0f84',False);g.take('488b4620','488b88c0000000','488b4148','4883782000');g.branch('0f84',False);g.take('488b4620','488b88c0000000','488b7948','488b4720','488b88c0000000','488b81c0000000','4883782000');g.branch('0f84',False);g.take('488b4720','4d8bc4','418bd7','488bcd','4c8b88c0000000','498b81c0000000','41b102','4889442420');g.call(s['enumTryInsert']);g.take('4c8b7c2440')
    if g.relative('488d3d')!=s['intCallback']:raise ValueError('Interactive.enum-key-repeat-callback')
    g.take('4c8ba424b0000000')
    if g.relative('488d2d')!=secondary:raise ValueError('Interactive.enum-key-repeat-secondary')
    g.take('41ffc7','4c897c2440','443b7c2430');g.branch('0f8c',i+1<count)
   g.take('4c8bb424a0000000')
  g.take('4883c460','415f','415d','415c','5f','5e','5d','5b','c3')
- return dict(selectedBytes=g.seen,count=count,newDictionary=new,keyWireBytes=4,valueBytes=8,inlineAddBehavior=2,keyCallback=None if count<1 else s['intCallback'],normalReturn=True,boundary='Exact current canonical Int32/reference Dictionary source with selected initialized matched32-bit key callback and actual owned typed K/V contexts; independently typed enum32 caller and normal provider/comparer/Initialize/Clear/TryInsert effects required. Positive values use independently gated KV-list grammar. No actual closed runtime inflater/default-selection identity is asserted.')
+ result=dict(selectedBytes=g.seen,count=count,newDictionary=new,keyWireBytes=4,valueBytes=8,inlineAddBehavior=2,keyCallback=None if count<1 else s['intCallback'],normalReturn=True,boundary='Exact current canonical Int32/reference Dictionary source with selected initialized matched32-bit key callback and actual owned typed K/V contexts; independently typed enum32 caller and normal provider/comparer/Initialize/Clear/TryInsert effects required. Positive values use independently gated KV-list grammar. No actual closed runtime inflater/default-selection identity is asserted.')
+ if key_profile=='enum':result.update(keyProfile='enum',keyCallback=None if count<1 else secondary,primaryCallbackMatched=False,secondaryCallbackMatched=count>0)
+ return result
 
 
 

@@ -109,9 +109,12 @@ def derive_one(image,pins,*,type_name):
         return dict(typeName=type_name,valueType=nominal['valueType'],status='outside-enum-source-scope',
             nativeInputs=dict(pins),nominal=nominal,sourceAdmitted=False,canonicalAdapterAdmitted=False,
             parentFieldAdmitted=False,wholeOwnerAdmitted=False)
-    if type_name=='Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.BitsetType>':
+    from scripts.game_data.memorypack.levelscript_bitset_param_sources import TYPES as INLINE_ENUMS
+    if type_name in INLINE_ENUMS:
         from scripts.game_data.memorypack.levelscript_bitset_param_sources import derive as derive_bitset
-        proof=derive_bitset(image,pins)
+        proof=derive_bitset(image,pins,type_name=type_name)
+        need('same-owned-inline-enum-nominal',proof.get('typeName')==type_name
+             and proof.get('valueType')==nominal['valueType']and proof.get('nativeInputs')==pins)
     else:
         options=dict(value_type=nominal['valueType'])
         if nominal['enumByteProfile']:options['enum_byte']=True

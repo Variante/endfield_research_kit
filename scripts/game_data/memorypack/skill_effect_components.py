@@ -73,6 +73,10 @@ def derive_reference(image,pins):
 
 
 def derive(image,pins):
+    return _derive_on_children(image,pins)
+
+
+def _derive_on_children(image,pins,*,double_component=None,vector_component=None):
     """Compose the complete finite Effect grammar on the selected image."""
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
@@ -85,7 +89,11 @@ def derive(image,pins):
     cap=terrain.bind_array(pins,array['typedRequest'],array['arrayReaderTargetRva'],array,element)
     array_child=dict(nativeInputs=pins,capabilities={**element['capabilities'],ARRAY:cap},proof=dict(array=array,element=element))
     double='Beyond.Blackboard+BlackboardDouble';vector='Beyond.Blackboard+BlackboardVector3'
-    children={double:skill_blackboard_double_sources.derive(image,pins),vector:skill_blackboard_vector3_sources.derive(image,pins)}
+    if double_component is None:double_component=skill_blackboard_double_sources.derive(image,pins)
+    if vector_component is None:vector_component=skill_blackboard_vector3_sources.derive(image,pins)
+    need('same-selected-effect-double-inputs',pins,double_component['nativeInputs'])
+    need('same-selected-effect-vector-inputs',pins,vector_component['nativeInputs'])
+    children={double:double_component,vector:vector_component}
     references={double:('skill-blackboard-double','blackboard-double','scalar-payload'),
         vector:(skill_blackboard_vector3_sources.CAPABILITY,'blackboard-vector3','blackboard-vector3')}
     requests={read['memberIndex']:derive_typed_usage_context(image,read['context']['instructionRva'],label='skillEffectComponents')

@@ -59,12 +59,21 @@ def _derive_parent(image,pins,*,value_type,reader_method,constant_kind,constant_
  integer=_record(image,calls['idRef']);scalar.integer_source(image,integer,offsets,'currentReferenceParam.integer')
  path=pooled_source_helper.validate_on_image(image,calls['path'],pins)
  def tail(record):
-  at,raw=record['instructions'][-1];raw=bytes.fromhex(raw);need('owned-reference-reference-tail',raw[:1]==b'\xe9')
+  # allocation_bridge has independently checked every split-constructor
+  # instruction and its fixed normal barrier tail, including cold suffixes.
+  if record is records['.ctor']:index=14 if len(record['instructions'])==23 else 21
+  elif record is records['CreateInstance']:index=21
+  else:index=9 if bytes.fromhex(record['instructions'][3][1])==b'\x75\x06' else 7
+  at,raw=record['instructions'][index];raw=bytes.fromhex(raw);need('owned-reference-reference-tail',len(raw)==5 and raw[:1]==b'\xe9')
   return base+at+5+int.from_bytes(raw[1:],'little',signed=True)
  barrier=tail(records['set___path__'])
  need('same-reference-output-and-reference-field-barriers',all(p['barrierTargetVa']==barrier for p in(programs[0],programs[2],programs[3]))
   and all(tail(records[n])==barrier for n in(('.ctor','CreateInstance','set___constValue__')if constant_kind in(18,21)else('.ctor','CreateInstance'))))
- return dict(parent=records['Deserialize'],typedRead=usage,ownedMethods=records,parameter=parameter,programs=programs,
+ parent_record=records['Deserialize']
+ if programs[0].get('savedEntryHomes')==dict(rbx=[24,32],rsi=[16,24]):
+  parent_record=dict(parent_record,instructions=[[int(r['va'],16)-base,bytes.fromhex(r['bytes']).hex().upper()]for r in body['rows']],
+   ownedFamilyWindows=body['windows'])
+ return dict(parent=parent_record,typedRead=usage,ownedMethods=records,parameter=parameter,programs=programs,
   wrapperAllocation=wrapper_usage,integerSource=integer,pooledPath=path,parentHeader=header,barrierTargetRva=barrier-base,
   sourceWindows=body['windows'],sourceRegions=[[a,raw.hex().upper()]for a,raw in body['regions']])
 

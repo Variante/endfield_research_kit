@@ -92,10 +92,11 @@ def prepared_buff_ptr_audit(operation,*,game_root,strings):
 
 @contextmanager
 def current_buff_ptr_params(*,game_root,strings):
+ from scripts.game_data.memorypack.operation_native_validation import _validate_with_reader_snapshot
  if game_root is None or strings is None or not hasattr(strings,'root'):raise BuffPtrOperationError(LABEL+'.operation:explicit-root-and-export-pool-required')
  root=Path(game_root).resolve();sources=snapshot_complete_reader_inputs();pool_root=Path(strings.root).parent
  pool=snapshot_string_pool_inputs(pool_root)
- audit=validate_buff_ptr_param_native_contract(game_root=root)
+ audit=_validate_with_reader_snapshot(validate_buff_ptr_param_native_contract,reader_inputs=sources,gameassembly=root.parent/'GameAssembly.dll',metadata=root/'il2cpp_data/Metadata/global-metadata.dat')
  if audit.get('status')!='validated' or any(audit.get(key)!=value for key,value in CAPABILITIES.items()):
   raise BuffPtrOperationError(LABEL+'.operation:enter:'+str(audit)[:1400])
  selected=audit['nativeSources']
@@ -104,7 +105,7 @@ def current_buff_ptr_params(*,game_root,strings):
  try:yield operation
  finally:
   operation.active=False
-  after=validate_buff_ptr_param_native_contract(gameassembly=Path(selected['GameAssembly.dll']),metadata=Path(selected['global-metadata.dat']))
+  after=_validate_with_reader_snapshot(validate_buff_ptr_param_native_contract,reader_inputs=sources,gameassembly=Path(selected['GameAssembly.dll']),metadata=Path(selected['global-metadata.dat']))
   if audit!=after:raise BuffPtrOperationError(LABEL+'.operation:exit-proof-drift:'+str(after)[:1400])
   current=snapshot_complete_reader_inputs()
   if sources!=current:raise BuffPtrOperationError(LABEL+'.operation:reader-source-drift:'+str(reader_input_changes(sources,current)))

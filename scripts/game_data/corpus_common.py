@@ -1,6 +1,8 @@
 """Provenance and output helpers shared by the installed-corpus gates."""
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import tempfile
 from pathlib import Path
@@ -93,6 +95,49 @@ def atomic_write_text(path: Path, text: str) -> None:
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
             stream.write(text)
+        os.replace(temporary_name, path)
+    except BaseException:
+        try:
+            os.unlink(temporary_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def atomic_write_json(path: Path, value: Any, *, sort_keys: bool = False,
+                      skip_unchanged: bool = False) -> None:
+    """Stream canonical corpus JSON; never materialize a multi-GB document.
+
+    The completed temporary file replaces its destination atomically. Identical
+    canonical bytes preserve the existing file and its cache timestamp.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        digest = hashlib.sha256()
+        with os.fdopen(descriptor, "wb") as stream:
+            pending = []
+            characters = 0
+            def write_pending():
+                nonlocal characters
+                block = "".join(pending).encode("utf-8")
+                stream.write(block)
+                digest.update(block)
+                pending.clear()
+                characters = 0
+            encoder = json.JSONEncoder(ensure_ascii=False, sort_keys=sort_keys, indent=2)
+            for fragment in encoder.iterencode(value):
+                pending.append(fragment)
+                characters += len(fragment)
+                if characters >= 1024 * 1024:
+                    write_pending()
+            pending.append("\n")
+            write_pending()
+        if skip_unchanged and path.is_file() and path.stat().st_size == Path(temporary_name).stat().st_size:
+            with path.open("rb") as previous:
+                if hashlib.file_digest(previous, "sha256").digest() == digest.digest():
+                    os.unlink(temporary_name)
+                    return
         os.replace(temporary_name, path)
     except BaseException:
         try:

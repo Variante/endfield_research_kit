@@ -32,15 +32,18 @@ def snapshot_string_pool_inputs(json_dir: Path) -> dict[str, Any]:
 
 def complete_reader_input_paths() -> list[Path]:
     """Discover current paths afresh, including newly added schema inputs."""
-    raw_root = REPO_ROOT / "scripts/game_data"
+    repo_root = REPO_ROOT.resolve()
+    raw_root = repo_root / "scripts/game_data"
     paths = {path.resolve() for path in raw_root.rglob("*")
-             if path.is_file() and path.suffix in {".py", ".json"}}
-    paths.update(path.resolve() for path in local_dependency_paths(["scripts.game_data.levelscript_binary"]))
+             if path.suffix in {".py", ".json"} and path.is_file()}
+    # The dependency collector already returns resolved paths. Re-resolving
+    # each path and the repository root costs thousands of Windows stat calls.
+    paths.update(local_dependency_paths(["scripts.game_data.levelscript_binary"]))
     paths.update((METADATA_HELPER_PATH.resolve(), NATIVE_MAPPER_PATH.resolve()))
     for folder in {METADATA_HELPER_PATH.parent, NATIVE_MAPPER_PATH.parent}:
         paths.update(path.resolve() for path in folder.rglob("*.py") if path.is_file())
     for path in paths:
-        path.relative_to(REPO_ROOT.resolve())
+        path.relative_to(repo_root)
         if not path.is_file():
             raise ValueError(f"levelscript-reader-inputs:missing-source:{path}")
     return sorted(paths)
@@ -62,9 +65,14 @@ def _snapshot_complete_reader_inputs_fresh() -> dict[str, Any]:
     """Hash the entire current path set; saved path lists never define scope."""
     rows = []
     for path in complete_reader_input_paths():
-        raw = path.read_bytes()
-        rows.append({"path": path.as_posix(), "length": len(raw),
-                     "sha256": hashlib.sha256(raw).hexdigest().upper()})
+        digest = hashlib.sha256()
+        length = 0
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+                length += len(block)
+        rows.append({"path": path.as_posix(), "length": length,
+                     "sha256": digest.hexdigest().upper()})
     return {"schema": SCHEMA, "scope": "complete-raw-package-plus-external-reader-dependencies",
             "files": rows}
 
@@ -88,5 +96,21 @@ def reader_input_changes(before: dict[str, Any], after: dict[str, Any], *, limit
 def require_current_reader_inputs(recorded: Any) -> dict[str, Any]:
     current = snapshot_complete_reader_inputs()
     if recorded != current:
-        raise ValueError("levelscript-reader-inputs:complete-current-snapshot-mismatch")
+        valid_rows = isinstance(recorded, dict) and isinstance(recorded.get("files"), list) and all(
+            isinstance(row, dict) and isinstance(row.get("path"), str) for row in recorded["files"]
+        )
+        changes = reader_input_changes(recorded, current) if valid_rows else {
+            "recordedShape": type(recorded).__name__, "expected": "complete reader snapshot with file rows"
+        }
+        diagnostic = {"validator": "levelscript-reader-inputs",
+                      "check": "complete-current-snapshot-mismatch", **changes}
+        detail = f"changedFiles={changes.get('changedFiles', 'invalid-recorded-snapshot')}"
+        first = next(iter(changes.get("changes", [])), None)
+        if first:
+            detail += (f"; first={first['path']}; change={first['change']}; "
+                       f"expectedSha256={(first['expected'] or {}).get('sha256')}; "
+                       f"actualSha256={(first['actual'] or {}).get('sha256')}")
+        error = ValueError("levelscript-reader-inputs:complete-current-snapshot-mismatch: " + detail)
+        error.diagnostic = diagnostic
+        raise error
     return current

@@ -15,6 +15,8 @@ CAP_SCHEMA = 'endfield.generated-actionmap-route-capability.v1'
 LABEL = 'generatedActionmapRoute'
 OPERATIONS = frozenset(('bool-byte', 'byte', 'scalar32', 'scalar64-bits',
                        'float32-bits', 'float64-bits', 'byte-payload', 'condition-param', 'actionmap-param-output', 'actionmap-param-array'))
+CURRENT_REVIEWED=frozenset({('GetterBase','Beyond.MemoryPack.Beyond_Gameplay_Actions_BoolGetterMultiAndForMemoryPack'),
+    ('GetterBase','Beyond.MemoryPack.Beyond_Gameplay_Actions_BoolGetterMultOrForMemoryPack')})
 
 
 def need(check, value):
@@ -29,6 +31,10 @@ def select_routes(image, layouts, requests):
     need('reviewed-layout-schema', layouts.get('schema') == 'endfield.action-map-layouts.v5')
     reviewed = {(row['family'], row['wrapperName']) for row in layouts['layouts']}
     need('distinct-reviewed-layouts', len(reviewed) == len(layouts['layouts']))
+    # Restored residual declarations still require the independent complete
+    # current source bridge; an existing name supplies no grammar permission.
+    residual = {(row['family'], row['wrapperName']) for row in layouts['layouts']
+                if row.get('nativeGate') == 'levelscript_residual_routes_native'}
     inventory = list(image.memorypack_wrappers.values())
     wrappers = {wrapper.type_definition: wrapper for wrapper in inventory}
     need('distinct-current-wrapper-identities', len(wrappers) == len(inventory)
@@ -48,7 +54,7 @@ def select_routes(image, layouts, requests):
             need('literal-actual-union-tag', type(entry['tag']) is int and 0 <= entry['tag'] <= 65535)
             wrapper = wrappers[entry['typeDefinition']]
             need('same-actual-wrapper-definition', wrapper.name == entry['wrapperName'])
-            if (family, wrapper.name) in reviewed:
+            if (family, wrapper.name) in reviewed and (family, wrapper.name) not in residual|CURRENT_REVIEWED:
                 continue
             routes[(family, entry['tag'])] = dict(family=family, tag=entry['tag'], **_declaration(wrapper),
                 unionIdentity=dict(dispatcherVa=switch['dispatcherVa'], tableVa=switch['tableVa'],
@@ -57,7 +63,7 @@ def select_routes(image, layouts, requests):
     return switches, [routes[(r['family'], r['tag'])] for r in requests]
 
 
-def compile_route(route, source, pins, *, param_children, typed_requests, pooled_sources, array_children=None):
+def compile_route(route, source, pins, *, param_children, typed_requests, pooled_sources, array_children=None, source_route=None):
     """Pure composition; native authority belongs only to fresh derive below."""
     from scripts.game_data.memorypack.generated_record_components import compile_member_program
     from scripts.game_data.memorypack.levelscript_action_route_sources import _join_source
@@ -65,16 +71,21 @@ def compile_route(route, source, pins, *, param_children, typed_requests, pooled
     from scripts.game_data.memorypack import levelscript_action_output_components as output
     from scripts.game_data.memorypack.levelscript_action_output_bindings import _capability as output_capability
     from scripts.game_data.memorypack import levelscript_vector_param_array_sources as vector_arrays
-    _join_source(route, source, pins)
+    from scripts.game_data.memorypack import levelscript_boolean_param_array_sources as boolean_arrays
+    _join_source(route if source_route is None else source_route, source, pins)
+    if source_route is not None:
+        need('same-complete-nested-child-declarations',route['memberCount']==source_route['memberCount']
+            and [(m['name'],m['declaredType'])for m in route['members']]==[(m['name'],m['declaredType'])for m in source_route['members']])
     references = {}
     params = {}
     arrays={};array_children={}if array_children is None else array_children
     for index,component in array_children.items():
+        selected=boolean_arrays if component.get('schema')==boolean_arrays.SCHEMA else vector_arrays
         need('exact-finite-array-child',type(index)is int and index==7
-            and source['orderedSourceReads'][index]['declaredType']==vector_arrays.TYPE)
-        cap=vector_arrays.validate_component(component,pins)
-        arrays[vector_arrays.TYPE]=(vector_arrays.CAPABILITY,vector_arrays.WIRE,vector_arrays.CAPABILITY)
-        params[vector_arrays.CAPABILITY]=dict(componentSchema=component['schema'],capability=cap)
+            and source['orderedSourceReads'][index]['declaredType']==selected.TYPE)
+        cap=selected.validate_component(component,pins)
+        arrays[selected.TYPE]=(selected.CAPABILITY,selected.WIRE,selected.CAPABILITY)
+        params[selected.CAPABILITY]=dict(componentSchema=component['schema'],capability=cap)
     for name, component in param_children.items():
         if component.get('schema')==output.SCHEMA:
             key=output.CAP_PREFIX+name;cap,_=output_capability(component,key);wire=output.WIRE
@@ -94,7 +105,7 @@ def compile_route(route, source, pins, *, param_children, typed_requests, pooled
              and proof.get('wireEncoding') == 'int32-pool-index'
              and proof.get('sourceHelpers') == [read['sourceTargetRva']])
     program, pending = compile_member_program(source, pins,
-        wrapper_name=route['wrapperName'], type_name=route['typeName'], value4={},
+        wrapper_name=(source_route or route)['wrapperName'], type_name=(source_route or route)['typeName'], value4={},
         references=references, reference_children=param_children, typed_requests=typed_requests,
         reference_binder=bind_reference,arrays=arrays,array_children=array_children)
     if pending:
@@ -130,6 +141,7 @@ def derive_many(image, pins, *, requests, layout_path=LAYOUT_PATH, progress=None
     from scripts.game_data.memorypack import levelscript_action_param_registry as registry_owner
     from scripts.game_data.memorypack import levelscript_action_output_components as output_owner
     from scripts.game_data.memorypack import levelscript_vector_param_array_sources as vector_arrays
+    from scripts.game_data.memorypack import levelscript_boolean_param_array_sources as boolean_arrays
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.memorypack.levelscript_action_route_sources import _join_source
     need('bounded-distinct-route-selectors', type(requests) is list and 0 < len(requests) <= 256
@@ -140,8 +152,12 @@ def derive_many(image, pins, *, requests, layout_path=LAYOUT_PATH, progress=None
     path = Path(layout_path)
     raw = path.read_bytes()
     switches, selected = select_routes(image, json.loads(raw), requests)
-    sources = generated_reader_sources.derive_many(image, pins, [r['wrapperName'] for r in selected])
-    need('same-fresh-source-batch', sources.get('nativeInputs') == pins and len(sources['owners']) == len(selected))
+    from scripts.game_data.memorypack import levelscript_set_buff_route_sources as nested
+    nested_routes={i for i,r in enumerate(selected)if r['family']=='ActionBase'
+        and r['wrapperName']==nested.WRAPPER and r['typeName']==nested.TYPE}
+    ordinary=[r for i,r in enumerate(selected)if i not in nested_routes]
+    sources = generated_reader_sources.derive_many(image, pins, [r['wrapperName'] for r in ordinary])if ordinary else dict(nativeInputs=pins,owners=[])
+    need('same-fresh-source-batch', sources.get('nativeInputs') == pins and len(sources['owners']) == len(ordinary))
     names = sorted({read['declaredType'] for owner in sources['owners']
                     if owner.get('status') == 'complete-reader-source-proved'
                     for read in owner['proof']['orderedSourceReads'] if read['declaredType'].startswith(PREFIX)
@@ -157,7 +173,13 @@ def derive_many(image, pins, *, requests, layout_path=LAYOUT_PATH, progress=None
         schema=output_owner.SCHEMA,nativeInputs=pins,capabilities={},owners=[],parentFieldAdmitted=False,wholeOwnerAdmitted=False)
     owners = []
     pool = {}
-    for route, outcome in zip(selected, sources['owners'], strict=True):
+    outcomes=iter(sources['owners'])
+    for index,route in enumerate(selected):
+        if index in nested_routes:
+            owners.append(nested.derive(image,pins,route))
+            if progress is not None:progress(dict(stage='compiled-generated-actionmap-route',family=route['family'],tag=route['tag'],status=owners[-1]['status']))
+            continue
+        outcome=next(outcomes)
         try:
             if outcome.get('status') != 'complete-reader-source-proved':
                 raise ValueError(LABEL+'.complete-selected-caller:'+str(outcome.get('reason',outcome.get('status')))[:1800])
@@ -169,9 +191,10 @@ def derive_many(image, pins, *, requests, layout_path=LAYOUT_PATH, progress=None
             children.update(output_children);usages.update(output_usages)
             array_children={}
             for read in source['orderedSourceReads']:
-                if read['declaredType']==vector_arrays.TYPE:
+                if read['declaredType']in(vector_arrays.TYPE,boolean_arrays.TYPE):
                     index=read['memberIndex']
-                    array_children[index]=vector_arrays.derive_member(image,pins,source,member_index=index)
+                    selected_array=boolean_arrays if read['declaredType']==boolean_arrays.TYPE else vector_arrays
+                    array_children[index]=selected_array.derive_member(image,pins,source,member_index=index)
                     usage=derive_typed_usage_context(image,read['context']['instructionRva'],label=LABEL+'.vectorParamArray')
                     need('disjoint-array-and-reference-requests',index not in usages)
                     usages[index]=usage

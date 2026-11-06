@@ -13,7 +13,9 @@ def program(regions,entry,*,base_slot,cache_slot,cast,barrier,refresh):
             and refresh in('empty','different')and type(cast)is int and type(barrier)is int):
         raise ValueError('generatedSplitCacheRefresh.scope')
     g=BytesPath(regions,entry);g.take('4053','4883ec20');flag=g.relative('803d')+1
-    g.take('00','488bd9');g.branch('74',False,1)
+    g.take('00','488bd9')
+    if g.bytes.get(g.at)==0x75:g.branch('75',True,1)
+    else:g.branch('74',False,1)
     b=bytes((base_slot,)).hex();c=bytes((cache_slot,)).hex();g.take('48837b'+c+'00')
     g.branch('0f85',refresh=='different')
     if refresh=='different':
@@ -75,3 +77,23 @@ def initialized_short_backward_program(regions,entry,*,base_slot,cache_slot,cast
         condition='Initialized own cache40 wrapper with compatible nonnull base and selected empty/different cache; '
             'actual compatible cast returns the unchanged full base pointer, normal disabled barrier preserves '
             'Win64 nonvolatiles and disjoint storage. Class predicates and live provider selection remain conditional.')
+
+
+def initialized_cache32_backward_program(regions,entry,*,base_slot,cache_slot,cast,barrier,refresh):
+    """Complete typed-first cache32 refresh and its owned warm return."""
+    if not((base_slot,cache_slot)==(16,32) and refresh in('empty','different')
+            and type(cast)is int and cast>0 and type(barrier)is int and barrier>0):
+        raise ValueError('generatedSplitCacheRefresh.initialized-cache32-scope')
+    g=BytesPath(regions,entry);g.take('4053','4883ec20');flag=g.relative('803d')+1
+    g.take('00','488bd9');g.branch('75',True,1)
+    g.take('48837b2000');g.branch('74',refresh=='empty',1)
+    if refresh=='different':g.take('488b4310','48394320');g.branch('75',True,1)
+    first=g.relative('488b15');g.take('48897c2430','488b7b10','488bcf');g.call(cast)
+    g.take('48894320','488bcf');second=g.relative('488b15');g.call(cast)
+    g.take('488d4b20');g.call(barrier);g.take('488b7c2430');g.jump('eb',1)
+    g.take('488b4320','4883c420','5b','c3')
+    if first!=second:raise ValueError('generatedSplitCacheRefresh.same-owned-cast-class')
+    return dict(selectedBytes=g.seen,initializedFlag=flag,baseSlot=base_slot,cacheSlot=cache_slot,
+        castClassCell=first,refresh=refresh,sameBaseReferenceCachedAndReturned=True,
+        normalReturn=True,entryRspRestored=True,allNonvolatilesRestored=True,
+        condition='Initialized own cache32 wrapper, compatible nonnull base, empty/different cache, unchanged full-pointer compatible cast and normal disabled barrier; no live provider or cold initialization claim.')

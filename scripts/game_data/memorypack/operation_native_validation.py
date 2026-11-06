@@ -6,6 +6,7 @@ validators execute directly. Entry and exit gates run with reuse suspended.
 from contextlib import contextmanager
 from contextvars import ContextVar
 import copy
+import hashlib
 import inspect
 from pathlib import Path,PurePath,PosixPath,WindowsPath,PurePosixPath,PureWindowsPath
 import struct
@@ -98,6 +99,7 @@ class _ValidationScope:
                 selected={row['path']:(row['path'],row['length'],row['sha256'])for row in rows}
                 if len(selected)==len(rows):self._reader_source_rows=selected
         self.reader_snapshot_copies=0
+        self._reader_bytes={};self._reader_byte_size=0;self.reader_byte_hits=0
 
     def statistics(self):
         result=dict(calls=self.calls,hits=self.hits,misses=self.misses,entries=self.entries,
@@ -105,10 +107,13 @@ class _ValidationScope:
         if self.reader_snapshot_copies:
             result['readerSnapshotDelegation']=dict(copies=self.reader_snapshot_copies,
                 freshOuterBookendsRequired=True,completedReceiptGranted=False)
+        if self.reader_byte_hits:
+            result['readerByteReuse']=dict(hits=self.reader_byte_hits,freshOuterBookendsRequired=True)
         return result
 
     def close(self):
-        self.cache.clear();self._reader_inputs=None;self._reader_source_rows=None;self.closed=True
+        self.cache.clear();self._reader_bytes.clear();self._reader_byte_size=0
+        self._reader_inputs=None;self._reader_source_rows=None;self.closed=True
 
 
 @contextmanager
@@ -138,6 +143,19 @@ def _invoke_selected(scope,function,args,kwargs):
         invocation.clear()  # do not retain a frame, arguments or code object
 
 
+def _validate_with_reader_snapshot(function,*,reader_inputs,gameassembly,metadata):
+    """Run a fresh native proof inside its owner's pending reader bookends.
+
+    The owning operation must freshly enumerate/hash readers before this call
+    and again before returning results. Only this validator's direct snapshot
+    calls borrow that identity. No native result is reused between calls; in
+    particular, an exit proof still evaluates the selected binaries anew.
+    """
+    with _native_validation_scope(gameassembly=gameassembly,metadata=metadata,
+            native_inputs={},reader_inputs=reader_inputs) as scope:
+        return _invoke_selected(scope,function,(),dict(gameassembly=gameassembly,metadata=metadata))
+
+
 def _owned_reader_snapshot(fresh):
     """Delegate only a direct selected call; outer entry/exit always scan afresh."""
     invocation=_READER_CALL.get();scope=_CURRENT.get()
@@ -164,6 +182,31 @@ def _owned_reader_source_inputs(paths):
         if not selected or len(set(selected))!=len(selected):return None
         return tuple(scope._reader_source_rows[path]for path in selected)
     except(KeyError,TypeError,ValueError,OSError):return None
+
+
+def _read_reader_input(path):
+    """Read a declaration once within its owner's complete reader bookends.
+
+    Only enumerated inputs can be reused, after their bytes match the entry
+    snapshot. Foreign paths and standalone calls always read current bytes.
+    This caches no native proof and cannot outlive the outer exit checks.
+    """
+    path=Path(path);scope=_CURRENT.get()
+    if scope is None or scope.closed or scope._reader_source_rows is None:return path.read_bytes()
+    key=path.as_posix()
+    if key not in scope._reader_source_rows:key=path.resolve().as_posix()
+    expected=scope._reader_source_rows.get(key)
+    if expected is None:return path.read_bytes()
+    if key in scope._reader_bytes:
+        scope.reader_byte_hits+=1
+        return scope._reader_bytes[key]
+    raw=path.read_bytes()
+    actual=(len(raw),hashlib.sha256(raw).hexdigest().upper())
+    if actual!=expected[1:]:
+        raise ValueError(f'reader-input:entry-content-drift:{key}:expected={expected[1:]}:actual={actual}')
+    if scope._reader_byte_size+len(raw)<=64*1024*1024:
+        scope._reader_bytes[key]=raw;scope._reader_byte_size+=len(raw)
+    return raw
 
 
 def validate_native(function,*args,**kwargs):

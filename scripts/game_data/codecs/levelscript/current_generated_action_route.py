@@ -16,6 +16,10 @@ OPERATIONS = frozenset(('bool-byte', 'byte', 'scalar32', 'scalar64-bits',
 
 
 def _param_codec(schema):
+    from scripts.game_data.memorypack.levelscript_boolean_param_array_sources import SCHEMA as BOOLEAN_ARRAY
+    if schema==BOOLEAN_ARRAY:
+        from scripts.game_data.codecs.levelscript import current_boolean_param_array
+        return current_boolean_param_array
     from scripts.game_data.memorypack.levelscript_vector_param_array_sources import SCHEMA as ARRAY
     if schema == ARRAY:
         from scripts.game_data.codecs.levelscript import current_vector_param_array
@@ -33,6 +37,9 @@ def need(check, condition):
 
 
 def validate(cap):
+    if isinstance(cap,dict)and cap.get('schema')=='endfield.generated-actionmap-nested-set-route-capability.v1':
+        from scripts.game_data.codecs.levelscript.current_set_buff_route import validate as nested
+        return nested(cap)
     need('finite-owned-route', isinstance(cap, dict) and cap.get('schema') == SCHEMA
          and cap.get('family') in ('ActionBase', 'GetterBase', 'ActionHeader')
          and type(cap.get('tag')) is int and 0 <= cap['tag'] <= 65535
@@ -65,9 +72,12 @@ def validate(cap):
                  and component['capability'].get('closedArrayType' if kind == 'actionmap-param-array' else 'typeName') == declaration['declaredType'])
             _param_codec(component.get('componentSchema')).validate(component['capability'])
             from scripts.game_data.memorypack.levelscript_vector_param_array_sources import SCHEMA as ARRAY_SCHEMA,CAPABILITY as ARRAY_CAPABILITY,TYPE as ARRAY_TYPE
-            need('distinct-owned-vector-Param-array-operation',
-                 (component.get('componentSchema') == ARRAY_SCHEMA) is (kind == 'actionmap-param-array')
-                 and (kind != 'actionmap-param-array' or (child == ARRAY_CAPABILITY and declaration['declaredType'] == ARRAY_TYPE)))
+            from scripts.game_data.memorypack.levelscript_boolean_param_array_sources import SCHEMA as BOOLEAN_ARRAY_SCHEMA,CAPABILITY as BOOLEAN_ARRAY_CAPABILITY,TYPE as BOOLEAN_ARRAY_TYPE
+            array_domains={ARRAY_SCHEMA:(ARRAY_CAPABILITY,ARRAY_TYPE),BOOLEAN_ARRAY_SCHEMA:(BOOLEAN_ARRAY_CAPABILITY,BOOLEAN_ARRAY_TYPE)}
+            selected_array=array_domains.get(component.get('componentSchema'))
+            need('distinct-owned-Param-array-operation',
+                 (selected_array is not None)is(kind=='actionmap-param-array')
+                 and(kind!='actionmap-param-array'or(child,declaration['declaredType'])==selected_array))
             from scripts.game_data.codecs.levelscript.current_action_output_param import SCHEMA as OUTPUT_CAP
             need('distinct-Output-and-constant-Param-operations',
                  (component['capability'].get('schema') == OUTPUT_CAP) is (kind == 'actionmap-param-output'))
@@ -145,6 +155,9 @@ def _legacy_param(value):
 
 def decode(data, offset, *, field, capability, strings):
     """Pure capability cursor; this function grants no native admission."""
+    if isinstance(capability,dict)and capability.get('schema')=='endfield.generated-actionmap-nested-set-route-capability.v1':
+        from scripts.game_data.codecs.levelscript.current_set_buff_route import decode as nested
+        return nested(data,offset,field=field,capability=capability,strings=strings)
     cap = validate(capability); reader = Reader(data, offset, strings, field); start = offset
     tag = reader.number('<B', field+'.tag')
     if tag == 250:
@@ -152,7 +165,12 @@ def decode(data, offset, *, field, capability, strings):
     elif tag >= 250:
         raise ValueError(f'{field}:reserved-union-marker,offset={start},actual={tag}')
     need('exact-selected-current-union-tag', tag == cap['tag'])
-    raw = read_record(reader, field+'.record', cap); fields = {}; spans = {}; types = {}
+    raw = read_record(reader, field+'.record', cap)
+    return project_record(raw,cap,start,reader.offset)
+
+
+def project_record(raw,cap,start,end):
+    fields = {}; spans = {}; types = {}
     if raw is not None:
         for declaration, operation in zip(cap['fields'], cap['program']['reads'], strict=True):
             source = declaration['fieldName']; name = source.lstrip('_'); kind = operation['kind']; value = raw['fields'][source]
@@ -168,7 +186,7 @@ def decode(data, offset, *, field, capability, strings):
             elif kind in ('float32-bits', 'float64-bits'):
                 value = value['value']
             fields[name] = value; spans[name] = raw['fieldRanges'][source]; types[name] = declaration['declaredType']
-    return dict(sourceOffset=start, endOffset=reader.offset, unionTag=tag,
+    return dict(sourceOffset=start, endOffset=end, unionTag=cap['tag'],
                 memberCount=255 if raw is None else cap['memberCount'], wrapperName=cap['wrapperName'],
                 fields=None if raw is None else fields, fieldRanges=spans, fieldTypes=types,
-                currentRouteValue=raw), reader.offset
+                currentRouteValue=raw), end

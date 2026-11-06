@@ -27,3 +27,51 @@ def validate(image,pointer,offsets):
  target=base+at+5+int.from_bytes(raw[1:],'little',signed=True)
  regions,windows=owned(pointer);advance_regions,advance_windows=owned(target)
  return json.loads(json.dumps(dict(sourceWindows=windows,advanceWindows=advance_windows,source=uint64(regions,pointer,offsets,target),advance=[advance(advance_regions,target,offsets,zero=z) for z in (True,False)])))
+
+
+def called_advance_qword_program(regions,entry,offsets):
+    keys=('currentPtr','bufferLength','advancedCount','consumed')
+    def need(key,valid,detail=None):
+        if not valid:raise ValueError('unmanagedQword.'+key+':'+str(detail)[:700])
+    need('four-independent-Reader-offsets',set(offsets)>=set(keys)
+        and len({offsets[key]for key in keys})==4
+        and all(type(offsets[key])is int and 0<=offsets[key]<128 for key in keys))
+    g=BytesPath(regions,entry);g.take('48895c2408','57','4883ec20',
+        '8379'+bytes((offsets['bufferLength'],8)).hex(),'488bf9')
+    if g.bytes.get(g.at)==0x7d:g.branch('7d',True,1)
+    else:g.branch('0f8c',False)
+    pointer=g.at;g.take('488b5f'+bytes((offsets['currentPtr'],)).hex(),'ba08000000','488bcf')
+    capture=g.at;g.take('488b1b');call=g.at;advance=g.relative('e8')
+    g.take('488bc3','488b5c2430','4883c420','5f','c3')
+    return dict(selectedBytes=g.seen,wireBytes=8,resultRegister='rax',sourcePointerInstructionVa=pointer,
+        captureInstructionVa=capture,sourcePointerRegister='rbx',payloadRegister='rbx',
+        advanceCallInstructionVa=call,advanceTargetVa=advance,actualSignedCountArgument=8,
+        sourceSlices=[[0,8]],returnSlices=[[0,8]],rawBitsIncludingPaddingUnchanged=True,
+        boolNormalizationClaimed=False,entryRspRestored=True,nonvolatileRegistersRestored=['rbx','rdi'],
+        normalReturn=True,independentAdvanceSourceRequired=True,managedLayoutUsedForWidth=False)
+
+
+def inline_qword_program(regions,entry,offsets):
+    """RDI Reader/RBX payload with all four inline cursor updates owned."""
+    keys=('currentPtr','bufferLength','advancedCount','consumed')
+    if (not set(keys)<=set(offsets)or len({offsets[k]for k in keys})!=4
+            or any(type(offsets[k])is not int or not 0<=offsets[k]<128 for k in keys)):
+        raise ValueError('unmanagedQword.four-distinct-Reader-offsets')
+    g=BytesPath(regions,entry)
+    g.take('48895c2408','4889742410','57','4883ec20',
+        '8379'+bytes((offsets['bufferLength'],8)).hex(),'488bf9')
+    g.branch('0f8c',False)
+    g.take('488b5f'+bytes((offsets['currentPtr'],)).hex(),'488b1b',
+        '8b77'+bytes((offsets['bufferLength'],)).hex(),'83c6f8')
+    g.branch('0f88',False)
+    g.take('488347'+bytes((offsets['currentPtr'],8)).hex(),
+        '8347'+bytes((offsets['advancedCount'],8)).hex(),
+        '8347'+bytes((offsets['consumed'],8)).hex(),
+        '8977'+bytes((offsets['bufferLength'],)).hex(),
+        '488b742438','488bc3','488b5c2430','4883c420','5f','c3')
+    return dict(selectedBytes=g.seen,wireBytes=8,resultRegister='rax',
+        readerRegister='rdi',payloadRegister='rbx',sourceSlices=[[0,8]],returnSlices=[[0,8]],
+        rawBitsIncludingPaddingUnchanged=True,allFourReaderUpdatesProved=True,
+        entryRspRestored=True,nonvolatileRegistersRestored=['rbx','rsi','rdi'],normalReturn=True,
+        managedLayoutUsedForWidth=False,
+        condition='Sufficient coherent disjoint buffered storage; refill and error branches excluded.')

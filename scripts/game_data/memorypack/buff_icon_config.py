@@ -25,6 +25,7 @@ presentation behavior and UI ownership do not follow from the field names.
 from __future__ import annotations
 
 import struct
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
@@ -48,12 +49,14 @@ def _contract() -> dict[str, Any]:
     return value
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
     """Recheck method identities, registered pointers, and exact code extents."""
     contract = _contract()
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")

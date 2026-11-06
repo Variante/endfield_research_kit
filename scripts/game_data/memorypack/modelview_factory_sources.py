@@ -35,8 +35,14 @@ def checked_cast(regions,entry,assignable):
 def cached_rbx(regions,entry,s,*,cache,refresh):
     if cache not in(24,32)or refresh not in('empty','different'):raise ValueError('modelViewFactory.getter-scope')
     c=bytes((cache,)).hex();g=BytesPath(regions,entry);g.take('4053','4883ec20');g.relative('803d');g.take('00','488bd9');g.branch('74',False,1);g.take('48837b'+c+'00');g.branch('74'if g.bytes.get(g.at)==0x74 else'0f84',refresh=='empty',1 if g.bytes.get(g.at)==0x74 else 4)
-    if refresh=='different':g.take('488b4310','483943'+c);g.branch('75'if g.bytes.get(g.at)==0x75 else'0f85',True,1 if g.bytes.get(g.at)==0x75 else 4)
-    first=g.relative('488b15');g.take('48897c2430','488b7b10','488bcf');g.call(s['cast']);g.take('488943'+c,'488bcf');second=g.relative('488b15');g.call(s['cast']);g.take('488d4b'+c);g.call(s['barrier']);g.take('488b7c2430');g.jump('eb',1)if g.bytes.get(g.at)==0xeb else g.jump('e9',4);g.take('488b43'+c,'4883c420','5b','c3')
+    if refresh=='different':
+        g.take('488b4310','483943'+c)
+        if g.bytes.get(g.at)==0x74 or bytes(g.bytes.get(g.at+i,0)for i in range(2))==bytes.fromhex('0f84'):
+            g.branch('74'if g.bytes.get(g.at)==0x74 else'0f84',False,1 if g.bytes.get(g.at)==0x74 else 4)
+        else:g.branch('75'if g.bytes.get(g.at)==0x75 else'0f85',True,1 if g.bytes.get(g.at)==0x75 else 4)
+    first=g.relative('488b15');g.take('48897c2430','488b7b10','488bcf');g.call(s['cast']);g.take('488943'+c,'488bcf');second=g.relative('488b15');g.call(s['cast']);g.take('488d4b'+c);g.call(s['barrier']);g.take('488b7c2430')
+    if g.bytes.get(g.at)in(0xeb,0xe9):g.jump('eb',1)if g.bytes.get(g.at)==0xeb else g.jump('e9',4)
+    g.take('488b43'+c,'4883c420','5b','c3')
     if first!=second:raise ValueError('modelViewFactory.getter-cast-context')
     return dict(selectedBytes=g.seen,baseSlot=16,cacheSlot=cache,castClassCell=first,refresh=refresh,normalReturn=True,sameBaseReferenceCachedAndReturned=True,condition='Initialized current typed wrapper with compatible nonnull base16, cache empty or unequal as selected; normally returning compatible cast preserves same input, disabled barrier/storage stable and noninterfering. Predicate/live/default selection conditional.')
 

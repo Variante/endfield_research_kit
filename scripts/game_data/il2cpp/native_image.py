@@ -123,6 +123,7 @@ class NativeImage:
         catalog = load_metadata_helper(METADATA_HELPER_PATH)
         self.mapper = mapper
         self.pe = mapper.PeImage(self.gameassembly)
+        self.pe._seal_sections()
         self.metadata = catalog.Metadata(self.metadata_path)
         image_names = {self.metadata.string(row.name_index) for row in self.metadata.images}
         registrations = mapper.find_code_registration_candidates(self.pe, image_names)

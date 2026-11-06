@@ -51,6 +51,21 @@ def program(regions,entry,s,*,tag,count,table,selected,ff=False):
 
 
 def derive_transport(image,pins):
+ return derive_reference_transport(image,pins,type_name=TYPE,
+  schema='endfield.levelscript-game-condition-transport.v1',status='validated-conditional-game-condition-transport',
+  evidence_boundary=dict(exact='Every selected current GameCondition table case, nominal cast, exact closed returning-reader thunk, unchanged reference output, canonical base adapter and inherited Original transfer.',
+   conditional=__doc__,unresolved=['concrete child and Param grammars','recursive collection and Task parent composition',
+    'existing-output alternatives and live callback/provider selection','runtime condition evaluation']))
+
+
+def derive_reference_transport(image,pins,*,type_name,schema,status,evidence_boundary):
+ """Prove this exact large-table byte program for a separately named owner.
+
+ The source owner supplies its own nominal family and evidence vocabulary.
+ The same complete program, bounded table, typed children and conversions are
+ freshly checked; an unrelated record or a different dispatcher is refused.
+ """
+ TYPE=type_name
  from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
  from scripts.game_data.contracts import CONTRACTS_DIR
  from scripts.game_data.il2cpp.formatter_composition import _vtable,derive_typed_usage_context
@@ -141,8 +156,8 @@ def derive_transport(image,pins):
  header_source=pointer.owned(image,header);offsets=scalar.reader_offsets(image,LABEL)
  headers={marker:enclosing_header(header_source['regions'],header,offsets,marker=marker)for marker in('short','extended','false')}
  _publication_gate(image,pins)
- return json.loads(json.dumps(dict(schema='endfield.levelscript-game-condition-transport.v1',
-  status='validated-conditional-game-condition-transport',nativeInputs=pins,typeName=TYPE,wrapperName=wrapper.name,
+ return json.loads(json.dumps(dict(schema=schema,
+  status=status,nativeInputs=pins,typeName=TYPE,wrapperName=wrapper.name,
   slot5Method=[method.index,image.type_name(formatter.index),'Deserialize',entry-base],switch=switch,
   ownedWindows=body['windows'],sourceRegions=[(a,b.hex().upper())for a,b in body['regions']],
   symbolRvas={k:v-base for k,v in symbols.items()if k!='imageBase'},programs=programs,canonicalFF=null,
@@ -150,6 +165,4 @@ def derive_transport(image,pins):
   headerWindows=header_source['windows'],headerPrograms=headers,barrier=_barrier(image,barrier),
   pair=pair,adapter=adapter,baseHolder=holder,baseGetValue=getter_program,inheritedConversions=joins,
   concreteChildGrammarAdmitted=False,parentFieldAdmitted=False,wholeOwnerAdmitted=False,
-  runtimeConditionEvaluationProved=False,evidenceBoundary=dict(exact='Every selected current GameCondition table case, nominal cast, exact closed returning-reader thunk, unchanged reference output, canonical base adapter and inherited Original transfer.',
-   conditional=__doc__,unresolved=['concrete child and Param grammars','recursive collection and Task parent composition',
-    'existing-output alternatives and live callback/provider selection','runtime condition evaluation']))))
+  runtimeConditionEvaluationProved=False,evidenceBoundary=evidence_boundary)))

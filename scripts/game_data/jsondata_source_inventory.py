@@ -319,12 +319,14 @@ def verify_saved_inventory(summary, *, ledger_path):
         filesJoined=len(fresh_rows), jsonRoot=fresh["jsonRoot"], sourceEntryExitPassed=True)
 
 
-def _guard_outputs(outputs, protected):
+def _guard_outputs(outputs, protected, *, evidence_root=None):
     for index, output in enumerate(outputs):
         resolved = output.resolve()
-        if not any(resolved.is_relative_to((REPO_ROOT / name).resolve()) for name in ("reports", "tmp", "scratch")):
+        roots = [REPO_ROOT / name for name in ("reports", "tmp", "scratch")]
+        roots.append(evidence_root or ExportLayout.configured().evidence_dir)
+        if not any(resolved.is_relative_to(root.resolve()) for root in roots):
             raise CensusGateError("inventory-output-generated-root", source=str(output),
-                expected="reports/, tmp/ or scratch/")
+                expected="selected export/meta/evidence/ or a diagnostic output root")
         _guard_output_path(output, [*protected, *(path for n, path in enumerate(outputs) if n != index)])
         for other in outputs:
             if other != output and (resolved.is_relative_to(other.resolve()) or other.resolve().is_relative_to(resolved)):
@@ -351,10 +353,12 @@ def main(argv=None):
     args = parser.parse_args(argv)
     failure = args.output_json.with_suffix(".validation.json")
     outputs = [args.output_json, args.output_files, failure]
-    protected = [args.outer_summary, args.outer_ledger, args.export_root, REPO_ROOT / "scripts"]
+    layout = ExportLayout(args.export_root)
+    protected = [args.outer_summary, args.outer_ledger, layout.game, layout.raw,
+                 layout.layout_file, REPO_ROOT / "scripts"]
     safe = False
     try:
-        _guard_outputs(outputs, protected)
+        _guard_outputs(outputs, protected, evidence_root=layout.evidence_dir)
         # Add live installed/tool input identities before any failure report can write.
         outer = json.loads(args.outer_summary.read_bytes())
         # Installed roots remain protected even when an optional root does not
@@ -375,14 +379,14 @@ def main(argv=None):
         layout = ExportLayout(args.export_root)
         protected.extend(path for path in layout.json_dir.rglob("*") if path.is_file())
         protected.extend([layout.layout_file, layout.game_file_store_path])
-        _guard_outputs(outputs, protected)
+        _guard_outputs(outputs, protected, evidence_root=layout.evidence_dir)
         safe = True
         report, rows = build_report(outer_path=args.outer_summary, ledger_path=args.outer_ledger,
             export_root=args.export_root, expected_input_set_sha256=args.expected_input_set_sha256)
         payload = gzip.compress(b"".join((json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
             for row in rows), mtime=0)
         report["provenance"]["outputFiles"] = dict(length=len(payload), sha256=hashlib.sha256(payload).hexdigest().upper())
-        _guard_outputs(outputs, protected)
+        _guard_outputs(outputs, protected, evidence_root=layout.evidence_dir)
         _atomic_bytes(args.output_files, payload)
         _atomic_write_json(args.output_json, report)  # Final source receipt marker.
         _atomic_write_json(failure, dict(schema="endfield.jsondata-source-inventory-validation.v1",

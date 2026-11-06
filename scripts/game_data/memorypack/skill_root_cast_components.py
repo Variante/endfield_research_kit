@@ -42,6 +42,10 @@ def cost_capability(pins,component,reference,order):
 
 
 def derive(image,pins):
+    return _derive_on_children(image,pins)
+
+
+def _derive_on_children(image,pins,*,double=None,cost_profile=None,cost_proof=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack.skill_root_record_sources import derive as record_sources
     from scripts.game_data.memorypack.skill_blackboard_double_sources import derive as double_source
@@ -51,8 +55,11 @@ def derive(image,pins):
     from scripts.game_data.memorypack.skill_root_children_codec import REFERENCE_RECORDS
     record=record_sources(image,pins,types=[TYPE])['records'][TYPE]
     reference=reference_record_abi(image,pins,record)
-    double=double_source(image,pins)
-    profile=cost_source.derive_profile(image);cost=cost_source.derive(image,pins,profile)
+    if double is None:double=double_source(image,pins)
+    need('same-cast-double-inputs',pins,double['nativeInputs'])
+    need('paired-cost-profile-proof',cost_profile is None,cost_proof is None)
+    profile=cost_source.derive_profile(image)if cost_profile is None else cost_profile
+    cost=cost_source.derive(image,pins,profile)if cost_proof is None else cost_proof
     child=cost['child'];wrapper,=[w for w in image.memorypack_wrappers.values()if w.name==child['wrapper']]
     adapter=derive_adapter(image,pins,profile['child'],wrapper)
     csource=dict(adapter=adapter,**reference_reader_abi(image,pins))

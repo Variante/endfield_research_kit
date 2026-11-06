@@ -33,6 +33,7 @@ from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.memorypack.operation_native_validation import _read_reader_input
 
 SCHEMA = "endfield.levelscript-union-tags.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_union_tags.json"
@@ -89,7 +90,7 @@ def _load(contract_path: Path = DEFAULT_CONTRACT, *, gameassembly=None, metadata
     if (gameassembly is None) != (metadata is None):
         return {}, {"status": "validation_failed", "detail": "both-selected-paths-required"}
     try:
-        contract,families,_ = _tables(Path(contract_path).read_bytes())
+        contract,families,_ = _tables(_read_reader_input(contract_path))
     except (OSError, UnicodeError, ValueError) as error:
         return {}, {"status": "validation_failed", "detail": str(error)[:400]}
     inputs = contract.get("nativeInputs") or {}
@@ -118,13 +119,18 @@ def type_name_for_tag(family: str, tag: int) -> str | None:
     return names[0] if len(names) == 1 else None
 
 
+@lru_cache(maxsize=2)
+def _native_input_declarations(raw: bytes):
+    inputs = json.loads(raw.decode("utf-8-sig")).get("nativeInputs") or {}
+    return tuple((key, str(inputs.get(key) or "").upper()) for key in ("gameAssemblySha256", "metadataSha256"))
+
+
 def contract_native_inputs(contract_path: Path = DEFAULT_CONTRACT) -> dict[str, str]:
     """The build the tag contract was regenerated against, uppercase."""
     try:
-        inputs = json.loads(Path(contract_path).read_bytes().decode("utf-8-sig")).get("nativeInputs") or {}
+        return dict(_native_input_declarations(_read_reader_input(contract_path)))
     except (OSError, UnicodeError, json.JSONDecodeError):
         return {"gameAssemblySha256": "", "metadataSha256": ""}
-    return {key: str(inputs.get(key) or "").upper() for key in ("gameAssemblySha256", "metadataSha256")}
 
 
 def pair(family: str, name: str, *, gameassembly=None, metadata=None) -> tuple[Any, ...]:
@@ -246,7 +252,7 @@ def _wrappers() -> dict[str, dict[str, str]]:
     families,audit=_load()
     if audit["status"] != NATIVE_EVIDENCE_VALIDATED:
         return {}
-    _,selected,wrappers=_tables(DEFAULT_CONTRACT.read_bytes())
+    _,selected,wrappers=_tables(_read_reader_input(DEFAULT_CONTRACT))
     return wrappers if selected is families else {}
 
 

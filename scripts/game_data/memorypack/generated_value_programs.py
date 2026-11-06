@@ -26,6 +26,40 @@ def register_bytes(name):
  if name.endswith('w'):return 2
  return 1
 
+
+def _collector_preserved_setup(path,at,state,locals_,base):
+ """Own finite late nonvolatile spills between CMP and its reference store.
+
+ Full frame ownership/restoration is still required by frame_program. These
+ exact MOV saves preserve flags and cannot overwrite a live source local. A
+ hoisted collector-table LEA is accepted only when its value is dead up to the
+ independently checked stack restore on this selected disabled path.
+ """
+ selected=[];saved=set()
+ while at<len(path)and len(selected)<3:
+  row=path[at];move=row.get('memoryOperation',{});address=move.get('address',{});raw=ec.raw(row)
+  if move.get('direction')=='store'and address.get('base')=='rsp':
+   name=move.get('register');width=move.get('memoryBytes');offset=address.get('displacement')
+   integer=name in NONVOLATILE and width==8 and raw[:2]in(b'\x48\x89',b'\x4c\x89')
+   vector=name in{'xmm'+str(n)for n in range(6,16)}and width==16 and raw[:2]==b'\x0f\x29'
+   need('collector-late-owned-nonvolatile-spill',(integer or vector)and state.get(name)is None
+       and move.get('writesFlags')is False and address.get('index')is None and not address.get('ripRelative')
+       and type(offset)is int and 32<=offset<256 and offset%width==0
+       and not any(offset<=home<offset+width for home in locals_),row)
+   saved.add(name)
+  elif row['text'].startswith('lea ')and len(raw)==7 and raw[:3]in(bytes.fromhex('4c8d3d'),bytes.fromhex('4c8d25')):
+   name='r15'if raw[2]==0x3d else'r12'
+   need('collector-table-address-has-owned-save',name in saved and state.get(name)is None,row)
+   mentions=[future for future in path[at+1:]if re.search(r'\b'+name+r'\b',future['text'])]
+   restore=mentions[0].get('memoryOperation',{})if mentions else{};home=restore.get('address',{})
+   need('collector-table-address-dead-until-restore',restore.get('direction')=='load'and restore.get('register')==name
+       and restore.get('memoryBytes')==8 and home.get('base')=='rsp'and home.get('index')is None
+       and not home.get('ripRelative'),mentions[:1])
+   state.pop(name,None)
+  else:break
+  selected.append(ec.site(row,base));at+=1
+ return at,selected
+
 def _owned_rbp_double_move(row,frame_alias):
  """Re-decode only full scalar8 moves through the owned Trigger frame base."""
  if frame_alias is None or not row['text'].startswith('movsd ')or'[rbp'not in row['text']:return None
@@ -87,6 +121,9 @@ def _same_body32_local_copy(row,event,setter,source,locals_,*,register,width,off
 def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barrier,inline_offsets=None,terminal_target=None,cached_accesses=None,disabled_collector=None,terminal_setter=None,static_out_parent=None,source_frame_alias=None):
  """Prove exact current count-to-RET flow, including hidden local12 values."""
  need('member-setter-bijection',0<len(events)==len(setters))
+ from scripts.game_data.memorypack import interactive_value_wrapper_sources as embedded
+ inline_wrapper=any(s.get('profile')==embedded.PROFILE for s in setters)
+ if inline_wrapper:embedded.require_inline_fields(setters)
  need('explicit-exact-terminal-barrier',terminal_target is None or type(terminal_target)is int and terminal_target==barrier and terminal_target>0)
  need('explicit-exact-final-named-setter',terminal_setter is None or type(terminal_setter)is int and terminal_setter>0
      and terminal_setter==base+setters[-1]['method'][3]and terminal_target is None)
@@ -98,9 +135,14 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
  context_by={base+c['instructionRva']:c for c in contexts}
  state={reader:('reader',),output:('output',)};locals_={};stores=[set()for e in events]
  sources=[];field_stores=[];calls=[];null_exits=[];hidden=[];copies=[];inline_homes=[];cache_uses=[];collectors=[];flags=None;pending=None;at=0
- static_zeros={};static_ready=set();class_guard={};class_loads={};class_comparisons={};class_calls={};extra_static_setup=False
+ static_zeros={};static_ready=set();class_guard={};class_loads={};class_comparisons={};class_calls={};extra_static_setup=False;interactive_static_setup=False
  if static_out_parent is not None:
-  if static_out_parent.get('schema')=='endfield.animation-extra-static-out-parent.v1':
+  if static_out_parent.get('schema')=='endfield.interactive-static-out-parent.v1':
+   from scripts.game_data.memorypack import interactive_dictionary_parent as interactive_parent
+   interactive_parent.validate_setup(static_out_parent,events);interactive_static_setup=True
+   guards=static_out_parent['classGuards'];class_loads={base+g['load'][0]:g for g in guards}
+   class_comparisons={base+g['comparison'][0]:g for g in guards}
+  elif static_out_parent.get('schema')=='endfield.animation-extra-static-out-parent.v1':
    from scripts.game_data.memorypack import animation_extra_parent_sources as extra_parent
    extra_parent.validate_setup(static_out_parent,events);extra_static_setup=True
    guards=static_out_parent['classGuards'];ready_calls=static_out_parent['classCalls']
@@ -293,7 +335,10 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    state['rcx']=('class-state',class_guard['load'][0]);take();continue
   if address in static_zeros:
    item=static_zeros[address];proof=item.get('zeroSource',{});start=item['displacement']
-   if extra_static_setup:
+   if interactive_static_setup:
+    interactive_parent.validate_zero(r,item,base)
+    need('own-interactive-static-local-no-live-overlap',not any(start<=p<start+8 for p in locals_))
+   elif extra_static_setup:
     extra_parent.validate_zero(r,item,base)
     need('actual-extra-static-local-no-live-overlap',not any(start<=p<start+8 for p in locals_))
    else:
@@ -309,12 +354,17 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    take();calls.append(ec.site(r,base));clobber();flags=None;continue
   if address in class_comparisons:
    class_guard=class_comparisons[address]
-   proof=class_guard['zeroSource'];need('actual-static-parent-nonzero-state-condition',state.get('rcx')==('class-state',class_guard['load'][0])
+   if interactive_static_setup:
+    interactive_parent.validate_guard(r,class_guard,base)
+    need('same-interactive-ready-class',state.get('rcx')==('class-state',class_guard['load'][0]))
+   else:
+    proof=class_guard['zeroSource'];need('actual-static-parent-nonzero-state-condition',state.get('rcx')==('class-state',class_guard['load'][0])
        and ec.site(r,base)==class_guard['comparison']and ec.raw(r)==bytes.fromhex('39a9e0000000')
        and proof.get('register')=='rbp'and proof.get('value')==0 and proof.get('zeroOnEveryOrdinaryPath')is True and address in proof.get('sites',[]))
+   variant_ready=interactive_static_setup and static_out_parent['parentType']=='Beyond.Gameplay.Core.InteractiveTemplateVariant'
    take();edge=take();flow=control_transfer(edge);need('actual-static-parent-selected-class-edge',ec.site(edge,base)==class_guard['edge']
-       and flow.get('kind')=='conditional'and flow.get('conditionCode')==4 and at<len(path)
-       and ec.va(row())==ec.va(edge)+len(ec.raw(edge))and ec.site(row(),base)==class_guard['selectedNextInstruction'])
+       and flow.get('kind')=='conditional'and flow.get('conditionCode')==(5 if variant_ready else 4)and at<len(path)
+       and ec.va(row())==(flow['target']if variant_ready else ec.va(edge)+len(ec.raw(edge)))and ec.site(row(),base)==class_guard['selectedNextInstruction'])
    state.pop('rcx',None);flags=None;continue
   compare=r.get('memoryImmediateComparisonOperation',{})
   if address not in cached_accesses and compare and compare.get('sourceAddress',{}).get('ripRelative'):
@@ -322,7 +372,53 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    need('exact-current-disabled-collector-comparison',disabled_collector is not None and len(raw)==7 and raw[:2]==b'\x83\x3d'and raw[-1]==0
        and cell==disabled_collector==compare['sourceAddress'].get('absoluteAddress')and compare.get('bits')==32
        and compare.get('immediateValue')==0 and compare.get('writesMemory')is False and pending is None,r)
-   take();written=row();move=written.get('memoryOperation',{});a=move.get('address',{});source=state.get(reg(move.get('register','')))
+   take();at,preserved_setup=_collector_preserved_setup(path,at,state,locals_,base)
+   load=row();load_move=load.get('memoryOperation',{});load_address=load_move.get('address',{})
+   if load_move.get('direction')=='load'and load_move.get('memoryBytes')==16 and load_address.get('base')=='rsp':
+    from scripts.game_data.memorypack.interactive_managed_optional_sources import TYPES as optional_types
+    start=load_address.get('displacement');parts=[locals_.get(start+i)for i in range(16)]if type(start)is int else[]
+    need('exact-Optional16-live-hidden-local',start==32 and parts and parts[0]is not None
+        and parts==[(parts[0][0],i)for i in range(16)]and load_move.get('register')=='xmm0'
+        and load_move.get('writesFlags')is False and load_address.get('index')is None
+        and not load_address.get('ripRelative')and ec.raw(load)==bytes.fromhex('0f10442420'))
+    n=parts[0][0];layout=setters[n].get('managedValueLayout',{});parameter=bytes.fromhex(setters[n].get('parameterTypeRecordHex',''))
+    nominal=layout.get('nominal',{}).get('carrier',{});carrier=bytes.fromhex(nominal.get('rawHex',''))
+    need('same-own-Optional16-source-layout-and-reference-lane',n in managed and events[n]['declaredType']in optional_types
+        and events[n].get('kind')=='managed:'+events[n]['declaredType']and events[n].get('resultAbi')=='hidden-local'
+        and layout.get('typeName')==events[n]['declaredType']and layout.get('managedBytes')==setters[n]['storedBytes']==16
+        and layout.get('referenceLaneOffsets')==[8]and layout.get('paddingByteRanges')==[[1,7]]
+        and layout.get('schema')=='endfield.interactive-value-layout.v1'and layout.get('openGenericOffsetsUsed')is False
+        and len(parameter)==len(carrier)==16 and parameter[10:12]==carrier[10:12]==bytes((21,128))and parameter[:8]==carrier[:8])
+    state['xmm0']=value(n,0,16);take()
+    at,late_setup=_collector_preserved_setup(path,at,state,locals_,base)
+    written=row();move=written.get('memoryOperation',{});a=move.get('address',{})
+    need('whole-Optional16-native-field-store',move.get('direction')=='store'and move.get('memoryBytes')==16
+        and move.get('register')=='xmm0'and move.get('writesFlags')is False and not a.get('ripRelative')
+        and a.get('index')is None and state.get(a.get('base'))==('original',)
+        and a.get('displacement')==setters[n]['fieldOffset'],dict(memberIndex=n,fieldName=events[n].get('fieldName'),
+            expectedFieldOffset=setters[n]['fieldOffset'],actualInstruction=written,
+            actualReceiverState=state.get(a.get('base'))))
+    store(n,0,16,written,False);take();edge=take();flow=control_transfer(edge)
+    need('exact-Optional16-disabled-collector-edge',flow.get('kind')=='conditional'and flow.get('conditionCode')==4
+        and at<len(path)and flow['target']==ec.va(row())and pending==n)
+    collectors.append(dict(memberIndex=n,disabledFlagRva=disabled_collector-base,comparison=ec.site(r,base),
+        sourceLocalLoad=ec.site(load,base),fieldStore=ec.site(written,base),disabledEdge=ec.site(edge,base),
+        flagsPreservingSetup=preserved_setup+late_setup,
+        managedBytes=16,referenceLaneOffsets=[8],allInputBitsAndPaddingCopied=True,enabledCollectorPathAdmitted=False))
+    pending=None;flags=None;continue
+   load=row();load_move=load.get('memoryOperation',{});load_address=load_move.get('address',{})
+   if load_move.get('direction')=='load'and load_move.get('memoryBytes')==8 and load_address.get('base')=='rsp':
+    start=load_address.get('displacement');parts=[locals_.get(start+i)for i in range(8)]if type(start)is int else[]
+    need('own-Variant-static-reference-local-load',interactive_static_setup
+        and static_out_parent['parentType']=='Beyond.Gameplay.Core.InteractiveTemplateVariant'
+        and start==96 and parts and parts[0]is not None and parts==[(parts[0][0],i)for i in range(8)]
+        and load_move.get('register')=='rax'and load_move.get('writesFlags')is False
+        and load_address.get('index')is None and not load_address.get('ripRelative')
+        and ec.raw(load)==bytes.fromhex('488b442460'))
+    n=parts[0][0];need('same-own-Variant-static-source',n==2 and events[n].get('mode')=='typed-static-out-reference'
+        and setters[n]['storedBytes']==8 and reference_lanes(n)==[0])
+    state['rax']=value(n,0,8);take()
+   written=row();move=written.get('memoryOperation',{});a=move.get('address',{});source=state.get(reg(move.get('register','')))
    need('disabled-comparison-followed-by-whole-reference-store',move.get('direction')=='store'and move.get('memoryBytes')==8 and move.get('writesFlags')is False
        and not a.get('ripRelative')and a.get('index')is None and state.get(a.get('base'))==('original',)
        and source is not None and source[:1]==('member',)and source[2:4]==(0,8),written)
@@ -332,6 +428,7 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    need('exact-selected-disabled-collector-edge',flow['kind']=='conditional'and flow['conditionCode']==4 and at<len(path)
        and flow['target']==ec.va(row())and pending==n,edge)
    collectors.append(dict(memberIndex=n,disabledFlagRva=disabled_collector-base,comparison=ec.site(r,base),fieldStore=ec.site(written,base),disabledEdge=ec.site(edge,base),
+       **({'flagsPreservingSetup':preserved_setup}if preserved_setup else{}),
        enabledCollectorPathAdmitted=False,condition='The independently proved current collector cell is zero; the exact whole reference store preserves comparison flags before JE.'))
    pending=None;flags=None;continue
   if address in cached_accesses:
@@ -350,7 +447,7 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    cache_uses.append(dict(memberIndex=n,program=p,getterMethod=getter['method'],metadata=access['metadata']));continue
   if address in event_by:
    n,e=event_by[address];need('source-call-order',n==len(sources)and pending is None)
-   if e.get('mode')in('buffered-inline-value','buffered-inline-scalar','buffered-called-advance-scalar','buffered-called-advance-color16','buffered-called-advance-value12','buffered-called-advance-int-vector12','buffered-called-advance-initial24','buffered-called-advance-clip36','buffered-called-advance-posrot24'):
+   if e.get('mode')in('buffered-inline-value','buffered-inline-scalar','buffered-called-advance-scalar','buffered-called-advance-color16','buffered-called-advance-float4','buffered-called-advance-raw16','buffered-called-advance-value12','buffered-called-advance-int-vector12','buffered-called-advance-initial24','buffered-called-advance-clip36','buffered-called-advance-posrot24'):
     from scripts.game_data.memorypack import generated_inline_value_sources as inline
     need('independent-inline-offsets',inline_offsets is not None)
     parsed=inline.guarded_program([(ec.va(q),ec.raw(q))for q in rows],address,inline_offsets,reader=reader,output=output)
@@ -359,12 +456,21 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
     width=setters[n]['storedBytes'];need('same-inline-source-setter-width',e.get('wireBytes')==width==parsed['wireBytes'])
     if parsed.get('independentAdvanceSourceRequired'):
      cap=e.get('inlineAdvanceSource',{})
-     color=e.get('mode')=='buffered-called-advance-color16'
+     color=e.get('mode')in('buffered-called-advance-color16','buffered-called-advance-float4')
      vector=e.get('mode')=='buffered-called-advance-value12'
      integer_vector=e.get('mode')=='buffered-called-advance-int-vector12'
      initial24=e.get('mode')=='buffered-called-advance-initial24'
      clip36=e.get('mode')=='buffered-called-advance-clip36'
      posrot24=e.get('mode')=='buffered-called-advance-posrot24'
+     raw16=e.get('mode')=='buffered-called-advance-raw16'
+     if raw16:
+      from scripts.game_data.memorypack.interactive_plunging_layout import require_event
+      require_event(e,setters[n])
+      need('independent-exact-Plunging16-capture',e.get('inlineNominalLayout')==setters[n]['nominalValueLayout']
+          and reader=='rdi'and output=='rbx'and parsed.get('actualReaderArgument')==reader
+          and parsed.get('actualSignedCountArgument')==width==16 and parsed.get('sourceLocalValues')==[]
+          and parsed.get('preservedCaptureRegistersRequired')==['xmm6']
+          and [(c['register'],c['sourceOffset'],c['bytes'])for c in parsed['capturedSourceSlices']]==[('xmm6',0,16)])
      if posrot24:
       from scripts.game_data.memorypack.generated_posrot_field_sources import validate_event
       validate_event(e,setters[n])
@@ -387,11 +493,15 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
           and parsed.get('paddingBytesCopied')is True and parsed.get('typedReadUnmanagedClaimed')is False)
      if color:
       layout=e.get('inlineNominalLayout',{});raw=bytes.fromhex(setters[n].get('parameterTypeRecordHex',''))
-      need('independent-exact-Color-layout-and-before-call-spill',e['kind']=='value16:UnityEngine.Color'and e.get('declaredType')==layout.get('typeName')=='UnityEngine.Color'
+      need('independent-exact-Color-layout-and-before-call-spill',e['kind']=='value16:'+('UnityEngine.Color'if e['mode']=='buffered-called-advance-color16'else'UnityEngine.Vector4')and e.get('declaredType')==layout.get('typeName')==('UnityEngine.Color'if e['mode']=='buffered-called-advance-color16'else'UnityEngine.Vector4')
           and layout==setters[n].get('nominalValueLayout')and layout.get('managedBytes')==width==16
           and layout.get('referenceLaneOffsets')==layout.get('paddingByteRanges')==[]and len(raw)==16 and raw[10:12]==bytes((17,128))
-          and int.from_bytes(raw[:8],'little')==layout.get('typeDefinition')and parsed.get('completeSourceBitsSpilledBeforeAdvance')is True
-          and parsed.get('sourceLocalValues')and parsed.get('actualSignedCountArgument')==16)
+          and int.from_bytes(raw[:8],'little')==layout.get('typeDefinition')
+          and ((parsed.get('completeSourceBitsSpilledBeforeAdvance')is True and parsed.get('sourceLocalValues'))
+               or e['mode']=='buffered-called-advance-float4'and reader=='rbx'and output=='rdi'
+                   and parsed.get('sourceLocalValues')==[]and parsed.get('preservedCaptureRegistersRequired')==['xmm6']
+                   and [(c['register'],c['sourceOffset'],c['bytes'])for c in parsed['capturedSourceSlices']]==[('xmm6',0,16)])
+          and parsed.get('actualSignedCountArgument')==16)
      if vector:
       layout=e.get('inlineNominalLayout',{});raw=bytes.fromhex(setters[n].get('parameterTypeRecordHex',''))
       high='rsi'if(reader,output)==('rdi','r14')else'r14'
@@ -418,7 +528,7 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
           and(wrapper_register!=output or n==len(events)-1)
           and [(c['register'],c['sourceOffset'],c['bytes'])for c in parsed['capturedSourceSlices']]==[('xmm0',0,8),(high_register,8,4)]
           and parsed.get('completeLowEightSpilledBeforeAdvance')is True and parsed.get('actualSignedCountArgument')==12)
-     need('independent-complete-actual-Advance-source',(e.get('mode')=='buffered-called-advance-scalar'or color or vector or integer_vector or initial24 or clip36 or posrot24)and e.get('actualSourceProved')is True
+     need('independent-complete-actual-Advance-source',(e.get('mode')=='buffered-called-advance-scalar'or color or raw16 or vector or integer_vector or initial24 or clip36 or posrot24)and e.get('actualSourceProved')is True
          and cap.get('targetRva',-base)+base==parsed['advanceTargetVa']and cap.get('completeAdvanceProgramProved')is True
          and cap.get('allFourReaderUpdatesProved')is True and cap.get('entryRspRestored')is True and cap.get('allNonvolatilesRestored')is True
          and cap.get('codeWindows')and all(cap.get('readerOffsets',{}).get(k)==v for k,v in parsed['readerOffsets'].items()))
@@ -458,13 +568,17 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    width=setters[n]['storedBytes'];context=e.get('context')
    if abi=='out-reference-local':
     from scripts.game_data.memorypack import animation_extra_dictionary_sources as extra_static
-    if e.get('declaredType')in extra_static.TYPES:validate_event=extra_static.validate_event
+    from scripts.game_data.memorypack import interactive_dictionary_sources as interactive_static
+    if e.get('declaredType')in interactive_static.TYPES:validate_event=interactive_static.validate_event
+    elif e.get('declaredType')in extra_static.TYPES:validate_event=extra_static.validate_event
     else:
      from scripts.game_data.memorypack.skill_gait_dictionary_sources import validate_event
     validate_event(e,setters[n])
     need('same-static-reference-reader-and-context',state.get('rcx')==('reader',)
         and state.get('r8')==('context',context['instructionRva']))
-    target=state.get('rdx');need('static-reference-owned-output-local',target is not None and target[0]=='local'and 32<=target[1]<128)
+    target=state.get('rdx');need('static-reference-owned-output-local',target is not None and target[0]=='local'
+        and(32<=target[1]<128 or interactive_static_setup and static_out_parent['parentType']=='Beyond.Gameplay.Core.AbilitySystemForIntData'
+            and n==2 and target[1]==136))
     start=target[1]
     need('actual-static-reference-local-initially-null',start in static_ready);static_ready.remove(start)
     need('static-reference-local-no-live-overlap',not any(start<=p<start+8 for p in locals_))
@@ -567,8 +681,9 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
   if m:
    need('restoration-alias-only-after-complete-fields',pending is None and len(sources)==len(events)and all(got==set(range(s['storedBytes']))for got,s in zip(stores,setters)))
    state['r11']=('frame',int(m[1],16));take();continue
-  m=re.fullmatch(r'lea rcx, \[(rax|rcx)\+0x([0-9a-f]+)\]',text)
+  m=re.fullmatch(r'lea rcx, \[(rax|rcx|rbx)\+0x([0-9a-f]+)\]',text)
   if m:
+   need('embedded-only-additional-address-base',m[1]!='rbx'or inline_wrapper)
    candidates=[(n,lane)for n,s in enumerate(setters)for lane in barrier_offsets(n)if s['fieldOffset']+lane==int(m[2],16)and(pending==n or not stores[n])]
    need('reference-address-owned-named-field',len(candidates)==1 and state.get(m[1])==('original',))
    state['rcx']=('field',*candidates[0]);take();continue
@@ -615,7 +730,7 @@ def complete_program(rows,path,events,setters,contexts,*,reader,output,base,barr
    need('ordinary-memory-address',a.get('index')is None and not a.get('ripRelative'),r)
    operand=a.get('base');offset=a.get('displacement',0);register=reg(move['register']);width=move['memoryBytes'];v=state.get(operand)
    if move['direction']=='load':
-    if v==('output',)and offset==0 and width==8:state[register]=('wrapper',)
+    if v==('output',)and offset==0 and width==8:state[register]=('original',)if inline_wrapper else('wrapper',)
     elif v==('wrapper',)and offset==16 and width==8:state[register]=('original',)
     elif(operand=='rsp'or v is not None and v[0]=='local')and(offset if operand=='rsp'else v[1]+offset)in locals_:
      start=offset if operand=='rsp'else v[1]+offset;parts=[locals_.get(start+i)for i in range(width)];need('whole-hidden-local-load',parts[0]is not None and parts==[(parts[0][0],parts[0][1]+i)for i in range(width)])

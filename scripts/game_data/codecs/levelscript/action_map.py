@@ -101,7 +101,7 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.memorypack.operation_native_validation import validate_native as _validate_native
+from scripts.game_data.memorypack.operation_native_validation import validate_native as _validate_native, _read_reader_input
 from . import params
 from . import send_lua_event
 from .pos_rot import decode_pos_rot_param
@@ -121,7 +121,7 @@ _UNION_TAG_FAMILY = {"GetterBase": "PureGetter"}
 
 
 def _contract() -> dict[str, Any]:
-    return _decoded_contract(CONTRACT_PATH.read_bytes())
+    return _decoded_contract(_read_reader_input(CONTRACT_PATH))
 
 
 @lru_cache(maxsize=2)
@@ -225,156 +225,156 @@ def _require_layout_build() -> None:
         )
 
 
-def _finish_scene_effect_native_audit() -> dict[str, Any]:
+def _finish_scene_effect_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_finish_scene_effect_native import (
         validate_finish_scene_effect_native_contract,
     )
 
-    return validate_finish_scene_effect_native_contract()
+    return _validate_native(validate_finish_scene_effect_native_contract, game_root=game_root)
 
 
-def _npc_proxy_patrol_stop_native_audit() -> dict[str, Any]:
+def _npc_proxy_patrol_stop_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_npc_proxy_patrol_stop_native import (
         validate_npc_proxy_patrol_stop_native_contract,
     )
 
-    return validate_npc_proxy_patrol_stop_native_contract()
+    return _validate_native(validate_npc_proxy_patrol_stop_native_contract, game_root=game_root)
 
 
-def _post_audio_status_native_audit() -> dict[str, Any]:
+def _post_audio_status_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_post_audio_status_native import (
         validate_post_audio_status_native_contract,
     )
 
-    return validate_post_audio_status_native_contract()
+    return _validate_native(validate_post_audio_status_native_contract, game_root=game_root)
 
 
-def _entities_visibility_native_audit() -> dict[str, Any]:
+def _entities_visibility_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_entities_visibility_native import (
         validate_entities_visibility_native_contract,
     )
 
-    return validate_entities_visibility_native_contract()
+    return _validate_native(validate_entities_visibility_native_contract, game_root=game_root)
 
 
-def _track_camera_native_audit() -> dict[str, Any]:
+def _track_camera_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_track_camera_native import (
         validate_track_camera_native_contract,
     )
 
-    return validate_track_camera_native_contract()
+    return _validate_native(validate_track_camera_native_contract, game_root=game_root)
 
 
-def _enemy_patrol_start_native_audit() -> dict[str, Any]:
+def _enemy_patrol_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_enemy_patrol_start_native import (
         validate_enemy_patrol_start_native_contract,
     )
 
-    return validate_enemy_patrol_start_native_contract()
+    return _validate_native(validate_enemy_patrol_start_native_contract, game_root=game_root)
 
 
-def _archery_stage_native_audit() -> dict[str, Any]:
+def _archery_stage_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_archery_stage_native import (
         validate_archery_stage_native_contract,
     )
 
-    return validate_archery_stage_native_contract()
+    return _validate_native(validate_archery_stage_native_contract, game_root=game_root)
 
 
-def _typhoea_chip_id_native_audit() -> dict[str, Any]:
+def _typhoea_chip_id_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_typhoea_chip_id_native import (
         validate_typhoea_chip_id_native_contract,
     )
 
-    return validate_typhoea_chip_id_native_contract()
+    return _validate_native(validate_typhoea_chip_id_native_contract, game_root=game_root)
 
 
-def _finish_buffs_native_audit() -> dict[str, Any]:
+def _finish_buffs_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_finish_buffs_native import (
         validate_finish_buffs_native_contract,
     )
 
-    return validate_finish_buffs_native_contract()
+    return _validate_native(validate_finish_buffs_native_contract, game_root=game_root)
 
 
-def _mark_task_condition_failed_native_audit() -> dict[str, Any]:
+def _mark_task_condition_failed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_mark_task_condition_failed_native import (
         validate_levelscript_mark_task_condition_failed_native_contract,
     )
 
-    return validate_levelscript_mark_task_condition_failed_native_contract()
+    return _validate_native(validate_levelscript_mark_task_condition_failed_native_contract, game_root=game_root)
 
 
-def _archery_advanced_headers_native_audit() -> dict[str, Any]:
+def _archery_advanced_headers_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_archery_advanced_headers_native import (
         validate_levelscript_archery_advanced_headers_native_contract,
     )
 
-    return validate_levelscript_archery_advanced_headers_native_contract()
+    return _validate_native(validate_levelscript_archery_advanced_headers_native_contract, game_root=game_root)
 
 
-def _on_train_level_event_native_audit() -> dict[str, Any]:
+def _on_train_level_event_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_train_level_event_native import (
         validate_levelscript_on_train_level_event_native_contract,
     )
 
-    return validate_levelscript_on_train_level_event_native_contract()
+    return _validate_native(validate_levelscript_on_train_level_event_native_contract, game_root=game_root)
 
 
-def _on_map_var_changed_native_audit() -> dict[str, Any]:
+def _on_map_var_changed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_map_var_changed_native import (
         validate_levelscript_on_map_var_changed_native_contract,
     )
 
-    return validate_levelscript_on_map_var_changed_native_contract()
+    return _validate_native(validate_levelscript_on_map_var_changed_native_contract, game_root=game_root)
 
 
-def _on_enemy_in_fight_native_audit() -> dict[str, Any]:
+def _on_enemy_in_fight_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_enemy_in_fight_native import (
         validate_levelscript_on_enemy_in_fight_native_contract,
     )
 
-    return validate_levelscript_on_enemy_in_fight_native_contract()
+    return _validate_native(validate_levelscript_on_enemy_in_fight_native_contract, game_root=game_root)
 
 
-def _on_enemy_take_last_attack_damage_native_audit() -> dict[str, Any]:
+def _on_enemy_take_last_attack_damage_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_enemy_take_last_attack_damage_native import (
         validate_levelscript_on_enemy_take_last_attack_damage_native_contract,
     )
 
-    return validate_levelscript_on_enemy_take_last_attack_damage_native_contract()
+    return _validate_native(validate_levelscript_on_enemy_take_last_attack_damage_native_contract, game_root=game_root)
 
 
-def _on_spell_infliction_native_audit() -> dict[str, Any]:
+def _on_spell_infliction_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spell_infliction_native import (
         validate_levelscript_on_spell_infliction_native_contract,
     )
 
-    return validate_levelscript_on_spell_infliction_native_contract()
+    return _validate_native(validate_levelscript_on_spell_infliction_native_contract, game_root=game_root)
 
 
-def _on_spawner_entity_spawn_native_audit() -> dict[str, Any]:
+def _on_spawner_entity_spawn_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_entity_spawn_native import (
         validate_levelscript_on_spawner_entity_spawn_native_contract,
     )
 
-    return validate_levelscript_on_spawner_entity_spawn_native_contract()
+    return _validate_native(validate_levelscript_on_spawner_entity_spawn_native_contract, game_root=game_root)
 
 
-def _on_spawner_group_begin_native_audit() -> dict[str, Any]:
+def _on_spawner_group_begin_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_group_begin_native import (
         validate_levelscript_on_spawner_group_begin_native_contract,
     )
 
-    return validate_levelscript_on_spawner_group_begin_native_contract()
+    return _validate_native(validate_levelscript_on_spawner_group_begin_native_contract, game_root=game_root)
 
 
-def _on_spawner_start_native_audit() -> dict[str, Any]:
+def _on_spawner_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_start_native import (
         validate_levelscript_on_spawner_start_native_contract,
     )
 
-    return validate_levelscript_on_spawner_start_native_contract()
+    return _validate_native(validate_levelscript_on_spawner_start_native_contract, game_root=game_root)
 
 
 def _on_spell_abnormal_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
@@ -404,420 +404,420 @@ def _on_bb_variable_changed_native_audit(*, game_root: Path | None = None) -> di
     return _validate_native(validate_levelscript_on_bb_variable_changed_native_contract,game_root=game_root)
 
 
-def _on_physical_no_guard_native_audit() -> dict[str, Any]:
+def _on_physical_no_guard_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_physical_no_guard_native import (
         validate_levelscript_on_physical_no_guard_native_contract,
     )
 
-    return validate_levelscript_on_physical_no_guard_native_contract()
+    return _validate_native(validate_levelscript_on_physical_no_guard_native_contract, game_root=game_root)
 
 
-def _on_spawner_wave_begin_native_audit() -> dict[str, Any]:
+def _on_spawner_wave_begin_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_wave_begin_native import (
         validate_levelscript_on_spawner_wave_begin_native_contract,
     )
 
-    return validate_levelscript_on_spawner_wave_begin_native_contract()
+    return _validate_native(validate_levelscript_on_spawner_wave_begin_native_contract, game_root=game_root)
 
 
-def _on_spawner_entity_die_native_audit() -> dict[str, Any]:
+def _on_spawner_entity_die_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_entity_die_native import (
         validate_levelscript_on_spawner_entity_die_native_contract,
     )
 
-    return validate_levelscript_on_spawner_entity_die_native_contract()
+    return _validate_native(validate_levelscript_on_spawner_entity_die_native_contract, game_root=game_root)
 
 
-def _on_encounter_activated_native_audit() -> dict[str, Any]:
+def _on_encounter_activated_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_encounter_activated_native import (
         validate_levelscript_on_encounter_activated_native_contract,
     )
 
-    return validate_levelscript_on_encounter_activated_native_contract()
+    return _validate_native(validate_levelscript_on_encounter_activated_native_contract, game_root=game_root)
 
 
-def _on_encounter_battle_part_begin_native_audit() -> dict[str, Any]:
+def _on_encounter_battle_part_begin_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_encounter_battle_part_begin_native import (
         validate_levelscript_on_encounter_battle_part_begin_native_contract,
     )
 
-    return validate_levelscript_on_encounter_battle_part_begin_native_contract()
+    return _validate_native(validate_levelscript_on_encounter_battle_part_begin_native_contract, game_root=game_root)
 
 
-def _on_encounter_battle_part_end_native_audit() -> dict[str, Any]:
+def _on_encounter_battle_part_end_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_encounter_battle_part_end_native import (
         validate_levelscript_on_encounter_battle_part_end_native_contract,
     )
 
-    return validate_levelscript_on_encounter_battle_part_end_native_contract()
+    return _validate_native(validate_levelscript_on_encounter_battle_part_end_native_contract, game_root=game_root)
 
 
-def _on_entity_cast_skill_native_audit() -> dict[str, Any]:
+def _on_entity_cast_skill_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_entity_cast_skill_native import (
         validate_levelscript_on_entity_cast_skill_native_contract,
     )
 
-    return validate_levelscript_on_entity_cast_skill_native_contract()
+    return _validate_native(validate_levelscript_on_entity_cast_skill_native_contract, game_root=game_root)
 
 
-def _on_leader_enter_trigger_volume_list_native_audit() -> dict[str, Any]:
+def _on_leader_enter_trigger_volume_list_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_leader_enter_trigger_volume_list_native import (
         validate_levelscript_on_leader_enter_trigger_volume_list_native_contract,
     )
 
-    return validate_levelscript_on_leader_enter_trigger_volume_list_native_contract()
+    return _validate_native(validate_levelscript_on_leader_enter_trigger_volume_list_native_contract, game_root=game_root)
 
 
-def _list_add_value_entity_ptr_native_audit() -> dict[str, Any]:
+def _list_add_value_entity_ptr_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_list_add_value_entity_ptr_native import (
         validate_levelscript_list_add_value_entity_ptr_native_contract,
     )
 
-    return validate_levelscript_list_add_value_entity_ptr_native_contract()
+    return _validate_native(validate_levelscript_list_add_value_entity_ptr_native_contract, game_root=game_root)
 
 
-def _add_tracking_point_native_audit() -> dict[str, Any]:
+def _add_tracking_point_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_add_tracking_point_native import (
         validate_levelscript_add_tracking_point_native_contract,
     )
 
-    return validate_levelscript_add_tracking_point_native_contract()
+    return _validate_native(validate_levelscript_add_tracking_point_native_contract, game_root=game_root)
 
 
-def _set_forbid_map_teleport_native_audit() -> dict[str, Any]:
+def _set_forbid_map_teleport_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_forbid_map_teleport_native import (
         validate_levelscript_set_forbid_map_teleport_native_contract,
     )
 
-    return validate_levelscript_set_forbid_map_teleport_native_contract()
+    return _validate_native(validate_levelscript_set_forbid_map_teleport_native_contract, game_root=game_root)
 
 
-def _resume_spawner_native_audit() -> dict[str, Any]:
+def _resume_spawner_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_resume_spawner_native import (
         validate_levelscript_resume_spawner_native_contract,
     )
 
-    return validate_levelscript_resume_spawner_native_contract()
+    return _validate_native(validate_levelscript_resume_spawner_native_contract, game_root=game_root)
 
 
-def _start_seq_loop_native_audit() -> dict[str, Any]:
+def _start_seq_loop_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_seq_loop_native import (
         validate_start_seq_loop_native_contract,
     )
 
-    return validate_start_seq_loop_native_contract()
+    return _validate_native(validate_start_seq_loop_native_contract, game_root=game_root)
 
 
-def _entity_scanned_native_audit() -> dict[str, Any]:
+def _entity_scanned_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_entity_scanned_native import (
         validate_entity_scanned_native_contract,
     )
 
-    return validate_entity_scanned_native_contract()
+    return _validate_native(validate_entity_scanned_native_contract, game_root=game_root)
 
 
-def _squad_fight_header_native_audit() -> dict[str, Any]:
+def _squad_fight_header_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_squad_fight_header_native import (
         validate_squad_fight_header_native_contract,
     )
 
-    return validate_squad_fight_header_native_contract()
+    return _validate_native(validate_squad_fight_header_native_contract, game_root=game_root)
 
 
-def _leader_enter_trigger_volume_native_audit() -> dict[str, Any]:
+def _leader_enter_trigger_volume_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_leader_enter_trigger_volume_native import (
         validate_leader_enter_trigger_volume_native_contract,
     )
 
-    return validate_leader_enter_trigger_volume_native_contract()
+    return _validate_native(validate_leader_enter_trigger_volume_native_contract, game_root=game_root)
 
 
-def _squad_all_die_header_native_audit() -> dict[str, Any]:
+def _squad_all_die_header_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_squad_all_die_header_native import (
         validate_squad_all_die_header_native_contract,
     )
 
-    return validate_squad_all_die_header_native_contract()
+    return _validate_native(validate_squad_all_die_header_native_contract, game_root=game_root)
 
 
-def _tracking_point_native_audit() -> dict[str, Any]:
+def _tracking_point_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_tracking_point_native import (
         validate_tracking_point_native_contract,
     )
 
-    return validate_tracking_point_native_contract()
+    return _validate_native(validate_tracking_point_native_contract, game_root=game_root)
 
 
-def _mission_changed_header_native_audit() -> dict[str, Any]:
+def _mission_changed_header_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_mission_changed_header_native import (
         validate_mission_changed_header_native_contract,
     )
 
-    return validate_mission_changed_header_native_contract()
+    return _validate_native(validate_mission_changed_header_native_contract, game_root=game_root)
 
 
-def _cutscene_teleport_native_audit() -> dict[str, Any]:
+def _cutscene_teleport_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_cutscene_teleport_native import (
         validate_cutscene_teleport_native_contract,
     )
 
-    return validate_cutscene_teleport_native_contract()
+    return _validate_native(validate_cutscene_teleport_native_contract, game_root=game_root)
 
 
-def _manually_stop_guide_native_audit() -> dict[str, Any]:
+def _manually_stop_guide_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_manually_stop_guide_native import (
         validate_manually_stop_guide_native_contract,
     )
 
-    return validate_manually_stop_guide_native_contract()
+    return _validate_native(validate_manually_stop_guide_native_contract, game_root=game_root)
 
 
-def _remove_tracking_point_native_audit() -> dict[str, Any]:
+def _remove_tracking_point_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_remove_tracking_point_native import (
         validate_remove_tracking_point_native_contract,
     )
 
-    return validate_remove_tracking_point_native_contract()
+    return _validate_native(validate_remove_tracking_point_native_contract, game_root=game_root)
 
 
-def _get_is_leader_in_trigger_volume_native_audit() -> dict[str, Any]:
+def _get_is_leader_in_trigger_volume_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_is_leader_in_trigger_volume_native import (
         validate_get_is_leader_in_trigger_volume_native_contract,
     )
 
-    return validate_get_is_leader_in_trigger_volume_native_contract()
+    return _validate_native(validate_get_is_leader_in_trigger_volume_native_contract, game_root=game_root)
 
 
-def _send_lua_event1_native_audit() -> dict[str, Any]:
+def _send_lua_event1_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_send_lua_event1_native import (
         validate_send_lua_event1_native_contract,
     )
 
-    return validate_send_lua_event1_native_contract()
+    return _validate_native(validate_send_lua_event1_native_contract, game_root=game_root)
 
 
-def _start_subgame_countdown_native_audit() -> dict[str, Any]:
+def _start_subgame_countdown_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_subgame_countdown_native import (
         validate_start_subgame_countdown_native_contract,
     )
 
-    return validate_start_subgame_countdown_native_contract()
+    return _validate_native(validate_start_subgame_countdown_native_contract, game_root=game_root)
 
 
-def _show_start_toast_native_audit() -> dict[str, Any]:
+def _show_start_toast_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_show_start_toast_native import (
         validate_show_start_toast_native_contract,
     )
 
-    return validate_show_start_toast_native_contract()
+    return _validate_native(validate_show_start_toast_native_contract, game_root=game_root)
 
 
-def _show_finish_toast_native_audit() -> dict[str, Any]:
+def _show_finish_toast_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_show_finish_toast_native import (
         validate_show_finish_toast_native_contract,
     )
 
-    return validate_show_finish_toast_native_contract()
+    return _validate_native(validate_show_finish_toast_native_contract, game_root=game_root)
 
 
-def _toggle_main_hud_ignore_native_audit() -> dict[str, Any]:
+def _toggle_main_hud_ignore_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_toggle_main_hud_ignore_native import (
         validate_toggle_main_hud_ignore_native_contract,
     )
 
-    return validate_toggle_main_hud_ignore_native_contract()
+    return _validate_native(validate_toggle_main_hud_ignore_native_contract, game_root=game_root)
 
 
-def _show_chapter_panel_direct_native_audit() -> dict[str, Any]:
+def _show_chapter_panel_direct_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_show_chapter_panel_direct_native import (
         validate_show_chapter_panel_direct_native_contract,
     )
 
-    return validate_show_chapter_panel_direct_native_contract()
+    return _validate_native(validate_show_chapter_panel_direct_native_contract, game_root=game_root)
 
 
-def _show_chapter_completed_panel_native_audit() -> dict[str, Any]:
+def _show_chapter_completed_panel_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_show_chapter_completed_panel_native import (
         validate_show_chapter_completed_panel_native_contract,
     )
 
-    return validate_show_chapter_completed_panel_native_contract()
+    return _validate_native(validate_show_chapter_completed_panel_native_contract, game_root=game_root)
 
 
-def _switch_to_camera_native_audit() -> dict[str, Any]:
+def _switch_to_camera_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_switch_to_camera_native import (
         validate_switch_to_camera_native_contract,
     )
 
-    return validate_switch_to_camera_native_contract()
+    return _validate_native(validate_switch_to_camera_native_contract, game_root=game_root)
 
 
-def _start_track_camera_native_audit() -> dict[str, Any]:
+def _start_track_camera_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_track_camera_native import (
         validate_start_track_camera_native_contract,
     )
 
-    return validate_start_track_camera_native_contract()
+    return _validate_native(validate_start_track_camera_native_contract, game_root=game_root)
 
 
-def _exit_camera_native_audit() -> dict[str, Any]:
+def _exit_camera_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_exit_camera_native import (
         validate_exit_camera_native_contract,
     )
 
-    return validate_exit_camera_native_contract()
+    return _validate_native(validate_exit_camera_native_contract, game_root=game_root)
 
 
-def _reset_follow_camera_native_audit() -> dict[str, Any]:
+def _reset_follow_camera_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_reset_follow_camera_native import (
         validate_reset_follow_camera_native_contract,
     )
 
-    return validate_reset_follow_camera_native_contract()
+    return _validate_native(validate_reset_follow_camera_native_contract, game_root=game_root)
 
 
-def _fac_set_interact_locked_state_native_audit() -> dict[str, Any]:
+def _fac_set_interact_locked_state_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_fac_set_interact_locked_state_native import (
         validate_fac_set_interact_locked_state_native_contract,
     )
 
-    return validate_fac_set_interact_locked_state_native_contract()
+    return _validate_native(validate_fac_set_interact_locked_state_native_contract, game_root=game_root)
 
 
-def _toggle_clear_screen_but_radio_v2_native_audit() -> dict[str, Any]:
+def _toggle_clear_screen_but_radio_v2_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_toggle_clear_screen_but_radio_v2_native import (
         validate_toggle_clear_screen_but_radio_v2_native_contract,
     )
 
-    return validate_toggle_clear_screen_but_radio_v2_native_contract()
+    return _validate_native(validate_toggle_clear_screen_but_radio_v2_native_contract, game_root=game_root)
 
 
-def _remove_npc_dialog_native_audit() -> dict[str, Any]:
+def _remove_npc_dialog_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_remove_npc_dialog_native import (
         validate_remove_npc_dialog_native_contract,
     )
 
-    return validate_remove_npc_dialog_native_contract()
+    return _validate_native(validate_remove_npc_dialog_native_contract, game_root=game_root)
 
 
-def _stop_subgame_countdown_by_handle_native_audit() -> dict[str, Any]:
+def _stop_subgame_countdown_by_handle_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_stop_subgame_countdown_by_handle_native import (
         validate_stop_subgame_countdown_by_handle_native_contract,
     )
 
-    return validate_stop_subgame_countdown_by_handle_native_contract()
+    return _validate_native(validate_stop_subgame_countdown_by_handle_native_contract, game_root=game_root)
 
 
-def _require_settlement_show_native_audit() -> dict[str, Any]:
+def _require_settlement_show_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_require_settlement_show_native import (
         validate_require_settlement_show_native_contract,
     )
 
-    return validate_require_settlement_show_native_contract()
+    return _validate_native(validate_require_settlement_show_native_contract, game_root=game_root)
 
 
-def _settlement_followon_native_audit() -> dict[str, Any]:
+def _settlement_followon_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_settlement_followon_native import (
         validate_settlement_followon_native_contract,
     )
 
-    return validate_settlement_followon_native_contract()
+    return _validate_native(validate_settlement_followon_native_contract, game_root=game_root)
 
 
-def _bool_compare_native_audit() -> dict[str, Any]:
+def _bool_compare_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_bool_compare_native import (
         validate_bool_compare_native_contract,
     )
 
-    return validate_bool_compare_native_contract()
+    return _validate_native(validate_bool_compare_native_contract, game_root=game_root)
 
 
-def _fac_top_view_range_native_audit() -> dict[str, Any]:
+def _fac_top_view_range_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_fac_top_view_range_native import (
         validate_fac_top_view_range_native_contract,
     )
 
-    return validate_fac_top_view_range_native_contract()
+    return _validate_native(validate_fac_top_view_range_native_contract, game_root=game_root)
 
 
-def _fac_build_effect_native_audit() -> dict[str, Any]:
+def _fac_build_effect_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_fac_build_effect_native import (
         validate_fac_build_effect_native_contract,
     )
 
-    return validate_fac_build_effect_native_contract()
+    return _validate_native(validate_fac_build_effect_native_contract, game_root=game_root)
 
 
-def _fac_change_building_native_audit() -> dict[str, Any]:
+def _fac_change_building_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_fac_change_building_native import (
         validate_fac_change_building_native_contract,
     )
 
-    return validate_fac_change_building_native_contract()
+    return _validate_native(validate_fac_change_building_native_contract, game_root=game_root)
 
 
-def _npc_proxy_effect_native_audit() -> dict[str, Any]:
+def _npc_proxy_effect_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_npc_proxy_effect_native import (
         validate_npc_proxy_effect_native_contract,
     )
 
-    return validate_npc_proxy_effect_native_contract()
+    return _validate_native(validate_npc_proxy_effect_native_contract, game_root=game_root)
 
 
-def _npc_effect_native_audit() -> dict[str, Any]:
+def _npc_effect_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_npc_effect_native import (
         validate_npc_effect_native_contract,
     )
 
-    return validate_npc_effect_native_contract()
+    return _validate_native(validate_npc_effect_native_contract, game_root=game_root)
 
 
-def _block_battle_music_native_audit() -> dict[str, Any]:
+def _block_battle_music_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_block_battle_music_native import (
         validate_block_battle_music_native_contract,
     )
 
-    return validate_block_battle_music_native_contract()
+    return _validate_native(validate_block_battle_music_native_contract, game_root=game_root)
 
 
-def _block_auto_music_change_cancel_native_audit() -> dict[str, Any]:
+def _block_auto_music_change_cancel_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_block_auto_music_change_cancel_native import (
         validate_block_auto_music_change_cancel_native_contract,
     )
 
-    return validate_block_auto_music_change_cancel_native_contract()
+    return _validate_native(validate_block_auto_music_change_cancel_native_contract, game_root=game_root)
 
 
-def _fac_get_building_position_native_audit() -> dict[str, Any]:
+def _fac_get_building_position_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_fac_get_building_position_native import (
         validate_fac_get_building_position_native_contract,
     )
 
-    return validate_fac_get_building_position_native_contract()
+    return _validate_native(validate_fac_get_building_position_native_contract, game_root=game_root)
 
 
-def _entity_hp_changed_native_audit() -> dict[str, Any]:
+def _entity_hp_changed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_entity_hp_changed_native import (
         validate_entity_hp_changed_native_contract,
     )
 
-    return validate_entity_hp_changed_native_contract()
+    return _validate_native(validate_entity_hp_changed_native_contract, game_root=game_root)
 
 
-def _settlement_upgrade_show_native_audit() -> dict[str, Any]:
+def _settlement_upgrade_show_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_settlement_upgrade_show_native import (
         validate_settlement_upgrade_show_native_contract,
     )
 
-    return validate_settlement_upgrade_show_native_contract()
+    return _validate_native(validate_settlement_upgrade_show_native_contract, game_root=game_root)
 
 
-def _check_performance_ready_native_audit() -> dict[str, Any]:
+def _check_performance_ready_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_check_performance_ready_native import (
         validate_check_performance_ready_native_contract,
     )
 
-    return validate_check_performance_ready_native_contract()
+    return _validate_native(validate_check_performance_ready_native_contract, game_root=game_root)
 
 
 def _environment_enable_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
@@ -825,287 +825,287 @@ def _environment_enable_native_audit(*, game_root: Path | None = None) -> dict[s
         validate_environment_enable_native_contract,
     )
 
-    return validate_environment_enable_native_contract(game_root=game_root)
+    return _validate_native(validate_environment_enable_native_contract, game_root=game_root)
 
 
-def _settlement_ready_performance_native_audit() -> dict[str, Any]:
+def _settlement_ready_performance_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_settlement_ready_performance_native import (
         validate_settlement_ready_performance_native_contract,
     )
 
-    return validate_settlement_ready_performance_native_contract()
+    return _validate_native(validate_settlement_ready_performance_native_contract, game_root=game_root)
 
 
-def _add_buffs_to_target_selves_native_audit() -> dict[str, Any]:
+def _add_buffs_to_target_selves_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_add_buffs_to_target_selves_native import (
         validate_add_buffs_to_target_selves_native_contract,
     )
 
-    return validate_add_buffs_to_target_selves_native_contract()
+    return _validate_native(validate_add_buffs_to_target_selves_native_contract, game_root=game_root)
 
 
-def _set_squad_special_idle_enable_native_audit() -> dict[str, Any]:
+def _set_squad_special_idle_enable_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_squad_special_idle_enable_native import (
         validate_set_squad_special_idle_enable_native_contract,
     )
 
-    return validate_set_squad_special_idle_enable_native_contract()
+    return _validate_native(validate_set_squad_special_idle_enable_native_contract, game_root=game_root)
 
 
-def _list_make_entity_ptr_native_audit() -> dict[str, Any]:
+def _list_make_entity_ptr_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_list_make_entity_ptr_native import (
         validate_list_make_entity_ptr_native_contract,
     )
 
-    return validate_list_make_entity_ptr_native_contract()
+    return _validate_native(validate_list_make_entity_ptr_native_contract, game_root=game_root)
 
 
-def _getter_entity_ptr_native_audit() -> dict[str, Any]:
+def _getter_entity_ptr_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_getter_entity_ptr_native import (
         validate_getter_entity_ptr_native_contract,
     )
 
-    return validate_getter_entity_ptr_native_contract()
+    return _validate_native(validate_getter_entity_ptr_native_contract, game_root=game_root)
 
 
-def _getter_levelscript_ptr_native_audit() -> dict[str, Any]:
+def _getter_levelscript_ptr_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_getter_levelscript_ptr_native import (
         validate_getter_levelscript_ptr_native_contract,
     )
 
-    return validate_getter_levelscript_ptr_native_contract()
+    return _validate_native(validate_getter_levelscript_ptr_native_contract, game_root=game_root)
 
 
-def _set_enemy_ui_show_range_native_audit() -> dict[str, Any]:
+def _set_enemy_ui_show_range_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_enemy_ui_show_range_native import (
         validate_set_enemy_ui_show_range_native_contract,
     )
 
-    return validate_set_enemy_ui_show_range_native_contract()
+    return _validate_native(validate_set_enemy_ui_show_range_native_contract, game_root=game_root)
 
 
-def _set_list_buff_native_audit() -> dict[str, Any]:
+def _set_list_buff_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_list_buff_native import (
         validate_set_list_buff_native_contract,
     )
 
-    return validate_set_list_buff_native_contract()
+    return _validate_native(validate_set_list_buff_native_contract, game_root=game_root)
 
 
-def _entity_to_string_native_audit() -> dict[str, Any]:
+def _entity_to_string_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_entity_to_string_native import (
         validate_entity_to_string_native_contract,
     )
 
-    return validate_entity_to_string_native_contract()
+    return _validate_native(validate_entity_to_string_native_contract, game_root=game_root)
 
 
-def _is_look_at_point_in_screen_native_audit() -> dict[str, Any]:
+def _is_look_at_point_in_screen_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_is_look_at_point_in_screen_native import (
         validate_is_look_at_point_in_screen_native_contract,
     )
 
-    return validate_is_look_at_point_in_screen_native_contract()
+    return _validate_native(validate_is_look_at_point_in_screen_native_contract, game_root=game_root)
 
 
-def _getter_list_buff_native_audit() -> dict[str, Any]:
+def _getter_list_buff_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_getter_list_buff_native import (
         validate_getter_list_buff_native_contract,
     )
 
-    return validate_getter_list_buff_native_contract()
+    return _validate_native(validate_getter_list_buff_native_contract, game_root=game_root)
 
 
-def _get_cur_squad_all_dead_native_audit() -> dict[str, Any]:
+def _get_cur_squad_all_dead_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_cur_squad_all_dead_native import (
         validate_get_cur_squad_all_dead_native_contract,
     )
 
-    return validate_get_cur_squad_all_dead_native_contract()
+    return _validate_native(validate_get_cur_squad_all_dead_native_contract, game_root=game_root)
 
 
-def _get_character_template_id_native_audit() -> dict[str, Any]:
+def _get_character_template_id_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_character_template_id_native import (
         validate_get_character_template_id_native_contract,
     )
 
-    return validate_get_character_template_id_native_contract()
+    return _validate_native(validate_get_character_template_id_native_contract, game_root=game_root)
 
 
-def _float_getter_int_to_float_native_audit() -> dict[str, Any]:
+def _float_getter_int_to_float_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_float_getter_int_to_float_native import (
         validate_float_getter_int_to_float_native_contract,
     )
 
-    return validate_float_getter_int_to_float_native_contract()
+    return _validate_native(validate_float_getter_int_to_float_native_contract, game_root=game_root)
 
 
-def _float_getter_plus_native_audit() -> dict[str, Any]:
+def _float_getter_plus_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_float_getter_plus_native import (
         validate_float_getter_plus_native_contract,
     )
 
-    return validate_float_getter_plus_native_contract()
+    return _validate_native(validate_float_getter_plus_native_contract, game_root=game_root)
 
 
-def _get_interactive_property_int_native_audit() -> dict[str, Any]:
+def _get_interactive_property_int_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_interactive_property_int_native import (
         validate_get_interactive_property_int_native_contract,
     )
 
-    return validate_get_interactive_property_int_native_contract()
+    return _validate_native(validate_get_interactive_property_int_native_contract, game_root=game_root)
 
 
-def _get_mission_save_property_int_native_audit() -> dict[str, Any]:
+def _get_mission_save_property_int_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_mission_save_property_int_native import (
         validate_get_mission_save_property_int_native_contract,
     )
 
-    return validate_get_mission_save_property_int_native_contract()
+    return _validate_native(validate_get_mission_save_property_int_native_contract, game_root=game_root)
 
 
-def _start_narrative_black_screen_teleport_native_audit() -> dict[str, Any]:
+def _start_narrative_black_screen_teleport_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_narrative_black_screen_teleport_native import (
         validate_start_narrative_black_screen_teleport_native_contract,
     )
 
-    return validate_start_narrative_black_screen_teleport_native_contract()
+    return _validate_native(validate_start_narrative_black_screen_teleport_native_contract, game_root=game_root)
 
 
-def _set_squad_enable_relax_idle_native_audit() -> dict[str, Any]:
+def _set_squad_enable_relax_idle_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_squad_enable_relax_idle_native import (
         validate_set_squad_enable_relax_idle_native_contract,
     )
 
-    return validate_set_squad_enable_relax_idle_native_contract()
+    return _validate_native(validate_set_squad_enable_relax_idle_native_contract, game_root=game_root)
 
 
-def _character_play_montage_native_audit() -> dict[str, Any]:
+def _character_play_montage_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_character_play_montage_native import (
         validate_character_play_montage_native_contract,
     )
 
-    return validate_character_play_montage_native_contract()
+    return _validate_native(validate_character_play_montage_native_contract, game_root=game_root)
 
 
-def _on_script_pre_start_native_audit() -> dict[str, Any]:
+def _on_script_pre_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_script_pre_start_native import (
         validate_on_script_pre_start_native_contract,
     )
 
-    return validate_on_script_pre_start_native_contract()
+    return _validate_native(validate_on_script_pre_start_native_contract, game_root=game_root)
 
 
-def _bool_getter_mult_or_native_audit() -> dict[str, Any]:
+def _bool_getter_mult_or_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_bool_getter_mult_or_native import (
         validate_bool_getter_mult_or_native_contract,
     )
 
-    return validate_bool_getter_mult_or_native_contract()
+    return _validate_native(validate_bool_getter_mult_or_native_contract, game_root=game_root)
 
 
-def _play_voice_narrative_native_audit() -> dict[str, Any]:
+def _play_voice_narrative_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_play_voice_narrative_native import (
         validate_play_voice_narrative_native_contract,
     )
 
-    return validate_play_voice_narrative_native_contract()
+    return _validate_native(validate_play_voice_narrative_native_contract, game_root=game_root)
 
 
-def _scripted_char_teleport_to_native_audit() -> dict[str, Any]:
+def _scripted_char_teleport_to_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_scripted_char_teleport_to_native import (
         validate_scripted_char_teleport_to_native_contract,
     )
 
-    return validate_scripted_char_teleport_to_native_contract()
+    return _validate_native(validate_scripted_char_teleport_to_native_contract, game_root=game_root)
 
 
-def _scripted_char_patrol_start_native_audit() -> dict[str, Any]:
+def _scripted_char_patrol_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_scripted_char_patrol_start_native import (
         validate_scripted_char_patrol_start_native_contract,
     )
 
-    return validate_scripted_char_patrol_start_native_contract()
+    return _validate_native(validate_scripted_char_patrol_start_native_contract, game_root=game_root)
 
 
-def _stop_char_scripted_mode_native_audit() -> dict[str, Any]:
+def _stop_char_scripted_mode_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_stop_char_scripted_mode_native import (
         validate_stop_char_scripted_mode_native_contract,
     )
 
-    return validate_stop_char_scripted_mode_native_contract()
+    return _validate_native(validate_stop_char_scripted_mode_native_contract, game_root=game_root)
 
 
-def _on_any_entity_die_native_audit() -> dict[str, Any]:
+def _on_any_entity_die_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_any_entity_die_native import (
         validate_on_any_entity_die_native_contract,
     )
 
-    return validate_on_any_entity_die_native_contract()
+    return _validate_native(validate_on_any_entity_die_native_contract, game_root=game_root)
 
 
-def _on_client_global_var_changed_native_audit() -> dict[str, Any]:
+def _on_client_global_var_changed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_client_global_var_changed_native import (
         validate_on_client_global_var_changed_native_contract,
     )
 
-    return validate_on_client_global_var_changed_native_contract()
+    return _validate_native(validate_on_client_global_var_changed_native_contract, game_root=game_root)
 
 
-def _on_specific_entity_list_die_native_audit() -> dict[str, Any]:
+def _on_specific_entity_list_die_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_specific_entity_list_die_native import (
         validate_on_specific_entity_list_die_native_contract,
     )
 
-    return validate_on_specific_entity_list_die_native_contract()
+    return _validate_native(validate_on_specific_entity_list_die_native_contract, game_root=game_root)
 
 
-def _on_start_script_controlled_char_mode_native_audit() -> dict[str, Any]:
+def _on_start_script_controlled_char_mode_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_start_script_controlled_char_mode_native import (
         validate_on_start_script_controlled_char_mode_native_contract,
     )
 
-    return validate_on_start_script_controlled_char_mode_native_contract()
+    return _validate_native(validate_on_start_script_controlled_char_mode_native_contract, game_root=game_root)
 
 
-def _on_spawner_pause_native_audit() -> dict[str, Any]:
+def _on_spawner_pause_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_pause_native import (
         validate_on_spawner_pause_native_contract,
     )
 
-    return validate_on_spawner_pause_native_contract()
+    return _validate_native(validate_on_spawner_pause_native_contract, game_root=game_root)
 
 
-def _building_pos_hint_show_native_audit() -> dict[str, Any]:
+def _building_pos_hint_show_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_building_pos_hint_show_native import (
         validate_building_pos_hint_show_native_contract,
     )
 
-    return validate_building_pos_hint_show_native_contract()
+    return _validate_native(validate_building_pos_hint_show_native_contract, game_root=game_root)
 
 
-def _building_pos_hint_hide_native_audit() -> dict[str, Any]:
+def _building_pos_hint_hide_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_building_pos_hint_hide_native import (
         validate_building_pos_hint_hide_native_contract,
     )
 
-    return validate_building_pos_hint_hide_native_contract()
+    return _validate_native(validate_building_pos_hint_hide_native_contract, game_root=game_root)
 
 
-def _fac_guide_hint_enable_native_audit() -> dict[str, Any]:
+def _fac_guide_hint_enable_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_fac_guide_hint_enable_native import (
         validate_fac_guide_hint_enable_native_contract,
     )
 
-    return validate_fac_guide_hint_enable_native_contract()
+    return _validate_native(validate_fac_guide_hint_enable_native_contract, game_root=game_root)
 
 
-def _npc_get_pack_anim_has_clean_native_audit() -> dict[str, Any]:
+def _npc_get_pack_anim_has_clean_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_npc_get_pack_anim_has_clean_native import (
         validate_npc_get_pack_anim_has_clean_native_contract,
     )
 
-    return validate_npc_get_pack_anim_has_clean_native_contract()
+    return _validate_native(validate_npc_get_pack_anim_has_clean_native_contract, game_root=game_root)
 
 
 def _on_encounter_intro_part_end_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
@@ -1117,260 +1117,260 @@ def _on_encounter_intro_part_end_native_audit(*, game_root: Path | None = None) 
     return _validate_native(validate_levelscript_on_encounter_intro_part_end_native_contract,game_root=game_root)
 
 
-def _on_npc_dirty_block_cleaned_native_audit() -> dict[str, Any]:
+def _on_npc_dirty_block_cleaned_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_npc_dirty_block_cleaned_native import (
         validate_levelscript_on_npc_dirty_block_cleaned_native_contract,
     )
 
-    return validate_levelscript_on_npc_dirty_block_cleaned_native_contract()
+    return _validate_native(validate_levelscript_on_npc_dirty_block_cleaned_native_contract, game_root=game_root)
 
 
-def _on_server_dialog_exit_native_audit() -> dict[str, Any]:
+def _on_server_dialog_exit_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_server_dialog_exit_native import (
         validate_levelscript_on_server_dialog_exit_native_contract,
     )
 
-    return validate_levelscript_on_server_dialog_exit_native_contract()
+    return _validate_native(validate_levelscript_on_server_dialog_exit_native_contract, game_root=game_root)
 
 
-def _on_level_reset_native_audit() -> dict[str, Any]:
+def _on_level_reset_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_level_reset_native import (
         validate_levelscript_on_level_reset_native_contract,
     )
 
-    return validate_levelscript_on_level_reset_native_contract()
+    return _validate_native(validate_levelscript_on_level_reset_native_contract, game_root=game_root)
 
 
-def _on_specific_entity_die_native_audit() -> dict[str, Any]:
+def _on_specific_entity_die_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_specific_entity_die_native import (
         validate_levelscript_on_specific_entity_die_native_contract,
     )
 
-    return validate_levelscript_on_specific_entity_die_native_contract()
+    return _validate_native(validate_levelscript_on_specific_entity_die_native_contract, game_root=game_root)
 
 
-def _on_sub_game_start_native_audit() -> dict[str, Any]:
+def _on_sub_game_start_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_sub_game_start_native import (
         validate_levelscript_on_sub_game_start_native_contract,
     )
 
-    return validate_levelscript_on_sub_game_start_native_contract()
+    return _validate_native(validate_levelscript_on_sub_game_start_native_contract, game_root=game_root)
 
 
-def _on_npc_patrol_checkpoint_reach_native_audit() -> dict[str, Any]:
+def _on_npc_patrol_checkpoint_reach_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_npc_patrol_checkpoint_reach_native import (
         validate_levelscript_on_npc_patrol_checkpoint_reach_native_contract,
     )
 
-    return validate_levelscript_on_npc_patrol_checkpoint_reach_native_contract()
+    return _validate_native(validate_levelscript_on_npc_patrol_checkpoint_reach_native_contract, game_root=game_root)
 
 
-def _on_spawner_group_complete_native_audit() -> dict[str, Any]:
+def _on_spawner_group_complete_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_spawner_group_complete_native import (
         validate_levelscript_on_spawner_group_complete_native_contract,
     )
 
-    return validate_levelscript_on_spawner_group_complete_native_contract()
+    return _validate_native(validate_levelscript_on_spawner_group_complete_native_contract, game_root=game_root)
 
 
-def _set_decoration_animator_int_native_audit() -> dict[str, Any]:
+def _set_decoration_animator_int_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_decoration_animator_int_native import (
         validate_set_decoration_animator_int_native_contract,
     )
 
-    return validate_set_decoration_animator_int_native_contract()
+    return _validate_native(validate_set_decoration_animator_int_native_contract, game_root=game_root)
 
 
-def _set_decoration_view_state_native_audit() -> dict[str, Any]:
+def _set_decoration_view_state_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_decoration_view_state_native import (
         validate_set_decoration_view_state_native_contract,
     )
 
-    return validate_set_decoration_view_state_native_contract()
+    return _validate_native(validate_set_decoration_view_state_native_contract, game_root=game_root)
 
 
-def _entity_move_to_with_speed_native_audit() -> dict[str, Any]:
+def _entity_move_to_with_speed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_entity_move_to_with_speed_native import (
         validate_entity_move_to_with_speed_native_contract,
     )
 
-    return validate_entity_move_to_with_speed_native_contract()
+    return _validate_native(validate_entity_move_to_with_speed_native_contract, game_root=game_root)
 
 
-def _start_fmv_and_teleport_native_audit() -> dict[str, Any]:
+def _start_fmv_and_teleport_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_fmv_and_teleport_native import (
         validate_start_fmv_and_teleport_native_contract,
     )
 
-    return validate_start_fmv_and_teleport_native_contract()
+    return _validate_native(validate_start_fmv_and_teleport_native_contract, game_root=game_root)
 
 
-def _disable_hud_fade_native_audit() -> dict[str, Any]:
+def _disable_hud_fade_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_disable_hud_fade_native import (
         validate_disable_hud_fade_native_contract,
     )
 
-    return validate_disable_hud_fade_native_contract()
+    return _validate_native(validate_disable_hud_fade_native_contract, game_root=game_root)
 
 
-def _stop_effect_on_npc_proxy_native_audit() -> dict[str, Any]:
+def _stop_effect_on_npc_proxy_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_stop_effect_on_npc_proxy_native import (
         validate_stop_effect_on_npc_proxy_native_contract,
     )
 
-    return validate_stop_effect_on_npc_proxy_native_contract()
+    return _validate_native(validate_stop_effect_on_npc_proxy_native_contract, game_root=game_root)
 
 
-def _npc_stop_cur_montage_native_audit() -> dict[str, Any]:
+def _npc_stop_cur_montage_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_npc_stop_cur_montage_native import (
         validate_npc_stop_cur_montage_native_contract,
     )
 
-    return validate_npc_stop_cur_montage_native_contract()
+    return _validate_native(validate_npc_stop_cur_montage_native_contract, game_root=game_root)
 
 
-def _set_main_char_hp_bar_active_native_audit() -> dict[str, Any]:
+def _set_main_char_hp_bar_active_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_main_char_hp_bar_active_native import (
         validate_set_main_char_hp_bar_active_native_contract,
     )
 
-    return validate_set_main_char_hp_bar_active_native_contract()
+    return _validate_native(validate_set_main_char_hp_bar_active_native_contract, game_root=game_root)
 
 
-def _destroy_ability_entity_native_audit() -> dict[str, Any]:
+def _destroy_ability_entity_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_destroy_ability_entity_native import (
         validate_destroy_ability_entity_native_contract,
     )
 
-    return validate_destroy_ability_entity_native_contract()
+    return _validate_native(validate_destroy_ability_entity_native_contract, game_root=game_root)
 
 
-def _move_bamboo_last_native_audit() -> dict[str, Any]:
+def _move_bamboo_last_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_move_bamboo_last_native import (
         validate_move_bamboo_last_native_contract,
     )
 
-    return validate_move_bamboo_last_native_contract()
+    return _validate_native(validate_move_bamboo_last_native_contract, game_root=game_root)
 
 
-def _stop_radio_native_audit() -> dict[str, Any]:
+def _stop_radio_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_stop_radio_native import (
         validate_stop_radio_native_contract,
     )
 
-    return validate_stop_radio_native_contract()
+    return _validate_native(validate_stop_radio_native_contract, game_root=game_root)
 
 
-def _set_bamboo_pos_index_native_audit() -> dict[str, Any]:
+def _set_bamboo_pos_index_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_bamboo_pos_index_native import (
         validate_set_bamboo_pos_index_native_contract,
     )
 
-    return validate_set_bamboo_pos_index_native_contract()
+    return _validate_native(validate_set_bamboo_pos_index_native_contract, game_root=game_root)
 
 
-def _is_endmin_gender_native_audit() -> dict[str, Any]:
+def _is_endmin_gender_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_is_endmin_gender_native import (
         validate_is_endmin_gender_native_contract,
     )
 
-    return validate_is_endmin_gender_native_contract()
+    return _validate_native(validate_is_endmin_gender_native_contract, game_root=game_root)
 
 
-def _teleport_gameplay_npc_native_audit() -> dict[str, Any]:
+def _teleport_gameplay_npc_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_teleport_gameplay_npc_native import (
         validate_levelscript_teleport_gameplay_npc_native_contract,
     )
 
-    return validate_levelscript_teleport_gameplay_npc_native_contract()
+    return _validate_native(validate_levelscript_teleport_gameplay_npc_native_contract, game_root=game_root)
 
 
-def _apply_movement_setting_modifier_native_audit() -> dict[str, Any]:
+def _apply_movement_setting_modifier_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_apply_movement_setting_modifier_native import (
         validate_apply_movement_setting_modifier_native_contract,
     )
 
-    return validate_apply_movement_setting_modifier_native_contract()
+    return _validate_native(validate_apply_movement_setting_modifier_native_contract, game_root=game_root)
 
 
-def _toggle_ui_dev_only_native_audit() -> dict[str, Any]:
+def _toggle_ui_dev_only_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_toggle_ui_dev_only_native import (
         validate_toggle_ui_dev_only_native_contract,
     )
 
-    return validate_toggle_ui_dev_only_native_contract()
+    return _validate_native(validate_toggle_ui_dev_only_native_contract, game_root=game_root)
 
 
-def _start_cutscene_hide_scene_object_native_audit() -> dict[str, Any]:
+def _start_cutscene_hide_scene_object_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_cutscene_hide_scene_object_native import (
         validate_start_cutscene_hide_scene_object_native_contract,
     )
 
-    return validate_start_cutscene_hide_scene_object_native_contract()
+    return _validate_native(validate_start_cutscene_hide_scene_object_native_contract, game_root=game_root)
 
 
-def _start_cutscene_control_scene_object_native_audit() -> dict[str, Any]:
+def _start_cutscene_control_scene_object_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_start_cutscene_control_scene_object_native import (
         validate_start_cutscene_control_scene_object_native_contract,
     )
 
-    return validate_start_cutscene_control_scene_object_native_contract()
+    return _validate_native(validate_start_cutscene_control_scene_object_native_contract, game_root=game_root)
 
 
-def _set_squad_icon_active_native_audit() -> dict[str, Any]:
+def _set_squad_icon_active_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_squad_icon_active_native import (
         validate_set_squad_icon_active_native_contract,
     )
 
-    return validate_set_squad_icon_active_native_contract()
+    return _validate_native(validate_set_squad_icon_active_native_contract, game_root=game_root)
 
 
-def _skip_entity_die_display_native_audit() -> dict[str, Any]:
+def _skip_entity_die_display_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_skip_entity_die_display_native import (
         validate_skip_entity_die_display_native_contract,
     )
 
-    return validate_skip_entity_die_display_native_contract()
+    return _validate_native(validate_skip_entity_die_display_native_contract, game_root=game_root)
 
 
-def _get_script_task_objective_is_completed_native_audit() -> dict[str, Any]:
+def _get_script_task_objective_is_completed_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_script_task_objective_is_completed_native import (
         validate_get_script_task_objective_is_completed_native_contract,
     )
 
-    return validate_get_script_task_objective_is_completed_native_contract()
+    return _validate_native(validate_get_script_task_objective_is_completed_native_contract, game_root=game_root)
 
 
-def _on_any_enemy_poise_zero_native_audit() -> dict[str, Any]:
+def _on_any_enemy_poise_zero_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_any_enemy_poise_zero_native import (
         validate_on_any_enemy_poise_zero_native_contract,
     )
 
-    return validate_on_any_enemy_poise_zero_native_contract()
+    return _validate_native(validate_on_any_enemy_poise_zero_native_contract, game_root=game_root)
 
 
-def _on_any_enemy_poise_knot_break_native_audit() -> dict[str, Any]:
+def _on_any_enemy_poise_knot_break_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_any_enemy_poise_knot_break_native import (
         validate_on_any_enemy_poise_knot_break_native_contract,
     )
 
-    return validate_on_any_enemy_poise_knot_break_native_contract()
+    return _validate_native(validate_on_any_enemy_poise_knot_break_native_contract, game_root=game_root)
 
 
-def _on_aether_lock_endpoint_scanned_native_audit() -> dict[str, Any]:
+def _on_aether_lock_endpoint_scanned_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_aether_lock_endpoint_scanned_native import (
         validate_levelscript_on_aether_lock_endpoint_scanned_native_contract,
     )
 
-    return validate_levelscript_on_aether_lock_endpoint_scanned_native_contract()
+    return _validate_native(validate_levelscript_on_aether_lock_endpoint_scanned_native_contract, game_root=game_root)
 
 
-def _on_cutscene_exit_native_audit() -> dict[str, Any]:
+def _on_cutscene_exit_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_cutscene_exit_native import (
         validate_levelscript_on_cutscene_exit_native_contract,
     )
 
-    return validate_levelscript_on_cutscene_exit_native_contract()
+    return _validate_native(validate_levelscript_on_cutscene_exit_native_contract, game_root=game_root)
 
 
 def _on_entity_die_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
@@ -1382,68 +1382,68 @@ def _on_entity_die_native_audit(*, game_root: Path | None = None) -> dict[str, A
     return _validate_native(validate_levelscript_on_entity_die_native_contract,game_root=game_root)
 
 
-def _on_blight_miasma_weak_guide_native_audit() -> dict[str, Any]:
+def _on_blight_miasma_weak_guide_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_on_blight_miasma_weak_guide_native import (
         validate_levelscript_on_blight_miasma_weak_guide_native_contract,
     )
 
-    return validate_levelscript_on_blight_miasma_weak_guide_native_contract()
+    return _validate_native(validate_levelscript_on_blight_miasma_weak_guide_native_contract, game_root=game_root)
 
 
-def _event_args_float_native_audit() -> dict[str, Any]:
+def _event_args_float_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_event_args_float_native import (
         validate_event_args_float_native_contract,
     )
 
-    return validate_event_args_float_native_contract()
+    return _validate_native(validate_event_args_float_native_contract, game_root=game_root)
 
 
-def _audio_cue_native_audit() -> dict[str, Any]:
+def _audio_cue_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_audio_cue_native import (
         validate_audio_cue_native_contract,
     )
 
-    return validate_audio_cue_native_contract()
+    return _validate_native(validate_audio_cue_native_contract, game_root=game_root)
 
 
-def _override_npc_dialog_native_audit() -> dict[str, Any]:
+def _override_npc_dialog_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_override_npc_dialog_native import (
         validate_override_npc_dialog_native_contract,
     )
 
-    return validate_override_npc_dialog_native_contract()
+    return _validate_native(validate_override_npc_dialog_native_contract, game_root=game_root)
 
 
-def _getter_compare_native_audit() -> dict[str, Any]:
+def _getter_compare_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_getter_compare_native import (
         validate_getter_compare_native_contract,
     )
 
-    return validate_getter_compare_native_contract()
+    return _validate_native(validate_getter_compare_native_contract, game_root=game_root)
 
 
-def _get_mission_state_native_audit() -> dict[str, Any]:
+def _get_mission_state_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_get_mission_state_native import (
         validate_get_mission_state_native_contract,
     )
 
-    return validate_get_mission_state_native_contract()
+    return _validate_native(validate_get_mission_state_native_contract, game_root=game_root)
 
 
-def _water_height_native_audit() -> dict[str, Any]:
+def _water_height_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_water_height_native import (
         validate_water_height_native_contract,
     )
 
-    return validate_water_height_native_contract()
+    return _validate_native(validate_water_height_native_contract, game_root=game_root)
 
 
-def _set_fac_mode_native_audit() -> dict[str, Any]:
+def _set_fac_mode_native_audit(*, game_root: Path | None = None) -> dict[str, Any]:
     from scripts.game_data.levelscript_set_fac_mode_native import (
         validate_set_fac_mode_native_contract,
     )
 
-    return validate_set_fac_mode_native_contract()
+    return _validate_native(validate_set_fac_mode_native_contract, game_root=game_root)
 
 
 _NATIVE_GATE_CONTRACTS = (
@@ -1625,15 +1625,30 @@ _NATIVE_GATE_CONTRACTS = (
 )
 
 
-def _required_native_gates() -> dict[tuple[str, int], str]:
-    families,audit=_union_tags()._load()
-    if audit.get('status')!='validated':return {}
+def _required_native_gates(*, game_root=None) -> dict[tuple[str, int], str]:
+    # This is a routing index, not a child proof. Reuse only within the same
+    # selected operation whose complete reader/native bookends still guard it.
+    required, _audit = _validate_native(_required_native_gate_index, game_root=game_root)
+    return required
+
+
+def _required_native_gate_index(*, game_root=None):
+    selected = {} if game_root is None else dict(
+        gameassembly=Path(game_root).parent/'GameAssembly.dll',
+        metadata=Path(game_root)/'il2cpp_data/Metadata/global-metadata.dat')
+    families,audit=_union_tags()._load(**selected)
+    if audit.get('status')!='validated':return {},audit
+    from scripts.game_data.memorypack.operation_native_validation import _owned_reader_source_inputs
+    owned = _owned_reader_source_inputs(CONTRACTS_DIR/filename for filename,_,_ in _NATIVE_GATE_CONTRACTS)
     signatures=[]
-    for filename,schema,gate in _NATIVE_GATE_CONTRACTS:
-        stat=(CONTRACTS_DIR/filename).stat()
-        signatures.append((filename,schema,gate,stat.st_mtime_ns,stat.st_size))
+    for index,(filename,schema,gate) in enumerate(_NATIVE_GATE_CONTRACTS):
+        if owned is not None:
+            signatures.append((filename,schema,gate,*owned[index]))
+        else:
+            stat=(CONTRACTS_DIR/filename).stat()
+            signatures.append((filename,schema,gate,stat.st_mtime_ns,stat.st_size))
     tag_rows=tuple((family,tuple(sorted(rows.items()))) for family,rows in sorted(families.items()))
-    return _required_native_gates_cached(tuple(signatures),tag_rows)
+    return _required_native_gates_cached(tuple(signatures),tag_rows),audit
 
 
 @lru_cache(maxsize=2)
@@ -1673,11 +1688,11 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
     reviewed = (_condition_layouts().get(tag) if family == 'GameCondition'
                 else _layouts().get((family, tag)))
     if reviewed is None:
-        if family == 'GameCondition' and _required_native_gates().get((family, tag)) is not None:
+        if family == 'GameCondition' and _required_native_gates(game_root=game_root).get((family, tag)) is not None:
             raise ActionMapCodecError(f'actionMap.nativeContract:missing-reviewed-condition-layout=0x{tag:04x}')
         return
     native_gate = reviewed.get("nativeGate")
-    required = _required_native_gates().get((family, tag))
+    required = _required_native_gates(game_root=game_root).get((family, tag))
     if required is not None and native_gate != required:
         raise ActionMapCodecError(
             f"actionMap.nativeGate:missing-gate={family}:0x{tag:04x},required={required}"
@@ -1716,7 +1731,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
                 selected_route=(family,tag),
                 gameassembly=root.parent/'GameAssembly.dll' if root else None,
                 metadata=root/'il2cpp_data/Metadata/global-metadata.dat' if root else None)
-        else:audit = reader()
+        else:audit = reader(game_root=game_root)
         selected = next((row for row in audit.get("validatedRows", [])
                          if (row.get("family"), row.get("tag")) == (family, tag)), None)
         if (audit.get("status") != "validated" or selected is None
@@ -1731,7 +1746,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_entity_scanned_native":
-        audit = _entity_scanned_native_audit()
+        audit = _entity_scanned_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1750,7 +1765,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_squad_fight_header_native":
-        audit = _squad_fight_header_native_audit()
+        audit = _squad_fight_header_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1769,7 +1784,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_leader_enter_trigger_volume_native":
-        audit = _leader_enter_trigger_volume_native_audit()
+        audit = _leader_enter_trigger_volume_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1788,7 +1803,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_squad_all_die_header_native":
-        audit = _squad_all_die_header_native_audit()
+        audit = _squad_all_die_header_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1807,7 +1822,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_tracking_point_native":
-        audit = _tracking_point_native_audit()
+        audit = _tracking_point_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1826,7 +1841,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_mission_changed_header_native":
-        audit = _mission_changed_header_native_audit()
+        audit = _mission_changed_header_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1845,7 +1860,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_cutscene_teleport_native":
-        audit = _cutscene_teleport_native_audit()
+        audit = _cutscene_teleport_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1864,7 +1879,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_manually_stop_guide_native":
-        audit = _manually_stop_guide_native_audit()
+        audit = _manually_stop_guide_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1883,7 +1898,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_remove_tracking_point_native":
-        audit = _remove_tracking_point_native_audit()
+        audit = _remove_tracking_point_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1902,7 +1917,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_get_is_leader_in_trigger_volume_native":
-        audit = _get_is_leader_in_trigger_volume_native_audit()
+        audit = _get_is_leader_in_trigger_volume_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1921,7 +1936,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_send_lua_event1_native":
-        audit = _send_lua_event1_native_audit()
+        audit = _send_lua_event1_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1940,7 +1955,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_start_subgame_countdown_native":
-        audit = _start_subgame_countdown_native_audit()
+        audit = _start_subgame_countdown_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -1974,19 +1989,19 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
         "levelscript_stop_subgame_countdown_by_handle_native",
     ):
         audit = (
-            _show_start_toast_native_audit() if native_gate == "levelscript_show_start_toast_native"
-            else _show_finish_toast_native_audit() if native_gate == "levelscript_show_finish_toast_native"
-            else _toggle_main_hud_ignore_native_audit() if native_gate == "levelscript_toggle_main_hud_ignore_native"
-            else _show_chapter_panel_direct_native_audit() if native_gate == "levelscript_show_chapter_panel_direct_native"
-            else _show_chapter_completed_panel_native_audit() if native_gate == "levelscript_show_chapter_completed_panel_native"
-            else _switch_to_camera_native_audit() if native_gate == "levelscript_switch_to_camera_native"
-            else _start_track_camera_native_audit() if native_gate == "levelscript_start_track_camera_native"
-            else _exit_camera_native_audit() if native_gate == "levelscript_exit_camera_native"
-            else _reset_follow_camera_native_audit() if native_gate == "levelscript_reset_follow_camera_native"
-            else _fac_set_interact_locked_state_native_audit() if native_gate == "levelscript_fac_set_interact_locked_state_native"
-            else _toggle_clear_screen_but_radio_v2_native_audit() if native_gate == "levelscript_toggle_clear_screen_but_radio_v2_native"
-            else _remove_npc_dialog_native_audit() if native_gate == "levelscript_remove_npc_dialog_native"
-            else _stop_subgame_countdown_by_handle_native_audit()
+            _show_start_toast_native_audit(game_root=game_root) if native_gate == "levelscript_show_start_toast_native"
+            else _show_finish_toast_native_audit(game_root=game_root) if native_gate == "levelscript_show_finish_toast_native"
+            else _toggle_main_hud_ignore_native_audit(game_root=game_root) if native_gate == "levelscript_toggle_main_hud_ignore_native"
+            else _show_chapter_panel_direct_native_audit(game_root=game_root) if native_gate == "levelscript_show_chapter_panel_direct_native"
+            else _show_chapter_completed_panel_native_audit(game_root=game_root) if native_gate == "levelscript_show_chapter_completed_panel_native"
+            else _switch_to_camera_native_audit(game_root=game_root) if native_gate == "levelscript_switch_to_camera_native"
+            else _start_track_camera_native_audit(game_root=game_root) if native_gate == "levelscript_start_track_camera_native"
+            else _exit_camera_native_audit(game_root=game_root) if native_gate == "levelscript_exit_camera_native"
+            else _reset_follow_camera_native_audit(game_root=game_root) if native_gate == "levelscript_reset_follow_camera_native"
+            else _fac_set_interact_locked_state_native_audit(game_root=game_root) if native_gate == "levelscript_fac_set_interact_locked_state_native"
+            else _toggle_clear_screen_but_radio_v2_native_audit(game_root=game_root) if native_gate == "levelscript_toggle_clear_screen_but_radio_v2_native"
+            else _remove_npc_dialog_native_audit(game_root=game_root) if native_gate == "levelscript_remove_npc_dialog_native"
+            else _stop_subgame_countdown_by_handle_native_audit(game_root=game_root)
         )
         selected = audit.get("route")
         if (
@@ -2006,7 +2021,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_require_settlement_show_native":
-        audit = _require_settlement_show_native_audit()
+        audit = _require_settlement_show_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2025,7 +2040,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_settlement_followon_native":
-        audit = _settlement_followon_native_audit()
+        audit = _settlement_followon_native_audit(game_root=game_root)
         selected = next(
             (row for row in audit.get("routes", [])
              if row.get("family") == family and row.get("tag") == tag), None,
@@ -2045,7 +2060,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_bool_compare_native":
-        audit = _bool_compare_native_audit()
+        audit = _bool_compare_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2064,7 +2079,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_fac_top_view_range_native":
-        audit = _fac_top_view_range_native_audit()
+        audit = _fac_top_view_range_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2083,7 +2098,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_fac_build_effect_native":
-        audit = _fac_build_effect_native_audit()
+        audit = _fac_build_effect_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2102,7 +2117,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_fac_change_building_native":
-        audit = _fac_change_building_native_audit()
+        audit = _fac_change_building_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2121,7 +2136,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_npc_proxy_effect_native":
-        audit = _npc_proxy_effect_native_audit()
+        audit = _npc_proxy_effect_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2273,7 +2288,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             "levelscript_on_any_enemy_poise_zero_native": _on_any_enemy_poise_zero_native_audit,
             "levelscript_on_any_enemy_poise_knot_break_native": _on_any_enemy_poise_knot_break_native_audit,
         }
-        audit = validators[native_gate](game_root=game_root) if native_gate == 'levelscript_environment_enable_native' else validators[native_gate]()
+        audit = validators[native_gate](game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2292,7 +2307,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_event_args_float_native":
-        audit = _event_args_float_native_audit()
+        audit = _event_args_float_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2311,7 +2326,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_audio_cue_native":
-        audit = _audio_cue_native_audit()
+        audit = _audio_cue_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2330,7 +2345,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_override_npc_dialog_native":
-        audit = _override_npc_dialog_native_audit()
+        audit = _override_npc_dialog_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2349,7 +2364,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_finish_scene_effect_native":
-        audit = _finish_scene_effect_native_audit()
+        audit = _finish_scene_effect_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2368,7 +2383,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_npc_proxy_patrol_stop_native":
-        audit = _npc_proxy_patrol_stop_native_audit()
+        audit = _npc_proxy_patrol_stop_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2387,7 +2402,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_post_audio_status_native":
-        audit = _post_audio_status_native_audit()
+        audit = _post_audio_status_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2406,7 +2421,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_entities_visibility_native":
-        audit = _entities_visibility_native_audit()
+        audit = _entities_visibility_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2425,7 +2440,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_track_camera_native":
-        audit = _track_camera_native_audit()
+        audit = _track_camera_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2444,7 +2459,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_enemy_patrol_start_native":
-        audit = _enemy_patrol_start_native_audit()
+        audit = _enemy_patrol_start_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2463,7 +2478,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_archery_stage_native":
-        audit = _archery_stage_native_audit()
+        audit = _archery_stage_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2482,7 +2497,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_typhoea_chip_id_native":
-        audit = _typhoea_chip_id_native_audit()
+        audit = _typhoea_chip_id_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2501,7 +2516,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_finish_buffs_native":
-        audit = _finish_buffs_native_audit()
+        audit = _finish_buffs_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2520,7 +2535,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_mark_task_condition_failed_native":
-        audit = _mark_task_condition_failed_native_audit()
+        audit = _mark_task_condition_failed_native_audit(game_root=game_root)
         selected = audit.get("route")
         selected_fields = (
             [[name, "int32" if kind == "enum32" else kind] for name, kind in selected["fields"]]
@@ -2543,7 +2558,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_archery_advanced_headers_native":
-        audit = _archery_advanced_headers_native_audit()
+        audit = _archery_advanced_headers_native_audit(game_root=game_root)
         selected = next(
             (route for route in audit.get("routes", [])
              if route.get("family") == family and route.get("tag") == tag),
@@ -2564,7 +2579,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_on_train_level_event_native":
-        audit = _on_train_level_event_native_audit()
+        audit = _on_train_level_event_native_audit(game_root=game_root)
         selected = next(
             (route for route in audit.get("routes", [])
              if route.get("family") == family and route.get("tag") == tag),
@@ -2656,11 +2671,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             "levelscript_set_forbid_map_teleport_native": _set_forbid_map_teleport_native_audit,
             "levelscript_resume_spawner_native": _resume_spawner_native_audit,
         }[native_gate]
-        audit = (audit_reader(game_root=game_root) if game_root is not None and native_gate in {
-            "levelscript_on_spell_abnormal_start_native", "levelscript_on_physical_infliction_native",
-            "levelscript_on_bb_variable_changed_native", "levelscript_on_entity_die_native",
-            "levelscript_on_encounter_intro_part_end_native",
-        } else audit_reader())
+        audit = audit_reader(game_root=game_root)
         selected = next(
             (route for route in audit.get("routes", [])
              if route.get("family") == family and route.get("tag") == tag),
@@ -2681,7 +2692,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_list_add_value_entity_ptr_native":
-        audit = _list_add_value_entity_ptr_native_audit()
+        audit = _list_add_value_entity_ptr_native_audit(game_root=game_root)
         selected = next(
             (route for route in audit.get("routes", [])
              if route.get("family") == family and route.get("tag") == tag),
@@ -2702,7 +2713,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_start_seq_loop_native":
-        audit = _start_seq_loop_native_audit()
+        audit = _start_seq_loop_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2743,7 +2754,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_getter_compare_native":
-        audit = _getter_compare_native_audit()
+        audit = _getter_compare_native_audit(game_root=game_root)
         selected = next(
             (route for route in audit.get("routes", [])
              if route.get("family") == family and route.get("tag") == tag),
@@ -2764,7 +2775,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_get_mission_state_native":
-        audit = _get_mission_state_native_audit()
+        audit = _get_mission_state_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2783,7 +2794,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_water_height_native":
-        audit = _water_height_native_audit()
+        audit = _water_height_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -2802,7 +2813,7 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any], *, g
             )
         return
     if native_gate == "levelscript_set_fac_mode_native":
-        audit = _set_fac_mode_native_audit()
+        audit = _set_fac_mode_native_audit(game_root=game_root)
         selected = audit.get("route")
         if (
             audit.get("status") != "validated"
@@ -3300,7 +3311,7 @@ class _Cursor:
             expected=dict(status='validated',codecKinds=[kind],memberCount=4,rawSize=4,pathEncoding='int32-pool-index')
             if any(audit.get(k)!=v for k,v in expected.items()):
                 raise ActionMapCodecError(f"{field}:enum-param-composition-unproved={kind},status={audit.get('status')},detail={str(audit.get('detail',''))[:500]}")
-            camera=_track_camera_native_audit()
+            camera=_track_camera_native_audit(game_root=self.game_root)
             if camera.get('status')!='validated':
                 raise ActionMapCodecError(f"{field}:trackCameraEnumNative:status={camera.get('status')},detail={str(camera.get('detail',''))[:500]}")
             value,end=decode_move_state_param(self.data,self.offset,{value:name for name,value in camera['enumMembers']},strings=self.strings)
@@ -4112,7 +4123,9 @@ class _Cursor:
         # used before those independent legacy rows were restored.
         legacy_residual = (layout is not None and
             layout.get("nativeGate") == "levelscript_residual_routes_native")
-        if self.current_owner is not None and (layout is None or legacy_residual):
+        from scripts.game_data.memorypack.levelscript_action_route_components import CURRENT_REVIEWED
+        current_reviewed=layout is not None and(family,layout.get('wrapperName'))in CURRENT_REVIEWED
+        if self.current_owner is not None and (layout is None or legacy_residual or current_reviewed):
             from .current_actionmap_route_gateway import decode
             try:
                 decoded, self.offset = decode(self.data, start, family=family, tag=tag,
@@ -4128,7 +4141,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_spell_abnormal_start_native":
             from .on_spell_abnormal_start import decode_on_spell_abnormal_start_header
 
-            audit = _on_spell_abnormal_start_native_audit(game_root=self.game_root) if self.game_root is not None else _on_spell_abnormal_start_native_audit()
+            audit = _on_spell_abnormal_start_native_audit(game_root=self.game_root) if self.game_root is not None else _on_spell_abnormal_start_native_audit(game_root=self.game_root)
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4145,7 +4158,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_physical_infliction_native":
             from .on_physical_infliction import decode_on_physical_infliction_header
 
-            audit = _on_physical_infliction_native_audit(game_root=self.game_root) if self.game_root is not None else _on_physical_infliction_native_audit()
+            audit = _on_physical_infliction_native_audit(game_root=self.game_root) if self.game_root is not None else _on_physical_infliction_native_audit(game_root=self.game_root)
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4162,7 +4175,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_bb_variable_changed_native":
             from .on_bb_variable_changed import decode_on_bb_variable_changed_header
 
-            audit = _on_bb_variable_changed_native_audit(game_root=self.game_root) if self.game_root is not None else _on_bb_variable_changed_native_audit()
+            audit = _on_bb_variable_changed_native_audit(game_root=self.game_root) if self.game_root is not None else _on_bb_variable_changed_native_audit(game_root=self.game_root)
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4178,7 +4191,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_entity_die_native":
             from .on_entity_die import decode_on_entity_die_header
 
-            audit = _on_entity_die_native_audit(game_root=self.game_root) if self.game_root is not None else _on_entity_die_native_audit()
+            audit = _on_entity_die_native_audit(game_root=self.game_root) if self.game_root is not None else _on_entity_die_native_audit(game_root=self.game_root)
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4194,7 +4207,7 @@ class _Cursor:
         if layout.get("nativeGate") == "levelscript_on_encounter_intro_part_end_native":
             from .on_encounter_intro_part_end import decode_on_encounter_intro_part_end_header
 
-            audit = _on_encounter_intro_part_end_native_audit(game_root=self.game_root) if self.game_root is not None else _on_encounter_intro_part_end_native_audit()
+            audit = _on_encounter_intro_part_end_native_audit(game_root=self.game_root) if self.game_root is not None else _on_encounter_intro_part_end_native_audit(game_root=self.game_root)
             route = next(
                 (row for row in audit.get("routes", [])
                  if row.get("family") == family and row.get("tag") == tag),
@@ -4359,4 +4372,8 @@ def decode_reviewed_node(
         raise ActionMapCodecError(f"actionMap:unsupported-family={family}")
     cursor = _Cursor(data, offset, game_root=game_root, strings=strings, null_list_params=null_list_params, numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params,current_owner=current_owner)
     result = cursor.node(family, f"actionMap.{family}")
+    if current_owner is not None:
+        from scripts.game_data.memorypack.levelscript_current_source import CurrentLevelScriptSource
+        if type(current_owner)is CurrentLevelScriptSource:
+            result=current_owner.verify_action_node(data,offset,family,result,cursor.offset,strings=strings)
     return result, cursor.offset

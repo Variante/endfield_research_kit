@@ -26,8 +26,8 @@ def derive_many(image,pins,parameter_types):
    need('own-complete-enum-Param-source',source.get('status')=='validated-conditional-enum-param-source'
     and source.get('nativeInputs')==pins and source.get('typeName')==name and source.get('sourceAdmitted')is True)
    value=source['valueType'];forwarder=None
-   from scripts.game_data.memorypack.levelscript_bitset_param_forwarder_sources import TYPE as BITSET,derive as bitset_forwarder
-   if name==BITSET:
+   from scripts.game_data.memorypack.levelscript_bitset_param_forwarder_sources import TYPES as INLINE_ENUMS,derive as bitset_forwarder
+   if name in INLINE_ENUMS:
     need('own-inline-Bitset-source-profile',source['proof'].get('sourceProfile')=='bitset-inline-enum-raw4')
     forwarder=bitset_forwarder
    reference=_reference_join(image,pins,value,forwarder_prover=forwarder)

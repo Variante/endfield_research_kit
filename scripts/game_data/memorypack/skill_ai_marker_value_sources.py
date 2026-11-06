@@ -51,30 +51,14 @@ def layout(image,ctx):
         referenceLaneOffsets=[],paddingByteRanges=[[1,4]],wireReadAdmitted=False)
 
 
-def source_program(regions,entry,offsets):
-    keys=('currentPtr','bufferLength','advancedCount','consumed')
-    need('four-independent-Reader-offsets',set(offsets)>=set(keys)
-        and len({offsets[key]for key in keys})==4
-        and all(type(offsets[key])is int and 0<=offsets[key]<128 for key in keys))
-    g=BytesPath(regions,entry);g.take('48895c2408','57','4883ec20',
-        '8379'+bytes((offsets['bufferLength'],8)).hex(),'488bf9');g.branch('7d',True,1)
-    pointer=g.at;g.take('488b5f'+bytes((offsets['currentPtr'],)).hex(),'ba08000000','488bcf')
-    capture=g.at;g.take('488b1b');call=g.at;advance=g.relative('e8')
-    g.take('488bc3','488b5c2430','4883c420','5f','c3')
-    return dict(selectedBytes=g.seen,wireBytes=8,resultRegister='rax',sourcePointerInstructionVa=pointer,
-        captureInstructionVa=capture,sourcePointerRegister='rbx',payloadRegister='rbx',
-        advanceCallInstructionVa=call,advanceTargetVa=advance,actualSignedCountArgument=8,
-        sourceSlices=[[0,8]],returnSlices=[[0,8]],rawBitsIncludingPaddingUnchanged=True,
-        boolNormalizationClaimed=False,entryRspRestored=True,nonvolatileRegistersRestored=['rbx','rdi'],
-        normalReturn=True,independentAdvanceSourceRequired=True,managedLayoutUsedForWidth=False)
-
 
 def _source(image,pins,target,offsets):
     from scripts.game_data.memorypack import buff_ec_profiles_native as ec
     from scripts.game_data.memorypack.generated_called_advance_sources import derive as derive_advance
     base=image.pe.image_base;family,windows,rows=ec.family(image,target-base)
     regions=[(base+w['startRva'],image.window_bytes(w))for w in windows]
-    program=source_program(regions,target,offsets)
+    from scripts.game_data.memorypack.unmanaged_qword_source import called_advance_qword_program
+    program=called_advance_qword_program(regions,target,offsets)
     advance=derive_advance(image,pins,target=program['advanceTargetVa'],offsets=offsets)
     need('own-eight-byte-payload-survives-actual-Advance',advance.get('completeAdvanceProgramProved')is True
         and advance.get('allFourReaderUpdatesProved')is True

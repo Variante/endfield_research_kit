@@ -12,14 +12,20 @@ def _merge(target,rows):
 
 
 def derive(image,pins):
+    return _derive_on_children(image,pins)
+
+
+def _derive_on_children(image,pins,*,double=None,vector=None,attributes=None,cast_component=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack import skill_damage_unit_sources as unit,skill_damage_union_components as unions
     from scripts.game_data.memorypack import skill_effect_components as effect,skill_root_cast_components as cast
     from scripts.game_data.memorypack import skill_damage_list_components as lists,reference_list_induction_sources as induction
     from scripts.game_data.memorypack import skill_damage_tag_components as tags,buff_ec_profiles_native as ec
     _publication_gate(image,pins);parent=unit.derive_reference(image,pins)
-    union=unions.derive(image,pins);need('complete-current-Damage-unions',[],union['pendingJoins'])
-    effects=effect.derive(image,pins);sound=unit.derive_hit_sound(image,pins);cost=cast.derive(image,pins)
+    union=unions._derive_on_children(image,pins,double=double,attributes=attributes);need('complete-current-Damage-unions',[],union['pendingJoins'])
+    effects=effect._derive_on_children(image,pins,double_component=double,vector_component=vector)
+    sound=unit.derive_hit_sound(image,pins);cost=cast.derive(image,pins)if cast_component is None else cast_component
+    need('same-selected-cast-inputs',pins,cost['nativeInputs'])
     caps={};proofs={}
     _merge(caps,effects['capabilities']);_merge(caps,sound['capabilities'])
     _merge(caps,{'damage-calculation-union':union['families']['CalculationBase'],

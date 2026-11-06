@@ -94,7 +94,8 @@ def derive_adapter(image,pins,pair,wrapper,*,forwarder_prover=None,conversion_pr
     elif pair['registration'].get('profile')in('direct-closed-adapter-constructor.v1','direct-adapter-explicit-static-checks.v1',
             'direct-reference-adapter-nonnull-skip-static-checks.v1',
             'direct-constructed-reference-adapter-nonnull-skip-static-checks.v1','direct-adapter-key-in-rcx-single-static-check.v1',
-            'direct-reference-adapter-late-rbx-save.v1'):
+            'direct-reference-adapter-late-rbx-save.v1','direct-constructed-adapter-key-in-rcx-single-static-check.v1',
+            'direct-adapter-rbx-key-rcx-ready-statics.v1'):
         need('direct-constructor-canonical-entry',json.loads(json.dumps(ctor)),pair['registration']['canonicalConstructor'])
         need('direct-constructor-call',True,pair['registration']['constructorCallExecuted'])
         need('direct-constructor-actual-entry',ctor['pointer']-base,pair['registration']['actualCalls']['constructor'])

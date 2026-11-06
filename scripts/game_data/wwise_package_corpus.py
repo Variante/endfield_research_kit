@@ -5,6 +5,7 @@ framing; this gate owns current-roster coverage, package byte joins and duplicat
 identity diagnostics. It does not choose among duplicate media or decode PCM.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from collections import Counter, defaultdict
@@ -199,8 +200,8 @@ def build(outer_path, ledger_path, expected_input_set_sha256):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--outer', type=Path, default=ROOT / 'reports/animestudio/vfs_understanding_latest.json')
-    parser.add_argument('--ledger', type=Path, default=ROOT / 'reports/animestudio/vfs_understanding_files_latest.jsonl.gz')
+    parser.add_argument('--outer', type=Path, default=ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_latest.json')
+    parser.add_argument('--ledger', type=Path, default=ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_files_latest.jsonl.gz')
     parser.add_argument('--expected-input-set-sha256', required=True)
     parser.add_argument('--output', type=Path, default=ROOT / 'reports/audio/package_corpus_current.json')
     args = parser.parse_args(argv)

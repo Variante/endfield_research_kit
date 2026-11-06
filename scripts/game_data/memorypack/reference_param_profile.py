@@ -134,6 +134,22 @@ def _derive_registration(image, original_type, wrapper, getter):
             except (ValueError,KeyError,IndexError,TypeError) as error:
                 profile_diagnostics.append(profile.__name__.rsplit('.',1)[-1]+':'+str(error)[:1600])
     if len(unique) != 1:
+        if not unique:
+            from scripts.game_data.il2cpp import formatter_constructed_key_receiver_registration as constructed_key
+            try:
+                row=constructed_key.derive(image,original_type,wrapper.name,candidates,helpers)
+                unique[row['window']['startRva']]=row
+            except(ValueError,KeyError,IndexError,TypeError)as error:
+                profile_diagnostics.append('formatter_constructed_key_receiver_registration:'+str(error)[:1600])
+    if len(unique) != 1:
+        if not unique:
+            from scripts.game_data.il2cpp import formatter_rbx_key_registration as rbx_key
+            try:
+                row=rbx_key.derive(image,original_type,wrapper.name,candidates,helpers)
+                unique[row['window']['startRva']]=row
+            except(ValueError,KeyError,IndexError,TypeError)as error:
+                profile_diagnostics.append('formatter_rbx_key_registration:'+str(error)[:1600])
+    if len(unique) != 1:
         raise ValueError(f'{LABEL}.eager-window-count: original={original_type} wrapper={wrapper.name}'
             f' expected=1 actual={len(unique)} diagnostics={diagnostics[:4]+profile_diagnostics}')
     return next(iter(unique.values()))

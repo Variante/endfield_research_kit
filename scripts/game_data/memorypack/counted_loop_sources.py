@@ -11,7 +11,7 @@ explicit capacity, buffered-source and normal ABI conditions.
 
 def prove_induction(programs,*,initial,increment,comparison,counter,saved_count,max_count=10000,mode_key='newList',backedge_sites=None):
     if (type(max_count)is not int or not 3<=max_count<=10000
-            or counter not in('ebx','esi','edi','ebp','r12d','r13d','r14d','r15d')or not isinstance(saved_count,str)or not saved_count
+            or counter not in('eax','ebx','esi','edi','ebp','r12d','r13d','r14d','r15d')or not isinstance(saved_count,str)or not saved_count
             or type(mode_key)is not str or mode_key not in('newList','newDictionary','newArray')):
         raise ValueError('countedLoop.invalid-induction-domain')
     # BytesPath records instruction operands as separate chunks. A one-byte

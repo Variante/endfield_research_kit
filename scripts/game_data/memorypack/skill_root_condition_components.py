@@ -48,6 +48,10 @@ def bind_union(union,children):
 
 
 def derive(image,pins):
+    return _derive_on_double(image,pins)
+
+
+def _derive_on_double(image,pins,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.memorypack.generated_record_components import compile_member_program
@@ -59,7 +63,9 @@ def derive(image,pins):
     wrappers=[]
     for _,typ,_ in ROUTES:
         wrapper,=[w for w in image.memorypack_wrappers.values()if w.wrapped_type==typ];wrappers.append(wrapper.name)
-    sources=derive_many(image,pins,wrappers);double=double_source(image,pins)
+    sources=derive_many(image,pins,wrappers)
+    if double is None:double=double_source(image,pins)
+    need('same-condition-double-inputs',pins,double['nativeInputs'])
     children={};caps=dict(double['capabilities'])
     for result,(_,typ,name)in zip(sources['owners'],ROUTES,strict=True):
         need('Condition-complete-concrete-source:'+typ,'complete-reader-source-proved',result['status'])
@@ -96,9 +102,13 @@ def derive(image,pins):
 
 
 def derive_list(image,pins,*,typed_request,call_target,count_limit=10000):
+    return _derive_list_on_double(image,pins,typed_request=typed_request,call_target=call_target,count_limit=count_limit)
+
+
+def _derive_list_on_double(image,pins,*,typed_request,call_target,count_limit=10000,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack.reference_list_induction_sources import derive as list_source
-    child=derive(image,pins)
+    child=_derive_on_double(image,pins,double)
     collection=list_source(image,pins,typed_request=typed_request,call_target=call_target,element_type=TYPE,count_limit=count_limit)
     witness=collection['witnessComponent'];caps=dict(child['capabilities'])
     caps[LIST_CAP]=dict(elementType=TYPE,elementValueType=False,closedListType='System.Collections.Generic.List`1<'+TYPE+'>',

@@ -1,5 +1,6 @@
-"""Current conditional Rolling/Launcher wire profile; every positive dictionary revalidates native composition."""
+"""Current conditional Rolling/Launcher wire profile with selected native proof."""
 import math,struct
+from scripts.game_data.memorypack.operation_native_validation import validate_native
 
 class ModuleStructureDecodeError(ValueError):pass
 
@@ -81,13 +82,18 @@ def _decode_module_dictionary(data,cursor,rolling_tag,diagnostics=None,*,count_l
  return dict(status='present',count=count,entries=entries,startOffset=start,endOffset=cursor),cursor
 
 
-def decode_module_dictionary(data,cursor,diagnostics=None):
- """Legacy public frontdoor retains its selected native gate for positives."""
+def decode_module_dictionary(data,cursor,diagnostics=None,*,gameassembly=None,metadata=None):
+ """Positive maps require a selected proof; guarded batches may reuse it.
+
+ Outside a batch the validator still runs on every positive map. Within a
+ batch only the exact native pair can reuse success, and the outer complete
+ input checks must finish before any decoded record can be published.
+ """
  if type(cursor)is not int or not 0<=cursor<=len(data)-4:raise LevelScriptModuleCodecError('truncated modules at '+str(cursor))
  count=struct.unpack_from('<i',data,cursor)[0];tag=0
  if count < -1 or count>max(0,(len(data)-cursor-4)//9):raise LevelScriptModuleCodecError('invalid/truncated modules count at '+str(cursor)+': '+str(count))
  if count>0:
-  audit=native.validate()
+  audit=validate_native(native.validate,gameassembly=gameassembly,metadata=metadata)
   if audit.get('status')!='validated':
    if diagnostics is not None:diagnostics.append(dict(gate='currentModuleWireNative',nativeAudit=audit))
    raise LevelScriptModuleCodecError('modules.native:'+str(audit.get('status'))+':'+str(audit.get('detail',''))[:500])

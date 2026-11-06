@@ -249,7 +249,7 @@ def derive_dispatches(image,pins,*,include_nonzero=False):
                 ['existing-output alternative','reserved markers','refill/malformed paths','whole owners']))))
 
 
-def _derive_with_ec(image,pins,ec_component=None,*,buff_find_component=None,buff_filter_component=None,nested_component=None,geometry_component=None,selected_nonzero_wrappers=None):
+def _derive_with_ec(image,pins,ec_component=None,*,buff_find_component=None,buff_filter_component=None,nested_component=None,geometry_component=None,selected_nonzero_wrappers=None,blackboard_components=None):
     """Compose finite closed children, base Original conversion and lists."""
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.contracts import CONTRACTS_DIR
@@ -273,7 +273,7 @@ def _derive_with_ec(image,pins,ec_component=None,*,buff_find_component=None,buff
     dispatches=derive_dispatches(image,pins,include_nonzero=True);children=derive_zero_components(image,pins)
     nonzero=_derive_with_dispatches(image,pins,dispatches,ec_component=ec_component,
         buff_find_component=buff_find_component,buff_filter_component=buff_filter_component,nested_component=nested_component,
-        geometry_component=geometry_component,wrapper_names=selected_nonzero_wrappers)
+        geometry_component=geometry_component,wrapper_names=selected_nonzero_wrappers,blackboard_components=blackboard_components)
     source_children={(r['family'],r['tag']):r for r in children['components']}
     callers={(family,row['tag']):row for family,body in dispatches['families'].items()for row in body['programs']}
     zero_callers={key for key,row in callers.items()if not wrappers[row['wrapperName']].members and not wrappers[row['wrapperName']].abstract}

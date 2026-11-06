@@ -29,7 +29,7 @@ def _nonnull(g):
  return dict(instructionVa=at,nullTargetVa=null,normalTargetVa=normal)
 
 def program(regions,entry,*,initialized_flag,base_slot,cache_slot,allocator,original_constructor,predicate,disabled,
-            wrapper='rdi',output='r14'):
+            wrapper='rdi',output='r14',wrapper_base_constructor=None):
  """Exact RDI-wrapper initialized construction with either owned output role."""
  need('explicit-current-inline-register-profile',(wrapper,output)in(('rdi','r14'),('rdi','rsi')),
      dict(wrapperRegister=wrapper,outputRegister=output))
@@ -40,6 +40,10 @@ def program(regions,entry,*,initialized_flag,base_slot,cache_slot,allocator,orig
  g=BytesPath(regions,entry);need('same-current-own-constructor-flag',flag(g,prefix='803d')==initialized_flag);_edge(g,zero=False)
  at=g.at;ancestor_cell=g.relative('488b0d');ancestor=dict(instructionVa=at,cellVa=ancestor_cell)
  g.take('83b9e000000000');_edge(g,zero=False)
+ base_call=None
+ if wrapper_base_constructor is not None and bytes(g.bytes.get(g.at+i,0)for i in range(5))==bytes.fromhex('33d2488bcf'):
+  need('own-literal-base-constructor-target',type(wrapper_base_constructor)is int and wrapper_base_constructor>0)
+  g.take('33d2','488bcf');base_call=g.at;g.call(wrapper_base_constructor)
  at=g.at;allocation_cell=g.relative('488b0d');allocation=dict(instructionVa=at,cellVa=allocation_cell);g.call(allocator)
  g.take('488bd8','4885c0');null=_nonnull(g);g.take('33d2','488bc8');constructor_call=g.at;g.call(original_constructor)
  b,c=bytes((base_slot,)).hex(),bytes((cache_slot,)).hex();stores=[];collectors=[]
@@ -59,13 +63,15 @@ def program(regions,entry,*,initialized_flag,base_slot,cache_slot,allocator,orig
  need('both-current-exact-Original-class-cells',class_cell==second_cell==allocation_cell)
  compatible();g.jump('e9');collect();_edge(g,zero=True)
  collect();store(output_store,'parent-output',0);_edge(g,zero=True)
- return dict(selectedBytes=g.seen,selectedEnd=g.at,initializedFlag=initialized_flag,allocation=allocation,ancestorClass=ancestor,
+ result=dict(selectedBytes=g.seen,selectedEnd=g.at,initializedFlag=initialized_flag,allocation=allocation,ancestorClass=ancestor,
      classUsages=classes,allocatorTarget=allocator,originalConstructorTarget=original_constructor,constructorCallVa=constructor_call,
      predicateTarget=predicate,predicateSites=predicate_sites,baseHolderOffset=base_slot,typedCacheOffset=cache_slot,
      wrapperRegister=wrapper,outputRegister=output,originalRegister='rbx',holderWrites=stores,collectorComparisons=collectors,
      ownedNullExit=null,completeSelectedConstructionFragment=True,sameFreshOriginalInBothHolders=True,sameFreshWrapperInOutput=True,
      callerFrameProved=False,childGrammarAdmitted=False,metadataInitializationAdmitted=False,enabledCollectorAdmitted=False,
      condition='Own metadata and ancestor class initialized, normal successful exact nominal allocation/Original constructor, both successful same-current-class assignability predicates and independently proved current collector disabled. Fresh wrapper/output/input and frame are disjoint. Whole caller frame and all field source/grammar remain independent; no live predicate/provider outcome or constructor execution is observed.')
+ if base_call is not None:result['wrapperBaseConstructorCall']=dict(instructionVa=base_call,targetVa=wrapper_base_constructor)
+ return result
 
 def require_ready_ancestor(factory,ancestor,wrapper_name):
  """Match only independently typed readiness uses, never compatible ancestry."""
@@ -132,10 +138,18 @@ def derive_fragment(image,pins,*,wrapper,lifecycle,rows,entry,wrapper_register,o
       wrapper=wrapper_register,output=output_register)
   parsed['entryZeroSource']=zero
  else:
+  base_target=fp.get('baseConstructorTarget')
   parsed=program([(members.ec.va(r),members.ec.raw(r))for r in rows],entry,initialized_flag=fp['initializedFlag'],
       base_slot=lifecycle['baseHolder'][2],cache_slot=lifecycle['typedCache'][2],allocator=fp['allocationTarget'],
       original_constructor=fp['originalConstructorTarget'],predicate=predicates[0],disabled=disabled,
-      wrapper=wrapper_register,output=output_register)
+      wrapper=wrapper_register,output=output_register,wrapper_base_constructor=base_target)
+  if parsed.get('wrapperBaseConstructorCall')is not None:
+   base_ctor=factory.get('baseConstructor',{})
+   need('independent-own-wrapper-base-constructor',base_ctor.get('completeCurrentOwnedBodyPinned')is True
+       and base_ctor.get('normalConstructorReturnRequired')is True and len(base_ctor.get('method',[]))==4
+       and base_ctor['method'][2]=='.ctor'and base_ctor['method'][3]+base==base_target
+       and type(base_ctor.get('codeWindows'))is list and bool(base_ctor['codeWindows']))
+   image.check_windows(base_ctor['codeWindows'],label=LABEL+'.actualWrapperBaseConstructor')
  usage=derive_typed_usage_context(image,parsed['allocation']['instructionVa']-base,label=LABEL+'.OriginalAllocation')
  need('same-fresh-exact-Original-class',(usage['tag'],usage['typeName'])==(1,wrapper.wrapped_type))
  classes=[derive_typed_usage_context(image,c['instructionVa']-base,label=LABEL+'.InlineCastClass')for c in parsed['classUsages']]

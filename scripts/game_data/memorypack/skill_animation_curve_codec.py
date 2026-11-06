@@ -55,15 +55,16 @@ def read_curve(reader, capability='curve-profile'):
         reader.records.append(dict(kind='unity-animation-curve', start=start, end=reader.pos, isNull=True))
         return
     reader.header(3)
+    wraps={}
     for field in ('preWrapMode', 'postWrapMode'):
-        reader.take(4, TYPE + '.' + field)
+        wraps[field+'RawHex']=reader.take(4, TYPE + '.' + field).hex()
     if reader.pos + 4 > reader.limit:
         raise ValueError(LABEL + '.truncated-key-count')
     count = struct.unpack_from('<i', reader.data, reader.pos)[0]
     if not -1 <= count <= cap['countLimit']:
         raise ValueError(LABEL + '.unproved-key-count=' + str(count))
     actual = reader.count(28, nullable=True)
-    for _ in range(max(0, actual)):
-        for field in cap['keyframeFields']:
-            reader.take(4, 'UnityEngine.Keyframe.' + field['fieldName'])
-    reader.records.append(dict(kind='unity-animation-curve', start=start, end=reader.pos, keyCount=count))
+    from scripts.game_data.memorypack.curve_key_values import read_named_keys
+    keys=read_named_keys(reader,max(0,actual),cap['keyframeFields'],28)
+    reader.records.append(dict(kind='unity-animation-curve', start=start, end=reader.pos, isNull=False,keyCount=count,
+        keys=keys,keysAreNull=count==-1,rawKeyBitsPreserved=True,**wraps))

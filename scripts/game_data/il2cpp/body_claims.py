@@ -326,7 +326,9 @@ class BodyIndex:
         return size
 
     def _decode(self, pointer: int, size: int) -> list[dict[str, Any]]:
-        return self.mapper.decode_x64_subset(self.pe.bytes_at_va(pointer, size), pointer, stop_offset=size)
+        from scripts.game_data.il2cpp.raw_instruction_index import decode_image_rows
+        return decode_image_rows(self.image,'mapper-subset',self.mapper.decode_x64_subset,
+            self.pe.bytes_at_va(pointer,size),pointer,stop_offset=size)
 
     def ifix_patch_id(self, pointer: int) -> str | None:
         """An early iFix patch id tested by the body at ``pointer``.

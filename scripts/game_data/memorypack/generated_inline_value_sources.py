@@ -31,6 +31,7 @@ def _payload_load(g):
         kind='sse';width=4 if prefix[0]==243 else 8;g.take(prefix[:3].hex())
     elif prefix[:2]==bytes.fromhex('0f10'):kind='sse';width=16;g.take('0f10')
     elif prefix[:2]==bytes.fromhex('0fb6'):kind='integer';width=1;g.take('0fb6')
+    elif prefix[:2]==bytes.fromhex('0fb7'):kind='integer';width=2;g.take('0fb7')
     elif prefix[0]==139:kind='integer';width=8 if rex&8 else 4;g.take('8b')
     else:raise ValueError(LABEL+'.actual-payload-load:'+prefix.hex())
     modrm=g.read(1)[0];mod=modrm>>6;number=((modrm>>3)&7)+(8 if rex&4 else 0)
@@ -49,6 +50,9 @@ def guarded_program(regions,entry,offsets,*,reader='rbx',output='rdi'):
     if(reader,output)==('rbx','rdi'):
         data={at+i:b for at,raw in regions for i,b in enumerate(raw)}
         def at(offset,length):return bytes(data.get(entry+offset+i,0)for i in range(length))
+        if at(0,7)in(bytes((0x83,0x7b,offsets['bufferLength'],16))+bytes.fromhex('488b37'),bytes((0x83,0x7b,offsets['bufferLength'],16))+bytes.fromhex('488b3f')) and at(7,2)==bytes.fromhex('0f8c') and at(13,9)==bytes((0x48,0x8b,0x43,offsets['currentPtr']))+bytes.fromhex('ba10000000'):
+            from scripts.game_data.memorypack.generated_float4_capture_sources import program
+            return program(regions,entry,offsets,reader=reader,output=output)
         if at(0,7)==bytes((0x83,0x7b,offsets['bufferLength'],24,0x48,0x8b,0x37)):
             from scripts.game_data.memorypack.levelscript_posrot_capture_sources import capture_program
             return capture_program(regions,entry,offsets)
@@ -64,6 +68,12 @@ def guarded_program(regions,entry,offsets,*,reader='rbx',output='rdi'):
         return program(regions,entry,offsets,reader=reader,output=output)
     if reader=='rdi'and output=='rbx':
         data={at+i:b for at,raw in regions for i,b in enumerate(raw)}
+        if bytes(data.get(entry+i,0)for i in range(32))[:4]==bytes((0x83,0x7f,offsets['bufferLength'],16)):
+            # Finite XMM6 capture differs from the XMM0/spilled profile below.
+            raw=bytes(data.get(entry+i,0)for i in range(40))
+            if raw[25:28]==bytes.fromhex('0f1030'):
+                from scripts.game_data.memorypack.generated_float4_capture_sources import program
+                return program(regions,entry,offsets,reader=reader,output=output)
         if bytes(data.get(entry+i,0)for i in range(7))==bytes((0x83,0x7f,offsets['bufferLength'],24,0x48,0x8b,0x33)):
             from scripts.game_data.memorypack.generated_initial24_capture_sources import program
             return program(regions,entry,offsets,reader=reader,output=output)
@@ -72,6 +82,10 @@ def guarded_program(regions,entry,offsets,*,reader='rbx',output='rdi'):
     if reader=='rdi'and output=='rsi':
         data={at+i:b for at,raw in regions for i,b in enumerate(raw)}
         prefix=bytes(data.get(entry+i,0)for i in range(7))
+        if prefix in(bytes((0x83,0x7f,offsets['bufferLength'],2))+bytes.fromhex('488b2e'),
+                      bytes((0x83,0x7f,offsets['bufferLength'],8))+bytes.fromhex('488b2e')):
+            from scripts.game_data.memorypack.interactive_raw_optional_capture_sources import program
+            return program(regions,entry,offsets,reader=reader,output=output)
         if prefix in(bytes((0x83,0x7f,offsets['bufferLength'],12,0x48,0x8b,0x1e)),
                       bytes((0x83,0x7f,offsets['bufferLength'],4,0x4c,0x8b,0x36))):
             from scripts.game_data.memorypack.generated_rdi_advance_capture_sources import program
@@ -91,7 +105,7 @@ def guarded_program(regions,entry,offsets,*,reader='rbx',output='rdi'):
         all(type(offsets[k])is int and 0<=offsets[k]<128 for k in('currentPtr','bufferLength','advancedCount','consumed')))
     c,r,a,u=(bytes((offsets[n],)).hex()for n in('currentPtr','bufferLength','advancedCount','consumed'))
     g=BytesPath(regions,entry);g.take('837b'+r);width=g.read(1)[0]
-    need('literal-finite-source-width',width in(1,4,8,12,16));wrapper_load=None
+    need('literal-finite-source-width',width in(1,2,4,8,12,16));wrapper_load=None
     prefix=peek(g,3)
     if prefix[0]in(0x48,0x49,0x4c,0x4d)and prefix[1]==0x8b and prefix[2]>>6==0 and \
         (prefix[2]&7)+(8 if prefix[0]&1 else 0)==REGISTERS.index(output):
@@ -151,8 +165,8 @@ def fast_path(rows,header,reader,offsets,*,output='rdi',terminal_target=None,cac
         and final_setter_target!=terminal_target)
     by={ec.va(r):r for r in rows};need('unique-owned-instructions',len(by)==len(rows))
     regions=[(ec.va(r),ec.raw(r))for r in rows];macros={};macro_errors={}
-    widths=('1|4|8|c|10|18'if(reader,output)==('rdi','rbx')else
-            '1|4|8|c|10|18|24'if(reader,output)==('rbx','rdi')else'1|4|8|c|10')
+    widths=('1|2|4|8|c|10'if(reader,output)==('rdi','rsi')else'1|4|8|c|10|18'if(reader,output)==('rdi','rbx')else
+            '1|2|4|8|c|10|18|24'if(reader,output)==('rbx','rdi')else'1|4|8|c|10')
     for r in rows:
         if re.fullmatch(rf"cmp dword \[{reader}\+{offsets['bufferLength']:#x}\], 0x(?:{widths})",r['text']):
             try:program=guarded_program(regions,ec.va(r),offsets,reader=reader,output=output)
@@ -189,22 +203,27 @@ def fast_path(rows,header,reader,offsets,*,output='rdi',terminal_target=None,cac
             elif re.fullmatch(r'cmp dword \[\w+\+0xe0\], 0x0',prior)and code in(4,5):taken,reason=code==5,'current class initialized'
             elif callable(zero_prover)and code in(4,5)and flag_site in by:
                 compare=by[flag_site];raw=ec.raw(compare);op=compare.get('memoryRegisterComparisonOperation',{});address=op.get('memoryAddress',{})
-                need('finite-owned-EBP-zero-DWORD-comparison',op.get('bits')==32 and op.get('register')=='ebp'
+                zero_register={'ebp':'rbp','r14d':'r14'}.get(op.get('register'))
+                need('finite-owned-zero-DWORD-comparison',op.get('bits')==32 and zero_register is not None
                     and op.get('memoryReadBytes')==4 and op.get('memoryWriteBytes')==0
-                    and op.get('memoryIsLeftOperand')is True and op.get('preservesRegisters')is True)
-                zero=zero_prover([flag_site],'rbp')
-                need('same-independent-whole-zero-at-comparison',zero.get('register')=='rbp'and zero.get('value')==0
+                    and op.get('memoryIsLeftOperand')is True and op.get('preservesRegisters')is True,
+                    dict(comparison=compare, conditional=r, prior=prior))
+                zero=zero_prover([flag_site],zero_register)
+                need('same-independent-whole-zero-at-comparison',zero.get('register')==zero_register
+                    and type(zero.get('value'))is int and zero.get('value')==0
                     and zero.get('zeroOnEveryOrdinaryPath')is True and flag_site in zero.get('sites',[]))
-                if raw==bytes.fromhex('39a9e0000000'):
+                class_raw={'rbp':'39a9e0000000','r14':'4439b1e0000000'}[zero_register]
+                if raw==bytes.fromhex(class_raw):
                     need('exact-class-ready-zero-comparison',address.get('base')=='rcx'and address.get('index')is None
                         and address.get('displacement')==224 and not address.get('ripRelative'))
-                    taken,reason=code==5,'current class initialized; independently proved whole EBP zero'
+                    taken,reason=code==5,'current class initialized; independently proved whole register zero'
                 else:
-                    need('exact-current-zero-collector-comparison',disabled_collector is not None and len(raw)==6
-                        and raw[:2]==bytes.fromhex('392d')and address.get('ripRelative')is True
+                    prefix=bytes.fromhex('392d')if zero_register=='rbp'else bytes.fromhex('443935')
+                    need('exact-current-zero-collector-comparison',disabled_collector is not None and len(raw)==len(prefix)+4
+                        and raw[:len(prefix)]==prefix and address.get('ripRelative')is True
                         and address.get('absoluteAddress')==disabled_collector
-                        and flag_site+6+int.from_bytes(raw[2:],'little',signed=True)==disabled_collector)
-                    taken,reason=code==4,'current disabled collector; independently proved whole EBP zero'
+                        and flag_site+len(raw)+int.from_bytes(raw[len(prefix):],'little',signed=True)==disabled_collector)
+                    taken,reason=code==4,'current disabled collector; independently proved whole register zero'
             else:raise ValueError(LABEL+'.unowned-conditional:'+str((r,prior,dict(precedingMacroRefusal=macro_errors[flag_site])if flag_site in macro_errors else{})))
             need('owned-conditional-target',flow['target']in by);decisions.append(dict(instruction=r,condition=reason,taken=taken));at=flow['target']if taken else end
         elif flow['kind']=='jump':

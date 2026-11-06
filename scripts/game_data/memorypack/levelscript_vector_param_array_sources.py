@@ -10,6 +10,7 @@ import json
 
 SCHEMA='endfield.levelscript-vector3-param-array-components.v1'
 SOURCE_SCHEMA='endfield.levelscript-vector3-param-array-source.v1'
+BOOL_SOURCE_SCHEMA='endfield.interactive-bool-param-array-source.v1'
 CAPABILITY='story-actionmap-vector3-param-array'
 WIRE='actionmap-param-array'
 VALUE='UnityEngine.Vector3'
@@ -26,16 +27,29 @@ def need(check, condition):
 def norm(value):return json.loads(json.dumps(value))
 
 
-def require_carrier(carrier):
+def require_carrier(carrier, *, value_type=VALUE):
+    need('finite-independent-closed-Param-value',value_type in(VALUE,'bool'))
+    element='Beyond.Gameplay.Actions.Param`1<'+value_type+'>'
     raw=bytes.fromhex(carrier.get('declaredTypeRecordHex','')) if isinstance(carrier,dict) else b''
     definition=bytes.fromhex(carrier.get('definitionTypeRecordHex','')) if isinstance(carrier,dict) else b''
     need('exact-closed-reference-Param-carrier', isinstance(carrier,dict)
-        and carrier.get('type')==ELEMENT and type(carrier.get('bytes')) is int and carrier['bytes']==8
-        and type(carrier.get('definitionTypeIndex')) is int and carrier.get('argumentTypes')==[VALUE]
+        and carrier.get('type')==element and type(carrier.get('bytes')) is int and carrier['bytes']==8
+        and type(carrier.get('definitionTypeIndex')) is int and carrier.get('argumentTypes')==[value_type]
         and len(raw)==len(definition)==16 and raw[10:12]==b'\x15\x00' and definition[10:12]==b'\x12\x00')
 
 
 def derive_source(image,pins,*,typed_request,call_target,count_limit=4096):
+    return _derive_closed_source(image,pins,typed_request=typed_request,call_target=call_target,
+        count_limit=count_limit,value_type=VALUE)
+
+
+def derive_boolean_source(image,pins,*,typed_request,call_target):
+    """Own Bool Param nominal; the shared slot loop grants no Bool grammar."""
+    return _derive_closed_source(image,pins,typed_request=typed_request,call_target=call_target,
+        count_limit=4096,value_type='bool')
+
+
+def _derive_closed_source(image,pins,*,typed_request,call_target,count_limit,value_type):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import validate_typed_usage_context,validate_generic_contexts,derive_typed_usage_context
     from scripts.game_data.il2cpp.generic_entries import GenericEntries
@@ -49,12 +63,13 @@ def derive_source(image,pins,*,typed_request,call_target,count_limit=4096):
     from scripts.game_data.memorypack.skill_passive_map_sources import _barrier
     from scripts.game_data.memorypack.skill_reference_array_sources import array_program,provider_program,induction
     from scripts.game_data.memorypack.skill_root_prefix_sources import bind_typed_read
-    need('exact-count-domain',type(count_limit)is int and count_limit==4096)
+    need('exact-count-domain',type(count_limit)is int and count_limit==4096 and value_type in(VALUE,'bool'))
+    element='Beyond.Gameplay.Actions.Param`1<'+value_type+'>'
     _publication_gate(image,pins);base=image.pe.image_base;ctx=NativeReferenceContext(image)
     need('literal-positive-source-target',type(call_target)is int and call_target>base)
     validate_typed_usage_context(image,typed_request,label='vectorParamArray.actual')
-    bound=bind_typed_read(image,typed_request,method_name='ReadArray',argument=ELEMENT,kind=21,reference=True)
-    carrier=closed_generic_reference_pointer_extent(ctx,bound['argumentPointer']);require_carrier(carrier)
+    bound=bind_typed_read(image,typed_request,method_name='ReadArray',argument=element,kind=21,reference=True)
+    carrier=closed_generic_reference_pointer_extent(ctx,bound['argumentPointer']);require_carrier(carrier,value_type=value_type)
     need('own-Param-definition',carrier['definitionTypeIndex']==ctx.index.types['Beyond.Gameplay.Actions.Param`1'].index)
     array=pointer.owned(image,call_target)
     helpers={name:_call(array,offset)for name,offset in dict(arrayAllocate=247,provider=373,prepare=435).items()}
@@ -86,8 +101,9 @@ def derive_source(image,pins,*,typed_request,call_target,count_limit=4096):
     barrier=_barrier(image,base+collector['collector']['entryRva'])
     need('same-disabled-collector',all(p['collectorFlag']==base+barrier['result']['disabledFlagRva']for p in programs))
     _publication_gate(image,pins)
-    return norm(dict(schema=SOURCE_SCHEMA,status='validated-conditional-vector-Param-array-source',nativeInputs=pins,
-        elementType=ELEMENT,elementValueType=False,closedArrayType=TYPE,typedRequest=typed_request,
+    return norm(dict(schema=SOURCE_SCHEMA if value_type==VALUE else BOOL_SOURCE_SCHEMA,
+        status='validated-conditional-vector-Param-array-source'if value_type==VALUE else'validated-conditional-bool-Param-array-source',nativeInputs=pins,
+        elementType=element,elementValueType=False,closedArrayType=element+'[]',typedRequest=typed_request,
         arrayReaderMethodDefinition=typed_request['methodSpec'][0],arrayReaderTargetRva=call_target-base,
         countLimit=count_limit,elementGrammarAdmitted=False,parentFieldAdmitted=False,wholeOwnerAdmitted=False,
         proof=dict(imageBase=base,closedCarrier=carrier,sourceWindows=array['windows'],
@@ -101,15 +117,18 @@ def derive_source(image,pins,*,typed_request,call_target,count_limit=4096):
 def validate_source(source,pins):
     from scripts.game_data.memorypack.animation_custom_dictionary_callbacks import regions
     from scripts.game_data.memorypack.skill_reference_array_sources import array_program,provider_program,induction
-    need('exact-owned-array-source',type(source)is dict and source.get('schema')==SOURCE_SCHEMA
-        and source.get('status')=='validated-conditional-vector-Param-array-source' and source.get('nativeInputs')==pins
-        and source.get('elementType')==ELEMENT and source.get('closedArrayType')==TYPE
+    need('source-object',type(source)is dict)
+    value_type='bool'if source.get('elementType')=='Beyond.Gameplay.Actions.Param`1<bool>'else VALUE
+    element='Beyond.Gameplay.Actions.Param`1<'+value_type+'>'
+    need('exact-owned-array-source',source.get('schema')==(SOURCE_SCHEMA if value_type==VALUE else BOOL_SOURCE_SCHEMA)
+        and source.get('status')==('validated-conditional-vector-Param-array-source'if value_type==VALUE else'validated-conditional-bool-Param-array-source') and source.get('nativeInputs')==pins
+        and source.get('elementType')==element and source.get('closedArrayType')==element+'[]'
         and source.get('elementValueType')is False and type(source.get('countLimit'))is int and source['countLimit']==4096
         and all(source.get(k)is False for k in('elementGrammarAdmitted','parentFieldAdmitted','wholeOwnerAdmitted')))
     p=source['proof'];base=p['imageBase'];need('literal-image-base',type(base)is int and base>0)
-    require_carrier(p['closedCarrier']);usage=source['typedRequest']
+    require_carrier(p['closedCarrier'],value_type=value_type);usage=source['typedRequest']
     need('actual-ReadArray-request',(usage.get('tag'),usage.get('typeName'),usage.get('methodName'),usage.get('classArguments'),usage.get('methodArguments'))==
-        (6,'MemoryPack.MemoryPackReader','ReadArray',[],[ELEMENT])
+        (6,'MemoryPack.MemoryPackReader','ReadArray',[],[element])
         and usage['methodSpec'][0]==source['arrayReaderMethodDefinition']
         and type(source.get('arrayReaderTargetRva'))is int and source['arrayReaderTargetRva']>0)
     body=regions(p['sourceWindows'],[[a-base,h]for a,h in p['sourceRegions']],base,'vector-Param-array')

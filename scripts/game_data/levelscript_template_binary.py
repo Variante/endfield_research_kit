@@ -45,7 +45,7 @@ def _empty_collection(data,cursor,field,empty):
     return None if count==-1 else empty,end
 
 
-def _action_map(data,cursor,strings,*,game_root=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None):
+def _action_map(data,cursor,strings,*,game_root=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None,current_owner=None):
     start=cursor;_need(data,cursor,1,'actionMap')
     if data[cursor]==255:return None,cursor+1
     if data[cursor]!=2:raise LevelScriptTemplateFramingError(f'actionMap: expected memberCount=2 actual={data[cursor]} offset={cursor}')
@@ -56,16 +56,19 @@ def _action_map(data,cursor,strings,*,game_root=None,null_list_params=None,numer
         cursor+=1;data_map={}
         for field,family in (('actionList','ActionBase'),('getterList','GetterBase'),('headerList','ActionHeader')):
             count,cursor=_count(data,cursor,'actionMap.dataMap.'+field);values=[]
+            if current_owner is not None and count>current_owner.require_template(strings=strings)['actionMapLists'][field]['countLimit']:
+                raise LevelScriptTemplateFramingError('actionMap.dataMap.'+field+':count-limit:'+str(count))
             for _ in range(max(0,count)):
-                value,cursor=decode_reviewed_node(data,cursor,family,strings=strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params);values.append(value)
+                value,cursor=decode_reviewed_node(data,cursor,family,strings=strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params,current_owner=current_owner);values.append(value)
             data_map[field]=None if count==-1 else values
     try:blackboard,cursor=decode_param_blackboard(data,cursor,strings=strings,game_root=game_root)
     except ParamGraphDecodeError as error:raise LevelScriptTemplateFramingError(str(error)) from error
     return {'startOffset':start,'endOffset':cursor,'status':'exact_named_action_map','fields':{'dataMap':data_map,'paramBlackboard':blackboard}},cursor
 
 
-def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None,game_root=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None):
+def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None,game_root=None,null_list_params=None,numeric_list_params=None,camera_shake_params=None,buff_ptr_params=None,entity_list_params=None,current_owner=None):
     """Read the current order sequentially; never scan an opaque suffix for an ID."""
+    if current_owner is not None:current_owner.require_template(strings=strings)
     gate=native.check_root_native_inputs(game_root=game_root)
     if gate.status!='validated':raise LevelScriptTemplateFramingError(f'template.native:{gate.status}:{gate.detail}')
     from importlib import import_module
@@ -85,11 +88,14 @@ def frame_levelscript_template(data:bytes,*,strings:StringPool|None=None,game_ro
     for field in ROOT_FIELDS:
         start=cursor
         try:
-            if field=='actionMap':value,end=_action_map(data,cursor,strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params)
+            if field=='actionMap':value,end=_action_map(data,cursor,strings,game_root=game_root,null_list_params=null_list_params,numeric_list_params=numeric_list_params,camera_shake_params=camera_shake_params,buff_ptr_params=buff_ptr_params,entity_list_params=entity_list_params,current_owner=current_owner)
             elif field=='maxStage':
                 _need(data,cursor,4,field);value=struct.unpack_from('<i',data,cursor)[0];end=cursor+4
             elif field in ('properties','propertyIdToKeyMap','taskMap'):
-                value,end=_empty_collection(data,cursor,field,[] if field=='properties' else {})
+                if current_owner is not None:
+                    value,end=(current_owner.task_map(data,cursor,strings=strings) if field=='taskMap'
+                        else current_owner.collection(field,data,cursor,strings=strings))
+                else:value,end=_empty_collection(data,cursor,field,[] if field=='properties' else {})
             else:
                 _need(data,cursor,4,field);value=resolve_string_pool_index(struct.unpack_from('<i',data,cursor)[0],strings,field);end=cursor+4
         except (ActionMapCodecError,ValueError,IndexError,KeyError,struct.error) as error:

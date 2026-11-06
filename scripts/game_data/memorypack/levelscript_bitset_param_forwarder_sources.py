@@ -1,9 +1,10 @@
-"""Own initialized Bitset formatter forwarder; its inlined cold resolver is excluded."""
+"""Own initialized inline-enum formatter forwarder; cold resolver is excluded."""
 import json
 
 from scripts.game_data.il2cpp.formatter_value_paths import BytesPath
 
 TYPE='Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.BitsetType>'
+TYPES=(TYPE,'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.ETrackCameraTargetType>')
 
 
 def need(key,condition):
@@ -33,7 +34,7 @@ def program(regions,entry,*,reader_target):
 def derive(image,pair,wrapper):
  from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
  from scripts.game_data.memorypack.pointer_param import owned,methods
- need('exact-nominal-Bitset-Param',wrapper.wrapped_type==TYPE and pair['registration']['originalType']==TYPE
+ need('exact-nominal-Bitset-Param',wrapper.wrapped_type in TYPES and pair['registration']['originalType']==wrapper.wrapped_type
   and pair['registration']['wrapperType']==wrapper.name)
  row=pair['composition']['methods'][1];image.validate_method_row(row,label='bitsetParamForwarder.method')
  reader=methods(image,wrapper)['Deserialize'];target=image.method_pointer_va(reader)

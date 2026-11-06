@@ -405,10 +405,10 @@ def frame_levelscript_null_action_map_sequential(data: bytes, *, strings: Any = 
     )
 
 
-def decode_levelscript_action_map_lists(data, records=None, *, strings=None, source_path=None):
+def decode_levelscript_action_map_lists(data, records=None, *, strings=None, source_path=None, game_root=None):
     """Return boundaries consumed sequentially by the selected typed readers."""
     if records is None:
-        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path, game_root=game_root)
     action_map = records.action_map if isinstance(records, LevelScriptUidRecords) else frame_uid_record_lists(data, records)
     return {**decode_levelscript_action_map_header(data), **action_map,
             'serializedListOrderEvidence': ACTION_SERIALIZED_MAP_ORDER_EVIDENCE}
@@ -826,7 +826,7 @@ def levelscript_action_map_membership(
 def decode_levelscript_active_shape_list(
     data: bytes,
     script_id: int,
-    *, strings: Any = None, source_path: Path | None = None,
+    *, strings: Any = None, source_path: Path | None = None, game_root: Path | None = None,
 ) -> dict[str, Any]:
     """Recover the authored active volume without an object-specific offset."""
     out: dict[str, Any] = {
@@ -839,7 +839,7 @@ def decode_levelscript_active_shape_list(
         return out
 
     try:
-        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+        records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path, game_root=game_root)
     except LevelScriptUidDecodeError as error:
         out['validatorDiagnostic'] = error.diagnostics
         return out
@@ -931,14 +931,14 @@ def decode_levelscript_action_map_details(
     *,
     sample_record_limit: int = 8,
     max_hint_records: int = 128,
-    strings: Any = None, source_path: Path | None = None,
+    strings: Any = None, source_path: Path | None = None, game_root: Path | None = None,
 ) -> dict[str, Any]:
     tagged_strings = _extract_levelscript_tagged_ascii_strings(data)
     plain_strings = _extract_levelscript_plain_ascii_strings(
         data,
         tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
-    records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+    records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path, game_root=game_root)
     action_map, memberships = levelscript_action_map_membership(data, records)
     list_status_counts: Counter[str] = Counter()
     for row in action_map.get("serializedLists") or []:
@@ -1028,7 +1028,7 @@ def decode_levelscript_action_map_details(
 def decode_embedded_action_serialized_map_audio(
     data: bytes,
     offset: int,
-    *, strings: Any = None, source_path: Path | None = None,
+    *, strings: Any = None, source_path: Path | None = None, game_root: Path | None = None,
 ) -> dict[str, Any]:
     """Decode exact audio actions from an embedded ``ActionSerializedMap``.
 
@@ -1047,7 +1047,7 @@ def decode_embedded_action_serialized_map_audio(
         adapted,
         tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
-    records = extract_levelscript_uid_records(adapted, strings=strings, source_path=source_path, map_offset=2)
+    records = extract_levelscript_uid_records(adapted, strings=strings, source_path=source_path, map_offset=2, game_root=game_root)
     action_map, memberships = levelscript_action_map_membership(adapted, records)
     lists = action_map.get("serializedLists") or []
     list_rows = {
@@ -1159,7 +1159,7 @@ def find_embedded_action_serialized_map_audio(
     *,
     start_offset: int = 0,
     max_action_count: int = 10_000,
-    strings=None, source_path=None,
+    strings=None, source_path=None, game_root=None,
 ) -> list[dict[str, Any]]:
     """Find uniquely claimed exact audio actions in embedded action maps.
 
@@ -1183,7 +1183,23 @@ def find_embedded_action_serialized_map_audio(
             or action_count > max_action_count
         ):
             continue
-        decoded = decode_embedded_action_serialized_map_audio(data, candidate, strings=strings, source_path=source_path)
+        try:
+            decoded = decode_embedded_action_serialized_map_audio(
+                data, candidate, strings=strings, source_path=source_path, game_root=game_root,
+            )
+        except LevelScriptUidDecodeError as error:
+            # This offset came from a byte scan, not a declared map boundary.
+            # A failed list frame or unknown union disproves this candidate only.
+            gate = error.diagnostics.get("gate")
+            if gate in {"listCount", "listCountTruncated"} or (
+                gate == "typedNode"
+                and str(error.__cause__).startswith("actionMap.")
+                and any(marker in str(error.__cause__) for marker in (
+                    ":unsupported-union=", ":unsupported-union-marker=",
+                ))
+            ):
+                continue
+            raise
         for action in decoded.get("audioActions") or []:
             if not isinstance(action, dict):
                 continue
@@ -1208,7 +1224,7 @@ def find_embedded_action_serialized_map_audio(
 def decode_levelscript_action_header_validation(
     data: bytes,
     header_local_id: int,
-    *, strings: Any = None, source_path: Path | None = None,
+    *, strings: Any = None, source_path: Path | None = None, game_root: Path | None = None,
 ) -> dict[str, Any]:
     """Resolve one ActionHeader's exact serialized playback predicate.
 
@@ -1225,7 +1241,7 @@ def decode_levelscript_action_header_validation(
         data,
         tagged_offsets={int(hit.get("offset") or 0) for hit in tagged_strings},
     )
-    records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path)
+    records = extract_levelscript_uid_records(data, strings=strings, source_path=source_path, game_root=game_root)
     _action_map, memberships = levelscript_action_map_membership(data, records)
     matching_headers = [
         (index, record)
@@ -1779,7 +1795,7 @@ def decode_levelscript_record_payload(
     return _drop_empty(out)
 
 
-def decode_levelscript_binary_summary(data: bytes, script_id: int, *, strings=None, source_path=None) -> dict[str, Any]:
+def decode_levelscript_binary_summary(data: bytes, script_id: int, *, strings=None, source_path=None, game_root=None) -> dict[str, Any]:
     """Decode stable top-level LevelScriptData facts from a raw blob.
 
     This intentionally handles only fields whose byte positions can be verified
@@ -1795,7 +1811,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int, *, strings=No
         for offset in offsets
     ]
     best = max(candidates, key=lambda item: int(item.get("score") or 0), default={})
-    active_shapes = decode_levelscript_active_shape_list(data, script_id, strings=strings, source_path=source_path)
+    active_shapes = decode_levelscript_active_shape_list(data, script_id, strings=strings, source_path=source_path, game_root=game_root)
     return {
         "serializedMemberCount": data[0],
         "expectedMemberCount": 28,
@@ -1838,7 +1854,7 @@ def decode_levelscript_binary_summary(data: bytes, script_id: int, *, strings=No
     }
 
 
-def decode_levelscript_binary_file(path: Path, script_id: int | str) -> dict[str, Any]:
+def decode_levelscript_binary_file(path: Path, script_id: int | str, *, game_root=None) -> dict[str, Any]:
     try:
         numeric_script_id = int(script_id)
     except (TypeError, ValueError):
@@ -1847,7 +1863,7 @@ def decode_levelscript_binary_file(path: Path, script_id: int | str) -> dict[str
         data = read_bytes_cached(path)
     except OSError:
         return {}
-    return decode_levelscript_binary_summary(data, numeric_script_id, source_path=path)
+    return decode_levelscript_binary_summary(data, numeric_script_id, source_path=path, game_root=game_root)
 
 
 class LevelScriptNamedFramingError(LevelScriptTopLevelFramingError):

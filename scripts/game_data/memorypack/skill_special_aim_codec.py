@@ -1,4 +1,5 @@
 """Finite SpecialAim union/sector/list bytes under an authenticated operation."""
+import struct
 from scripts.game_data.memorypack.skill_special_aim_components import TYPE,CHILD,CHILD_WRAPPER,CAPABILITY,SECTOR,LIST,ORDER
 
 
@@ -61,7 +62,13 @@ class SpecialAimReader:
             and all(cap.get(k)is True for k in('nullable','positiveCountsAdmitted','elementGrammarAdmitted'))
             and type(cap.get('packableReaderMethodDefinition'))is int and cap['packableReaderMethodDefinition']>0
             and type(cap.get('packableReaderTargetRva'))is int and cap['packableReaderTargetRva']>0)
-        require_union(r.operation.child(CAPABILITY));start=r.pos;count=r.count(cap['countLimit'],nullable=True)
+        require_union(r.operation.child(CAPABILITY));start=r.pos
+        need('complete-signed-count',r.pos+4<=r.limit)
+        declared=struct.unpack_from('<i',r.data,r.pos)[0]
+        need('source-proved-count-domain',-1<=declared<=cap['countLimit'])
+        # count() takes the minimum element wire width, not a resource limit.
+        # A null union occupies one byte; positive bodies keep their own gates.
+        count=r.count(1,nullable=True)
         need('element-depth',count<=0 or depth+1<=64)
         for _ in range(max(count,0)):self.union(depth+1)
         out=dict(kind=LIST,start=start,end=r.pos,count=count);r.records.append(out);return out

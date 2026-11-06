@@ -1,6 +1,9 @@
-"""Strict partial framing for current-corpus ``LevelData`` payloads.
+"""Authenticated current LevelData owners and independent legacy framing.
 
-``frame_leveldata_named_prefix`` is the one sequential reader for the
+``complete_leveldata_reader`` binds the independent source inventory and fresh
+current native graph to the selected export. All selected owners must close
+forty-three fields and physical EOF before its exit-validated receipt exists.
+``frame_leveldata_named_prefix`` retains its legacy sequential profile for the
 generated 43-field ``LevelData`` wrapper (``LEVELDATA_FIELDS``, generated
 setter order). It advances a single cursor field by field, handing each
 member to its codec under ``scripts.game_data.codecs.leveldata`` (or, for
@@ -50,6 +53,8 @@ evaluation, lock presentation or component ownership.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from pathlib import Path
 import re
 from typing import Any
 
@@ -135,6 +140,87 @@ LEVELDATA_FIELDS = (
 
 LEVELDATA_TERMINAL_FIELDS = LEVELDATA_FIELDS[35:]
 LEVELDATA_EMPTY_TAIL_FIELDS = LEVELDATA_FIELDS[20:]
+
+
+class _CompleteLevelDataReader:
+    def __init__(self, operation):
+        self.operation = operation
+        self._receipt = None
+
+    def __call__(self, path, data):
+        if not self.operation.active:
+            raise LevelDataTopLevelFramingError('completeLevelData.operation-closed')
+        if not isinstance(data, (bytes, bytearray, memoryview)):
+            raise LevelDataTopLevelFramingError('completeLevelData.bytes-like-input-required')
+        data = bytes(data)
+        path = Path(path)
+        if not path.is_absolute():
+            path = self.operation.root / path
+        result = self.operation.frame_leveldata(path, data)
+        if (result.get('schemaStatus') != 'named_exact' or result.get('serializedMemberCount') != 43
+                or result.get('bytesConsumed') != len(data)
+                or list(result.get('fields', {})) != list(LEVELDATA_FIELDS)):
+            raise LevelDataTopLevelFramingError('completeLevelData.all43-fields-and-physical-EOF-required: ' + str(path))
+        return dict(result, wholeSchemaExact=True, physicalEOF=True,
+                    closedFields=list(LEVELDATA_FIELDS), openField=None,
+                    schemaMappingId='endfield.leveldata-current-source-owner.v1')
+
+    @property
+    def receipt(self):
+        if self.operation.active or self._receipt is None:
+            raise LevelDataTopLevelFramingError('completeLevelData.successful-operation-exit-required')
+        return self._receipt
+
+
+@contextmanager
+def complete_leveldata_reader(export_root, *, game_root=None, gameassembly=None, metadata=None):
+    """Authenticate every selected LevelData source and prove its current graph.
+
+    The independent source inventory avoids a classification/reader cycle.
+    No stored native receipt or diagnostic input can grant child capabilities.
+    The decoder and its receipt require the selected native pair, source/pool
+    bookends and complete coverage of this inventory's LevelData family.
+    """
+    from scripts.common import resolve_installed_native_inputs, native_game_data_root
+    from scripts.source_paths import ExportLayout
+    from scripts.game_data.memorypack.levelscript_current_source import CurrentLevelScriptSource
+    layout = ExportLayout(Path(export_root).resolve()).require()
+    if (gameassembly is None) != (metadata is None):
+        raise LevelDataTopLevelFramingError('completeLevelData.both-selected-native-paths-required')
+    if gameassembly is None:
+        if game_root is None:
+            gameassembly, metadata = resolve_installed_native_inputs(
+                export_summary_path=layout.root / 'meta/extraction/summary.json')
+        else:
+            selected = Path(game_root).resolve()
+            gameassembly = selected.parent / 'GameAssembly.dll'
+            metadata = selected / 'il2cpp_data/Metadata/global-metadata.dat'
+    gameassembly, metadata = Path(gameassembly).resolve(), Path(metadata).resolve()
+    selected = native_game_data_root(gameassembly=gameassembly, metadata=metadata)
+    if game_root is not None and selected != Path(game_root).resolve():
+        raise LevelDataTopLevelFramingError('completeLevelData.explicit-root-and-native-pair-disagree')
+    evidence = layout.evidence_dir / 'animestudio'
+    with CurrentLevelScriptSource.from_source_inventory(layout.json_dir,
+            gameassembly=gameassembly, metadata=metadata,
+            summary_path=evidence / 'jsondata_source_current.json',
+            ledger_path=evidence / 'jsondata_source_files_current.jsonl.gz') as operation:
+        decode = _CompleteLevelDataReader(operation)
+        yield decode
+        audit = operation.audit()
+        host = audit['leveldata']
+        if (not host['sourceUniverse'] or not host['allSourcesAttempted'] or not host['allOwnersClosed']
+                or (host['sourcesAttempted'], host['ownersClosed']) != (host['sourceUniverse'], host['sourceUniverse'])):
+            raise LevelDataTopLevelFramingError('completeLevelData.selected-source-family-not-complete: '
+                + str({key: value for key, value in host.items() if key != 'conditionalChildSources'}))
+    if operation.native_validation_reuse.get('entryExitBookendsPassed') is not True:
+        raise LevelDataTopLevelFramingError('completeLevelData.native-source-pool-exit-required')
+    decode._receipt = dict(schema='endfield.complete-leveldata-operation.v1',
+        status='validated-current-LevelData-operation', nativeInputs=dict(operation.proof['nativeInputs']),
+        nativeSources=dict(operation.proof['nativeSources']), sourceInventory=audit['summary'],
+        sourceInventoryAuthenticated=audit['sourceInventoryAuthenticated'],
+        sourceUniverse=host['sourceUniverse'], sourcesAttempted=host['sourcesAttempted'],
+        ownersClosed=host['ownersClosed'], allSelectedOwnersClosed=True, rootFieldCount=43,
+        nativeSourcePoolOwnerExitBookendsPassed=True, runtimeActivationProved=False, playbackProved=False)
 
 _LEVELDATA_NULLABLE_OBJECT_FIELDS = {
     "blackbox",

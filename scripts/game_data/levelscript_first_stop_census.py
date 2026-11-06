@@ -77,6 +77,7 @@ combined JsonData registry.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 if __name__ == "__main__" and not __package__:
     raise SystemExit("Run as: python -m scripts.game_data.levelscript_first_stop_census")
@@ -119,8 +120,8 @@ OWNER = (
     "scripts.game_data.codecs.levelscript.current_action_sequence."
     "frame_levelscript_current_action_sequence_leader_enter"
 )
-DEFAULT_SUMMARY = REPO_ROOT / "reports/animestudio/jsondata_current_latest.json"
-DEFAULT_LEDGER = REPO_ROOT / "reports/animestudio/jsondata_current_files_latest.jsonl.gz"
+DEFAULT_SUMMARY = ExportLayout.configured().evidence_dir / 'animestudio/jsondata_current_latest.json'
+DEFAULT_LEDGER = ExportLayout.configured().evidence_dir / 'animestudio/jsondata_current_files_latest.jsonl.gz'
 DEFAULT_EXPORT = REPO_ROOT / "export_full/game/Json"
 DEFAULT_OUTPUT = REPO_ROOT / "reports/game_data/levelscript_partial_first_stops_current.json"
 TOP_STOPS = 100

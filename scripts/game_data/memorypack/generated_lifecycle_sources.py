@@ -41,6 +41,11 @@ def factory_program(regions,entry,barrier,*,ctor,original_ctor,base_slot,cache_s
     need('owned-original-initializers',original_initializers is None or type(original_initializers)is list)
     need('explicit-base-constructor-role',base_ctor is None or ctor and type(base_ctor)is int and base_ctor>0)
     probe=BytesPath(regions,entry)
+    if original_ctor is None and original_initializers is not None and _peek(probe,2)in(b'\x40\x53',b'\x40\x57'):
+        from scripts.game_data.memorypack.generated_called_original_factory_sources import r9_initialized_factory
+        try:return r9_initialized_factory(regions,entry,barrier,ctor=ctor,base_ctor=base_ctor,
+            base_slot=base_slot,cache_slot=cache_slot,initializers=original_initializers)
+        except(ValueError,KeyError,IndexError):pass
     if original_ctor is None and original_initializers:
         from scripts.game_data.memorypack.generated_cached_register_default_sources import program as mixed_register_defaults
         try:return mixed_register_defaults(regions,entry,barrier,ctor=ctor,base_slot=base_slot,cache_slot=cache_slot,initializers=original_initializers)
@@ -78,8 +83,11 @@ def factory_program(regions,entry,barrier,*,ctor,original_ctor,base_slot,cache_s
     site=g.at;cell=g.relative('488b0d');allocation=dict(site=site,cell=cell);allocator=g.relative('e8')
     if original_ctor is not None:g.take('488bd8')
     g.take('4885c0');_nonnull(g)
+    original_context=None
     if original_ctor is not None:
-        g.take('33d2')
+        if _peek(g,3)==bytes.fromhex('488b15'):
+            at=g.at;original_context=dict(site=at,cell=g.relative('488b15'))
+        else:g.take('33d2')
         for store in original_initializers or[]:
             width,offset=store['bytes'],store['offset'];need('called-prefix-scalar-default',width in(1,2,4)and 16<=offset<2**31)
             raw=('66'if width==2 else'')+('c6'if width==1 else'c7')+('40'if offset<128 else'80')+offset.to_bytes(1 if offset<128 else 4,'little',signed=True).hex()+store['constantHex'].lower()
@@ -133,6 +141,7 @@ def factory_program(regions,entry,barrier,*,ctor,original_ctor,base_slot,cache_s
     if original_initializers is not None:proof['inlinedOriginalInitializers']=original_initializers
     if inline_writes is not None:proof['inlineHolderWrites']=inline_writes
     if base_ctor is not None:proof['baseConstructorTarget']=base_ctor
+    if original_context is not None:proof['originalConstructorContext']=original_context
     return proof
 
 
@@ -148,7 +157,10 @@ def base_called_factory_program(regions,entry,barrier,*,base_ctor,base_slot,cach
     g.take('4885c0');_nonnull(g)
     if initializers is None:g.take('4533c0','48897c2430','488bd0','488bcb')
     else:
-        need('owned-base-called-initializer-list',type(initializers)is list and 0<len(initializers)<=32)
+        # A freshly proved empty Original leaf has no stores. Its caller must
+        # still execute every exact holder argument below; an empty list is
+        # not evidence for skipping any instruction or constructor effect.
+        need('owned-base-called-initializer-list',type(initializers)is list and 0<=len(initializers)<=32)
         expected={};covered=set()
         for store in initializers:
             width,offset=store['bytes'],store['offset'];need('base-called-scalar-default-domain',width in(1,2,4)and 16<=offset<2**31)
@@ -291,11 +303,23 @@ def _original_constructor(image,ctx,method,original,*,_owners=(),pins=None):
         return dict(method=_method_row(image,method),family=family,codeWindows=windows,completeCurrentOwnedBodyPinned=True,
             normalConstructorReturnRequired=True,runtimeEffectsProved=False)
     data=image.pe.bytes_at_va(pointer,128);md=image.metadata
+    if data[:3]==bytes.fromhex('488b15'):
+        from scripts.game_data.memorypack.generated_typed_constructor_tail import derive
+        need('typed-constructor-explicit-selected-inputs',isinstance(pins,dict)and bool(pins))
+        return derive(image,pins,context=ctx,method=method,original=original)
     if data[:3]==bytes.fromhex('33d2e9'):
         from scripts.game_data.memorypack import scalar_param_native as scalar
         target=pointer+7+int.from_bytes(data[3:7],'little',signed=True);candidates=[]
         for ancestor in _class_ancestry(ctx,original)[1:]:
-            for chosen in md.methods_for(ctx.index.types[ancestor]):
+            definition=ctx.index.types.get(ancestor)
+            if definition is None:
+                # A proved closed generic ancestor has no named TypeDef.
+                # It supplies no candidate: the actual jump must still join
+                # exactly one named nongeneric constructor below.
+                need('only-closed-generic-ancestor-constructor-candidate-omitted',
+                    '<'in ancestor and ancestor.endswith('>'),ancestor)
+                continue
+            for chosen in md.methods_for(definition):
                 if md.string(chosen.name_index)=='.ctor'and chosen.parameter_count==0 and image.method_pointer_va(chosen)==target:candidates.append((ancestor,chosen))
         need('unique-owned-ancestor-constructor-tail',len(candidates)==1,[(n,m.index)for n,m in candidates])
         ancestor,chosen=candidates[0];need('nongeneric-owned-ancestor-constructor',chosen.generic_container_index<0)
@@ -334,11 +358,27 @@ def _original_constructor(image,ctx,method,original,*,_owners=(),pins=None):
         need('literal-default-explicit-selected-inputs',isinstance(pins,dict)and bool(pins))
         return derive(image,pins,context=ctx,method=method,original=original)
     program=original_leaf_program(data,pointer);fields=[];value_subfields=None
+    if(not program['stores']and program.get('tailTargetVa')is None
+            and any(owner not in ctx.index.types for owner in _class_ancestry(ctx,original))):
+        # A complete call-free RET has no field-layout obligation. Do not
+        # inspect an open generic's placeholder offsets for an absent store.
+        length=program['programBytes']
+        return dict(method=_method_row(image,method),codeWindows=[dict(startRva=pointer-base,
+            endRva=pointer-base+length,sha256=hashlib.sha256(data[:length]).hexdigest().upper(),
+            boundary='complete reachable call-free original-constructor entry program; physical extent unproved')],
+            reachableLeaf=program,constantFieldStores=[],completeReachableEntryProgramProved=True,
+            physicalFunctionExtentProved=False,normalConstructorReturnRequired=True,runtimeExecutionKnown=False)
     kinds={'bool':(2,1),'byte':(5,1),'sbyte':(4,1),'short':(6,2),'ushort':(7,2),
         'int':(8,4),'uint':(9,4),'long':(10,8),'ulong':(11,8),'float':(12,4),'double':(13,8)}
     from scripts.game_data.memorypack import scalar_param_native as scalar
     for owner in _class_ancestry(ctx,original):
-        td=ctx.index.types[owner]
+        td=ctx.index.types.get(owner)
+        if td is None:
+            # Closed generic ancestors have no named TypeDef or usable open
+            # field offsets. Stores still must match one independently named
+            # nongeneric field byte below; unknown storage never owns a byte.
+            need('only-closed-generic-ancestor-field-layout-omitted','<'in owner and owner.endswith('>'))
+            continue
         for field in md.fields_for(td):
             if ctx.field_attributes(field.type_index)&16:continue
             name=md.string(field.name_index);fact=ctx.field(owner+'::'+name);declared=ctx.type_name(field.type_index);backing=declared
@@ -371,7 +411,15 @@ def _original_constructor(image,ctx,method,original,*,_owners=(),pins=None):
     if program.get('tailTargetVa')is not None:
         target=program['tailTargetVa'];candidates=[]
         for ancestor in _class_ancestry(ctx,original)[1:]:
-            for chosen in md.methods_for(ctx.index.types[ancestor]):
+            definition=ctx.index.types.get(ancestor)
+            if definition is None:
+                # A proved closed generic ancestor has no named TypeDef.
+                # It supplies no candidate: the actual jump must still join
+                # exactly one named nongeneric constructor below.
+                need('only-closed-generic-ancestor-constructor-candidate-omitted',
+                    '<'in ancestor and ancestor.endswith('>'),ancestor)
+                continue
+            for chosen in md.methods_for(definition):
                 if md.string(chosen.name_index)=='.ctor'and chosen.parameter_count==0 and image.method_pointer_va(chosen)==target:candidates.append((ancestor,chosen))
         need('unique-owned-initializing-ancestor-tail',len(candidates)==1,[(n,m.index)for n,m in candidates])
         ancestor,chosen=candidates[0];need('nongeneric-initializing-ancestor-constructor',chosen.generic_container_index<0)
@@ -396,6 +444,39 @@ def _holder_fields(image,ctx,receiver,slots,original_chain):
         need('one-compatible-owned-holder-field',len(fields)==1 and fields[0][1]in original_chain,(slot,fields));result.append(fields[0])
     return result
 
+
+
+def _inline_base_initializer_source(image,ctx,wrapper,original_chain,slot,*,pins):
+    from scripts.game_data.memorypack import scalar_param_native as scalar
+    field,=_holder_fields(image,ctx,wrapper.name,[slot],original_chain)
+    owner=field[1];definition=ctx.index.types.get(owner)
+    need('named-inlined-base-original',definition is not None and not ctx.is_value_type(owner))
+    methods=[m for m in image.metadata.methods_for(definition)
+        if image.metadata.string(m.name_index)=='.ctor'and m.parameter_count==0]
+    need('unique-inlined-base-original-constructor',len(methods)==1)
+    method=methods[0];need('nongeneric-inlined-base-original-constructor',method.generic_container_index<0)
+    scalar.owned_method_abi(image,ctx,method.index,method.declaring_type,('void',1,False),[],LABEL+'.inlinedBaseCtor')
+    proof=_original_constructor(image,ctx,method,owner,pins=pins)
+    leaf=proof.get('reachableLeaf',{})
+    need('complete-independent-inlined-base-defaults',proof.get('completeReachableEntryProgramProved')is True
+        and leaf.get('callFree')is True and leaf.get('normalReturn')is True
+        and leaf.get('tailTargetVa')is None and type(proof.get('constantFieldStores'))is list)
+    return dict(holderField=field,typeName=owner,constructor=proof,defaults=proof['constantFieldStores'])
+
+
+def _bind_inline_base_initialization(image,program,source):
+    from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
+    initialization=program['inlinedBaseInitialization']
+    need('independently-proved-inline-base-source',isinstance(source,dict))
+    actual=derive_typed_usage_context(image,initialization['allocation']['site']-image.pe.image_base,label=LABEL+'.inlineBaseAllocation')
+    need('same-exact-allocated-base-holder-class',(actual['tag'],actual['typeName'])==(1,source['typeName'])
+        and source['holderField'][1]==source['typeName']
+        and source['holderField'][2]==initialization['holderWrite']['offset']
+        and initialization['holderWrite']['bytes']==8
+        and initialization['allocationTarget']==program['allocationTarget'])
+    values=lambda rows:[(r['offset'],r['bytes'],r['constantHex'].upper())for r in rows]
+    need('same-complete-base-default-stores',values(initialization['actualDefaultStores'])==values(source['defaults']))
+    return dict(program=initialization,allocation=actual,holderField=source['holderField'],independentConstructor=source['constructor'])
 
 
 def _direct_flag(g,prefix='833d'):
@@ -578,12 +659,19 @@ def _direct_factory_proof(image,ctx,wrapper,body,barrier,original_ctor,*,direct_
     base=image.pe.image_base;original=wrapper.wrapped_type;allocators=[]
     for i,row in enumerate(body['rows'][:-1]):
         raw=members.ec.raw(row)
-        if len(raw)!=7 or raw[:3]!=bytes.fromhex('488b0d')or members.ec.raw(body['rows'][i+1])[:1]!=b'\xe8':continue
+        if len(raw)!=7 or raw[:3]!=bytes.fromhex('488b0d'):continue
+        next_index=i+1
+        if members.ec.raw(body['rows'][next_index])==bytes.fromhex('48897c2438'):next_index+=1
+        if next_index>=len(body['rows'])or members.ec.raw(body['rows'][next_index])[:1]!=b'\xe8':continue
         try:usage=derive_typed_usage_context(image,members.ec.va(row)-base,label=LABEL+'.directAllocationCandidate')
         except(ValueError,KeyError,IndexError):continue
-        if(usage['tag'],usage['typeName'])==(1,original):allocators.append(members.control_transfer(body['rows'][i+1])['target'])
+        if(usage['tag'],usage['typeName'])==(1,original):allocators.append(members.control_transfer(body['rows'][next_index])['target'])
     need('one-current-direct-allocator',len(set(allocators))==1,allocators);allocate=allocators[0]
     disabled=_barrier(image,base+barrier)['result']['disabledFlagRva'];symbols=dict(allocate=allocate,barrier=base+barrier,disabled=base+disabled)
+    if direct_factory_prover is None and original=='Beyond.Gameplay.ParamListForGraph':
+        from scripts.game_data.memorypack.interactive_graph_factory_sources import derive as direct_factory_prover
+    elif direct_factory_prover is None and original=='Beyond.Gameplay.Core.InteractiveTemplateVariant':
+        from scripts.game_data.memorypack.interactive_variant_factory_sources import derive as direct_factory_prover
     if direct_factory_prover is not None:
         need('direct-factory-prover-callable',callable(direct_factory_prover))
         supplied=direct_factory_prover(image,ctx,wrapper,body,symbols,original_ctor)
@@ -731,6 +819,10 @@ def _concrete_formatter(image,ctx,wrapper,reader,*,formatter_prover=None,pins=No
     from scripts.game_data.il2cpp.zero_wrapper_programs import prove_zero_wrapper_forwarder
     from scripts.game_data.memorypack import scalar_param_native as scalar
     md=image.metadata;base=image.pe.image_base
+    if formatter_prover is None and wrapper.wrapped_type=='Beyond.Gameplay.ParamListForGraph':
+        from scripts.game_data.memorypack.interactive_graph_factory_sources import formatter_source
+        def formatter_prover(image,wrapper,reader,method,body):
+            return formatter_source(image,wrapper,reader,method,body,pins=pins)
     formatter_name=wrapper.name+'+'+wrapper.name.rsplit('.',1)[-1]+'Formatter'
     definitions=image.named_type_definitions.get(formatter_name,());need('one-own-concrete-formatter',len(definitions)==1)
     formatter=definitions[0];methods=[m for m in md.methods_for(formatter)if md.string(m.name_index)=='Deserialize']
@@ -840,6 +932,9 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
         if target is None and original_constructor is not None and 'ownedAncestorTail'in original_constructor:
             ancestor_target=base+original_constructor['ownedAncestorTail']['targetRva']
             if ancestor_target in calls:target=ancestor_target
+        if target is None and original_constructor is not None and 'typedAncestorTail'in original_constructor:
+            ancestor_target=base+original_constructor['typedAncestorTail']['targetMethod'][3]
+            if ancestor_target in calls:target=ancestor_target
         initializers=original_constructor.get('reachableLeaf',{}).get('stores')if original_constructor is not None and(target is None or 'ownedAncestorTail'in original_constructor and target==base+original_constructor['ownedAncestorTail']['targetRva'])else None
         base_constructor=None;base_ctor=None
         if name=='.ctor':
@@ -852,6 +947,9 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
                 owner,candidate=selected[0];need('base-wrapper-constructor-nongeneric',candidate.generic_container_index<0)
                 scalar.owned_method_abi(image,ctx,candidate.index,candidate.declaring_type,('void',1,False),[],LABEL+'.baseWrapperCtor')
                 base_constructor=_original_constructor(image,ctx,candidate,owner,pins=pins);base_ctor=image.method_pointer_va(candidate)
+        inlined_base_source=None
+        if name=='.ctor'and any(raw.startswith(bytes.fromhex('488bc4535556574883ec78'))for at,raw in body['regions']if at==body['pointer']):
+            inlined_base_source=_inline_base_initializer_source(image,ctx,wrapper,original_chain,base_holder[2],pins=pins)
         value_initialization=None
         try:
             from scripts.game_data.memorypack import generated_nested_header_factory_sources as nested_header
@@ -862,7 +960,9 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
             elif original in default_list.TYPES:
                 program,value_initialization=default_list.derive_program(image,pins,ctx,wrapper,body,base+barrier,
                     original_chain=original_chain,wrapper_chain=wrapper_chain)
-            elif coherent['program'].get('getterProfile')=='rsi-zero-rbp-image-base-inline-collector':
+            elif(coherent['program'].get('getterProfile')=='rsi-zero-rbp-image-base-inline-collector'
+                    or any(raw.startswith(bytes.fromhex(prefix))for at,raw in body['regions']if at==body['pointer']
+                        for prefix in('488bc4535556574883ec68','48895c241048896c2420564883ec40'))):
                 from scripts.game_data.memorypack.generated_large_cached_sources import factory_program as large_factory
                 from scripts.game_data.memorypack.skill_passive_map_sources import _barrier
                 collector=_barrier(image,base+barrier)
@@ -874,7 +974,8 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
                     from scripts.game_data.memorypack.generated_condition_factory_sources import large_program
                     program=large_program(body['regions'],body['pointer'],ctor=name=='.ctor',original_ctor=target,
                         base_slot=base_holder[2],cache_slot=typed_cache[2],image_base=base,
-                        disabled=base+collector['result']['disabledFlagRva'],original_initializers=initializers,base_ctor=base_ctor)
+                        disabled=base+collector['result']['disabledFlagRva'],original_initializers=initializers,base_ctor=base_ctor,
+                        base_initializers=None if inlined_base_source is None else inlined_base_source['defaults'])
             elif original_constructor is not None and 'zeroVectorDefaultSource'in original_constructor:
                 from scripts.game_data.memorypack import generated_zero_vector_factory_sources as zero_vectors
                 need('zero-vector-factory-does-not-invoke-Original-or-base-constructor',target is None and base_ctor is None)
@@ -895,7 +996,7 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
                 value_initialization=vector_defaults.bind_initialization(image,pins,original,program,base+barrier)
             else:
                 program=factory_program(body['regions'],body['pointer'],base+barrier,ctor=name=='.ctor',original_ctor=target,
-                    base_slot=base_holder[2],cache_slot=typed_cache[2],original_initializers=initializers or None,base_ctor=base_ctor)
+                    base_slot=base_holder[2],cache_slot=typed_cache[2],original_initializers=initializers,base_ctor=base_ctor)
         except(ValueError,KeyError,IndexError)as error:
             need('only-constructor-inline-holders',name=='.ctor',str(error))
             try:
@@ -921,6 +1022,15 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
                             raise ValueError(LABEL+'.factory-programs:'+str([str(error),str(inline_error),str(vector_error),str(cast_error),str(literal_error)])[:2200])from literal_error
         usage=derive_typed_usage_context(image,program['allocation']['site']-base,label=LABEL+'.originalAllocation')
         need('exact-allocated-original',(usage['tag'],usage['typeName'])==(1,original))
+        if program.get('originalConstructorContext')is not None:
+            use=program['originalConstructorContext']
+            actual=derive_typed_usage_context(image,use['site']-base,label=LABEL+'.typedAncestorConstructor')
+            proved=(original_constructor or{}).get('typedAncestorTail',{})
+            need('same-own-closed-ancestor-constructor',bool(proved)
+                and all(actual.get(key)==proved['typedRequest'].get(key)for key in
+                    ('tag','methodSpec','typeName','methodName','classArguments','methodArguments'))
+                and program['originalConstructorTarget']==base+proved['targetMethod'][3])
+            program['originalConstructorContext']['typedRequest']=actual
         classes=[]
         for use in program['classUsages']:
             typed=derive_typed_usage_context(image,use['site']-base,label=LABEL+'.castClass')
@@ -980,6 +1090,8 @@ def _derive(image,pins,wrapper,wrappers,barrier,getter_cache,*,formatter_prover=
             cast_program=holders.rolling_owned_strict_cast(cast_body['regions'],cast_body['pointer'],predicates[0])
             strict_cast=dict(**_body_proof(cast_body),program=cast_program)
         extra_initialization={}
+        if 'inlinedBaseInitialization'in program:
+            extra_initialization['inlinedBaseInitialization']=_bind_inline_base_initialization(image,program,inlined_base_source)
         if 'inlinedNestedInitialization'in program:
             from scripts.game_data.memorypack.generated_inline_cast_factory_sources import bind_initialization
             extra_initialization['inlinedNestedInitialization']=bind_initialization(image,ctx,wrapper,program)

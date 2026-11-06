@@ -126,6 +126,10 @@ def factory_program(regions,entry):
 
 
 def derive(image,pins):
+    return _derive_on_double(image,pins)
+
+
+def _derive_on_double(image,pins,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
@@ -166,7 +170,8 @@ def derive(image,pins):
     for program in programs:
         if program['barrierTarget']is not None:need('same-vector-barrier',factory['barrier'],program['barrierTarget'])
     for program in(constructor,original,*programs[:2]):need('same-actual-vector-disabled-collector',base+barrier_proof['disabledFlagRva'],program['disabledCollector'])
-    double=skill_blackboard_double_sources.derive(image,pins);typed=[]
+    if double is None:double=skill_blackboard_double_sources.derive(image,pins)
+    need('same-selected-double-inputs',pins,double['nativeInputs']);typed=[]
     def class_usage(usage,typename):
         row=derive_typed_usage_context(image,usage['instruction']-base,label='blackboardVector3.class')
         need('exact-vector-owned-class',(1,typename),(row['tag'],row['typeName']));typed.append(row)

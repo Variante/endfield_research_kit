@@ -26,6 +26,8 @@ def validate(cap):
     # Dict equality does not distinguish Bool from int; the finite spec must.
     if any(type(cap['constantSpecification'][key])is not type(item)for key,item in spec.items()):
         raise ValueError('currentDedicatedParam.literal-constant-specification')
+    from scripts.game_data.memorypack.levelscript_action_value_list_sources import TYPES as VALUE_LISTS,validate_constant as validate_list
+    if value in VALUE_LISTS:validate_list(cap.get('constantCapability'),value)
     if value=='Beyond.Gameplay.CommonMaskBlendData':
         from scripts.game_data.codecs.levelscript.current_mask_curve_param import validate as mask
         mask(cap.get('constantCapability'))
@@ -66,11 +68,53 @@ def read(reader,field,cap):
     elif spec['kind'] in ('buff-pointer-record','null-buff-list'):
         from scripts.game_data.codecs.levelscript.current_action_buff_param import read_constant
         constant=read_constant(reader,field+'.constValue',cap['constantCapability'],value)
-    elif spec['kind']=='owned-int32-list':
+    elif spec['kind']=='owned-blackboard-list':
         count=reader.number('<i',field+'.constValue.count')
-        if not -1<=count<=spec['countLimit']:raise ValueError(field+':own-int32-list-count-limit')
-        reader.need(max(count,0)*4,field+'.constValue.elements')
-        constant=None if count==-1 else[reader.number('<i',field+'.constValue['+str(i)+']')for i in range(count)]
+        if not -1<=count<=spec['countLimit']:raise ValueError(field+':own-Blackboard-list-count-limit')
+        reader.need(max(count,0),field+'.constValue.minimum-element-headers')
+        constant=None if count==-1 else []
+        from scripts.game_data.codecs.levelscript.current_mask_curve_param import _float
+        for i in range(max(count,0)):
+            name=field+'.constValue['+str(i)+']'
+            header=reader.number('<B',name+'.memberCount')
+            if header==255:constant.append(None);continue
+            if header!=spec['childMemberCount']:raise ValueError(name+':Blackboard-member-count')
+            key=reader.string(name+'.key');use=reader.number('<B',name+'.useString')
+            number=_float(reader,name+'.valueFloat');text=reader.string(name+'.valueString')
+            constant.append(dict(key=key,useString=bool(use),useStringRawByte=use,valueFloat=number,valueString=text))
+    elif spec['kind']in('owned-Boolean-list','owned-global-buff-id-list','owned-lang-key-list'):
+        count=reader.number('<i',field+'.constValue.count')
+        if not -1<=count<=spec['countLimit']:raise ValueError(field+':own-value-list-count-limit')
+        reader.need(max(count,0),field+'.constValue.minimum-elements')
+        constant=None if count==-1 else[]
+        for i in range(max(count,0)):
+            at=field+'.constValue['+str(i)+']'
+            if spec['kind']=='owned-Boolean-list':
+                constant.append(reader.number('<B',at))
+            else:
+                child=reader.number('<B',at+'.memberCount')
+                if child not in(1,255):raise ValueError(at+':own-nominal-list-element-member-count')
+                key='id'if spec['kind']=='owned-global-buff-id-list'else'key'
+                constant.append({key:None if child==255 else reader.string(at+'.'+key),'wasNullMarker':child==255})
+    elif spec['kind']=='owned-envtalk-value-list':
+        count=reader.number('<i',field+'.constValue.count')
+        if not -1<=count<=spec['countLimit']:raise ValueError(field+':own-EnvTalk-list-count-limit')
+        reader.need(max(count,0),field+'.constValue.minimum-element-headers')
+        constant=None if count==-1 else []
+        for i in range(max(count,0)):
+            at=field+'.constValue['+str(i)+']'
+            header=reader.number('<B',at+'.memberCount')
+            if header==255:
+                constant.append(dict(envTalkId=None,odds=0,wasNullMarker=True));continue
+            if header!=spec['childMemberCount']:raise ValueError(at+':EnvTalk-member-count')
+            constant.append(dict(envTalkId=reader.string(at+'.envTalkId'),
+                                 odds=reader.number('<i',at+'.odds'),wasNullMarker=False))
+    elif spec['kind']in('owned-int32-list','owned-uint64-list'):
+        count=reader.number('<i',field+'.constValue.count')
+        if not -1<=count<=spec['countLimit']:raise ValueError(field+':own-integer-list-count-limit')
+        reader.need(max(count,0)*spec['elementWireBytes'],field+'.constValue.elements')
+        fmt='<Q'if spec['kind']=='owned-uint64-list'else'<i'
+        constant=None if count==-1 else[reader.number(fmt,field+'.constValue['+str(i)+']')for i in range(count)]
     elif spec['kind'] in ('owned-float32-list','owned-vector3-list'):
         import math
         count=reader.number('<i',field+'.constValue.count')

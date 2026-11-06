@@ -70,12 +70,13 @@ def derive_adapter(image,pins,*,type_name,wrapper_name=None,reference_lane):
  need('reference-lane',type(reference_lane)is int and reference_lane in(0,8))
  ctx=NativeReferenceContext(image);md=image.metadata;base=image.pe.image_base;ge=GenericEntries(image)
  wrappers=[w for w in image.memorypack_wrappers.values()if w.wrapped_type==type_name and(wrapper_name is None or w.name==wrapper_name)]
- need('one-current-wrapper',len(wrappers)==1);wrapper=wrappers[0];td=ctx.index.types[type_name]
+ need('one-current-wrapper',len(wrappers)==1);wrapper=wrappers[0]
+ td=ctx.index.types[type_name]
  need('nongeneric-value-original',ctx.is_value_type(type_name)and td.generic_container_index<0)
  scalar.ordinary(image,ctx.type_pointer(td.byval_type_index),17,LABEL+'.original')
  size=image.pe.u64_at_va(int(image.registration['typeDefinitionsSizes'],16)+td.index*8)
  need('managed16-layout',(image.pe.u32_at_va(size),image.pe.u32_at_va(size+4))==(32,16))
- layout=[];references=[];occupied=[]
+ layout=[];references=[];occupied=[];original_kind=17
  for field in md.fields_for(td):
   if ctx.field_attributes(field.type_index)&16:continue
   name=md.string(field.name_index);owner,declared,offset=ctx.field(type_name+'::'+name)
@@ -95,7 +96,7 @@ def derive_adapter(image,pins,*,type_name,wrapper_name=None,reference_lane):
  need('exact-wrapper-holder',ctx.field(wrapper.name+'::__instance')==(wrapper.name,type_name,16))
  pair=derive_pair(image,type_name,wrapper.name);registration=pointer.registered_pair(image,pair,wrapper,label=LABEL+'.pair')
  face,=pair['composition']['interfaces'];getter=md.methods[face['getValueMethodIndex']]
- scalar.owned_method_abi(image,ctx,getter.index,wrapper.type_definition,(type_name,17,False),[],LABEL+'.getter')
+ scalar.owned_method_abi(image,ctx,getter.index,wrapper.type_definition,(type_name,original_kind,False),[],LABEL+'.getter')
  getter_entry=image.method_pointer_va(getter);getter_path=lang_getter([(getter_entry,image.pe.bytes_at_va(getter_entry,16))],getter_entry)
  section=md.sections['interfaceOffsets'];at=section.offset+md.types[wrapper.type_definition].interface_offsets_start*8
  table=list(struct.iter_unpack('<ii',md.buf[at:at+md.types[wrapper.type_definition].interface_offsets_count*8]))

@@ -106,6 +106,10 @@ def formatter_program(regions,entry):
 
 
 def derive_wrapper(image,pins):
+    return _derive_wrapper_on_double(image,pins)
+
+
+def _derive_wrapper_on_double(image,pins,child=None):
     """Fresh concrete wrapper source; deliberately grants no ordinary adapter."""
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
@@ -151,7 +155,8 @@ def derive_wrapper(image,pins):
     class_usage(constructor['originalClassUsage'],TYPE);class_usage(factory['originalClassUsage'],TYPE)
     class_usage(programs[1]['wrapperAllocation'],wrapper.name)
     for usage,name in zip(original['classUsages'],(CHILD,skill_blackboard_double_sources.BASE)*2,strict=True):class_usage(usage,name)
-    child=skill_blackboard_double_sources.derive(image,pins);bindings=[];setters=[]
+    if child is None:child=skill_blackboard_double_sources.derive(image,pins)
+    need('same-selected-double-inputs',pins,child['nativeInputs']);bindings=[];setters=[]
     for index,(member,usage,call,setter_call)in enumerate(zip(wrapper.members,programs[0]['childUsages'],programs[0]['childCalls'],programs[0]['setterCalls'],strict=True)):
         request=derive_typed_usage_context(image,usage['instruction']-base,label='blackboardVector2.child')
         bindings.append(bind_read_value(pins,dict(fieldName=member.name,typeName=CHILD,typedRequest=request,
@@ -183,10 +188,14 @@ def derive_wrapper(image,pins):
 
 
 def derive(image,pins):
+    return _derive_on_double(image,pins)
+
+
+def _derive_on_double(image,pins,double=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack.reference_param_profile import derive_pair
     from scripts.game_data.memorypack.reference_object_sources import derive_adapter
-    wrapper_source=derive_wrapper(image,pins);base=image.pe.image_base
+    wrapper_source=_derive_wrapper_on_double(image,pins,double);base=image.pe.image_base
     wrapper,=[w for w in image.memorypack_wrappers.values()if w.name==wrapper_source['wrapperName']]
     pair=derive_pair(image,TYPE,wrapper.name)
     def prove_forwarder(selected,selected_pair,selected_wrapper):

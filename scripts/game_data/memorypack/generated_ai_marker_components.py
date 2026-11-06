@@ -16,6 +16,7 @@ def norm(value):return json.loads(json.dumps(value))
 
 def _verify_source(proof,pins,base,offsets):
     from scripts.game_data.memorypack.generated_called_advance_components import verify_advance
+    from scripts.game_data.memorypack.unmanaged_qword_source import called_advance_qword_program
     regions=proof.get('sourceRegions',[]);windows=proof.get('codeWindows',[])
     need('exact-source-owned-regions',bool(regions)and len(regions)==len(windows)
         and len({at for at,h in regions})==len(regions))
@@ -24,7 +25,7 @@ def _verify_source(proof,pins,base,offsets):
             and w.get('endRva',0)-w.get('startRva',0)==len(raw)]
         need('exact-current-source-region-hash',len(matching)==1
             and hashlib.sha256(raw).hexdigest().upper()==matching[0].get('sha256'))
-    program=source.source_program([(at,bytes.fromhex(h))for at,h in regions],base+proof['targetRva'],offsets)
+    program=called_advance_qword_program([(at,bytes.fromhex(h))for at,h in regions],base+proof['targetRva'],offsets)
     need('complete-source-QWORD-frame-replayed',norm(program)==proof.get('program')
         and proof.get('completeBufferedProgram')is True and proof.get('entryRspRestored')is True
         and proof.get('nonvolatilesRestored')is True)

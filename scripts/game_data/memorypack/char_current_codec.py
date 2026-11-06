@@ -51,5 +51,6 @@ def frame(data,selected,*,operation):
             kind=wire,start=start,end=reader.pos,value=value))
     need('whole-physical-EOF',reader.pos==reader.limit==len(data))
     return dict(status='complete-current-char-interact-frame',schemaStatus='named_exact',wholeSchemaExact=True,
+        schemaMappingId='endfield.char-interact-perform-current.v1',
         serializedMemberCount=28,bytesConsumed=reader.pos,physicalEOF=True,fields=fields,records=reader.records,
         sourceSelectionConditional=True,runtimeAnimationProved=False,remainingNodeBudget=budget['remaining'])

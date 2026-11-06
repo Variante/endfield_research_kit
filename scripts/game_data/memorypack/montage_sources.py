@@ -13,20 +13,23 @@ from scripts.game_data.il2cpp.owned_partition import BranchGrammar
 
 from scripts.game_data.memorypack.scalar_param_native import parameter_setter
 
-def check_inline_copy(rows, *, width, field, remaining, current, instance, advance, reader_setup=False):
+def check_inline_copy(rows, *, width, field, remaining, current, instance, advance, reader_setup=False, stack_copy=False):
     if width not in (16,32,36) or type(field) is not int or field<16:
         raise ValueError('montageCopy.layout')
     g=BranchGrammar(rows,label='montageCopy')
     g.take(f'cmp dword [rbx+{remaining:#x}], {width:#x}', 'mov rsi, [rdi]')
     refill=g.branch('jl')['target']
-    g.take(f'mov rax, [rbx+{current:#x}]',f'mov edx, {width:#x}','mov rcx, rbx','movups xmm6, [rax]')
+    if type(stack_copy)is not bool or stack_copy and width!=16:raise ValueError('montageCopy.stack-profile')
+    g.take(f'mov rax, [rbx+{current:#x}]',f'mov edx, {width:#x}','mov rcx, rbx',f'movups {"xmm0"if stack_copy else"xmm6"}, [rax]')
+    if stack_copy:g.take('movups [rsp+0x20], xmm0')
     if width==36:g.take('mov ebp, [rax+0x20]')
     if width>=32:g.take('movups xmm7, [rax+0x10]')
     g.call(advance)
     g.take('test rsi, rsi');null=g.branch('je')['target']
     g.take(f'mov rax, [rsi+{instance:#x}]','test rax, rax')
     if g.branch('je')['target']!=null:raise ValueError('montageCopy.null-target')
-    g.take(f'movups [rax+{field:#x}], xmm6')
+    if stack_copy:g.take('movups xmm0, [rsp+0x20]','mov rcx, rbx')
+    g.take(f'movups [rax+{field:#x}], {"xmm0"if stack_copy else"xmm6"}')
     if reader_setup:g.take('mov rcx, rbx')
     if width>=32:g.take(f'movups [rax+{field+16:#x}], xmm7')
     if width==36:g.take(f'mov [rax+{field+32:#x}], ebp')
@@ -96,7 +99,9 @@ def validate_fields(image,pins,selected):
    advance_record=recorder(advance-base,fragments=True);scalar.advance_source(image,advance_record,offsets,'montage.inline.advance')
    holder=context.field(wrapper.name+'::__instance')
    if holder!=(wrapper.name,name,16):raise ValueError('inline typed holder differs')
-   proof=check_inline_copy(part,width=width,field=slot,remaining=offsets['bufferLength'],current=offsets['currentPtr'],instance=holder[2],advance=advance,reader_setup=any(r['text']=='mov rcx, rbx' for r in part[j+1:]))
+   stack_copy=any(r['text']=='movups [rsp+0x20], xmm0'for r in part)
+   if stack_copy and declared!='Beyond.Resource.ManifestData+GUIDProxy':raise ValueError('stack copy requires its own nominal GUID field')
+   proof=check_inline_copy(part,width=width,field=slot,remaining=offsets['bufferLength'],current=offsets['currentPtr'],instance=holder[2],advance=advance,reader_setup=any(r['text']=='mov rcx, rbx' for r in part[j+1:]),stack_copy=stack_copy)
    inline[member.name]=dict(start=i,end=rows.index(part[-1]),rows=part,proof=proof,advanceSource=advance_record)
   fields=[];previous=-1
   for member in wrapper.members:
@@ -130,7 +135,14 @@ def validate_fields(image,pins,selected):
     setter=recorder(pointer-base)
     decoded=decode_type_data_initialization_instructions(image.mapper,image.pe.bytes_at_va(pointer,setter['window']['endRva']-setter['window']['startRva']),pointer)
     if member.kind in ('list','object','string') and not value4:
-     if decoded[3]['text'].startswith('jne '):parameter_setter(image,setter['instructions'],name='path',slot=slot,width=8,label='montage.reference')
+     if name=='Beyond.Montage.DynamicEntity'and member.name=='extraEffects':
+      from scripts.game_data.memorypack.generated_member_sources import _derive_setter
+      from scripts.game_data.memorypack.generated_action_sources import _prepare
+      _,barrier,_=_prepare(image,pins)
+      current=_derive_setter(image,member,build.wrappers,barrier,{},pins=pins)
+      if current['fieldOffset']!=slot or current['storedBytes']!=8 or current.get('incomingValueStoredUnchanged')is not True:raise ValueError('current extra-effects named reference setter differs')
+      setter['currentNamedSetter']=current
+     elif decoded[3]['text'].startswith('jne '):parameter_setter(image,setter['instructions'],name='path',slot=slot,width=8,label='montage.reference')
      else:prove_reference_setter_rows(decoded,slot=16,field=slot)
     else:scalar_setter(decoded,field=slot,mode=mode)
     setup=block[:block.index(read)+1];typed=None

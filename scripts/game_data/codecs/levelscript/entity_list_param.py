@@ -22,6 +22,9 @@ def decode_entity_list_constant(data,offset,*,max_count=10000):
 
 def decode_entity_list_param(data,offset,*,strings=None,game_root=None,operation=None):
  if operation is None:
+  from scripts.game_data.memorypack.levelscript_param_batch import selected_batch_param
+  operation=selected_batch_param('entity_list',game_root=game_root,strings=strings)
+ if operation is None:
   with current_entity_list_params(game_root=game_root,strings=strings)as selected:
    return decode_entity_list_param(data,offset,strings=strings,game_root=game_root,operation=selected)
  audit=prepared_entity_list_audit(operation,game_root=game_root,strings=strings)

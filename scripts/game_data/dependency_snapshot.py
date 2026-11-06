@@ -42,9 +42,11 @@ class DependencySnapshotError(ValueError):
 class _ParseFactsCache:
     """Bounded immutable syntax facts, never paths, manifests or proof results.
 
-    Each caller still reads current bytes. Full bytes form the key; timestamps
-    and saved digests confer no freshness. Filesystem-dependent resolution and
-    every ambiguity/existence/escape check remain outside this cache.
+    Each caller still reads current bytes. Python and small JSON use full-byte
+    keys; large JSON declarations use length plus SHA256 of those current bytes.
+    Only immutable syntax is cached, never a path set or a validation result.
+    Filesystem-dependent resolution and every ambiguity/existence/escape check
+    remain outside this cache.
     """
     def __init__(self, *, max_bytes=128 * 1024 * 1024, max_entries=4096,
                  max_entry_bytes=8 * 1024 * 1024):
@@ -164,6 +166,12 @@ def _json_dependency_declarations(raw, path):
             # still refuses before a later invalid declaration as before.
             result.append(declared if isinstance(declared, str) and declared else None)
         return tuple(result)
+    # Large native contracts usually contribute only a few dependency names.
+    # Retaining their full bytes exceeds the entry budget and forced a complete
+    # JSON parse at every snapshot. Hash freshly read bytes instead; timestamps
+    # and a saved dependency roster never decide whether this syntax is current.
+    if len(raw) > _PARSE_FACTS.max_entry_bytes:
+        return _PARSE_FACTS.get(('json-sha256', len(raw)), hashlib.sha256(raw).digest(), build)
     return _PARSE_FACTS.get('json', raw, build)
 
 

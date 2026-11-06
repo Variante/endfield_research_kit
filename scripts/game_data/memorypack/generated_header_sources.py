@@ -17,14 +17,15 @@ def need(check,condition,detail=None):
     if not condition:raise ValueError(LABEL+'.'+check+':'+str(detail)[:700])
 
 
-def _arguments(rows,entry):
+def _arguments(rows,entry,argument_registers=('rcx','rdx')):
+    need('finite-entry-argument-ABI',argument_registers in(('rcx','rdx'),('rdx','r8')))
     by={ec.va(r):r for r in rows};at=entry;prefix=[]
     while at in by and len(prefix)<40:
         row=by[at]
         if control_transfer(row)['kind']!='next':break
         prefix.append(row);at+=len(ec.raw(row))
     result={}
-    for role,argument in(('reader','rcx'),('output','rdx')):
+    for role,argument in zip(('reader','output'),argument_registers,strict=True):
         saved=ec.one(prefix,lambda r:re.fullmatch(r'mov (?:rbx|rbp|rsi|rdi|r1[2345]), '+argument,r['text'])is not None,LABEL+'.'+role)
         register=saved['text'].split()[1].strip(',')
         need(role+'-provenance',ec.last_write(prefix,prefix.index(saved),argument)is None)
@@ -277,7 +278,7 @@ def _inline(rows,entry,count,roles,image,offsets,barrier,disabled_flag,owned_par
     base=image.pe.image_base;reader=roles['reader'];by={ec.va(r):r for r in rows}
     null=ec.one(rows,lambda r:re.fullmatch(r'cmp (?:[abcd]l|[sd]il|[bs]pl|r1[2345]b), -0x1',r['text'])is not None,LABEL+'.inline-null')
     register=null['text'][4:].split(',')[0]
-    count_row=ec.one(rows,lambda r:r['text']==f'cmp {register}, {hex(count)}',LABEL+'.inline-member-count')
+    count_row=ec.one(rows,lambda r:r['text']==(f'test {register}, {register}'if count==0 else f'cmp {register}, {hex(count)}'),LABEL+'.inline-member-count')
     root=_ALIASES.get(register,register);candidates=[]
     for i,row in enumerate(rows[:-1]):
         zero=rows[i+1].get('byteMemoryZeroExtensionOperation',{})
@@ -287,11 +288,21 @@ def _inline(rows,entry,count,roles,image,offsets,barrier,disabled_flag,owned_par
     predicates=[]
     for pi,row in enumerate(rows[:-1]):
         if row['text']!=f'cmp dword [{reader}+{offsets["bufferLength"]:#x}], 0x1':continue
-        edge=rows[pi+1];predicate=control_transfer(edge)
+        setup=[];edge=rows[pi+1]
+        if(ec.raw(edge)==bytes.fromhex('48c744246000000000')and(reader,roles['output'])==('rdi','rsi')
+                and pi+2<len(rows)and ec.va(edge)==ec.va(row)+len(ec.raw(row))):
+            # Exact whole-null MOV between CMP and JGE preserves its flags.
+            # REX.W C7 /0, SIB [RSP+disp8], imm32 zero: this exact MOV
+            # writes the whole sign-extended qword and preserves all flags.
+            # The mapper has no memoryOperation for immediate stores.
+            need('literal-null-setup-whole-MOV',edge['text']=='mov qword [rsp+0x60], 0x0')
+            setup=[edge];edge=rows[pi+2]
+            need('literal-null-setup-contiguous-edge',ec.va(edge)==ec.va(setup[0])+len(ec.raw(setup[0])))
+        predicate=control_transfer(edge)
         if predicate['kind']=='conditional'and(predicate['conditionCode']==13 and predicate['target']==ec.va(start)or
             predicate['conditionCode']==12 and ec.va(edge)+len(ec.raw(edge))==ec.va(start)):
-            predicates.append((row,edge))
-    buffer_compare,buffer_edge=ec.one(predicates,lambda x:True,LABEL+'.inline-buffer-predicate')
+            predicates.append((row,edge,setup))
+    buffer_compare,buffer_edge,buffer_setup=ec.one(predicates,lambda x:True,LABEL+'.inline-buffer-predicate')
     path=[];at=ec.va(start)
     while at!=ec.va(null):
         need('inline-source-boundary',at in by and at not in {ec.va(r)for r in path}and len(path)<20)
@@ -304,17 +315,25 @@ def _inline(rows,entry,count,roles,image,offsets,barrier,disabled_flag,owned_par
     width,program=ec.inline_read(path,0,reader,offsets);need('inline-one-complete-byte',width==1 and path==program)
     need('inline-output-provenance',ec.last_write(rows,index,roles['output'])==roles['outputSave'])
     edge=by[ec.va(null)+len(ec.raw(null))];flow=control_transfer(edge)
-    need('inline-exact-ff-edge',flow['kind']=='conditional'and flow['conditionCode']==4)
-    tail=_null_tail(rows,flow['target'],entry,roles['output'],base,barrier,disabled_flag,owned_partition,ordinary_zero_prover)
+    need('inline-exact-ff-edge',flow['kind']=='conditional'and flow['conditionCode']in(4,5))
+    null_target=flow['target']if flow['conditionCode']==4 else ec.va(edge)+len(ec.raw(edge))
+    tail=_null_tail(rows,null_target,entry,roles['output'],base,barrier,disabled_flag,owned_partition,ordinary_zero_prover)
+    extra={}
+    if buffer_setup:
+        frame=tail['frame'];home=96-frame['frameBytes']
+        need('literal-null-setup-owned-frame',frame['frameBytes']==88 and home==8
+            and all(home+8<=saved or saved+8<=home for saved in frame['savedHomes'].values()))
+        extra['bufferSetup']=[dict(instruction=ec.site(buffer_setup[0],base),displacement=96,entryRspOffset=home,
+            zeroProfile='interactive-variant-literal-null')]
     return count_row,tail,dict(mode='inline',bufferPredicate=ec.site(buffer_compare,base),
         bufferEdge=ec.site(buffer_edge,base),sourceProgram=[ec.site(r,base)for r in path],
-        nullCompare=ec.site(null,base),nullEdge=ec.site(edge,base))
+        nullCompare=ec.site(null,base),nullEdge=ec.site(edge,base),**extra)
 
 
-def derive(image,rows,entry,count,offsets,barrier,*,disabled_flag=None,owned_partition=None):
+def derive(image,rows,entry,count,offsets,barrier,*,disabled_flag=None,owned_partition=None,argument_registers=('rcx','rdx')):
     """Return exact current header role proof and its selected count row."""
-    need('member-count-domain',type(count)is int and 0<count<250)
-    roles=_arguments(rows,entry);failures=[];ordinary_family=None
+    need('member-count-domain',type(count)is int and 0<=count<250)
+    roles=_arguments(rows,entry,argument_registers);failures=[];ordinary_family=None
     def ordinary_zero_prover(sites,register):
         nonlocal ordinary_family
         if owned_partition is not None:

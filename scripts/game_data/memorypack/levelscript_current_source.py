@@ -5,8 +5,10 @@ for an interactive map. Every successful owner reaches physical EOF through
 the maintained sequential source cursor.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
-from contextlib import ExitStack
+from contextlib import ExitStack,contextmanager
+from contextvars import ContextVar
 import gzip
 import hashlib
 import json
@@ -22,6 +24,26 @@ from scripts.game_data.levelscript_reader_inputs import (
 from scripts.game_data.memorypack import pooled_source_helper
 from scripts.game_data.string_pool import export_string_pool
 
+_ACTION_VALUES=ContextVar('current_levelscript_action_values',default=None)
+
+
+@contextmanager
+def _action_values_scope(owner):
+    state=dict(owner=owner,paths=(owner.gameassembly,owner.metadata),
+        pins=dict(owner.proof['nativeInputs']),value=None,nodes=0)
+    token=_ACTION_VALUES.set(state)
+    try:yield state
+    finally:_ACTION_VALUES.reset(token)
+
+
+def _action_value_state(owner):
+    state=_ACTION_VALUES.get()
+    if(not isinstance(state,dict)or state.get('owner')is not owner
+            or state.get('paths')!=(owner.gameassembly,owner.metadata)
+            or state.get('pins')!=owner.proof['nativeInputs']):
+        raise CurrentLevelScriptSourceError('active-selected-action-value-scope-required',owner.root)
+    return state
+
 COLLECTIONS={
     'interactiveActiveRiskEntityIdList':'System.Collections.Generic.List`1<ulong>',
     'refWorldEntityIdList':'System.Collections.Generic.List`1<ulong>',
@@ -35,7 +57,13 @@ class CurrentLevelScriptSourceError(ValueError):
     def __init__(self,gate,source,expected=None,actual=None):
         self.diagnostic=dict(validator='currentLevelScriptSource',gate=gate,source=str(source),
             expected=expected,actual=actual)
-        super().__init__(json.dumps(self.diagnostic,sort_keys=True))
+        message=self.diagnostic
+        if isinstance(actual,dict)and isinstance(actual.get('readerRefusals'),list):
+            rows=[r for r in actual['readerRefusals']if isinstance(r,dict)]
+            primary=next((r for r in rows if r.get('validator')=='frame_levelscript_current_action_sequence_leader_enter'),rows[-1]if rows else None)
+            if primary is not None:
+                message=dict(self.diagnostic,actual=dict(actual,primaryReaderRefusal=primary))
+        super().__init__(json.dumps(message,sort_keys=True))
 
 
 def _reviewed_native_identity(*,gameassembly,metadata):
@@ -69,9 +97,24 @@ def _reviewed_native_identity(*,gameassembly,metadata):
 
 
 class CurrentLevelScriptSource:
+    @classmethod
+    def from_receipt(cls,json_root,*,gameassembly,metadata,summary_path,ledger_path):
+        """Dispatch the envelope format, retaining each independent admission gate."""
+        from scripts.game_data.jsondata_source_provenance import SOURCE_INVENTORY_FORMAT, REGISTRY_FORMAT
+        value=json.loads(Path(summary_path).read_bytes())
+        kind=value.get('format')
+        if kind==SOURCE_INVENTORY_FORMAT:
+            return cls.from_source_inventory(json_root,gameassembly=gameassembly,metadata=metadata,
+                summary_path=summary_path,ledger_path=ledger_path)
+        if kind!=REGISTRY_FORMAT:
+            raise CurrentLevelScriptSourceError('source-receipt-format',summary_path,
+                [SOURCE_INVENTORY_FORMAT,REGISTRY_FORMAT],kind)
+        return cls(json_root,gameassembly=gameassembly,metadata=metadata,
+            summary_path=summary_path,ledger_path=ledger_path)
+
     def __init__(self,json_root,*,gameassembly,metadata,
-            summary_path=Path('reports/animestudio/jsondata_current_latest.json'),
-            ledger_path=Path('reports/animestudio/jsondata_current_files_latest.jsonl.gz')):
+            summary_path=(ExportLayout.configured().evidence_dir / 'animestudio/jsondata_current_latest.json'),
+            ledger_path=(ExportLayout.configured().evidence_dir / 'animestudio/jsondata_current_files_latest.jsonl.gz')):
         self.root=Path(json_root).resolve();self.gameassembly=gameassembly;self.metadata=metadata
         self.summary=Path(summary_path);self.ledger=Path(ledger_path);self.active=False
         self._source_inventory=False
@@ -107,7 +150,7 @@ class CurrentLevelScriptSource:
         with gzip.open(self.ledger,'rt',encoding='utf-8')as stream:
             for line in stream:
                 row=json.loads(line);key=row.get('exportRelativePath','')
-                if not key.startswith(('LevelScriptData/','LevelData/','StringPool/'))and key!='Interactive/InteractiveTable.json':continue
+                if not key.startswith(('LevelScriptData/','LevelScriptTemplateData/','LevelData/','StringPool/'))and key!='Interactive/InteractiveTable.json':continue
                 if key in self.rows:raise CurrentLevelScriptSourceError('duplicate-logical-source',key)
                 self.rows[key]=row
 
@@ -182,10 +225,12 @@ class CurrentLevelScriptSource:
             self.files={};self.closed=set();self.attempted=set()
             self.host_closed=set();self.host_attempted=set();self.host_conditions={}
             self.root_conditions={}
+            self.template_closed=set();self.template_attempted=set();self._template_capability=None
             for row in self.pool_inputs['files']:
                 path=Path(row['path']);self._join(path,path.read_bytes())
             self.universe={key for key in self.rows if key.startswith('LevelScriptData/')}
             self.host_universe={key for key in self.rows if key.startswith('LevelData/')}
+            self.template_universe={key for key in self.rows if key.startswith('LevelScriptTemplateData/')}
             from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
             from scripts.game_data.levelscript_numeric_list_param_native import current_numeric_list_params
             from scripts.game_data.levelscript_camera_shake_param_native import current_camera_shake_params
@@ -200,6 +245,7 @@ class CurrentLevelScriptSource:
             self.npc_decoder=self.stack.enter_context(npc_runtime_decoder(strings=self.strings,
                 gameassembly=self.gameassembly,metadata=self.metadata))
             self.active=True
+            self.stack.enter_context(_action_values_scope(self))
             if isinstance(self.host_caps,dict):
                 from scripts.game_data.memorypack.levelscript_current_npc import _current_npc_decoder
                 self.npc_decoder=_current_npc_decoder(self,self.npc_decoder)
@@ -215,6 +261,38 @@ class CurrentLevelScriptSource:
         expected=None if row is None else[row['length'],row['logicalSha256'].upper()]
         if expected!=actual:raise CurrentLevelScriptSourceError('logical-source-byte-join',key,expected,actual)
         return key
+
+    def verify_action_node(self,data,offset,family,decoded,end,*,strings):
+        """Re-read the full reached node against fresh native field sources.
+
+        Historical reviewed projections remain an independent framing oracle.
+        They cannot grant a current node's child grammar or named values. The
+        selected operation owns this lazy graph's native and reader bookends.
+        """
+        require_current_owner(self,strings=strings)
+        graph,registry=self.action_value_context()
+        from scripts.game_data.memorypack.interactive_current_values import InteractiveValueReader
+        reader=InteractiveValueReader(data,'current-action:'+family,registry=registry,
+            strings=strings,graph=graph,action_owner=self)
+        value,native_end=reader._native_action_node(reader.data,offset,family,decoded)
+        if native_end!=end:
+            raise CurrentLevelScriptSourceError('independent-action-source-extent',family,end,native_end)
+        _action_value_state(self)['nodes']+=1
+        return dict(decoded,currentNativeValue=value,serializedRawHex=bytes(data[offset:end]).hex(),
+            currentNativeNodeVerified=True)
+
+    def action_value_context(self):
+        """One selected graph, whose lifetime and bookends belong to this owner."""
+        require_current_owner(self,strings=self.strings)
+        state=_action_value_state(self)
+        if state['value']is None:
+            from scripts.game_data.il2cpp.native_image import open_native_image
+            from scripts.game_data.memorypack.interactive_native_graph import InteractiveNativeGraph
+            from scripts.game_data.memorypack.interactive_current_values import registry_from_image
+            image=open_native_image(*state['paths'])
+            graph=self.stack.enter_context(InteractiveNativeGraph(image,state['pins'],action_owner=self))
+            state['value']=(graph,registry_from_image(image))
+        return state['value']
 
     def frame(self,path,data):
         if not self.active:raise CurrentLevelScriptSourceError('operation-closed',self.root)
@@ -419,6 +497,43 @@ class CurrentLevelScriptSource:
         return _decode_module_dictionary(data,offset,cap['allowedModuleTags'][0],diagnostics,
             count_limit=cap['countLimit'],canonical=True)
 
+    def prepare_template(self):
+        """Fresh same-image root, map and child-call proofs, owned by this scope."""
+        require_current_owner(self,strings=self.strings)
+        if self._template_capability is not None:return
+        from scripts.game_data.il2cpp.native_image import open_native_image
+        from scripts.game_data.memorypack.levelscript_template_sources import derive
+        self._template_capability=derive(open_native_image(self.gameassembly,self.metadata),
+            self.proof['nativeInputs'],task_cap=self.task_caps)
+
+    def require_template(self,*,strings):
+        require_current_owner(self,strings=strings)
+        cap=self._template_capability
+        if (not isinstance(cap,dict)or cap.get('schema')!='endfield.current-levelscript-template-source.v1'
+                or cap.get('nativeInputs')!=self.proof['nativeInputs']or cap.get('storedGrammarAdmitted')is not True
+                or cap.get('memberCount')!=6 or cap.get('runtimeProviderSelectionObserved')is not False
+                or cap.get('wholeOwnerAdmitted')is not False):
+            raise CurrentLevelScriptSourceError('fresh-template-callers-required',self.root)
+        return cap
+
+    def frame_template(self,path,data):
+        self.require_template(strings=self.strings)
+        path=Path(path).resolve();key=self._join(path,data)
+        if key not in self.template_universe:
+            raise CurrentLevelScriptSourceError('owner-family',key,'LevelScriptTemplateData')
+        if self.files.setdefault(path,data)!=data:raise CurrentLevelScriptSourceError('mixed-source-versions',key)
+        self.template_attempted.add(key)
+        from scripts.game_data.levelscript_template_binary import frame_levelscript_template,ROOT_FIELDS
+        framed=frame_levelscript_template(data,strings=self.strings,game_root=self.game_root,
+            current_owner=self,**self.leaves)
+        if ((framed.get('schemaStatus'),framed.get('serializedMemberCount'),framed.get('bytesConsumed'))
+                !=('named_exact',6,len(data))or list(framed.get('fields',{}))!=list(ROOT_FIELDS)):
+            raise CurrentLevelScriptSourceError('complete-current-template-EOF',key,
+                'all6 source-backed ordered fields and physical EOF',
+                {name:framed.get(name)for name in('schemaStatus','bytesConsumed','stopField','diagnostics')})
+        framed['reader']='scripts.game_data.levelscript_template_binary.frame_levelscript_template'
+        self.template_closed.add(key);return framed
+
     def frame_leveldata(self,path,data):
         """Close a current host only through the independently composed cursor."""
         if not self.active:raise CurrentLevelScriptSourceError('operation-closed',self.root)
@@ -468,7 +583,10 @@ class CurrentLevelScriptSource:
 
     def audit(self):
         if not self.active:raise CurrentLevelScriptSourceError('operation-closed',self.root)
+        state=_action_value_state(self);values=state['value']
         return dict(self._source_audit(),nativeValidationReuse=self._native_validation_state.statistics(),sourceUniverse=len(self.universe),
+            actionValueProofs=dict(nodesVerified=state['nodes'],concreteCases=0 if values is None else len(values[0]._action_cases),
+                activeSelectedNativeGraph=values is not None,retainedOperationAttributeAuthority=False),
             sourcesAttempted=len(self.attempted),ownersClosed=len(self.closed),
             allSourcesAttempted=len(self.attempted)==len(self.universe),allOwnersClosed=len(self.closed)==len(self.universe),
             conditionalChildSources={key:self.root_conditions[key]for key in sorted(self.root_conditions)},
@@ -476,6 +594,9 @@ class CurrentLevelScriptSource:
                 ownersClosed=len(self.host_closed),allSourcesAttempted=len(self.host_attempted)==len(self.host_universe),
                 allOwnersClosed=len(self.host_closed)==len(self.host_universe),
                 conditionalChildSources={key:self.host_conditions[key]for key in sorted(self.host_conditions)}),
+            template=dict(sourceUniverse=len(self.template_universe),sourcesAttempted=len(self.template_attempted),
+                ownersClosed=len(self.template_closed),allSourcesAttempted=self.template_attempted==self.template_universe,
+                allOwnersClosed=self.template_closed==self.template_universe),
             runtimeActivationProved=False,playbackProved=False,absenceProved=False)
 
     def __exit__(self,*error):

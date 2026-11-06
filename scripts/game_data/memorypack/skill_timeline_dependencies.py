@@ -11,6 +11,7 @@ strictly null/empty; positive elements remain unproved.
 from __future__ import annotations
 
 import json
+import copy
 import struct
 
 from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
@@ -222,7 +223,36 @@ def bind_component(image,parent,name,proof,*,label):
     return dict(status='validated',component=name,joins=joins,capability=proof)
 
 
-def validate_dependency(image,parent,dependency,*,label):
+class _DependencyProofCache:
+    """Only selected same-call component proofs; parent joins always re-run."""
+    def __init__(self,image,inputs):
+        self.image=image;self.inputs=copy.deepcopy(inputs);self.entries={}
+
+    def proof(self,image,inputs,owner,name,fact,*,label):
+        _need(label,'same-operation-image',True,image is self.image)
+        _need(label,'same-operation-inputs',self.inputs,inputs)
+        path=owner.CONTRACT_PATH.resolve();raw=path.read_bytes()
+        _need(label,'unchanged-read-declaration',fact,json.loads(raw))
+        function=owner.validate_on_image
+        previous=self.entries.get(name)
+        if previous is not None:
+            old_function,old_path,old_raw,proof=previous
+            _need(label,'same-component-validator',True,function is old_function)
+            _need(label,'same-component-path',old_path,path)
+            _need(label,'unchanged-component-declaration',old_raw,raw)
+            return copy.deepcopy(proof)
+        proof=function(image,inputs)
+        _need(label,'component-arguments-bookend',self.inputs,inputs)
+        _need(label,'component-validator-bookend',True,function is owner.validate_on_image)
+        _need(label,'component-declaration-bookend',raw,path.read_bytes())
+        _need(label,'cache-only-validated-component','validated',proof.get('status'))
+        _need(label,'cache-only-selected-inputs',inputs,proof.get('nativeInputs'))
+        stored=copy.deepcopy(proof)
+        self.entries[name]=(function,path,raw,stored)
+        return copy.deepcopy(stored)
+
+
+def validate_dependency(image,parent,dependency,*,label,proof_cache=None):
     """Validate one allowlisted declaration and its exact current parent join."""
     name = dependency.get('path')
     inputs = parent['nativeInputs']
@@ -232,7 +262,8 @@ def validate_dependency(image,parent,dependency,*,label):
         fact,_ = read_reviewed_contract(owner.CONTRACT_PATH,schema=owner.SCHEMA,status='exact-current-build',label=label+'.'+name)
         _need(label,'selected-component-inputs',inputs,fact['nativeInputs'])
         _publication_gate(image,inputs)
-        proof = owner.validate_on_image(image,inputs)
+        proof = (owner.validate_on_image(image,inputs)if proof_cache is None else
+            proof_cache.proof(image,inputs,owner,name,fact,label=label))
         result = bind_component(image,parent,name,proof,label=label)
         _publication_gate(image,inputs)
         return result
@@ -257,11 +288,11 @@ def validate_dependency(image,parent,dependency,*,label):
     return dict(status='validated',component=name)
 
 
-def validate_dependencies(image,parent,*,label):
+def validate_dependencies(image,parent,*,label,proof_cache=None):
     rows = parent.get('dependencies',[])
     names = [r.get('path') for r in rows]
     _need(label,'unique-dependency-names',len(names),len(set(names)))
-    return {row['path']:validate_dependency(image,parent,row,label=label) for row in rows}
+    return {row['path']:validate_dependency(image,parent,row,label=label,proof_cache=proof_cache) for row in rows}
 
 
 def read_null_empty_selector_list(reader):

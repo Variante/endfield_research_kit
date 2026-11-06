@@ -98,7 +98,8 @@ def family(image, entry):
     rows = []
     for part in selected["ranges"]:
         start, end = part["runtimeTriple"][:2]
-        rows.extend(decode_string_source_instructions(image.mapper,
+        from scripts.game_data.il2cpp.raw_instruction_index import decode_image_rows
+        rows.extend(decode_image_rows(image,'string-source',decode_string_source_instructions,
             image.pe.bytes_at_va(base + start, end - start), base + start))
     return selected, windows, rows
 

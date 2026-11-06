@@ -335,7 +335,8 @@ def decode_empty_action_map_owner_prefix(
                 if module_end is None:
                     module_rows,module_end=current_owner.module_map(data,cursor,strings=strings,diagnostics=module_diagnostics)
                 else:module_rows=empty
-        else:module_rows, module_end = modules.decode_module_dictionary(data, cursor, module_diagnostics)
+        else:module_rows, module_end = modules.decode_module_dictionary(
+            data, cursor, module_diagnostics, gameassembly=gameassembly, metadata=metadata)
     except modules.LevelScriptModuleCodecError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
     if module_rows is None:

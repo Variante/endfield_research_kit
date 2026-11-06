@@ -89,7 +89,7 @@ import re
 import struct
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -212,9 +212,12 @@ class MemberPlan:
     value_offset: int | None = None
     pair_size: int | None = None
     header: bool | None = None
+    declared_type: str | None = None
 
     def row(self) -> dict[str, Any]:
         row: dict[str, Any] = {"name": self.name, "kind": self.kind}
+        if self.declared_type is not None:
+            row["declaredType"] = self.declared_type
         if self.width is not None:
             row["width"] = self.width
         if self.scalar is not None:
@@ -347,6 +350,12 @@ class Resolver:
     def _plan_for_type(
         self, name: str, declared: str | None, *, as_element: bool = False
     ) -> MemberPlan | None:
+        plan = self._plan_for_declared_type(name, declared, as_element=as_element)
+        return replace(plan, declared_type=declared) if plan is not None else None
+
+    def _plan_for_declared_type(
+        self, name: str, declared: str | None, *, as_element: bool = False
+    ) -> MemberPlan | None:
         """A plan for a member holding ``declared``, or None when unresolved.
 
         ``as_element`` marks a collection element, which is framed differently
@@ -449,7 +458,8 @@ class Resolver:
             if member.width is not None:
                 members.append(MemberPlan(
                     member.name, FIXED, width=member.width,
-                    scalar=member.underlying_kind or member.kind))
+                    scalar=member.underlying_kind or member.kind,
+                    declared_type=member.declared_type))
                 continue
             built = self._plan_for_type(member.name, member.declared_type)
             if built is None:

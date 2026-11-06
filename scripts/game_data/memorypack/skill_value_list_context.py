@@ -74,9 +74,16 @@ def derive(image,pins,*,typed_request,call_target,element_type):
     argument,=image.instantiations.resolve(typed_request['methodSpec'][2]).arguments
     carrier=ContextSymbols(image).type(argument.type_pointer_va)
     need('closed-list-name',declared,carrier['name']);element,=carrier['classArguments'];raw=bytes.fromhex(element['rawHex'])
-    require_value_element(raw,ctx.index.types[element_type].index)
-    need('actual-value-type',True,ctx.is_value_type(element_type));need('non-enum-element',False,ctx.is_enum(element_type))
-    need('value-parent','System.ValueType',ctx.parent(element_type))
+    nominal='System.Boolean' if element_type=='bool' else element_type
+    if element_type=='bool':
+        scalar.ordinary(image,element['typePointerVa'],2,LABEL+'.Boolean')
+        definition=ctx.index.types[nominal]
+        own=image.pe.bytes_at_va(ctx.type_pointer(definition.byval_type_index),16)
+        need('exact-own-Boolean-element-record',own,raw)
+        need('Boolean-value-marker',128,raw[11])
+    else:require_value_element(raw,ctx.index.types[element_type].index)
+    need('actual-value-type',True,ctx.is_value_type(nominal));need('non-enum-element',False,ctx.is_enum(nominal))
+    need('value-parent','System.ValueType',ctx.parent(nominal))
     core=_load('npc_runtime_native.json',pins)['readPackable']
     generic=_load('leveldata_npc_patrol_native.json',pins)['declarations']
     routes=copy.deepcopy(generic['adapters']['referenceRoutes']);routes['wrappers']=[]

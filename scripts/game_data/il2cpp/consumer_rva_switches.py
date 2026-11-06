@@ -96,7 +96,8 @@ def partition_consumer_rva_switches(mapper,raw,*,entry,image_base,
 
 def ordinary_entry_program(part,*,entry,tail_exits=None):
     from scripts.game_data.il2cpp.consumer_control import build_consumer_control_graph, check_consumer_control
-    graph=build_consumer_control_graph(part['rows'],entry=entry,owned_ranges=[part['codeRange']],
+    ranges=part.get('codeRanges',[part['codeRange']])
+    graph=build_consumer_control_graph(part['rows'],entry=entry,owned_ranges=ranges,
         computed_jump_targets=part['computedJumpTargets'],tail_exits=tail_exits)
     by_at={int(row['va'],16):row for row in part['rows']}
     for table in part['tables']:
@@ -107,7 +108,7 @@ def ordinary_entry_program(part,*,entry,tail_exits=None):
                    (not table['guard']<=source<table['jump'] or target!=following) for target in targets):
                 raise ValueError('consumerRvaSwitches.guard-bypass')
     from scripts.game_data.il2cpp.consumer_entry_program import ordinary_consumer_entry
-    program=ordinary_consumer_entry(part['rows'],entry=entry,owned_ranges=[part['codeRange']],computed_jump_targets=part['computedJumpTargets'],tail_exits=tail_exits)
+    program=ordinary_consumer_entry(part['rows'],entry=entry,owned_ranges=ranges,computed_jump_targets=part['computedJumpTargets'],tail_exits=tail_exits)
     program['nonEntryCode']=program.pop('unenteredOwnedByteCandidates')
     program['condition']='Complete owned code/table framing. '+program['condition'].replace('Exception/resumption','exception/resumption')
     return program

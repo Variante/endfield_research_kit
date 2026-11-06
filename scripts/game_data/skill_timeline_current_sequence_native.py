@@ -14,7 +14,7 @@ from scripts.game_data.il2cpp.rgctx_symbols import validate_claims
 from scripts.game_data.levelscript_reader_inputs import (
     snapshot_complete_reader_inputs,snapshot_string_pool_inputs,reader_input_changes)
 from scripts.game_data.memorypack import skill_shared_sequence_sources as source,pooled_source_helper
-from scripts.game_data.memorypack.skill_contract_provenance import project_contract,validate_projection,contract_json_bytes
+from scripts.game_data.memorypack.skill_contract_provenance import project_contract,validate_projection,contract_json_bytes,_normalize_json_graph
 from scripts.game_data.memorypack.skill_timeline_current_sequence import validate_program,validate_continuation
 from scripts.repo_paths import REPO_ROOT
 
@@ -911,9 +911,9 @@ def derive(image,inputs,*,retain_traces=False):
                         raise ValueError(LABEL+'.child:atomic-source-target='+capability)
     child['blackboardInt']=skill_blackboard_int_sources.derive(image,inputs)
     caps['blackboard-int']=_compose_blackboard(child['blackboardInt'],inputs,kind='int')
-    child['blackboardVector3']=skill_blackboard_vector3_sources.derive(image,inputs)
+    child['blackboardVector3']=skill_blackboard_vector3_sources._derive_on_double(image,inputs,child['blackboardDouble'])
     caps['blackboard-vector3']=_compose_blackboard_vector3(child['blackboardVector3'],inputs,scalar_cap=caps['scalar-payload'])
-    child['blackboardVector2']=skill_blackboard_vector2_sources.derive(image,inputs)
+    child['blackboardVector2']=skill_blackboard_vector2_sources._derive_on_double(image,inputs,child['blackboardDouble'])
     caps['blackboard-vector2']=_compose_blackboard_vector(child['blackboardVector2'],inputs,dimensions=2,scalar_cap=caps['scalar-payload'])
     from scripts.game_data.memorypack import skill_ec_components
     child['ecComponents']=skill_ec_components.derive(image,inputs)
@@ -950,7 +950,9 @@ def derive(image,inputs,*,retain_traces=False):
             or action_null.get('reservedMarkersAdmitted')is not False):
         raise ValueError(LABEL+'.source:unproved-current-action-null')
     proof['actionNull']=action_null
-    continuation=skill_root_components.derive(image,inputs)
+    continuation=skill_root_components._derive_on_children(image,inputs,
+        double=child['blackboardDouble'],cost_profile=cost_profile,cost_proof=cost_proof,
+        _preserve_json_graph=not retain_traces)
     _compose_root(continuation,inputs,caps);proof['rootContinuation']=continuation
     from scripts.game_data.memorypack import skill_selector_buff_filter_components
     buff_filter=skill_selector_buff_filter_components.derive(image,inputs,
@@ -981,7 +983,12 @@ def derive(image,inputs,*,retain_traces=False):
     from scripts.game_data.memorypack import skill_selector_union_sources
     selectors=skill_selector_union_sources._derive_with_ec(image,inputs,child['ecComponents'],
         buff_find_component=continuation['proof']['buffFindSettings'],buff_filter_component=buff_filter,nested_component=child['actionNestedRecords'],
-        geometry_component=child['actionGeometry'])
+        geometry_component=child['actionGeometry'],
+        blackboard_components={
+            'Beyond.Blackboard+BlackboardDouble':child['blackboardDouble'],
+            'Beyond.Blackboard+BlackboardInt':child['blackboardInt'],
+            'Beyond.Blackboard+BlackboardVector2':child['blackboardVector2'],
+            'Beyond.Blackboard+BlackboardVector3':child['blackboardVector3']})
     smart=selectors['proof']['nonzeroChildren']['proof'].get('managedValueChildren',{}).get('Beyond.Gameplay.Core.SmartTargetSelectSetting')
     if smart is not None:
         _compose_smart_target(smart,inputs,caps);child['smartTargetValue']=smart
@@ -1011,7 +1018,9 @@ def derive(image,inputs,*,retain_traces=False):
     child['blowoffPriority']=skill_blowoff_priority_sources.derive(image,inputs)
     _compose_action_reference_records(child['blowoffPriority'],inputs,caps,['skill-blackboard-blowoff-priority'])
     from scripts.game_data.memorypack import skill_damage_components
-    child['damageComponents']=skill_damage_components.derive(image,inputs)
+    child['damageComponents']=skill_damage_components._derive_on_children(image,inputs,
+        double=child['blackboardDouble'],vector=child['blackboardVector3'],
+        attributes=continuation['proof']['attributeModifiers'],cast_component=continuation['proof']['castData'])
     _compose_damage(child['damageComponents'],inputs,caps)
     from scripts.game_data.memorypack import skill_hit_env_sources
     child['hitEnv']=skill_hit_env_sources._derive_on_calculation(image,inputs,child['damageComponents'])
@@ -1100,14 +1109,14 @@ def derive(image,inputs,*,retain_traces=False):
     references.update({skill_ordinary_ability_map_sources.TYPE:child['ordinaryAbilityMap'],
         skill_target_filter_sources.TYPE:child['targetFilter'],skill_special_aim_components.TYPE:child['specialAim']})
     actions=skill_action_components._derive_with_transport(image,inputs,transport,extension,reference_children=references,
-        selector_component=selectors)
+        selector_component=selectors,enum_component=child['cameraEnums'],_preserve_json_graph=not retain_traces)
     _compose_action_collections(actions,inputs,caps)
     _compose_actions(actions,inputs,caps,programs,requirements);proof['currentActions']=actions
     from scripts.game_data.memorypack import skill_wrapper_null_sources
     wrapper_nulls=skill_wrapper_null_sources.derive(image,inputs,programs)
     _compose_wrapper_nulls(wrapper_nulls,inputs,programs);proof['wrapperNulls']=wrapper_nulls
-    from scripts.game_data.memorypack.skill_timeline_dependencies import validate_dependencies
-    dependency_joins={}
+    from scripts.game_data.memorypack.skill_timeline_dependencies import validate_dependencies,_DependencyProofCache
+    dependency_joins={};dependency_cache=_DependencyProofCache(image,inputs)
     for fact in facts:
         if not fact.get('dependencies'):continue
         withheld=[];declarations=[]
@@ -1119,10 +1128,11 @@ def derive(image,inputs,*,retain_traces=False):
             else:declarations.append(dependency)
         parent=dict(fact,dependencies=declarations)
         dependency_joins[fact['dispatcher']['wrapperName']]=dict(
-            current=validate_dependencies(image,parent,label=LABEL),withheldDescendants=withheld)
+            current=validate_dependencies(image,parent,label=LABEL,proof_cache=dependency_cache),withheldDescendants=withheld)
     proof['uniformDependencyJoins']=dependency_joins
     proof['children']=child;proof['componentOwners']=components
-    fact=_json_fact(dict(schema=SCHEMA,status='exact-current-build',nativeInputs=dict(inputs),sourceOwners=sorted(source.UNIFORM_OWNERS),
+    normalize=_json_fact if retain_traces else _normalize_json_graph
+    fact=normalize(dict(schema=SCHEMA,status='exact-current-build',nativeInputs=dict(inputs),sourceOwners=sorted(source.UNIFORM_OWNERS),
         programs=programs,routeRequirements=requirements,capabilities=caps,
         nullUnions={'AbilityActionData':True,**selector_nulls},
         proof=proof,evidenceBoundary=BOUNDARY))
@@ -1237,17 +1247,27 @@ def validate_current_native_contract(*,game_root=None,gameassembly=None,metadata
         gate=_gate(inputs,game_root=game_root,gameassembly=gameassembly,metadata=metadata)
         if gate.status!='validated':return dict(status=gate.status,programs=[],capabilities={},detail=gate.detail,failedCheck='installed-native-inputs')
         if failed:=pooled_source_helper.check_unity_input(gate.gameassembly,inputs):return dict(programs=[],capabilities={},failedCheck='UnityPlayer.dll',**failed)
-        result=validate_on_image(open_native_image(gate.gameassembly,gate.metadata),inputs,contract=fact,
-            retain_source_provenance=retain_source_provenance)
+        from scripts.game_data.memorypack.generated_action_sources import _source_preparation_scope
+        image=open_native_image(gate.gameassembly,gate.metadata)
+        with _source_preparation_scope(image,inputs):
+            result=validate_on_image(image,inputs,contract=fact,
+                retain_source_provenance=retain_source_provenance)
         after=_gate(inputs,gameassembly=gate.gameassembly,metadata=gate.metadata)
         if after.status!='validated':return dict(status=after.status,programs=[],capabilities={},detail=after.detail,failedCheck='installed-native-inputs-bookend')
         if failed:=pooled_source_helper.check_unity_input(gate.gameassembly,inputs):return dict(programs=[],capabilities={},failedCheck='UnityPlayer.dll-bookend',**failed)
         if raw!=path.read_bytes():raise ValueError(LABEL+'.contract:declaration-drift')
-        if sources!=snapshot_complete_reader_inputs():raise ValueError(LABEL+'.native:reader-source-drift')
+        current_sources=snapshot_complete_reader_inputs()
+        if sources!=current_sources:
+            changes=reader_input_changes(sources,current_sources)
+            error=ValueError(LABEL+'.native:reader-source-drift:'+json.dumps(changes,separators=(',',':')))
+            error.reader_input_changes=changes
+            raise error
         result['nativeSources']={'GameAssembly.dll':str(Path(gate.gameassembly).resolve()),'global-metadata.dat':str(Path(gate.metadata).resolve())}
         return result
     except(ValueError,KeyError,IndexError,TypeError,OSError,RuntimeError)as error:
-        return dict(programs=[],capabilities={},**native_validation_failure(error,label=LABEL,source_path=contract_path))
+        failure=dict(programs=[],capabilities={},**native_validation_failure(error,label=LABEL,source_path=contract_path))
+        if hasattr(error,'reader_input_changes'):failure['readerInputChanges']=error.reader_input_changes
+        return failure
 
 
 class CurrentSequenceOperationError(ValueError):pass
@@ -1303,8 +1323,18 @@ def prepared_current_sequence(operation):
 def current_sequence(*,game_root,strings):
     if game_root is None or strings is None or not hasattr(strings,'root')or not callable(getattr(strings,'resolve',None)):
         raise CurrentSequenceOperationError(LABEL+'.operation:explicit-root-and-pool-required')
-    root=Path(game_root).resolve();before=snapshot_complete_reader_inputs();pool_root=Path(strings.root).parent
-    pool=snapshot_string_pool_inputs(pool_root);proof=validate_current_native_contract(game_root=root,retain_source_provenance=True)
+    from scripts.game_data.memorypack.operation_native_validation import (
+        _native_validation_scope,_suspend_native_validation,_invoke_selected)
+    root=Path(game_root).resolve();pool_root=Path(strings.root).parent
+    with _suspend_native_validation():
+        before=snapshot_complete_reader_inputs();pool=snapshot_string_pool_inputs(pool_root)
+    # Delegate the enclosing operation's pending source identity to this one
+    # direct selected validator only. Do not cache or copy its large proof.
+    with _native_validation_scope(gameassembly=root.parent/'GameAssembly.dll',
+            metadata=root/'il2cpp_data/Metadata/global-metadata.dat',
+            native_inputs=pooled_source_helper._contract()['nativeInputs'],reader_inputs=before) as scope:
+        proof=_invoke_selected(scope,validate_current_native_contract,(),
+            dict(game_root=root,retain_source_provenance=True))
     if proof.get('status')!='validated':raise CurrentSequenceOperationError(LABEL+'.operation:enter:'+str(proof)[:1400])
     selected=proof['nativeSources']
     if(Path(selected['GameAssembly.dll']).resolve()!=root.parent/'GameAssembly.dll'
@@ -1314,12 +1344,13 @@ def current_sequence(*,game_root,strings):
     try:yield operation
     finally:
         operation.active=False;inputs=proof['nativeInputs']
-        after=_gate(inputs,gameassembly=Path(selected['GameAssembly.dll']),metadata=Path(selected['global-metadata.dat']))
-        if after.status!='validated'or pooled_source_helper.check_unity_input(selected['GameAssembly.dll'],inputs):
-            raise CurrentSequenceOperationError(LABEL+'.operation:native-exit-drift')
-        current=snapshot_complete_reader_inputs()
-        if before!=current:raise CurrentSequenceOperationError(LABEL+'.operation:reader-source-drift:'+str(reader_input_changes(before,current)))
-        if pool!=snapshot_string_pool_inputs(pool_root):raise CurrentSequenceOperationError(LABEL+'.operation:string-pool-drift')
+        with _suspend_native_validation():
+            after=_gate(inputs,gameassembly=Path(selected['GameAssembly.dll']),metadata=Path(selected['global-metadata.dat']))
+            if after.status!='validated'or pooled_source_helper.check_unity_input(selected['GameAssembly.dll'],inputs):
+                raise CurrentSequenceOperationError(LABEL+'.operation:native-exit-drift')
+            current=snapshot_complete_reader_inputs()
+            if before!=current:raise CurrentSequenceOperationError(LABEL+'.operation:reader-source-drift:'+str(reader_input_changes(before,current)))
+            if pool!=snapshot_string_pool_inputs(pool_root):raise CurrentSequenceOperationError(LABEL+'.operation:string-pool-drift')
 
 
 def regenerate(*,game_root=None,gameassembly=None,metadata=None,write=False,contract_path=CONTRACT_PATH):
@@ -1348,7 +1379,12 @@ def main(argv=None):
     result=regenerate(**selected,write=args.write)if args.regenerate else validate_current_native_contract(**selected)
     if args.output_json:
         args.output_json.parent.mkdir(parents=True,exist_ok=True);args.output_json.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
-    print(json.dumps(dict(status=result['status'],programs=len(result.get('programs',[])),wholeSkillDataAdmitted=False)))
+    summary=dict(status=result['status'],programs=len(result.get('programs',[])),wholeSkillDataAdmitted=False)
+    if result['status']not in('validated','exact-current-build'):
+        summary['diagnostic']={key:result[key]for key in('validator','failedCheck','detail','sourcePath',
+            'sourceSha256','validationFailures','readerInputChanges')if key in result}
+        summary['selectedNative']={key:str(value.resolve())for key,value in selected.items()if value is not None}
+    print(json.dumps(summary))
     return 0 if result['status']in('validated','exact-current-build')else 2
 
 

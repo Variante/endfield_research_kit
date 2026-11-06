@@ -2967,7 +2967,7 @@ def read_memorypack_tag_list_prefix(
     return tags, raw_count, offset, None
 
 
-def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -> dict[str, Any] | None:
+def decode_interactive_template_memorypack(path: Path, data: bytes, size: int, *, game_root: Path | None = None, decode_action_audio: bool = True) -> dict[str, Any] | None:
     if not data or data[0] != INTERACTIVE_TEMPLATE_MEMBER_COUNT:
         return None
 
@@ -3435,18 +3435,19 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                                 component_scan_offset,
                             )
                         )
-                        try:
-                            from story_builder.levelscript_binary import (
-                                decode_embedded_action_serialized_map_audio,
+                        if decode_action_audio:
+                            try:
+                                from story_builder.levelscript_binary import (
+                                    decode_embedded_action_serialized_map_audio,
+                                )
+                            except ImportError:
+                                from scripts.game_data.levelscript_binary import (
+                                    decode_embedded_action_serialized_map_audio,
+                                )
+                            template_action_map_audio = (
+                                decode_embedded_action_serialized_map_audio(data, _template_config_end, source_path=path, game_root=game_root)
+                                or None
                             )
-                        except ImportError:
-                            from scripts.game_data.levelscript_binary import (
-                                decode_embedded_action_serialized_map_audio,
-                            )
-                        template_action_map_audio = (
-                            decode_embedded_action_serialized_map_audio(data, _template_config_end, source_path=path)
-                            or None
-                        )
                         try:
                             template_empty_tail, _template_tail_end = (
                                 parse_interactive_template_empty_tail(

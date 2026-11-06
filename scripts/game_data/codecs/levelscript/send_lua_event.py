@@ -104,7 +104,8 @@ def _require_pooled_string_param(field: str, game_root: Any) -> None:
         validate_string_param_native_contract,
     )
 
-    audit = validate_string_param_native_contract(game_root=game_root)
+    from scripts.game_data.memorypack.operation_native_validation import validate_native
+    audit = validate_native(validate_string_param_native_contract, game_root=game_root)
     observed = tuple(
         audit.get(key)
         for key in ("status", "codecKind", "rawSize", "pathEncoding", "valueEncoding")

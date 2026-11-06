@@ -512,6 +512,26 @@ def enum_widths_from_image(image: NativeImage) -> dict[str, int]:
 
 
 def unmanaged_value_sizes_from_image(image: NativeImage) -> dict[str, int]:
+    """Return an isolated size table, reusing only this opened immutable image.
+
+    This is derived-data reuse, not native admission. Callers retain their
+    installed-input/source gates. Proxy or subclass lifecycle checks keep their
+    original derivation path; NativeImage itself has no close/reopen lifecycle.
+    """
+    if type(image) is not NativeImage:
+        return _unmanaged_value_sizes_from_image(image)
+    from types import MappingProxyType
+    key = '_memorypack_unmanaged_value_sizes'
+    cached = image.__dict__.get(key)
+    if cached is None:
+        # Publish only a complete successful result, and never return the
+        # backing dictionary to a consumer that may mutate its own tables.
+        cached = MappingProxyType(dict(_unmanaged_value_sizes_from_image(image)))
+        image.__dict__[key] = cached
+    return dict(cached)
+
+
+def _unmanaged_value_sizes_from_image(image: NativeImage) -> dict[str, int]:
     """Every blittable struct's size, keyed by full type name.
 
     MemoryPack writes an unmanaged struct as raw memory, so its serialized

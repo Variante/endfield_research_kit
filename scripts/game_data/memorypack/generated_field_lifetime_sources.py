@@ -23,7 +23,8 @@ def hidden_certificates(path,*,base,hidden_locals,field_stores):
         if static8:
             from scripts.game_data.memorypack.skill_gait_dictionary_sources import TYPE
             from scripts.game_data.memorypack.animation_extra_dictionary_sources import TYPES
-            need('own-static-reference-local-identity',item.get('nominalTypeName')in({TYPE}|set(TYPES))and type(item.get('nominalTypeDefinition'))is int)
+            from scripts.game_data.memorypack.interactive_dictionary_sources import TYPES as INTERACTIVE_TYPES
+            need('own-static-reference-local-identity',item.get('nominalTypeName')in({TYPE}|set(TYPES)|set(INTERACTIVE_TYPES))and type(item.get('nominalTypeDefinition'))is int)
         entity40=width==40 and item.get('nominalTypeName')=='Beyond.Gameplay.Core.EntityPtr'and type(item.get('nominalTypeDefinition'))is int
         sk_morph40=width==40 and item.get('nominalTypeName')=='Beyond.Gameplay.Core.SkMorphPlaySetting'and type(item.get('nominalTypeDefinition'))is int
         montage_value=(width,item.get('nominalTypeName'))in((32,'Beyond.Gameplay.BodyTypeDef'),(56,'Beyond.Gameplay.View.Animation.AlphaBlend'))and type(item.get('nominalTypeDefinition'))is int

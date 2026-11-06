@@ -55,11 +55,14 @@ def _curve(reader, field, cap):
         raise ValueError(field + ':curve-count-limit')
     reader.offset += 4
     reader.need(max(count, 0) * 28, field + '.keys')
-    keys = []
-    for index in range(max(count, 0)):
-        start = reader.offset
-        reader.offset += 28
-        keys.append(dict(rawHex=bytes(reader.data[start:reader.offset]).hex().upper()))
+    from scripts.game_data.memorypack.buff_actions import Reader as KeyReader
+    from scripts.game_data.memorypack.curve_key_values import read_named_keys
+    key_reader = KeyReader(reader.data, field, limit=reader.offset + max(count, 0) * 28)
+    key_reader.pos = reader.offset
+    keys = read_named_keys(key_reader, max(count, 0), cap['keyframeFields'], 28)
+    reader.offset = key_reader.pos
+    for key in keys:
+        key['rawHex'] = bytes(reader.data[key['start']:key['end']]).hex().upper()
     return dict(preWrapMode=before, postWrapMode=after, count=count, keys=None if count == -1 else keys)
 
 

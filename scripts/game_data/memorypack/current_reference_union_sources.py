@@ -18,7 +18,10 @@ FAMILIES={
  'DamageProcessorBase':('Beyond.Gameplay.Core.DamageProcessorBase','table-rdi',11,5),
  'BuffInputBase':('Beyond.Gameplay.Core.BuffInputBase','pair-bpl',2,None),
  'AbilityCondition':('Beyond.Gameplay.Core.Abilities.Condition.ConditionBase','pair-edi',2,None),
+ 'HealProcessorBase':('Beyond.Gameplay.Core.HealProcessorBase','heal-pair-esi32',2,None),
+ 'PoiseProcessorBase':('Beyond.Gameplay.Core.PoiseProcessorBase','poise-single-edi32',1,None),
 }
+DEFAULT_FAMILIES=('CalculationBase','DamageProcessorBase','BuffInputBase','AbilityCondition')
 
 
 def _finish(g,s,profile,ff,prepared=False):
@@ -116,7 +119,9 @@ def _header_target(body,profile):
     patterns={'table-rsi':'488d542438488bcf6689742438e8',
         'table-rdi':'488d542438488bcb66897c2438e8',
         'pair-bpl':'488d54243866896c2438488bcfe8',
-        'pair-edi':'488d542438488bce66897c2438e8'}
+        'pair-edi':'488d542438488bce66897c2438e8',
+        'heal-pair-esi32':'488d542438488bcf6689742438e8',
+        'poise-single-edi32':'488d542438488bce66897c2438e8'}
     pattern=bytes.fromhex(patterns[profile]);found=[]
     for at,raw in body['regions']:
         pos=raw.find(pattern)
@@ -158,7 +163,7 @@ def derive(image,pins,*,families=None):
     from scripts.game_data.memorypack.skill_shared_sequence_sources import _wrapper_holder
     from scripts.game_data.memorypack.union_dispatch import read_union_switch
     need=lambda k,e,a:scalar.need(LABEL,k,e,a)
-    names=list(FAMILIES)if families is None else list(families)
+    names=list(DEFAULT_FAMILIES)if families is None else list(families)
     need('finite-distinct-owned-families',True,bool(names)and len(names)==len(set(names))and set(names)<=set(FAMILIES))
     _publication_gate(image,pins)
     base=image.pe.image_base;md=image.metadata;ctx=NativeReferenceContext(image)
@@ -204,6 +209,9 @@ def derive(image,pins,*,families=None):
                 table_entry=dict(rva=slot-base,rawHex=word.to_bytes(4,'little').hex().upper(),targetRva=word)
                 program=table_program(body['regions'],entry,symbols,profile=profile,tag=tag,count=count,
                     hot=hot,table=table,selected=int(selected['bodyVa'],16))
+            elif profile in('heal-pair-esi32','poise-single-edi32'):
+                from scripts.game_data.memorypack.buff_modifier_union_sources import program as buff_program
+                program=buff_program(body['regions'],entry,symbols,profile=profile,tag=tag)
             else:program=pair_program(body['regions'],entry,symbols,profile=profile,tag=tag)
             usage=derive_typed_usage_context(image,program['childUsage']['instruction']-base,label=LABEL+'.child')
             arguments=usage['methodArguments'];need('one-actual-child-argument',1,len(arguments))
@@ -218,7 +226,10 @@ def derive(image,pins,*,families=None):
         options=dict(profile=profile,tag=0,ff=True)
         if switch is not None:
             options.update(count=count,hot=hot,table=table,selected=int(cases[0]['bodyVa'],16))
-        null=(table_program if switch is not None else pair_program)(body['regions'],entry,symbols,**options)
+        if profile in('heal-pair-esi32','poise-single-edi32'):
+            from scripts.game_data.memorypack.buff_modifier_union_sources import program as buff_program
+            null=buff_program(body['regions'],entry,symbols,**options)
+        else:null=(table_program if switch is not None else pair_program)(body['regions'],entry,symbols,**options)
         pair=derive_pair(image,original,wrapper.name)
         def prove_forwarder(selected_image,selected_pair,selected_wrapper):
             face,=selected_pair['composition']['interfaces']

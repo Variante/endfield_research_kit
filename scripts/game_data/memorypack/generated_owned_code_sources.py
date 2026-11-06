@@ -23,11 +23,11 @@ def _reached(edges,entry,blocked=()):
         seen.add(at);pending.extend(edges.get(at,())-seen)
     return seen
 
-def base_certificate(part,*,entry,image_base,post_dispatch_overwrite_registers=()):
+def base_certificate(part,*,entry,image_base,post_dispatch_overwrite_registers=(),tail_exits=None):
     """Require guarded dispatch and actual nonvolatile image-base provenance."""
     need('explicit-post-dispatch-overwrite-domain',type(post_dispatch_overwrite_registers)is tuple and
         post_dispatch_overwrite_registers in((),('rbp',),('rbp','r14')))
-    proof=ordinary_entry_program(part,entry=entry);graph=proof['fullGraph'];edges=graph['edges'];reachable=set(graph['reachableInstructions'])
+    proof=ordinary_entry_program(part,entry=entry,tail_exits=tail_exits);graph=proof['fullGraph'];edges=graph['edges'];reachable=set(graph['reachableInstructions'])
     rows=part['rows'];by={int(r['va'],16):r for r in rows};certificates=[]
     all_dispatch_loads={t['load']for t in part['tables']}
     for register in sorted({t['baseRegister']for t in part['tables']}):
@@ -101,7 +101,7 @@ def _json_value(value):
     return json.loads(json.dumps(value,default=convert))
 
 
-def source_family(image,pins,*,entry_rva):
+def source_family(image,pins,*,entry_rva,tail_targets=()):
     """Keep the ordinary family unchanged; partition data only when required."""
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.memorypack import buff_ec_profiles_native as ec
@@ -112,11 +112,11 @@ def source_family(image,pins,*,entry_rva):
         # complete owned windows and require the same guarded byte partition;
         # a decoder exception never supplies a code/data boundary itself.
         family,windows=ec.family_windows(image,entry_rva)
-        proof=_derive_family(image,pins,entry_rva,family,windows)
+        proof=_derive_family(image,pins,entry_rva,family,windows,tail_targets=tail_targets)
         return family,windows,proof['rows'],proof
     if not any(row['text'].startswith('db ')for row in rows):
         _publication_gate(image,pins);return family,windows,rows,None
-    proof=_derive_family(image,pins,entry_rva,family,windows)
+    proof=_derive_family(image,pins,entry_rva,family,windows,tail_targets=tail_targets)
     return family,windows,proof['rows'],proof
 
 
@@ -129,7 +129,7 @@ def derive(image,pins,*,entry_rva):
     return _derive_family(image,pins,entry_rva,family,windows)
 
 
-def _derive_family(image,pins,entry_rva,family,windows):
+def _derive_family(image,pins,entry_rva,family,windows,*,tail_targets=()):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.consumer_rva_switches import partition_consumer_rva_switches
     from scripts.game_data.il2cpp.string_source_instructions import decode_string_source_instructions
@@ -141,7 +141,7 @@ def _derive_family(image,pins,entry_rva,family,windows):
         if chunks and chunks[-1][0]+len(chunks[-1][1])==base+a:
             old,data=chunks.pop();chunks.append((old,data+raw))
         else:chunks.append((base+a,raw))
-    rows=[];partitions=[]
+    rows=[];partitions=[];code_ranges=[]
     for start,raw in chunks:
         try:decoded=decode_string_source_instructions(image.mapper,raw,start)
         except(ValueError,IndexError):decoded=None
@@ -149,12 +149,40 @@ def _derive_family(image,pins,entry_rva,family,windows):
             part=partition_consumer_rva_switches(image.mapper,raw,entry=start,image_base=base,
                 old_base_registers=('rbp','r12','r13','r14','r15'),destination_registers=('rax','rcx','rdx'),
                 padding_forms=(b'\x90',b'\xcc',b'\x66\x90',b'\x0f\x1f\x00'),return_padding=True)
-            certificate=base_certificate(part,entry=start,image_base=base,post_dispatch_overwrite_registers=('rbp','r14'))
-            partitions.append(dict(startRva=start-base,endRva=start-base+len(raw),partition=part,baseCertificate=certificate))
+            partitions.append(dict(startRva=start-base,endRva=start-base+len(raw),partition=part))
+            code_ranges.append(part['codeRange'])
             rows+=part['rows']
-        else:rows+=decoded
+        else:
+            rows+=decoded;code_ranges.append((start,start+len(raw)))
     need('at-least-one-exact-owned-data-partition',bool(partitions))
     need('remaining-code-completely-decoded',not any(r['text'].startswith('db ')for r in rows))
+    from scripts.game_data.il2cpp.initializer_control import control_transfer
+    need('explicit-bounded-direct-tail-domain',type(tail_targets)is tuple and len(tail_targets)<=2
+        and len(set(tail_targets))==len(tail_targets)
+        and all(type(target)is int and target>base for target in tail_targets))
+    tails={}
+    for row in rows:
+        flow=control_transfer(row)
+        if flow['kind']=='jump'and flow['target']in tail_targets:
+            need('tail-outside-owned-code',not any(a<=flow['target']<z for a,z in code_ranges))
+            tails[int(row['va'],16)]=dict(target=flow['target'])
+    if len(chunks)==1:
+        for selected in partitions:
+            selected['baseCertificate']=base_certificate(selected['partition'],entry=base+selected['startRva'],
+                image_base=base,post_dispatch_overwrite_registers=('rbp','r14'),tail_exits=tails)
+    else:
+        # Direct edges may cross unwind fragments. Check them in the exact
+        # complete owned family; a fragment's entry is not a new entry ABI.
+        tables=[table for selected in partitions for table in selected['partition']['tables']]
+        jumps={}
+        for selected in partitions:
+            for at,targets in selected['partition']['computedJumpTargets'].items():
+                need('one-family-dispatch-definition',at not in jumps);jumps[at]=targets
+        whole=dict(rows=rows,codeRange=code_ranges[0],codeRanges=code_ranges,tables=tables,computedJumpTargets=jumps)
+        certificate=base_certificate(whole,entry=base+entry_rva,image_base=base,
+            post_dispatch_overwrite_registers=('rbp','r14'),tail_exits=tails)
+        for selected in partitions:
+            selected['baseCertificate']=certificate
     _publication_gate(image,pins)
     return _json_value(dict(status='current-owned-code-partition-proved',nativeInputs=pins,entryRva=entry_rva,
         family=family,codeWindows=windows,rows=rows,partitions=partitions,

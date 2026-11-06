@@ -65,11 +65,13 @@ def read_curve(reader, capability=CAPABILITY):
         need('proved-key-count', -1 <= count <= cap['countLimit'])
         reader.take(4, CAPABILITY + '.keyCount')
         payload_start = reader.pos
-        reader.take(max(0, count)*32, CAPABILITY + '.raw-key-bits')
-        reader.take(4, CAPABILITY + '.postWrapMode')
-        reader.take(4, CAPABILITY + '.preWrapMode')
+        from scripts.game_data.memorypack.curve_key_values import read_named_keys
+        keys=read_named_keys(reader,max(0,count),cap['keyframeFields'],32)
+        post=reader.take(4, CAPABILITY + '.postWrapMode')
+        pre=reader.take(4, CAPABILITY + '.preWrapMode')
         row = dict(kind=CAPABILITY, start=start, end=reader.pos, isNull=False, keyCount=count,
                    keyPayloadStart=payload_start, keyPayloadEnd=payload_start + max(0, count)*32,
-                   rawKeyBitsPreserved=True)
+                   rawKeyBitsPreserved=True,keys=keys,keysAreNull=count==-1,
+                   postWrapModeRawHex=post.hex(),preWrapModeRawHex=pre.hex())
     reader.records.append(row)
     return row

@@ -13,6 +13,18 @@ from scripts.game_data.memorypack.levelscript_condition_param_sources import PRE
 SCHEMA = 'endfield.actionmap-dedicated-param-components.v1'
 CAP_SCHEMA = 'endfield.actionmap-dedicated-param-capability.v1'
 SPECS = {
+    'System.Collections.Generic.List`1<ulong>': dict(kind='owned-uint64-list',elementWireBytes=8,countLimit=4096),
+    **{'System.Collections.Generic.List`1<Beyond.Gameplay.Actions.'+name+'+EnvTalkStruct>':
+        dict(contract='levelscript_envtalk_native.json',kind='owned-envtalk-value-list',countLimit=4096,
+             childMemberCount=2,childPositiveWireBytes=9,fieldOrder=['envTalkId','odds'])
+       for name in ('NpcAtmosphericOverrideEnvTalk','NpcOverrideEnvTalk','NpcProxyOverrideEnvTalk')},
+    'System.Collections.Generic.List`1<Beyond.BlackboardKVPair>': dict(contract='levelscript_blackboard_native.json',
+        kind='owned-blackboard-list',countLimit=4096,childMemberCount=4,childPositiveWireBytes=14,
+        fieldOrder=['key','useString','valueFloat','valueString']),
+    'System.Collections.Generic.List`1<bool>': dict(kind='owned-Boolean-list',countLimit=4096),
+    'System.Collections.Generic.List`1<Beyond.LangKey>': dict(kind='owned-lang-key-list',countLimit=4096),
+    'System.Collections.Generic.List`1<Beyond.Gameplay.Core.GlobalBuffId>': dict(kind='owned-global-buff-id-list',countLimit=4096),
+    'Beyond.LangKey': dict(contract='levelscript_nominal_key_param_native.json',kind='lang-key-mc1',constantMemberCount=1,keyField='key',constantNullAdmitted=True,managedKeyBytes=16,nonserializedRawText=True),
     'Beyond.Gameplay.Core.BuffPtr': dict(kind='buff-pointer-record'),
     'System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffPtr>': dict(kind='null-buff-list', collectionCounts=[-1], positiveElementsAdmitted=False),
     'Beyond.Gameplay.AI.Config.NpcBehaviorTag': dict(kind='npc-behavior-tag-raw4', constantWireBytes=4),
@@ -59,6 +71,13 @@ def _contract(name, pins, captures):
 
 def _wire(image, pins, value, captures):
     spec = SPECS[value]
+    if value == 'System.Collections.Generic.List`1<ulong>':
+        from scripts.game_data.memorypack import levelscript_positive_ulong_list_sources as owner
+        actual = owner.derive(image,pins)
+        owner.validate(actual,pins)
+        return dict(actualSource=actual,completeOwnValueAndParentSourceRevalidated=True)
+    from scripts.game_data.memorypack.levelscript_action_value_list_sources import TYPES as VALUE_LISTS,derive_wire as derive_value_list
+    if value in VALUE_LISTS:return derive_value_list(image,pins,value_type=value)
     from scripts.game_data.memorypack.levelscript_action_buff_param_sources import TYPES as BUFF_TYPES,derive_wire as derive_buff
     if value in BUFF_TYPES:return derive_buff(image,pins,value_type=value)
     from scripts.game_data.memorypack.levelscript_action_numeric_vector_list_sources import TYPES as LIST_TYPES,derive_wire as derive_list
@@ -69,6 +88,32 @@ def _wire(image, pins, value, captures):
         from scripts.game_data.memorypack.levelscript_action_additional_param_sources import derive_wire
         return derive_wire(image,pins,value_type=value)
     fact = _contract(spec['contract'], pins, captures)
+    if spec['kind'] == 'owned-envtalk-value-list':
+        from scripts.game_data import levelscript_envtalk_native as owner
+        need('own-EnvTalk-list-reviewed-domain',fact['schema']==owner.SCHEMA
+             and fact['codecKinds']==['Param<List<'+name+'.EnvTalkStruct>>' for name in
+                ('NpcAtmosphericOverrideEnvTalk','NpcOverrideEnvTalk','NpcProxyOverrideEnvTalk')]
+             and fact['layout']==dict(paramMemberCount=4,childMemberCount=2,childManagedBytes=16,
+                childPositiveWireBytes=9,stringEncoding='int32-pool-index',nullChild=dict(envTalkId=None,odds=0))
+             and any(row['typeName']==PREFIX+value+'>' for row in fact['declarations']))
+        owner._validate_native(image,fact)
+        return dict(reviewedSource=fact,completeOwnValueAndParentAndCanonicalSourceRevalidated=True)
+    if value == 'System.Collections.Generic.List`1<Beyond.BlackboardKVPair>':
+        from scripts.game_data import levelscript_blackboard_native as owner
+        need('own-Blackboard-list-reviewed-domain',fact['schema']==owner.SCHEMA
+            and fact['codecKinds']==['Param<List<BlackboardKVPair>>']
+            and fact['layout']==dict(stringEncoding='int32-pool-index',paramMemberCount=4,
+                childMemberCount=4,childPositiveWireBytes=14,nullableClassMarker=255,nullChild=None,
+                collectionCount='signed-int32,-1 null',fields=[['key','pooled-string'],
+                    ['useString','normalized-byte'],['valueFloat','raw-float32'],['valueString','pooled-string']]))
+        owner._validate_native(image,fact)
+        return dict(reviewedSource=fact,completeOwnValueAndParentAndCanonicalSourceRevalidated=True)
+    if value == 'Beyond.LangKey':
+        from scripts.game_data import levelscript_nominal_key_param_native as owner
+        need('own-LangKey-reviewed-domain',fact['schema']==owner.SCHEMA and fact['codecKinds']==['Param<LangKey>']
+             and fact['layout']['managedKeyBytes']==16 and fact['layout']['nonserializedRawText'] is True)
+        owner._validate_native(image,fact)
+        return dict(reviewedSource=fact,completeOwnValueAndParentAndCanonicalSourceRevalidated=True)
     if value == 'Beyond.Gameplay.Core.EventArgsPtr':
         from scripts.game_data import levelscript_event_args_param_native as owner
         from scripts.game_data.memorypack import event_args_param
@@ -153,6 +198,8 @@ def capability(value, wire, reference, reader):
     cap.update(schema=CAP_SCHEMA,constantSpecification=spec,constantWireBytes=width,
         positiveWireBytes=width+13 if width is not None else None,
         constantSourceAdmitted=True,canonicalAdapterAdmitted=True,constantValueEvaluationAdmitted=False)
+    from scripts.game_data.memorypack.levelscript_action_value_list_sources import TYPES as VALUE_LISTS
+    if value in VALUE_LISTS:cap['constantCapability']=wire['constantCapability']
     if value=='Beyond.Gameplay.CommonMaskBlendData':
         from scripts.game_data.memorypack.levelscript_mask_curve_sources import CAPABILITY
         cap['constantCapability']=wire['actualSource']['capabilities'][CAPABILITY]

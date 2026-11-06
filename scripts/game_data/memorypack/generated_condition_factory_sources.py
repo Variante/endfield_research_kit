@@ -35,7 +35,7 @@ def _flag(g):
 
 
 def _defaults(initializers):
-    need('finite-independent-Original-defaults', type(initializers) is list and 0 < len(initializers) <= 32)
+    need('finite-independent-Original-defaults', type(initializers) is list and 0 <= len(initializers) <= 32)
     expected = {}; occupied = set()
     for store in initializers:
         offset, width, bits = store.get('offset'), store.get('bytes'), store.get('constantHex')
@@ -82,7 +82,13 @@ def _large_prefix(g, *, ctor, image_base):
     if not ctor:
         g.take('48895c2410', '48896c2420', '56', '4883ec40'); profile = 'create-frame64'
     elif _peek(g, 3) == bytes.fromhex('488bc4'):
-        g.take('488bc4', '53', '55', '56', '57', '4883ec58'); profile = 'constructor-frame88'; extra = True
+        g.take('488bc4', '53', '55', '56', '57')
+        if _peek(g,4)==bytes.fromhex('4883ec78'):
+            g.take('4883ec78');profile='constructor-frame120'
+        elif _peek(g,4)==bytes.fromhex('4883ec68'):
+            g.take('4883ec68');profile='constructor-frame104'
+        else:g.take('4883ec58');profile='constructor-frame88'
+        extra = True
     elif _peek(g, 2) == bytes.fromhex('4053'):
         g.take('4053', '55', '56', '57', '4883ec48'); profile = 'constructor-frame72'
     else:
@@ -92,7 +98,7 @@ def _large_prefix(g, *, ctor, image_base):
     need('literal-image-base', g.relative('488d2d') == image_base)
     unused = []
     if extra:
-        g.take('4c896008'); unused.append(g.relative('488d1d'))
+        g.take('4c896008'); unused.append(g.relative('488d3d'if profile=='constructor-frame120'else'488d1d'))
         g.take('4c897010'); unused.append(g.relative('4c8d25')); g.take('4c8978d8', '488bf1', '49bf')
         g.read(8); g.take('49be'); g.read(8)
     else:
@@ -105,7 +111,7 @@ def _large_prefix(g, *, ctor, image_base):
 
 
 def large_program(regions, entry, *, ctor, original_ctor, base_slot, cache_slot,
-                  image_base, disabled, original_initializers=None, base_ctor=None):
+                  image_base, disabled, original_initializers=None, base_ctor=None, base_initializers=None):
     """Own one initialized large-factory path; caller binds all nominal roles."""
     need('literal-role-domain', type(ctor) is bool and type(base_slot) is int and type(cache_slot) is int
          and 16 <= base_slot < cache_slot < 128 and all(type(n) is int and n > 0 for n in (image_base, disabled))
@@ -120,16 +126,42 @@ def large_program(regions, entry, *, ctor, original_ctor, base_slot, cache_slot,
             need('one-explicit-owned-base-constructor', base_ctor is not None and not base_called)
             g.take('33d2', '488bce'); g.call(base_ctor); base_called = True; continue
         site = g.at; cell = g.relative('488b0d'); usage = dict(site=site, cell=cell)
-        if _peek(g, 5) == bytes.fromhex('4c8b7c2450'):
-            need('one-exact-extra-register-restoration', frame == 'constructor-frame88' and not restored_extra)
-            g.take('4c8b7c2450', '4c8bb42488000000', '4c8ba42480000000'); restored_extra = True
+        if _peek(g, 5) in(bytes.fromhex('4c8b7c2450'),bytes.fromhex('4c8b7c2460')):
+            need('one-exact-extra-register-restoration', frame in('constructor-frame88','constructor-frame104') and not restored_extra)
+            if frame=='constructor-frame104':g.take('4c8b7c2460','4c8bb42498000000','4c8ba42490000000')
+            else:g.take('4c8b7c2450', '4c8bb42488000000', '4c8ba42480000000')
+            restored_extra = True
         if _peek(g, 2) == bytes.fromhex('83b9'):
             g.take('83b9e000000000'); _initialized(g); ancestors.append(usage); continue
         allocation = usage; allocate = g.relative('e8'); break
     else:
         raise ValueError(LABEL + '.bounded-initialized-ancestor-program')
+    base_initialization = None
+    if frame == 'constructor-frame120':
+        need('finite-inlined-base-construction', ctor and base_ctor is None and base_initializers is not None)
+        g.take('4c8b7c2470','4c8bb424a8000000','4c8ba424a0000000'); restored_extra = True
+        base_allocation, base_allocator = allocation, allocate
+        from scripts.game_data.memorypack.generated_lifecycle_sources import _nonnull
+        g.take('4885c0'); _nonnull(g)
+        need('same-disabled-base-initialization-collector',g.relative('833d')+1 == disabled);g.take('00')
+        expected = _defaults(base_initializers); stores = []
+        while expected:
+            at = g.at; prefix = _peek(g,3)
+            width = 2 if prefix[:1] == b'\x66' else 1 if prefix[:1] == b'\xc6' else 4
+            if width == 2:g.take('66')
+            g.take('c6'if width == 1 else'c7');modrm=g.read(1)[0]
+            need('base-initializer-same-fresh-allocation',modrm in(0x40,0x80))
+            offset=int.from_bytes(g.read(1 if modrm==0x40 else 4),'little',signed=True)
+            bits=g.read(width);key=(offset,width)
+            need('same-independent-base-default',key in expected and expected[key]==bits,(key,bits.hex()))
+            del expected[key];stores.append(dict(instructionVa=at,offset=offset,bytes=width,constantHex=bits.hex().upper()))
+        holder_at=g.at;g.take('488946'+bytes((base_slot,)).hex());g.branch('74',True,1)
+        base_initialization=dict(allocation=base_allocation,allocationTarget=base_allocator,
+            actualDefaultStores=stores,holderWrite=dict(instructionVa=holder_at,offset=base_slot,bytes=8),
+            sameFreshReferenceStored=True,disabledCollectorRequired=True)
+        site=g.at;cell=g.relative('488b0d');allocation=dict(site=site,cell=cell);allocate=g.relative('e8')
     need('exact-base-constructor-invocation', base_called == (base_ctor is not None))
-    need('all-extra-registers-restored', restored_extra == (frame == 'constructor-frame88'))
+    need('all-extra-registers-restored', restored_extra == (frame in('constructor-frame88','constructor-frame104','constructor-frame120')))
     from scripts.game_data.memorypack.generated_lifecycle_sources import _nonnull
     if original_ctor is None:
         g.take('4885c0'); _nonnull(g)
@@ -159,10 +191,14 @@ def large_program(regions, entry, *, ctor, original_ctor, base_slot, cache_slot,
         g.take('4883c448', '5f', '5e', '5d', '5b', 'c3')
     elif frame == 'constructor-frame88':
         g.take('4883c458', '5f', '5e', '5d', '5b', 'c3')
+    elif frame == 'constructor-frame104':
+        g.take('4883c468', '5f', '5e', '5d', '5b', 'c3')
+    elif frame == 'constructor-frame120':
+        g.take('4883c478', '5f', '5e', '5d', '5b', 'c3')
     else:
         g.take('4c8d5c2470', '498b5b30', '498b6b38', '498be3', '415f', '415e', '415c', '5f', '5e', 'c3')
     restored = ['rbx', 'rbp', 'rsi', 'rdi']
-    if frame in ('constructor-frame88', 'constructor-frame112'):
+    if frame in ('constructor-frame88', 'constructor-frame104', 'constructor-frame112', 'constructor-frame120'):
         restored += ['r12', 'r14', 'r15']
     result = dict(selectedBytes=g.seen, factoryProfile=LARGE_PROFILE, frameProfile=frame,
                   holderSourceProfile='rsi-wrapper-rbp-image-base-inline-collector', initializedFlag=flag,
@@ -180,6 +216,8 @@ def large_program(regions, entry, *, ctor, original_ctor, base_slot, cache_slot,
                   parentOrWireGrammarAdmitted=False, condition=__doc__)
     if stores is not None:
         result.update(inlinedOriginalInitializers=original_initializers, actualDefaultStores=stores)
+    if base_initialization is not None:
+        result['inlinedBaseInitialization']=base_initialization
     return result
 
 

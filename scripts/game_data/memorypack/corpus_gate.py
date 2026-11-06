@@ -7,6 +7,8 @@ report format, and Markdown rendering; nothing here interprets payload bytes.
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli
+from scripts.source_paths import ExportLayout
 
 import ast
 import gzip
@@ -23,11 +25,10 @@ from scripts.repo_paths import REPO_ROOT
 from scripts.common import sha256_file_upper as _sha256_file
 
 MODULE_REPO_ROOT = REPO_ROOT
-DEFAULT_OUTER = MODULE_REPO_ROOT / "reports/animestudio/vfs_understanding_latest.json"
-DEFAULT_LEDGER = MODULE_REPO_ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
+DEFAULT_OUTER = ExportLayout.configured().evidence_dir / "animestudio/vfs_understanding_latest.json"
+DEFAULT_LEDGER = ExportLayout.configured().evidence_dir / "animestudio/vfs_understanding_files_latest.jsonl.gz"
 DEFAULT_CLI = (
-    MODULE_REPO_ROOT
-    / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
+    configured_animestudio_cli()
 )
 
 
@@ -106,11 +107,45 @@ def _chunk_fingerprints(rows: Iterable[Mapping[str, Any]]) -> list[dict[str, Any
 
 
 def _chunk_selection_snapshot(rows: Iterable[Mapping[str, Any]], outer: Mapping[str, Any]) -> list[dict[str, Any]]:
+    # One chunk may own thousands of file rows. Reuse observations only in
+    # this invocation; re-observe every chunk and path alias before returning.
+    resolved: dict[str, Path] = {}
+
+    def resolve(path: Path) -> Path:
+        key = str(path)
+        if key not in resolved:
+            resolved[key] = path.resolve()
+        return resolved[key]
+
     roots = {
-        "primary": Path(str(outer.get("primaryAssets") or "")).resolve(),
-        "fallback": Path(str(outer.get("fallbackAssets") or "")).resolve(),
+        "primary": resolve(Path(str(outer.get("primaryAssets") or ""))),
+        "fallback": resolve(Path(str(outer.get("fallbackAssets") or ""))),
     }
     result_by_identity: dict[tuple[str, str], dict[str, Any]] = {}
+    observations: dict[tuple[str, str], tuple[str, str, str, dict[str, Any]]] = {}
+
+    def candidates_for(directory, filename, source, *, fresh=False):
+        candidates = {}
+        for role, root in roots.items():
+            raw = root / 'VFS' / directory / filename
+            candidate = raw.resolve() if fresh else resolve(raw)
+            if not candidate.is_relative_to(root):
+                _fail('chunk-path-outside-assets-root', source=source,
+                      expected={'role': role, 'root': str(root)}, actual=str(candidate))
+            candidates[role] = candidate
+        return candidates
+
+    def observe(candidates, identity, source):
+        exists = {role: path.is_file() for role, path in candidates.items()}
+        selected = 'primary' if exists['primary'] else 'fallback' if exists['fallback'] else None
+        if selected is None:
+            _fail('selected-chunk-missing', source=source, expected='primary or fallback chunk',
+                  actual={role: str(path) for role, path in candidates.items()})
+        return dict(hashDirectory=identity[0], chunkFile=identity[1],
+            primaryPath=candidates['primary'].as_posix(), primaryExists=exists['primary'],
+            fallbackPath=candidates['fallback'].as_posix(), fallbackExists=exists['fallback'],
+            selectedRole=selected, selectedPath=candidates[selected].as_posix())
+
     for row in rows:
         virtual_path = str(row.get("virtualPath") or "")
         hash_directory = str(row.get("hashDirectory") or "")
@@ -120,40 +155,40 @@ def _chunk_selection_snapshot(rows: Iterable[Mapping[str, Any]], outer: Mapping[
         if not re.fullmatch(r"[0-9A-Fa-f]{32}[.]chk", chunk_file):
             _fail("invalid-chunk-file", source=virtual_path, actual=chunk_file)
         identity = (hash_directory.upper(), chunk_file.upper())
-        candidates: dict[str, Path] = {}
-        for role, root in roots.items():
-            candidate = (root / "VFS" / hash_directory / chunk_file).resolve()
-            if not candidate.is_relative_to(root):
-                _fail(
-                    "chunk-path-outside-assets-root",
-                    source=virtual_path,
-                    expected={"role": role, "root": str(root)},
-                    actual=str(candidate),
-                )
-            candidates[role] = candidate
-        selected_role = "primary" if candidates["primary"].is_file() else "fallback" if candidates["fallback"].is_file() else None
-        if selected_role is None:
-            _fail("selected-chunk-missing", source=virtual_path, expected="primary or fallback chunk", actual={role: str(path) for role, path in candidates.items()})
-        actual_path = Path(str(row.get("physicalChunkPath") or "")).resolve()
+        candidates = candidates_for(hash_directory, chunk_file, virtual_path)
+        if identity not in observations:
+            observations[identity] = (hash_directory, chunk_file, virtual_path,
+                                      observe(candidates, identity, virtual_path))
+        captured = observations[identity][3]
+        selected_role = captured['selectedRole']
+        actual_path = resolve(Path(str(row.get("physicalChunkPath") or "")))
         if os.path.normcase(str(actual_path)) != os.path.normcase(str(candidates[selected_role])):
             _fail("chunk-overlay-selection-mismatch", source=virtual_path, expected=str(candidates[selected_role]), actual=str(actual_path))
         if row.get("physicalChunkSource") != selected_role:
             _fail("chunk-source-mismatch", source=virtual_path, expected=selected_role, actual=row.get("physicalChunkSource"))
-        if os.path.normcase(str(Path(str(row.get("physicalChunkRoot") or "")).resolve())) != os.path.normcase(str(roots[selected_role])):
+        if os.path.normcase(str(resolve(Path(str(row.get("physicalChunkRoot") or ""))))) != os.path.normcase(str(roots[selected_role])):
             _fail("chunk-root-mismatch", source=virtual_path, expected=str(roots[selected_role]), actual=row.get("physicalChunkRoot"))
         snapshot = {
             "hashDirectory": identity[0],
             "chunkFile": identity[1],
             "primaryPath": candidates["primary"].as_posix(),
-            "primaryExists": candidates["primary"].is_file(),
+            "primaryExists": captured['primaryExists'],
             "fallbackPath": candidates["fallback"].as_posix(),
-            "fallbackExists": candidates["fallback"].is_file(),
+            "fallbackExists": captured['fallbackExists'],
             "selectedRole": selected_role,
             "selectedPath": candidates[selected_role].as_posix(),
         }
         previous = result_by_identity.setdefault(identity, snapshot)
         if previous != snapshot:
             _fail("chunk-selection-conflict", source=virtual_path, expected=previous, actual=snapshot)
+    for identity, (directory, filename, source, captured) in observations.items():
+        current = observe(candidates_for(directory, filename, source, fresh=True), identity, source)
+        if current != captured:
+            _fail('chunk-selection-drift', source=source, expected=captured, actual=current)
+    for raw_path, captured in resolved.items():
+        current = Path(raw_path).resolve()
+        if current != captured:
+            _fail('chunk-path-resolution-drift', source=raw_path, expected=str(captured), actual=str(current))
     return [result_by_identity[key] for key in sorted(result_by_identity)]
 
 

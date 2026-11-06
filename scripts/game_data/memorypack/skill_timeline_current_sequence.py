@@ -312,6 +312,7 @@ class CurrentSequenceReader(Reader):
                 self._profile(method, element)
 
     def _run(self, row, depth, tag, width):
+        start = self.pos
         validate_program(row)
         expected = encoded_tag(row['tag'])
         if tag != row['tag'] or width != len(expected) or self.data[self.pos:self.pos + width] != expected:
@@ -323,7 +324,9 @@ class CurrentSequenceReader(Reader):
             self.take(1, 'null-wrapper')
             return
         self.header(row['memberCount'])
+        fields = []
         for read in row['reads']:
+            at = self.pos
             kind = read['kind']; child = read['childCapability']
             if kind in ATOMIC_KINDS:
                 self.take(ATOMIC_KINDS[kind], row['wrappedType'] + '.' + read['fieldName'] + '.' + kind)
@@ -335,10 +338,15 @@ class CurrentSequenceReader(Reader):
                 claim = self._capability(child)
                 if self.peek() == 255 and claim.get('nullAdmitted') is True:
                     self.take(1, child + '.null')
+                    fields.append(dict(fieldName=read['fieldName'], start=at, end=self.pos))
                     continue
                 if claim.get('wholeGrammarAdmitted') is not True:
                     raise ValueError(LABEL + '.child:unproved-positive=' + child)
                 self.sequence(depth + 1)
+            fields.append(dict(fieldName=read['fieldName'], start=at, end=self.pos))
+        self.records.append(dict(kind='current-named-record', start=start + width,
+            end=self.pos, typeName=row['wrappedType'], fields=fields,
+            unionStart=start, unionTag=tag, unionFamily=row['family']))
 
     def _action(self, depth, tag, width):
         if depth > SEQUENCE_RECURSION_LIMIT:

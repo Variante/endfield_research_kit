@@ -33,6 +33,10 @@ def compile_child(route,concrete,pins,*,reference_children,typed_requests):
 
 
 def derive(image,pins):
+    return _derive_on_children(image,pins)
+
+
+def _derive_on_children(image,pins,*,double=None,attributes=None):
     from scripts.game_data.buff_formatter_windows_regenerate import _publication_gate
     from scripts.game_data.il2cpp.formatter_composition import derive_typed_usage_context
     from scripts.game_data.memorypack import current_reference_union_sources,generated_reader_sources,buff_ec_profiles_native as ec
@@ -46,8 +50,11 @@ def derive(image,pins):
     need('disjoint-concrete-union-children',len(by_name)==sum(len(f['programs'])for f in unions['families'].values()))
     readers=generated_reader_sources.derive_many(image,pins,list(by_name))
     need('same-selected-concrete-inputs',readers['nativeInputs']==pins and readers['wholeOwnerAdmitted']is False)
-    children={'Beyond.Blackboard+BlackboardDouble':skill_blackboard_double_sources.derive(image,pins),
-        'Beyond.Gameplay.AttributeModifierData+AttributeModifier':skill_root_attribute_components.derive(image,pins)}
+    if double is None:double=skill_blackboard_double_sources.derive(image,pins)
+    if attributes is None:attributes=skill_root_attribute_components.derive(image,pins)
+    need('same-selected-shared-child-inputs',double.get('nativeInputs')==pins and attributes.get('nativeInputs')==pins)
+    children={'Beyond.Blackboard+BlackboardDouble':double,
+        'Beyond.Gameplay.AttributeModifierData+AttributeModifier':attributes}
     closed={};proofs={};pending=[];pooled={};seen=set()
     for candidate in readers['owners']:
         proof=candidate.get('proof');name=proof['wrapperName']if proof is not None else candidate['wrapperName']

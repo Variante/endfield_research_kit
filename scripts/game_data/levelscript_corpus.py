@@ -49,7 +49,7 @@ from scripts.source_paths import ExportLayout
 FORMAT = "endfield-levelscript-current-corpus-v2"
 FAMILIES = ("LevelScriptData", "LevelScriptTemplateData")
 DEFAULT_EXPORT = REPO_ROOT / "export_full"
-DEFAULT_OUTPUT = REPO_ROOT / "reports/game_data/levelscript_current_latest.json"
+DEFAULT_OUTPUT = ExportLayout.configured().evidence_dir / "game_data/levelscript_current_latest.json"
 
 
 def _fail(check: str, source: str | Path, expected: Any, actual: Any,
@@ -376,7 +376,8 @@ def _guard_output(output: Path, inputs: list[Path]) -> None:
     target = output.resolve()
     repo = REPO_ROOT.resolve()
     roots = [(repo / name).resolve() for name in ("reports", "scratch", "tmp")]
-    if not any(root.is_relative_to(repo) and target != root and target.is_relative_to(root) for root in roots):
+    roots.append(ExportLayout.configured().evidence_dir.resolve())
+    if not any(target != root and target.is_relative_to(root) for root in roots):
         _fail("output-root", target, "ignored report file", str(target))
     _guard_output_path(target, inputs)
 
@@ -524,7 +525,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     safe = False
     try:
-        protected = [args.outer_summary, args.outer_ledger, args.export_root, Path(__file__),
+        protected = [args.outer_summary, args.outer_ledger, ExportLayout(args.export_root).game, ExportLayout(args.export_root).raw, Path(__file__),
                      LAYOUT_CONTRACT_PATH, REPO_ROOT / "scripts", args.cli]
         protected.extend(args.cli.parent.glob("AnimeStudio*.dll"))
         protected.extend(path for path in (args.gameassembly, args.metadata) if path is not None)
