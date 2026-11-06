@@ -67,6 +67,7 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = "audioNativeCallsiteRederivation.v1"
 DEFAULT_REPORT = REPO_ROOT / "reports" / "audio" / "native_callsite_rederivation.json"
+CURRENT_PROGRAMS = CONTRACTS_DIR / "audio_current_callsite_programs.json"
 MAX_HELPER_BYTES = 0x800
 INITIALIZER_METHODS = (".ctor", ".cctor", "_Init", "Init", "Setup", "Awake", "OnValidate")
 _BRANCH = re.compile(r"(?:call|jmp|j[a-z]{1,3}|jcc) 0x([0-9a-f]+)$")
@@ -116,12 +117,27 @@ class _Build:
             return None
         return self.fragment_owner.get(start, start)
 
-    def _literal_loads(self) -> dict[str, list[int]]:
-        """``literal -> [instruction VA]`` for every ``mov r64, [rip+cell]`` of a string literal."""
+    def literal_at(self, cell: int) -> str | None:
         pe, metadata = self.index.pe, self.index.metadata
         literal_section = metadata.sections["stringLiteral"]
         data_section = metadata.sections["stringLiteralData"]
-        literal_count = literal_section.size // 8
+        try:
+            word = pe.u64_at_va(cell)
+        except (ValueError, IndexError, struct.error):
+            return None
+        if word > 0xFFFFFFFF or not word & 1 or word >> 29 != 5:
+            return None
+        literal_index = (word >> 1) & 0x0FFFFFFF
+        if literal_index >= literal_section.size // 8:
+            return None
+        length, start = struct.unpack_from("<ii", metadata.buf, literal_section.offset + literal_index * 8)
+        if not 0 <= start <= start + length <= data_section.size:
+            return None
+        return metadata.buf[data_section.offset + start:data_section.offset + start + length].decode("utf-8", "replace").lower()
+
+    def _literal_loads(self) -> dict[str, list[int]]:
+        """``literal -> [instruction VA]`` for every ``mov r64, [rip+cell]`` of a string literal."""
+        pe = self.index.pe
         pattern = re.compile(rb"[\x48\x4c]\x8b[\x05\x0d\x15\x1d\x25\x2d\x35\x3d]")
         loads: dict[str, list[int]] = defaultdict(list)
         for section in pe.sections:
@@ -134,18 +150,9 @@ class _Build:
                 if offset + 7 > len(raw):
                     continue
                 cell = base + offset + 7 + struct.unpack_from("<i", raw, offset + 3)[0]
-                try:
-                    word = pe.u64_at_va(cell)
-                except (ValueError, IndexError, struct.error):
-                    continue
-                if word > 0xFFFFFFFF or not word & 1 or word >> 29 != 5:
-                    continue
-                literal_index = (word >> 1) & 0x0FFFFFFF
-                if literal_index >= literal_count:
-                    continue
-                length, start = struct.unpack_from("<ii", metadata.buf, literal_section.offset + literal_index * 8)
-                text = metadata.buf[data_section.offset + start:data_section.offset + start + length]
-                loads[text.decode("utf-8", "replace").lower()].append(base + offset)
+                literal = self.literal_at(cell)
+                if literal is not None:
+                    loads[literal].append(base + offset)
         return loads
 
     def spans(self, full: str) -> list[tuple[int, int]]:
@@ -278,8 +285,119 @@ def _resolve_consumer(
     return resolve(f"{short_type.replace('+', '.')}.{method}")
 
 
+def _conditional_literal_call(build: _Build, consumer: str, event: str, sink: str) -> tuple[int, int] | None:
+    """Join the Sapling conditional string selection to its own typed call."""
+    matches = set()
+    predicate = _full(_split(consumer)[0], "get_canBreak")
+    for start, size in build.spans(consumer):
+        rows = build.index._decode(start, size)
+        for before, default, test, select, zero, receiver, post in zip(
+            rows, rows[1:], rows[2:], rows[3:], rows[4:], rows[5:], rows[6:],
+        ):
+            if test["text"] != "test al, al" or zero["text"] != "xor r8d, r8d" or receiver["text"] != "mov rcx, rbx":
+                continue
+            getter = _CALL.fullmatch(before["text"])
+            call = _CALL.fullmatch(post["text"])
+            if not getter or not call:
+                continue
+            if predicate not in build.index.names_of(int(getter[1], 16)) or sink not in build.index.names_of(int(call[1], 16)):
+                continue
+            idle = re.fullmatch(r"mov rdx, \[rip[^]]* => (0x[0-9a-f]+)\]", default["text"])
+            chosen = re.fullmatch(r"cmovne rdx, \[rip[^]]* => (0x[0-9a-f]+)\]", select["text"])
+            if not idle or not chosen:
+                continue
+            idle_event = build.literal_at(int(idle[1], 16))
+            if idle_event != event.replace("brokensapling", "idlesapling"):
+                continue
+            if build.literal_at(int(chosen[1], 16)) == event:
+                matches.add((int(select["va"], 16), int(post["va"], 16)))
+    return next(iter(matches)) if len(matches) == 1 else None
+
+
+def _proved_current_program(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    """Replay the reviewed argument flow on the exact selected instruction bytes."""
+    from scripts.game_data.il2cpp.body_claims import ClaimError
+
+    program = build.current_programs["events"][event]
+    index = build.index
+    selected = []
+    for key in program["windows"]:
+        window = build.current_programs["windows"][key]
+        start, end = int(window["start"], 16), int(window["end"], 16)
+        method = window["method"]
+        if method is not None:
+            owner_spans = []
+            for body in index.overload_bodies(*_split(method)):
+                owner_spans.append((body.pointer, body.size))
+                owner_spans.extend(index.chained_fragments.get(body.pointer, ()))
+            if not any(begin <= start < end <= begin + size for begin, size in owner_spans):
+                return None, "current-program-owner-mismatch"
+        if hashlib.sha256(index.pe.bytes_at_va(start, end - start)).hexdigest() != window["sha256"]:
+            return None, "current-program-byte-mismatch"
+        selected.append((start, end, method))
+
+    field = program.get("field")
+    if field:
+        try:
+            offset = index.field_offset(f"{field['owner']}::{field['name']}")
+        except ClaimError:
+            return None, "current-program-field-missing"
+        if offset != field["offset"]:
+            return None, "current-program-field-mismatch"
+
+    load = int(program["literalLoad"], 16)
+    owners = [owner for start, end, owner in selected if start <= load < end and owner]
+    if len(owners) != 1 or load not in build.loads.get(event, ()):
+        return None, "current-program-literal-mismatch"
+    playback = int(program["playbackCall"], 16)
+    consumers = [owner for start, end, owner in selected if start <= playback < end and owner]
+    if len(consumers) != 1:
+        return None, "current-program-playback-owner-mismatch"
+    for site, target in [
+        (playback, None),
+        *((int(link["site"], 16), int(link["target"], 16)) for link in program.get("directLinks", ())),
+    ]:
+        if not any(start <= site and site + 5 <= end for start, end, _ in selected):
+            return None, "current-program-call-outside-window"
+        raw = index.pe.bytes_at_va(site, 5)
+        if raw[0] != 0xe8:
+            return None, "current-program-direct-call-missing"
+        actual = site + 5 + struct.unpack_from("<i", raw, 1)[0]
+        if target is None:
+            if program["sink"] not in index.names_of(actual):
+                return None, "current-program-sink-mismatch"
+        elif actual != target:
+            return None, "current-program-link-mismatch"
+
+    consumer = consumers[0]
+    current = {
+        key: value for key, value in _clear_addresses(row).items()
+        if key not in {"callsiteOffset", "metadataUsageWord", "metadataStringLiteralIndex",
+                       "literalArgumentInstruction", "literalArgumentRegister",
+                       "playbackHashCall", "additionalPlaybackCall"}
+    }
+    current.update(
+        consumerType=_split(consumer)[0], consumerMethod=_split(consumer)[1],
+        methodIndex=_method_index(index, consumer), methodVa=_address(index, consumer),
+        literalLoadVa=program["literalLoad"], playbackCallVa=program["playbackCall"],
+        playbackCall=program["sink"], playbackSink=program["sink"],
+        nativeRederivation={
+            "status": "verified", "literalSource": "reviewedCurrentProgram",
+            "literalLoader": owners[0], "branchConditionStatus": "reviewedOnPreviousBuild",
+            "boundary": program["boundary"], "instructionWindows": program["windows"],
+        },
+    )
+    if field:
+        current.update(selectorType=field["owner"], selectorMethod=field["name"],
+                       selectorField=field["name"], selectorFieldOffset=hex(field["offset"]))
+    return current, "verified"
+
+
 def verify_row(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str]:
     """Return the row with this build's addresses, or ``None`` and the reason it is withheld."""
+    programs = getattr(build, "current_programs", None)
+    if programs and event in programs["events"]:
+        return _proved_current_program(build, event, row)
     index = build.index
     consumer_type = str(row.get("consumerType") or "")
     # A reviewed row may name alternative methods as ``A / B``; each is a candidate.
@@ -292,6 +410,12 @@ def verify_row(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[
         return None, "consumer-missing"
     literal = str(row.get("customStateName") or event)
     source, loader, load_va = "direct", consumer, build.load_in(literal, consumer)
+    conditional_call = None
+    if row.get("literalArgumentInstruction") == "cmovne":
+        conditional_call = _conditional_literal_call(build, consumer, literal, str(row.get("playbackCall") or ""))
+        if conditional_call is None:
+            return None, "conditional-literal-call-not-proved"
+        load_va, _ = conditional_call
     if load_va is None:
         owners = build.loader_methods(literal)
         reached = sorted(owners & build.reach(consumer))
@@ -319,7 +443,9 @@ def verify_row(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[
     if not sink and "." in str(row.get("playbackCall") or ""):
         sink = row.get("playbackCall")
     call_va = None
-    if sink:
+    if conditional_call is not None:
+        call_va = conditional_call[1]
+    elif sink:
         direct = [va for va, names in build.calls(consumer) if sink in names]
         if direct:
             call_va = direct[0]
@@ -1098,6 +1224,13 @@ def rederive_catalogs(
         def index_factory():
             return BodyIndex(open_native_image(native.gameassembly, native.metadata))
     build = _Build(index_factory())
+    programs = json.loads(CURRENT_PROGRAMS.read_bytes())
+    if programs.get("schema") != "endfield.audio-current-callsite-programs.v1":
+        raise ValueError("audioNativeCatalog.current-program-schema")
+    expected = programs["nativeInputs"]
+    if (expected["gameAssemblySha256"].casefold() == native.gameassembly_sha256.casefold()
+            and expected["metadataSha256"].casefold() == native.metadata_sha256.casefold()):
+        build.current_programs = programs
     verified: dict[str, dict[str, Any]] = {}
     withheld: dict[str, dict[str, str]] = {}
     for name, rows in catalogs.items():

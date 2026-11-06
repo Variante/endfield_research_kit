@@ -1,0 +1,280 @@
+{
+  "schema": "endfield.audio-current-callsite-programs.v1",
+  "nativeInputs": {
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
+  },
+  "windows": {
+    "fireConfig": {
+      "method": "Beyond.Gameplay.FireSeedGameplayConfig..ctor",
+      "start": "0x186e11a27",
+      "end": "0x186e11a99",
+      "sha256": "b03a12c7ec45902b8c4f6bec6429c5d8c78e17d01357a83754c79e545a08b9b6"
+    },
+    "fireTickEntry": {
+      "method": "Beyond.Gameplay.Core.GameMech.FireSeedBrain._TickUpdateFireSeedInUse",
+      "start": "0x186187780",
+      "end": "0x1861877b0",
+      "sha256": "cd6a2218e038dc2d1fb08f4b47d7fda190b5d0d693238c067ccade4be043f5d9"
+    },
+    "fireTickCold": {
+      "method": "Beyond.Gameplay.Core.GameMech.FireSeedBrain._TickUpdateFireSeedInUse",
+      "start": "0x18768cc2f",
+      "end": "0x18768ccd7",
+      "sha256": "aefd330c9651e0f5d8642ec0d2314102d63f8451b4a9262a1d6b19b6c7acf889"
+    },
+    "bridgeStart": {
+      "method": "Beyond.Gameplay.Core.GameMech.FireSeedBrain._PlayFireSeedInUseAudio",
+      "start": "0x1892a1f7c",
+      "end": "0x1892a1fda",
+      "sha256": "c3ccd00b6257bfbf090033e656ca3aef42708d649c0e0e02126b6f200f9e11b5"
+    },
+    "bridgeStop": {
+      "method": "Beyond.Gameplay.Core.GameMech.FireSeedBrain._PlayFireSeedUnUseAudio",
+      "start": "0x1892a205c",
+      "end": "0x1892a20b7",
+      "sha256": "5be014c0166d39f5e43f78c1eba218cd55d3eecf02be73118f36b979a49f7b5a"
+    },
+    "fireStart": {
+      "method": "Beyond.Gameplay.Core.GameMech.FireSeedBrain._PlayFireSeedAppearAudio",
+      "start": "0x1892a1dca",
+      "end": "0x1892a1e25",
+      "sha256": "2be2bd5ce87869abbfcaadf1e9efbd0a3ae6ed8fe013209523b445ca860a9d6b"
+    },
+    "fireStop": {
+      "method": "Beyond.Gameplay.Core.GameMech.FireSeedBrain._PlayFireSeedDisappearAudio",
+      "start": "0x1892a1e9e",
+      "end": "0x1892a1ef9",
+      "sha256": "7d63b9269478cf74fb2568a89b1ce46e13f88ccbb6107fd41d27e6fb6798eb08"
+    },
+    "waterCtor": {
+      "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume..ctor",
+      "start": "0x1858e31fb",
+      "end": "0x1858e322f",
+      "sha256": "e6e0efe2f470d2733df41104e0ecdbe3cb03199a3232de87562acae5fd3590a0"
+    },
+    "waterSetup": {
+      "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.Setup",
+      "start": "0x1852bbc27",
+      "end": "0x1852bbca8",
+      "sha256": "2226a557574d2eff9ef92d5165c4baeeb550eab264d654475ba781548fe26240"
+    },
+    "waterResolve": {
+      "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume._ResolveWaterAudio",
+      "start": "0x1852bbf90",
+      "end": "0x1852bbfce",
+      "sha256": "f8b1ac75910a1e0c4aab8ee231557774e2807903227998b528edc864692a793a"
+    },
+    "waterStart": {
+      "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume._UpdateInfiniteWaterMeshPos",
+      "start": "0x1891be65c",
+      "end": "0x1891be6a6",
+      "sha256": "dede06f7a6e2c7f02ef4513e86c44cd1cea7bda480ce8f5a6feef8dfa968d448"
+    },
+    "waterStop": {
+      "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume._OnInfiniteWaterMeshPosUpdateFinished",
+      "start": "0x1891be23c",
+      "end": "0x1891be27c",
+      "sha256": "48123dadf4e54df24b3f35e73381346aaa21be53c0de6cfcb6b1c64ef6982d8b"
+    },
+    "anchorInit": {
+      "method": "Beyond.Gameplay.InteractiveLogicSimpleAnchorWaveCore..cctor",
+      "start": "0x1894daaa8",
+      "end": "0x1894daad3",
+      "sha256": "d885b7f3b624e1def1092a03f7c640a3be4252919c3374a4ef46793806e70526"
+    },
+    "anchorRead": {
+      "method": "Beyond.Gameplay.InteractiveLogicSimpleAnchorWaveCore._HideSceneDynamicObjectEffectWithCondition",
+      "start": "0x1894d95c8",
+      "end": "0x1894d9606",
+      "sha256": "4f5f822c376a31da4456bec8e705f88c6c4b636c2c56958b29b0343fb9df49b2"
+    },
+    "butterflyInit": {
+      "method": "Beyond.Gameplay.Core.GuideButterflyModuleController..cctor",
+      "start": "0x1871ea21c",
+      "end": "0x1871ea24b",
+      "sha256": "71ff872853ca3c5fd0007ce73cc9a6b933149bb2f58845c1aa7bd68877d2380c"
+    },
+    "butterflyRead": {
+      "method": "Beyond.Gameplay.Core.GuideButterflyModuleController._OnSmallButterflyCollected",
+      "start": "0x18917d75d",
+      "end": "0x18917d7a2",
+      "sha256": "3de72898538ebdcf1c0ae578caffa68a766d6ba4825e6da5932aeea6649f47b6"
+    },
+    "enemyLoadAndPost": {
+      "method": "Beyond.Gameplay.Core.EnemyController.OnDie",
+      "start": "0x1860158d5",
+      "end": "0x186015ad0",
+      "sha256": "6656255c7a69d4d2c8bc08683f6c22ba825f5c9d565891fcf516f495f79aaa45"
+    },
+    "enemyHash": {
+      "method": null,
+      "start": "0x18577af90",
+      "end": "0x18577b036",
+      "sha256": "ba667c132753308a209ff2dffe870412b3e490ab3fd8569a1a4aaaa1d3106d8e"
+    },
+    "enemyPost": {
+      "method": "Beyond.Gameplay.Audio.AudioTempEmitter.PostAndForget",
+      "start": "0x185f277d0",
+      "end": "0x185f27858",
+      "sha256": "b49588681040585c7ce37aa6bce486ee2d52678709961c62c663588263d2ce9e"
+    }
+  },
+  "events": {
+    "au_int_shuimo_bridge_appear": {
+      "windows": [
+        "fireConfig",
+        "bridgeStart",
+        "fireTickEntry",
+        "fireTickCold"
+      ],
+      "literalLoad": "0x186e11a38",
+      "playbackCall": "0x1892a1fd2",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "Constructor stores the literal in the named config field. The stock audio branch reads that field and passes it as PostEvent argument two. The installed config may override the constructor default.",
+      "field": {
+        "owner": "Beyond.Gameplay.FireSeedGameplayConfig",
+        "name": "invisibleBridgeAppearAudio",
+        "offset": 152
+      },
+      "directLinks": [
+        {
+          "site": "0x18768cccc",
+          "target": "0x1892a1f04"
+        }
+      ]
+    },
+    "au_int_shuimo_bridge_disappear": {
+      "windows": [
+        "fireConfig",
+        "bridgeStop"
+      ],
+      "literalLoad": "0x186e11a4b",
+      "playbackCall": "0x1892a20b2",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "Constructor stores the literal in the named config field. The stock audio branch reads that field and passes it as PostEvent argument two. The installed config may override the constructor default.",
+      "field": {
+        "owner": "Beyond.Gameplay.FireSeedGameplayConfig",
+        "name": "invisibleBridgeDisappearAudio",
+        "offset": 160
+      }
+    },
+    "au_int_yinglongguan_fire_appear": {
+      "windows": [
+        "fireConfig",
+        "fireStart"
+      ],
+      "literalLoad": "0x186e11a65",
+      "playbackCall": "0x1892a1e20",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "Constructor stores the literal in the named config field. The stock audio branch reads that field and passes it as PostEvent argument two. The installed config may override the constructor default.",
+      "field": {
+        "owner": "Beyond.Gameplay.FireSeedGameplayConfig",
+        "name": "fireSeedAppearAudio",
+        "offset": 168
+      }
+    },
+    "au_int_yinglongguan_fire_disappear": {
+      "windows": [
+        "fireConfig",
+        "fireStop"
+      ],
+      "literalLoad": "0x186e11a7f",
+      "playbackCall": "0x1892a1ef4",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "Constructor stores the literal in the named config field. The stock audio branch reads that field and passes it as PostEvent argument two. The installed config may override the constructor default.",
+      "field": {
+        "owner": "Beyond.Gameplay.FireSeedGameplayConfig",
+        "name": "fireSeedDisappearAudio",
+        "offset": 176
+      }
+    },
+    "au_int_water_start": {
+      "windows": [
+        "waterCtor",
+        "waterSetup",
+        "waterResolve",
+        "waterStart"
+      ],
+      "literalLoad": "0x1852bbc2e",
+      "playbackCall": "0x1891be69c",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "Constructor initializes the instance string slot. Setup also passes this literal as the final resolver fallback into that same slot. The stock consumer reads the slot into PostEvent argument two.",
+      "directLinks": [
+        {
+          "site": "0x1852bbc3e",
+          "target": "0x1852bbf90"
+        }
+      ]
+    },
+    "au_int_water_stop": {
+      "windows": [
+        "waterCtor",
+        "waterSetup",
+        "waterResolve",
+        "waterStop"
+      ],
+      "literalLoad": "0x1852bbc80",
+      "playbackCall": "0x1891be277",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "Constructor initializes the instance string slot. Setup also passes this literal as the final resolver fallback into that same slot. The stock consumer reads the slot into PostEvent argument two.",
+      "directLinks": [
+        {
+          "site": "0x1852bbc90",
+          "target": "0x1852bbf90"
+        }
+      ]
+    },
+    "au_int_anchor_idle": {
+      "windows": [
+        "anchorInit",
+        "anchorRead"
+      ],
+      "literalLoad": "0x1894daab6",
+      "playbackCall": "0x1894d9601",
+      "sink": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneConditionHelper.PlayLoopAudioIfNecessary",
+      "boundary": "The class initializer stores the literal in the current static field. The consumer loads the same slot and supplies it as argument two.",
+      "field": {
+        "owner": "Beyond.Gameplay.InteractiveLogicSimpleAnchorWaveCore",
+        "name": "ANCHOR_IDLE_AUDIO",
+        "offset": 0
+      }
+    },
+    "au_env_npc_butterflyclust_small_interactall": {
+      "windows": [
+        "butterflyInit",
+        "butterflyRead"
+      ],
+      "literalLoad": "0x1871ea22a",
+      "playbackCall": "0x18917d79d",
+      "sink": "Beyond.Gameplay.Audio.AudioManager.PostEvent",
+      "boundary": "The class initializer stores the literal in the current static field. The entity route loads that slot and supplies it as PostEvent argument two.",
+      "field": {
+        "owner": "Beyond.Gameplay.Core.GuideButterflyModuleController",
+        "name": "ALL_SMALL_BUTTER_FLY_COLLECTED_AUDIO",
+        "offset": 0
+      }
+    },
+    "au_eny_general_death_dissolve": {
+      "windows": [
+        "enemyLoadAndPost",
+        "enemyHash",
+        "enemyPost"
+      ],
+      "literalLoad": "0x1860158d5",
+      "playbackCall": "0x186015acb",
+      "sink": "Beyond.Gameplay.Audio.AudioTempEmitter.PostAndForget",
+      "boundary": "The stock OnDie path loads the literal, calls the current hash routine and passes the event ID with the allocated positional emitter into PostAndForget. Runtime overrides are outside this proof.",
+      "directLinks": [
+        {
+          "site": "0x186015a1c",
+          "target": "0x18577af90"
+        },
+        {
+          "site": "0x186015a87",
+          "target": "0x18587bdd0"
+        }
+      ]
+    }
+  }
+}
