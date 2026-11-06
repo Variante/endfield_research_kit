@@ -989,6 +989,7 @@ def build_audio_semantic_data(
     native_context = native_evidence.validate_native_audio_evidence(
         metadata_path,
         gameassembly_path,
+        rederive_current=True,
     )
     with native_callsite_rederivation.current_catalogs_operation(native_context) as native_context:
         # Several legacy projections read the broad HIRC summary with ``.get``.

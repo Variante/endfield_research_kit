@@ -861,8 +861,10 @@ def _route_with_fingerprints(
 def validate_native_audio_evidence(
     metadata_path: Path | None,
     gameassembly_path: Path | None,
+    *,
+    rederive_current: bool = False,
 ) -> NativeAudioEvidence:
-    """Validate the two exact installed inputs once for every native consumer."""
+    """Measure selected inputs before the pinned or current native proof."""
 
     missing = [
         label
@@ -901,7 +903,8 @@ def validate_native_audio_evidence(
         result.detail,
         True,
     )
-    if not result.validated and native_evidence_required():
+    pending_current_proof = rederive_current and result.status == "mismatched"
+    if not result.validated and not pending_current_proof and native_evidence_required():
         raise RuntimeError(
             "Audio native evidence required but not validated: "
             f"{result.status}: {result.reason}"
