@@ -1438,6 +1438,7 @@ def audio_file_metrics(path: Path, file_size: int | None = None) -> dict[str, An
 
 def audio_file_metrics_bulk(
     rows: list[tuple[Path, str, os.stat_result]],
+    *, jobs: int = 0,
 ) -> list[dict[str, Any]]:
     """Read the container header of every row, overlapping the file opens.
 
@@ -1449,7 +1450,7 @@ def audio_file_metrics_bulk(
 
     if not rows:
         return []
-    workers = min(16, max(1, (os.cpu_count() or 4) * 2), len(rows))
+    workers = min(jobs if jobs > 0 else min(16, max(1, (os.cpu_count() or 4) * 2)), len(rows))
     if workers <= 1:
         return [audio_file_metrics(path, stat.st_size) for path, _rel, stat in rows]
     with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -1465,6 +1466,7 @@ def collect_audio_files(
     language_info: dict[str, str],
     decoded_source_by_rel: dict[tuple[str, str], dict[str, str]] | None = None,
     prior_source_by_rel: dict[tuple[str, str], dict[str, str]] | None = None,
+    *, jobs: int = 0,
 ) -> dict[str, dict[str, Any]]:
     decoded_source_by_rel = decoded_source_by_rel or {}
     prior_source_by_rel = prior_source_by_rel or {}
@@ -1481,7 +1483,7 @@ def collect_audio_files(
             continue
         seen_occurrences.add(occurrence_key)
         selected.append(row)
-    metrics_by_row = audio_file_metrics_bulk(selected)
+    metrics_by_row = audio_file_metrics_bulk(selected, jobs=jobs)
     for (path, rel, stat), metrics in zip(selected, metrics_by_row):
         audio_id = path.stem.lower()
         metadata = source_metadata_for_rel(
@@ -1571,6 +1573,7 @@ def build_dialog_audio_index(
     language: str,
     language_info: dict[str, str],
     preferred_extension: str,
+    *, jobs: int = 0,
 ) -> dict[str, dict[str, Any]]:
     duration_field = language_info["durationField"]
     # One directory walk answers the per-candidate existence probes and carries
@@ -1626,7 +1629,7 @@ def build_dialog_audio_index(
         [
             (file_path, rel, stat)
             for _id, rel, file_path, stat, _row, _key, _src, _dialog in resolved
-        ]
+        ], jobs=jobs
     )
     for (
         audio_id,
@@ -4126,6 +4129,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_info,
         decoded_source_by_rel,
         prior_source_by_rel,
+        jobs=args.decode_jobs,
     )
     language_audio = collect_audio_files(
         args.audio_root,
@@ -4136,6 +4140,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_info,
         decoded_source_by_rel,
         prior_source_by_rel,
+        jobs=args.decode_jobs,
     )
     stage.mark("collectAudioFiles")
     generic_audio = merge_audio_file_indexes(shared_audio, language_audio)
@@ -4147,6 +4152,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language,
         language_info,
         ".flac",
+        jobs=args.decode_jobs,
     )
     # Normalize the logical media inventory before computing the Event-cache
     # fingerprint. Otherwise the cache compares an unsuppressed physical scan

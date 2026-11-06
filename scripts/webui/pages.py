@@ -336,6 +336,7 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     # index, projectiles and the Map streaming sidecars
     # (webui/data/_build/map/world_placements) enrich its contexts when present.
     audio_args: list[str] = [] if options.decode_audio else ["--skip-decode"]
+    audio_args += ["--decode-jobs", str(max(1, options.jobs))]
     if options.game_root:
         audio_args += ["--game-root", str(options.game_root)]
     if options.export_root:
