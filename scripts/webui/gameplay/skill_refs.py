@@ -91,9 +91,15 @@ def project_skill(record: dict[str, Any]) -> dict[str, Any]:
     payload = record.get("payload") or {}
     if not isinstance(facts, dict) or not isinstance(payload, dict):
         raise ValueError("SkillData facts/payload: objects expected")
-    if (record.get("status") != "structural_only" or facts.get("wholeFileCursorExact") is not True
+    status = record.get("status")
+    if (status not in {"named_exact", "structural_only"} or facts.get("wholeFileCursorExact") is not True
             or facts.get("identifierMatchesFilename") is not True):
         raise ValueError("SkillData record lacks whole-file cursor/identifier proof")
+    if status == "named_exact" and (
+        facts.get("wholeSchemaExact") is not True or facts.get("physicalEOF") is not True
+        or facts.get("serializedMemberCount") != 49 or len(payload) != 49
+    ):
+        raise ValueError("SkillData named record lacks complete root/EOF proof")
     skill_id = payload.get("skillId")
     if not isinstance(skill_id, str) or not skill_id or skill_id != Path(record["source"]["path"]).stem:
         raise ValueError("SkillData skillId does not match its source filename")
@@ -161,7 +167,7 @@ def project_skill(record: dict[str, Any]) -> dict[str, Any]:
 
     walk(payload, "")
     return {"id": skill_id, "recordId": record["id"], "source": record["source"],
-            "status": "structural_only", "nodes": nodes, "references": references,
+            "status": status, "nodes": nodes, "references": references,
             "actionCount": sum(node["kind"] == "action" for node in nodes)}
 
 
@@ -273,7 +279,8 @@ def main(argv: list[str] | None = None) -> int:
     for audit in result["sources"]:
         if audit["status"] != "current":
             print(f"  {audit['datasetId']}: {audit.get('diagnostic', audit['status'])}")
-    return 0
+    return int(not result["records"] or bool(result["rejected"])
+               or any(audit["status"] != "current" for audit in result["sources"]))
 
 
 if __name__ == "__main__":
