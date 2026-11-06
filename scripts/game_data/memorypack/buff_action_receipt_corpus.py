@@ -40,6 +40,7 @@ JSON is the ``--action-report`` of the Buff child corpora
 ``buff_find_settings_child_corpus``, ``buff_super_armor_blackboard_child_receipt``).
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -60,7 +61,7 @@ from scripts.game_data.memorypack.buff_action_receipts import (
 
 SCHEMA = "endfield.buff-action-receipt-corpus.v7"
 REPORTS_ROOT = ROOT / "reports"
-DEFAULT_OUTPUT_JSON = REPORTS_ROOT / "animestudio/buff_action_receipts_current_latest.json"
+DEFAULT_OUTPUT_JSON = ExportLayout.configured().evidence_dir / "animestudio/buff_action_receipts_current_latest.json"
 DEFAULT_OUTPUT_MD = REPORTS_ROOT / "animestudio/buff_action_receipts_current_latest.md"
 _SOURCE_PATTERN = re.compile(r"^Data/Json/BuffData/[^/\\]+[.]json$")
 
@@ -245,7 +246,7 @@ def build_receipt_report(
 
 def _reports_path(path: Path) -> Path:
     resolved = Path(path).resolve()
-    if not resolved.is_relative_to(REPORTS_ROOT.resolve()):
+    if not any(resolved.is_relative_to(base.resolve()) for base in (REPORTS_ROOT, ExportLayout.configured().evidence_dir)):
         _fail("output-outside-reports", detail=str(resolved))
     return resolved
 

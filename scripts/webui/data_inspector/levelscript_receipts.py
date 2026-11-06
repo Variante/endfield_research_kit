@@ -121,4 +121,8 @@ def try_current_levelscript_records(export_root: Path) -> tuple[list[dict[str, A
     try:
         return load_current_levelscript_records(export_root)
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
-        return None, {"status": "direct-reader-fallback", "reason": str(error)[:1000]}
+        result = {"status": "direct-reader-fallback", "reason": str(error)[:1000]}
+        diagnostic = getattr(error, "diagnostic", None)
+        if isinstance(diagnostic, dict):
+            result["diagnostic"] = diagnostic
+        return None, result

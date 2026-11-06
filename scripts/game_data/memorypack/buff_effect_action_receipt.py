@@ -47,6 +47,18 @@ def _contracts() -> tuple[dict[str, Any], dict[str, Any]]:
     catalog = json.loads(CATALOG_CONTRACT.read_text(encoding="utf-8"))
     route = catalog["families"]["AbilityActionData"][TAG]
     kinds = source["anonymousReadOrder"]["member18"]
+    # Tags are physical dispatcher identities for one build. Resolve the
+    # reviewed wrapper by its literal declaration before joining the old tag;
+    # otherwise a different current action produces an opaque shape error.
+    wrapper = source["methods"][-1][1]
+    selected = [row for row in catalog["families"]["AbilityActionData"]
+                if row.get("wrapperName") == wrapper]
+    if len(selected) != 1 or selected[0].get("tag") != TAG or selected[0].get("memberCount") != len(kinds):
+        raise ValueError(f"{LABEL}:source-catalog-build-mismatch: source={SOURCE_CONTRACT}; "
+                         f"expected wrapper={wrapper}, tag={TAG}, members={len(kinds)}; "
+                         f"current={[(r.get('tag'), r.get('memberCount')) for r in selected]}; "
+                         f"tag {TAG} currently selects {route.get('wrapperName')}; "
+                         "current source reads and child grammars must be reproved before decoding")
     if (
         source.get("schemaVersion") != 1
         or catalog.get("schema") != "endfield.levelscript-union-tags.v1"

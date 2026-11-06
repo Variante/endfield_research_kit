@@ -21,26 +21,32 @@ and consumption snapshots, without another export. Only actual AssetBundle
 container GameObject pointers label reciprocal hierarchy roots as prefabs.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from collections import Counter
+from contextvars import ContextVar
 import hashlib
 import json
+import os
 from pathlib import Path
 import struct
 import subprocess
 import tempfile
 
 from scripts.game_data.cooked_collision_corpus import (
-    DEFAULT_CLI, _decoder_closure, _digest, _identity, _path_key,
+    DEFAULT_CLI, _decoder_closure, _digest, _identity, _path_key, _retain_input, _guard_evidence_root,
     _selected_ledger, _selection_input, _verify_fingerprints, inspect_exports,
 )
-from scripts.game_data.corpus_common import atomic_write_text
+from scripts.game_data.corpus_common import atomic_write_json
 from scripts.game_data.unity_scene import read_scene_object, scene_identity, trace_collider
 from scripts.game_data.unity_asset_bundle import read_container_prefix
 from scripts.repo_paths import REPO_ROOT
 
 SCENE_TYPES = ("GameObject", "Transform", "MeshCollider", "MeshColliderEx", "AssetBundle")
+# One validate_receipt call owns this decoded document. Matching the current
+# receipt digest is still required before reuse; no derived row is admitted.
+_REPLAY_DOCUMENT = ContextVar("selected_scene_replay_document", default=None)
 
 
 def _pointer(document: dict) -> tuple[int, int]:
@@ -132,20 +138,31 @@ def _check_typed(body: dict, document: dict, kind: str) -> None:
                 raise ValueError(f"Rigidbody raw {field} differs from typed JSON")
 
 
-def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list) -> dict:
+def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list, *, grouping="ByType") -> dict:
     """Inspect already authenticated exports; this function is not a source gate."""
+    if grouping not in ("ByType", "BySource"):
+        raise ValueError(f"unsupported scene export grouping: {grouping}")
     wanted_cabs = {(_path_key(row["Source"]), row["Offset"]) for row in selection}
     wanted_meshes = {_identity(row["Source"], row["Offset"], row["PathID"]) for row in selection
                      if row["Type"] == "Mesh"}
     source_rows, bodies, bundles, metadata_rows, failures, seen_raw = {}, {}, {}, {}, [], set()
-    for path in sorted(json_root.glob("*/*.json")):
+    mesh_exports = []
+    for path in sorted(json_root.rglob("*.json")):
         try:
-            document = json.loads(path.read_text("utf-8-sig")); meta = document["$animestudio"]
+            json_bytes = path.read_bytes()
+            json_sha = hashlib.sha256(json_bytes).hexdigest().upper()
+            document = json.loads(json_bytes.decode("utf-8-sig")); meta = document["$animestudio"]
+            del json_bytes
             kind = meta["type"]
-            if kind not in (*SCENE_TYPES, "Mesh") or path.parent.name != kind:
+            if kind not in (*SCENE_TYPES, "Mesh"):
                 raise ValueError(f"unexpected exported type/folder: {kind}/{path.parent.name}")
-            raw_path = raw_root/kind/(path.stem+".dat"); raw = raw_path.read_bytes()
-            seen_raw.add(raw_path.resolve())
+            relative = path.relative_to(json_root)
+            expected_parent = ((kind,) if grouping == "ByType" else (
+                Path(meta["sourceOriginalPath"].replace("\\", "/")).name+"_export", meta["sourceFile"]))
+            if relative.parts[:-1] != expected_parent:
+                raise ValueError(f"exported path differs from {grouping} metadata: {relative}")
+            raw_path = raw_root / relative.with_suffix(".dat"); raw = raw_path.read_bytes()
+            seen_raw.add(os.path.normcase(str(raw_path.resolve())))
             sha = hashlib.sha256(raw).hexdigest(); key = scene_identity(meta)
             if (len(raw) != meta["rawDataLength"] or len(raw) != meta["byteSize"]
                     or sha != meta["rawDataSha256"]):
@@ -157,8 +174,14 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list) -> d
             source_rows[key] = dict(identity={name: meta[name] for name in (
                 "sourceOriginalPath", "sourceOffset", "sourceFile", "pathId")},
                 type=kind, name=meta["name"], jsonPath=str(path), rawPath=str(raw_path),
-                rawSha256=sha, jsonSha256=_digest(path), byteSize=len(raw))
-            metadata_rows[key] = meta
+                rawSha256=sha, jsonSha256=json_sha, byteSize=len(raw))
+            # Only MeshCollider external slots participate in the join below.
+            # Retaining every object's redundant TypeTree metadata scales with
+            # the full scene directory instead of the collider evidence.
+            if kind == "MeshCollider":
+                metadata_rows[key] = meta
+            if kind == "Mesh":
+                mesh_exports.append((path, raw_path))
             if kind in ("Mesh", "MeshColliderEx"):
                 continue  # Mesh has its own complete readers; Ex has no proved scene layout.
             if kind == "AssetBundle":
@@ -170,11 +193,12 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list) -> d
             bodies[key] = dict(body, kind=kind)
         except (ValueError, KeyError, TypeError, OSError, OverflowError, struct.error) as error:
             failures.append(dict(check="scene_body", source=str(path), detail=str(error)[:800]))
-    actual_raw = {path.resolve() for path in raw_root.glob("*/*.dat")}
+    actual_raw = {os.path.normcase(str(path.resolve())) for path in raw_root.rglob("*.dat")}
     if actual_raw != seen_raw:
         failures.append(dict(check="raw_json_coverage", expected=len(seen_raw), actual=len(actual_raw),
                              detail=f"first unmatched: {next(iter(sorted(actual_raw ^ seen_raw)), '')}"))
-    meshes = inspect_exports(json_root/"Mesh", raw_root/"Mesh")
+    del actual_raw, seen_raw
+    meshes = inspect_exports(json_root, raw_root, export_pairs=mesh_exports)
     failures.extend(dict(check="mesh_body", **failure) for failure in meshes["failures"])
     mesh_rows = {scene_identity(row["identity"]): row for row in meshes["objects"] if row.get("identity")}
     if not wanted_meshes.issubset({_identity(row["identity"]["sourceOriginalPath"],
@@ -228,6 +252,18 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list) -> d
 def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Path,
                     expected_input_set: str, work_root: Path, cli: Path = DEFAULT_CLI,
                     reuse_path: Path | None = None, receipt_root: Path = REPO_ROOT) -> dict:
+    retained = {}
+    if reuse_path is None:
+        work_root.mkdir(parents=True, exist_ok=True)
+        run_root = Path(tempfile.mkdtemp(prefix="scene-", dir=work_root)).resolve()
+        inputs = run_root / "inputs"
+        inputs.mkdir()
+        for source, name in ((selection_path, "selection.json"), (summary_path, "vfs_audit.json"),
+                             (ledger_path, "vfs_ledger.jsonl.gz")):
+            destination = inputs / name
+            retained[destination] = _retain_input(source, destination)
+        selection_path, summary_path, ledger_path = (
+            inputs / "selection.json", inputs / "vfs_audit.json", inputs / "vfs_ledger.jsonl.gz")
     selection = json.loads(selection_path.read_text("utf-8"))
     if (not isinstance(selection, list) or not selection
             or any(row.get("Type") not in ("Mesh", "AssetBundle") for row in selection)
@@ -246,7 +282,14 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         physical_inputs.append(dict(path=str(path), length=stat.st_size, mtimeNs=stat.st_mtime_ns, md5=digest))
     previous = None
     if reuse_path is not None:
-        previous = json.loads(reuse_path.read_text("utf-8"))
+        owned = _REPLAY_DOCUMENT.get()
+        if owned is not None and owned[0] == reuse_path.resolve():
+            if _digest(reuse_path) != owned[1]:
+                raise ValueError("scene receipt changed before reanalysis")
+            previous = owned[2]
+        else:
+            with reuse_path.open(encoding="utf-8") as stream:
+                previous = json.load(stream)
         def provenance_key(value):
             return {**value, **{field: _path_key(receipt_root / value[field])
                                for field in ("outerLedger", "outerSummaryPath")}}
@@ -272,15 +315,28 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         if old_physical != physical_inputs:
             raise ValueError("saved scene extraction physical input snapshot differs")
         run_root = Path(previous["extraction"]["command"][2]).parent
-    else:
-        work_root.mkdir(parents=True, exist_ok=True)
-        run_root = Path(tempfile.mkdtemp(prefix="scene-", dir=work_root))
     json_root, raw_root = run_root/"json", run_root/"raw"
     types = [*SCENE_TYPES, "Mesh"]
+    # Type folders put millions of identically prefixed Transform filenames in
+    # one NTFS directory. Source/CAB folders preserve identities and avoid the
+    # short-name namespace degeneration without changing the selected corpus.
+    grouping, group_args = "BySource", ["--group_assets", "BySource"]
+    if previous is not None:
+        old_command = previous["extraction"]["command"]
+        positions = [index for index, value in enumerate(old_command) if value == "--group_assets"]
+        if not positions:
+            # v4 receipts made before source grouping pin the CLI's ByType default.
+            grouping, group_args = "ByType", []
+        elif (len(positions) != 1 or positions[0]+1 >= len(old_command)
+              or old_command[positions[0]+1] not in ("ByType", "BySource")):
+            raise ValueError("saved scene extraction has an unsupported grouping")
+        else:
+            grouping = old_command[positions[0]+1]
+            group_args = ["--group_assets", grouping]
     command = [str(cli), str(_selection_input(selection)), str(json_root), "--game", "ArknightsEndfield",
                "--types", *types, "--export_type", "JSON", "--filter_data", str(selection_path.resolve()),
                "--secondary_export_type", "Raw", "--secondary_export_path", str(raw_root),
-               "--secondary_types", *types, "--logger_flags", "Warning", "Error"]
+               "--secondary_types", *types, "--logger_flags", "Warning", "Error", *group_args]
     log_path = run_root/"export.log"
     if previous is not None:
         if (previous["extraction"]["command"] != command or previous["extraction"]["log"] != str(log_path)
@@ -298,7 +354,7 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         stat = Path(item["path"]).stat()
         if (stat.st_size, stat.st_mtime_ns) != (item["length"], item["mtimeNs"]):
             raise ValueError(f"physical chunk changed during scene extraction: {item['path']}")
-    report = inspect_scene_exports(json_root, raw_root, selection)
+    report = inspect_scene_exports(json_root, raw_root, selection, grouping=grouping)
     if previous is not None and report["rawSources"] != previous["rawSources"]:
         raise ValueError("saved scene extraction object identities/raw hashes differ")
     _verify_fingerprints(summary)
@@ -314,6 +370,9 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         report["failures"].append(dict(check="export_diagnostics", source=str(log_path),
                                        detail=log_path.read_text("utf-8", errors="replace")[:1200]))
         report["status"] = "failed"
+    for path, digest in retained.items():
+        if _digest(path) != digest:
+            raise ValueError(f"retained scene input changed during extraction: {path}")
     report.update(schema="endfield.selected-unity-scene-corpus.v4", inputSetSha256=expected_input_set.upper(),
                   provenance=provenance,
                   selection=dict(path=str(selection_path.resolve()), sha256=selection_sha,
@@ -332,8 +391,11 @@ def validate_receipt(report_path: Path, *, root: Path = REPO_ROOT) -> dict:
     census before rebuilding those rows. Snapshots also cover consumption by
     another publisher, so a changed input cannot leave a partial owner join.
     """
-    original = report_path.read_bytes()
-    saved = json.loads(original)
+    original = _digest(report_path)
+    with report_path.open(encoding="utf-8") as stream:
+        saved = json.load(stream)
+    if _digest(report_path) != original:
+        raise ValueError("scene receipt changed while reading")
     if (saved.get("schema") != "endfield.selected-unity-scene-corpus.v4"
             or saved.get("status") != "complete" or saved.get("failures")):
         raise ValueError("scene receipt is not a complete v4 selected-corpus result")
@@ -342,20 +404,39 @@ def validate_receipt(report_path: Path, *, root: Path = REPO_ROOT) -> dict:
     selection_path = Path(saved["selection"]["path"])
     summary = json.loads(summary_path.read_text("utf-8"))
     cli = Path(saved["extraction"]["command"][0])
-    paths = {report_path, summary_path, ledger_path, selection_path,
-             Path(saved["extraction"]["log"])}
-    paths.update(Path(row["path"]) for row in summary["sourceFingerprints"] + summary["buildFingerprints"])
-    paths.update(Path(row["path"]) for row in saved["extraction"]["physicalInputs"])
-    paths.update(path for path in cli.parent.rglob("*") if path.is_file())
+    snapshots, seen = {}, set()
+    def remember(filename):
+        path = Path(filename)
+        name = str(path)
+        identity = os.path.normcase(name)
+        if identity not in seen:
+            stat = path.stat()
+            snapshots[name] = (stat.st_size, stat.st_mtime_ns)
+            seen.add(identity)
+    for path in (report_path, summary_path, ledger_path, selection_path, saved["extraction"]["log"]):
+        remember(path)
+    for row in summary["sourceFingerprints"] + summary["buildFingerprints"]:
+        remember(row["path"])
+    for row in saved["extraction"]["physicalInputs"]:
+        remember(row["path"])
+    for path in cli.parent.rglob("*"):
+        if path.is_file():
+            remember(path)
     for row in saved["rawSources"]:
-        paths.update(Path(row[field]) for field in ("jsonPath", "rawPath"))
-    snapshots = {str(path): (path.stat().st_size, path.stat().st_mtime_ns) for path in paths}
-    report = audit_selection(selection_path=selection_path, summary_path=summary_path,
-                             ledger_path=ledger_path, expected_input_set=saved["inputSetSha256"],
-                             work_root=report_path.parent, cli=cli, reuse_path=report_path, receipt_root=root)
+        for field in ("jsonPath", "rawPath"):
+            remember(row[field])
+    del seen
+    token = _REPLAY_DOCUMENT.set((report_path.resolve(), original, saved))
+    try:
+        report = audit_selection(selection_path=selection_path, summary_path=summary_path,
+                                 ledger_path=ledger_path, expected_input_set=saved["inputSetSha256"],
+                                 work_root=report_path.parent, cli=cli, reuse_path=report_path, receipt_root=root)
+    finally:
+        _REPLAY_DOCUMENT.reset(token)
+    saved.clear()
     if report["status"] != "complete" or report["failures"]:
         raise ValueError(f"scene receipt reanalysis failed: {report['failures'][:3]}")
-    if report_path.read_bytes() != original:
+    if _digest(report_path) != original:
         raise ValueError("scene receipt changed during reanalysis")
     report["currentInputSnapshots"] = snapshots
     check_receipt_snapshot(report)
@@ -377,12 +458,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--outer-ledger", type=Path, required=True)
     parser.add_argument("--expected-input-set-sha256", required=True)
     parser.add_argument("--cli", type=Path, default=DEFAULT_CLI)
-    parser.add_argument("--work-root", type=Path, default=REPO_ROOT/"tmp/animestudio/collision_ownership")
-    parser.add_argument("--output-json", type=Path, default=REPO_ROOT/"reports/assets/collision_scene_current.json")
+    parser.add_argument("--work-root", type=Path, default=ExportLayout.configured().evidence_dir / 'assets/collision_ownership')
+    parser.add_argument("--output-json", type=Path, default=ExportLayout.configured().evidence_dir / 'assets/collision_scene_current.json')
     parser.add_argument("--reuse-extraction", type=Path,
                         help="Reanalyse a saved scene-corpus extraction after revalidating its current source/CLI/raw receipt.")
     args = parser.parse_args(argv)
     destination = args.output_json
+    _guard_evidence_root(destination)
+    if args.reuse_extraction is None:
+        _guard_evidence_root(args.work_root)
     try:
         report = audit_selection(selection_path=args.selection, summary_path=args.outer_summary,
                                  ledger_path=args.outer_ledger, expected_input_set=args.expected_input_set_sha256,
@@ -394,7 +478,7 @@ def main(argv: list[str] | None = None) -> int:
         # retry. A gate failure never replaces it with an unusable shell.
         if args.reuse_extraction is not None and destination.resolve() == args.reuse_extraction.resolve():
             destination = destination.with_name(destination.stem+".failed"+destination.suffix)
-    atomic_write_text(destination, json.dumps(report, ensure_ascii=False, indent=2)+"\n")
+    atomic_write_json(destination, report)
     print(json.dumps(dict(status=report["status"], counts=report.get("counts"),
                           failures=report["failures"][:3], report=str(destination)), ensure_ascii=False), flush=True)
     return 0 if report["status"] == "complete" else 1

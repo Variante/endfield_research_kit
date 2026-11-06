@@ -45,6 +45,7 @@ context cannot serve even when the native binaries match.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -87,8 +88,8 @@ SKILL_PREFIX = "Data/Json/SkillData/"
 from scripts.repo_paths import REPO_ROOT
 
 REPO_ROOT = REPO_ROOT
-DEFAULT_CORPUS_REPORT = REPO_ROOT / "reports/animestudio/skilldata_current_latest.json"
-DEFAULT_NATIVE_CONTEXT = REPO_ROOT / "reports/animestudio/il2cpp_context_current_latest.json"
+DEFAULT_CORPUS_REPORT = ExportLayout.configured().evidence_dir / 'animestudio/skilldata_current_latest.json'
+DEFAULT_NATIVE_CONTEXT = ExportLayout.configured().evidence_dir / 'animestudio/il2cpp_context_current_latest.json'
 
 
 class ReceiptVerificationError(ValueError):

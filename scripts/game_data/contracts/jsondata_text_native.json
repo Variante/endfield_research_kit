@@ -1,0 +1,2994 @@
+{
+  "schema": "endfield.jsondata-text-native-declarations.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "roots": {
+    "AIConfig/AIGlobalSetting.json": "Beyond.Gameplay.AIGlobalSetting",
+    "LevelGenForRuntime/DoodadGroupTable.json": "Beyond.Gameplay.DoodadGroupData",
+    "SpaceshipCabinData.json": "Beyond.Gameplay.SpaceshipCabinData",
+    "GameplayConfig/InnSceneLayoutTable.json": "Beyond.Gameplay.InnSceneLayoutTableData",
+    "GameplayConfig/PaintingScrollConfigTable.json": "Beyond.Gameplay.PaintingScrollConfigDataTable",
+    "GameplayConfig/PoiLevelChangePerformBindingTable.json": "Beyond.Gameplay.PoiLevelChangePerformBindingTable",
+    "GameplayConfig/PoiLevelChangePerformDataTable.json": "Beyond.Gameplay.PoiLevelChangePerformDataTable",
+    "GameplayConfig/RanchConfigTable.json": "Beyond.Gameplay.RanchConfigTable",
+    "AIConfig/GroupAIConfig/ContingencyContract_Guard.json": "Beyond.Gameplay.AI.GroupAIConfig",
+    "AIConfig/GroupAIConfig/ContingencyContract_Main.json": "Beyond.Gameplay.AI.GroupAIConfig",
+    "AIConfig/GroupAIConfig/Default_GroupAITargetMain.json": "Beyond.Gameplay.AI.GroupAIConfig",
+    "AIConfig/GroupAIConfig/Default_GroupAITargetNotMain.json": "Beyond.Gameplay.AI.GroupAIConfig"
+  },
+  "declarations": {
+    "Beyond.Gameplay.AIGlobalSetting": {
+      "typeName": "Beyond.Gameplay.AIGlobalSetting",
+      "typeDefinition": 673,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "editorCategory",
+          "type": "Beyond.Gameplay.AIGlobalSettingEditorCategory"
+        },
+        {
+          "name": "characterAttackRandomDelay",
+          "type": "UnityEngine.AnimationCurve"
+        },
+        {
+          "name": "characterRefreshTargetInstantlyCD",
+          "type": "float"
+        },
+        {
+          "name": "randomStopAttackTime",
+          "type": "UnityEngine.Vector2"
+        },
+        {
+          "name": "confrontToRunDis",
+          "type": "float"
+        },
+        {
+          "name": "runToConfrontDis",
+          "type": "float"
+        },
+        {
+          "name": "gaitChangeCD",
+          "type": "float"
+        },
+        {
+          "name": "leaveTrapTime",
+          "type": "float"
+        },
+        {
+          "name": "idleRelaxTime",
+          "type": "float"
+        },
+        {
+          "name": "closeToHealTargetGait",
+          "type": "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait"
+        },
+        {
+          "name": "closeToHealTargetTime",
+          "type": "float"
+        },
+        {
+          "name": "seatLeaveDis",
+          "type": "float"
+        },
+        {
+          "name": "seatSearchRadius",
+          "type": "float"
+        },
+        {
+          "name": "seatSearchHeight",
+          "type": "float"
+        },
+        {
+          "name": "unlockSeatTime",
+          "type": "float"
+        },
+        {
+          "name": "seatOffset",
+          "type": "float"
+        },
+        {
+          "name": "checkEnemyColliderInterval",
+          "type": "float"
+        },
+        {
+          "name": "checkEnemyColliderDuration",
+          "type": "float"
+        },
+        {
+          "name": "skillTeleportOffset",
+          "type": "System.Collections.Generic.List`1<UnityEngine.Vector2>"
+        },
+        {
+          "name": "teleportSlotOffset",
+          "type": "System.Collections.Generic.List`1<UnityEngine.Vector2>"
+        },
+        {
+          "name": "farmingSearchRadius",
+          "type": "float"
+        },
+        {
+          "name": "speedWeightCurve",
+          "type": "UnityEngine.AnimationCurve"
+        },
+        {
+          "name": "disPredictTime",
+          "type": "float"
+        },
+        {
+          "name": "dodgePredictMinDist",
+          "type": "float"
+        },
+        {
+          "name": "dodgeRadius",
+          "type": "float"
+        },
+        {
+          "name": "dodgeHalfHeight",
+          "type": "float"
+        },
+        {
+          "name": "dodgeAngle",
+          "type": "int"
+        },
+        {
+          "name": "dodgeAngleDelta",
+          "type": "int"
+        },
+        {
+          "name": "singleDodgeCD",
+          "type": "float"
+        },
+        {
+          "name": "commonDodgeCD",
+          "type": "float"
+        },
+        {
+          "name": "pickupRadius",
+          "type": "float"
+        },
+        {
+          "name": "pickupHeight",
+          "type": "float"
+        },
+        {
+          "name": "pickupEnemyRadius",
+          "type": "float"
+        },
+        {
+          "name": "pickupEnemyHeight",
+          "type": "float"
+        },
+        {
+          "name": "evadeStartRadius",
+          "type": "float"
+        },
+        {
+          "name": "evadeEndRadius",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchCD",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchProb",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchProbAdd",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchTargetDis",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchRootmotionDis",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchPosDisRange",
+          "type": "UnityEngine.Vector2"
+        },
+        {
+          "name": "strafeSwitchAngle",
+          "type": "float"
+        },
+        {
+          "name": "strafeSwitchTime",
+          "type": "float"
+        },
+        {
+          "name": "settlementSearchRadius",
+          "type": "float"
+        },
+        {
+          "name": "settlementSearchHeight",
+          "type": "float"
+        },
+        {
+          "name": "settlementLoseTargetRadius",
+          "type": "float"
+        },
+        {
+          "name": "maxSensorVigilance",
+          "type": "float"
+        },
+        {
+          "name": "maxSensorDistance",
+          "type": "float"
+        },
+        {
+          "name": "nearSensorDisVigilance",
+          "type": "float"
+        },
+        {
+          "name": "farSensorDisVigilance",
+          "type": "float"
+        },
+        {
+          "name": "damageSensorCD",
+          "type": "float"
+        },
+        {
+          "name": "damageSensorFactor",
+          "type": "float"
+        },
+        {
+          "name": "moveToOuterRadiusOffset",
+          "type": "float"
+        },
+        {
+          "name": "moveRotateCurve",
+          "type": "UnityEngine.AnimationCurve"
+        },
+        {
+          "name": "moveToTargetMinDis",
+          "type": "float"
+        },
+        {
+          "name": "moveToTargetMinAngle",
+          "type": "float"
+        },
+        {
+          "name": "moveToTargetForceDis",
+          "type": "float"
+        },
+        {
+          "name": "maxTouchDetectDistance",
+          "type": "float"
+        },
+        {
+          "name": "touchVigilanceStep",
+          "type": "float"
+        },
+        {
+          "name": "touchRemoteDetectDistance",
+          "type": "float"
+        },
+        {
+          "name": "touchRemoteMaxVigilance",
+          "type": "float"
+        },
+        {
+          "name": "stimulateSettingDatas",
+          "type": "System.Collections.Generic.Dictionary`2<string,StimulateSettingData>"
+        },
+        {
+          "name": "switchSteadyMinMax",
+          "type": "UnityEngine.Vector2Int"
+        },
+        {
+          "name": "playerStopAtkTime",
+          "type": "float"
+        },
+        {
+          "name": "battlePlayCategoryGroupAIConfigs",
+          "type": "System.Collections.Generic.Dictionary`2<Beyond.GEnums.BattlePlayCategory,Beyond.Gameplay.BattlePlayCategoryConfig>"
+        },
+        {
+          "name": "battlePlayCategoryEnemyHateProb",
+          "type": "System.Collections.Generic.Dictionary`2<Beyond.GEnums.BattlePlayCategory,System.Collections.Generic.Dictionary`2<Beyond.Gameplay.AI.HateProbLevel,float>>"
+        },
+        {
+          "name": "enemyIgnoreMainCD",
+          "type": "float"
+        },
+        {
+          "name": "enemyAttackerUpdateTargetPeriod",
+          "type": "float"
+        },
+        {
+          "name": "meleeCharDynamicWeight",
+          "type": "int"
+        },
+        {
+          "name": "rangedCharDynamicWeight",
+          "type": "int"
+        },
+        {
+          "name": "charDistanceDynamicWeight",
+          "type": "int"
+        },
+        {
+          "name": "pursueRangeOffset",
+          "type": "float"
+        },
+        {
+          "name": "enemyDisengageNoDamageDuration",
+          "type": "float"
+        },
+        {
+          "name": "enemyDisengageCheckInterval",
+          "type": "float"
+        },
+        {
+          "name": "enemyDisengageNavDisconnectCount",
+          "type": "int"
+        },
+        {
+          "name": "enemyDisengageLosDisconnectCount",
+          "type": "int"
+        },
+        {
+          "name": "enemyDisengageNavAndLosDisconnectCount",
+          "type": "int"
+        },
+        {
+          "name": "npcAttractStopLengthFactor",
+          "type": "float"
+        },
+        {
+          "name": "npcAttractStopWidthFactor",
+          "type": "float"
+        },
+        {
+          "name": "npcAttractStopBackwardsOffset",
+          "type": "float"
+        },
+        {
+          "name": "npcAttractUnoccupiedDis",
+          "type": "float"
+        },
+        {
+          "name": "npcCalcRVOTimeRandom",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "npcCalcRVOTimeout",
+          "type": "float"
+        },
+        {
+          "name": "mainCharCalcRVOTimeout",
+          "type": "float"
+        },
+        {
+          "name": "npcRVODeflectionAngle",
+          "type": "float"
+        },
+        {
+          "name": "mainCharStillInterval",
+          "type": "float"
+        },
+        {
+          "name": "mainCharStillFloatDist",
+          "type": "float"
+        },
+        {
+          "name": "npcFallbackAnimVirtualTag",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        },
+        {
+          "name": "charFallbackAnimVirtualTag",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        },
+        {
+          "name": "spaceShipSearchMinDis",
+          "type": "float"
+        },
+        {
+          "name": "blurDetectDis",
+          "type": "float"
+        },
+        {
+          "name": "npcDetectDis",
+          "type": "float"
+        },
+        {
+          "name": "disCountPerTick",
+          "type": "int"
+        },
+        {
+          "name": "idlePqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "healtargetPqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "pickupPqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "focusImportantConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "barkExploreConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "followPqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "confrontFallbackPqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "tauntPqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "skillMovePqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "revivePqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "skillTeleportPQSConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "enemyCastSkillPqsConfig",
+          "type": "Beyond.Gameplay.AIReferencedPQSConfig"
+        },
+        {
+          "name": "preloadPerform",
+          "type": "System.Collections.Generic.List`1<string>"
+        },
+        {
+          "name": "mainCharCreateObstacleTime",
+          "type": "float"
+        },
+        {
+          "name": "navigationBlockTimeout",
+          "type": "float"
+        },
+        {
+          "name": "navigationBlockDetectDist",
+          "type": "float"
+        },
+        {
+          "name": "navigationBlockProgressDist",
+          "type": "float"
+        },
+        {
+          "name": "navLinkAdditiveDist",
+          "type": "float"
+        },
+        {
+          "name": "factoryNavObstacleMinLength",
+          "type": "float"
+        },
+        {
+          "name": "enemyPathAreaTypeMask",
+          "type": "int"
+        },
+        {
+          "name": "enemyPathAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "enemyWalkingAreaTypeMask",
+          "type": "int"
+        },
+        {
+          "name": "enemyWalkingAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "characterPathAreaTypeMask",
+          "type": "int"
+        },
+        {
+          "name": "characterPathAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "characterWalkingAreaTypeMask",
+          "type": "int"
+        },
+        {
+          "name": "characterWalkingAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "mainCharWalkingAreaTypeMask",
+          "type": "int"
+        },
+        {
+          "name": "mainCharWalkingAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "charfindPointAreaMask",
+          "type": "int"
+        },
+        {
+          "name": "charfindPointAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "npcfindPointAreaMask",
+          "type": "int"
+        },
+        {
+          "name": "npcfindPointAreaType",
+          "type": "System.Collections.Generic.List`1<int>"
+        }
+      ],
+      "properties": []
+    },
+    "UnityEngine.Keyframe": {
+      "typeName": "UnityEngine.Keyframe",
+      "typeDefinition": 75337,
+      "parent": "System.ValueType",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "m_Time",
+          "type": "float"
+        },
+        {
+          "name": "m_Value",
+          "type": "float"
+        },
+        {
+          "name": "m_InTangent",
+          "type": "float"
+        },
+        {
+          "name": "m_OutTangent",
+          "type": "float"
+        },
+        {
+          "name": "m_WeightedMode",
+          "type": "int"
+        },
+        {
+          "name": "m_InWeight",
+          "type": "float"
+        },
+        {
+          "name": "m_OutWeight",
+          "type": "float"
+        }
+      ],
+      "properties": [
+        {
+          "name": "time",
+          "type": "float",
+          "getter": [
+            473442,
+            "UnityEngine.Keyframe",
+            "get_time"
+          ]
+        },
+        {
+          "name": "value",
+          "type": "float",
+          "getter": [
+            473444,
+            "UnityEngine.Keyframe",
+            "get_value"
+          ]
+        },
+        {
+          "name": "inTangent",
+          "type": "float",
+          "getter": [
+            473446,
+            "UnityEngine.Keyframe",
+            "get_inTangent"
+          ]
+        },
+        {
+          "name": "outTangent",
+          "type": "float",
+          "getter": [
+            473448,
+            "UnityEngine.Keyframe",
+            "get_outTangent"
+          ]
+        },
+        {
+          "name": "inWeight",
+          "type": "float",
+          "getter": [
+            473450,
+            "UnityEngine.Keyframe",
+            "get_inWeight"
+          ]
+        },
+        {
+          "name": "outWeight",
+          "type": "float",
+          "getter": [
+            473452,
+            "UnityEngine.Keyframe",
+            "get_outWeight"
+          ]
+        },
+        {
+          "name": "weightedMode",
+          "type": "UnityEngine.WeightedMode",
+          "getter": [
+            473454,
+            "UnityEngine.Keyframe",
+            "get_weightedMode"
+          ]
+        },
+        {
+          "name": "tangentMode",
+          "type": "int",
+          "getter": [
+            473456,
+            "UnityEngine.Keyframe",
+            "get_tangentMode"
+          ]
+        },
+        {
+          "name": "tangentModeInternal",
+          "type": "int",
+          "getter": [
+            473458,
+            "UnityEngine.Keyframe",
+            "get_tangentModeInternal"
+          ]
+        }
+      ]
+    },
+    "UnityEngine.WeightedMode": {
+      "typeName": "UnityEngine.WeightedMode",
+      "typeDefinition": 75336,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "UnityEngine.Vector2": {
+      "typeName": "UnityEngine.Vector2",
+      "typeDefinition": 75547,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<UnityEngine.Vector2>",
+        "System.IFormattable"
+      ],
+      "fields": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        }
+      ],
+      "properties": [
+        {
+          "name": "normalized",
+          "type": "UnityEngine.Vector2",
+          "getter": [
+            476954,
+            "UnityEngine.Vector2",
+            "get_normalized"
+          ]
+        },
+        {
+          "name": "magnitude",
+          "type": "float",
+          "getter": [
+            476964,
+            "UnityEngine.Vector2",
+            "get_magnitude"
+          ]
+        },
+        {
+          "name": "sqrMagnitude",
+          "type": "float",
+          "getter": [
+            476965,
+            "UnityEngine.Vector2",
+            "get_sqrMagnitude"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait": {
+      "typeName": "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait",
+      "typeDefinition": 12783,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "StimulateSettingData": {
+      "typeName": "StimulateSettingData",
+      "typeDefinition": 3,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "envConfrontXZDis",
+          "type": "float"
+        },
+        {
+          "name": "envConfrontHeight",
+          "type": "float"
+        },
+        {
+          "name": "battleConfrontXZDis",
+          "type": "float"
+        },
+        {
+          "name": "battleConfrontHeight",
+          "type": "float"
+        },
+        {
+          "name": "searNpcSafeAreaDis",
+          "type": "float"
+        },
+        {
+          "name": "npcEnvConfrontTriggerXZ",
+          "type": "float"
+        },
+        {
+          "name": "npcEnvConfrontTriggerY",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "UnityEngine.Vector2Int": {
+      "typeName": "UnityEngine.Vector2Int",
+      "typeDefinition": 75548,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<UnityEngine.Vector2Int>",
+        "System.IFormattable"
+      ],
+      "fields": [
+        {
+          "name": "m_X",
+          "type": "int"
+        },
+        {
+          "name": "m_Y",
+          "type": "int"
+        }
+      ],
+      "properties": [
+        {
+          "name": "x",
+          "type": "int",
+          "getter": [
+            476998,
+            "UnityEngine.Vector2Int",
+            "get_x"
+          ]
+        },
+        {
+          "name": "y",
+          "type": "int",
+          "getter": [
+            477000,
+            "UnityEngine.Vector2Int",
+            "get_y"
+          ]
+        },
+        {
+          "name": "magnitude",
+          "type": "float",
+          "getter": [
+            477006,
+            "UnityEngine.Vector2Int",
+            "get_magnitude"
+          ]
+        },
+        {
+          "name": "sqrMagnitude",
+          "type": "int",
+          "getter": [
+            477007,
+            "UnityEngine.Vector2Int",
+            "get_sqrMagnitude"
+          ]
+        }
+      ]
+    },
+    "Beyond.GEnums.BattlePlayCategory": {
+      "typeName": "Beyond.GEnums.BattlePlayCategory",
+      "typeDefinition": 62664,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.BattlePlayCategoryConfig": {
+      "typeName": "Beyond.Gameplay.BattlePlayCategoryConfig",
+      "typeDefinition": 675,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "centerBattleNumRange",
+          "type": "UnityEngine.Vector2Int"
+        },
+        {
+          "name": "characterBattleNumRange",
+          "type": "int"
+        },
+        {
+          "name": "enableDynamicHate",
+          "type": "bool"
+        },
+        {
+          "name": "targetMainGroupAIConfigPath",
+          "type": "string"
+        },
+        {
+          "name": "targetNotMainGroupAIConfigPath",
+          "type": "string"
+        },
+        {
+          "name": "targetMainGroupAIConfig",
+          "type": "Beyond.Gameplay.AI.GroupAIConfig"
+        },
+        {
+          "name": "targetNotMainGroupAIConfig",
+          "type": "Beyond.Gameplay.AI.GroupAIConfig"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.HateProbLevel": {
+      "typeName": "Beyond.Gameplay.AI.HateProbLevel",
+      "typeDefinition": 8373,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "UnityEngine.Vector3": {
+      "typeName": "UnityEngine.Vector3",
+      "typeDefinition": 75544,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<UnityEngine.Vector3>",
+        "System.IFormattable"
+      ],
+      "fields": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        }
+      ],
+      "properties": [
+        {
+          "name": "normalized",
+          "type": "UnityEngine.Vector3",
+          "getter": [
+            476766,
+            "UnityEngine.Vector3",
+            "get_normalized"
+          ]
+        },
+        {
+          "name": "magnitude",
+          "type": "float",
+          "getter": [
+            476775,
+            "UnityEngine.Vector3",
+            "get_magnitude"
+          ]
+        },
+        {
+          "name": "sqrMagnitude",
+          "type": "float",
+          "getter": [
+            476777,
+            "UnityEngine.Vector3",
+            "get_sqrMagnitude"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.Core.GameplayTag": {
+      "typeName": "Beyond.Gameplay.Core.GameplayTag",
+      "typeDefinition": 12233,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<Beyond.Gameplay.Core.GameplayTag>"
+      ],
+      "fields": [
+        {
+          "name": "tagId",
+          "type": "int"
+        }
+      ],
+      "properties": [
+        {
+          "name": "tagName",
+          "type": "string",
+          "getter": [
+            78910,
+            "Beyond.Gameplay.Core.GameplayTag",
+            "get_tagName"
+          ]
+        },
+        {
+          "name": "isValidTagId",
+          "type": "bool",
+          "getter": [
+            78911,
+            "Beyond.Gameplay.Core.GameplayTag",
+            "get_isValidTagId"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.AIReferencedPQSConfig": {
+      "typeName": "Beyond.Gameplay.AIReferencedPQSConfig",
+      "typeDefinition": 674,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "assetGuid",
+          "type": "string"
+        },
+        {
+          "name": "assetPath",
+          "type": "string"
+        },
+        {
+          "name": "m_cachedConfig",
+          "type": "Beyond.Gameplay.AI.Config.CharacterPQSConfigData"
+        }
+      ],
+      "properties": [
+        {
+          "name": "config",
+          "type": "Beyond.Gameplay.AI.Config.CharacterPQSConfigData",
+          "getter": [
+            4247,
+            "Beyond.Gameplay.AIReferencedPQSConfig",
+            "get_config"
+          ]
+        },
+        {
+          "name": "pqsConfig",
+          "type": "Beyond.Gameplay.Core.PQSData",
+          "getter": [
+            4248,
+            "Beyond.Gameplay.AIReferencedPQSConfig",
+            "get_pqsConfig"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.DoodadGroupData": {
+      "typeName": "Beyond.Gameplay.DoodadGroupData",
+      "typeDefinition": 817,
+      "parent": "System.Collections.Generic.Dictionary`2<ulong,Beyond.Gameplay.SubLevelDoodadGroupData>",
+      "interfaces": [
+        "Beyond.ISubDataTable`1<Beyond.Gameplay.DoodadGroupData>",
+        "Beyond.ISubDataTable"
+      ],
+      "fields": [],
+      "properties": []
+    },
+    "Beyond.Gameplay.SubLevelDoodadGroupData": {
+      "typeName": "Beyond.Gameplay.SubLevelDoodadGroupData",
+      "typeDefinition": 818,
+      "parent": "System.Collections.Generic.List`1<Beyond.Gameplay.SingleDoodadGroupData>",
+      "interfaces": [],
+      "fields": [],
+      "properties": []
+    },
+    "Beyond.Gameplay.SingleDoodadGroupData": {
+      "typeName": "Beyond.Gameplay.SingleDoodadGroupData",
+      "typeDefinition": 820,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "doodadGroupId",
+          "type": "ulong"
+        },
+        {
+          "name": "mapMarkInstId",
+          "type": "string"
+        },
+        {
+          "name": "centerId",
+          "type": "ulong"
+        },
+        {
+          "name": "outerId",
+          "type": "System.Collections.Generic.List`1<ulong>"
+        },
+        {
+          "name": "childDoodadIds",
+          "type": "System.Collections.Generic.Dictionary`2<ulong,string>"
+        },
+        {
+          "name": "childUpgradeNeedLevels",
+          "type": "System.Collections.Generic.Dictionary`2<ulong,System.Collections.Generic.List`1<int>>"
+        },
+        {
+          "name": "upgradeSource",
+          "type": "Beyond.GEnums.DoodadGroupUpgradeSource"
+        },
+        {
+          "name": "upgradeSceneGrade",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "refreshGroupUpperLimitLevel",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "refreshGroupNumLevel",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "outputSpeedPercentage",
+          "type": "System.Collections.Generic.List`1<int>"
+        },
+        {
+          "name": "factoryPosition",
+          "type": "UnityEngine.Vector3Int"
+        },
+        {
+          "name": "doodadGroupType",
+          "type": "Beyond.Gameplay.DoodadGroupType"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.GEnums.DoodadGroupUpgradeSource": {
+      "typeName": "Beyond.GEnums.DoodadGroupUpgradeSource",
+      "typeDefinition": 62587,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "UnityEngine.Vector3Int": {
+      "typeName": "UnityEngine.Vector3Int",
+      "typeDefinition": 75549,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<UnityEngine.Vector3Int>",
+        "System.IFormattable"
+      ],
+      "fields": [
+        {
+          "name": "m_X",
+          "type": "int"
+        },
+        {
+          "name": "m_Y",
+          "type": "int"
+        },
+        {
+          "name": "m_Z",
+          "type": "int"
+        }
+      ],
+      "properties": [
+        {
+          "name": "x",
+          "type": "int",
+          "getter": [
+            477041,
+            "UnityEngine.Vector3Int",
+            "get_x"
+          ]
+        },
+        {
+          "name": "y",
+          "type": "int",
+          "getter": [
+            477043,
+            "UnityEngine.Vector3Int",
+            "get_y"
+          ]
+        },
+        {
+          "name": "z",
+          "type": "int",
+          "getter": [
+            477045,
+            "UnityEngine.Vector3Int",
+            "get_z"
+          ]
+        },
+        {
+          "name": "magnitude",
+          "type": "float",
+          "getter": [
+            477051,
+            "UnityEngine.Vector3Int",
+            "get_magnitude"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.DoodadGroupType": {
+      "typeName": "Beyond.Gameplay.DoodadGroupType",
+      "typeDefinition": 2920,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.SpaceshipCabinData": {
+      "typeName": "Beyond.Gameplay.SpaceshipCabinData",
+      "typeDefinition": 1152,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "cabinSpawnInfos",
+          "type": "System.Collections.Generic.Dictionary`2<Beyond.GEnums.SpaceshipRoomType,Beyond.Gameplay.SpaceshipCabinSpawnInfo>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.GEnums.SpaceshipRoomType": {
+      "typeName": "Beyond.GEnums.SpaceshipRoomType",
+      "typeDefinition": 62519,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.SpaceshipCabinSpawnInfo": {
+      "typeName": "Beyond.Gameplay.SpaceshipCabinSpawnInfo",
+      "typeDefinition": 1154,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "dynamicSceneUniqueId",
+          "type": "string"
+        },
+        {
+          "name": "mainInteractiveSpawnInfo",
+          "type": "Beyond.Gameplay.InteractiveSpawnInfo"
+        },
+        {
+          "name": "worldWayPointData",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.WayPointInEditorData>"
+        },
+        {
+          "name": "npcAttractPointData",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.AttractPointInEditorData>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.ManufacturingCabinInfo": {
+      "typeName": "Beyond.Gameplay.ManufacturingCabinInfo",
+      "typeDefinition": 1155,
+      "parent": "Beyond.Gameplay.SpaceshipCabinSpawnInfo",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "manufacturingStationMp",
+          "type": "Beyond.Gameplay.Deco_MountPoint"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InteractiveSpawnInfo": {
+      "typeName": "Beyond.Gameplay.InteractiveSpawnInfo",
+      "typeDefinition": 1153,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "interactiveTemplateId",
+          "type": "string"
+        },
+        {
+          "name": "spawnPosition",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "spawnRotation",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "interactiveRelativeCameraConfig",
+          "type": "System.Collections.Generic.Dictionary`2<string,string>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.WayPointInEditorData": {
+      "typeName": "Beyond.Gameplay.AI.WayPointInEditorData",
+      "typeDefinition": 7842,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "linkTo",
+          "type": "System.Collections.Generic.List`1<ulong>"
+        },
+        {
+          "name": "linkLane",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.WayLane>"
+        },
+        {
+          "name": "uuid",
+          "type": "ulong"
+        },
+        {
+          "name": "isGate",
+          "type": "bool"
+        },
+        {
+          "name": "gateLaneCount",
+          "type": "int"
+        },
+        {
+          "name": "isPoiPoint",
+          "type": "bool"
+        },
+        {
+          "name": "mainId",
+          "type": "ulong"
+        },
+        {
+          "name": "level",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.WayLane": {
+      "typeName": "Beyond.Gameplay.AI.WayLane",
+      "typeDefinition": 8448,
+      "parent": "System.ValueType",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "totalLane",
+          "type": "int"
+        },
+        {
+          "name": "laneDir",
+          "type": "uint[]"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.AttractPointInEditorData": {
+      "typeName": "Beyond.Gameplay.AI.AttractPointInEditorData",
+      "typeDefinition": 7840,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "showDebugInfo",
+          "type": "bool"
+        },
+        {
+          "name": "searchName",
+          "type": "string"
+        },
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rotation",
+          "type": "UnityEngine.Quaternion"
+        },
+        {
+          "name": "linkedWayPoints",
+          "type": "System.Collections.Generic.List`1<ulong>"
+        },
+        {
+          "name": "wayPointRate",
+          "type": "float"
+        },
+        {
+          "name": "wayPointStartUuid",
+          "type": "ulong"
+        },
+        {
+          "name": "wayPointEndUuid",
+          "type": "ulong"
+        },
+        {
+          "name": "wayLineHash",
+          "type": "int"
+        },
+        {
+          "name": "uuid",
+          "type": "ulong"
+        },
+        {
+          "name": "linkedAttractPoints",
+          "type": "System.Collections.Generic.List`1<ulong>"
+        },
+        {
+          "name": "enableAtInit",
+          "type": "bool"
+        },
+        {
+          "name": "enableCooldown",
+          "type": "bool"
+        },
+        {
+          "name": "cooldownTime",
+          "type": "float"
+        },
+        {
+          "name": "cooldownFinishAction",
+          "type": "Beyond.Gameplay.AI.AttractCooldownFinishAction"
+        },
+        {
+          "name": "enableSyncGroup",
+          "type": "bool"
+        },
+        {
+          "name": "syncGroupId",
+          "type": "int"
+        },
+        {
+          "name": "attractObjectType",
+          "type": "Beyond.Gameplay.AI.AttractObjectType"
+        },
+        {
+          "name": "moveToMethod",
+          "type": "Beyond.Gameplay.AI.MoveToMethod"
+        },
+        {
+          "name": "movementStyleType",
+          "type": "Beyond.Gameplay.AbilityUnsafe.ENPCAbilityMovementStyleType"
+        },
+        {
+          "name": "actionType",
+          "type": "Beyond.Gameplay.AI.ActionType"
+        },
+        {
+          "name": "animVirtualTag",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        },
+        {
+          "name": "animNameTag",
+          "type": "Beyond.Gameplay.Core.GameplayTag"
+        },
+        {
+          "name": "animMaskType",
+          "type": "Beyond.NPC.Animation.ENPCAnimationAvatarMaskType"
+        },
+        {
+          "name": "actionEndType",
+          "type": "Beyond.Gameplay.AI.ActionEndType"
+        },
+        {
+          "name": "waitTime",
+          "type": "float"
+        },
+        {
+          "name": "activeLookAt",
+          "type": "bool"
+        },
+        {
+          "name": "spaceshipBehaviorType",
+          "type": "Beyond.GEnums.AttractBehaviourType"
+        },
+        {
+          "name": "ownerRoomId",
+          "type": "string"
+        },
+        {
+          "name": "spaceshipDetailAnimType",
+          "type": "string"
+        },
+        {
+          "name": "spaceshipTag",
+          "type": "System.Collections.Generic.List`1<string>"
+        },
+        {
+          "name": "spaceshipGeneralAnimType",
+          "type": "Beyond.GEnums.AttractGeneralAnimType"
+        },
+        {
+          "name": "useEmoji",
+          "type": "bool"
+        },
+        {
+          "name": "startDelay",
+          "type": "float"
+        },
+        {
+          "name": "envTalkString",
+          "type": "string"
+        },
+        {
+          "name": "chairID",
+          "type": "ulong"
+        },
+        {
+          "name": "chairCheckDistance",
+          "type": "float"
+        },
+        {
+          "name": "restaurantPointType",
+          "type": "Beyond.Gameplay.AI.RestaurantPointType"
+        },
+        {
+          "name": "groupId",
+          "type": "int"
+        },
+        {
+          "name": "groupIndex",
+          "type": "int"
+        },
+        {
+          "name": "isPoiPoint",
+          "type": "bool"
+        },
+        {
+          "name": "mainId",
+          "type": "ulong"
+        },
+        {
+          "name": "level",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "UnityEngine.Quaternion": {
+      "typeName": "UnityEngine.Quaternion",
+      "typeDefinition": 75545,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<UnityEngine.Quaternion>",
+        "System.IFormattable"
+      ],
+      "fields": [
+        {
+          "name": "x",
+          "type": "float"
+        },
+        {
+          "name": "y",
+          "type": "float"
+        },
+        {
+          "name": "z",
+          "type": "float"
+        },
+        {
+          "name": "w",
+          "type": "float"
+        }
+      ],
+      "properties": [
+        {
+          "name": "eulerAngles",
+          "type": "UnityEngine.Vector3",
+          "getter": [
+            476835,
+            "UnityEngine.Quaternion",
+            "get_eulerAngles"
+          ]
+        },
+        {
+          "name": "normalized",
+          "type": "UnityEngine.Quaternion",
+          "getter": [
+            476844,
+            "UnityEngine.Quaternion",
+            "get_normalized"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.AI.AttractCooldownFinishAction": {
+      "typeName": "Beyond.Gameplay.AI.AttractCooldownFinishAction",
+      "typeDefinition": 7839,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.AttractObjectType": {
+      "typeName": "Beyond.Gameplay.AI.AttractObjectType",
+      "typeDefinition": 7835,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.MoveToMethod": {
+      "typeName": "Beyond.Gameplay.AI.MoveToMethod",
+      "typeDefinition": 7830,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AbilityUnsafe.ENPCAbilityMovementStyleType": {
+      "typeName": "Beyond.Gameplay.AbilityUnsafe.ENPCAbilityMovementStyleType",
+      "typeDefinition": 5012,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.ActionType": {
+      "typeName": "Beyond.Gameplay.AI.ActionType",
+      "typeDefinition": 7833,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.NPC.Animation.ENPCAnimationAvatarMaskType": {
+      "typeName": "Beyond.NPC.Animation.ENPCAnimationAvatarMaskType",
+      "typeDefinition": 418,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.ActionEndType": {
+      "typeName": "Beyond.Gameplay.AI.ActionEndType",
+      "typeDefinition": 7834,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.GEnums.AttractBehaviourType": {
+      "typeName": "Beyond.GEnums.AttractBehaviourType",
+      "typeDefinition": 62417,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.GEnums.AttractGeneralAnimType": {
+      "typeName": "Beyond.GEnums.AttractGeneralAnimType",
+      "typeDefinition": 62418,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.RestaurantPointType": {
+      "typeName": "Beyond.Gameplay.AI.RestaurantPointType",
+      "typeDefinition": 7838,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.Deco_MountPoint": {
+      "typeName": "Beyond.Gameplay.Deco_MountPoint",
+      "typeDefinition": 1517,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "byte"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.GrowCabinInfo": {
+      "typeName": "Beyond.Gameplay.GrowCabinInfo",
+      "typeDefinition": 1156,
+      "parent": "Beyond.Gameplay.SpaceshipCabinSpawnInfo",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "growBoxMps",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Deco_MountPoint>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InnSceneLayoutTableData": {
+      "typeName": "Beyond.Gameplay.InnSceneLayoutTableData",
+      "typeDefinition": 879,
+      "parent": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.InnSceneLayoutLevelData>",
+      "interfaces": [
+        "Beyond.ISubDataTable`1<Beyond.Gameplay.InnSceneLayoutTableData>",
+        "Beyond.ISubDataTable"
+      ],
+      "fields": [],
+      "properties": []
+    },
+    "Beyond.Gameplay.InnSceneLayoutLevelData": {
+      "typeName": "Beyond.Gameplay.InnSceneLayoutLevelData",
+      "typeDefinition": 880,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "levelId",
+          "type": "string"
+        },
+        {
+          "name": "pois",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.InnSceneLayoutPoiEntry>"
+        },
+        {
+          "name": "entities",
+          "type": "System.Collections.Generic.Dictionary`2<int,System.Collections.Generic.List`1<Beyond.Gameplay.InnEntitySlotEntry>>"
+        },
+        {
+          "name": "airWalls",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AirWallPtr>"
+        },
+        {
+          "name": "functionAreas",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.FunctionAreaPtr>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InnSceneLayoutPoiEntry": {
+      "typeName": "Beyond.Gameplay.InnSceneLayoutPoiEntry",
+      "typeDefinition": 881,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "instKey",
+          "type": "string"
+        },
+        {
+          "name": "initialLevel",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.Core.AirWallPtr": {
+      "typeName": "Beyond.Gameplay.Core.AirWallPtr",
+      "typeDefinition": 13003,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<Beyond.Gameplay.Core.AirWallPtr>",
+        "Beyond.Gameplay.Core.IPtrWithId"
+      ],
+      "fields": [
+        {
+          "name": "useSlotId",
+          "type": "bool"
+        },
+        {
+          "name": "logicId",
+          "type": "ulong"
+        },
+        {
+          "name": "slotId",
+          "type": "uint"
+        }
+      ],
+      "properties": [
+        {
+          "name": "isEmpty",
+          "type": "bool",
+          "getter": [
+            86706,
+            "Beyond.Gameplay.Core.AirWallPtr",
+            "get_isEmpty"
+          ]
+        },
+        {
+          "name": "ptrId",
+          "type": "ulong",
+          "getter": [
+            86717,
+            "Beyond.Gameplay.Core.AirWallPtr",
+            "get_ptrId"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.Core.FunctionAreaPtr": {
+      "typeName": "Beyond.Gameplay.Core.FunctionAreaPtr",
+      "typeDefinition": 13078,
+      "parent": "System.ValueType",
+      "interfaces": [
+        "System.IEquatable`1<Beyond.Gameplay.Core.FunctionAreaPtr>",
+        "Beyond.Gameplay.Core.IPtrWithId"
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "type": "ulong"
+        }
+      ],
+      "properties": [
+        {
+          "name": "isEmpty",
+          "type": "bool",
+          "getter": [
+            87289,
+            "Beyond.Gameplay.Core.FunctionAreaPtr",
+            "get_isEmpty"
+          ]
+        },
+        {
+          "name": "ptrId",
+          "type": "ulong",
+          "getter": [
+            87298,
+            "Beyond.Gameplay.Core.FunctionAreaPtr",
+            "get_ptrId"
+          ]
+        }
+      ]
+    },
+    "Beyond.Gameplay.PaintingScrollConfigDataTable": {
+      "typeName": "Beyond.Gameplay.PaintingScrollConfigDataTable",
+      "typeDefinition": 1354,
+      "parent": "object",
+      "interfaces": [
+        "Beyond.ISubDataTable`1<Beyond.Gameplay.PaintingScrollConfigDataTable>",
+        "Beyond.ISubDataTable",
+        "Beyond.ISubDataTableClear",
+        "Beyond.MemoryPack.IMemoryPackSerialize"
+      ],
+      "fields": [
+        {
+          "name": "paintingScrollConfigDatas",
+          "type": "System.Collections.Generic.Dictionary`2<ulong,Beyond.Gameplay.PaintingScrollConfig>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PaintingScrollConfig": {
+      "typeName": "Beyond.Gameplay.PaintingScrollConfig",
+      "typeDefinition": 1346,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "subDataParentId",
+          "type": "ulong"
+        },
+        {
+          "name": "cameraControlConfig",
+          "type": "Beyond.Gameplay.CameraControlConfig"
+        },
+        {
+          "name": "paintingObjConfigs",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.PaintingObjConfig>"
+        },
+        {
+          "name": "paintingExtraObjConfigs",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.PaintingExtraObjConfig>"
+        },
+        {
+          "name": "eventNameWhenExit",
+          "type": "string"
+        },
+        {
+          "name": "eventNameWhenOpened",
+          "type": "string"
+        },
+        {
+          "name": "eventNameWhenClosed",
+          "type": "string"
+        },
+        {
+          "name": "openByEventName",
+          "type": "string"
+        },
+        {
+          "name": "splashRadius",
+          "type": "float"
+        },
+        {
+          "name": "interactiveCamType",
+          "type": "Beyond.Gameplay.InteractiveCamType"
+        },
+        {
+          "name": "cameraTweenTime",
+          "type": "float"
+        },
+        {
+          "name": "enterWaitTime",
+          "type": "float"
+        },
+        {
+          "name": "openScreenEffect",
+          "type": "Beyond.Gameplay.ScreenEffectConfig"
+        },
+        {
+          "name": "closeScreenEffect",
+          "type": "Beyond.Gameplay.ScreenEffectConfig"
+        },
+        {
+          "name": "inkWashConfig",
+          "type": "Beyond.Gameplay.InkWashConfig"
+        },
+        {
+          "name": "exitWhenAllFinished",
+          "type": "bool"
+        },
+        {
+          "name": "triggerConditionWhenAllDrawableFinished",
+          "type": "bool"
+        },
+        {
+          "name": "waitPerformFinishBeforeExit",
+          "type": "bool"
+        },
+        {
+          "name": "enableEarlyInkWashMode",
+          "type": "bool"
+        },
+        {
+          "name": "instantExitOnComplete",
+          "type": "bool"
+        },
+        {
+          "name": "instantExitKeepInkWash",
+          "type": "bool"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.CameraControlConfig": {
+      "typeName": "Beyond.Gameplay.CameraControlConfig",
+      "typeDefinition": 1350,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rotation",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "fov",
+          "type": "float"
+        },
+        {
+          "name": "allowCameraRotation",
+          "type": "bool"
+        },
+        {
+          "name": "horizontalRotationLimit",
+          "type": "UnityEngine.Vector2"
+        },
+        {
+          "name": "verticalRotationLimit",
+          "type": "UnityEngine.Vector2"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PaintingObjConfig": {
+      "typeName": "Beyond.Gameplay.PaintingObjConfig",
+      "typeDefinition": 1348,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "mapVal",
+          "type": "string"
+        },
+        {
+          "name": "decoId",
+          "type": "ulong"
+        },
+        {
+          "name": "inkSpotConfigs",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.InkSpotConfig>"
+        },
+        {
+          "name": "cantBeenClear",
+          "type": "bool"
+        },
+        {
+          "name": "exitWhenFinish",
+          "type": "bool"
+        },
+        {
+          "name": "splashThreshold",
+          "type": "float"
+        },
+        {
+          "name": "firstSplashRatio",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InkSpotConfig": {
+      "typeName": "Beyond.Gameplay.InkSpotConfig",
+      "typeDefinition": 1347,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "lockMapVarKey",
+          "type": "string"
+        },
+        {
+          "name": "nonInteractive",
+          "type": "bool"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InteractiveCamType": {
+      "typeName": "Beyond.Gameplay.InteractiveCamType",
+      "typeDefinition": 1343,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.ScreenEffectConfig": {
+      "typeName": "Beyond.Gameplay.ScreenEffectConfig",
+      "typeDefinition": 1345,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "effectType",
+          "type": "Beyond.Gameplay.ScreenEffectType"
+        },
+        {
+          "name": "inkWashDelay",
+          "type": "float"
+        },
+        {
+          "name": "inkWashDuration",
+          "type": "float"
+        },
+        {
+          "name": "inkWashEase",
+          "type": "DG.Tweening.Ease"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.ScreenEffectType": {
+      "typeName": "Beyond.Gameplay.ScreenEffectType",
+      "typeDefinition": 1344,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "DG.Tweening.Ease": {
+      "typeName": "DG.Tweening.Ease",
+      "typeDefinition": 86385,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InkWashConfig": {
+      "typeName": "Beyond.Gameplay.InkWashConfig",
+      "typeDefinition": 1351,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "ignoreCharacter",
+          "type": "bool"
+        },
+        {
+          "name": "baseConfig",
+          "type": "Beyond.Gameplay.InkWashBaseSubConfig"
+        },
+        {
+          "name": "overlayConfig",
+          "type": "Beyond.Gameplay.InkWashOverlaySubConfig"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InkWashBaseSubConfig": {
+      "typeName": "Beyond.Gameplay.InkWashBaseSubConfig",
+      "typeDefinition": 1352,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "baseMat",
+          "type": "UnityEngine.Material"
+        },
+        {
+          "name": "baseMatPath",
+          "type": "long"
+        },
+        {
+          "name": "verticalFadeStart",
+          "type": "float"
+        },
+        {
+          "name": "verticalFadeEnd",
+          "type": "float"
+        },
+        {
+          "name": "verticalFadeAffectDist",
+          "type": "float"
+        },
+        {
+          "name": "verticalFadeDist",
+          "type": "float"
+        },
+        {
+          "name": "groundColorAdj",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.InkWashOverlaySubConfig": {
+      "typeName": "Beyond.Gameplay.InkWashOverlaySubConfig",
+      "typeDefinition": 1353,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "overlayMat",
+          "type": "UnityEngine.Material"
+        },
+        {
+          "name": "overlayMatPath",
+          "type": "long"
+        },
+        {
+          "name": "verticalFadeStart",
+          "type": "float"
+        },
+        {
+          "name": "verticalFadeEnd",
+          "type": "float"
+        },
+        {
+          "name": "verticalFadeAffectDist",
+          "type": "float"
+        },
+        {
+          "name": "verticalFadeDist",
+          "type": "float"
+        },
+        {
+          "name": "groundColorAdj",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PaintingExtraObjConfig": {
+      "typeName": "Beyond.Gameplay.PaintingExtraObjConfig",
+      "typeDefinition": 1349,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "entityId",
+          "type": "ulong"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PoiLevelChangePerformBindingTable": {
+      "typeName": "Beyond.Gameplay.PoiLevelChangePerformBindingTable",
+      "typeDefinition": 1363,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "data",
+          "type": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.PoiLevelChangePerformBindingData>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PoiLevelChangePerformBindingData": {
+      "typeName": "Beyond.Gameplay.PoiLevelChangePerformBindingData",
+      "typeDefinition": 1362,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "poiType",
+          "type": "Beyond.GEnums.DomainPoiType"
+        },
+        {
+          "name": "poiInsKey",
+          "type": "string"
+        },
+        {
+          "name": "targetLevel",
+          "type": "int"
+        },
+        {
+          "name": "performDataId",
+          "type": "string"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.GEnums.DomainPoiType": {
+      "typeName": "Beyond.GEnums.DomainPoiType",
+      "typeDefinition": 62297,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PoiLevelChangePerformDataTable": {
+      "typeName": "Beyond.Gameplay.PoiLevelChangePerformDataTable",
+      "typeDefinition": 1361,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "performDatas",
+          "type": "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.PoiLevelChangePerformData>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.PoiLevelChangePerformData": {
+      "typeName": "Beyond.Gameplay.PoiLevelChangePerformData",
+      "typeDefinition": 1360,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "relativeCameraConfig",
+          "type": "string"
+        },
+        {
+          "name": "useCustomCameraPivot",
+          "type": "bool"
+        },
+        {
+          "name": "customCameraPivotPos",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "customCameraPivotRot",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "changeModelDelay",
+          "type": "float"
+        },
+        {
+          "name": "vanishVfxDelay",
+          "type": "float"
+        },
+        {
+          "name": "appearVfxDelay",
+          "type": "float"
+        },
+        {
+          "name": "vanishEffect",
+          "type": "string"
+        },
+        {
+          "name": "appearEffect",
+          "type": "string"
+        },
+        {
+          "name": "vanishAudioId",
+          "type": "Beyond.Audio.AudioId"
+        },
+        {
+          "name": "appearAudioId",
+          "type": "Beyond.Audio.AudioId"
+        },
+        {
+          "name": "switchEventName",
+          "type": "string"
+        },
+        {
+          "name": "playVfxDelay",
+          "type": "float"
+        },
+        {
+          "name": "playVfxName",
+          "type": "string"
+        },
+        {
+          "name": "playVfxPos",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "playVfxRot",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "playVfxEventName",
+          "type": "string"
+        },
+        {
+          "name": "playVfxAudioId",
+          "type": "Beyond.Audio.AudioId"
+        },
+        {
+          "name": "loadInBlackScreen",
+          "type": "bool"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Audio.AudioId": {
+      "typeName": "Beyond.Audio.AudioId",
+      "typeDefinition": 86820,
+      "parent": "System.ValueType",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "_id",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.RanchConfigTable": {
+      "typeName": "Beyond.Gameplay.RanchConfigTable",
+      "typeDefinition": 1376,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "corralGroupId",
+          "type": "int"
+        },
+        {
+          "name": "corralStables",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.RanchConfigTable+CorralStableEntry>"
+        },
+        {
+          "name": "animPosRotInfos",
+          "type": "Beyond.SerializeFieldDictionary`2<string,Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRotList>"
+        },
+        {
+          "name": "pondGroupId",
+          "type": "int"
+        },
+        {
+          "name": "pondStables",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.RanchConfigTable+PondStableEntry>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.RanchConfigTable+CorralStableEntry": {
+      "typeName": "Beyond.Gameplay.RanchConfigTable+CorralStableEntry",
+      "typeDefinition": 1371,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rotation",
+          "type": "UnityEngine.Quaternion"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRotList": {
+      "typeName": "Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRotList",
+      "typeDefinition": 1373,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "posRots",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRot>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRot": {
+      "typeName": "Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRot",
+      "typeDefinition": 1372,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rotation",
+          "type": "UnityEngine.Quaternion"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.RanchConfigTable+PondStableEntry": {
+      "typeName": "Beyond.Gameplay.RanchConfigTable+PondStableEntry",
+      "typeDefinition": 1375,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rotation",
+          "type": "UnityEngine.Quaternion"
+        },
+        {
+          "name": "fish",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.RanchConfigTable+PondFishEntry>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.RanchConfigTable+PondFishEntry": {
+      "typeName": "Beyond.Gameplay.RanchConfigTable+PondFishEntry",
+      "typeDefinition": 1374,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "effectId",
+          "type": "string"
+        },
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3"
+        },
+        {
+          "name": "rotation",
+          "type": "UnityEngine.Quaternion"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.GroupAIConfig": {
+      "typeName": "Beyond.Gameplay.AI.GroupAIConfig",
+      "typeDefinition": 8132,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "memberSetting",
+          "type": "Beyond.SerializeFieldDictionary`2<Beyond.Gameplay.AI.TeamAIMemberType,Beyond.Gameplay.AI.GroupAIMemberConfig>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.TeamAIMemberType": {
+      "typeName": "Beyond.Gameplay.AI.TeamAIMemberType",
+      "typeDefinition": 8161,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.GroupAIMemberConfig": {
+      "typeName": "Beyond.Gameplay.AI.GroupAIMemberConfig",
+      "typeDefinition": 8133,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "totalToken",
+          "type": "int"
+        },
+        {
+          "name": "modeSetting",
+          "type": "Beyond.SerializeFieldDictionary`2<Beyond.Gameplay.AI.GroupAIIdentity,Beyond.Gameplay.AI.GroupAIIdentityModeSetting>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.GroupAIIdentity": {
+      "typeName": "Beyond.Gameplay.AI.GroupAIIdentity",
+      "typeDefinition": 8423,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.GroupAIIdentityModeSetting": {
+      "typeName": "Beyond.Gameplay.AI.GroupAIIdentityModeSetting",
+      "typeDefinition": 8134,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "order",
+          "type": "int"
+        },
+        {
+          "name": "maxLifeCycle",
+          "type": "float"
+        },
+        {
+          "name": "notCountInTotal",
+          "type": "bool"
+        },
+        {
+          "name": "useMode",
+          "type": "bool"
+        },
+        {
+          "name": "identitySettingGroup",
+          "type": "Beyond.SerializeFieldDictionary`2<Beyond.Gameplay.AI.GroupAIIdentityMode,Beyond.Gameplay.AI.GroupAIIdentitySelect>"
+        },
+        {
+          "name": "identitySettingSingle",
+          "type": "Beyond.Gameplay.AI.GroupAIIdentitySelect"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.GroupAIIdentityMode": {
+      "typeName": "Beyond.Gameplay.AI.GroupAIIdentityMode",
+      "typeDefinition": 8424,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.GroupAIIdentitySelect": {
+      "typeName": "Beyond.Gameplay.AI.GroupAIIdentitySelect",
+      "typeDefinition": 8144,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "tickInterval",
+          "type": "float"
+        },
+        {
+          "name": "lifeCycle",
+          "type": "float"
+        },
+        {
+          "name": "minCountSet",
+          "type": "Beyond.Gameplay.AI.IdentityCountSet"
+        },
+        {
+          "name": "maxCountSet",
+          "type": "Beyond.Gameplay.AI.IdentityCountSet"
+        },
+        {
+          "name": "filters",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.IdentityFilter>"
+        },
+        {
+          "name": "evaluates",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.AI.IIdentityEvaluator>"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.IdentityCountSet": {
+      "typeName": "Beyond.Gameplay.AI.IdentityCountSet",
+      "typeDefinition": 8139,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.ForceSet": {
+      "typeName": "Beyond.Gameplay.AI.ForceSet",
+      "typeDefinition": 8140,
+      "parent": "Beyond.Gameplay.AI.IdentityCountSet",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "count",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.IdentityFilter": {
+      "typeName": "Beyond.Gameplay.AI.IdentityFilter",
+      "typeDefinition": 8145,
+      "parent": "object",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "revertResult",
+          "type": "bool"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.TargetInsideMaxSlotRange": {
+      "typeName": "Beyond.Gameplay.AI.TargetInsideMaxSlotRange",
+      "typeDefinition": 8159,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "offset",
+          "type": "float"
+        },
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.IIdentityEvaluator": {
+      "typeName": "Beyond.Gameplay.AI.IIdentityEvaluator",
+      "typeDefinition": 8146,
+      "parent": null,
+      "interfaces": [],
+      "fields": [],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.TargetHasTags": {
+      "typeName": "Beyond.Gameplay.AI.TargetHasTags",
+      "typeDefinition": 8158,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "tagEntityType",
+          "type": "Beyond.Gameplay.AI.TagEntityType"
+        },
+        {
+          "name": "tag",
+          "type": "Beyond.Gameplay.AI.PredefinedTagInAIToken"
+        },
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.TagEntityType": {
+      "typeName": "Beyond.Gameplay.AI.TagEntityType",
+      "typeDefinition": 8426,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.PredefinedTagInAIToken": {
+      "typeName": "Beyond.Gameplay.AI.PredefinedTagInAIToken",
+      "typeDefinition": 8425,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.RandomAdd": {
+      "typeName": "Beyond.Gameplay.AI.RandomAdd",
+      "typeDefinition": 8151,
+      "parent": "object",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "range",
+          "type": "UnityEngine.Vector2"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.LongTimeNoIdentity": {
+      "typeName": "Beyond.Gameplay.AI.LongTimeNoIdentity",
+      "typeDefinition": 8152,
+      "parent": "object",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "outTime",
+          "type": "float"
+        },
+        {
+          "name": "multiplier",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.HasAttackRangeType": {
+      "typeName": "Beyond.Gameplay.AI.HasAttackRangeType",
+      "typeDefinition": 8155,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "attackRangeType",
+          "type": "Beyond.Gameplay.AttackRangeType"
+        },
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AttackRangeType": {
+      "typeName": "Beyond.Gameplay.AttackRangeType",
+      "typeDefinition": 1498,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.HasFinishToken": {
+      "typeName": "Beyond.Gameplay.AI.HasFinishToken",
+      "typeDefinition": 8147,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.EnemySubRankType": {
+      "typeName": "Beyond.Gameplay.AI.EnemySubRankType",
+      "typeDefinition": 8157,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "enemySubRank",
+          "type": "Beyond.Gameplay.EnemySubRank"
+        },
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.EnemySubRank": {
+      "typeName": "Beyond.Gameplay.EnemySubRank",
+      "typeDefinition": 1521,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.TargetDistance": {
+      "typeName": "Beyond.Gameplay.AI.TargetDistance",
+      "typeDefinition": 8150,
+      "parent": "object",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "disType",
+          "type": "Beyond.Gameplay.AI.TargetDistance+DistanceType"
+        },
+        {
+          "name": "factor",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.TargetDistance+DistanceType": {
+      "typeName": "Beyond.Gameplay.AI.TargetDistance+DistanceType",
+      "typeDefinition": 8149,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.EnemyRankType": {
+      "typeName": "Beyond.Gameplay.AI.EnemyRankType",
+      "typeDefinition": 8156,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "enemyRank",
+          "type": "Beyond.Gameplay.EnemyRank"
+        },
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.EnemyRank": {
+      "typeName": "Beyond.Gameplay.EnemyRank",
+      "typeDefinition": 1520,
+      "parent": "System.Enum",
+      "interfaces": [],
+      "fields": [
+        {
+          "name": "value__",
+          "type": "int"
+        }
+      ],
+      "properties": []
+    },
+    "Beyond.Gameplay.AI.ResilienceEmpty": {
+      "typeName": "Beyond.Gameplay.AI.ResilienceEmpty",
+      "typeDefinition": 8153,
+      "parent": "Beyond.Gameplay.AI.IdentityFilter",
+      "interfaces": [
+        "Beyond.Gameplay.AI.IIdentityEvaluator"
+      ],
+      "fields": [
+        {
+          "name": "priority",
+          "type": "float"
+        }
+      ],
+      "properties": []
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected metadata declarations and reviewed stored JSON structures; no runtime activation or evaluated gameplay claim.",
+    "direct": "Explicit schema roots, native field/property types and tagged inheritance; no file-name-only runtime ownership."
+  },
+  "methods": {
+    "AnimationCurveJsonConverter.ReadJson": {
+      "type": "Beyond.AnimationCurveJsonConverter",
+      "method": "ReadJson",
+      "contract": "Reads a JSON array and the seven stored keyframe words; native declaration checks separately prove each property type. Runtime evaluation remains unproved.",
+      "claims": [
+        {
+          "calls": [
+            "Newtonsoft.Json.Linq.JArray.Load"
+          ]
+        },
+        {
+          "loadsLiterals": [
+            "time",
+            "value",
+            "inTangent",
+            "outTangent",
+            "inWeight",
+            "outWeight",
+            "weightedMode"
+          ]
+        }
+      ]
+    }
+  },
+  "reviewedRepresentations": {
+    "UnityEngine.AnimationCurve": "UnityEngine.Keyframe[]; seven named property words under the separately checked native JSON converter"
+  }
+}

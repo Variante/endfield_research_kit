@@ -1,17 +1,16 @@
-"""Publish authenticated stored DynamicStreaming components, without extracting."""
+"""Publish complete current DynamicStreaming roots and independent authored joins."""
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 from typing import Any
 
-from scripts.common import resolve_installed_game_data_root, resolve_installed_native_inputs
+from scripts.common import resolve_installed_native_inputs
 from scripts.game_data.dynamic_scalar_components_native import (
-    decode_authenticated_main, validate_native_layout,
+    _resolve_string_index, validate_native_layout,
 )
 from scripts.game_data.dynamic_stream_area_corpus import (
-    DEFAULT_CLI, DEFAULT_LEDGER, DEFAULT_OUTER, MAIN_NAME_RE, load_current_inputs,
+    MAIN_NAME_RE,
 )
 from scripts.game_data.dynamic_root_comp_native import (
     decode_authenticated_root_components, load_current_template_asset,
@@ -24,15 +23,6 @@ from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader
 
 def main_raw_files(root: Path) -> list[Path]:
     return sorted(path for path in root.rglob("*.bytes") if MAIN_NAME_RE.search(path.as_posix()))
-
-
-def _raw_path(export_root: Path, virtual_path: str) -> Path:
-    normalized = virtual_path.replace("\\", "/")
-    if not normalized.startswith("Data/DynamicStreaming/"):
-        raise ValueError(f"unexpected DynamicStreaming source: {virtual_path}")
-    path = export_root / "raw" / normalized.removeprefix("Data/")
-    path.resolve().relative_to((export_root / "raw/DynamicStreaming").resolve())
-    return path
 
 
 def _attach_authored_owners(components: list[dict[str, Any]], references: list[dict[str, Any]],
@@ -55,91 +45,78 @@ def _attach_authored_owners(components: list[dict[str, Any]], references: list[d
 
 
 def dynamic_main_records(export_root: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Recheck native inputs, the current roster and every raw byte join before reuse."""
+    """Publish complete current roots only after every independent exit proof."""
+    from scripts.game_data.dynamic_components_corpus import current_main_files
+    export_root = Path(export_root).resolve()
     reader_inputs = snapshot_complete_reader_inputs()
     gameassembly, metadata = resolve_installed_native_inputs()
-    layout, main, digests, native_inputs = validate_native_layout(gameassembly, metadata)
-    outer = json.loads(DEFAULT_OUTER.read_text(encoding="utf-8"))
-    _, sources, provenance = load_current_inputs(
-        DEFAULT_OUTER, DEFAULT_LEDGER, DEFAULT_CLI, str(outer.get("inputSetSha256") or ""),
-        file_name_re=MAIN_NAME_RE, selection_label="fb_main_*.bytes",
-    )
-    # Authored ownership needs its own native route and a fresh template asset.
-    # A refused owner gate retains only independently proved scalar fields.
-    owner_context = None
-    owner_signature: dict[str, Any]
-    try:
-        root_layout, index_layout, root_main, enums, entities, root_digests, root_inputs = validate_root_layout(gameassembly, metadata)
-        templates, template_receipt = load_current_template_asset(
-            root_layout["templateLookup"], game_root=resolve_installed_game_data_root(),
-            export_root=export_root, entity_enum=entities, data_enum=enums,
-        )
-        owner_context = (root_layout, index_layout, root_main, enums, entities, templates)
-        owner_signature = {"status": "validated", "nativeInputs": root_inputs,
-                           **root_digests, "template": template_receipt}
-    except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
-        owner_signature = {"status": "unavailable", "diagnostic": f"{type(exc).__name__}: {str(exc)[:1000]}"}
-    fields = {row["name"]: int(row["gridFieldIndex"]) for row in layout["records"]} if owner_context else {}
-    records, byte_receipts = [], []
-    for source in sources:
-        virtual_path = source["path"]
-        path = _raw_path(export_root, virtual_path)
+    complete_rows, operation = current_main_files(export_root, gameassembly=gameassembly, metadata=metadata)
+    # These consumers add authored strings and associations. They have their
+    # own native claims; full stored syntax never substitutes for those claims.
+    scalar, main, scalar_digests, scalar_inputs = validate_native_layout(gameassembly, metadata)
+    root_layout, index_layout, root_main, enums, entities, root_digests, root_inputs = validate_root_layout(gameassembly, metadata)
+    if scalar_inputs != operation['nativeInputs'] or root_inputs != operation['nativeInputs']:
+        raise ValueError('dynamic components: independent native selections differ')
+    game_root = Path(metadata).resolve().parents[2]
+    templates, template_receipt = load_current_template_asset(root_layout['templateLookup'],
+        game_root=game_root, export_root=export_root, entity_enum=entities, data_enum=enums)
+    fields = {row['name']: row['fieldIndex'] for row in main['vectors']}
+    records = []
+    for selected in complete_rows:
+        source = selected['source']; path = selected['rawPath']; frame = selected['decoded']
         data = path.read_bytes()
-        sha = hashlib.sha256(data).hexdigest().upper()
-        components = decode_authenticated_main(data, layout=layout, main=main, source=source)
-        references: list[dict[str, Any]] = []
-        owned = 0
-        if owner_context:
-            root_layout, index_layout, root_main, enums, entities, templates = owner_context
-            references = decode_authenticated_root_components(
-                data, layout=root_layout, index_layout=index_layout, main_layout=root_main,
-                enum_by_id=enums, entity_enum=entities, templates=templates, source=source,
-            )
-            owned = _attach_authored_owners(components, references, fields)
-        by_type: dict[str, int] = {}
-        keys = set()
+        if hashlib.sha256(data).hexdigest().upper() != frame['sourceSha256']:
+            raise ValueError('dynamic components: late input drift: ' + str(path))
+        components = frame['components']
+        strings = [row['text'] for row in frame['fields'][4]['value']]
         for component in components:
-            name = component["name"]
-            by_type[name] = by_type.get(name, 0) + 1
-            for reference in component.get("stringReferences", {}).values():
-                if reference.get("status") == "resolved":
-                    keys.add(reference["text"])
-        byte_receipts.append({"path": virtual_path, "bytes": len(data), "sha256": sha})
+            for join in scalar.get('stringIndexConsumers', []):
+                if join['record'] != component['name']:
+                    continue
+                component['stringReferences'][join['field']] = _resolve_string_index(strings, component['values'][join['field']])
+        references = decode_authenticated_root_components(data, layout=root_layout, index_layout=index_layout,
+            main_layout=root_main, enum_by_id=enums, entity_enum=entities, templates=templates, source=source)
+        owned = _attach_authored_owners(components, references, fields)
+        keys = {reference['text'] for component in components
+                for reference in component['stringReferences'].values() if reference.get('status') == 'resolved'}
         relative = path.relative_to(export_root).as_posix()
-        records.append({
-            "id": relative, "title": path.stem,
-            "source": source_descriptor(path, export_root=export_root, media_type="application/octet-stream"),
-            "status": "bounded_partial", "tags": ["world", "dynamic-streaming", "bounded_partial"],
-            "summary": f"{len(components)} stored components; authored mission keys={len(keys)}",
-            "searchTerms": sorted({*by_type, *keys, *(reference["authoredOwner"]["entityTypeName"] for reference in references)}),
-            "facts": {"componentCount": len(components), "byType": by_type, "authoredMissionKeyCount": len(keys),
-                      "authoredOwnedComponentCount": owned, "authoredRootReferenceCount": len(references)},
-            "payloadKind": "reader",
-            "payload": {
-                "schemaStatus": "bounded_partial", "components": components,
-                "componentLayouts": [row["name"] for row in layout["records"]],
-                "authoredRootReferences": references,
-                "authoredRootAssociationGate": owner_signature,
-                "evidenceBoundary": {"storedComponentFields": "exact", "missionConditionString": "direct",
-                                     "authoredRootOwnership": "direct" if owner_context else "unresolved",
-                                     "runtimeEntityOwnership": "unresolved", "conditionEvaluation": "unresolved"},
-            },
-        })
-    # Recheck inputs, never reuse a semantic proof across operations.
-    expected = [(DEFAULT_OUTER, provenance["outerReportSha256"]),
-                (DEFAULT_LEDGER, provenance["ledgerSha256"]),
-                (DEFAULT_CLI, provenance["streamCliFingerprint"]["currentSha256"]),
-                (Path(gameassembly).parent / "UnityPlayer.dll", native_inputs["unityPlayerSha256"])]
-    expected.extend((Path(row["path"]), row["sha256"]) for row in
-                    provenance["sourceFingerprints"] + provenance["gameBuildFingerprints"])
-    expected.extend((_raw_path(export_root, row["path"]), row["sha256"]) for row in byte_receipts)
-    for path, digest in expected:
-        if not path.is_file() or sha256_file_upper(path) != digest.upper():
-            raise ValueError(f"dynamic components: late input drift: {path}")
+        records.append(dict(id=relative, title=path.stem,
+            source=source_descriptor(path, export_root=export_root, media_type='application/octet-stream'),
+            status='named_exact', tags=['world', 'dynamic-streaming', 'named_exact'],
+            summary=f"{len(components)} stored components; complete root; authored mission keys={len(keys)}",
+            searchTerms=sorted({*frame['byType'], *keys, *(r['authoredOwner']['entityTypeName'] for r in references)}),
+            facts=dict(componentCount=len(components), byType=frame['byType'], authoredMissionKeyCount=len(keys),
+                authoredOwnedComponentCount=owned, authoredRootReferenceCount=len(references),
+                wholeSchemaExact=True, physicalEOF=True, bytesConsumed=frame['bytesConsumed'],
+                rootFieldCount=5, gridFieldCount=61),
+            payloadKind='reader', payload={**frame, 'authoredRootReferences':references,
+                'authoredRootAssociationGate':dict(status='validated', nativeInputs=root_inputs,
+                    **root_digests, template=template_receipt),
+                'evidenceBoundary':{**frame['evidenceBoundary'], 'missionConditionString':'direct',
+                    'authoredRootOwnership':'direct', 'runtimeEntityOwnership':'unresolved', 'conditionEvaluation':'unresolved'}}))
+    # Association work runs after the complete corpus operation. Check its
+    # inputs again before returning any records to the page publisher.
+    for row in operation['authenticatedInputs']:
+        path = Path(row['path'])
+        if not path.is_file() or sha256_file_upper(path) != row['sha256']:
+            raise ValueError('dynamic components: late input drift: ' + str(path))
+    corpus = operation['currentCorpus']
+    for row in corpus['sourceFingerprints'] + corpus['gameBuildFingerprints']:
+        path = Path(row['path'])
+        if not path.is_file() or sha256_file_upper(path) != row['sha256']:
+            raise ValueError('dynamic components: late VFS/native input drift: ' + str(path))
+    native_paths = [(Path(gameassembly), 'gameAssemblySha256'), (Path(metadata), 'metadataSha256'),
+                    (Path(gameassembly).parent / 'UnityPlayer.dll', 'unityPlayerSha256')]
+    for path, key in native_paths:
+        if not path.is_file() or sha256_file_upper(path) != operation['nativeInputs'][key]:
+            raise ValueError('dynamic components: late native input drift: ' + str(path))
+    after_templates, after_receipt = load_current_template_asset(root_layout['templateLookup'],
+        game_root=game_root, export_root=export_root, entity_enum=entities, data_enum=enums)
+    if (after_templates, after_receipt) != (templates, template_receipt):
+        raise ValueError('dynamic components: late template input drift')
     if reader_inputs != snapshot_complete_reader_inputs():
-        raise ValueError("dynamic components: late reader/contract drift")
-    return records, {
-        "nativeStatus": "validated", "nativeInputs": native_inputs, **digests,
-        "currentCorpus": provenance, "authenticatedFiles": byte_receipts,
-        "authoredRootAssociations": owner_signature,
-    }
+        raise ValueError('dynamic components: late reader/contract drift')
+    return records, dict(nativeStatus='validated', nativeInputs=operation['nativeInputs'],
+        completeDynamicComponentsOperation=operation, authenticatedFiles=operation['authenticatedFiles'],
+        authoredRootAssociations=dict(status='validated', nativeInputs=root_inputs, **root_digests, template=template_receipt),
+        authoredStringConsumers=dict(nativeInputs=scalar_inputs, **scalar_digests))

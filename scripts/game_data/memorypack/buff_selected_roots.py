@@ -33,7 +33,8 @@ import json
 from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
-from scripts.common import REPORTS_DIR, canonical_json_sha256, check_installed_native_inputs
+from scripts.source_paths import ExportLayout
+from scripts.common import canonical_json_sha256, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack import buff_root_no_positive as root
 from scripts.game_data.memorypack import buff_heal_processor_zero as heal
@@ -43,7 +44,7 @@ from scripts.game_data.memorypack import buff_damage_sword_selected as sword
 from scripts.game_data.memorypack import corpus_gate as gate
 from scripts.game_data.memorypack.action_dispatcher import reviewed_switch_table
 
-DEFAULT_NATIVE_AUDIT = REPORTS_DIR / "animestudio/il2cpp_context_current_latest.json"
+DEFAULT_NATIVE_AUDIT = ExportLayout.configured().evidence_dir / "animestudio/il2cpp_context_current_latest.json"
 ROUTES = {
     "positiveHeal": (heal, root.decode_selected_positive_heal_buff,
                      "positive_heal_validation", "endfield.buff-root-selected-positive-heal-receipt.v1"),

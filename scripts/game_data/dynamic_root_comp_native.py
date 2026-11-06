@@ -91,6 +91,7 @@ asset map and the export manifest. It writes
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -122,7 +123,7 @@ from scripts.game_data.dynamic_system_routing_native import (
     SCHEMA as ROUTE_SCHEMA,
     validate_native_routes,
 )
-from scripts.game_data.extraction.verify_export_freshness import DEFAULT_SUMMARY, build_report as export_freshness_report
+from scripts.game_data.extraction.verify_export_freshness import Requirements, build_report as export_freshness_report
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.il2cpp.context import generic_type_carrier, literal_record, unresolved_usage_index
 from scripts.game_data.unity_store import UnityStoreError, open_store
@@ -134,7 +135,7 @@ from scripts.repo_paths import REPO_ROOT
 
 CONTRACT = CONTRACTS_DIR / "dynamic_root_comp_native.json"
 SCHEMA = "endfield.dynamic-root-comp-native-contract.v7"
-DEFAULT_JSON = REPO_ROOT / "reports/animestudio/dynamic_root_comp_native_latest.json"
+DEFAULT_JSON = ExportLayout.configured().evidence_dir / 'animestudio/dynamic_root_comp_native_latest.json'
 DEFAULT_MARKDOWN = REPO_ROOT / "reports/animestudio/dynamic_root_comp_native_latest.md"
 
 
@@ -1360,13 +1361,14 @@ def load_current_template_asset(
     entity_enum: dict[int, str], data_enum: dict[int, str],
 ) -> tuple[dict[int, tuple[int, ...]], dict[str, Any]]:
     """Authenticate the exported authored asset against its current source and map."""
-    summary = json.loads(DEFAULT_SUMMARY.read_text(encoding="utf-8"))
-    if (Path(summary.get("game_root", "")).resolve() != game_root.resolve()
-            or Path(summary.get("output_root", "")).resolve() != export_root.resolve()):
-        raise DynamicRootCompError("export summary does not select the supplied game/export roots")
+    summary_path = ExportLayout(export_root).export_summary_path
+    provenance_path = ExportLayout(export_root).extraction_provenance_path
+    if not provenance_path.is_file():
+        raise DynamicRootCompError(f"DynamicSceneTemplates requires selected per-output extraction provenance: {provenance_path}")
     freshness = export_freshness_report(
-        game_root=game_root, output_root=export_root, summary_path=DEFAULT_SUMMARY,
+        game_root=game_root, output_root=export_root, summary_path=summary_path,
         sources=("StreamingAssets",),
+        requirements=Requirements(unity=("MonoBehaviour",), asset_map=True),
     )
     if not freshness.get("fresh"):
         raise DynamicRootCompError(f"DynamicSceneTemplates export freshness failed: {freshness.get('error') or freshness.get('sources')}")
@@ -1439,6 +1441,9 @@ def load_current_template_asset(
         "rawDataSha256": meta.get("rawDataSha256"),
         "streamingAssetsFingerprint": freshness["sources"][0]["current"]["fingerprint"],
         "templateRows": len(templates),
+        "extractionProvenanceSha256": sha256_file(ExportLayout(export_root).extraction_provenance_path).upper(),
+        "assetMapSha256": sha256_file(map_path).upper(),
+        "manifestSha256": sha256_file(manifest_path).upper(),
     }
 
 

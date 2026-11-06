@@ -1,0 +1,307 @@
+{
+  "schema": "endfield.string-pool-hash-index-native.v1",
+  "status": "reviewed",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "header": {
+    "magic": "SHPI",
+    "version": 4,
+    "encoding": "little-endian",
+    "fields": [
+      [
+        "magic",
+        "4s"
+      ],
+      [
+        "version",
+        "I"
+      ],
+      [
+        "jsonKeyCount",
+        "I"
+      ],
+      [
+        "bucketCount",
+        "I"
+      ],
+      [
+        "seed1",
+        "Q"
+      ],
+      [
+        "seed2",
+        "Q"
+      ]
+    ]
+  },
+  "arrays": [
+    [
+      "displacements",
+      "bucketCount",
+      "I"
+    ],
+    [
+      "values",
+      "jsonKeyCount",
+      "i"
+    ],
+    [
+      "fingerprints",
+      "jsonKeyCount",
+      "I"
+    ]
+  ],
+  "hash": {
+    "characterEncoding": "utf-16-le-code-units",
+    "operator": "xor-then-multiply-mod-2^64",
+    "multiplier": 1099511628211,
+    "bucket": "hash1 % bucketCount",
+    "slot": "((hash2 + displacement) mod 2^64) % jsonKeyCount",
+    "fingerprint": "low32(hash1 xor high32(hash1) xor hash2 xor high32(hash2))"
+  },
+  "nativeHashIndex": {
+    "typeName": "Beyond.UniqueStringPool.StringPoolHashIndexCodec+HashIndex",
+    "fields": [
+      [
+        "jsonKeyCount",
+        "int",
+        16
+      ],
+      [
+        "m_bucketCount",
+        "int",
+        20
+      ],
+      [
+        "m_seed1",
+        "ulong",
+        24
+      ],
+      [
+        "m_seed2",
+        "ulong",
+        32
+      ],
+      [
+        "m_displacements",
+        "uint[]",
+        40
+      ],
+      [
+        "m_values",
+        "int[]",
+        48
+      ],
+      [
+        "m_fingerprints",
+        "uint[]",
+        56
+      ]
+    ]
+  },
+  "methods": [
+    {
+      "method": [
+        357581,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "ReadHashIndex",
+        93717360
+      ],
+      "parameters": [
+        "System.IO.Stream"
+      ],
+      "returned": "Beyond.UniqueStringPool.StringPoolHashIndexCodec+HashIndex",
+      "codeWindows": [
+        {
+          "startRva": 93717360,
+          "endRva": 93718996,
+          "sha256": "A9E0A8981111E8A9FB6D839D2F9BD64FD43A09F61A7B7F20A4B9067292490998",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357586,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "_ReadHashIndex",
+        41020752
+      ],
+      "parameters": [
+        "System.IO.Stream",
+        "int"
+      ],
+      "returned": "Beyond.UniqueStringPool.StringPoolHashIndexCodec+HashIndex",
+      "codeWindows": [
+        {
+          "startRva": 41020752,
+          "endRva": 41024904,
+          "sha256": "729F5AF6B16AFA13F4F70F78B8426E2CBCC0CEF57CD07E0520D672307C420D20",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357589,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "_ReadUInt32",
+        93719104
+      ],
+      "parameters": [
+        "byte[]",
+        "int"
+      ],
+      "returned": "uint",
+      "codeWindows": [
+        {
+          "startRva": 93719104,
+          "endRva": 93719145,
+          "sha256": "E116F7A0071E8EECD870A176CC010CBC9B530726D3715BE0F0AF0F4EDE8DC073",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357590,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "_ReadUInt64",
+        93719008
+      ],
+      "parameters": [
+        "byte[]",
+        "int"
+      ],
+      "returned": "ulong",
+      "codeWindows": [
+        {
+          "startRva": 93719008,
+          "endRva": 93719100,
+          "sha256": "628AFB8BE336CD4F559D2C7D937081A61D519052A92848BE685942CE3606A1D8",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357594,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "_ReadExact",
+        93719296
+      ],
+      "parameters": [
+        "System.IO.Stream",
+        "byte[]",
+        "int",
+        "int"
+      ],
+      "returned": "void",
+      "codeWindows": [
+        {
+          "startRva": 93719296,
+          "endRva": 93720589,
+          "sha256": "823D37173738450C725E45AA6F680CED82FE3C51FA33269C55F2284E0BE0AAB7",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357576,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "ComputeHash64",
+        84354224
+      ],
+      "parameters": [
+        "string",
+        "ulong"
+      ],
+      "returned": "ulong",
+      "codeWindows": [
+        {
+          "startRva": 84354224,
+          "endRva": 84354348,
+          "sha256": "0F9CF1CADD0019B6AC375889F6D2A639852192A717C12F77286E6661AA4AC6E2",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357577,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "_ComputeHashPair",
+        41020544
+      ],
+      "parameters": [
+        "string",
+        "ulong",
+        "ulong",
+        "ulong",
+        "ulong"
+      ],
+      "returned": "void",
+      "codeWindows": [
+        {
+          "startRva": 41020544,
+          "endRva": 41020751,
+          "sha256": "BC987088476B710BE382006C125577CFB00D18855DEB339C1F92D1FBABDD5FEE",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357578,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec",
+        "_ComputeFingerprint",
+        41020464
+      ],
+      "parameters": [
+        "ulong",
+        "ulong"
+      ],
+      "returned": "uint",
+      "codeWindows": [
+        {
+          "startRva": 41020464,
+          "endRva": 41020544,
+          "sha256": "E3FAFD9492AFC01EFCF77DECAB4E1E78C0959B9DCED74B6192F892C0431651FA",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    },
+    {
+      "method": [
+        357601,
+        "Beyond.UniqueStringPool.StringPoolHashIndexCodec+HashIndex",
+        "_TryFindIndexChd",
+        40955536
+      ],
+      "parameters": [
+        "string",
+        "System.Func`2<int,string>",
+        "int",
+        "string"
+      ],
+      "returned": "bool",
+      "codeWindows": [
+        {
+          "startRva": 40955536,
+          "endRva": 40956432,
+          "sha256": "0A94B9E0E296613E98D503D9E54B00D3C1577454D972E45CECAF9E25C710DB12",
+          "boundary": "reviewed selected method window; no whole-method or runtime claim"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "Reviewed selected original IFix-disabled reader: SHPI/version4/count prefix, bucket/seed header, three typed arrays and HashIndex field declarations. Selected method windows pin the reviewed native format and lookup program; whole control flow and runtime execution are not asserted.",
+    "exact": "Stored little-endian words and all array extents through physical EOF. Every slot is independently replayed against its complete selected StringPool string using both UTF-16 code-unit FNV hashes, wrapping uint64 displacement addition, fingerprint and full string identity.",
+    "conditional": "Original native paths require disabled IFix hooks, coherent buffers and normal Stream/array helpers. Runtime hook activation and lookup execution are not observed."
+  }
+}

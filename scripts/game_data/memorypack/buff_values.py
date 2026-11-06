@@ -73,3 +73,42 @@ def read_record(path: Path, context: dict[str, Any], *, strings: StringPool | No
     if reached != len(data) or identifier != path.stem:
         raise ValueError(f"BuffData whole-record-or-identifier mismatch: {reached}/{len(data)} id={identifier!r} expected={path.stem!r}")
     return value
+
+
+from scripts.game_data.memorypack.skill_values import SkillValueSchema, need
+from scripts.game_data.memorypack import buff_icon_config
+
+
+class BuffValueSchema(SkillValueSchema):
+    ROOT_COUNT = 30
+    ROOT_EXACT_FLAG = 'wholeBuffDataExact'
+
+    def __init__(self, *, operation, registry, image, native):
+        super().__init__(operation=operation, registry=registry, image=image)
+        need('Buff-values-selected-native-operation', native.get('_operation') is self.operation
+             and native.get('nativeInputs') == self.operation.proof['nativeInputs'])
+        self.orders['Beyond.Gameplay.Core.BuffData'] = [f['name'] for f in native['fields']]
+        for name, record in native['records'].items():
+            order=[r['fieldName'] for r in record['source']['orderedSourceReads']]
+            need('Buff-one-native-record-order', self.orders.setdefault(name,order) == order, name)
+        icon=buff_icon_config._contract()
+        wrappers=[w for w in image.memorypack_wrappers.values()
+                  if w.wrapped_type=='Beyond.Gameplay.Core.BuffIconConfig']
+        need('Buff-icon-one-selected-wrapper',len(wrappers)==1)
+        names=[m.name for m in wrappers[0].members]
+        need('Buff-icon-native-semantic-field-join',
+             [n.lstrip('_') for n in names]==icon['selectedReadOrder'])
+        self.orders[wrappers[0].wrapped_type]=names
+        def visit(value):
+            if isinstance(value,dict):
+                name=value.get('typeName',value.get('wrappedType'))
+                reads=value.get('orderedReads',value.get('reads'))
+                if name and isinstance(reads,list)and all('fieldName'in r for r in reads):
+                    order=[r['fieldName']for r in reads]
+                    need('Buff-one-native-modifier-order',self.orders.setdefault(name,order)==order,name)
+                if name and isinstance(value.get('routes'),list):
+                    self.unions[name]={r['tag']:r.get('wrappedType',r.get('typeName'))for r in value['routes']}
+                for child in value.values():visit(child)
+            elif isinstance(value,list):
+                for child in value:visit(child)
+        visit(native['modifierUnions']['capabilities'])

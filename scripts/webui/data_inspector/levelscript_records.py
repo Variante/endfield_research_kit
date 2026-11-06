@@ -113,7 +113,8 @@ def selected_native_signature(*, family: str = "LevelScript") -> tuple[dict[str,
     return signature, "" if gate.validated else f"{family} native {gate.status}: {gate.detail or gate.status}"
 
 
-def levelscript_record(path: Path, export_root: Path, *, game_root=None) -> dict[str, Any]:
+def levelscript_record(path: Path, export_root: Path, *, game_root=None,
+                       data: bytes | None = None, strings=None, levelscript_decoder=None) -> dict[str, Any]:
     """Keep exact/bounded status, opaque ranges and refused-profile evidence."""
     relative = path.relative_to(export_root).as_posix()
     source = source_descriptor(path, export_root=export_root, media_type="application/octet-stream")
@@ -122,7 +123,12 @@ def levelscript_record(path: Path, export_root: Path, *, game_root=None) -> dict
         "tags": ["level", "levelscript", "memorypack"],
     }
     try:
-        decoded = frame_levelscript_named(path.read_bytes(), source=relative, strings=export_string_pool(export_root/'game'/'Json'), game_root=game_root)
+        raw = path.read_bytes() if data is None else data
+        decoded = levelscript_decoder(path, raw) if levelscript_decoder is not None else frame_levelscript_named(
+            raw, source=relative,
+            strings=export_string_pool(export_root/'game'/'Json') if strings is None else strings,
+            game_root=game_root,
+        )
     except (OSError, LevelScriptTopLevelFramingError, ValueError) as exc:
         record = {
             **base, "status": "decode_error", "summary": str(exc)[:1200],
@@ -153,6 +159,9 @@ def levelscript_record_from_detail(path: Path, export_root: Path, decoded: dict[
         "serializedMemberCount": decoded.get("serializedMemberCount"),
         "bytesConsumed": decoded.get("bytesConsumed"),
         "stopField": stop,
+        "wholeSchemaExact": decoded.get("wholeSchemaExact") is True,
+        "physicalEOF": decoded.get("physicalEOF") is True,
+        "closedFieldCount": len(decoded.get("closedFields") or []),
         "readerRefusalCount": len(decoded.get("readerRefusals") or []),
     }
     parts = [f"named fields={len(fields)}"]

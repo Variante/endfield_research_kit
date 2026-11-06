@@ -1,4 +1,4 @@
-"""Selected current Montage sparse grammar; no positive collection admission."""
+"""Selected Montage root and independently proved complete collection grammar."""
 import json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs
@@ -85,7 +85,18 @@ def _validate_native(image,fact):
  reference_adapter_sources.validate_reference_routes(image,fact['referenceRoutes'],fact['compositions']);need('adapter-originals',set(actual),{r['original'] for r in fact['referenceRoutes']['wrappers']});validate_factories(image,fact['factories']);_collections(image,pins,fact,records)
  for raw in fact['rawValues']:
   td=ctx.index.types[raw['type']];need('raw-value-kind',True,ctx.is_value_type(raw['type']));fields=[f for f in image.metadata.fields_for(td) if not ctx.field_attributes(f.type_index)&16];actual_fields=[[image.metadata.string(f.name_index),canonical_type_name(ctx.type_name(f.type_index)),ctx.field(raw['type']+'::'+image.metadata.string(f.name_index))[2]-16] for f in fields];need('raw-value-fields',raw['fields'],actual_fields);pointer=image.pe.u64_at_va(int(image.registration['typeDefinitionsSizes'],16)+8*td.index);need('raw-value-sizes',[raw['serializedBytes']+16,raw['nativeAbiBytes']],[image.pe.u32_at_va(pointer),image.pe.u32_at_va(pointer+4)])
- return layout
+ from scripts.game_data.memorypack.npc_montage_children_sources import derive as reference_children
+ from scripts.game_data.memorypack.npc_montage_transition_sources import derive as transition_child
+ children=reference_children(image,pins,records,layout)
+ parent=next(r for r in records if r['type']=='Beyond.Montage.NPCMontageAnim')
+ transition=transition_child(image,pins,parent)
+ complete=children.pop('layout');complete['records'][transition['typeName']]=transition['layout']
+ field=next(r for r in complete['records'][parent['type']]if r['name']=='montageOverrideTransitions')
+ field.update(wire='value-list',elementType=transition['typeName'],countLimit=4096)
+ complete['completeCollections']=dict(schema='endfield.npc-montage-complete-collections.v1',countRange=[-1,4096],
+  wholeGrammarAdmitted=True,transitionNullReturnsDefaultValue=True,nodeLimit=16384,
+  referenceChildren=children,transitionChild=transition)
+ return complete
 
 def validate(*,game_root=None,gameassembly=None,metadata=None,contract_path=None):
  path=Path(contract_path or CONTRACT_PATH)
@@ -105,5 +116,9 @@ def validate(*,game_root=None,gameassembly=None,metadata=None,contract_path=None
   if raw!=path.read_bytes():raise ValueError(LABEL+'.contract-changed-during-validation')
   source_after=snapshot_complete_reader_inputs()
   if sources!=source_after:raise ValueError(LABEL+'.reader-sources-changed:'+str(reader_input_changes(sources,source_after)))
-  return dict(status='validated',layout=layout,rawValues=fact['rawValues'],nativeInputs=pins,nativeSources={'GameAssembly.dll':str(selected_gameassembly),'global-metadata.dat':str(selected_metadata)},evidenceBoundary=fact['evidenceBoundary'])
+  boundary=(dict(exact='Complete selected NPC Montage root, named reference children, positive reference and transition-value lists, pooled strings and physical stored framing.',
+    conditional='Freshly proved source-owned native programs, coherent ready nominal formatter contexts and actual callbacks matching the proved canonical bodies, normal helpers and disjoint bounded buffers; runtime callback selection remains unobserved.',
+    unresolved=['runtime animation activation and playback','live provider/default/override selection'])
+    if layout.get('completeCollections',{}).get('wholeGrammarAdmitted')is True else fact['evidenceBoundary'])
+  return dict(status='validated',layout=layout,rawValues=fact['rawValues'],nativeInputs=pins,nativeSources={'GameAssembly.dll':str(selected_gameassembly),'global-metadata.dat':str(selected_metadata)},evidenceBoundary=boundary)
  except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError,StopIteration) as error:return native_validation_failure(error,label=LABEL,source_path=path)

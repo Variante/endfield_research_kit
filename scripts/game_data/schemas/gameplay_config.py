@@ -488,8 +488,11 @@ def _atmospheric_switchers(root: Any, source: str) -> dict[str, Any]:
             if switcher_id in level_for_switcher:
                 _fail(source + ".level2SwitcherIds", "unique switcher ownership", switcher_id)
             level_for_switcher[switcher_id] = level_id
-    if set(level_for_switcher) != set(switchers):
-        _fail(source + ".switcherId2GroupIds.keys", set(level_for_switcher), set(switchers))
+    missing_switchers = set(level_for_switcher) - set(switchers)
+    if missing_switchers:
+        _fail(source + ".switcherId2GroupIds.keys", "every indexed switcher has a stored group list",
+              {"missingSwitchers": sorted(missing_switchers)[:8]})
+    unindexed_switchers = set(switchers) - set(level_for_switcher)
     fields = ("switcherId", "levelId", "mapId", "groupId", "switcherType", "condition")
     bound_fields = ("switcherId", "levelId", "mapId", "groupId", "bindMissionId", "switcherType", "condition")
     for switcher_id, group_ids in switchers.items():
@@ -500,6 +503,14 @@ def _atmospheric_switchers(root: Any, source: str) -> dict[str, Any]:
                 _fail(path + ".fields", (fields, bound_fields), tuple(row) if isinstance(row, dict) else type(row).__name__)
             if row["switcherId"] != switcher_id or row["groupId"] != group_id:
                 _fail(path + ".identity", (switcher_id, group_id), (row["switcherId"], row["groupId"]))
+            _type(row["levelId"], str, path + ".levelId")
+            if switcher_id not in level_for_switcher:
+                # The native table stores three independent dictionaries. A
+                # retained switcher need not occur in the level's selection
+                # list, but its own stored groups must agree on a known level.
+                if row["levelId"] not in levels:
+                    _fail(path + ".levelId", "a declared level", row["levelId"])
+                level_for_switcher[switcher_id] = row["levelId"]
             if row["levelId"] != level_for_switcher[switcher_id]:
                 _fail(path + ".levelId", level_for_switcher[switcher_id], row["levelId"])
             _type(row["mapId"], str, path + ".mapId")
@@ -510,7 +521,9 @@ def _atmospheric_switchers(root: Any, source: str) -> dict[str, Any]:
     referenced = {group for ids in switchers.values() for group in ids}
     if referenced != set(groups):
         _fail(source + ".groupConfigs.keys", referenced, set(groups))
-    return {"entryCount": len(groups), "switcherCount": len(switchers), "levelCount": len(levels), "tableKind": "atmospheric_switchers"}
+    return {"entryCount": len(groups), "switcherCount": len(switchers), "levelCount": len(levels),
+            "unindexedSwitcherCount": len(unindexed_switchers), "unindexedSwitcherIds": sorted(unindexed_switchers),
+            "tableKind": "atmospheric_switchers"}
 
 
 def _gameplay_tags(root: Any, source: str) -> dict[str, Any]:

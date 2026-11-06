@@ -13,6 +13,7 @@ event actions and runtime buff effects stay open. It reads the complete
 ``reports/animestudio/buff_create_action_root_current_latest.json``.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -30,9 +31,9 @@ from scripts.game_data.memorypack.buff_root_no_positive_native import _contract 
 
 
 SCHEMA = "endfield.buff-root-single-create-action-corpus.v1"
-DEFAULT_REPORT = ROOT / "reports/animestudio/buffdata_current_latest.json"
+DEFAULT_REPORT = ExportLayout.configured().evidence_dir / 'animestudio/buffdata_current_latest.json'
 DEFAULT_EXPORT = ROOT / "export_full"
-DEFAULT_OUTPUT = ROOT / "reports/animestudio/buff_create_action_root_current_latest.json"
+DEFAULT_OUTPUT = ExportLayout.configured().evidence_dir / 'animestudio/buff_create_action_root_current_latest.json'
 SOURCE_PATTERN = re.compile(r"^Data/Json/BuffData/[^/\\]+[.]json$")
 ROOT_BLOCKER = {"field": "root", "category": "recursive-name-authentication-incomplete",
                 "start": None, "end": None}
@@ -203,8 +204,8 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     output = args.output.resolve()
-    if (ROOT / "reports").resolve() not in output.parents:
-        parser.error("output must be under reports/")
+    if not output.is_relative_to(ExportLayout.configured().evidence_dir.resolve()):
+        parser.error("output must be under the selected export/meta/evidence/")
     buff_path = args.buff_report.resolve()
     report = build_report(
         json.loads(buff_path.read_text(encoding="utf-8")),

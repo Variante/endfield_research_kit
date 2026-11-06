@@ -20,6 +20,7 @@ prefab root. Keep Model placement and prefab-local collider matrices separate;
 registration, parenting, instantiation and enable state remain unresolved.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from collections import Counter
@@ -189,23 +190,23 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--scene-receipt',type=Path,required=True);parser.add_argument('--render-receipt',type=Path,required=True)
     parser.add_argument('--source-receipt',type=Path,action='append',required=True)
-    parser.add_argument('--output-json',type=Path,default=REPO_ROOT/'reports/assets/render_resources_current.json')
-    parser.add_argument('--dependency-selection',type=Path,default=REPO_ROOT/'reports/assets/render_resource_dependency_selection.json')
+    parser.add_argument('--output-json',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/render_resources_current.json')
+    parser.add_argument('--dependency-selection',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/render_resource_dependency_selection.json')
     parser.add_argument('--cabmap-dir',type=Path,default=REPO_ROOT/'export_full/meta/cab_map')
     parser.add_argument('--collect-dependencies',action='store_true',help='Collect located Mesh/material CAB dependencies as a separate static source receipt, then recompute joins.')
-    parser.add_argument('--dependency-receipt',type=Path,default=REPO_ROOT/'reports/assets/source_directories_dependencies_current.json')
+    parser.add_argument('--dependency-receipt',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/source_directories_dependencies_current.json')
     parser.add_argument('--collect-material-resources',action='store_true',help='Collect shader/texture target directories after Mesh/material ownership is resolved.')
-    parser.add_argument('--material-resource-receipt',type=Path,default=REPO_ROOT/'reports/assets/source_directories_material_resources_current.json')
+    parser.add_argument('--material-resource-receipt',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/source_directories_material_resources_current.json')
     args=parser.parse_args(argv)
-    if any(not p.resolve().is_relative_to((REPO_ROOT/'reports').resolve()) for p in (args.output_json,args.dependency_selection,args.dependency_receipt,args.material_resource_receipt)):
-        parser.error('generated resource audits/selections belong under reports/')
+    if any(not p.resolve().is_relative_to(ExportLayout.configured().evidence_dir.resolve()) for p in (args.output_json,args.dependency_selection,args.dependency_receipt,args.material_resource_receipt)):
+        parser.error('generated resource audits/selections belong under the selected export/meta/evidence/')
     try:
         result,scene,render,admissions,decoded=audit(args.scene_receipt,args.render_receipt,args.source_receipt)
         selection,gaps,inputs=locate_cabs(result['missingCabs'],scene,cabmap_dir=args.cabmap_dir)
         write_json(args.dependency_selection,selection)
         if args.collect_dependencies and selection:
             print('Collecting located resource CABs:',len(selection),flush=True)
-            fresh=sources.collect(args.scene_receipt,work_root=REPO_ROOT/'tmp/animestudio/source_directories',
+            fresh=sources.collect(args.scene_receipt,work_root=ExportLayout.configured().evidence_dir / 'assets/source_directories',
                                   selection=selection,classes=(21,43,142),admitted_scene=scene)
             write_json(args.dependency_receipt,fresh)
             admission,bodies=sources.validate_receipt(args.dependency_receipt.resolve(),scene)
@@ -222,7 +223,7 @@ def main(argv=None):
             material_selection=list({(_path_key(r['Source']),r['Offset'],r['Cab']):r for r in material_selection}.values())
             if material_selection:
                 print('Collecting shader/texture resource CABs:',len(material_selection),flush=True)
-                fresh=sources.collect(args.scene_receipt,work_root=REPO_ROOT/'tmp/animestudio/source_directories',selection=material_selection,
+                fresh=sources.collect(args.scene_receipt,work_root=ExportLayout.configured().evidence_dir / 'assets/source_directories',selection=material_selection,
                     classes=(28,48,89),admitted_scene=scene)
                 write_json(args.material_resource_receipt,fresh)
                 admission,bodies=sources.validate_receipt(args.material_resource_receipt.resolve(),scene)

@@ -32,6 +32,7 @@ contract's ``nativeInputs`` and fails closed on ``missing`` or ``mismatched``.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -57,8 +58,8 @@ SCHEMA = "endfield.skill-cursor-native-context.v1"
 CONTRACT_SCHEMA = "endfield.skill-cursor-observer-native.v2"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_cursor_observer_native.json"
 TARGET_CONTRACT_PATH = CONTRACTS_DIR / "skill_cursor_capture_target.json"
-DEFAULT_CORPUS = REPO_ROOT / "reports/animestudio/skilldata_cursor_basis_latest.json"
-DEFAULT_CONTEXT = REPO_ROOT / "reports/animestudio/skill_cursor_native_context_current_latest.json"
+DEFAULT_CORPUS = ExportLayout.configured().evidence_dir / 'animestudio/skilldata_cursor_basis_latest.json'
+DEFAULT_CONTEXT = ExportLayout.configured().evidence_dir / 'animestudio/skill_cursor_native_context_current_latest.json'
 HEX64 = re.compile(r"^[0-9A-Fa-f]{64}$")
 # The recorder's selected source lengths are corpus-locked declarations in the
 # observer contract, loaded through the receipt verifier's shape check.

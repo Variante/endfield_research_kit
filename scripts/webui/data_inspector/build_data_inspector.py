@@ -7,15 +7,12 @@ and is fetched only when a user asks to inspect its raw source.
 
 Datasets (``DATASET_IDS``):
 
-* ``animation-config`` -- the complete ``frame_animation_config`` result:
-  framing/evidence status, member order and byte ranges, controller path ids,
-  extra-data subtype and values, montage rows and clip data, NPC montages,
-  sync-group and time-reference curves. ``extraDataFields`` is only the list
-  of decoded member names; scalar values are in ``extraDataValues`` and every
-  value stays under ``payload.fields.extraData``; montages and curves are
-  under ``payload.fields.montages``, ``syncGroupCurves`` and
-  ``timeRefCurves``.
-* ``npc-montage`` -- current native-gated root/body/clip and null/empty lists;
+* ``animation-config`` -- the complete selected MC15 operation: all root
+  fields, ExtraData unions, montage/curve children and physical EOF. The full
+  ordered reader values remain in ``payload.fields``; facts contain bounded
+  controller, subtype, collection and name summaries. No prefix cache admits
+  a complete publication, and the exit receipt is retained in provenance.
+* ``npc-montage`` -- current native-gated complete roots and bounded positive lists;
   positive collections remain visible decode errors, with no cached proof reuse.
 * ``animator-controller`` / ``animator-override-controller`` -- a selected
   ``projection`` of the complete AnimeStudio JSON from the Unity store
@@ -24,17 +21,14 @@ Datasets (``DATASET_IDS``):
   every original/override clip reference). The mounted raw JSON stays the
   exact source.
 * ``level-config`` -- the complete ``decode_level_config`` result.
-* ``level-data`` -- ``frame_leveldata_named_prefix`` per file: named exact
-  fields and byte boundaries where reached, an explicit open field and opaque
-  remainder elsewhere, stored spline rows when their collection decodes
-  (``has-splines``/``has-knots`` tags). Stored geometry only.
-* ``levelscript-data`` -- ``frame_levelscript_named`` per file: the maintained
-  exact/bounded owner result, reader identity, byte ranges, opaque remainder
-  and earlier-profile refusal diagnostics; no runtime execution is implied.
-  The reviewed union-tag native inputs gate the dataset before cache reuse.
-* ``levelscript-template-data`` -- ``frame_levelscript_template``: named template
-  fields where closed, otherwise endpoint ranges with an explicit opaque middle.
-  The selected-native gate and complete reader snapshot run before cache reuse.
+* ``level-data`` -- ``complete_leveldata_reader`` authenticates the selected
+  source inventory and current native graph. Every selected owner must close
+  all forty-three fields and physical EOF; stored geometry only.
+* ``levelscript-data`` / ``levelscript-template-data`` -- one authenticated
+  ``complete_levelscript_reader`` operation proves the current native source
+  graph, all twenty-eight/six ordered root fields and physical EOF. Every
+  selected owner and the native/source/pool exit gates must pass before either
+  dataset publishes. Legacy partial receipts cannot supply this publication.
 * ``spawner-config`` -- ``frame_spawner_named``: the sequential enemy library,
   routes, settings and waves, or the proved prefix and open range on refusal.
 * ``atmospheric-npc`` -- ``frame_atmospheric_npc_table``: complete named proxy
@@ -43,32 +37,31 @@ Datasets (``DATASET_IDS``):
 * ``map-config`` -- ``decode_map_config``: all validated stored JSON fields,
   including scene-state indices, typed condition trees and inverse variable
   dictionaries. No live scene visibility or condition result is implied.
-* ``skill-data`` -- the selected build's generated-wrapper values
-  (``derived_values.decode_file``). A record is ``structural_only`` only when
-  the native plan validates, the cursor reaches EOF and the stored
-  ``skillId`` equals the filename; nested union assignments keep that
-  structural tier even with an exact cursor, and a failed file stays visible
-  as ``decode_error``. Missing or mismatched native inputs publish an
-  unavailable dataset with a diagnostic, never cached rows; the input
-  signature includes the selected native hashes. Stored
+* ``skill-data`` -- complete named stored values under the selected current
+  native root/action operation. Each object order and actual union assignment
+  must match that operation, root/child field extents must match independent
+  raw replay, and every root requires its filename id and physical EOF.
+  Curve keys and typed unmanaged fields retain their original bits. Required
+  source/native evidence refuses incomplete publication before cache reuse.
+  Stored
   ``AllowNextSkillAction`` (``0x000E``) ``allowedSkillIdList`` ids become
   ``references`` resolved by unique filename stem. ``searchTerms`` and
   ``directStoredActionTypes`` count direct timeline and passive-event action
   unions only; an unfamiliar array shape withholds the whole inventory. The
-  independent SkillData VFS corpus still owns the narrower reviewed
-  timeline-action framing claims.
+  independent current SkillData VFS corpus owns source completeness and fresh
+  native/raw replay, not a runtime execution claim.
 * ``buff-data`` -- every authenticated current Buff source: canonical-admitted
   complete root reader receipts, or explicit unresolved framing projections.
   Registry, family-report, parser, native and exported-byte freshness are
   rechecked before cache reuse; stored fields establish no runtime behavior.
 * ``buff-action-receipts`` -- optional; see ``buff_action_receipts``.
-* ``dynamic-components`` -- selected-native component layouts decoded from
-  existing raw main files after current-roster and byte authentication. Scalar
-  and vector values, grid/component ordinals and authored string references
-  are preserved; entity ownership and live condition evaluation remain open.
-* ``char-interact-perform`` -- ``decode_char_interact_complete_frame``; a
-  file the complete frame rejects falls back to ``frame_char_interact_prefix``
-  and is published as a bounded row, never dropped.
+* ``dynamic-components`` -- complete selected-native main roots, grid vectors,
+  inline child fields and native zero padding after exact current-roster and
+  byte authentication. Native/source/reader/template exit checks precede
+  publication; runtime ownership and condition evaluation remain open.
+* ``char-interact-perform`` -- ``complete_perform_reader`` proves the whole
+  current graph and requires every selected root to reach physical EOF. A
+  refused root or failed native/source/pool exit gate stops publication.
 * ``navmesh`` -- ``decode_luna_area`` / ``decode_navmesh_state_container``
   framed to EOF; an unrouted NavMesh filename stays ``unsupported``.
 * ``level-mount-point`` -- validated ``decode_level_mount_points`` trees.
@@ -128,7 +121,7 @@ from scripts.common import OUT_DIR, ROOT, check_installed_native_inputs, require
 from scripts.webui.data_inspector.current_receipts import select_current_family_report
 from scripts.game_data.animation_config_binary import (
     AnimationConfigFramingError,
-    frame_animation_config,
+    complete_animation_reader,
 )
 from scripts.game_data.aether_energy_lock_binary import (
     AetherEnergyLockDecodeError,
@@ -138,6 +131,7 @@ from scripts.game_data.char_interact_perform_binary import (
     CharInteractPerformDecodeError,
     decode_char_interact_complete_frame,
     frame_char_interact_prefix,
+    complete_perform_reader,
 )
 from scripts.game_data.gameplay_compact_binary import (
     GameplayCompactDecodeError,
@@ -162,6 +156,7 @@ from scripts.game_data.levelconfig_binary import (
     decode_level_config,
 )
 from scripts.game_data.leveldata_binary import (
+    complete_leveldata_reader,
     LevelDataTopLevelFramingError,
     frame_leveldata_named_prefix,
 )
@@ -189,6 +184,7 @@ from scripts.game_data.navmesh_binary import (
 )
 from scripts.game_data.string_pool import StringPool, export_string_pool
 from scripts.game_data.memorypack.npc_runtime import npc_runtime_decoder
+from scripts.game_data.memorypack.levelscript_complete import complete_levelscript_reader
 from scripts.game_data.memorypack.pooled_source_helper import check_unity_input
 from scripts.game_data.animation_masks_native import validate as validate_animation_masks
 from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs, snapshot_complete_reader_inputs
@@ -216,11 +212,11 @@ from scripts.webui.data_inspector.levelscript_records import (
 from scripts.webui.data_inspector.levelscript_receipts import try_current_levelscript_records
 from scripts.webui.data_inspector.levelscript_native_inputs import selected_child_native_signature
 from scripts.webui.data_inspector.levelscript_template_records import levelscript_template_record
-from scripts.webui.data_inspector.skill_root_evidence import (
-    attach_skill_root_evidence, try_skill_root_evidence,
-)
+from scripts.webui.data_inspector.skill_records import load_skill_values
 from scripts.webui.data_inspector.modelview_records import current_records as current_modelview_records, check_after_read as check_modelview_after_read
 from scripts.webui.data_inspector.world_records import atmospheric_npc_record, map_config_record, spawner_record
+from scripts.webui.data_inspector.interactive_records import interactive_record
+from scripts.game_data.memorypack.interactive_current_source import complete_interactive_reader
 
 
 DATASET_IDS = (
@@ -233,6 +229,7 @@ DATASET_IDS = (
     "level-data",
     "levelscript-data",
     "levelscript-template-data",
+    "interactive-data",
     "spawner-config",
     "atmospheric-npc",
     "map-config",
@@ -245,7 +242,31 @@ DATASET_IDS = (
     "level-mount-point",
     "config-table",
 )
-PUBLISHER_REVISION = 21
+PUBLISHER_REVISION = 30
+
+
+def _require_complete_dynamic(records, signature):
+    operation = signature.get('completeDynamicComponentsOperation', {})
+    counts = operation.get('sourceCounts', {})
+    required = ('nativeSourceReaderExitBookendsPassed', 'allAttemptedOwnersClosed',
+                'allFiveRootFieldsAdmitted', 'allSixtyOneGridFieldsAdmitted',
+                'allReachedStructFieldsAdmitted', 'physicalEOFRequired')
+    if (operation.get('schema') != 'endfield.complete-dynamic-components-operation.v1'
+            or not records or counts != dict(attempted=len(records), closed=len(records), failed=0)
+            or any(operation.get(key) is not True for key in required)
+            or any(operation.get('nativePaddingProof', {}).get(key) is not True for key in (
+                'minimalAlignmentFormulaProved', 'countedZeroWriterProved',
+                'vectorCountAndElementAlignmentProved', 'stringNulAndAlignmentProved',
+                'finishRootOffsetAlignmentProved'))):
+        raise ValueError('DynamicComponents complete publication refused: incomplete native/source exit or source roster: ' + str(counts))
+    for record in records:
+        frame = record.get('payload', {}); facts = record.get('facts', {})
+        if (record.get('status') != 'named_exact' or frame.get('wholeSchemaExact') is not True
+                or frame.get('physicalEOF') is not True or frame.get('bytesConsumed') != record['source']['bytes']
+                or facts.get('wholeSchemaExact') is not True or facts.get('physicalEOF') is not True
+                or frame.get('rootFieldCount') != 5 or frame.get('gridFieldCount') != 61
+                or frame.get('byteClosure', {}).get('allBytesAccounted') is not True):
+            raise ValueError('DynamicComponents complete publication refused: ' + str(record.get('id')))
 _HASH_KEY = re.compile(r"(?:hash|id)$", re.IGNORECASE)
 _SKIP_HASH_KEYS = {"m_pathid", "m_fileid", "pathid", "fileid"}
 
@@ -263,7 +284,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--shard-size", type=int, default=20)
     parser.add_argument(
         "--buff-action-receipts-report", type=Path,
-        default=ROOT / "reports/animestudio/buff_action_receipts_current_latest.json",
+        default=ExportLayout.configured().evidence_dir / 'animestudio/buff_action_receipts_current_latest.json',
     )
     parser.add_argument(
         "--buff-corpus-report", type=Path,
@@ -281,103 +302,12 @@ def _summary_text(parts: Iterable[Any]) -> str:
     return "; ".join(str(value) for value in parts if value not in (None, "", [], {}))
 
 
-def _scalar_values(value: Any) -> dict[str, Any]:
-    if not isinstance(value, dict):
-        return {}
-    return {
-        str(key): child
-        for key, child in value.items()
-        if child is None or isinstance(child, (str, int, float, bool))
-    }
-
-
-def _named_row_keys(value: Any) -> list[Any]:
-    if not isinstance(value, dict) or not isinstance(value.get("rows"), list):
-        return []
-    return [
-        row.get("key")
-        for row in value["rows"]
-        if isinstance(row, dict) and row.get("key") is not None
-    ]
-
-
-def _named_collection_count(value: Any) -> int | None:
-    if value is None:
-        return 0
-    if isinstance(value, list):
-        return len(value)
-    if isinstance(value, dict):
-        if type(value.get("count")) is int:
-            return value["count"]
-        if isinstance(value.get("rows"), list):
-            return len(value["rows"])
-        if not value:
-            return 0
-    return None
-
-
-def _animation_config_record(path: Path, export_root: Path, *, strings: StringPool | None = None, game_root=None) -> dict[str, Any]:
-    relative = path.relative_to(export_root).as_posix()
-    try:
-        decoded = frame_animation_config(path.read_bytes(), strings=strings, game_root=game_root)
-        fields = decoded.get("fields") if isinstance(decoded.get("fields"), dict) else {}
-        prefix = decoded.get("prefix") or {}
-        prefix_fields = prefix.get("fields") or {}
-        known = {**prefix_fields, **fields}
-        extra_header = decoded.get("extraData") if isinstance(decoded.get("extraData"), dict) else {}
-        extra = fields.get("extraData") if isinstance(fields.get("extraData"), dict) else {}
-        status = str(decoded.get("schemaStatus") or "partial")
-        facts = {
-            "controllerPath": known.get("controllerPath"),
-            "optControllerPath": known.get("optControllerPath"),
-            "retargetAnimConfigPath": known.get("retargetAnimConfigPath"),
-            "extraDataType": extra_header.get("subtype"),
-        }
-        if "boneWeightMasks" in known:
-            masks = known["boneWeightMasks"]
-            facts["boneWeightMaskCount"] = _named_collection_count(masks)
-            facts["boneWeightMaskLayerNames"] = [r["layerName"] for r in masks.get("rows", [])] if isinstance(masks, dict) else []
-        for name, key in (("montages", "montageCount"), ("npcMontages", "npcMontageCount"),
-                          ("syncGroupCurves", "syncGroupCurveCount"), ("timeRefCurves", "timeRefCurveCount")):
-            if name in fields and (count := _named_collection_count(fields[name])) is not None:
-                facts[key] = count
-        for name, key in (("montages", "montageNames"), ("syncGroupCurves", "syncGroupCurveNames"),
-                          ("timeRefCurves", "timeRefCurveNames")):
-            if name in fields:
-                facts[key] = _named_row_keys(fields[name])
-        if "extraData" in fields:
-            facts.update(extraDataFields=sorted(extra), extraDataValues=_scalar_values(extra))
-        tags = ["animation", "memorypack", status]
-        if facts["extraDataType"]:
-            tags.append(str(facts["extraDataType"]))
-        return {
-            "id": relative,
-            "title": path.stem,
-            "status": status,
-            "summary": _summary_text((
-                facts.get("extraDataType") or ("no extra data" if extra_header.get("status") == "null"
-                    or "extraData" in fields and fields["extraData"] is None else None),
-                f"montages={facts['montageCount']}" if "montageCount" in facts else None,
-                f"curves={facts['syncGroupCurveCount'] + facts['timeRefCurveCount']}"
-                    if "syncGroupCurveCount" in facts and "timeRefCurveCount" in facts else None,
-                "opaque fields remain" if decoded.get("opaqueRanges") else None,
-            )),
-            "tags": tags,
-            "source": _source(path, export_root, "application/octet-stream"),
-            "facts": facts,
-            "payload": decoded,
-            "payloadKind": "reader",
-        }
-    except (OSError, AnimationConfigFramingError, ValueError) as exc:
-        return {
-            "id": relative,
-            "title": path.stem,
-            "status": "decode_error",
-            "summary": str(exc),
-            "tags": ["animation", "memorypack", "decode_error"],
-            "source": _source(path, export_root, "application/octet-stream"),
-            "diagnostic": str(exc),
-        }
+def _animation_config_record(path: Path, export_root: Path, *, decode=None, strings=None, game_root=None):
+    from scripts.webui.data_inspector.animation_records import record
+    from scripts.game_data.animation_config_binary import decode_animation_config_complete_frame
+    selected=decode if decode is not None else lambda data: decode_animation_config_complete_frame(
+        data,strings=strings,game_root=game_root)
+    return record(path,export_root,decode=selected)
 
 
 def _npc_montage_record(path: Path, export_root: Path, *, decode=None) -> dict[str, Any]:
@@ -495,7 +425,7 @@ def _level_config_record(path: Path, export_root: Path) -> dict[str, Any]:
         )
 
 
-def _level_data_record(path: Path, export_root: Path, *, strings=None, game_root=None, npc_decoder=None) -> dict[str, Any]:
+def _level_data_record(path: Path, export_root: Path, *, strings=None, game_root=None, npc_decoder=None, leveldata_decoder=None) -> dict[str, Any]:
     """Publish the maintained LevelData reader's exact or bounded result.
 
     A decoded spline is stored geometry. Its presence does not establish a
@@ -504,13 +434,17 @@ def _level_data_record(path: Path, export_root: Path, *, strings=None, game_root
     relative = path.relative_to(export_root).as_posix()
     tags = ["level", "leveldata", "memorypack"]
     try:
-        decoded = frame_leveldata_named_prefix(path.read_bytes(), strings=strings if strings is not None else export_string_pool(export_root / 'game' / 'Json'), game_root=game_root, npc_decoder=npc_decoder)
+        raw = path.read_bytes()
+        decoded = (leveldata_decoder(path, raw) if leveldata_decoder is not None else
+                   frame_leveldata_named_prefix(raw, strings=strings if strings is not None else export_string_pool(export_root / 'game' / 'Json'), game_root=game_root, npc_decoder=npc_decoder))
     except (OSError, LevelDataTopLevelFramingError, ValueError) as exc:
         return _error_record(path, export_root, "application/octet-stream", tags, exc)
 
     status = _reader_status(decoded, "bounded_partial")
     fields = decoded.get("fields") if isinstance(decoded.get("fields"), dict) else {}
     splines = fields.get("splines") if isinstance(fields.get("splines"), dict) else {}
+    if isinstance(splines.get('value'), dict):
+        splines = splines['value']
     open_field = decoded.get("openField") if isinstance(decoded.get("openField"), dict) else {}
     spline_count = splines.get("count") if isinstance(splines.get("count"), int) else None
     spline_rows = splines.get("rows") if isinstance(splines.get("rows"), list) else None
@@ -527,6 +461,8 @@ def _level_data_record(path: Path, export_root: Path, *, strings=None, game_root
     facts = {
         "level": path.parent.name,
         "closedFieldCount": len(decoded.get("closedFields") or []),
+        "wholeSchemaExact": decoded.get("wholeSchemaExact"),
+        "physicalEOF": decoded.get("physicalEOF"),
         "serializedMemberCount": decoded.get("serializedMemberCount"),
         "openField": open_field.get("name"),
         "bytesConsumed": decoded.get("bytesConsumed"),
@@ -667,6 +603,7 @@ def _skill_data_direct_action_types(value: dict[str, Any]) -> list[dict[str, Any
 def _skill_data_record(
     path: Path, export_root: Path, *, registry: Any, definition: int, strings: StringPool | None,
     reference_targets: dict[str, list[str]] | None = None,
+    complete_value: tuple[dict[str, Any], dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Publish stored SkillData values only after whole-file and id agreement.
 
@@ -679,7 +616,18 @@ def _skill_data_record(
         raw = path.read_bytes()
         if strings is None:
             raise ValueError("SkillData requires a matching current StringPool")
-        value, reached = decode_file(raw, definition, registry, source=path.name, strings=strings)
+        if complete_value is None:
+            value, reached = decode_file(raw, definition, registry, source=path.name, strings=strings)
+            complete_facts = {}
+        else:
+            value, complete_facts = complete_value
+            import hashlib
+            if (complete_facts.get('wholeSchemaExact') is not True
+                    or complete_facts.get('physicalEOF') is not True
+                    or complete_facts.get('serializedMemberCount') != 49
+                    or complete_facts.get('sourceSha256') != hashlib.sha256(raw).hexdigest().upper()):
+                raise ValueError('SkillData complete named values/source proof differs')
+            reached = complete_facts['bytesConsumed']
         if reached != len(raw):
             raise ValueError(f"whole-file cursor {reached}/{len(raw)}")
         if find_identifier(value) != path.stem:
@@ -688,6 +636,8 @@ def _skill_data_record(
             )
         if not isinstance(value, dict):
             raise ValueError("SkillData root is not a named record")
+        if complete_value is not None and len(value) != 49:
+            raise ValueError('SkillData complete named root requires all 49 fields')
         group = value.get("actionGroupData")
         group = group if isinstance(group, dict) else {}
         timeline = group.get("timelineActions")
@@ -696,6 +646,7 @@ def _skill_data_record(
         passive_count = len(passive) if isinstance(passive, list) else None
         direct_actions = _skill_data_direct_action_types(value)
         facts = {
+            **complete_facts,
             "skillId": value["skillId"],
             "storedMemberCount": len(value),
             "wholeFileCursorExact": True,
@@ -705,6 +656,10 @@ def _skill_data_record(
             "passiveEventActionCount": passive_count,
             "directStoredActionInventoryAvailable": direct_actions is not None,
             "evidenceBoundary": (
+                "exact: current source-owned root, union assignments, ordered child programs, "
+                "named stored values and checked field extents; raw value bits retained; "
+                "source id and physical EOF; no runtime execution claim"
+                if complete_value is not None else
                 "structuralOnly: selected native generated-wrapper member values "
                 "and nested union assignments; exact whole-file cursor and "
                 "exported-filename identifier; stored data only"
@@ -720,14 +675,14 @@ def _skill_data_record(
         record = {
             "id": relative,
             "title": path.stem,
-            "status": "structural_only",
+            "status": "named_exact" if complete_value is not None else "structural_only",
             "summary": _summary_text((
                 f"members={len(value)}",
                 f"timeline actions={timeline_count}" if timeline_count is not None else "",
                 f"passive events={passive_count}" if passive_count is not None else "",
             )),
             "tags": [
-                *tags, "structural_only",
+                *tags, "named_exact" if complete_value is not None else "structural_only",
                 *(["has-timeline-actions"] if timeline_count else []),
                 *(["has-passive-events"] if passive_count else []),
             ],
@@ -754,7 +709,7 @@ def _skill_data_record(
         return _error_record(path, export_root, "application/octet-stream", tags, exc)
 
 
-def _char_interact_perform_record(path: Path, export_root: Path) -> dict[str, Any]:
+def _char_interact_perform_record(path: Path, export_root: Path, *, char_decoder=None) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
     tags = ["npc", "char-interact", "memorypack"]
     strings = None
@@ -763,15 +718,19 @@ def _char_interact_perform_record(path: Path, export_root: Path) -> dict[str, An
     except OSError as exc:
         return _error_record(path, export_root, "application/octet-stream", tags, exc)
     try:
-        gameassembly, metadata = resolve_installed_native_inputs()
-        strings = export_string_pool(ExportLayout(export_root).json_dir)
-        decoded = decode_char_interact_complete_frame(data, gameassembly=gameassembly, metadata=metadata, strings=strings)
+        if char_decoder is None:
+            gameassembly, metadata = resolve_installed_native_inputs()
+            strings = export_string_pool(ExportLayout(export_root).json_dir)
+            decoded = decode_char_interact_complete_frame(data, gameassembly=gameassembly, metadata=metadata, strings=strings)
+        else:
+            decoded = char_decoder(data)
         bounded = False
     except (CharInteractPerformDecodeError, ValueError) as complete_exc:
         # The complete frame is the claim; the named prefix is the honest
         # fallback, and it is published as a bounded row rather than dropped.
         try:
-            decoded = frame_char_interact_prefix(data, gameassembly=gameassembly, metadata=metadata, strings=strings)
+            decoded = (char_decoder(data,prefix=True) if char_decoder is not None else
+                       frame_char_interact_prefix(data, gameassembly=gameassembly, metadata=metadata, strings=strings))
             bounded = True
         except (CharInteractPerformDecodeError, ValueError):
             return _error_record(
@@ -783,6 +742,8 @@ def _char_interact_perform_record(path: Path, export_root: Path) -> dict[str, An
         "actionTypeCounts": decoded.get("actionTypeCounts"),
         "audioActionCount": decoded.get("audioActionCount"),
         "wholeSchemaExact": decoded.get("wholeSchemaExact"),
+        "physicalEOF": decoded.get("physicalEOF"),
+        "serializedMemberCount": decoded.get("serializedMemberCount"),
         "schemaMappingId": decoded.get("schemaMappingId"),
         "unionMappingId": decoded.get("unionMappingId"),
         "bytesConsumed": decoded.get("bytesConsumed"),
@@ -947,12 +908,38 @@ CONFIG_TABLE_READERS: dict[str, tuple[ConfigTableReader, str, str]] = {
         _pooled(decode_interactive_table), "interactive-table", "gameplay"),
 }
 
+# Share the exact schema registry with the corpus gate; a newly supported
+# textual table must also be readable in Data's decoded table view.
+from scripts.game_data.schemas.text_schema import SUPPORTED as NAMED_TEXT_TABLES,decode_named_jsondata_text
+from scripts.game_data.string_pool_aux import decode_counting,decode_hash_index
+from scripts.game_data.gpu_ui_binary import decode_damage_text
+
+
+def _named_text_table(source):
+    def read(data,_strings):
+        game_root=resolve_installed_native_inputs()[1].parents[2]
+        decoded=decode_named_jsondata_text(data,source=source,game_root=game_root)
+        from scripts.game_data.schemas.named_schema import parse_utf8_json
+        decoded['values']=parse_utf8_json(data,source=source,error=ValueError)
+        return decoded
+    return read
+
+
+CONFIG_TABLE_READERS.update({name:(_named_text_table(name),'named-json-table','gameplay')for name in NAMED_TEXT_TABLES})
+CONFIG_TABLE_READERS.update({
+    'GPUISystemConfig/damage_text.json':(_pooled(decode_damage_text),'damage-text','gpui'),
+    'StringPool/StringPoolCounting.json':(_pooled(decode_counting),'string-pool-counting','string-pool'),
+    'StringPool/StringPoolHashIndex.byte':(
+        lambda data,strings:decode_hash_index(data,strings=strings,game_root=resolve_installed_native_inputs()[1].parents[2]),
+        'string-pool-hash-index','string-pool'),
+})
+
 # Config tables the client ships as plaintext UTF-8 JSON rather than as a
 # serialized payload. Their bytes are the readable source, so the record must
 # say so instead of presenting the file as an opaque binary blob.
 JSON_TEXT_CONFIG_TABLES = frozenset({
     "GameplayConfig/LevelScriptTeleportValidationDataTable.json",
-})
+}) | NAMED_TEXT_TABLES
 
 
 _TABLE_ERRORS = (
@@ -1002,7 +989,7 @@ def _config_table_record(path: Path, export_root: Path) -> dict[str, Any]:
         facts = {
             key: value
             for key, value in decoded.items()
-            if key not in {"status", "schemaStatus", "decoded", "rows", "sample", "keys"}
+            if key not in {"status", "schemaStatus", "decoded", "rows", "sample", "keys", "values", "fields"}
         }
         rows = decoded.get("rows")
         if isinstance(rows, int):
@@ -1501,10 +1488,19 @@ def _levelscript_native_after_read(input_signature: dict[str, Any]) -> tuple[dic
 
 
 def main(argv: list[str] | None = None) -> int:
+    from contextlib import ExitStack
     args = parse_args(argv)
+    with ExitStack() as stack:
+        return _build(args, stack)
+
+
+def _build(args, stack) -> int:
     require_export_layout(args.export_root)
     layout = ExportLayout(args.export_root)
     selected = set(args.dataset or DATASET_IDS)
+    if selected==set(DATASET_IDS):
+        from scripts.webui.data_inspector.current_receipts import require_complete_jsondata
+        require_complete_jsondata(args.export_root)
     specs = {
         "model-view-state": (
             "ModelView state controllers",
@@ -1549,7 +1545,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "level-data": (
             "Level data",
-            "Exact and bounded LevelData fields, including stored spline geometry when reached; "
+            "Complete current LevelData stored fields, including spline geometry; "
             "no runtime traversal is implied.",
             layout.json_dir / "LevelData",
             _level_data_record,
@@ -1569,6 +1565,13 @@ def main(argv: list[str] | None = None) -> int:
             "explicit opaque middle; the reader's exact or partial status is preserved.",
             layout.json_dir / "LevelScriptTemplateData",
             levelscript_template_record,
+            _all_json,
+        ),
+        "interactive-data": (
+            "Interactive templates",
+            "Complete current stored components, properties, variants and ActionMap values; no runtime execution is implied.",
+            layout.json_dir / "Interactive/InteractiveData",
+            interactive_record,
             _all_json,
         ),
         "skill-data": (
@@ -1599,13 +1602,13 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "buff-data": (
             "Buff data",
-            "Authenticated complete stored Buff roots and unresolved source rows; "
-            "named receipts do not establish runtime gameplay effects.",
+            "Complete named stored Buff roots, including child values and original numeric bits; "
+            "no runtime gameplay effects are inferred.",
             layout.json_dir / "BuffData", None, _all_json,
         ),
         "buff-action-receipts": (
             "Buff action receipts",
-            "Authenticated spans and wrapper fields for eight reviewed Buff action types; "
+            "Authenticated source-owned action spans and complete named child values; "
             "these child receipts alone do not establish the complete Buff root.",
             layout.json_dir / "BuffData",
             None,
@@ -1613,14 +1616,14 @@ def main(argv: list[str] | None = None) -> int:
         ),
         "dynamic-components": (
             "World component records",
-            "Authenticated stored DynamicStreaming components and authored mission keys; "
+            "Complete native-proved DynamicStreaming roots, grid vectors, component fields and zero padding; "
             "entity ownership and live condition evaluation remain unresolved.",
             args.export_root / "raw/DynamicStreaming", None, main_raw_files,
         ),
         "char-interact-perform": (
             "Character interact performances",
-            "Current native-gated sparse CharInteractPerform roots and explicit bounded "
-            "prefixes; positive collections require their own source proofs.",
+            "Complete current CharInteractPerform stored graphs with named actors, "
+            "actions, dictionaries and settings; stored fields only, not runtime execution.",
             layout.json_dir / "CharInteractPerformCfgs",
             _char_interact_perform_record,
             _all_json,
@@ -1650,6 +1653,26 @@ def main(argv: list[str] | None = None) -> int:
         ),
     }
 
+    family_context = None
+
+    def current_family_context(family):
+        nonlocal family_context
+        if family_context is not None:
+            return family_context
+        if not (layout.evidence_dir / 'animestudio/jsondata_current_latest.json').is_file():
+            return None
+        from scripts.game_data.memorypack.current_family_evidence import FORMATS, reader_context
+        _path, selection = select_current_family_report(family, args.export_root)
+        if selection['familyReport'].get('format') != FORMATS[family]:
+            return None
+        family_context = stack.enter_context(reader_context(layout,
+            resolve_installed_native_inputs()[1].parents[2],
+            buff=bool(selected & {'buff-data','buff-action-receipts'})))
+        return family_context
+
+    complete_level_records = None
+    complete_level_receipt = None
+    complete_interactive_receipt = None
     descriptors: list[dict[str, Any]] = []
     for dataset_id in DATASET_IDS:
         if dataset_id not in selected:
@@ -1658,6 +1681,8 @@ def main(argv: list[str] | None = None) -> int:
                 descriptors.append(descriptor)
             continue
         title, description, root, reader, selector = specs[dataset_id]
+        template_batch_audit = None
+        print(f"[data-inspector:{dataset_id}] checking inputs", flush=True)
         unity_type = UNITY_DATASET_TYPES.get(dataset_id)
         if unity_type is not None:
             unity_store = open_store_if_present(args.export_root)
@@ -1673,7 +1698,7 @@ def main(argv: list[str] | None = None) -> int:
         skill_registry = None
         skill_strings = None
         skill_definition = None
-        skill_root_evidence = None
+        complete_skill_values = None
         buff_receipt_records = None
         buff_root_records = None
         dynamic_records = None
@@ -1688,11 +1713,8 @@ def main(argv: list[str] | None = None) -> int:
             if native_signature.get("nativeStatus") != "validated":
                 available = False
                 diagnostic = native_diagnostic
-        if dataset_id in {"level-data", "levelscript-data", "spawner-config", "atmospheric-npc", "skill-data", "char-interact-perform", "animation-config"} and available:
+        if dataset_id in {"level-data", "levelscript-data", "spawner-config", "atmospheric-npc", "skill-data", "char-interact-perform", "animation-config", "interactive-data"} and available:
             input_signature['stringPool'] = snapshot_string_pool_inputs(layout.json_dir)
-        if dataset_id == "levelscript-data" and available:
-            levelscript_receipt_records, receipt_signature = try_current_levelscript_records(args.export_root)
-            input_signature["canonicalLevelScriptReader"] = receipt_signature
         if dataset_id == "animation-config" and available:
             native_signature, diagnostic = _animation_native_signature()
             input_signature["selectedNative"] = native_signature
@@ -1725,15 +1747,21 @@ def main(argv: list[str] | None = None) -> int:
                     available = False
                     diagnostic = str(error)
                 if available:
-                    skill_root_evidence, skill_receipt_signature = try_skill_root_evidence(args.export_root)
-                    input_signature["canonicalSkillRootEvidence"] = skill_receipt_signature
+                    complete_skill_values, skill_receipt_signature = load_skill_values(args.export_root,
+                        registry=skill_registry, definition=skill_definition,
+                        context=current_family_context('SkillData'))
+                    input_signature['completeSkillDataOperation'] = skill_receipt_signature
+            if not available:
+                raise ValueError('SkillData complete publication refused: ' + str(diagnostic))
         if dataset_id == "buff-data" and available:
             try:
-                buff_root_records, root_signature = load_buff_root_records(args.export_root)
+                buff_root_records, root_signature = load_buff_root_records(args.export_root,
+                    current_context=current_family_context('BuffData'))
                 input_signature["authenticatedBuffRoots"] = root_signature
             except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
-                available = False
-                diagnostic = f"Buff roots unavailable: {type(exc).__name__}: {str(exc)[:1000]}"
+                raise ValueError(f'Buff complete publication refused: {type(exc).__name__}: {str(exc)[:1000]}') from exc
+            if not buff_root_records or any(r.get('status')!='named_exact' for r in buff_root_records):
+                raise ValueError('Buff complete publication refused: incomplete named values')
         if dataset_id == "buff-action-receipts" and available:
             try:
                 buff_corpus_report = args.buff_corpus_report
@@ -1743,24 +1771,23 @@ def main(argv: list[str] | None = None) -> int:
                 buff_receipt_records, receipt_signature = load_receipt_records(
                     args.buff_action_receipts_report, buff_corpus_report,
                     args.export_root,
+                    current_context=current_family_context('BuffData'),
                 )
                 input_signature["authenticatedReceipts"] = receipt_signature
             except (OSError, ValueError, RuntimeError, KeyError, TypeError,
                     json.JSONDecodeError) as exc:
-                available = False
-                diagnostic = f"Buff action receipts unavailable: {type(exc).__name__}: {exc}"
+                raise ValueError(f'Buff action value publication refused: {type(exc).__name__}: {exc}') from exc
+            if any(r.get('status')!='named_exact' for r in buff_receipt_records):
+                raise ValueError('Buff action value publication refused: incomplete named action values')
         if dataset_id == "dynamic-components" and available:
-            try:
-                dynamic_records, dynamic_signature = dynamic_main_records(args.export_root)
-                input_signature["authenticatedComponents"] = dynamic_signature
-            except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
-                available = False
-                diagnostic = f"World components unavailable: {type(exc).__name__}: {str(exc)[:1000]}"
+            dynamic_records, dynamic_signature = dynamic_main_records(args.export_root)
+            _require_complete_dynamic(dynamic_records, dynamic_signature)
+            input_signature["authenticatedComponents"] = dynamic_signature
         # A rejected canonical receipt must not fall through to an older page
         # cache whose size/mtime source signature could conceal changed bytes.
-        force_direct_levelscript = dataset_id == "levelscript-data" and levelscript_receipt_records is None
-        force_direct_skill = dataset_id == "skill-data" and skill_root_evidence is None
-        descriptor = None if args.force or not available or force_direct_levelscript or force_direct_skill or dataset_id in {"npc-montage", "char-interact-perform", "atmospheric-npc", "level-data", "model-view-state"} else _reusable_descriptor(
+        force_direct_levelscript = dataset_id in {"levelscript-data", "levelscript-template-data", "interactive-data"}
+        force_direct_skill = dataset_id == "skill-data"
+        descriptor = None if args.force or not available or force_direct_levelscript or force_direct_skill or dataset_id in {"dynamic-components", "animation-config", "npc-montage", "char-interact-perform", "atmospheric-npc", "level-data", "model-view-state"} else _reusable_descriptor(
             args.out_dir, dataset_id, input_signature, args.shard_size
         )
         if descriptor is not None and dataset_id in {"level-data", "levelscript-data", "levelscript-template-data", "spawner-config", "atmospheric-npc", "skill-data", "char-interact-perform", "animation-config"}:
@@ -1782,26 +1809,100 @@ def main(argv: list[str] | None = None) -> int:
             except (OSError,ValueError) as error:
                 records=[];available=False;diagnostic=str(error)
         elif available and dataset_id == "animation-config":
-            records = [_animation_config_record(path, args.export_root, strings=animation_strings,
-                       game_root=animation_game_root) for path in selector(root)]
+            with complete_animation_reader(strings=animation_strings,game_root=animation_game_root)as decode:
+                records=[_animation_config_record(path,args.export_root,decode=decode)for path in selector(root)]
+                for record in records:
+                    facts=record.get('facts',{})
+                    if(facts.get('wholeSchemaExact')is not True or facts.get('physicalEOF')is not True
+                        or facts.get('serializedMemberCount')!=15 or facts.get('bytesConsumed')!=record['source']['bytes']):
+                        raise ValueError('AnimationConfig complete publication refused: '+record['id']
+                            +': '+str(record.get('diagnostic')or record.get('summary'))[:1200])
+            input_signature['completeAnimationConfigOperation']=decode.receipt
+        elif available and dataset_id == "char-interact-perform":
+            gameassembly,metadata=resolve_installed_native_inputs()
+            with complete_perform_reader(gameassembly=gameassembly,metadata=metadata,
+                                       strings=export_string_pool(layout.json_dir)) as decode:
+                records=[reader(path,args.export_root,char_decoder=decode) for path in selector(root)]
+                for record in records:
+                    facts = record.get('facts', {})
+                    if (facts.get('wholeSchemaExact') is not True or facts.get('physicalEOF') is not True
+                        or facts.get('serializedMemberCount') != 28
+                        or facts.get('bytesConsumed') != record['source']['bytes']):
+                        raise ValueError('CharInteract complete publication refused: ' + record['id']
+                            + ': ' + str(record.get('diagnostic') or record.get('summary'))[:1200])
+            input_signature['completeCharInteractOperation']=decode.receipt
         elif available and dataset_id == "skill-data":
             skill_paths = list(selector(root))
+            if (complete_skill_values is None or set(complete_skill_values) != {
+                    path.relative_to(args.export_root).as_posix() for path in skill_paths}):
+                raise ValueError('SkillData complete publication refused: full source roster differs')
             reference_targets = _skill_data_reference_targets(skill_paths, args.export_root)
             records = [
                 _skill_data_record(
                     path, args.export_root,
                     registry=skill_registry, definition=skill_definition, strings=skill_strings,
                     reference_targets=reference_targets,
+                    complete_value=complete_skill_values[path.relative_to(args.export_root).as_posix()],
                 )
                 for path in skill_paths
             ]
-            records = attach_skill_root_evidence(records, skill_root_evidence)
-        elif available and dataset_id == "levelscript-data" and levelscript_receipt_records is not None:
-            records = levelscript_receipt_records
-        elif available and dataset_id == "levelscript-data":
-            game_root=resolve_installed_native_inputs()[1].parents[2]
-            records=[reader(path,args.export_root,game_root=game_root)for path in selector(root)]
-        elif available and dataset_id in {"atmospheric-npc", "level-data"}:
+            for record in records:
+                if record.get('status') != 'named_exact':
+                    raise ValueError('SkillData complete publication refused: ' + record['id']
+                        + ': ' + str(record.get('diagnostic') or record.get('summary'))[:1200])
+        elif available and dataset_id in {"levelscript-data", "levelscript-template-data", "interactive-data"}:
+            if complete_level_records is None:
+                family_ids = {"levelscript-data": "LevelScriptData", "levelscript-template-data": "LevelScriptTemplateData"}
+                chosen = [name for name in family_ids if name in selected]
+                gameassembly, metadata = resolve_installed_native_inputs()
+                pending = {}
+                def decode_interactives(action_operation=None):
+                    _,_,source_root,adapt,source_selector=specs['interactive-data']
+                    paths=list(source_selector(source_root))
+                    print(f"[data-inspector:interactive-data] complete source decode {len(paths)} files",flush=True)
+                    with complete_interactive_reader(args.export_root,gameassembly=gameassembly,metadata=metadata,
+                            action_operation=action_operation)as interactive_decode:
+                        pending['interactive-data']=[adapt(path,args.export_root,interactive_decoder=interactive_decode)for path in paths]
+                    return interactive_decode.receipt
+                if chosen:
+                    with complete_levelscript_reader(args.export_root, gameassembly=gameassembly, metadata=metadata,
+                            families=[family_ids[name] for name in chosen]) as decode:
+                        for name in chosen:
+                            _, _, source_root, adapt, source_selector = specs[name]
+                            paths = list(source_selector(source_root))
+                            print(f"[data-inspector:{name}] complete source decode {len(paths)} files", flush=True)
+                            pending[name] = [adapt(path, args.export_root, levelscript_decoder=decode) for path in paths]
+                            count = 28 if name == "levelscript-data" else 6
+                            for record in pending[name]:
+                                facts = record.get('facts', {})
+                                if (record.get('status') != 'named_exact' or facts.get('wholeSchemaExact') is not True
+                                        or facts.get('physicalEOF') is not True or facts.get('closedFieldCount') != count
+                                        or facts.get('serializedMemberCount') != count
+                                        or facts.get('bytesConsumed') != record['source']['bytes']):
+                                    raise ValueError(name + ' complete publication refused: ' + record['id']
+                                        + ': ' + str(record.get('diagnostic') or record.get('summary'))[:1200])
+                        if 'interactive-data'in selected:
+                            complete_interactive_receipt=decode_interactives(decode.operation)
+                    complete_level_receipt = decode.receipt
+                else:
+                    complete_interactive_receipt=decode_interactives()
+                complete_level_records = pending
+            records = complete_level_records[dataset_id]
+            if complete_level_receipt is not None:input_signature['completeLevelScriptOperation'] = complete_level_receipt
+            if dataset_id=='interactive-data':input_signature['completeInteractiveOperation']=complete_interactive_receipt
+        elif available and dataset_id == "level-data":
+            gameassembly, metadata = resolve_installed_native_inputs()
+            with complete_leveldata_reader(args.export_root, gameassembly=gameassembly, metadata=metadata) as decode:
+                records = [reader(path, args.export_root, leveldata_decoder=decode) for path in selector(root)]
+                for record in records:
+                    facts = record.get('facts', {})
+                    if (facts.get('wholeSchemaExact') is not True or facts.get('physicalEOF') is not True
+                        or facts.get('closedFieldCount') != 43 or facts.get('serializedMemberCount') != 43
+                        or facts.get('bytesConsumed') != record['source']['bytes']):
+                        raise ValueError('LevelData complete publication refused: ' + record['id']
+                            + ': ' + str(record.get('diagnostic') or record.get('summary'))[:1200])
+            input_signature['completeLevelDataOperation'] = decode.receipt
+        elif available and dataset_id == "atmospheric-npc":
             game_root=resolve_installed_native_inputs()[1].parents[2]
             strings=export_string_pool(layout.json_dir)
             try:
@@ -1821,6 +1922,7 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 with montage_decoder(strings=export_string_pool(layout.json_dir), game_root=resolve_installed_native_inputs()[1].parents[2]) as decode:
                     records = [_npc_montage_record(path, args.export_root, decode=decode) for path in selector(root)]
+                input_signature['completeNpcMontageOperation'] = decode.receipt
             except (OSError, ValueError) as error:
                 records = []; available = False; diagnostic = str(error)
         else:
@@ -1858,22 +1960,29 @@ def main(argv: list[str] | None = None) -> int:
                     if dataset_id == "levelscript-data" else
                     "scripts.game_data.levelscript_template_binary.frame_levelscript_template"
                     if dataset_id == "levelscript-template-data" else
+                    "scripts.game_data.memorypack.interactive_current_source.complete_interactive_reader"
+                    if dataset_id == "interactive-data" else
                     "scripts.game_data.spawner_binary.frame_spawner_named"
                     if dataset_id == "spawner-config" else
                     "scripts.game_data.atmospheric_npc_binary.frame_atmospheric_npc_table"
                     if dataset_id == "atmospheric-npc" else
                     "scripts.game_data.schemas.map_config.decode_map_config"
                     if dataset_id == "map-config" else
-                    "scripts.game_data.dynamic_scalar_components_native.decode_authenticated_main"
+                    "scripts.game_data.dynamic_components_corpus.current_main_files"
                     if dataset_id == "dynamic-components" else
                     "scripts.game_data.memorypack.buff_corpus"
                     if dataset_id == "buff-data" else
                     "scripts.game_data.memorypack.buff_action_receipt_corpus"
                     if dataset_id == "buff-action-receipts" else
+                    "scripts.game_data.char_interact_perform_binary.complete_perform_reader"
+                    if dataset_id == "char-interact-perform" else
+                    "scripts.game_data.leveldata_binary.complete_leveldata_reader"
+                    if dataset_id == "level-data" else
                     f"{reader.__module__}.{reader.__name__}"
                 ),
                 "publisherRevision": PUBLISHER_REVISION,
                 "inputSignature": input_signature,
+                **({"decodeBatch": template_batch_audit} if template_batch_audit is not None else {}),
                 **({"selectedNativeAfterRead": native_after_read} if native_after_read is not None else {}),
             },
             shard_size=args.shard_size,
@@ -1885,6 +1994,9 @@ def main(argv: list[str] | None = None) -> int:
             f"{dataset_id}: {descriptor['recordCount']} records "
             f"({', '.join(f'{key}={value}' for key, value in descriptor['statusCounts'].items())})"
         )
+    # Sharing is lexical to this build. Native, reader, pool, chunk and
+    # inventory exit gates must all pass before the page index is published.
+    stack.close()
     path = publish_root_index(args.out_dir, descriptors)
     print(f"wrote {path}")
     return 0

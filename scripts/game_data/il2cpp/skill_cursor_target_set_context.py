@@ -30,6 +30,7 @@ The full capture workflow is in
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import gc
@@ -52,7 +53,7 @@ SCHEMA = "endfield.skill-cursor-target-set-native-context.v1"
 CONTRACT_SCHEMA = "endfield.skill-cursor-capture-target-set.v1"
 TARGET_CONTRACT_PATH = CONTRACTS_DIR / "skill_cursor_capture_target_set.json"
 DEFAULT_CORPUS = native.DEFAULT_CORPUS
-DEFAULT_CONTEXT = REPO_ROOT / "reports/animestudio/skill_cursor_target_set_native_context_latest.json"
+DEFAULT_CONTEXT = ExportLayout.configured().evidence_dir / 'animestudio/skill_cursor_target_set_native_context_latest.json'
 SKILL_PATH = re.compile(r"Data/Json/SkillData/[^/]+[.]json\Z")
 
 
@@ -268,7 +269,7 @@ def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
     from scripts.game_data.il2cpp import skill_cursor_filter_context as filters
     selected_contract = _read_object(Path(target_contract_path), label='target-set contract')
     if selected_contract.get('schema') == filters.CONTRACT_SCHEMA:
-        outer_path = (REPO_ROOT / 'reports/runtime_capture/porting/vfs-current/summary.json'
+        outer_path = (ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_latest.json'
                       if Path(corpus_path) == DEFAULT_CORPUS else Path(corpus_path))
         try:
             return filters.audit(selected_contract, outer_path)

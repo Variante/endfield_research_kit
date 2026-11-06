@@ -19,6 +19,7 @@ witnesses, excluded bodies and ambiguous CABs remain distinct. Other Renderer
 classes are outside scope; exact Mesh identity alone is not render geometry.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from collections import Counter
@@ -162,11 +163,11 @@ def validate_receipt(path,scene):
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--scene-receipt',type=Path,required=True)
-    parser.add_argument('--work-root',type=Path,default=REPO_ROOT/'tmp/animestudio/collision_renderers')
-    parser.add_argument('--output-json',type=Path,default=REPO_ROOT/'reports/assets/collision_renderers_current.json')
+    parser.add_argument('--work-root',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/collision_renderers')
+    parser.add_argument('--output-json',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/collision_renderers_current.json')
     args=parser.parse_args(argv)
-    if not args.output_json.resolve().is_relative_to((REPO_ROOT/'reports').resolve()):
-        parser.error('generated receipts belong under reports/')
+    if not args.output_json.resolve().is_relative_to(ExportLayout.configured().evidence_dir.resolve()):
+        parser.error('generated receipts belong inside the selected export/meta/evidence/')
     try:
         report=collect(args.scene_receipt,work_root=args.work_root);write_json(args.output_json,report)
         print('Stored render component corpus:',report['status'],report['counts'])

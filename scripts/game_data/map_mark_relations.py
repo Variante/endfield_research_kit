@@ -42,6 +42,7 @@ visibility; discovery and server state are unobserved.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import gzip
@@ -57,8 +58,8 @@ from scripts.repo_paths import REPO_ROOT
 
 
 DEFAULT_GAME = REPO_ROOT / "export_full" / "game"
-DEFAULT_CORPUS = REPO_ROOT / "reports" / "animestudio" / "jsondata_current_latest.json"
-DEFAULT_FILES = REPO_ROOT / "reports" / "animestudio" / "jsondata_current_files_latest.jsonl.gz"
+DEFAULT_CORPUS = ExportLayout.configured().evidence_dir / 'animestudio/jsondata_current_latest.json'
+DEFAULT_FILES = ExportLayout.configured().evidence_dir / 'animestudio/jsondata_current_files_latest.jsonl.gz'
 DEFAULT_OUTPUT = REPO_ROOT / "reports" / "game_data" / "map_mark_relations.json"
 JSON_NAMES = (
     "LevelMapMark.json", "MapBriefInfoTable.json", "MapRegionTable.json",

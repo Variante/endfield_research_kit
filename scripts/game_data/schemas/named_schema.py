@@ -16,6 +16,7 @@ still names the family that raised it.
 from __future__ import annotations
 
 import json
+import math
 import re
 from typing import Any, Callable
 
@@ -87,9 +88,21 @@ def load_schema_contract(
 
 
 def parse_utf8_json(data: bytes, *, source: str, error: type[ValueError]) -> Any:
+    def object_pairs(pairs):
+        value={}
+        for key,item in pairs:
+            if key in value:raise ValueError('duplicate JSON object key '+repr(key))
+            value[key]=item
+        return value
+    def finite_number(text):
+        value=float(text)
+        if not math.isfinite(value):raise ValueError('non-finite JSON number '+text)
+        return value
+    def reject_constant(text):raise ValueError('non-JSON numeric constant '+text)
     try:
-        return json.loads(data.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return json.loads(data.decode("utf-8"),object_pairs_hook=object_pairs,
+                          parse_float=finite_number,parse_constant=reject_constant)
+    except (UnicodeDecodeError, ValueError) as exc:
         raise error(f"{source}: invalid UTF-8 JSON: {exc}") from exc
 
 

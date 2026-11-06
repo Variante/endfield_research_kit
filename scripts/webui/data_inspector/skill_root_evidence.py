@@ -199,11 +199,39 @@ def _project(row: dict[str, Any]) -> dict[str, Any]:
             "sourceSha256": row["logicalSha256"], "evidenceBoundary": _BOUNDARY}
 
 
-def load_skill_root_evidence(export_root: Path, *, summary_path: Path = DEFAULT_SUMMARY,
-                             ledger_path: Path = DEFAULT_LEDGER) -> tuple[dict[str, Any], dict[str, Any]]:
+def load_skill_root_evidence(export_root: Path, *, summary_path: Path | None = None,
+                             ledger_path: Path | None = None, current_context=None) -> tuple[dict[str, Any], dict[str, Any]]:
+    from scripts.source_paths import ExportLayout
+    root = ExportLayout(Path(export_root)).evidence_dir / 'animestudio'
+    summary_path = root / 'jsondata_current_latest.json' if summary_path is None else Path(summary_path)
+    ledger_path = root / 'jsondata_current_files_latest.jsonl.gz' if ledger_path is None else Path(ledger_path)
     summary = json.loads(summary_path.read_bytes())
     reader = require_current_reader_inputs(summary.get("provenance", {}).get("levelscriptReaderInputs"))
     path, selection = select_current_family_report("SkillData", export_root, summary_path=summary_path, ledger_path=ledger_path)
+    from scripts.game_data.memorypack import current_family_evidence as current
+    if selection['familyReport'].get('format') == current.FORMATS['SkillData']:
+        report = json.loads(path.read_bytes()); pin = _fingerprint(path)
+        rows = _registry_rows(ledger_path)
+        fresh, _ = current.load_evidence(path, family='SkillData',
+            expected_input_set_sha256=selection['currentSourceReceipt']['inputSetSha256'],
+            expected_paths={row['virtualPath'] for row in rows.values()}, loaded_report=(report,pin), context=current_context)
+        sources = _source_pins(export_root)
+        _require(sources.keys() == rows.keys(), 'one-to-one-source-set')
+        evidence = {}
+        for key, source in sources.items():
+            row = rows[key]; detail = fresh[row['virtualPath']]['detail']
+            _require(row.get('length') == source['length'] and row.get('logicalSha256') == source['sha256']
+                and row.get('status') == detail['canonicalStatus'], 'current-root-registry-byte-join', source['path'])
+            evidence['game/Json/' + source['path']] = dict(canonicalStatus=detail['canonicalStatus'],
+                storedFrameExact=detail['wholeSchemaExact'], wholeSchemaExact=detail['wholeSchemaExact'],
+                namedSchemaStatus='exact' if detail['wholeSchemaExact'] else 'bounded_partial',
+                rootProofSummary=detail['rootProofSummary'], sourceSha256=source['sha256'], evidenceBoundary=_BOUNDARY)
+        _require(_source_pins(export_root) == sources, 'export-source-drift')
+        _require(select_current_family_report('SkillData', export_root, summary_path=summary_path, ledger_path=ledger_path)
+            == (path, selection), 'canonical-receipt-drift')
+        _require(require_current_reader_inputs(reader) == reader, 'reader-input-drift')
+        return evidence, dict(status='current-canonical-skill-evidence', selection=selection,
+            readerInputs=reader, sourceCount=len(evidence), currentNativeRoot=True)
     header = read_report_header(path)
     pin = selection["familyReport"]
     _require(header.get("format") == pin.get("format")
@@ -229,9 +257,9 @@ def load_skill_root_evidence(export_root: Path, *, summary_path: Path = DEFAULT_
                       "inputs": inputs, "readerInputs": reader, "sourceCount": len(evidence)}
 
 
-def try_skill_root_evidence(export_root: Path):
+def try_skill_root_evidence(export_root: Path, *, current_context=None):
     try:
-        return load_skill_root_evidence(export_root)
+        return load_skill_root_evidence(export_root, current_context=current_context)
     except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
         return None, {"status": "canonical-skill-evidence-unavailable", "reason": str(error)[:1000]}
 

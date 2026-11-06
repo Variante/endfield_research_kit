@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.jsondata_text_native import validate_text_native
 from scripts.game_data.schemas.named_schema import (
     load_schema_contract,
     make_fail,
@@ -37,7 +38,7 @@ class JsonDataTextSchemaDecodeError(ValueError):
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "jsondata_text_schema.json"
-CONTRACT_SCHEMA = "endfield.jsondata-text-schema.v1"
+CONTRACT_SCHEMA = "endfield.jsondata-text-schema.v2"
 SUPPORTED = frozenset({
     "AIConfig/AIGlobalSetting.json",
     "AIConfig/EnemyTemplateDataSummary.json",
@@ -47,6 +48,15 @@ SUPPORTED = frozenset({
     "LevelGenForRuntime/DoodadGroupTable.json",
     "LevelGenForRuntime/TotalFactoryRegions.json",
     "SpaceshipCabinData.json",
+    "AIConfig/GroupAIConfig/ContingencyContract_Guard.json",
+    "AIConfig/GroupAIConfig/ContingencyContract_Main.json",
+    "AIConfig/GroupAIConfig/Default_GroupAITargetMain.json",
+    "AIConfig/GroupAIConfig/Default_GroupAITargetNotMain.json",
+    "GameplayConfig/InnSceneLayoutTable.json",
+    "GameplayConfig/PaintingScrollConfigTable.json",
+    "GameplayConfig/PoiLevelChangePerformBindingTable.json",
+    "GameplayConfig/PoiLevelChangePerformDataTable.json",
+    "GameplayConfig/RanchConfigTable.json",
 })
 _fail = make_fail(JsonDataTextSchemaDecodeError)
 
@@ -98,7 +108,7 @@ def _relations(root: Any, relative: str, source: str) -> None:
             _fail(source + ".regions.regionId", "unique", ids)
 
 
-def decode_named_jsondata_text(data: bytes, *, source: str) -> dict[str, Any]:
+def decode_named_jsondata_text(data: bytes, *, source: str, game_root: Path | None = None) -> dict[str, Any]:
     relative = source.replace("\\", "/")
     if relative not in SUPPORTED:
         _fail(source, "supported named text-table path", relative)
@@ -106,6 +116,7 @@ def decode_named_jsondata_text(data: bytes, *, source: str) -> dict[str, Any]:
     table = _load_contract()["tables"][relative]
     counters = validate_document(root, table, source=source, error=JsonDataTextSchemaDecodeError)
     _relations(root, relative, source)
+    native=validate_text_native(root,relative,game_root=game_root)
     return {
         "status": "named_exact",
         "schemaStatus": "named_exact",
@@ -113,6 +124,7 @@ def decode_named_jsondata_text(data: bytes, *, source: str) -> dict[str, Any]:
         "evidenceBoundary": "exact",
         **section_counts(table),
         **counters,
+        **({'nativeAudit':native}if native is not None else{}),
     }
 
 

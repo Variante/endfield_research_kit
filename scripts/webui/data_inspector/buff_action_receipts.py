@@ -1,30 +1,14 @@
-"""Publish only authenticated Buff action spans, never a whole BuffData decode.
+"""Publish authenticated named Buff action values from current source-owned spans.
 
-The optional ``buff-action-receipts`` Data-page dataset projects the eight
-reviewed action wrapper fields from the current v7 receipt report at
-their byte spans in exported BuffData files. ``load_receipt_records``
-publishes only when every check holds:
+Ordinary Data builds select the current v9 receipt below the selected export's
+meta/evidence directory and replay its complete Buff source operation. The
+current adapter separately proves named stored values and their exact source
+spans; enclosing Buff roots have their own complete admission. A stored action
+does not establish runtime execution. Native, source, pool and reader exit
+gates remain mandatory before publication.
 
-* the receipt report names the Buff VFS corpus report by its SHA256, and its
-  source identity set and input set equal that report's;
-* the corpus report is complete and publication-eligible, with no failed or
-  ambiguous file;
-* each reviewed tag's domain gate authenticates its own selected native layout
-  and the receipt report agrees with that gate's declared input pins;
-* every Buff source's exported logical bytes still match its recorded length
-  and SHA256;
-* each span is independently certified by the corpus and replayed by its selected
-  codec; names, kinds, ranges and structural fields agree with that replay;
-  nested spans may contain one another, crossing
-  or duplicate spans are refused, and the report summary
-  matches the recounted spans.
-
-Any failure raises, and the builder marks the dataset unavailable without
-cached records. Records are ``bounded_partial`` projections: nested values,
-unlisted actions and the enclosing BuffData schema are not decoded here, and
-a stored action is not evidence of runtime use. The default report paths are
-under ``reports/animestudio/``; ``--buff-corpus-report`` and
-``--buff-action-receipts-report`` override them.
+The v7 branch below retains historical diagnostic projection and validation;
+its bounded fields cannot substitute for current complete named values.
 """
 
 from __future__ import annotations
@@ -204,10 +188,15 @@ def _action_projection(
 
 def load_receipt_records(
     receipt_path: Path, buff_report_path: Path, export_root: Path,
+    *, current_context=None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Recheck the selected report, corpus, native inputs and every export identity."""
     export_root = export_root.resolve()
     receipt_raw, report = _read(receipt_path)
+    if report.get('schema') == 'endfield.buff-action-receipt-corpus.v9':
+        from scripts.webui.data_inspector.current_family_records import load_action_records
+        return load_action_records(receipt_path, buff_report_path, export_root, report=report,
+            current_context=current_context)
     buff_raw, buff_report = _read(buff_report_path)
     _require(
         report.get("schema") == "endfield.buff-action-receipt-corpus.v7"

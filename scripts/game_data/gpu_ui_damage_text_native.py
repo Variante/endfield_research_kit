@@ -18,11 +18,10 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.animation_curve_native import _pe_file_offset
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "gpu_ui_damage_text_native.json"
-SCHEMA = "endfield.gpui-damage-text-native-contract.v1"
+SCHEMA = "endfield.gpui-damage-text-native-contract.v2"
 
 
 def load_damage_text_schema(
@@ -35,8 +34,6 @@ def load_damage_text_schema(
     }
     try:
         raw = Path(contract_path).read_bytes()
-        digest = hashlib.sha256(raw).hexdigest().upper()
-        audit["contractSha256"] = digest
         contract = json.loads(raw)
         if contract.get("schema") != SCHEMA or contract.get("status") != "validated":
             raise ValueError("unsupported contract schema or status")
@@ -53,17 +50,23 @@ def load_damage_text_schema(
             failures.append({"gate": "installed_native_inputs", "expected": "validated",
                              "actual": gate.status, "detail": gate.detail})
             return None, audit
-        image = gate.gameassembly.read_bytes()
-        for window in contract["codeWindows"]:
-            size = window["length"]
-            offset = _pe_file_offset(image, int(window["rva"], 0), size)
-            actual = hashlib.sha256(image[offset:offset + size]).hexdigest().upper()
-            if actual != window["sha256"]:
-                failures.append({"gate": "reader_window_sha256", "owner": window["name"],
-                                 "expected": window["sha256"], "actual": actual})
-        if failures:
-            return None, audit
-        audit.update(status="validated", validatedCodeWindows=len(contract["codeWindows"]),
+        selected_root=gate.metadata.parent.parent.parent
+        unity=selected_root.parent/'UnityPlayer.dll'
+        if not unity.is_file() or hashlib.sha256(unity.read_bytes()).hexdigest().upper()!=native['UnityPlayer.dll']:
+            raise ValueError('selected UnityPlayer.dll missing or mismatched: '+str(unity))
+        from scripts.game_data.il2cpp.native_image import open_native_image
+        from scripts.game_data.memorypack.generated_action_sources import _source_preparation_scope
+        from scripts.game_data.memorypack.gpu_damage_text_sources import derive,declaration
+        from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
+        before=snapshot_complete_reader_inputs()
+        image=open_native_image(gate.gameassembly,gate.metadata)
+        with _source_preparation_scope(image,native):fresh=declaration(derive(image,native))
+        if fresh!=contract['nativePrograms'] or fresh['records']!=contract['records']:
+            raise ValueError('current complete DamageText graph differs from reviewed native declaration')
+        if Path(contract_path).read_bytes()!=raw or before!=snapshot_complete_reader_inputs():
+            raise ValueError('DamageText contract or reader sources changed during proof')
+        audit.update(status="validated", validatedCodeWindows=len(fresh['codeWindows']),
+                     completeNativeReaderCount=len(fresh['readers']),
                      evidenceBoundary=contract["evidenceBoundary"])
         return contract, audit
     except (OSError, ValueError, KeyError, TypeError) as error:

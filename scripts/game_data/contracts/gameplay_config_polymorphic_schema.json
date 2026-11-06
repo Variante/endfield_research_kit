@@ -2626,7 +2626,8 @@
             "Beyond.Gameplay.MapMarkVisibilityDataFarmTerminal, Gameplay.Beyond",
             "Beyond.Gameplay.MapMarkVisibilityDataFoodBox, Gameplay.Beyond",
             "Beyond.Gameplay.MapMarkVisibilityDataInn, Gameplay.Beyond",
-            "Beyond.Gameplay.MapMarkVisibilityDataRanch, Gameplay.Beyond"
+            "Beyond.Gameplay.MapMarkVisibilityDataRanch, Gameplay.Beyond",
+            "Beyond.Gameplay.MapMarkVisibilityDataActivityContingencyContract, Gameplay.Beyond"
           ]
         },
         "@Beyond.Gameplay.MapMarkVisibilityDataMapDetectorEntity, Gameplay.Beyond.distToPosThreshold": {
@@ -3610,6 +3611,21 @@
           "types": [
             "boolean"
           ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataActivityContingencyContract, Gameplay.Beyond.distToPosThreshold": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataActivityContingencyContract, Gameplay.Beyond.activityId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.MapMarkVisibilityDataActivityContingencyContract, Gameplay.Beyond.dynamicVisibility": {
+          "types": [
+            "boolean"
+          ]
         }
       },
       "taggedObjects": {
@@ -4180,6 +4196,16 @@
               "$type",
               "distToPosThreshold",
               "dynamicVisibility"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.MapMarkVisibilityDataActivityContingencyContract, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "distToPosThreshold",
+              "dynamicVisibility",
+              "activityId"
             ]
           ]
         }

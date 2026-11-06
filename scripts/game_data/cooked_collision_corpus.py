@@ -7,6 +7,8 @@ The selection defines coverage; this does not claim every installed Mesh was
 selected, or assign scene transforms, materials or runtime collider ownership.
 """
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli
+from scripts.source_paths import ExportLayout
 
 from collections import Counter
 import argparse
@@ -16,6 +18,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import struct
 import subprocess
 import tempfile
@@ -26,7 +29,25 @@ from scripts.game_data.cooked_convex import read_convex_mesh
 from scripts.game_data.corpus_common import atomic_write_text, validate_provenance
 from scripts.repo_paths import REPO_ROOT
 
-DEFAULT_CLI = REPO_ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
+DEFAULT_CLI = configured_animestudio_cli()
+DEFAULT_EVIDENCE_ROOT = ExportLayout.configured().evidence_dir / 'assets/collision_evidence'
+
+
+def _guard_evidence_root(path: Path, evidence_root: Path | None = None) -> None:
+    """Published receipts must survive cleanup of disposable extraction inputs."""
+    reports = (evidence_root or ExportLayout.configured().evidence_dir).resolve()
+    resolved = path.resolve()
+    if reports not in resolved.parents:
+        raise ValueError("Collision evidence directory must be under the selected export/meta/evidence/: " + str(path))
+
+
+def _retain_input(source: Path, destination: Path) -> str:
+    """Keep the exact audited bytes, refusing a source changed during copying."""
+    expected = _digest(source)
+    shutil.copyfile(source, destination)
+    if _digest(destination) != expected or _digest(source) != expected:
+        raise ValueError(f"Collision evidence input changed while retaining it: {source}")
+    return expected
 
 
 @lru_cache(maxsize=4096)
@@ -130,8 +151,24 @@ def _join_selection(report: dict, selection: list) -> None:
 
 
 def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Path,
-                    expected_input_set: str, work_root: Path, cli: Path = DEFAULT_CLI) -> dict:
+                    expected_input_set: str, work_root: Path, cli: Path = DEFAULT_CLI,
+                    evidence_root: Path | None = None) -> dict:
     """Authenticate inputs, run a fresh typed/raw export, check identity coverage."""
+    _guard_evidence_root(work_root, evidence_root)
+    work_root.mkdir(parents=True, exist_ok=True)
+    run_root = Path(tempfile.mkdtemp(prefix="collision-", dir=work_root)).resolve()
+    inputs = run_root / "inputs"
+    inputs.mkdir()
+    retained = {}
+    for source, name in ((selection_path, "selection.json"), (summary_path, "vfs_audit.json"),
+                         (ledger_path, "vfs_ledger.jsonl.gz")):
+        destination = inputs / name
+        retained[destination] = _retain_input(source, destination)
+    selection_path, summary_path, ledger_path = (
+        inputs / "selection.json", inputs / "vfs_audit.json", inputs / "vfs_ledger.jsonl.gz"
+    )
+    # Validate and invoke the exporter using retained inputs. Original paths may
+    # be temporary; no published dependency or command points back to them.
     selection = json.loads(selection_path.read_text("utf-8"))
     if not isinstance(selection,list) or not selection or any(row.get("Type") != "Mesh" for row in selection):
         raise ValueError("selection must be a non-empty AnimeStudio Mesh filter array")
@@ -150,8 +187,6 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         if stat.st_size != row["actualPhysicalLength"] or digest != row["recomputedContentMd5"]:
             raise ValueError(f"selected physical chunk differs from current audit: {path}")
         physical_inputs.append(dict(path=str(path),length=stat.st_size,mtimeNs=stat.st_mtime_ns,md5=digest))
-    work_root.mkdir(parents=True,exist_ok=True)
-    run_root = Path(tempfile.mkdtemp(prefix="collision-",dir=work_root))
     json_root,raw_root = run_root/"json",run_root/"raw"
     command = [str(cli),str(_selection_input(selection)),str(json_root),"--game","ArknightsEndfield",
                "--types","Mesh","--names","^$","--export_type","JSON","--filter_data",str(selection_path.resolve()),
@@ -169,6 +204,9 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
             raise ValueError(f"selected physical chunk changed during extraction: {row['path']}")
     report = inspect_exports(json_root/"Mesh",raw_root/"Mesh",payload_root=run_root/"payloads")
     _join_selection(report,selection)
+    for path, expected in retained.items():
+        if _digest(path) != expected:
+            raise ValueError(f"retained Collision evidence changed during extraction: {path}")
     report.update(schema="endfield.cooked-collision-selected-corpus.v2", inputSetSha256=expected_input_set.upper(),
                   provenance=provenance, selection=dict(path=str(selection_path),sha256=selection_sha,meshCount=len(selection),cabCount=len(files)),
                   extraction=dict(command=command,log=str(run_root/"export.log"),logSha256=_digest(run_root/"export.log"),
@@ -209,6 +247,19 @@ def validate_receipt(report_path: Path, *, summary_path: Path | None = None) -> 
     Consumers must additionally rejoin each typed/raw buffer with
     ``receipt_payloads`` and run the complete format reader before using it.
     """
+    try:
+        return _validate_receipt(report_path, summary_path=summary_path)
+    except FileNotFoundError as error:
+        raise ValueError(
+            f"Collision receipt {report_path}: required evidence file is missing: {error.filename}. "
+            "Run export.bat assets to regenerate legacy receipts automatically; "
+            "new runs retain selection, VFS audit and Mesh JSON/raw evidence inside the selected export/meta/evidence/assets/collision_evidence/. "
+            "export.bat assets automatically prepares missing or stale static collision evidence; "
+            "an empty replacement file cannot satisfy its hash checks."
+        ) from error
+
+
+def _validate_receipt(report_path: Path, *, summary_path: Path | None = None) -> dict:
     report = json.loads(report_path.read_text("utf-8"))
     if (report.get("schema") not in ("endfield.cooked-collision-selected-corpus.v1", "endfield.cooked-collision-selected-corpus.v2")
             or report.get("status") != "complete" or report.get("failures")):
@@ -328,10 +379,14 @@ def receipt_payloads(row: dict):
         raise ValueError("collision receipt cooked-buffer coverage differs")
 
 
-def inspect_exports(json_root: Path, raw_root: Path, *, payload_root: Path | None = None) -> dict:
+def inspect_exports(json_root: Path, raw_root: Path, *, payload_root: Path | None = None,
+                    export_pairs=None) -> dict:
     results, failures, groups = [], [], Counter()
-    for source in sorted(json_root.glob("*.json"), key=lambda p: p.name):
-        row = {"jsonPath": str(source), "rawPath": str(raw_root / (source.stem+".dat"))}
+    pairs = export_pairs if export_pairs is not None else (
+        (source, raw_root / (source.stem+".dat"))
+        for source in sorted(json_root.glob("*.json"), key=lambda p: p.name))
+    for source, raw_path in pairs:
+        row = {"jsonPath": str(source), "rawPath": str(raw_path)}
         try:
             data = json.loads(source.read_text("utf-8-sig"))
             identity = data["$animestudio"]
@@ -386,8 +441,8 @@ def inspect_exports(json_root: Path, raw_root: Path, *, payload_root: Path | Non
 
 def _guard_generated(path: Path) -> None:
     resolved = path.resolve()
-    if not any(base.resolve() in resolved.parents for base in (REPO_ROOT/"reports",REPO_ROOT/"tmp",REPO_ROOT/"scratch")):
-        raise ValueError(f"generated output must be inside reports/, tmp/ or scratch/: {path}")
+    if not any(base.resolve() in resolved.parents for base in (ExportLayout.configured().evidence_dir,)):
+        raise ValueError(f"corpus publication must be inside the selected export/meta/evidence/: {path}")
 
 
 def main() -> int:
@@ -397,11 +452,12 @@ def main() -> int:
     parser.add_argument("--outer-ledger",type=Path,required=True)
     parser.add_argument("--expected-input-set-sha256",required=True)
     parser.add_argument("--cli",type=Path,default=DEFAULT_CLI)
-    parser.add_argument("--work-root",type=Path,default=REPO_ROOT/"tmp/animestudio/cooked_collision_corpus")
-    parser.add_argument("--output-json",type=Path,default=REPO_ROOT/"reports/assets/cooked_collision_current_latest.json")
+    parser.add_argument("--work-root",type=Path,default=DEFAULT_EVIDENCE_ROOT,
+                        help="retained evidence directory inside the selected export/meta/evidence/")
+    parser.add_argument("--output-json",type=Path,default=ExportLayout.configured().evidence_dir / 'assets/cooked_collision_current_latest.json')
     args = parser.parse_args()
     try:
-        _guard_generated(args.output_json); _guard_generated(args.work_root)
+        _guard_generated(args.output_json); _guard_evidence_root(args.work_root)
         if _path_key(args.output_json) in {_path_key(p) for p in (args.selection,args.outer_summary,args.outer_ledger,args.cli)}:
             raise ValueError("output report must differ from input files")
     except ValueError as error:
@@ -414,11 +470,14 @@ def main() -> int:
         report = dict(schema="endfield.cooked-collision-selected-corpus.v2",status="failed",
                       inputSetSha256=args.expected_input_set_sha256.upper(),
                       failures=[dict(validator="cooked_collision_selected_corpus",check="input/extraction gate",diagnostic=str(error))])
-    atomic_write_text(args.output_json,json.dumps(report,ensure_ascii=False,indent=2)+"\n")
+    # A failed refresh must not replace the last complete publication.
+    output = args.output_json if report["status"] == "complete" else args.output_json.with_name(
+        args.output_json.stem + ".failed" + args.output_json.suffix)
+    atomic_write_text(output,json.dumps(report,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps(dict(validator="cooked_collision_selected_corpus",status=report["status"],
                           selectedCount=report.get("selectedCount"),counts=report.get("counts"),
                           failureCount=len(report["failures"]),firstFailures=report["failures"][:5],
-                          report=str(args.output_json)),ensure_ascii=False))
+                          report=str(output)),ensure_ascii=False))
     return 0 if report["status"] == "complete" else 1
 
 

@@ -16,7 +16,8 @@ from typing import Any
 if __name__ == "__main__" and not __package__:
     raise SystemExit("Run from the repository root: python -m scripts.game_data.memorypack.buff_damage_sword_selected")
 
-from scripts.common import REPORTS_DIR, check_installed_native_inputs
+from scripts.source_paths import ExportLayout
+from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.corpus_common import atomic_write_text
 from scripts.game_data.il2cpp.context import method_spec_usage_index
@@ -33,7 +34,7 @@ LABEL = "buffDamageSwordSelected"
 SCHEMA = "endfield.buff-damage-sword-selected-receipt.v1"
 NATIVE_SCHEMA = "endfield.buff-damage-sword-selected-native-contract.v1"
 CONTRACT_PATH = CONTRACTS_DIR / "buff_damage_sword_selected_native.json"
-DEFAULT_NATIVE_AUDIT = REPORTS_DIR / "animestudio/il2cpp_context_current_latest.json"
+DEFAULT_NATIVE_AUDIT = ExportLayout.configured().evidence_dir / "animestudio/il2cpp_context_current_latest.json"
 
 
 def _public_native(value: Any) -> Any:

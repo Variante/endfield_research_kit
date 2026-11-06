@@ -54,6 +54,7 @@ the sparse report a full SkillData census.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -75,12 +76,12 @@ RECEIPT_SCHEMA = "endfieldCapture.skillDataCursorCapture.v3"
 DEFAULT_CORPUS = context_audit.DEFAULT_CORPUS
 DEFAULT_NATIVE_CONTEXT = context_audit.DEFAULT_CONTEXT
 DEFAULT_TARGET_CONTRACT = context_audit.TARGET_CONTRACT_PATH
-DEFAULT_OUTPUT = REPO_ROOT / "reports/animestudio/skilldata_cursor_target_set_verification_latest.json"
+DEFAULT_OUTPUT = ExportLayout.configured().evidence_dir / 'animestudio/skilldata_cursor_target_set_verification_latest.json'
 DEFAULT_DIAGNOSTIC_OUTPUT = (
-    REPO_ROOT / "reports/animestudio/skilldata_cursor_target_set_diagnostic_latest.json"
+    ExportLayout.configured().evidence_dir / 'animestudio/skilldata_cursor_target_set_diagnostic_latest.json'
 )
 DEFAULT_REBIND_OUTPUT = (
-    REPO_ROOT / "reports/animestudio/skilldata_cursor_target_set_rebind_latest.json"
+    ExportLayout.configured().evidence_dir / 'animestudio/skilldata_cursor_target_set_rebind_latest.json'
 )
 
 LOSS_COUNTERS = (

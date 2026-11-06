@@ -16,6 +16,7 @@ complete Transform chains must reach an actual container-declared root. Stored
 corner projection does not prove live shear/nonuniform-scale PhysX handling.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from pathlib import Path
@@ -74,11 +75,11 @@ def validate_receipt(path: Path, scene: dict) -> dict:
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--scene-receipt', type=Path, required=True)
-    parser.add_argument('--work-root', type=Path, default=REPO_ROOT/'tmp/animestudio/collision_primitives')
-    parser.add_argument('--output-json', type=Path, default=REPO_ROOT/'reports/assets/collision_boxes_current.json')
+    parser.add_argument('--work-root', type=Path, default=ExportLayout.configured().evidence_dir / 'assets/collision_primitives')
+    parser.add_argument('--output-json', type=Path, default=ExportLayout.configured().evidence_dir / 'assets/collision_boxes_current.json')
     args = parser.parse_args(argv)
-    if not args.output_json.resolve().is_relative_to((REPO_ROOT/'reports').resolve()):
-        parser.error('generated receipts belong under reports/')
+    if not args.output_json.resolve().is_relative_to(ExportLayout.configured().evidence_dir.resolve()):
+        parser.error('generated receipts belong inside the selected export/meta/evidence/')
     try:
         report = collect(args.scene_receipt, work_root=args.work_root)
         write_json(args.output_json, report)

@@ -17,7 +17,8 @@ from scripts.game_data.string_pool import export_string_pool
 from scripts.webui.data_inspector.contract import source_descriptor
 
 
-def levelscript_template_record(path: Path, export_root: Path) -> dict[str, Any]:
+def levelscript_template_record(path: Path, export_root: Path, *, data: bytes | None = None,
+                               strings=None, game_root=None, levelscript_decoder=None) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
     base = {
         "id": relative, "title": path.stem,
@@ -27,7 +28,10 @@ def levelscript_template_record(path: Path, export_root: Path) -> dict[str, Any]
         base["source"] = source_descriptor(
             path, export_root=export_root, media_type="application/octet-stream",
         )
-        decoded = frame_levelscript_template(path.read_bytes(), strings=export_string_pool(export_root / 'game/Json'))
+        raw = path.read_bytes() if data is None else data
+        decoded = levelscript_decoder(path, raw) if levelscript_decoder is not None else frame_levelscript_template(raw,
+            strings=export_string_pool(export_root / 'game/Json') if strings is None else strings,
+            game_root=game_root)
     except (OSError, LevelScriptTemplateFramingError, ValueError) as exc:
         diagnostic = f"{relative}: {exc}"[:1200]
         return {
@@ -57,6 +61,9 @@ def levelscript_template_record(path: Path, export_root: Path) -> dict[str, Any]
             "serializedMemberCount": decoded.get("serializedMemberCount"),
             "bytesConsumed": decoded.get("bytesConsumed"),
             "opaqueMiddleLength": opaque_length,
+            "wholeSchemaExact": decoded.get("wholeSchemaExact") is True,
+            "physicalEOF": decoded.get("physicalEOF") is True,
+            "closedFieldCount": len(decoded.get("closedFields") or []),
             "unresolvedReason": stop,
         },
         "payload": decoded, "payloadKind": "reader",

@@ -7,6 +7,7 @@ its reviewed code windows and every other build-locked value the audit checks
 :func:`native_gate` fails closed unless the installed client is that build.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import hashlib
 import re
@@ -33,7 +34,7 @@ NATIVE_CONTRACT, _NATIVE_CONTRACT_DIGEST = read_reviewed_contract(
 GA_SHA = NATIVE_CONTRACT['nativeInputs']['GameAssembly.dll'].upper()
 MD_SHA = NATIVE_CONTRACT['nativeInputs']['global-metadata.dat'].upper()
 UNITY_SHA = NATIVE_CONTRACT['nativeInputs']['UnityPlayer.dll'].upper()
-CORPUS_REPORT_RELATIVE = 'reports/animestudio/skilldata_cursor_basis_latest.json'
+CORPUS_REPORT_RELATIVE = str(ExportLayout.configured().evidence_dir / 'animestudio/skilldata_cursor_basis_latest.json')
 CONSUMER_WINDOWS = tuple(
     (int(begin, 16), int(end, 16), digest)
     for begin, end, digest in NATIVE_CONTRACT['consumerWindows']

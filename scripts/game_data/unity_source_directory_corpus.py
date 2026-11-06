@@ -16,6 +16,7 @@ directory/body admission closes stored Mesh/Material/Shader/Texture references;
 it does not establish runtime material overrides, selected LOD or instances.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from collections import Counter
@@ -215,10 +216,10 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--scene-receipt',type=Path,required=True)
     parser.add_argument('--selection',type=Path)
-    parser.add_argument('--work-root',type=Path,default=REPO_ROOT/'tmp/animestudio/source_directories')
-    parser.add_argument('--output-json',type=Path,default=REPO_ROOT/'reports/assets/source_directories_current.json')
+    parser.add_argument('--work-root',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/source_directories')
+    parser.add_argument('--output-json',type=Path,default=ExportLayout.configured().evidence_dir / 'assets/source_directories_current.json')
     args=parser.parse_args(argv)
-    if not args.output_json.resolve().is_relative_to((REPO_ROOT/'reports').resolve()):parser.error('generated receipts belong under reports/')
+    if not args.output_json.resolve().is_relative_to(ExportLayout.configured().evidence_dir.resolve()):parser.error('generated receipts belong inside the selected export/meta/evidence/')
     try:
         report=collect(args.scene_receipt,work_root=args.work_root,selection=json.loads(args.selection.read_bytes()) if args.selection else None)
         write_json(args.output_json,report);print('Selected source directories:',report['status'],report['counts'],flush=True);return 0

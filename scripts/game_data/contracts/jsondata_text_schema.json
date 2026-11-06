@@ -1,10 +1,9 @@
 {
-  "schema": "endfield.jsondata-text-schema.v1",
+  "schema": "endfield.jsondata-text-schema.v2",
   "status": "named_exact",
   "evidenceBoundary": "Every ordered object shape, array member, scalar JSON type, and observed $type identity in the eight current named text tables is validated. Only explicitly named ID dictionaries are dynamic.",
   "tables": {
     "AIConfig/AIGlobalSetting.json": {
-      "dynamicDictionaries": {},
       "nodes": {
         "$": {
           "types": [
@@ -12,8 +11,6 @@
           ],
           "shapes": [
             [
-              "centerBattleNumRange",
-              "characterBattleNumRange",
               "characterAttackRandomDelay",
               "characterRefreshTargetInstantlyCD",
               "randomStopAttackTime",
@@ -78,7 +75,8 @@
               "stimulateSettingDatas",
               "switchSteadyMinMax",
               "playerStopAtkTime",
-              "enemyHateProbability",
+              "battlePlayCategoryGroupAIConfigs",
+              "battlePlayCategoryEnemyHateProb",
               "enemyIgnoreMainCD",
               "enemyAttackerUpdateTargetPeriod",
               "meleeCharDynamicWeight",
@@ -141,32 +139,6 @@
             ]
           ]
         },
-        "$.centerBattleNumRange": {
-          "types": [
-            "object"
-          ],
-          "shapes": [
-            [
-              "x",
-              "y"
-            ]
-          ]
-        },
-        "$.centerBattleNumRange.x": {
-          "types": [
-            "integer"
-          ]
-        },
-        "$.centerBattleNumRange.y": {
-          "types": [
-            "integer"
-          ]
-        },
-        "$.characterBattleNumRange": {
-          "types": [
-            "integer"
-          ]
-        },
         "$.characterAttackRandomDelay": {
           "types": [
             "array"
@@ -190,31 +162,37 @@
         },
         "$.characterAttackRandomDelay[].time": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.characterAttackRandomDelay[].value": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.characterAttackRandomDelay[].inTangent": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.characterAttackRandomDelay[].outTangent": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.characterAttackRandomDelay[].inWeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.characterAttackRandomDelay[].outWeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -225,6 +203,7 @@
         },
         "$.characterRefreshTargetInstantlyCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -241,36 +220,43 @@
         },
         "$.randomStopAttackTime.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.randomStopAttackTime.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.confrontToRunDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.runToConfrontDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.gaitChangeCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.leaveTrapTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.idleRelaxTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -281,41 +267,49 @@
         },
         "$.closeToHealTargetTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.seatLeaveDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.seatSearchRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.seatSearchHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.unlockSeatTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.seatOffset": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.checkEnemyColliderInterval": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.checkEnemyColliderDuration": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -337,11 +331,13 @@
         },
         "$.skillTeleportOffset[].x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.skillTeleportOffset[].y": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -363,16 +359,19 @@
         },
         "$.teleportSlotOffset[].x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.teleportSlotOffset[].y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.farmingSearchRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -399,31 +398,37 @@
         },
         "$.speedWeightCurve[].time": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.speedWeightCurve[].value": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.speedWeightCurve[].inTangent": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.speedWeightCurve[].outTangent": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.speedWeightCurve[].inWeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.speedWeightCurve[].outWeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -434,21 +439,25 @@
         },
         "$.disPredictTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.dodgePredictMinDist": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.dodgeRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.dodgeHalfHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -464,66 +473,79 @@
         },
         "$.singleDodgeCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.commonDodgeCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.pickupRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.pickupHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.pickupEnemyRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.pickupEnemyHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.evadeStartRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.evadeEndRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchProb": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchProbAdd": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchTargetDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchRootmotionDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -540,71 +562,85 @@
         },
         "$.strafeSwitchPosDisRange.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchPosDisRange.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchAngle": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.strafeSwitchTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.settlementSearchRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.settlementSearchHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.settlementLoseTargetRadius": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.maxSensorVigilance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.maxSensorDistance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.nearSensorDisVigilance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.farSensorDisVigilance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.damageSensorCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.damageSensorFactor": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveToOuterRadiusOffset": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -631,31 +667,37 @@
         },
         "$.moveRotateCurve[].time": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveRotateCurve[].value": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveRotateCurve[].inTangent": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveRotateCurve[].outTangent": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveRotateCurve[].inWeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveRotateCurve[].outWeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -666,52 +708,52 @@
         },
         "$.moveToTargetMinDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveToTargetMinAngle": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.moveToTargetForceDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.maxTouchDetectDistance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.touchVigilanceStep": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.touchRemoteDetectDistance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.touchRemoteMaxVigilance": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.stimulateSettingDatas": {
           "types": [
             "object"
-          ],
-          "shapes": [
-            [
-              "Default",
-              "Far",
-              "Middle"
-            ]
           ]
         },
-        "$.stimulateSettingDatas.Default": {
+        "$.stimulateSettingDatas.*": {
           "types": [
             "object"
           ],
@@ -727,140 +769,45 @@
             ]
           ]
         },
-        "$.stimulateSettingDatas.Default.envConfrontXZDis": {
+        "$.stimulateSettingDatas.*.envConfrontXZDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.stimulateSettingDatas.Default.envConfrontHeight": {
+        "$.stimulateSettingDatas.*.envConfrontHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.stimulateSettingDatas.Default.battleConfrontXZDis": {
+        "$.stimulateSettingDatas.*.battleConfrontXZDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.stimulateSettingDatas.Default.battleConfrontHeight": {
+        "$.stimulateSettingDatas.*.battleConfrontHeight": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.stimulateSettingDatas.Default.searNpcSafeAreaDis": {
+        "$.stimulateSettingDatas.*.searNpcSafeAreaDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.stimulateSettingDatas.Default.npcEnvConfrontTriggerXZ": {
+        "$.stimulateSettingDatas.*.npcEnvConfrontTriggerXZ": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.stimulateSettingDatas.Default.npcEnvConfrontTriggerY": {
+        "$.stimulateSettingDatas.*.npcEnvConfrontTriggerY": {
           "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far": {
-          "types": [
-            "object"
-          ],
-          "shapes": [
-            [
-              "envConfrontXZDis",
-              "envConfrontHeight",
-              "battleConfrontXZDis",
-              "battleConfrontHeight",
-              "searNpcSafeAreaDis",
-              "npcEnvConfrontTriggerXZ",
-              "npcEnvConfrontTriggerY"
-            ]
-          ]
-        },
-        "$.stimulateSettingDatas.Far.envConfrontXZDis": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far.envConfrontHeight": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far.battleConfrontXZDis": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far.battleConfrontHeight": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far.searNpcSafeAreaDis": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far.npcEnvConfrontTriggerXZ": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Far.npcEnvConfrontTriggerY": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle": {
-          "types": [
-            "object"
-          ],
-          "shapes": [
-            [
-              "envConfrontXZDis",
-              "envConfrontHeight",
-              "battleConfrontXZDis",
-              "battleConfrontHeight",
-              "searNpcSafeAreaDis",
-              "npcEnvConfrontTriggerXZ",
-              "npcEnvConfrontTriggerY"
-            ]
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.envConfrontXZDis": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.envConfrontHeight": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.battleConfrontXZDis": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.battleConfrontHeight": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.searNpcSafeAreaDis": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.npcEnvConfrontTriggerXZ": {
-          "types": [
-            "number"
-          ]
-        },
-        "$.stimulateSettingDatas.Middle.npcEnvConfrontTriggerY": {
-          "types": [
+            "integer",
             "number"
           ]
         },
@@ -887,55 +834,95 @@
         },
         "$.playerStopAtkTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
-        "$.enemyHateProbability": {
+        "$.battlePlayCategoryGroupAIConfigs": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.battlePlayCategoryGroupAIConfigs.*": {
           "types": [
             "object"
           ],
           "shapes": [
             [
-              "UltraLow",
-              "Low",
-              "Middle",
-              "High",
-              "UltraHigh"
+              "centerBattleNumRange",
+              "characterBattleNumRange",
+              "enableDynamicHate",
+              "targetMainGroupAIConfigPath",
+              "targetNotMainGroupAIConfigPath"
             ]
           ]
         },
-        "$.enemyHateProbability.UltraLow": {
+        "$.battlePlayCategoryGroupAIConfigs.*.centerBattleNumRange": {
           "types": [
-            "number"
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
           ]
         },
-        "$.enemyHateProbability.Low": {
+        "$.battlePlayCategoryGroupAIConfigs.*.centerBattleNumRange.x": {
           "types": [
-            "number"
+            "integer"
           ]
         },
-        "$.enemyHateProbability.Middle": {
+        "$.battlePlayCategoryGroupAIConfigs.*.centerBattleNumRange.y": {
           "types": [
-            "number"
+            "integer"
           ]
         },
-        "$.enemyHateProbability.High": {
+        "$.battlePlayCategoryGroupAIConfigs.*.characterBattleNumRange": {
           "types": [
-            "number"
+            "integer"
           ]
         },
-        "$.enemyHateProbability.UltraHigh": {
+        "$.battlePlayCategoryGroupAIConfigs.*.enableDynamicHate": {
           "types": [
+            "boolean"
+          ]
+        },
+        "$.battlePlayCategoryGroupAIConfigs.*.targetMainGroupAIConfigPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.battlePlayCategoryGroupAIConfigs.*.targetNotMainGroupAIConfigPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.battlePlayCategoryEnemyHateProb": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.battlePlayCategoryEnemyHateProb.*": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.battlePlayCategoryEnemyHateProb.*.*": {
+          "types": [
+            "integer",
             "number"
           ]
         },
         "$.enemyIgnoreMainCD": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.enemyAttackerUpdateTargetPeriod": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -956,16 +943,19 @@
         },
         "$.pursueRangeOffset": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.enemyDisengageNoDamageDuration": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.enemyDisengageCheckInterval": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -986,21 +976,25 @@
         },
         "$.npcAttractStopLengthFactor": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcAttractStopWidthFactor": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcAttractStopBackwardsOffset": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcAttractUnoccupiedDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -1018,41 +1012,49 @@
         },
         "$.npcCalcRVOTimeRandom.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcCalcRVOTimeRandom.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcCalcRVOTimeRandom.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcCalcRVOTimeout": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.mainCharCalcRVOTimeout": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcRVODeflectionAngle": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.mainCharStillInterval": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.mainCharStillFloatDist": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -1088,16 +1090,19 @@
         },
         "$.spaceShipSearchMinDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.blurDetectDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.npcDetectDis": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -1370,26 +1375,31 @@
         },
         "$.mainCharCreateObstacleTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.navigationBlockTimeout": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.navigationBlockDetectDist": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.navLinkAdditiveDist": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "$.factoryNavObstacleMinLength": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -1499,7 +1509,33 @@
           ]
         }
       },
-      "taggedObjects": {}
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$.stimulateSettingDatas": {
+          "keyPattern": "^.*$",
+          "valuePath": "$.stimulateSettingDatas.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "StimulateSettingData"
+        },
+        "$.battlePlayCategoryGroupAIConfigs": {
+          "keyPattern": "^(?:Default|ContingencyContract|SeasonTower|Roguelike|HighDifficulty|Multiplayer)$",
+          "valuePath": "$.battlePlayCategoryGroupAIConfigs.*",
+          "nativeKeyType": "Beyond.GEnums.BattlePlayCategory",
+          "nativeValueType": "Beyond.Gameplay.BattlePlayCategoryConfig"
+        },
+        "$.battlePlayCategoryEnemyHateProb": {
+          "keyPattern": "^(?:Default|ContingencyContract|SeasonTower|Roguelike|HighDifficulty|Multiplayer)$",
+          "valuePath": "$.battlePlayCategoryEnemyHateProb.*",
+          "nativeKeyType": "Beyond.GEnums.BattlePlayCategory",
+          "nativeValueType": "System.Collections.Generic.Dictionary`2<Beyond.Gameplay.AI.HateProbLevel,float>"
+        },
+        "$.battlePlayCategoryEnemyHateProb.*": {
+          "keyPattern": "^(?:UltraLow|Low|Middle|High|UltraHigh|Max)$",
+          "valuePath": "$.battlePlayCategoryEnemyHateProb.*.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.HateProbLevel",
+          "nativeValueType": "float"
+        }
+      }
     },
     "AIConfig/EnemyTemplateDataSummary.json": {
       "dynamicDictionaries": {
@@ -1779,13 +1815,6 @@
       "taggedObjects": {}
     },
     "LevelGenForRuntime/DoodadGroupTable.json": {
-      "dynamicDictionaries": {
-        "$": {
-          "keyPattern": "^[0-9]+$",
-          "valuePath": "$.*",
-          "meaning": "numeric sublevel ID to doodad group rows"
-        }
-      },
       "nodes": {
         "$": {
           "types": [
@@ -1806,6 +1835,8 @@
               "doodadGroupId",
               "centerId",
               "outerId",
+              "childDoodadIds",
+              "childUpgradeNeedLevels",
               "upgradeSource",
               "upgradeSceneGrade",
               "refreshGroupUpperLimitLevel",
@@ -1819,6 +1850,8 @@
               "mapMarkInstId",
               "centerId",
               "outerId",
+              "childDoodadIds",
+              "childUpgradeNeedLevels",
               "upgradeSource",
               "upgradeSceneGrade",
               "refreshGroupUpperLimitLevel",
@@ -1847,6 +1880,21 @@
         "$.*[].outerId[]": {
           "types": [
             "integer"
+          ]
+        },
+        "$.*[].childDoodadIds": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.*[].childDoodadIds.*": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.*[].childUpgradeNeedLevels": {
+          "types": [
+            "object"
           ]
         },
         "$.*[].upgradeSource": {
@@ -1930,9 +1978,39 @@
           "types": [
             "string"
           ]
+        },
+        "$.*[].childUpgradeNeedLevels.*": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[].childUpgradeNeedLevels.*[]": {
+          "types": [
+            "integer"
+          ]
         }
       },
-      "taggedObjects": {}
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$": {
+          "keyPattern": "^-?(?:0|[1-9][0-9]*)$",
+          "valuePath": "$.*",
+          "nativeKeyType": "ulong",
+          "nativeValueType": "Beyond.Gameplay.SubLevelDoodadGroupData"
+        },
+        "$.*[].childDoodadIds": {
+          "keyPattern": "^-?(?:0|[1-9][0-9]*)$",
+          "valuePath": "$.*[].childDoodadIds.*",
+          "nativeKeyType": "ulong",
+          "nativeValueType": "string"
+        },
+        "$.*[].childUpgradeNeedLevels": {
+          "keyPattern": "^-?(?:0|[1-9][0-9]*)$",
+          "valuePath": "$.*[].childUpgradeNeedLevels.*",
+          "nativeKeyType": "ulong",
+          "nativeValueType": "System.Collections.Generic.List`1<int>"
+        }
+      }
     },
     "LevelGenForRuntime/TotalFactoryRegions.json": {
       "dynamicDictionaries": {},
@@ -2105,13 +2183,6 @@
       "taggedObjects": {}
     },
     "SpaceshipCabinData.json": {
-      "dynamicDictionaries": {
-        "$.cabinSpawnInfos": {
-          "keyPattern": "^[A-Za-z0-9_]+$",
-          "valuePath": "$.cabinSpawnInfos.*",
-          "meaning": "cabin type to typed cabin spawn configuration"
-        }
-      },
       "nodes": {
         "$": {
           "types": [
@@ -2174,16 +2245,19 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2201,36 +2275,28 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig": {
           "types": [
             "object"
-          ],
-          "shapes": [
-            [
-              "default",
-              "upgrade"
-            ]
           ]
         },
-        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.default": {
-          "types": [
-            "string"
-          ]
-        },
-        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.upgrade": {
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.*": {
           "types": [
             "string"
           ]
@@ -2272,16 +2338,19 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2381,6 +2450,11 @@
               "uuid",
               "linkedAttractPoints",
               "enableAtInit",
+              "enableCooldown",
+              "cooldownTime",
+              "cooldownFinishAction",
+              "enableSyncGroup",
+              "syncGroupId",
               "attractObjectType",
               "moveToMethod",
               "movementStyleType",
@@ -2401,6 +2475,9 @@
               "envTalkString",
               "chairID",
               "chairCheckDistance",
+              "restaurantPointType",
+              "groupId",
+              "groupIndex",
               "isPoiPoint",
               "mainId",
               "level"
@@ -2426,16 +2503,19 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2454,21 +2534,25 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.w": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2479,6 +2563,7 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointRate": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2510,6 +2595,32 @@
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableAtInit": {
           "types": [
             "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableCooldown": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].cooldownTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].cooldownFinishAction": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableSyncGroup": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].syncGroupId": {
+          "types": [
+            "integer"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].attractObjectType": {
@@ -2574,6 +2685,7 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].waitTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2614,6 +2726,7 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].startDelay": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2629,7 +2742,23 @@
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].chairCheckDistance": {
           "types": [
+            "integer",
             "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].restaurantPointType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].groupId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].groupIndex": {
+          "types": [
+            "integer"
           ]
         },
         "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].isPoiPoint": {
@@ -2694,16 +2823,19 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2721,36 +2853,28 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig": {
           "types": [
             "object"
-          ],
-          "shapes": [
-            [
-              "default",
-              "upgrade"
-            ]
           ]
         },
-        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.default": {
-          "types": [
-            "string"
-          ]
-        },
-        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.upgrade": {
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.*": {
           "types": [
             "string"
           ]
@@ -2792,16 +2916,19 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2901,6 +3028,11 @@
               "uuid",
               "linkedAttractPoints",
               "enableAtInit",
+              "enableCooldown",
+              "cooldownTime",
+              "cooldownFinishAction",
+              "enableSyncGroup",
+              "syncGroupId",
               "attractObjectType",
               "moveToMethod",
               "movementStyleType",
@@ -2921,6 +3053,9 @@
               "envTalkString",
               "chairID",
               "chairCheckDistance",
+              "restaurantPointType",
+              "groupId",
+              "groupIndex",
               "isPoiPoint",
               "mainId",
               "level"
@@ -2946,16 +3081,19 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -2974,21 +3112,25 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.x": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.y": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.z": {
           "types": [
+            "integer",
             "number"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.w": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -3004,6 +3146,7 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointRate": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -3035,6 +3178,32 @@
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableAtInit": {
           "types": [
             "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableCooldown": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].cooldownTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].cooldownFinishAction": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableSyncGroup": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].syncGroupId": {
+          "types": [
+            "integer"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].attractObjectType": {
@@ -3099,6 +3268,7 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].waitTime": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -3139,6 +3309,7 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].startDelay": {
           "types": [
+            "integer",
             "number"
           ]
         },
@@ -3154,7 +3325,23 @@
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].chairCheckDistance": {
           "types": [
+            "integer",
             "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].restaurantPointType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].groupId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].groupIndex": {
+          "types": [
+            "integer"
           ]
         },
         "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].isPoiPoint": {
@@ -3207,6 +3394,3424 @@
               "growBoxMps"
             ]
           ]
+        }
+      },
+      "dynamicDictionaries": {
+        "$.cabinSpawnInfos": {
+          "keyPattern": "^(?:ControlCenter|ManufacturingStation|GrowCabin|GuestRoom|CommandCenter|GuestRoomClueExtension|Any|FlexibleTypeB|FlexibleTypeA|Invalid)$",
+          "valuePath": "$.cabinSpawnInfos.*",
+          "nativeKeyType": "Beyond.GEnums.SpaceshipRoomType",
+          "nativeValueType": "Beyond.Gameplay.SpaceshipCabinSpawnInfo"
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig": {
+          "keyPattern": "^.*$",
+          "valuePath": "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "string"
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig": {
+          "keyPattern": "^.*$",
+          "valuePath": "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "string"
+        }
+      }
+    },
+    "GameplayConfig/InnSceneLayoutTable.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "levelId",
+              "pois",
+              "entities",
+              "airWalls",
+              "functionAreas"
+            ]
+          ]
+        },
+        "$.*.levelId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.*.pois": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*.pois[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "instKey",
+              "initialLevel"
+            ]
+          ]
+        },
+        "$.*.pois[].instKey": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.*.pois[].initialLevel": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*.entities": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.*.airWalls": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*.airWalls[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "useSlotId",
+              "logicId",
+              "slotId"
+            ]
+          ]
+        },
+        "$.*.airWalls[].useSlotId": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.*.airWalls[].logicId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*.airWalls[].slotId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*.functionAreas": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*.functionAreas[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "id"
+            ]
+          ]
+        },
+        "$.*.functionAreas[].id": {
+          "types": [
+            "integer"
+          ]
+        }
+      },
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$": {
+          "keyPattern": "^.*$",
+          "valuePath": "$.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "Beyond.Gameplay.InnSceneLayoutLevelData"
+        },
+        "$.*.entities": {
+          "keyPattern": "^-?(?:0|[1-9][0-9]*)$",
+          "valuePath": "$.*.entities.*",
+          "nativeKeyType": "int",
+          "nativeValueType": "System.Collections.Generic.List`1<Beyond.Gameplay.InnEntitySlotEntry>"
+        }
+      }
+    },
+    "GameplayConfig/PaintingScrollConfigTable.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "paintingScrollConfigDatas"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "subDataParentId",
+              "cameraControlConfig",
+              "paintingObjConfigs",
+              "paintingExtraObjConfigs",
+              "eventNameWhenExit",
+              "eventNameWhenOpened",
+              "eventNameWhenClosed",
+              "openByEventName",
+              "splashRadius",
+              "interactiveCamType",
+              "cameraTweenTime",
+              "enterWaitTime",
+              "openScreenEffect",
+              "closeScreenEffect",
+              "inkWashConfig",
+              "exitWhenAllFinished",
+              "triggerConditionWhenAllDrawableFinished",
+              "enableEarlyInkWashMode",
+              "instantExitOnComplete",
+              "instantExitKeepInkWash"
+            ],
+            [
+              "subDataParentId",
+              "cameraControlConfig",
+              "paintingObjConfigs",
+              "paintingExtraObjConfigs",
+              "eventNameWhenExit",
+              "eventNameWhenOpened",
+              "eventNameWhenClosed",
+              "openByEventName",
+              "splashRadius",
+              "interactiveCamType",
+              "cameraTweenTime",
+              "enterWaitTime",
+              "openScreenEffect",
+              "closeScreenEffect",
+              "inkWashConfig",
+              "exitWhenAllFinished",
+              "triggerConditionWhenAllDrawableFinished",
+              "waitPerformFinishBeforeExit",
+              "enableEarlyInkWashMode",
+              "instantExitOnComplete",
+              "instantExitKeepInkWash"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.subDataParentId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "position",
+              "rotation",
+              "fov",
+              "allowCameraRotation",
+              "horizontalRotationLimit",
+              "verticalRotationLimit"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.position.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.position.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.position.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.rotation.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.rotation.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.rotation.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.fov": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.allowCameraRotation": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.horizontalRotationLimit": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.horizontalRotationLimit.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.horizontalRotationLimit.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.verticalRotationLimit": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.verticalRotationLimit.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraControlConfig.verticalRotationLimit.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "mapVal",
+              "decoId",
+              "inkSpotConfigs",
+              "cantBeenClear",
+              "exitWhenFinish",
+              "splashThreshold",
+              "firstSplashRatio"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].mapVal": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].decoId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "position",
+              "lockMapVarKey",
+              "nonInteractive"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[].position.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[].position.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[].position.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[].lockMapVarKey": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].inkSpotConfigs[].nonInteractive": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].cantBeenClear": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].exitWhenFinish": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].splashThreshold": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingObjConfigs[].firstSplashRatio": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingExtraObjConfigs": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.eventNameWhenExit": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.eventNameWhenOpened": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.eventNameWhenClosed": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.openByEventName": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.splashRadius": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.interactiveCamType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.cameraTweenTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.enterWaitTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.openScreenEffect": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "effectType",
+              "inkWashDelay",
+              "inkWashDuration",
+              "inkWashEase"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.openScreenEffect.effectType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.openScreenEffect.inkWashDelay": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.openScreenEffect.inkWashDuration": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.openScreenEffect.inkWashEase": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.closeScreenEffect": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "effectType",
+              "inkWashDelay",
+              "inkWashDuration",
+              "inkWashEase"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.closeScreenEffect.effectType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.closeScreenEffect.inkWashDelay": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.closeScreenEffect.inkWashDuration": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.closeScreenEffect.inkWashEase": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "ignoreCharacter",
+              "baseConfig",
+              "overlayConfig"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.ignoreCharacter": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "baseMatPath",
+              "verticalFadeStart",
+              "verticalFadeEnd",
+              "verticalFadeAffectDist",
+              "verticalFadeDist",
+              "groundColorAdj"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig.baseMatPath": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig.verticalFadeStart": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig.verticalFadeEnd": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig.verticalFadeAffectDist": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig.verticalFadeDist": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.baseConfig.groundColorAdj": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "overlayMatPath",
+              "verticalFadeStart",
+              "verticalFadeEnd",
+              "verticalFadeAffectDist",
+              "verticalFadeDist",
+              "groundColorAdj"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig.overlayMatPath": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig.verticalFadeStart": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig.verticalFadeEnd": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig.verticalFadeAffectDist": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig.verticalFadeDist": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.inkWashConfig.overlayConfig.groundColorAdj": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.exitWhenAllFinished": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.triggerConditionWhenAllDrawableFinished": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.enableEarlyInkWashMode": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.instantExitOnComplete": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.instantExitKeepInkWash": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingExtraObjConfigs[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "entityId"
+            ]
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.paintingExtraObjConfigs[].entityId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.paintingScrollConfigDatas.*.waitPerformFinishBeforeExit": {
+          "types": [
+            "boolean"
+          ]
+        }
+      },
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$.paintingScrollConfigDatas": {
+          "keyPattern": "^-?(?:0|[1-9][0-9]*)$",
+          "valuePath": "$.paintingScrollConfigDatas.*",
+          "nativeKeyType": "ulong",
+          "nativeValueType": "Beyond.Gameplay.PaintingScrollConfig"
+        }
+      }
+    },
+    "GameplayConfig/PoiLevelChangePerformBindingTable.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "data"
+            ]
+          ]
+        },
+        "$.data": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.data.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "id",
+              "poiType",
+              "poiInsKey",
+              "targetLevel",
+              "performDataId"
+            ]
+          ]
+        },
+        "$.data.*.id": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.data.*.poiType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.data.*.poiInsKey": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.data.*.targetLevel": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.data.*.performDataId": {
+          "types": [
+            "string"
+          ]
+        }
+      },
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$.data": {
+          "keyPattern": "^.*$",
+          "valuePath": "$.data.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "Beyond.Gameplay.PoiLevelChangePerformBindingData"
+        }
+      }
+    },
+    "GameplayConfig/PoiLevelChangePerformDataTable.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "performDatas"
+            ]
+          ]
+        },
+        "$.performDatas": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.performDatas.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "id",
+              "useCustomCameraPivot",
+              "customCameraPivotPos",
+              "customCameraPivotRot",
+              "changeModelDelay",
+              "vanishVfxDelay",
+              "appearVfxDelay",
+              "vanishEffect",
+              "appearEffect",
+              "vanishAudioId",
+              "appearAudioId",
+              "playVfxDelay",
+              "playVfxPos",
+              "playVfxRot",
+              "playVfxAudioId",
+              "loadInBlackScreen"
+            ],
+            [
+              "id",
+              "relativeCameraConfig",
+              "useCustomCameraPivot",
+              "customCameraPivotPos",
+              "customCameraPivotRot",
+              "changeModelDelay",
+              "vanishVfxDelay",
+              "appearVfxDelay",
+              "vanishEffect",
+              "appearEffect",
+              "vanishAudioId",
+              "appearAudioId",
+              "playVfxDelay",
+              "playVfxPos",
+              "playVfxRot",
+              "playVfxAudioId",
+              "loadInBlackScreen"
+            ],
+            [
+              "id",
+              "relativeCameraConfig",
+              "useCustomCameraPivot",
+              "customCameraPivotPos",
+              "customCameraPivotRot",
+              "changeModelDelay",
+              "vanishVfxDelay",
+              "appearVfxDelay",
+              "vanishEffect",
+              "vanishAudioId",
+              "appearAudioId",
+              "playVfxDelay",
+              "playVfxName",
+              "playVfxPos",
+              "playVfxRot",
+              "playVfxAudioId",
+              "loadInBlackScreen"
+            ]
+          ]
+        },
+        "$.performDatas.*.id": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.performDatas.*.useCustomCameraPivot": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.performDatas.*.customCameraPivotPos": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.performDatas.*.customCameraPivotPos.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.customCameraPivotPos.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.customCameraPivotPos.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.customCameraPivotRot": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.performDatas.*.customCameraPivotRot.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.customCameraPivotRot.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.customCameraPivotRot.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.changeModelDelay": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.vanishVfxDelay": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.appearVfxDelay": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.vanishEffect": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.performDatas.*.appearEffect": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.performDatas.*.vanishAudioId": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "_id"
+            ]
+          ]
+        },
+        "$.performDatas.*.vanishAudioId._id": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.performDatas.*.appearAudioId": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "_id"
+            ]
+          ]
+        },
+        "$.performDatas.*.appearAudioId._id": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.performDatas.*.playVfxDelay": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxPos": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.performDatas.*.playVfxPos.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxPos.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxPos.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxRot": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.performDatas.*.playVfxRot.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxRot.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxRot.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.performDatas.*.playVfxAudioId": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "_id"
+            ]
+          ]
+        },
+        "$.performDatas.*.playVfxAudioId._id": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.performDatas.*.loadInBlackScreen": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.performDatas.*.relativeCameraConfig": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.performDatas.*.playVfxName": {
+          "types": [
+            "string"
+          ]
+        }
+      },
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$.performDatas": {
+          "keyPattern": "^.*$",
+          "valuePath": "$.performDatas.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "Beyond.Gameplay.PoiLevelChangePerformData"
+        }
+      }
+    },
+    "GameplayConfig/RanchConfigTable.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "corralGroupId",
+              "corralStables",
+              "animPosRotInfos",
+              "pondGroupId",
+              "pondStables"
+            ]
+          ]
+        },
+        "$.corralGroupId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.corralStables": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.corralStables[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "id",
+              "position",
+              "rotation"
+            ]
+          ]
+        },
+        "$.corralStables[].id": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.corralStables[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.corralStables[].position.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.corralStables[].position.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.corralStables[].position.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.corralStables[].rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z",
+              "w"
+            ]
+          ]
+        },
+        "$.corralStables[].rotation.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.corralStables[].rotation.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.corralStables[].rotation.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.corralStables[].rotation.w": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.animPosRotInfos.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "posRots"
+            ]
+          ]
+        },
+        "$.animPosRotInfos.*.posRots": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "position",
+              "rotation"
+            ]
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].position.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].position.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].position.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z",
+              "w"
+            ]
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].rotation.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].rotation.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].rotation.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.animPosRotInfos.*.posRots[].rotation.w": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondGroupId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.pondStables": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.pondStables[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "id",
+              "position",
+              "rotation",
+              "fish"
+            ]
+          ]
+        },
+        "$.pondStables[].id": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.pondStables[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.pondStables[].position.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].position.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].position.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z",
+              "w"
+            ]
+          ]
+        },
+        "$.pondStables[].rotation.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].rotation.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].rotation.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].rotation.w": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.pondStables[].fish[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "effectId",
+              "position",
+              "rotation"
+            ]
+          ]
+        },
+        "$.pondStables[].fish[].effectId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.pondStables[].fish[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.pondStables[].fish[].position.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish[].position.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish[].position.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish[].rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z",
+              "w"
+            ]
+          ]
+        },
+        "$.pondStables[].fish[].rotation.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish[].rotation.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish[].rotation.z": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.pondStables[].fish[].rotation.w": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        }
+      },
+      "taggedObjects": {},
+      "dynamicDictionaries": {
+        "$.animPosRotInfos": {
+          "keyPattern": "^.*$",
+          "valuePath": "$.animPosRotInfos.*",
+          "nativeKeyType": "string",
+          "nativeValueType": "Beyond.Gameplay.RanchConfigTable+CorralAnimalRelaPosRotList"
+        }
+      }
+    },
+    "AIConfig/GroupAIConfig/ContingencyContract_Guard.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "memberSetting"
+            ]
+          ]
+        },
+        "$.memberSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "totalToken",
+              "modeSetting"
+            ]
+          ]
+        },
+        "$.memberSetting.*.totalToken": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "order",
+              "maxLifeCycle",
+              "notCountInTotal",
+              "useMode",
+              "identitySettingGroup",
+              "identitySettingSingle"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.order": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.maxLifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.notCountInTotal": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.useMode": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond.count": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond.offset": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tagEntityType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tag": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.outTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.multiplier": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "filters",
+              "evaluates"
+            ],
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.attackRangeType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.enemySubRank": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        }
+      },
+      "taggedObjects": {
+        "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "count"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "offset",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "tagEntityType",
+              "tag",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "range"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "outTime",
+              "multiplier"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "attackRangeType",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "enemySubRank",
+              "priority"
+            ]
+          ]
+        }
+      },
+      "dynamicDictionaries": {
+        "$.memberSetting": {
+          "keyPattern": "^(?:Character|Enemy)$",
+          "valuePath": "$.memberSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.TeamAIMemberType",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIMemberConfig"
+        },
+        "$.memberSetting.*.modeSetting": {
+          "keyPattern": "^(?:Defender|Attacker|RangeAttacker|EliteAttacker|EliteRangeAttacker|AngryAttacker|PermanentAttacker)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentity",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentityModeSetting"
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "keyPattern": "^(?:Radical|Moderate|Steady|SingleOne)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*.identitySettingGroup.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentityMode",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentitySelect"
+        }
+      }
+    },
+    "AIConfig/GroupAIConfig/ContingencyContract_Main.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "memberSetting"
+            ]
+          ]
+        },
+        "$.memberSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "totalToken",
+              "modeSetting"
+            ]
+          ]
+        },
+        "$.memberSetting.*.totalToken": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "order",
+              "maxLifeCycle",
+              "notCountInTotal",
+              "useMode",
+              "identitySettingGroup",
+              "identitySettingSingle"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.order": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.maxLifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.notCountInTotal": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.useMode": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ],
+            [
+              "tickInterval",
+              "lifeCycle",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond.count": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.attackRangeType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond.disType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond.factor": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond.enemyRank": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.outTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.multiplier": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.enemySubRank": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tagEntityType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tag": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        }
+      },
+      "taggedObjects": {
+        "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "count"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "attackRangeType",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "disType",
+              "factor"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "enemyRank",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "range"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "outTime",
+              "multiplier"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "enemySubRank",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "tagEntityType",
+              "tag",
+              "priority"
+            ]
+          ]
+        }
+      },
+      "dynamicDictionaries": {
+        "$.memberSetting": {
+          "keyPattern": "^(?:Character|Enemy)$",
+          "valuePath": "$.memberSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.TeamAIMemberType",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIMemberConfig"
+        },
+        "$.memberSetting.*.modeSetting": {
+          "keyPattern": "^(?:Defender|Attacker|RangeAttacker|EliteAttacker|EliteRangeAttacker|AngryAttacker|PermanentAttacker)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentity",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentityModeSetting"
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "keyPattern": "^(?:Radical|Moderate|Steady|SingleOne)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*.identitySettingGroup.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentityMode",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentitySelect"
+        }
+      }
+    },
+    "AIConfig/GroupAIConfig/Default_GroupAITargetMain.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "memberSetting"
+            ]
+          ]
+        },
+        "$.memberSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "totalToken",
+              "modeSetting"
+            ]
+          ]
+        },
+        "$.memberSetting.*.totalToken": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "order",
+              "maxLifeCycle",
+              "notCountInTotal",
+              "useMode",
+              "identitySettingGroup",
+              "identitySettingSingle"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.order": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.maxLifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.notCountInTotal": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.useMode": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ],
+            [
+              "tickInterval",
+              "lifeCycle",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond.count": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.attackRangeType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond.disType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond.factor": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond.enemyRank": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.outTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.multiplier": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.enemySubRank": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tagEntityType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tag": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        }
+      },
+      "taggedObjects": {
+        "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "count"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "attackRangeType",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetDistance, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "disType",
+              "factor"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.EnemyRankType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "enemyRank",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "range"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "outTime",
+              "multiplier"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "enemySubRank",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.ResilienceEmpty, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "tagEntityType",
+              "tag",
+              "priority"
+            ]
+          ]
+        }
+      },
+      "dynamicDictionaries": {
+        "$.memberSetting": {
+          "keyPattern": "^(?:Character|Enemy)$",
+          "valuePath": "$.memberSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.TeamAIMemberType",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIMemberConfig"
+        },
+        "$.memberSetting.*.modeSetting": {
+          "keyPattern": "^(?:Defender|Attacker|RangeAttacker|EliteAttacker|EliteRangeAttacker|AngryAttacker|PermanentAttacker)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentity",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentityModeSetting"
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "keyPattern": "^(?:Radical|Moderate|Steady|SingleOne)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*.identitySettingGroup.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentityMode",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentitySelect"
+        }
+      }
+    },
+    "AIConfig/GroupAIConfig/Default_GroupAITargetNotMain.json": {
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "memberSetting"
+            ]
+          ]
+        },
+        "$.memberSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "totalToken",
+              "modeSetting"
+            ]
+          ]
+        },
+        "$.memberSetting.*.totalToken": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "order",
+              "maxLifeCycle",
+              "notCountInTotal",
+              "useMode",
+              "identitySettingGroup",
+              "identitySettingSingle"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.order": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.maxLifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.notCountInTotal": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.useMode": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond.count": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond.offset": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tagEntityType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.tag": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup.*.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.x": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond.range.y": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.outTime": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond.multiplier": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tickInterval",
+              "lifeCycle",
+              "filters",
+              "evaluates"
+            ],
+            [
+              "tickInterval",
+              "lifeCycle",
+              "minCountSet",
+              "maxCountSet",
+              "filters",
+              "evaluates"
+            ]
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.tickInterval": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.lifeCycle": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.minCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.maxCountSet": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.filters[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.attackRangeType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingSingle.evaluates[]": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond",
+            "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.revertResult": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.enemySubRank": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond.priority": {
+          "types": [
+            "integer",
+            "number"
+          ]
+        }
+      },
+      "taggedObjects": {
+        "Beyond.Gameplay.AI.ForceSet, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "count"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetInsideMaxSlotRange, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "offset",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.TargetHasTags, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "tagEntityType",
+              "tag",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.RandomAdd, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "range"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.LongTimeNoIdentity, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "outTime",
+              "multiplier"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasAttackRangeType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "attackRangeType",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.HasFinishToken, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "priority"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.AI.EnemySubRankType, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "revertResult",
+              "enemySubRank",
+              "priority"
+            ]
+          ]
+        }
+      },
+      "dynamicDictionaries": {
+        "$.memberSetting": {
+          "keyPattern": "^(?:Character|Enemy)$",
+          "valuePath": "$.memberSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.TeamAIMemberType",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIMemberConfig"
+        },
+        "$.memberSetting.*.modeSetting": {
+          "keyPattern": "^(?:Defender|Attacker|RangeAttacker|EliteAttacker|EliteRangeAttacker|AngryAttacker|PermanentAttacker)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentity",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentityModeSetting"
+        },
+        "$.memberSetting.*.modeSetting.*.identitySettingGroup": {
+          "keyPattern": "^(?:Radical|Moderate|Steady|SingleOne)$",
+          "valuePath": "$.memberSetting.*.modeSetting.*.identitySettingGroup.*",
+          "nativeKeyType": "Beyond.Gameplay.AI.GroupAIIdentityMode",
+          "nativeValueType": "Beyond.Gameplay.AI.GroupAIIdentitySelect"
         }
       }
     }

@@ -5,6 +5,7 @@ Current VFS bytes and a native-gated BundleManifest join its PathHash to authore
 asset paths. These are stored placements, not instantiated Unity transforms.
 """
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 from collections import Counter, defaultdict
@@ -258,7 +259,7 @@ def audit(*, gameassembly: Path, metadata: Path, input_root: Path, manifest: Pat
         saved = json.loads(scene_receipt.read_text("utf-8"))
         scene = audit_scene_selection(selection_path=Path(saved["selection"]["path"]), summary_path=outer_path,
             ledger_path=ledger_path, expected_input_set=expected_input_set, cli=cli,
-            work_root=REPO_ROOT/"tmp/animestudio/collision_ownership", reuse_path=scene_receipt)
+            work_root=ExportLayout.configured().evidence_dir / 'assets/collision_ownership', reuse_path=scene_receipt)
         if scene["status"] != "complete":
             raise ValueError(f"dynamic-model: selected scene receipt failed: {scene['failures'][:3]}")
         scene_join = dict(receipt=str(scene_receipt), sha256=sha256_file(scene_receipt),
@@ -353,7 +354,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expected-input-set-sha256", required=True)
     parser.add_argument("--scene-receipt", type=Path,
                         help="Revalidate a selected scene extraction and join declared prefab roots to stored models.")
-    parser.add_argument("--output", type=Path, default=REPO_ROOT/"reports/animestudio/dynamic_model_current_latest.json")
+    parser.add_argument("--output", type=Path, default=ExportLayout.configured().evidence_dir / 'animestudio/dynamic_model_current_latest.json')
     args = parser.parse_args(argv)
     try:
         report = audit(gameassembly=args.gameassembly, metadata=args.metadata, input_root=args.input_root,

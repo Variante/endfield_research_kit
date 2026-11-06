@@ -36,6 +36,7 @@ is what ``memorypack.skill_corpus --capture-target-verification`` replays.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -51,8 +52,8 @@ from scripts.repo_paths import REPO_ROOT
 
 
 OUTPUT_SCHEMA = "endfield.skillDataCursorTargetVerification.v1"
-DEFAULT_CORPUS = REPO_ROOT / "reports/animestudio/skilldata_cursor_basis_latest.json"
-DEFAULT_NATIVE_CONTEXT = REPO_ROOT / "reports/animestudio/skill_cursor_native_context_current_latest.json"
+DEFAULT_CORPUS = ExportLayout.configured().evidence_dir / 'animestudio/skilldata_cursor_basis_latest.json'
+DEFAULT_NATIVE_CONTEXT = ExportLayout.configured().evidence_dir / 'animestudio/skill_cursor_native_context_current_latest.json'
 DEFAULT_TARGET_CONTRACT = CONTRACTS_DIR / "skill_cursor_capture_target.json"
 
 

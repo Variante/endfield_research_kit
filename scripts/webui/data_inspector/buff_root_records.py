@@ -194,13 +194,25 @@ def _record(row: dict[str, Any], registry: dict[str, Any], path: Path, export_ro
 
 
 def load_buff_root_records(
-    export_root: Path, *, summary_path: Path = DEFAULT_SUMMARY, ledger_path: Path = DEFAULT_LEDGER,
+    export_root: Path, *, summary_path: Path | None = None, ledger_path: Path | None = None,
+    current_context=None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Load every current Buff source, failing closed before dataset cache reuse."""
     export_root = export_root.resolve()
+    from scripts.source_paths import ExportLayout
+    evidence = ExportLayout(export_root).evidence_dir / 'animestudio'
+    summary_path = evidence / 'jsondata_current_latest.json' if summary_path is None else Path(summary_path)
+    ledger_path = evidence / 'jsondata_current_files_latest.jsonl.gz' if ledger_path is None else Path(ledger_path)
     report_path, selection = select_current_family_report(
         "BuffData", export_root, summary_path=summary_path, ledger_path=ledger_path,
     )
+    from scripts.game_data.memorypack.current_family_evidence import FORMATS
+    if selection['familyReport'].get('format') == FORMATS['BuffData']:
+        # The current owner authenticates and parses this large report itself.
+        # Dispatch from the authenticated registry pin to avoid two live copies.
+        from scripts.webui.data_inspector.current_family_records import load_buff_records
+        return load_buff_records(export_root, summary_path=summary_path, ledger_path=ledger_path,
+            current_context=current_context)
     raw = report_path.read_bytes()
     pin = selection["familyReport"]
     _require(len(raw) == pin["length"] and hashlib.sha256(raw).hexdigest().upper() == pin["sha256"].upper(),

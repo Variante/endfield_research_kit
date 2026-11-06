@@ -1,0 +1,201 @@
+{
+  "schema": "endfield.npc-montage-child-sources.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "fieldSources": [
+    {
+      "type": "Beyond.Montage.DecoEntity",
+      "wrapper": "Beyond.MemoryPack.Beyond_Montage_DecoEntityForMemoryPack",
+      "members": [
+        [
+          "eventHide",
+          "Beyond.Montage.EventInfo",
+          "object"
+        ],
+        [
+          "eventShow",
+          "Beyond.Montage.EventInfo",
+          "object"
+        ]
+      ],
+      "entry": 205485104,
+      "windows": [
+        {
+          "startRva": 205485104,
+          "endRva": 205485430,
+          "sha256": "B666039EE5E3296B835D99DD2390E57B8C034886774DDECE5D3E7BDA5F409BC6"
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Montage.DynamicEntity",
+      "wrapper": "Beyond.MemoryPack.Beyond_Montage_DynamicEntityForMemoryPack",
+      "members": [
+        [
+          "effectPath",
+          "string",
+          "string"
+        ],
+        [
+          "eventHide",
+          "Beyond.Montage.EventInfo",
+          "object"
+        ],
+        [
+          "eventShow",
+          "Beyond.Montage.EventInfo",
+          "object"
+        ],
+        [
+          "eventStr",
+          "string",
+          "string"
+        ],
+        [
+          "extraEffects",
+          "System.Collections.Generic.List`1<Beyond.Montage.DynamicEntityExtraEffect>",
+          "list"
+        ],
+        [
+          "hideAccName",
+          "string",
+          "string"
+        ],
+        [
+          "isLoop",
+          "bool",
+          "bool"
+        ],
+        [
+          "mountPoint",
+          "Beyond.Gameplay.MountPoint",
+          "enum"
+        ],
+        [
+          "prefabGuid",
+          "Beyond.Resource.ManifestData+GUIDProxy",
+          "object"
+        ],
+        [
+          "prefabPathHash",
+          "long",
+          "scalar64"
+        ],
+        [
+          "syncAnimatorWithOwner",
+          "bool",
+          "bool"
+        ],
+        [
+          "type",
+          "Beyond.Gameplay.NpcEnums+AnimEventType",
+          "enum"
+        ]
+      ],
+      "entry": 106633088,
+      "windows": [
+        {
+          "startRva": 106633088,
+          "endRva": 106633143,
+          "sha256": "D9AFE591CF9D4CFA852110B0A2244921CF7D6B90D5F8B198B2BB572CFEE7D7A1"
+        },
+        {
+          "startRva": 106633143,
+          "endRva": 106633638,
+          "sha256": "E94E975DE94FBEDB83D8D2FBC1F8E3C7F009B2AFF14AAD9FD54B84329D9E7FCA"
+        },
+        {
+          "startRva": 106633638,
+          "endRva": 106633649,
+          "sha256": "036EA2B84AA465695DA1C7E6D61B70EEA91754445FC83EF49EE9390BACA62AEA"
+        },
+        {
+          "startRva": 106633649,
+          "endRva": 106633655,
+          "sha256": "72AF13F123AEB9E113A2EB7E2E9039E4F182D69198FEC86DBE81EE3C3CE8B159"
+        },
+        {
+          "startRva": 106633655,
+          "endRva": 106633763,
+          "sha256": "6B760B071381ABDDBFE5FF6D72990F04CA0391CA5F5E1D94A4F9CB9F61C6FE10"
+        },
+        {
+          "startRva": 124791060,
+          "endRva": 124791189,
+          "sha256": "B3745C8BC2EB55154C9CDC03D95A300779C8BC5FB04A97F6890CDE8BD060C908"
+        },
+        {
+          "startRva": 124791189,
+          "endRva": 124791210,
+          "sha256": "91B1D190D0BAA1C76DC4330A0337F86B6540A324C5775CB9DCE549BD3451925C"
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Montage.EventInfo",
+      "wrapper": "Beyond.MemoryPack.Beyond_Montage_EventInfoForMemoryPack",
+      "members": [
+        [
+          "stateType",
+          "Beyond.Montage.NPCMontageAnim+EMontageStateType",
+          "enum"
+        ],
+        [
+          "time",
+          "float",
+          "float32"
+        ],
+        [
+          "trigger",
+          "bool",
+          "bool"
+        ]
+      ],
+      "entry": 94808896,
+      "windows": [
+        {
+          "startRva": 94808896,
+          "endRva": 94808951,
+          "sha256": "419C536D3A4CB5CC380DC996F1963F37D3E612CD568DAA3A62613B4B7B1BBF34"
+        },
+        {
+          "startRva": 94808951,
+          "endRva": 94809082,
+          "sha256": "45898DDC25774DB6798699131D28AFA02966EEC453724E24B97CBBABDFE69665"
+        },
+        {
+          "startRva": 94809082,
+          "endRva": 94809093,
+          "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F"
+        },
+        {
+          "startRva": 94809093,
+          "endRva": 94809099,
+          "sha256": "62A3597859CA76E9FB80A35031175E25A25ADD5FD98758F3E74E831FF6AB1C27"
+        },
+        {
+          "startRva": 94809099,
+          "endRva": 94809159,
+          "sha256": "0C59C90A0FEFBD83C495941D76D0F4C1BDC33C649D0ABC09C6A176CEB20B916D"
+        },
+        {
+          "startRva": 123486232,
+          "endRva": 123486339,
+          "sha256": "457D42AD81713AE7F8E4188082191655EC30B87D2178617EDEA637BB74A0B033"
+        },
+        {
+          "startRva": 123486339,
+          "endRva": 123486360,
+          "sha256": "D3C0BF10BA54F93139CC0FE953075808ED35149B37248714A6A795B0779CDCA3"
+        }
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Owned current field declarations and source windows for Montage reference children; collection elements and canonical adapters require independent validation."
+  }
+}

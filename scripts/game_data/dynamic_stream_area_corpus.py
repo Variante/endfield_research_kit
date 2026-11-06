@@ -22,6 +22,8 @@ remaining vector elements, not unowned data.
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli
+from scripts.source_paths import ExportLayout
 
 import argparse
 import base64
@@ -49,10 +51,10 @@ from scripts.repo_paths import REPO_ROOT
 from scripts.common import sha256_file_upper as sha256_file
 
 ROOT = REPO_ROOT
-DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
-DEFAULT_LEDGER = ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
-DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
-DEFAULT_JSON = ROOT / "reports/animestudio/dynamic_stream_area_current_latest.json"
+DEFAULT_OUTER = ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_latest.json'
+DEFAULT_LEDGER = ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_files_latest.jsonl.gz'
+DEFAULT_CLI = configured_animestudio_cli()
+DEFAULT_JSON = ExportLayout.configured().evidence_dir / 'animestudio/dynamic_stream_area_current_latest.json'
 DEFAULT_MARKDOWN = ROOT / "reports/animestudio/dynamic_stream_area_current_latest.md"
 INPUT_SET_RE = re.compile(r"^[0-9A-F]{64}$")
 MD5_RE = re.compile(r"^[0-9A-F]{32}$")

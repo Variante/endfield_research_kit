@@ -39,6 +39,7 @@ authenticates the current VFS ledger and writes
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import argparse
 import hashlib
@@ -66,7 +67,7 @@ from scripts.repo_paths import REPO_ROOT
 
 CONTRACT = CONTRACTS_DIR / "dynamic_main_vector_native.json"
 SCHEMA = "endfield.dynamic-main-vector-native-contract.v2"
-DEFAULT_JSON = REPO_ROOT / "reports/animestudio/dynamic_main_vector_native_latest.json"
+DEFAULT_JSON = ExportLayout.configured().evidence_dir / 'animestudio/dynamic_main_vector_native_latest.json'
 DEFAULT_MARKDOWN = REPO_ROOT / "reports/animestudio/dynamic_main_vector_native_latest.md"
 
 
