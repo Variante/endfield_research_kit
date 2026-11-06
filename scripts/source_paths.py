@@ -9,6 +9,11 @@ from typing import Any
 
 from scripts.repo_paths import REPO_ROOT
 
+
+def configured_animestudio_cli() -> Path:
+    value = os.environ.get("ENDFIELD_ANIMESTUDIO", "").strip().strip('"')
+    return Path(value) if value else REPO_ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
+
 # ---------------------------------------------------------------------------
 # Export root layout v4
 #
@@ -28,9 +33,12 @@ from scripts.repo_paths import REPO_ROOT
 #           Per installed layer (meta/<Layer>/...), because each index,
 #           asset map and fingerprint describes one physical root, and the
 #           base catalogue is what proves which bundles a hot update replaced.
+#           meta/evidence/ retains authenticated extraction receipts and every
+#           generated input needed to replay them; extraction/summary.json owns
+#           the export summary consumed by builders.
 #
 # Builder output never lives here (it goes to webui/data), and run
-# intermediates never live here (they go to tmp/). Every path into an export
+# intermediates go to webui/data/_build/work/. Every path into an export
 # root is built by ExportLayout; do not join export-root segments by hand.
 # ---------------------------------------------------------------------------
 
@@ -154,6 +162,15 @@ class ExportLayout:
         return self.root / "meta"
 
     @property
+    def evidence_dir(self) -> Path:
+        """Authenticated extraction evidence shipped with this selected export."""
+        return self.meta / "evidence"
+
+    @property
+    def export_summary_path(self) -> Path:
+        return self.meta / "extraction" / "summary.json"
+
+    @property
     def layout_file(self) -> Path:
         return self.root / EXPORT_LAYOUT_FILE
 
@@ -258,7 +275,7 @@ class ExportLayout:
         # a folder name (or a root that has no name) never share a work dir.
         identity = os.path.normcase(os.path.abspath(self.root))
         digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
-        return REPO_ROOT / "tmp" / "game_data" / "export" / f"{self.root.name or 'root'}-{digest}"
+        return REPO_ROOT / "webui/data/_build/work/export" / f"{self.root.name or 'root'}-{digest}"
 
     # -- version marker ------------------------------------------------------
     def read_marker(self) -> dict[str, Any] | None:

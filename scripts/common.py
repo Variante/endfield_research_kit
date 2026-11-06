@@ -30,8 +30,8 @@ LANG_DIR = OUT_DIR / "lang"
 ASSET_DIR = OUT_DIR / "assets"
 REPORTS_DIR = ROOT / "reports"
 EXPORT_REPORTS_DIR = REPORTS_DIR / "export"
-STORY_REPORTS_DIR = REPORTS_DIR / "story" / "build"
-STORY_RECOVERY_REPORTS_DIR = REPORTS_DIR / "story" / "recovery"
+STORY_REPORTS_DIR = WEBUI_BUILD_DIR / "story" / "build"
+STORY_RECOVERY_REPORTS_DIR = WEBUI_BUILD_DIR / "story" / "recovery"
 STORY_OPTION_REPORTS_DIR = STORY_RECOVERY_REPORTS_DIR / "options"
 UPDATES_REPORTS_DIR = REPORTS_DIR / "updates"
 ASSET_REPORTS_DIR = REPORTS_DIR / "assets"
@@ -386,7 +386,7 @@ GUIDE_RUNTIME_NON_MISSION_REPORT = (
     STORY_RECOVERY_REPORTS_DIR
     / "animestudio_story_guide_consumer_audit.json"
 )
-EXPORT_FULL_SUMMARY = EXPORT_REPORTS_DIR / "export_full_summary.json"
+EXPORT_FULL_SUMMARY = EXPORT_LAYOUT.export_summary_path
 GUIDE_RUNTIME_NON_MISSION_SCHEMA = "animestudioStoryGuideConsumerAudit.v2"
 SPACESHIP_STORY_NON_MISSION_REPORT = (
     STORY_RECOVERY_REPORTS_DIR / "spaceship_story_content_audit.json"
@@ -416,7 +416,7 @@ def _game_data_root_from_paths_bat() -> Path | None:
     except OSError:
         return None
     match = re.search(
-        r'^\s*set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
+        r'^\s*(?:if\s+not\s+defined\s+ENDFIELD_GAME_ROOT\s+)?set\s+"ENDFIELD_GAME_ROOT=([^"\r\n]+)"',
         text,
         flags=re.IGNORECASE | re.MULTILINE,
     )
@@ -436,28 +436,31 @@ def installed_game_data_root_candidates(
     which covers scripts run outside the wrappers, and the historical default
     is last.
     """
-    candidates: list[Path] = []
-    env_value = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
-    if env_value:
-        candidates.append(Path(env_value.strip('"')))
-    configured = _game_data_root_from_paths_bat()
-    if configured is not None:
-        candidates.append(configured)
-    summary = read_json(export_summary_path, {})
-    if isinstance(summary, dict):
-        recorded = safe_key(summary.get("game_root")).strip()
-        if recorded:
-            candidates.append(Path(recorded))
-    candidates.append(DEFAULT_INSTALLED_GAME_DATA_ROOT)
+    return list(_iter_installed_game_data_root_candidates(export_summary_path))
 
-    ordered: list[Path] = []
+
+def _iter_installed_game_data_root_candidates(export_summary_path: Path) -> Iterable[Path]:
+    """Read lower-priority configuration only if a caller needs that fallback."""
+    def candidates():
+        env_value = os.environ.get("ENDFIELD_GAME_ROOT", "").strip()
+        if env_value:
+            yield Path(env_value.strip('"'))
+        configured = _game_data_root_from_paths_bat()
+        if configured is not None:
+            yield configured
+        summary = read_json(export_summary_path, {})
+        if isinstance(summary, dict):
+            recorded = safe_key(summary.get("game_root")).strip()
+            if recorded:
+                yield Path(recorded)
+        yield DEFAULT_INSTALLED_GAME_DATA_ROOT
+
     seen: set[str] = set()
-    for candidate in candidates:
+    for candidate in candidates():
         key = str(candidate).rstrip("\\/").casefold()
         if key and key not in seen:
             seen.add(key)
-            ordered.append(candidate)
-    return ordered
+            yield candidate
 
 
 def sha256_file(path: Path, *, chunk_bytes: int = 1024 * 1024) -> str:
@@ -550,10 +553,12 @@ def resolve_installed_game_data_root(
 ) -> Path:
     """Return the installed ``Endfield_Data`` root this checkout builds against.
 
-    The first candidate that exists on disk wins; otherwise the highest
-    priority candidate is returned so callers report a path the user can fix.
-    Edit ``endfield_paths.bat`` (or set ``ENDFIELD_GAME_ROOT``) to move it.
+    An environment or paths-bat selection is authoritative even when missing.
+    Only an unconfigured checkout discovers a root from its export summary.
     """
+    selected = _configured_game_data_root()
+    if selected is not None:
+        return selected
     candidates = installed_game_data_root_candidates(export_summary_path)
     for candidate in candidates:
         if candidate.is_dir():
@@ -561,18 +566,24 @@ def resolve_installed_game_data_root(
     return candidates[0]
 
 
+def _configured_game_data_root() -> Path | None:
+    value = os.environ.get("ENDFIELD_GAME_ROOT", "").strip().strip('"')
+    return Path(value) if value else _game_data_root_from_paths_bat()
+
+
 def resolve_installed_native_inputs(
     export_summary_path: Path = EXPORT_FULL_SUMMARY,
 ) -> tuple[Path, Path]:
     """Return the installed ``(GameAssembly.dll, global-metadata.dat)`` pair.
 
-    The first candidate root whose files both exist wins, so a relocated
-    install is found even when a stale export summary or a leftover default
-    points elsewhere. When nothing exists the highest-priority candidate is
-    returned so callers report the path the user is expected to fix.
+    Explicit configuration never falls back to another installed build when a
+    selected file is missing. Discovery is only for unconfigured checkouts.
     """
+    selected = _configured_game_data_root()
+    if selected is not None:
+        return selected.parent / "GameAssembly.dll", selected / GLOBAL_METADATA_REL
     fallback: tuple[Path, Path] | None = None
-    for root in installed_game_data_root_candidates(export_summary_path):
+    for root in _iter_installed_game_data_root_candidates(export_summary_path):
         pair = (root.parent / "GameAssembly.dll", root / GLOBAL_METADATA_REL)
         if fallback is None:
             fallback = pair
@@ -580,6 +591,24 @@ def resolve_installed_native_inputs(
             return pair
     assert fallback is not None  # the default candidate is always present
     return fallback
+
+
+def native_game_data_root(*, gameassembly: Path | None, metadata: Path | None) -> Path | None:
+    """Adapt an explicit native pair to a root-only reader without selecting another build.
+
+    This checks the path layout only; the reader still authenticates the bytes.
+    An incomplete selection stays unavailable rather than finding a default install.
+    """
+    if gameassembly is None or metadata is None:
+        return None
+    assembly, selected_metadata = Path(gameassembly).resolve(), Path(metadata).resolve()
+    root = selected_metadata.parents[2]
+    if selected_metadata != root / GLOBAL_METADATA_REL or assembly != root.parent / "GameAssembly.dll":
+        raise ValueError(
+            "native-selection.root-layout-mismatch: "
+            f"GameAssembly.dll={assembly}; global-metadata.dat={selected_metadata}"
+        )
+    return root
 
 
 @dataclass(frozen=True)

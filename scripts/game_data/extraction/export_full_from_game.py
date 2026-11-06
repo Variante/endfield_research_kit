@@ -119,6 +119,7 @@ Scheduling (each default was measured; re-measure before changing one)
 """
 
 from __future__ import annotations
+from scripts.source_paths import configured_animestudio_cli
 
 from scripts.game_data.extraction.unity_dependencies import builtin_inputs, files_for_source, MODEL_TYPES
 
@@ -197,7 +198,7 @@ DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_OUTPUT = configured_export_root()
 DEFAULT_REPORTS = ROOT / "reports" / "export"
 DEFAULT_REPORT_RUNS_TO_KEEP = 5
-DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
+DEFAULT_ANIMESTUDIO = configured_animestudio_cli()
 DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
 SOURCES = ("StreamingAssets", "Persistent")
 SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL = {
@@ -2773,6 +2774,12 @@ def current_report_run_id() -> str:
 
 
 def prune_export_report_runs(runs_root: Path, current_run: Path, runs_to_keep: int) -> None:
+    # Report retention is housekeeping, never a prerequisite for publication.
+    # An input-restricted build must not enumerate diagnostic directories.
+    from scripts.build_inputs import INPUT_BOUNDARY_ENV, disposable_input
+    if os.environ.get(INPUT_BOUNDARY_ENV) == "1" and disposable_input(runs_root):
+        log("diagnostic report retention deferred outside the build input boundary")
+        return
     if runs_to_keep < 1 or not runs_root.exists():
         return
     current_resolved = current_run.resolve()
@@ -2791,10 +2798,10 @@ def prune_export_report_runs(runs_root: Path, current_run: Path, runs_to_keep: i
         shutil.rmtree(path)
 
 
-def load_previous_summary(primary_path: Path, legacy_path: Path) -> dict[str, Any]:
-    for candidate in (primary_path, legacy_path):
-        if candidate.exists():
-            return json.loads(candidate.read_text(encoding="utf-8-sig"))
+def load_previous_summary(path: Path) -> dict[str, Any]:
+    """Only the selected export owns its freshness/cache baseline."""
+    if path.is_file():
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     return {}
 
 
@@ -6591,7 +6598,9 @@ def main() -> int:
     report_run_id = current_report_run_id()
     reports_runs_root = ensure_dir(reports_root / "runs")
     reports_dir = ensure_dir(reports_runs_root / report_run_id)
-    legacy_reports_dir = output_root / "reports"
+    # Command output is parsed by the exporter, so it is a build intermediate.
+    # Human-readable summaries remain diagnostic outputs in reports/.
+    command_logs_dir = ensure_dir(ExportLayout(output_root).work_dir / "command_logs" / report_run_id)
     structured_dumper = args.structured_dumper.resolve()
     animestudio = args.animestudio.resolve()
     selected_sources = ordered_unique(args.sources)
@@ -6814,9 +6823,8 @@ def main() -> int:
             log("  warning: script-first requested without DummyDlls; AnimeStudio will use serialized fallback behavior")
     log("  source inventory: disabled")
     log(f"  report-only mode: {'enabled' if args.report_only else 'disabled'}")
-    previous_summary_path = reports_root / "export_full_summary.json"
-    legacy_summary_path = legacy_reports_dir / "export_full_summary.json"
-    previous_summary = load_previous_summary(previous_summary_path, legacy_summary_path)
+    previous_summary_path = ExportLayout(output_root).export_summary_path
+    previous_summary = load_previous_summary(previous_summary_path)
 
     source_sizes = collect_source_sizes(game_root, selected_sources)
     for source in selected_sources:
@@ -6918,7 +6926,7 @@ def main() -> int:
         cache_source_sizes.update(collect_source_sizes(game_root, missing_cache_layers))
     for source in installed_layers:
         source_root = game_root / source
-        source_report_dir = ensure_dir(reports_dir / source)
+        source_report_dir = ensure_dir(command_logs_dir / source)
         current_vfs_index_paths = [
             vfs_index_path(output_root, source, block_name)
             for block_name, _cli_block_name in VFS_INDEX_BLOCKS
@@ -6982,7 +6990,7 @@ def main() -> int:
     unity_stage_failures: list[str] = []
     for source in selected_sources:
         source_root = game_root / source
-        source_report_dir = ensure_dir(reports_dir / source)
+        source_report_dir = ensure_dir(command_logs_dir / source)
         source_structured_dump_plan = structured_dump_steps_for_source(structured_dump_plan, source)
         log(f"processing source {source}")
         log(f"  source root: {source_root}")
@@ -7873,6 +7881,9 @@ def main() -> int:
             log(f"stage item failed: {item}")
         return 1
     if not args.report_only:
+        metadata_summary = ExportLayout(output_root).export_summary_path
+        metadata_summary.parent.mkdir(parents=True, exist_ok=True)
+        write_json(metadata_summary, summary)
         ExportLayout(output_root).finish_write(producer="export_full_from_game", publish=publish_summary)
     return 0
 

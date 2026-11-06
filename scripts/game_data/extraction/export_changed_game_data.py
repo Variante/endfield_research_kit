@@ -69,9 +69,9 @@ from scripts.game_data.jsondata_blocks import JSON_BLOCKS, JSON_LIP_LANGUAGES
 
 
 SCHEMA_VERSION = 1
-DEFAULT_AUDIT_LEDGER = ROOT / "reports" / "animestudio" / "vfs_understanding_files_latest.jsonl.gz"
-DEFAULT_AUDIT_SUMMARY = ROOT / "reports" / "animestudio" / "vfs_understanding_latest.json"
-DEFAULT_EXPORT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
+DEFAULT_AUDIT_LEDGER = ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_files_latest.jsonl.gz'
+DEFAULT_AUDIT_SUMMARY = ExportLayout.configured().evidence_dir / 'animestudio/vfs_understanding_latest.json'
+DEFAULT_EXPORT_SUMMARY = ExportLayout.configured().export_summary_path
 DEFAULT_REPORT = DEFAULT_REPORTS / "local_changed_export_latest.json"
 def _state_root(output_root: Path) -> Path:
     return ExportLayout(output_root).extraction_incremental_dir
@@ -813,7 +813,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
 
     args.manifest.parent.mkdir(parents=True, exist_ok=True)
     args.report.parent.mkdir(parents=True, exist_ok=True)
-    work_parent = ROOT / "tmp" / "animestudio"
+    work_parent = ExportLayout(output_root).work_dir / "changed"
     work_parent.mkdir(parents=True, exist_ok=True)
     state_rows: list[dict[str, Any]] = []
     audit_seed: tuple[list[dict[str, Any]], str] | None = None

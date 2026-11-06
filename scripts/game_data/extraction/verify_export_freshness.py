@@ -27,14 +27,13 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
-from scripts.source_paths import PACKED_GAME_DIRS, ExportLayout, ExportLayoutError, packed_game_dir
+from scripts.source_paths import PACKED_GAME_DIRS, ExportLayout, ExportLayoutError, packed_game_dir, configured_export_root
 from scripts.game_data.game_file_store import open_game_files_if_present
 from scripts.game_data.extraction.unity_dependencies import auxiliary_drift
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,
-    DEFAULT_REPORTS,
     EXTRACTION_PROVENANCE_SCHEMA,
     PROVENANCE_FINGERPRINT_FIELDS,
     SOURCES,
@@ -44,7 +43,7 @@ from scripts.game_data.extraction.export_full_from_game import (
 from scripts.game_data.extraction.scope import STRUCTURED_BLOCKS, UNITY_CONVERT_TYPES, UNITY_JSON_TYPES
 
 
-DEFAULT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
+DEFAULT_SUMMARY = ExportLayout(configured_export_root()).export_summary_path
 #: The game/ folder a structured block publishes into, for the blocks whose
 #: folder must be non-empty. Other blocks are checked by provenance only.
 BLOCK_GAME_DIRS = {
@@ -386,12 +385,15 @@ def build_report(
 ) -> dict[str, Any]:
     """Whether every required output exists and every present one is current."""
     summary = read_json(summary_path, {})
-    if not isinstance(summary, dict) or not summary:
+    provenance = load_provenance(output_root)
+    if (not isinstance(summary, dict) or not summary) and provenance is None:
         return {
             "fresh": False,
             "summaryPath": slash(summary_path),
             "error": "export summary missing or invalid",
         }
+    if not isinstance(summary, dict):
+        summary = {}
 
     selected_sources = sources or tuple(summary.get("sources_selected") or SOURCES)
     selected_sources = ordered_unique([source for source in selected_sources if source in SOURCES])
@@ -399,7 +401,6 @@ def build_report(
         selected_sources = SOURCES
 
     current_source_sizes = collect_source_sizes(game_root, selected_sources)
-    provenance = load_provenance(output_root)
     output_rows = required_output_status(
         output_root, selected_sources, exact_counts=exact_output_counts, requirements=requirements,
     )
@@ -504,7 +505,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="Export root to verify. Defaults to the latest export summary's output_root.",
     )
-    parser.add_argument("--summary", type=Path, default=DEFAULT_SUMMARY)
+    parser.add_argument("--summary", type=Path)
     parser.add_argument("--sources", nargs="+", choices=SOURCES)
     parser.add_argument("--json-out", type=Path, help="Optional path to write the verification report JSON.")
     parser.add_argument("--warn-only", action="store_true", help="Print stale status but exit 0.")
@@ -552,7 +553,7 @@ def verify(
     *,
     game_root: Path | None = None,
     output_root: Path | None = None,
-    summary_path: Path = DEFAULT_SUMMARY,
+    summary_path: Path | None = None,
     requirements: Requirements = DEFAULT_REQUIREMENTS,
     sources: tuple[str, ...] | None = None,
     exact_output_counts: bool = False,
@@ -561,12 +562,13 @@ def verify(
     remedy: str = "re-extract them with export.bat PAGE --from-game before building WebUI data",
 ) -> int:
     """Check ``requirements`` against the installed build, print the result, return an exit code."""
-    summary_path = summary_path.resolve()
+    selected_output = (output_root or configured_export_root()).resolve()
+    summary_path = (summary_path or ExportLayout(selected_output).export_summary_path).resolve()
     summary = read_json(summary_path, {})
     summary_game_root = summary.get("game_root") if isinstance(summary, dict) else None
     summary_output_root = summary.get("output_root") if isinstance(summary, dict) else None
     game_root = (game_root or Path(summary_game_root or DEFAULT_GAME_ROOT)).resolve()
-    output_root = (output_root or Path(summary_output_root or DEFAULT_OUTPUT)).resolve()
+    output_root = (output_root or (Path(summary_output_root) if summary_output_root else selected_output)).resolve()
     try:
         ExportLayout(output_root).require()
     except ExportLayoutError as exc:

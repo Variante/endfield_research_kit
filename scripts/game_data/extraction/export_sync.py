@@ -46,7 +46,7 @@ def write_state(path: Path, payload: dict[str, Any]) -> None:
 
 def sync_root(export_root: Path) -> Path:
     key = hashlib.sha256(str(export_root.resolve()).casefold().encode("utf-8")).hexdigest()[:16]
-    return REPO_ROOT / "reports" / "export" / "sync" / key
+    return REPO_ROOT / "webui/data/_build/export/sync" / key
 
 
 def input_identity(game_root: Path) -> dict[str, Any]:
