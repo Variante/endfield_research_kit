@@ -18,11 +18,12 @@ if __name__ == '__main__' and not __package__:
     raise SystemExit('Run with python -m scripts.game_data.dynamic_group_owner_join')
 
 from scripts.game_data import dynamic_group_components_native as groups
-from scripts.game_data.dynamic_root_comp_native import decode_authenticated_root_components, load_current_template_asset, DEFAULT_SUMMARY
+from scripts.game_data.dynamic_root_comp_native import decode_authenticated_root_components, load_current_template_asset
 from scripts.game_data.unity_store import store_path
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _parser_source_snapshots
 from scripts.game_data.corpus_common import atomic_write_text
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout
 
 
 def join_authored_owners(group_rows: list[dict[str, Any]], root_rows: list[dict[str, Any]],
@@ -112,7 +113,7 @@ def main(argv=None):
     parser.add_argument('--output-json',type=Path,default=REPO_ROOT/'reports/animestudio/dynamic_group_owner_join_latest.json')
     args=parser.parse_args(argv)
     try:
-        template_inputs = [DEFAULT_SUMMARY, args.export_root/'meta/extraction/provenance.json',
+        template_inputs = [ExportLayout(args.export_root).export_summary_path, args.export_root/'meta/extraction/provenance.json',
             args.export_root/'meta/StreamingAssets/asset_map/endfield_streamingassets_assets.json',
             args.export_root/'meta/StreamingAssets/export_manifest/StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl']
         protected = [args.gameassembly,args.metadata,args.gameassembly.parent/'UnityPlayer.dll',args.game_root,args.export_root,
