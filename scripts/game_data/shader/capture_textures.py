@@ -8,6 +8,7 @@ from collections import Counter,defaultdict
 import hashlib
 import json
 from pathlib import Path
+from scripts.game_data.unity_evidence_store import evidence_path
 from scripts.common import write_json
 from scripts.game_data.unity_texture import read_texture
 from scripts.repo_paths import REPO_ROOT
@@ -19,7 +20,7 @@ def source_tails(receipt):
     if receipt.get('schema')!='endfield.stored-texture-previews.v1' or receipt.get('status')!='complete':raise ValueError('stored texture preview receipt unavailable')
     result=defaultdict(list)
     for row in receipt['textures']:
-        source=row['source'];raw_path=Path(source['rawPath']);json_path=Path(source['jsonPath'])
+        source=row['source'];raw_path=evidence_path(source['rawPath']);json_path=evidence_path(source['jsonPath'])
         if hashlib.sha256(raw_path.read_bytes()).hexdigest()!=source['rawSha256']:raise ValueError('frozen Texture2D body changed')
         raw=json_path.read_bytes()
         if hashlib.sha256(raw).hexdigest()!=source['jsonSha256']:raise ValueError('frozen Texture2D decoded body changed')

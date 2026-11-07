@@ -3,6 +3,7 @@ from collections import defaultdict
 import hashlib
 import json
 from pathlib import Path
+from scripts.game_data.unity_evidence_store import evidence_path
 import tempfile
 import shutil
 
@@ -69,7 +70,7 @@ def publish(report,bodies,*,root,asset_dir,cli=None):
             decoded=unity_texture_decode.decode_textures(list(textures.values()),bodies,cli=cli,work_root=root/'webui/data/_build/assets/texture_previews')
             for value in decoded['textures']:
                 target=textures[scene_identity(value['source']['identity'])];name='texture_'+unity_texture_decode.texture_key(target['identity'])+'.png'
-                shutil.copyfile(value['pngPath'],stage/name)
+                (stage/name).write_bytes(evidence_path(value['pngPath']).read_bytes())
                 if sha256_file(stage/name).lower()!=value['pngSha256']:raise ValueError('copied texture PNG hash differs')
                 target['preview']=dict(rel=f'{SOURCE}/{name}',sha256=value['pngSha256'],**value['descriptor'],
                     payloadSha256=value['payloadSha256'],topMipSha256=value['topMipSha256'])
@@ -80,7 +81,7 @@ def publish(report,bodies,*,root,asset_dir,cli=None):
             texture_evidence.update(status='unavailable',diagnostic=str(error)[:1200])
     for row in report['meshes']:
         key=scene_identity(row['identity'])
-        resource=row.get('resource');stream=Path(row['rawPath']).parent/resource['file'] if resource and resource['status']=='exact_owner_archive_span' else None
+        resource=row.get('resource');stream=evidence_path(row['rawPath']).parent/resource['file'] if resource and resource['status']=='exact_owner_archive_span' else None
         try:surface=read_surface(bodies[key],stream.read_bytes() if stream else None)
         except ValueError:continue # source audit retains the scoped diagnostic
         surfaces[key]=surface;descriptor=_obj(stage/('mesh_'+_name(key)+'.obj'),[(row['name'],surface,surface['vertices'],surface['submeshes'])])

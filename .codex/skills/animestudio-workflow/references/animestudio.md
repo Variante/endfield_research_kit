@@ -60,7 +60,8 @@ Important options:
 --dummy_dlls        Optional DummyDll folder for MonoBehaviour script schema recovery.
 --object_index_jsonl  Compact object/schema/MonoScript JSONL sidecar for binary-first joins.
 --filter_data       JSON list of source, offset, name, pathID, and type items.
---document_store    SQLite file for JSON or Convert .json/.anim documents.
+--document_store    SQLite file for JSON/Raw/Convert .json/.anim/.dat documents.
+--document_store_root Common output root for full relative evidence row keys.
 --sprite_images     SQLite file for AnimeStudio's own Sprite PNGs, each checked against its crop document.
 --packed-game-store SQLite file for dump's Data/Json/LipSync files.
 ```
@@ -70,10 +71,20 @@ target would have written to disk as a row of an `endfield.unity-object-store.v1
 (`scripts/game_data/unity_store.py`): key (type folder, file name), the exact
 file bytes zlib-compressed, their SHA256, and the header columns
 `describe_document` computes. No document file or folder is created; media
-and Raw/Dump targets stay on disk, and the export manifest
+and Dump targets stay on disk, and the export manifest
 keeps the same logical paths. The store is built at `<file>.partial` and
 renamed only when the export completes. Without the option, output is
 byte-for-byte unchanged.
+
+Selected Collision, scene and supplement producers pass both
+--document_store and --document_store_root. JSON and raw bytes go directly
+into separate relative namespaces in the same database. Source-directory
+metadata, typed/raw objects and owner resource spans also go directly into a
+native store. Texture mip inputs, native decoded pixels and preview
+intermediates are stored from memory. The evidence readers authenticate row
+sizes and SHA256, the database receipt, source identities and complete object
+coverage. Loose legacy receipts retain their original replay gates. No
+production evidence step creates object files to pack afterward.
 
 Convert exports a Sprite as an `endfield.sprite-crop.v1` `.json` document, not
 a PNG (`ExportSprite`, `SpriteHelper.GetCropPlan`): the texture's exported file
