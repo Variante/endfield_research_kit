@@ -12,6 +12,7 @@ if __name__=='__main__' and not __package__:
 import argparse
 import json
 from pathlib import Path
+from scripts.game_data.unity_evidence_store import evidence_path
 import tempfile
 
 from scripts.common import write_json,sha256_file,rel_path
@@ -40,7 +41,7 @@ def project(index,rows,bodies,*,root=REPO_ROOT):
         if target is None:continue
         asset=target['asset']
         if row['rawSha256']!=target['rawSha256']:raise ValueError('Mesh source/raw hash differs from published reference')
-        resource=row.get('resource');stream=Path(row['rawPath']).parent/resource['file'] if resource and resource['status']=='exact_owner_archive_span' else None
+        resource=row.get('resource');stream=evidence_path(row['rawPath']).parent/resource['file'] if resource and resource['status']=='exact_owner_archive_span' else None
         surface=read_surface(bodies[key],stream.read_bytes() if stream else None)
         if surface['uv1'] is None:
             unavailable.append(dict(rel=asset['rel'],reason='stored UV1 absent'));continue

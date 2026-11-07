@@ -11,6 +11,9 @@ from pathlib import Path
 import subprocess
 import tempfile
 
+from scripts.game_data.unity_evidence_store import (
+    evidence_path, evidence_roots, native_store_args, snapshot_path, storage_receipt, validate_storage,
+)
 from scripts.common import sha256_file, write_json
 from scripts.game_data.cooked_collision_corpus import _decoder_closure, _selection_input
 from scripts.game_data import unity_scene_corpus as scenes
@@ -27,12 +30,12 @@ def selection(scene):
             for source, offset in sorted(sources)]
 
 
-def command(scene, run, types):
+def command(scene, run, types, *, stored=True):
     return [scene['extraction']['command'][0], str(_selection_input(selection(scene))), str(run/'json'),
             '--game', 'ArknightsEndfield', '--types', *types, '--export_type', 'JSON',
             '--filter_data', str(run/'selection.json'), '--secondary_export_type', 'Raw',
             '--secondary_export_path', str(run/'raw'), '--secondary_types', *types,
-            '--logger_flags', 'Warning', 'Error']
+            '--logger_flags', 'Warning', 'Error', *(native_store_args(run) if stored else [])]
 
 
 def inspect_sources(run, scene, types):
@@ -44,24 +47,28 @@ def inspect_sources(run, scene, types):
     for key, row in admitted.items():
         if row['type'] not in ('GameObject','Transform'):
             continue
-        raw = Path(row['rawPath']).read_bytes()
+        raw = evidence_path(row['rawPath']).read_bytes()
         if len(raw)!=row['byteSize'] or hashlib.sha256(raw).hexdigest()!=row['rawSha256']:
             raise ValueError(f"supplement scene body changed: {row['rawPath']}")
         bodies[key] = dict(read_scene_object(row['type'],raw),kind=row['type'])
+    stored = (run/"objects.sqlite").is_file()
+    if stored and ((run/"json").exists() or (run/"raw").exists()):
+        raise ValueError("Unity supplement mixes native database and loose extraction roots")
+    json_root, raw_root = evidence_roots(run, stored=stored)
     sources, documents, seen = {}, {}, set()
-    for path in sorted((run/'json').glob('*/*.json')):
+    for path in json_root.glob('*/*.json'):
         document=json.loads(path.read_text('utf-8-sig')); meta=document['$animestudio']
         kind=meta['type'];key=scene_identity(meta)
         if kind not in types or path.parent.name!=kind or key[:3] not in cabs or key in seen:
             raise ValueError(f'Unity supplement identity/type/selection differs: {path}')
         seen.add(key)
-        raw_path=run/'raw'/kind/(path.stem+'.dat');raw=raw_path.read_bytes()
+        raw_path=raw_root/kind/(path.stem+'.dat');raw=raw_path.read_bytes()
         digest=hashlib.sha256(raw).hexdigest()
         if len(raw)!=meta['byteSize'] or len(raw)!=meta['rawDataLength'] or digest!=meta['rawDataSha256']:
             raise ValueError(f'Unity supplement raw length/hash differs: {raw_path}')
         source=dict(identity={f:meta[f] for f in ('sourceOriginalPath','sourceOffset','sourceFile','pathId')},
                     type=kind,jsonPath=str(path),rawPath=str(raw_path),rawSha256=digest,
-                    jsonSha256=sha256_file(path),byteSize=len(raw))
+                    jsonSha256=hashlib.sha256(path.read_bytes()).hexdigest(),byteSize=len(raw))
         sources[key]=source;documents[key]=(document,raw)
         if kind!='AssetBundle':
             if key in admitted:
@@ -75,8 +82,8 @@ def inspect_sources(run, scene, types):
                 target=(*key[:3],entry['asset'][1]&((1<<64)-1))
                 if bodies.get(target,{}).get('kind')=='GameObject':
                     prefab_roots.setdefault(target,set()).add(entry['path'])
-    if ({Path(r['rawPath']).resolve() for r in sources.values()}
-            != {p.resolve() for p in (run/'raw').glob('*/*.dat')}):
+    if ({str(evidence_path(r['rawPath']).resolve()) for r in sources.values()}
+            != {str(p.resolve()) for p in raw_root.glob('*/*.dat')}):
         raise ValueError('Unity supplement raw/typed object census differs')
     if {key for key in seen if key in bundles}!=set(bundles):
         raise ValueError('Unity supplement physical AssetBundle coverage differs')
@@ -100,7 +107,7 @@ def collect(scene_receipt, *, work_root, prefix, types, inspect):
                   sceneReceiptSha256=sha256_file(scene_receipt),
                   extraction=dict(command=args, log=str(log_path), logSha256=sha256_file(log_path),
                                   selectionSha256=sha256_file(selection_path),
-                                  decoderOutputClosure=scene['extraction']['decoderOutputClosure']))
+                                  decoderOutputClosure=scene['extraction']['decoderOutputClosure'], storage=storage_receipt(run)))
     scenes.check_receipt_snapshot(scene)
     return report
 
@@ -114,17 +121,20 @@ def validate_receipt(path, scene, *, schema, types, inspect):
             or sha256_file(Path(saved['sceneReceipt'])) != saved['sceneReceiptSha256']):
         raise ValueError('Unity supplement receipt and admitted scene inputs differ')
     run = Path(saved['extraction']['command'][2]).parent
+    stored = 'storage' in saved['extraction']
+    if stored:
+        validate_storage(run, saved['extraction'])
     selection_path = run/'selection.json'; log_path = run/'export.log'
     if (json.loads(selection_path.read_bytes()) != selection(scene)
             or sha256_file(selection_path) != saved['extraction']['selectionSha256']
-            or command(scene, run, types) != saved['extraction']['command']
+            or command(scene, run, types, stored=stored) != saved['extraction']['command']
             or str(log_path) != saved['extraction']['log'] or log_path.stat().st_size
             or sha256_file(log_path) != saved['extraction']['logSha256']
             or _decoder_closure(Path(scene['extraction']['command'][0])) != saved['extraction']['decoderOutputClosure']
             or saved['extraction']['decoderOutputClosure'] != scene['extraction']['decoderOutputClosure']):
         raise ValueError('Unity supplement extraction selection/command/log/exporter gate differs')
     paths = {path.resolve(), selection_path, log_path}
-    paths.update(Path(r[f]) for r in saved['rawSources'] for f in ('jsonPath', 'rawPath'))
+    paths.update(snapshot_path(r[f]) for r in saved['rawSources'] for f in ('jsonPath', 'rawPath'))
     snapshots = {str(p): (p.stat().st_size, p.stat().st_mtime_ns) for p in paths}
     current = inspect(run, scene)
     if current['rawSources'] != saved['rawSources'] or path.read_bytes() != original:

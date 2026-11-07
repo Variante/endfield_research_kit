@@ -38,6 +38,9 @@ from scripts.game_data.cooked_collision_corpus import (
     DEFAULT_CLI, _decoder_closure, _digest, _identity, _path_key, _retain_input, _guard_evidence_root,
     _selected_ledger, _selection_input, _verify_fingerprints, inspect_exports,
 )
+from scripts.game_data.unity_evidence_store import (
+    evidence_path, evidence_roots, native_store_args, snapshot_path, storage_receipt, validate_storage,
+)
 from scripts.game_data.corpus_common import atomic_write_json
 from scripts.game_data.unity_scene import read_scene_object, scene_identity, trace_collider
 from scripts.game_data.unity_asset_bundle import read_container_prefix
@@ -147,7 +150,7 @@ def inspect_scene_exports(json_root: Path, raw_root: Path, selection: list, *, g
                      if row["Type"] == "Mesh"}
     source_rows, bodies, bundles, metadata_rows, failures, seen_raw = {}, {}, {}, {}, [], set()
     mesh_exports = []
-    for path in sorted(json_root.rglob("*.json")):
+    for path in json_root.rglob("*.json"):
         try:
             json_bytes = path.read_bytes()
             json_sha = hashlib.sha256(json_bytes).hexdigest().upper()
@@ -293,8 +296,9 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         def provenance_key(value):
             return {**value, **{field: _path_key(receipt_root / value[field])
                                for field in ("outerLedger", "outerSummaryPath")}}
-        checks = (("schema", previous.get("schema"), "endfield.selected-unity-scene-corpus.v4"),
-                  ("inputSetSha256", previous["inputSetSha256"], expected_input_set.upper()),
+        if previous.get("schema") not in ("endfield.selected-unity-scene-corpus.v4", "endfield.selected-unity-scene-corpus.v5"):
+            raise ValueError("scene receipt has an unsupported extraction schema")
+        checks = (("inputSetSha256", previous["inputSetSha256"], expected_input_set.upper()),
                   ("selection.sha256", previous["selection"]["sha256"], selection_sha),
                   ("selection.path", previous["selection"]["path"], str(selection_path.resolve())))
         for field, expected, actual in checks:
@@ -337,6 +341,9 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
                "--types", *types, "--export_type", "JSON", "--filter_data", str(selection_path.resolve()),
                "--secondary_export_type", "Raw", "--secondary_export_path", str(raw_root),
                "--secondary_types", *types, "--logger_flags", "Warning", "Error", *group_args]
+    stored = previous is None or previous["schema"].endswith(".v5")
+    if stored:
+        command.extend(native_store_args(run_root))
     log_path = run_root/"export.log"
     if previous is not None:
         if (previous["extraction"]["command"] != command or previous["extraction"]["log"] != str(log_path)
@@ -354,6 +361,10 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         stat = Path(item["path"]).stat()
         if (stat.st_size, stat.st_mtime_ns) != (item["length"], item["mtimeNs"]):
             raise ValueError(f"physical chunk changed during scene extraction: {item['path']}")
+    if stored:
+        if previous is not None:
+            validate_storage(run_root, previous["extraction"])
+        json_root, raw_root = evidence_roots(run_root, stored=True)
     report = inspect_scene_exports(json_root, raw_root, selection, grouping=grouping)
     if previous is not None and report["rawSources"] != previous["rawSources"]:
         raise ValueError("saved scene extraction object identities/raw hashes differ")
@@ -373,12 +384,13 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
     for path, digest in retained.items():
         if _digest(path) != digest:
             raise ValueError(f"retained scene input changed during extraction: {path}")
-    report.update(schema="endfield.selected-unity-scene-corpus.v4", inputSetSha256=expected_input_set.upper(),
+    report.update(schema="endfield.selected-unity-scene-corpus.v5" if stored else "endfield.selected-unity-scene-corpus.v4", inputSetSha256=expected_input_set.upper(),
                   provenance=provenance,
                   selection=dict(path=str(selection_path.resolve()), sha256=selection_sha,
                                  meshCount=sum(row["Type"] == "Mesh" for row in selection), cabCount=len(files)),
                   extraction=dict(command=command, log=str(log_path), logSha256=_digest(log_path),
-                                  decoderOutputClosure=closure, physicalInputs=physical_inputs),
+                                  decoderOutputClosure=closure, physicalInputs=physical_inputs,
+                                  **({"storage": storage_receipt(run_root)} if stored else {})),
                   evidenceBoundary="Authenticated fresh exported scene bodies in selected physical Bundle CABs. Raw/typed values, local component backlinks and complete reciprocal TRS chains join current cooked Mesh buffers. External Mesh PPtrs require the exporter-observed referring external slot and a unique fresh physical target CAB. Export coverage is not an inner object-directory absence proof. Unavailable or ambiguous external targets, scene instantiation and runtime activation remain unresolved.")
     return report
 
@@ -396,7 +408,7 @@ def validate_receipt(report_path: Path, *, root: Path = REPO_ROOT) -> dict:
         saved = json.load(stream)
     if _digest(report_path) != original:
         raise ValueError("scene receipt changed while reading")
-    if (saved.get("schema") != "endfield.selected-unity-scene-corpus.v4"
+    if (saved.get("schema") not in ("endfield.selected-unity-scene-corpus.v4", "endfield.selected-unity-scene-corpus.v5")
             or saved.get("status") != "complete" or saved.get("failures")):
         raise ValueError("scene receipt is not a complete v4 selected-corpus result")
     summary_path = Path(saved["provenance"]["outerSummaryPath"])
@@ -406,7 +418,7 @@ def validate_receipt(report_path: Path, *, root: Path = REPO_ROOT) -> dict:
     cli = Path(saved["extraction"]["command"][0])
     snapshots, seen = {}, set()
     def remember(filename):
-        path = Path(filename)
+        path = snapshot_path(filename)
         name = str(path)
         identity = os.path.normcase(name)
         if identity not in seen:

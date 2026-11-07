@@ -46,7 +46,7 @@ def project_owners(entries: list[dict], reports: list[dict]) -> dict:
     groups, owners, statuses = {}, {}, Counter()
     unmatched = set()
     for report in reports:
-        if (report.get("schema") not in ("endfield.selected-unity-scene-corpus.v4", JOIN_SCHEMA)
+        if (report.get("schema") not in ("endfield.selected-unity-scene-corpus.v4", "endfield.selected-unity-scene-corpus.v5", JOIN_SCHEMA)
                 or report.get("status") != "complete" or report.get("failures")):
             raise ValueError("authored scene audit did not validate")
         for row in report["colliders"]:

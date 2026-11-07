@@ -2,6 +2,7 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -13,10 +14,18 @@ class Program
 {
     static int Main(string[] args)
     {
-        if (args.Length != 4) { Console.Error.WriteLine("Expected CLI-directory, selection JSON, output directory, class IDs"); return 2; }
+        if (args.Length != 4 && (args.Length != 6 || args[4] != "--document_store")) { Console.Error.WriteLine("Expected CLI-directory, selection JSON, output directory, class IDs"); return 2; }
         AppDomain.CurrentDomain.AssemblyResolve += (_, e) => {
             var path = Path.Combine(args[0], new AssemblyName(e.Name).Name + ".dll");
-            return File.Exists(path) ? Assembly.LoadFrom(path) : null;
+            if (!File.Exists(path)) return null;
+            var assembly = Assembly.LoadFrom(path);
+            if (new AssemblyName(e.Name).Name == "SQLitePCLRaw.provider.e_sqlite3")
+                NativeLibrary.SetDllImportResolver(assembly, (library, _, _) => {
+                    if (library != "e_sqlite3" || !OperatingSystem.IsWindows() || RuntimeInformation.ProcessArchitecture != Architecture.X64)
+                        throw new DllNotFoundException("Unsupported selected SQLite library/platform");
+                    return NativeLibrary.Load(Path.Combine(args[0], "runtimes", "win-x64", "native", "e_sqlite3.dll"));
+                });
+            return assembly;
         };
         try { return Run(args); }
         catch (Exception error) { Console.Error.WriteLine(error.ToString()); return 1; }
@@ -30,7 +39,11 @@ class Program
         var classes = args[3].Split(',').Select(int.Parse).ToHashSet();
         var selection = JsonDocument.Parse(File.ReadAllBytes(args[1])).RootElement.EnumerateArray().ToArray();
         if (selection.Length == 0) throw new InvalidDataException("Empty source selection");
-        var output = Path.GetFullPath(args[2]); Directory.CreateDirectory(output);
+        var output = Path.GetFullPath(args[2]);
+        using var store = args.Length == 6
+            ? AnimeStudio.CLI.UnityDocumentStoreWriter.OpenDetached(new FileInfo(args[5]), AnimeStudio.CLI.UnityDocumentStoreWriter.Schema)
+            : null;
+        if (store == null) Directory.CreateDirectory(output);
         AnimeStudio.Logger.Default = new AnimeStudio.ConsoleLogger();
         AnimeStudio.Logger.Flags = AnimeStudio.LoggerEvent.Warning | AnimeStudio.LoggerEvent.Error;
         AnimeStudio.Progress.Silent = true;
@@ -52,7 +65,7 @@ class Program
                     var id = Hash(Encoding.UTF8.GetBytes(group.Key.Source.ToUpperInvariant() + "|" + file.offset.ToString(CultureInfo.InvariantCulture) + "|" + file.fileName));
                     file.reader.Position = 0;
                     var metadata = file.reader.ReadBytes(checked((int)file.header.m_MetadataSize + 48));
-                    var metaName = id + ".metadata.bin"; File.WriteAllBytes(Path.Combine(output, metaName), metadata);
+                    var metaName = id + ".metadata.bin"; Write(store, output, metaName, metadata);
                     var objects = new List<object>();
                     foreach (var item in file.m_Objects.Where(o => classes.Contains(o.classID)))
                     {
@@ -61,10 +74,10 @@ class Program
                         if (typed == null || asset.reader.Position - asset.reader.byteStart != item.byteSize)
                             throw new InvalidDataException($"Object EOF differs: {file.fileName}/{item.m_PathID}; class {item.classID}");
                         var stem = id + "_p" + unchecked((ulong)item.m_PathID).ToString("X16");
-                        File.WriteAllBytes(Path.Combine(output, stem + ".dat"), raw);
+                        Write(store, output, stem + ".dat", raw);
                         var json = Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(typed));
-                        File.WriteAllBytes(Path.Combine(output, stem + ".json"), json);
-                        var resource = ReadResource(typed, file, manager, output, stem);
+                        Write(store, output, stem + ".json", json);
+                        var resource = ReadResource(typed, file, manager, output, stem, store);
                         objects.Add(new { pathId = item.m_PathID, classId = item.classID, byteStart = item.byteStart, byteSize = item.byteSize,
                             stem, rawSha256 = Hash(raw), jsonSha256 = Hash(json), resource });
                     }
@@ -75,11 +88,12 @@ class Program
             }
             finally { manager.Clear(); }
         }
-        File.WriteAllText(Path.Combine(output, "directory.json"), JsonSerializer.Serialize(new { schema = "endfield.serialized-directory-extraction.v1", directories = rows }));
+        Write(store, output, "directory.json", Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { schema = "endfield.serialized-directory-extraction.v1", directories = rows })));
+        store?.Complete();
         return 0;
     }
 
-    static object ReadResource(OrderedDictionary typed, AnimeStudio.SerializedFile file, AnimeStudio.AssetsManager manager, string output, string stem)
+    static object ReadResource(OrderedDictionary typed, AnimeStudio.SerializedFile file, AnimeStudio.AssetsManager manager, string output, string stem, AnimeStudio.CLI.UnityDocumentStoreWriter store)
     {
         if (typed["m_StreamData"] is not OrderedDictionary stream) return null;
         var path = Convert.ToString(stream["path"], CultureInfo.InvariantCulture);
@@ -99,7 +113,13 @@ class Program
             throw new InvalidDataException("Owner archive resource range outside stream: " + path);
         reader.BaseStream.Position = offset; var bytes = reader.ReadBytes((int)size);
         if (bytes.Length != size) throw new EndOfStreamException("Owner resource range truncated");
-        var resourceName = stem + ".stream.bin"; File.WriteAllBytes(Path.Combine(output, resourceName), bytes);
+        var resourceName = stem + ".stream.bin"; Write(store, output, resourceName, bytes);
         return new { status = "exact_owner_archive_span", path, offset, size, file = resourceName, sha256 = Hash(bytes), archiveStreamLength = reader.BaseStream.Length };
     }
+    static void Write(AnimeStudio.CLI.UnityDocumentStoreWriter store, string output, string name, byte[] bytes)
+    {
+        if (store != null) store.Put("data", name, bytes);
+        else File.WriteAllBytes(Path.Combine(output, name), bytes);
+    }
+
 }

@@ -34,6 +34,7 @@ from scripts.game_data.unity_serialized_directory import read_directory
 from scripts.game_data.unity_type_tree import decode_object,check_json
 from scripts.game_data.unity_mesh import decode_mesh,read_surface
 from scripts.game_data.unity_scene import scene_identity
+from scripts.game_data.unity_evidence_store import EvidencePath, evidence_path, snapshot_path, storage_receipt, validate_storage
 from scripts.repo_paths import REPO_ROOT
 
 SCHEMA='endfield.selected-unity-source-directory-corpus.v1'
@@ -101,10 +102,10 @@ def inspect_exports(data_root,selection,classes,*,known_sources=()):
             if not re.fullmatch(r'[0-9a-f]{64}_p[0-9A-F]{16}',stem):raise ValueError('directory object filename is unsupported')
             if stem!=row['metadata'].removesuffix('.metadata.bin')+f'_p{pid:016X}':
                 raise ValueError('directory object filename differs from physical file/PathID')
-            raw_path=data_root/(stem+'.dat');json_path=data_root/(stem+'.json');raw=raw_path.read_bytes();typed=json.loads(json_path.read_bytes())
+            raw_path=data_root/(stem+'.dat');json_path=data_root/(stem+'.json');raw=raw_path.read_bytes();typed_bytes=json_path.read_bytes();typed=json.loads(typed_bytes)
             files.update((raw_path.resolve(),json_path.resolve()))
             if (len(raw)!=info['byteSize'] or hashlib.sha256(raw).hexdigest()!=item['rawSha256']
-                    or sha256_file(json_path).lower()!=item['jsonSha256']):
+                    or hashlib.sha256(typed_bytes).hexdigest()!=item['jsonSha256']):
                 raise ValueError(f'directory body byte/hash gate: source={raw_path}; expectedBytes={info["byteSize"]}; actualBytes={len(raw)}')
             nodes=directory['types'][info['typeIndex']]['nodes']
             try:
@@ -152,7 +153,7 @@ def inspect_exports(data_root,selection,classes,*,known_sources=()):
         if physical not in seen:continue
         source=next(d for d in directories if (_path_key(d['sourceOriginalPath']),d['sourceOffset'],d['sourceFile'])==physical)
         candidates=[o for o in source['directory']['objects'] if o['pathId']&((1<<64)-1)==key[3]]
-        meta=json.loads(Path(row['jsonPath']).read_bytes())['$animestudio']
+        meta=json.loads(evidence_path(row['jsonPath']).read_bytes())['$animestudio']
         if (len(candidates)!=1 or candidates[0]['byteSize']!=row['byteSize'] or candidates[0]['classId']!=meta['classId']):
             raise ValueError('admitted source object class/span differs from complete serialized directory')
     return dict(schema=SCHEMA,status='complete',failures=[],directories=directories,objects=objects,
@@ -162,7 +163,7 @@ def inspect_exports(data_root,selection,classes,*,known_sources=()):
 
 def collect(scene_receipt,*,work_root,selection=None,classes=DEFAULT_CLASSES,admitted_scene=None):
     scene_receipt=scene_receipt.resolve();scene=admitted_scene or scenes.validate_receipt(scene_receipt)
-    if (scene.get('schema')!='endfield.selected-unity-scene-corpus.v4' or scene.get('status')!='complete'
+    if (scene.get('schema') not in ('endfield.selected-unity-scene-corpus.v4','endfield.selected-unity-scene-corpus.v5') or scene.get('status')!='complete'
             or scene.get('failures') or str(scene_receipt) not in scene['currentInputSnapshots']):
         raise ValueError('source collection requires its currently admitted complete parent scene')
     scenes.check_receipt_snapshot(scene)
@@ -170,11 +171,12 @@ def collect(scene_receipt,*,work_root,selection=None,classes=DEFAULT_CLASSES,adm
     work_root.mkdir(parents=True,exist_ok=True);run=Path(tempfile.mkdtemp(prefix='directories-',dir=work_root.resolve()))
     path=run/'selection.json';write_json(path,selection);cli=Path(scene['extraction']['command'][0])
     helper=build_helper(cli,run/'helper');extraction=extract(helper,cli,path,run/'data',classes)
+    extraction['storage']=storage_receipt(run, 'data.sqlite')
     write_json(run/'producer.json',dict(inputSetSha256=scene['inputSetSha256'],sceneReceipt=str(scene_receipt),sceneReceiptSha256=sha256_file(scene_receipt),
         selection=dict(path=str(path),sha256=sha256_file(path),classes=sorted(classes)),
         extraction=dict(**extraction,logSha256=sha256_file(Path(extraction['log'])),helper=helper,physicalInputs=physical,
                         decoderOutputClosure=scene['extraction']['decoderOutputClosure'])))
-    report,_,_=inspect_exports(run/'data',selection,classes,known_sources=scene['rawSources'])
+    report,_,_=inspect_exports(EvidencePath(run/'data.sqlite', 'data'),selection,classes,known_sources=scene['rawSources'])
     report.update(inputSetSha256=scene['inputSetSha256'],sceneReceipt=str(scene_receipt),sceneReceiptSha256=sha256_file(scene_receipt),
         selection=dict(path=str(path),sha256=sha256_file(path),classes=sorted(classes)),
         extraction=dict(**extraction,logSha256=sha256_file(Path(extraction['log'])),helper=helper,physicalInputs=physical,
@@ -198,12 +200,16 @@ def validate_receipt(path,scene,*,root=REPO_ROOT):
     extraction=saved['extraction'];helper=extraction['helper'];cli=Path(scene['extraction']['command'][0]);log=Path(extraction['log'])
     run=selection_path.parent;data_root=run/'data'
     expected=[helper['sdk'],helper['binary'],str(cli.parent.resolve()),str(selection_path.resolve()),str(data_root.resolve()),','.join(map(str,sorted(classes)))]
+    if 'storage' in extraction:
+        expected.extend(['--document_store', str((run/'data.sqlite').resolve())])
+        validate_storage(run, extraction, 'data.sqlite')
+        data_root=EvidencePath(run/'data.sqlite', 'data')
     if (extraction['command']!=expected or log!=run/'data.log' or log.stat().st_size or sha256_file(log)!=extraction['logSha256']
             or _decoder_closure(Path(helper['binary']))!=helper['closure']
             or _decoder_closure(cli)!=extraction['decoderOutputClosure']
             or extraction['decoderOutputClosure']!=scene['extraction']['decoderOutputClosure']):raise ValueError('source directory producer/command/log/CLI gate differs')
     paths={path.resolve(),selection_path,log}
-    paths.update(p for p in data_root.iterdir() if p.is_file());paths.update(Path(r['path']) for r in physical)
+    paths.update(snapshot_path(p) for p in data_root.iterdir() if p.is_file());paths.update(Path(r['path']) for r in physical)
     paths.update(p for p in Path(helper['binary']).parent.rglob('*') if p.is_file())
     snapshots={str(p):(p.stat().st_size,p.stat().st_mtime_ns) for p in paths}
     current,decoded,_=inspect_exports(data_root,selection,classes,known_sources=scene['rawSources'])

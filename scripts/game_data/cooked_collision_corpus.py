@@ -24,6 +24,9 @@ import subprocess
 import tempfile
 from functools import lru_cache
 
+from scripts.game_data.unity_evidence_store import (
+    evidence_path, evidence_roots, native_store_args, snapshot_path, storage_receipt, validate_storage,
+)
 from scripts.game_data.cooked_collision import read_triangle_mesh
 from scripts.game_data.cooked_convex import read_convex_mesh
 from scripts.game_data.corpus_common import atomic_write_text, validate_provenance
@@ -190,7 +193,7 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
     json_root,raw_root = run_root/"json",run_root/"raw"
     command = [str(cli),str(_selection_input(selection)),str(json_root),"--game","ArknightsEndfield",
                "--types","Mesh","--names","^$","--export_type","JSON","--filter_data",str(selection_path.resolve()),
-               "--secondary_export_type","Raw","--secondary_export_path",str(raw_root),"--secondary_types","Mesh"]
+               "--secondary_export_type","Raw","--secondary_export_path",str(raw_root),"--secondary_types","Mesh", *native_store_args(run_root)]
     with (run_root/"export.log").open("wb") as log:
         completed = subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,check=False)
     if completed.returncode:
@@ -202,15 +205,18 @@ def audit_selection(*, selection_path: Path, summary_path: Path, ledger_path: Pa
         stat = Path(row["path"]).stat()
         if stat.st_size != row["length"] or stat.st_mtime_ns != row["mtimeNs"]:
             raise ValueError(f"selected physical chunk changed during extraction: {row['path']}")
-    report = inspect_exports(json_root/"Mesh",raw_root/"Mesh",payload_root=run_root/"payloads")
+    json_root, raw_root = evidence_roots(run_root, stored=True)
+    report = inspect_exports(json_root/"Mesh", raw_root/"Mesh")
+    if {str(p) for p in raw_root.rglob("*.dat")} != {r["rawPath"] for r in report["objects"]}:
+        raise ValueError("Collision raw/typed object census differs")
     _join_selection(report,selection)
     for path, expected in retained.items():
         if _digest(path) != expected:
             raise ValueError(f"retained Collision evidence changed during extraction: {path}")
-    report.update(schema="endfield.cooked-collision-selected-corpus.v2", inputSetSha256=expected_input_set.upper(),
+    report.update(schema="endfield.cooked-collision-selected-corpus.v3", inputSetSha256=expected_input_set.upper(),
                   provenance=provenance, selection=dict(path=str(selection_path),sha256=selection_sha,meshCount=len(selection),cabCount=len(files)),
                   extraction=dict(command=command,log=str(run_root/"export.log"),logSha256=_digest(run_root/"export.log"),
-                                  decoderOutputClosure=decoder,physicalInputs=physical_inputs),
+                                  decoderOutputClosure=decoder,physicalInputs=physical_inputs, storage=storage_receipt(run_root)),
                   evidenceBoundary="Exact cooked-buffer length/SHA256 joins to fresh Unity raw objects, under a selected current VFS Bundle audit and unchanged exporter/input snapshots. Format readers reach payload EOF. Coverage is the explicit Mesh identity selection; render attributes, scene transforms and collider ownership are separate joins.")
     return report
 
@@ -261,7 +267,7 @@ def validate_receipt(report_path: Path, *, summary_path: Path | None = None) -> 
 
 def _validate_receipt(report_path: Path, *, summary_path: Path | None = None) -> dict:
     report = json.loads(report_path.read_text("utf-8"))
-    if (report.get("schema") not in ("endfield.cooked-collision-selected-corpus.v1", "endfield.cooked-collision-selected-corpus.v2")
+    if (report.get("schema") not in ("endfield.cooked-collision-selected-corpus.v1", "endfield.cooked-collision-selected-corpus.v2", "endfield.cooked-collision-selected-corpus.v3")
             or report.get("status") != "complete" or report.get("failures")):
         raise ValueError("collision receipt is not a complete selected-corpus result")
     selection_info = report["selection"]
@@ -286,7 +292,8 @@ def _validate_receipt(report_path: Path, *, summary_path: Path | None = None) ->
     extraction = report["extraction"]
     command = extraction["command"]
     # Bind the raw/JSON paths and selection to the command that made them.
-    if len(command) != 19:
+    stored = report["schema"].endswith(".v3")
+    if len(command) != (23 if stored else 19):
         raise ValueError("collision receipt extraction command has an unexpected shape")
     cli, primary, json_root = map(Path, command[:3])
     raw_root = Path(command[16])
@@ -294,7 +301,12 @@ def _validate_receipt(report_path: Path, *, summary_path: Path | None = None) ->
                 "--types", "Mesh", "--names", "^$", "--export_type", "JSON", "--filter_data",
                 str(selection_path.resolve()), "--secondary_export_type", "Raw", "--secondary_export_path",
                 str(raw_root), "--secondary_types", "Mesh"]
-    expected_input = _selection_input(selection) if report["schema"].endswith(".v2") else Path(summary["primaryAssets"])
+    if stored:
+        expected.extend(native_store_args(json_root.parent))
+        validate_storage(json_root.parent, extraction)
+        store = json_root.parent / "objects.sqlite"
+        snapshots[str(store)] = (store.stat().st_size, store.stat().st_mtime_ns)
+    expected_input = _selection_input(selection) if not report["schema"].endswith(".v1") else Path(summary["primaryAssets"])
     if command[3:] != expected[3:] or _path_key(primary) != _path_key(expected_input):
         raise ValueError("collision receipt command does not match the audited Mesh selection")
     if _path_key(cli) not in {_path_key(row["path"]) for row in summary["buildFingerprints"]}:
@@ -322,13 +334,20 @@ def _validate_receipt(report_path: Path, *, summary_path: Path | None = None) ->
     counts = Counter(row["status"] for row in report["objects"])
     if dict(counts) != report["counts"] or set(counts) - {"decoded", "noCookedData"}:
         raise ValueError("collision receipt object statuses/counts differ")
+    if stored:
+        json_root, raw_root = evidence_roots(json_root.parent, stored=True)
+        for root, field, pattern in ((json_root, "jsonPath", "*.json"), (raw_root, "rawPath", "*.dat")):
+            if {str(p) for p in (root/"Mesh").glob(pattern)} != {r[field] for r in report["objects"]}:
+                raise ValueError("collision database object census differs")
     for row in report["objects"]:
-        if (Path(row["jsonPath"]).resolve().parent != (json_root/"Mesh").resolve()
-                or Path(row["rawPath"]).resolve().parent != (raw_root/"Mesh").resolve()):
+        if (evidence_path(row["jsonPath"]).resolve().parent != (json_root/"Mesh").resolve()
+                or evidence_path(row["rawPath"]).resolve().parent != (raw_root/"Mesh").resolve()):
             raise ValueError(f"collision receipt object lies outside extraction roots: {row['name']}")
         for field in ("jsonPath", "rawPath"):
-            path = Path(row[field]); stat = path.stat()
-            snapshots[str(path)] = (stat.st_size, stat.st_mtime_ns)
+            path = snapshot_path(row[field])
+            if str(path) not in snapshots:
+                stat = path.stat()
+                snapshots[str(path)] = (stat.st_size, stat.st_mtime_ns)
     report["currentInputSnapshots"] = snapshots
     check_receipt_snapshot(report)
     return report
@@ -344,7 +363,10 @@ def check_receipt_snapshot(report: dict) -> None:
 
 def receipt_payloads(row: dict):
     """Yield hash-joined buffers, refusing edited typed JSON or raw objects."""
-    data = json.loads(Path(row["jsonPath"]).read_text("utf-8-sig"))
+    typed = evidence_path(row["jsonPath"]).read_bytes()
+    if row.get("jsonSha256") and hashlib.sha256(typed).hexdigest() != row["jsonSha256"].lower():
+        raise ValueError("collision typed JSON SHA256 differs")
+    data = json.loads(typed.decode("utf-8-sig"))
     identity = data["$animestudio"]
     if ({key: identity[key] for key in row["identity"]} != row["identity"]
             or data["m_Name"] != row["name"]
@@ -353,7 +375,7 @@ def receipt_payloads(row: dict):
             or data["m_CollisionMeshConvex"] != row["convex"]
             or data["m_VertexCount"] != row["renderVertexCount"]):
         raise ValueError(f"collision typed identity/flags differ: {row['jsonPath']}")
-    raw = Path(row["rawPath"]).read_bytes()
+    raw = evidence_path(row["rawPath"]).read_bytes()
     if (len(raw) != identity["rawDataLength"]
             or hashlib.sha256(raw).hexdigest() != identity["rawDataSha256"]
             or identity["rawDataSha256"] != row["rawSha256"]):
@@ -388,13 +410,14 @@ def inspect_exports(json_root: Path, raw_root: Path, *, payload_root: Path | Non
     for source, raw_path in pairs:
         row = {"jsonPath": str(source), "rawPath": str(raw_path)}
         try:
-            data = json.loads(source.read_text("utf-8-sig"))
+            typed = source.read_bytes()
+            data = json.loads(typed.decode("utf-8-sig"))
             identity = data["$animestudio"]
             row.update(identity={k: identity[k] for k in ("pathId", "sourceFile", "sourceOriginalPath", "sourceOffset")},
-                       name=data["m_Name"], rawSha256=identity["rawDataSha256"],
+                       name=data["m_Name"], jsonSha256=hashlib.sha256(typed).hexdigest(), rawSha256=identity["rawDataSha256"],
                        collisionOnly=data["m_CollisionMeshOnly"], baked=data["m_CollisionMeshBaked"],
                        convex=data["m_CollisionMeshConvex"], renderVertexCount=data["m_VertexCount"])
-            raw = Path(row["rawPath"]).read_bytes()
+            raw = evidence_path(row["rawPath"]).read_bytes()
             if len(raw) != identity["rawDataLength"] or hashlib.sha256(raw).hexdigest() != identity["rawDataSha256"]:
                 raise ValueError("raw object length/SHA256 differs from typed export identity")
             cooked = []

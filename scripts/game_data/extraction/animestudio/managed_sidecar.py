@@ -11,7 +11,7 @@ from scripts.game_data.cooked_collision_corpus import _decoder_closure
 def build_sidecar(cli,work,*,project,binary_name,unitycn_keys=False):
     sdk=find_dotnet(False);env=dotnet_environment(sdk.parent)
     work.mkdir(parents=True,exist_ok=True);work=work.resolve()
-    args=[str(sdk),'build',str(project),'-c','Release','--nologo',
+    args=[str(sdk),'build',str(project),'-c','Release','--nologo','-m:1',
           '-p:AnimeStudioCliRoot='+str(cli.parent.resolve()),'-p:BaseIntermediateOutputPath='+str(work/'obj')+'/',
           '-p:OutputPath='+str(work/'bin')+'/','-p:RestoreIgnoreFailedSources=true','-p:NuGetAudit=false']
     log=work/'build.log'

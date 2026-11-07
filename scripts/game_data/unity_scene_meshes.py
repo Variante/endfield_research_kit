@@ -22,6 +22,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+from scripts.game_data.unity_evidence_store import evidence_path
 
 from scripts.game_data.cooked_collision import read_triangle_mesh
 from scripts.game_data.cooked_convex import read_convex_mesh
@@ -34,9 +35,9 @@ SCHEMA = "endfield.stored-collider-mesh-joins.v1"
 
 def join_mesh_receipt(scene: dict, meshes: dict) -> dict:
     """Compose current receipt admissions while retaining both source scopes."""
-    if (scene.get("schema") != "endfield.selected-unity-scene-corpus.v4"
+    if (scene.get("schema") not in ("endfield.selected-unity-scene-corpus.v4", "endfield.selected-unity-scene-corpus.v5")
             or meshes.get("schema") not in ("endfield.cooked-collision-selected-corpus.v1",
-                                           "endfield.cooked-collision-selected-corpus.v2")
+                                           "endfield.cooked-collision-selected-corpus.v2", "endfield.cooked-collision-selected-corpus.v3")
             or scene.get("status") != "complete" or meshes.get("status") != "complete"
             or scene.get("failures") or meshes.get("failures")
             or scene["inputSetSha256"] != meshes["inputSetSha256"]):
@@ -59,8 +60,8 @@ def join_mesh_receipt(scene: dict, meshes: dict) -> dict:
             continue
         collider = source_row["collider"]
         key = scene_identity(collider["identity"])
-        raw = Path(collider["rawPath"]).read_bytes()
-        typed = Path(collider["jsonPath"]).read_bytes()
+        raw = evidence_path(collider["rawPath"]).read_bytes()
+        typed = evidence_path(collider["jsonPath"]).read_bytes()
         if (len(raw) != collider["byteSize"] or hashlib.sha256(raw).hexdigest() != collider["rawSha256"]
                 or hashlib.sha256(typed).hexdigest().upper() != collider["jsonSha256"]):
             raise ValueError(f"referring MeshCollider bytes changed: {collider['jsonPath']}")

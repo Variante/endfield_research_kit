@@ -27,6 +27,7 @@ from collections import Counter
 import gzip
 import json
 from pathlib import Path
+from scripts.game_data.unity_evidence_store import evidence_path
 
 from scripts.common import write_json,sha256_file
 from scripts.game_data import unity_scene_corpus as scenes,unity_render_corpus as renderers,unity_source_directory_corpus as sources
@@ -119,7 +120,7 @@ def join_resources(scene,render_report,source_reports,decoded_bodies):
             validKeywords=body['m_ValidKeywords'],invalidKeywords=body['m_InvalidKeywords'],
             customRenderQueue=body['m_CustomRenderQueue'],doubleSidedGI=body['m_DoubleSidedGI']))
     # LOD memberships come from actual stored group PPtrs, not _lodN names.
-    bodies={scene_identity(r['identity']):dict(read_scene_object(r['type'],Path(r['rawPath']).read_bytes()),kind=r['type'])
+    bodies={scene_identity(r['identity']):dict(read_scene_object(r['type'],evidence_path(r['rawPath']).read_bytes()),kind=r['type'])
             for r in scene['rawSources'] if r['type'] in ('GameObject','Transform')}
     groups=[];selected_renderers={scene_identity(r['renderer']['identity']) for r in rows}
     for key,source in objects.items():

@@ -26,6 +26,7 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+from scripts.game_data.unity_evidence_store import evidence_path
 
 from scripts.common import write_json
 from scripts.game_data import unity_scene_corpus as scenes, unity_scene_supplement as supplement
@@ -43,8 +44,8 @@ def _slot_witnesses(scene):
     for row in scene['rawSources']:
         if row['type']!='MeshCollider':
             continue
-        key=scene_identity(row['identity']);raw=Path(row['rawPath']).read_bytes()
-        typed=Path(row['jsonPath']).read_bytes()
+        key=scene_identity(row['identity']);raw=evidence_path(row['rawPath']).read_bytes()
+        typed=evidence_path(row['jsonPath']).read_bytes()
         if (hashlib.sha256(raw).hexdigest()!=row['rawSha256']
                 or hashlib.sha256(typed).hexdigest().upper()!=row['jsonSha256'].upper()):
             raise ValueError(f"renderer external-slot witness changed: {row['jsonPath']}")

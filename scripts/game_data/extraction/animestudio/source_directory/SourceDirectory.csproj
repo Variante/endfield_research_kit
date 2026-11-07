@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="obj/**;bin/**" />
+    <Reference Include="AnimeStudio.CLI"><HintPath>$(AnimeStudioCliRoot)/AnimeStudio.CLI.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="AnimeStudio"><HintPath>$(AnimeStudioCliRoot)/AnimeStudio.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Newtonsoft.Json"><HintPath>$(AnimeStudioCliRoot)/Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>

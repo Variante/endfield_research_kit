@@ -21,7 +21,7 @@ def build_helper(cli,work):
 
 def extract(helper,cli,selection,output,classes):
     args=[helper['sdk'],helper['binary'],str(cli.parent.resolve()),str(selection.resolve()),str(output.resolve()),
-          ','.join(map(str,sorted(classes)))]
+          ','.join(map(str,sorted(classes))), '--document_store', str(output.with_suffix('.sqlite').resolve())]
     log=output.parent/(output.name+'.log')
     with log.open('wb') as stream:
         result=subprocess.run(args,stdout=stream,stderr=subprocess.STDOUT,env=dotnet_environment(Path(helper['sdk']).parent))
