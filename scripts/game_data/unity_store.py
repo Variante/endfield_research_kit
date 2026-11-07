@@ -81,7 +81,7 @@ PACK_COMMAND = "python -m scripts.game_data.extraction.pack_export_stores"
 STORE_FILE_NAME = "Unity.sqlite"
 #: Exported suffixes that are object documents and live in the store. Every
 #: other suffix is converted media and stays a loose file.
-STORE_SUFFIXES: tuple[str, ...] = (".json", ".anim", ".fbx")
+STORE_SUFFIXES: tuple[str, ...] = (".json", ".anim", ".fbx", ".dat", ".raw.bin")
 ZLIB_LEVEL = 6
 #: An FBX property block at least this long is stored once in ``chunks``.
 #: Smaller blocks (names, transforms, scalar properties) stay in the row:
@@ -630,6 +630,27 @@ class UnityObjectStore:
         ).fetchone() is not None
 
     # -- content ------------------------------------------------------------
+    def iter_relative_names(self, folder: str):
+        """Stream row paths below a folder without filesystem traversal."""
+        prefix = folder.rstrip("/") + "/"
+        for type_name, name in self._connection().execute(
+            "SELECT type, name FROM objects WHERE type=? OR type LIKE ? ESCAPE '\\' ORDER BY type, name",
+            (folder, _like_escape(prefix) + "%"),
+        ):
+            yield type_name + "/" + name
+
+    def read_verified_bytes(self, type_name: str, name: str) -> bytes:
+        """Read exact bytes and authenticate both the stored size and SHA256."""
+        found = self._connection().execute(
+            "SELECT data, size, sha256 FROM objects WHERE type=? AND name=?", (type_name, name)
+        ).fetchone()
+        if found is None:
+            raise FileNotFoundError(f"{self.path}/{type_name}/{name}")
+        data = _decode_document(self._connection(), found[0])
+        if len(data) != found[1] or hashlib.sha256(data).hexdigest().lower() != found[2].lower():
+            raise UnityStoreError(f"document size/SHA256 differs: {self.path}/{type_name}/{name}")
+        return data
+
     def read_bytes(self, type_name: str, name: str) -> bytes:
         found = self._connection().execute(
             "SELECT data FROM objects WHERE type=? AND name=?", (type_name, name)
