@@ -16,6 +16,28 @@ def require(ok,check,source,**detail):
  if not ok:
   error=ValueError('audioLevelScriptSource.'+check+':'+str(source)+':'+json.dumps(detail,sort_keys=True)[:1300]);error.diagnostic=dict(validator='audioLevelScriptSource',check=check,source=str(source),**detail);raise error
 
+def projected_audio_node(node):
+ """Normalize only exact native Param type spellings for pure projections.
+
+ The complete owner already proves the declared nominal types and values.
+ Preserve those declarations alongside aliases; other namespaces and generic
+ arities never acquire a Param interpretation through a suffix match.
+ """
+ aliases={'System.String':'string','System.Boolean':'bool','System.Int32':'int',
+          'System.UInt32':'uint','System.Int64':'long','System.UInt64':'ulong',
+          'System.Single':'float','System.Double':'double'}
+ def kind(value):
+  if not isinstance(value,str):return value
+  for full,short in(('Beyond.Gameplay.Actions.Param`1<','Param<'),
+                     ('Beyond.Gameplay.Actions.ParamOutput`1<','ParamOutput<'),
+                     ('Param<','Param<'),('ParamOutput<','ParamOutput<')):
+   if value.startswith(full)and value.endswith('>'):
+    inner=value[len(full):-1]
+    return short+aliases.get(inner,inner)+'>'
+  return value
+ types=node.get('fieldTypes',{})
+ return dict(node,nativeFieldTypes=dict(node.get('nativeFieldTypes',types)),fieldTypes={key:kind(value)for key,value in types.items()})
+
 def project_owner(data,frame,*,source,action_names):
  require(frame.get('schemaStatus')=='named_exact'and type(frame.get('bytesConsumed'))is int and frame['bytesConsumed']==len(data),'complete-named-eof-required',source,expected=dict(schemaStatus='named_exact',bytesConsumed=len(data)),actual={k:frame.get(k)for k in('schemaStatus','bytesConsumed','stopField')},readerRefusals=frame.get('readerRefusals',[])[:2])
  asset=frame.get('ranges',{}).get('actionMap',{})
@@ -28,6 +50,7 @@ def project_owner(data,frame,*,source,action_names):
   for ordinal,node in enumerate(nodes):
    name=short_name(node['wrapperName'])
    if family=='ActionBase'and name not in action_names or family=='GetterBase'and name!='ListGetValueString':continue
+   node=projected_audio_node(node)
    fields=node['fields'];spans=node.get('fieldRanges',{});common=8 if family=='ActionBase'else 7;common_name=list(fields)[common-1]if len(fields)>=common else None;start,end=node['sourceOffset'],node['endOffset']
    require(common_name in spans and type(start)is int and type(end)is int and 0<=start<spans[common_name][1]<=end<=len(data),'typed-node-boundary',source,action=name,start=start,end=end)
    record=dict(start=start,end=end,payloadStart=spans[common_name][1],localId=fields.get('ID'),uid=fields.get('uid'),unionTag=node['unionTag'],serializedMemberCount=node['memberCount'],family=family,typedNode=node,unionTagEncoding='current-typed-owner')
@@ -53,7 +76,7 @@ def project_owner(data,frame,*,source,action_names):
    rows.append(dict(record=record,actionMapRole='actionList#'+str(ordinal+1),audioAction=audio))
  return dict(targetCount=count,rows=rows,stringListGetters=selected_getters,topology=None,topologyDiagnostic=dict(validator='audioLevelScriptSource',check='current-native-topology-consumer-unproved',source=source))
 
-class CurrentAudioSource:
+class _LegacyCurrentAudioSource:
  """One lexical operation; no saved native/schema success survives another enter."""
  def __init__(self,export_root,*,gameassembly,metadata,action_names,receipt_path=DEFAULT_OUTPUT):
   self.root=Path(export_root);self.receipt_path=Path(receipt_path);self.gameassembly=gameassembly;self.metadata=metadata;self.action_names=action_names;self.active=False;self.files={};self.closed=set()
@@ -78,4 +101,66 @@ class CurrentAudioSource:
   try:
    self.native_scope.__exit__(*error)
    self.source.check();require(all(path.read_bytes()==raw for path,raw in self.files.items()),'owner-source-bookend',self.source.root);require(self.receipt_raw==self.receipt_path.read_bytes()and self.before==self.receipt(),'family-receipt-bookend',self.receipt_path)
+  finally:self.active=False
+
+
+class CurrentAudioSource:
+ """Use selected generated source evidence and complete current native owners.
+
+ Explicit historical family receipts retain their independently gated replay
+ path. Ordinary exports never need that legacy corpus or its saved schema.
+ """
+ def __init__(self,export_root,*,gameassembly,metadata,action_names,receipt_path=None):
+  self.root=Path(export_root).resolve();self.gameassembly=gameassembly;self.metadata=metadata
+  self.action_names=action_names;self.receipt_path=receipt_path;self.active=False
+  self.legacy=None;self._audit=None
+ def __enter__(self):
+  require(not self.active and(self.legacy is None or not self.legacy.active),'operation-already-active',self.root)
+  require(self.gameassembly is not None and self.metadata is not None,'explicit-native-pair-required',self.root)
+  if self.receipt_path is not None:
+   self.legacy=_LegacyCurrentAudioSource(self.root,gameassembly=self.gameassembly,metadata=self.metadata,
+       action_names=self.action_names,receipt_path=self.receipt_path)
+   return self.legacy.__enter__()
+  self.legacy=None;self._audit=None
+  from scripts.source_paths import ExportLayout
+  from scripts.game_data.memorypack.levelscript_current_source import CurrentLevelScriptSource
+  layout=ExportLayout(self.root).require()
+  evidence=layout.evidence_dir/'animestudio'
+  self.source=CurrentLevelScriptSource.from_source_inventory(layout.json_dir,
+      gameassembly=Path(self.gameassembly),metadata=Path(self.metadata),
+      summary_path=evidence/'jsondata_source_current.json',
+      ledger_path=evidence/'jsondata_source_files_current.jsonl.gz')
+  self.source.__enter__();self.active=True
+  return self
+ def frame(self,path,data):
+  if self.legacy is not None:return self.legacy.frame(path,data)
+  require(self.active,'operation-not-active',path)
+  return self.source.frame(path,data)
+ def decode(self,path,data):
+  if self.legacy is not None:return self.legacy.decode(path,data)
+  return project_owner(data,self.frame(path,data),
+      source=Path(path).resolve().relative_to(self.source.root.resolve()).as_posix(),action_names=self.action_names)
+ def audit(self):
+  if self.legacy is not None:return self.legacy.audit()
+  require(self.active,'operation-not-active',self.root)
+  value=self.source.audit()
+  require(value.get('sourceInventoryAuthenticated')is True and value.get('allSourcesAttempted')is True
+      and value.get('allOwnersClosed')is True and value.get('sourceUniverse',0)>0,
+      'complete-selected-owner-universe-required',self.root,
+      expected='every selected LevelScript owner attempted and closed at EOF',
+      actual={k:value.get(k)for k in('sourceUniverse','sourcesAttempted','ownersClosed','allSourcesAttempted','allOwnersClosed')})
+  self._audit=dict(value,status='current-authenticated-complete-owner-source',
+      nativeSourcePoolExitBookendsPassed=False,audioActionAbsenceProved=False,
+      requestConsumerStatus='current-native-consumer-unproved')
+  return self._audit
+ def __exit__(self,*error):
+  if self.legacy is not None:return self.legacy.__exit__(*error)
+  try:
+   self.source.__exit__(*error)
+   if not error or error[0]is None:
+    require(self._audit is not None,'complete-owner-audit-required',self.root)
+    require(self.source.native_validation_reuse.get('entryExitBookendsPassed')is True,
+        'complete-native-exit-required',self.root)
+    self._audit.update(nativeSourcePoolExitBookendsPassed=True,
+        nativeValidationReuse=dict(self.source.native_validation_reuse))
   finally:self.active=False

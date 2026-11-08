@@ -7,7 +7,7 @@ from typing import Any,Iterable
 from scripts.source_paths import ExportLayout
 from scripts.game_data.levelscript_union_tags import short_name
 from scripts.webui.audio.semantics.context_utils import append_context as _append_context,normalize_posix
-from scripts.webui.audio.semantics.levelscript_source import CurrentAudioSource,require,COMMON
+from scripts.webui.audio.semantics.levelscript_source import CurrentAudioSource,require,COMMON,projected_audio_node
 
 ACTION_NAMES={'PlayLevelSequenceAction':'PlayLevelSequence',
               'PlayLevelSequenceAndControlSceneObjectsAction':'PlayLevelSequenceAndControlSceneObjects'}
@@ -23,7 +23,7 @@ def _levelsequence_fields_from_decoded_detail(detail):
 def project_source_rows(decoded,source):
     rows=[];unresolved=[]
     for row in decoded.get('rows',[]):
-        record=row['record'];node=record['typedNode'];name=short_name(node['wrapperName'])
+        record=row['record'];node=projected_audio_node(record['typedNode']);record=dict(record,typedNode=node);name=short_name(node['wrapperName'])
         require(name in ACTION_NAMES,'typed-LevelSequence-action',source,actual=name)
         kind=node['fieldTypes'].get('levelSeqId');param=node['fields'].get('levelSeqId')
         require(kind=='Param<string>' and (param is None or isinstance(param,dict)),
@@ -47,6 +47,7 @@ def project_sequence_owner(data,frame,source):
     selected=[]
     for node in nodes:
         if short_name(node['wrapperName']) not in ACTION_NAMES:continue
+        node=projected_audio_node(node)
         fields=node['fields'];spans=node['fieldRanges'];start,end=node['sourceOffset'],node['endOffset']
         require(tuple(fields)[:8]==COMMON and node['memberCount']==len(fields),
                 'current-LevelSequence-common-fields',source)
@@ -111,9 +112,14 @@ def collect_levelsequence_play_actions(export_root:Path,*,gameassembly=None,meta
                 except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
                     projection.refuse(path,error);continue
                 projection.project(path,data,frame)
+            from scripts.common import native_evidence_required
+            if native_evidence_required():require(not projection.failures,'current-LevelSequence-projection-complete',export_root,diagnostics=projection.failures[:3])
             audit=source.audit()
         return projection.result(audit)
-    except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:return projection.result(error=error)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+        from scripts.common import native_evidence_required
+        if native_evidence_required():raise
+        return projection.result(error=error)
 
 
 def build_levelsequence_audio_contexts(

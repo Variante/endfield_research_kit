@@ -585,7 +585,7 @@ def collect_levelscript_audio_semantics(export_root, *, decode_file=None, cue_se
     """Replay a current v2 family source plan; no saved schema/native success is reused."""
     if decode_file is not None:
         return _collect_levelscript_audio_semantics(export_root,decode_file=decode_file,cue_semantics=cue_semantics)
-    from scripts.webui.audio.semantics.levelscript_source import CurrentAudioSource,project_owner
+    from scripts.webui.audio.semantics.levelscript_source import CurrentAudioSource,project_owner,require
     from scripts.webui.audio.semantics.levelsequence import LevelSequenceActions
     sequences=LevelSequenceActions(export_root)
     names={*LEVELSCRIPT_AUDIO_EVENT_FIELDS,*LEVELSCRIPT_AUDIO_CONTROL_ROLES,*LEVELSCRIPT_RADIO_ACTION_NAMES,
@@ -602,10 +602,17 @@ def collect_levelscript_audio_semantics(export_root, *, decode_file=None, cue_se
                 relative=Path(path).resolve().relative_to(source.source.root.resolve()).as_posix()
                 return project_owner(data,frame,source=relative,action_names=names)
             result=_collect_levelscript_audio_semantics(export_root,decode_file=decode,cue_semantics=cue_semantics)
+            from scripts.common import native_evidence_required
+            if native_evidence_required():
+                require(result.get('stats',{}).get('decodeFailures',0)==0 and not sequences.failures,
+                        'current-audio-projections-complete',export_root,
+                        diagnostics=result.get('sourceDiagnostics',[])[:3],sequenceFailures=sequences.failures[:3])
             result['sourceAudit']=source.audit()
             result['levelSequencePlayActions']=sequences.result(result['sourceAudit'])
             return result
     except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+        from scripts.common import native_evidence_required
+        if native_evidence_required():raise
         return dict(levelSequencePlayActions=sequences.result(error=error),eventContexts={},cueInvocations=[],dynamicEventBindings=[],resolvedDynamicEventBindings=[],
                     radioInvocations=[],voiceInvocations=[],dynamicRadioBindings=[],resolvedDynamicRadioBindings=[],
                     controlActions=[],dynamicControlBindings=[],unresolvedEventRequests=[],
