@@ -3951,10 +3951,12 @@ def build_audio(args: argparse.Namespace) -> int:
     language_root = args.audio_root / language
     if args.skip_decode and not has_decoded_audio_in_roots(shared_root, language_root):
         print(
-            f"Audio build [{language}]: skipped "
-            f"(no decoded audio files at {shared_root} or {language_root})"
+            f"Audio build [{language}]: failed "
+            f"(no decoded audio files at {shared_root} or {language_root}). "
+            "Run export.bat audio --from-game to generate the selected installed audio.",
+            file=sys.stderr,
         )
-        return 0
+        return 2
     language_root.mkdir(parents=True, exist_ok=True)
 
     started = time.time()
