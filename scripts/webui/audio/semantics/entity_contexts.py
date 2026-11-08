@@ -9,6 +9,7 @@ from __future__ import annotations
 from scripts.game_data.memorypack.npc_patrol import CurrentNpcPatrolSource
 
 import hashlib
+from scripts.common import native_evidence_required
 import json
 from scripts.webui.audio.semantics import build_contracts
 from scripts.webui.audio.semantics import context_utils
@@ -703,6 +704,15 @@ def collect_patrol_sub_action_audio_semantics(
         failures = [stats["sourceDiagnostic"]]
     stats["unresolvedSourceFiles"] = stats["failedFiles"]
     stats["failureSamples"] = failures
+    if native_evidence_required():
+        audit = stats.get("sourceAudit") or {}
+        if (stats["status"] != "source_complete_consumer_unresolved"
+                or not paths or stats["failedFiles"] or stats["decodedFiles"] != len(paths)
+                or audit.get("allSourcesAttempted") is not True
+                or audit.get("allOwnersClosed") is not True
+                or audit.get("nativeSourcePoolExitBookendsPassed") is not True):
+            raise ValueError("Audio Patrol requires every selected owner and native/source/pool exit: "
+                             + str(stats.get("sourceDiagnostic") or failures[:1] or audit)[:1600])
     stats["evidenceBoundary"] = (
         "Current pooled Patrol candidates require authenticated sequential LevelData EOF and "
         "fresh selected native/source/pool bookends. Canonical reference sharing retains its "

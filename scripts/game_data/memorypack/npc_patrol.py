@@ -36,11 +36,20 @@ def npc_patrol_decoder(*,strings,game_root=None,gameassembly=None,metadata=None)
 
 class CurrentNpcPatrolSource:
  """Current pooled Patrol projection of the shared whole LevelData operation."""
- def __init__(self,json_root,*,gameassembly,metadata,summary_path=ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_current.json',ledger_path=ExportLayout.configured().evidence_dir / 'animestudio/jsondata_source_files_current.jsonl.gz'):
-  self.root=Path(json_root).resolve();self.gameassembly=gameassembly;self.metadata=metadata;self.summary=Path(summary_path);self.ledger=Path(ledger_path);self.active=False
+ def __init__(self,json_root,*,gameassembly,metadata,summary_path=None,ledger_path=None):
+  self.root=Path(json_root).resolve();self.gameassembly=gameassembly;self.metadata=metadata
+  if summary_path is None or ledger_path is None:
+   layout=ExportLayout(self.root.parent.parent)
+   if self.root!=layout.json_dir.resolve():
+    raise NpcPatrolFramingError('selected-json-root-required',str(self.root),None,'<export>/game/Json')
+   evidence=layout.evidence_dir/'animestudio'
+   if summary_path is None:summary_path=evidence/'jsondata_source_current.json'
+   if ledger_path is None:ledger_path=evidence/'jsondata_source_files_current.jsonl.gz'
+  self.summary=Path(summary_path);self.ledger=Path(ledger_path);self.active=False;self._audit=None
  def __enter__(self):
   if self.active:raise NpcPatrolFramingError('operation-active','npcPatrol',None)
   if self.gameassembly is None or self.metadata is None:raise NpcPatrolFramingError('explicit-native-pair-required','npcPatrol',None)
+  self._audit=None
   self.scope=CurrentLevelScriptSource.from_receipt(self.root,gameassembly=self.gameassembly,metadata=self.metadata,
    summary_path=self.summary,ledger_path=self.ledger)
   self.owner=self.scope.__enter__();self.strings=self.owner.strings;self.game_root=self.owner.game_root
@@ -59,10 +68,19 @@ class CurrentNpcPatrolSource:
  def audit(self):
   if not self.active:raise NpcPatrolFramingError('operation-closed','npcPatrol',None)
   audit=self.owner.audit()
-  return dict(audit['leveldata'],status='conditional-current-patrol-source',
-   audioActionAbsenceProved=False,eventRequestsProved=False,summary=audit['summary'])
+  self._audit=dict(audit['leveldata'],status='conditional-current-patrol-source',
+   audioActionAbsenceProved=False,eventRequestsProved=False,summary=audit['summary'],
+   sourceInventoryAuthenticated=audit.get('sourceInventoryAuthenticated',False),
+   nativeSourcePoolExitBookendsPassed=False)
+  return self._audit
  def __exit__(self,*error):
   try:
-   return self.scope.__exit__(*error)
+   result=self.scope.__exit__(*error)
+   if (not error or error[0]is None)and self._audit is not None:
+    reuse=self.owner.native_validation_reuse
+    if reuse.get('entryExitBookendsPassed')is not True:
+     raise NpcPatrolFramingError('native-exit-bookends-required','npcPatrol',None)
+    self._audit.update(nativeSourcePoolExitBookendsPassed=True,nativeValidationReuse=dict(reuse))
+   return result
   finally:
    self.active=False
