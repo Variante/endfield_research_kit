@@ -53,6 +53,7 @@ import sys
 import tempfile
 import time
 import wave
+from urllib.parse import quote
 from collections import Counter, defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
@@ -1111,15 +1112,33 @@ def audio_file_path(audio_root: Path, storage_root: str, relative_audio_path: st
     return audio_root / storage_root / Path(*PurePosixPath(relative_audio_path).parts)
 
 
-def served_audio_href(audio_root: Path, webui_root: Path, storage_root: str, relative_audio_path: str) -> str:
-    audio_path = audio_file_path(audio_root, storage_root, relative_audio_path)
+def served_audio_href(
+    audio_root: Path,
+    webui_root: Path,
+    storage_root: str,
+    relative_audio_path: str,
+    *, export_root: Path | None = None,
+) -> str:
+    audio_root = Path(os.path.abspath(audio_root))
+    audio_path = Path(os.path.abspath(audio_file_path(audio_root, storage_root, relative_audio_path)))
+    if not audio_path.is_relative_to(audio_root):
+        raise ValueError("Audio path escapes its selected audio root")
+    # The server mounts the selected export independently of the checkout's
+    # location. Use that stable route even when the export is inside the repo.
+    if export_root is not None:
+        selected_export = Path(os.path.abspath(export_root))
+        if audio_root == ExportLayout(selected_export).audio_dir:
+            relative = audio_path.relative_to(selected_export).as_posix()
+            return "/export_full/" + quote(relative, safe="/")
+    webui_root = Path(os.path.abspath(webui_root))
     if audio_path.is_relative_to(webui_root):
         return normalize_posix(audio_path.relative_to(webui_root))
-    if audio_path.is_relative_to(ROOT):
-        return "/" + normalize_posix(audio_path.relative_to(ROOT))
+    if audio_path.is_relative_to(Path(os.path.abspath(ROOT))):
+        return "/" + normalize_posix(audio_path.relative_to(Path(os.path.abspath(ROOT))))
     raise SystemExit(
-        "Audio root must be under the WebUI root or project root so generated "
-        f"audioSrc links are servable: {audio_root}"
+        "Audio root must be the selected export's game/Audio directory or be "
+        "under the WebUI or project root so generated audioSrc links are servable: "
+        f"{audio_root}"
     )
 
 
@@ -1469,7 +1488,7 @@ def collect_audio_files(
     language_info: dict[str, str],
     decoded_source_by_rel: dict[tuple[str, str], dict[str, str]] | None = None,
     prior_source_by_rel: dict[tuple[str, str], dict[str, str]] | None = None,
-    *, jobs: int = 0,
+    *, jobs: int = 0, export_root: Path | None = None,
 ) -> dict[str, dict[str, Any]]:
     decoded_source_by_rel = decoded_source_by_rel or {}
     prior_source_by_rel = prior_source_by_rel or {}
@@ -1501,7 +1520,7 @@ def collect_audio_files(
             "id": audio_id,
             "rel": rel,
             "storageRoot": storage_root,
-            "src": served_audio_href(audio_root, webui_root, storage_root, rel),
+            "src": served_audio_href(audio_root, webui_root, storage_root, rel, export_root=export_root),
             "format": path.suffix.lower().lstrip("."),
             "bytes": stat.st_size,
             **metrics,
@@ -1576,7 +1595,7 @@ def build_dialog_audio_index(
     language: str,
     language_info: dict[str, str],
     preferred_extension: str,
-    *, jobs: int = 0,
+    *, jobs: int = 0, export_root: Path | None = None,
 ) -> dict[str, dict[str, Any]]:
     duration_field = language_info["durationField"]
     # One directory walk answers the per-candidate existence probes and carries
@@ -1651,7 +1670,7 @@ def build_dialog_audio_index(
             "id": audio_id,
             "rel": rel,
             "storageRoot": language,
-            "src": served_audio_href(audio_root, webui_root, language, rel),
+            "src": served_audio_href(audio_root, webui_root, language, rel, export_root=export_root),
             "format": file_path.suffix.lower().lstrip("."),
             "bytes": stat.st_size,
             "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
@@ -3057,6 +3076,7 @@ def load_cached_event_audio_index(
     expected_media_inventory_fingerprint: str | None = None,
     expected_decoded_payload_names: set[str] | None = None,
     expected_decoded_payload_audit: dict[str, Any] | None = None,
+    *, export_root: Path | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None:
     """Reuse event-to-media links from the last audio index when complete."""
     payload = load_json_strict(language_root / "index.json", {})
@@ -3150,7 +3170,7 @@ def load_cached_event_audio_index(
             apply_audio_category(cached)
         if not _audio_entry_file_exists(audio_root, language, cached):
             continue
-        cached["src"] = served_audio_href(audio_root, webui_root, cached["storageRoot"], str(cached.get("rel") or ""))
+        cached["src"] = served_audio_href(audio_root, webui_root, cached["storageRoot"], str(cached.get("rel") or ""), export_root=export_root)
         event_audio_by_id[event_key].append(cached)
 
     if not any(event_audio_by_id.values()):
@@ -3746,6 +3766,7 @@ def regroup_unmapped_by_category(
     event_entries: list[dict[str, Any]],
     language: str,
     fresh_outputs: set[tuple[str, str]] | None = None,
+    *, export_root: Path | None = None,
 ) -> int:
     """Move event-resolved Wwise media into wwise/<category>/<id> and tag entries."""
     fresh_outputs = fresh_outputs or set()
@@ -3802,7 +3823,7 @@ def regroup_unmapped_by_category(
                 else:
                     src_path.replace(dst_path)
                     moved += 1
-        new_src = served_audio_href(audio_root, webui_root, storage, new_rel)
+        new_src = served_audio_href(audio_root, webui_root, storage, new_rel, export_root=export_root)
         for entry in targets:
             entry["rel"] = new_rel
             entry["src"] = new_src
@@ -4139,7 +4160,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_info,
         decoded_source_by_rel,
         prior_source_by_rel,
-        jobs=args.decode_jobs,
+        jobs=args.decode_jobs, export_root=args.export_root,
     )
     language_audio = collect_audio_files(
         args.audio_root,
@@ -4150,7 +4171,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language_info,
         decoded_source_by_rel,
         prior_source_by_rel,
-        jobs=args.decode_jobs,
+        jobs=args.decode_jobs, export_root=args.export_root,
     )
     stage.mark("collectAudioFiles")
     generic_audio = merge_audio_file_indexes(shared_audio, language_audio)
@@ -4162,7 +4183,7 @@ def build_audio(args: argparse.Namespace) -> int:
         language,
         language_info,
         ".flac",
-        jobs=args.decode_jobs,
+        jobs=args.decode_jobs, export_root=args.export_root,
     )
     # Normalize the logical media inventory before computing the Event-cache
     # fingerprint. Otherwise the cache compares an unsuppressed physical scan
@@ -4204,6 +4225,7 @@ def build_audio(args: argparse.Namespace) -> int:
             expected_media_inventory_fingerprint=media_inventory_fingerprint,
             expected_decoded_payload_names=decoded_payload_event_names,
             expected_decoded_payload_audit=decoded_payload_audit,
+            export_root=args.export_root,
         )
         if args.skip_decode and not args.refresh_hirc
         else None
@@ -4378,7 +4400,8 @@ def build_audio(args: argparse.Namespace) -> int:
     })
     stage.mark("backfillEventSourceMetadata")
     category_moved = regroup_unmapped_by_category(
-        args.audio_root, args.webui_root, audio_by_id, event_entries, language, fresh_outputs
+        args.audio_root, args.webui_root, audio_by_id, event_entries, language, fresh_outputs,
+        export_root=args.export_root,
     )
     if category_moved:
         print(f"Audio layout: {category_moved:,} Wwise files filed under event-category folders")
