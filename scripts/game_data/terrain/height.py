@@ -20,6 +20,7 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
+from scripts.common import rel_path
 from scripts.game_data.terrain.tret import parse_tret_record
 
 
@@ -128,6 +129,7 @@ def write_height_index(root: Path, output: Path, *, relative_to: Path) -> dict:
     decoding them on every WebUI rebuild would add work without a validated
     world origin or a map consumer.
     """
+    source_root = rel_path(root, root=relative_to)
     selected_paths = []
     for scene, lod in sorted(KNOWN_SCENE_FINEST_LODS.items()):
         scene_root = root / scene
@@ -135,7 +137,7 @@ def write_height_index(root: Path, output: Path, *, relative_to: Path) -> dict:
             stat = path.stat()
             selected_paths.append((path.relative_to(root).as_posix(), stat.st_size, stat.st_mtime_ns))
     signature = hashlib.sha256(
-        (INDEX_INTERPRETATION + "\n" + "\n".join(
+        (INDEX_INTERPRETATION + "\n" + source_root + "\n" + "\n".join(
             f"{name}\0{size}\0{mtime}" for name, size, mtime in selected_paths
         )).encode("utf-8")
     ).hexdigest()
@@ -169,14 +171,14 @@ def write_height_index(root: Path, output: Path, *, relative_to: Path) -> dict:
             "diagnosticComposite": "byte0 + 256*byte1",
             "storedFormatCode": 6,
             "valueRange": [tile.minimum, tile.maximum],
-            "source": tile.path.relative_to(relative_to).as_posix(),
+            "source": rel_path(tile.path, root=relative_to),
             "sha256": tile.sha256,
         })
     payload = {
         "schemaVersion": INDEX_SCHEMA_VERSION,
         "status": "complete" if tiles else "unavailable",
         "sourceFingerprint": signature,
-        "sourceRoot": root.relative_to(relative_to).as_posix() if root.is_relative_to(relative_to) else str(root),
+        "sourceRoot": source_root,
         "tileCount": len(tiles),
         "sceneCounts": dict(sorted(scene_counts.items())),
         "entries": entries,
