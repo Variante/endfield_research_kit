@@ -719,17 +719,16 @@ def collect_char_interact_audio_semantics(
     decoder: Any | None = None,
     gameassembly_path: Path | None = None,
     metadata_path: Path | None = None,
+    _expected_sources: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Recover only native-gated complete interaction-perform AudioEvent rows."""
     if decoder is None:
-        from scripts.game_data.char_interact_perform_binary import (
-            decode_char_interact_audio_actions,
+        from scripts.webui.audio.semantics.char_interact_complete import collect_complete
+        return collect_complete(
+            export_root, gameassembly=gameassembly_path, metadata=metadata_path,
+            collector=lambda decode, expected: collect_char_interact_audio_semantics(
+                export_root, decoder=decode, _expected_sources=expected),
         )
-        strings = export_string_pool(ExportLayout(export_root).json_dir)
-        def decoder(data):
-            if gameassembly_path is None or metadata_path is None:
-                raise ValueError("CharInteract requires explicit GameAssembly and metadata paths")
-            return decode_char_interact_audio_actions(data, gameassembly=gameassembly_path, metadata=metadata_path, strings=strings)
 
     roots = ("game",)
     relative_versions: dict[str, list[tuple[str, Path, str]]] = defaultdict(list)
@@ -771,6 +770,10 @@ def collect_char_interact_audio_semantics(
             continue
         source_root, path, digest = versions[0]
         data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != digest or (
+            _expected_sources is not None and _expected_sources.get(relative_name) != digest
+        ):
+            raise ValueError("CharInteract Audio source changed or differs from the selected ledger: " + relative_name)
         candidate_owners += 1
         try:
             rows = decoder(data)
@@ -840,6 +843,7 @@ def collect_char_interact_audio_semantics(
                 "schemaMappingId": row.get("schemaMappingId"),
                 "unionMappingId": row.get("unionMappingId"),
                 "schemaStatus": row.get("schemaStatus"),
+                "storedActionFields": row.get("storedFields") or [],
                 "triggerBindingStatus": "exactCharInteractPerformConfig",
                 "triggerRequestEvidence": [
                     "serializedCharInteractPerformAudioEventActDataAudioEvent"
