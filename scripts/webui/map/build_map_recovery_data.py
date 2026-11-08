@@ -43,7 +43,10 @@ invalidate only that checkpoint, and ``build_map_recovery_preview
 from __future__ import annotations
 from scripts.webui.localization import HOTFIX_TABLE, localize
 from scripts.common import require_export_layout
-from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path, unity_asset_rel
+from scripts.common import (
+    EXPORT_LAYOUT, rel_path as export_rel_path, unity_asset_rel, resolve_installed_native_inputs,
+)
+from scripts.game_data.levelscript_union_tags import authenticated_tables
 
 import argparse
 import hashlib
@@ -5794,10 +5797,16 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
     return payloads
 
 
+def _build_all_authenticated(language: str, only: set[str] | None = None) -> list[dict]:
+    gameassembly, metadata = resolve_installed_native_inputs()
+    with authenticated_tables(gameassembly=gameassembly, metadata=metadata):
+        return build_all(language, only)
+
+
 def _build_all_shard(payload: tuple[str, tuple[str, ...]]) -> list[dict]:
     """Build one interleaved slice of the level catalog in a worker process."""
     language, levels = payload
-    return build_all(language, set(levels))
+    return _build_all_authenticated(language, set(levels))
 
 
 def _buildable_level_ids() -> list[str]:
@@ -5826,7 +5835,7 @@ def build_all_parallel(language: str, jobs: int) -> list[dict]:
     levels = _buildable_level_ids()
     jobs = max(1, min(jobs, len(levels)))
     if jobs == 1:
-        return build_all(language, None)
+        return _build_all_authenticated(language, None)
     shards = [tuple(levels[index::jobs]) for index in range(jobs)]
     payloads: list[dict] = []
     with ProcessPoolExecutor(max_workers=jobs) as pool:
@@ -5969,7 +5978,7 @@ def main() -> int:
     )
 
     if args.level:
-        payloads = build_all(language, set(args.level))
+        payloads = _build_all_authenticated(language, set(args.level))
     else:
         payloads = build_all_parallel(language, args.jobs)
     maps = OUT / "maps"

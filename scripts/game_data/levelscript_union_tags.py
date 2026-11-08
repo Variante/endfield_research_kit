@@ -26,17 +26,24 @@ Run as: python -m scripts.game_data.levelscript_union_tags --regenerate [--write
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+from contextlib import contextmanager
+from contextvars import ContextVar
+from types import MappingProxyType
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.common import (
+    NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs, resolve_installed_native_inputs,
+)
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.memorypack.operation_native_validation import _read_reader_input
 
 SCHEMA = "endfield.levelscript-union-tags.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_union_tags.json"
+_ACTIVE_TABLES = ContextVar("authenticated_levelscript_union_tables", default=None)
 FAMILY_BASES = {
     "ActionBase": "Beyond_Gameplay_Actions_ActionBaseForMemoryPack",
     "PureGetter": "Beyond_Gameplay_Actions_PureGetterForMemoryPack",
@@ -86,9 +93,69 @@ def _tables(raw: bytes):
     return contract,{family:{r['name']:(r['tag'],r['memberCount']) for r in rows} for family,rows in families.items()}, {family:{r['name']:r.get('wrapperName','') for r in rows} for family,rows in families.items()}
 
 
+@contextmanager
+def authenticated_tables(*, gameassembly: Path, metadata: Path,
+                         contract_path: Path = DEFAULT_CONTRACT):
+    """Reuse tag tables only between fresh declaration and binary bookends.
+
+    Map control-path traversal asks for the same names on every edge. The
+    scope admits exactly one selected native pair, hashes both actual files
+    at entry and exit, and rejects changed declarations or root selection.
+    Lookups outside this scope retain their original per-call gates.
+    """
+    declaration = Path(contract_path).resolve()
+    arguments = (Path(gameassembly), Path(metadata))
+    selected = tuple(path.resolve() for path in arguments)
+    raw = declaration.read_bytes()
+    contract, families, wrappers = _tables.__wrapped__(raw)
+    pins = contract.get("nativeInputs") or {}
+    expected = tuple(str(pins.get(name) or "").lower()
+                     for name in ("gameAssemblySha256", "metadataSha256"))
+    if any(len(pin) != 64 or any(c not in "0123456789abcdef" for c in pin)
+           for pin in expected):
+        raise ValueError("union-tags.scope: complete native hashes required")
+    configured = tuple(Path(path).resolve() for path in resolve_installed_native_inputs())
+    allow_default = configured == selected
+
+    def confirm():
+        if (Path(contract_path).resolve() != declaration
+                or declaration.read_bytes() != raw):
+            raise ValueError("union-tags.scope: declaration drift")
+        if tuple(path.resolve() for path in arguments) != selected:
+            raise ValueError("union-tags.scope: selected native path drift")
+        for path, pin in zip(selected, expected):
+            # Do not borrow the stat-based file hash cache for either bookend.
+            with path.open("rb") as stream:
+                actual = hashlib.file_digest(stream, "sha256").hexdigest()
+            if actual != pin:
+                raise ValueError(f"union-tags.scope: native content differs: {path.name}")
+        if allow_default and tuple(Path(path).resolve() for path in
+                                   resolve_installed_native_inputs()) != configured:
+            raise ValueError("union-tags.scope: configured native selection drift")
+
+    confirm()
+    tables = MappingProxyType({family: MappingProxyType(rows)
+                               for family, rows in families.items()})
+    wrapper_tables = MappingProxyType({family: MappingProxyType(rows)
+                                       for family, rows in wrappers.items()})
+    token = _ACTIVE_TABLES.set((declaration, selected, allow_default, tables, wrapper_tables))
+    try:
+        yield
+    finally:
+        _ACTIVE_TABLES.reset(token)
+        confirm()
+
+
 def _load(contract_path: Path = DEFAULT_CONTRACT, *, gameassembly=None, metadata=None) -> tuple[dict[str, dict[str, tuple[int, int]]], dict[str, Any]]:
     if (gameassembly is None) != (metadata is None):
         return {}, {"status": "validation_failed", "detail": "both-selected-paths-required"}
+    scope = _ACTIVE_TABLES.get()
+    if scope is not None and Path(contract_path) == scope[0]:
+        implicit = gameassembly is None and metadata is None
+        explicit = (not implicit and
+                    (Path(gameassembly), Path(metadata)) == scope[1])
+        if explicit or (implicit and scope[2]):
+            return scope[3], {"status": NATIVE_EVIDENCE_VALIDATED, "detail": ""}
     try:
         contract,families,_ = _tables(_read_reader_input(contract_path))
     except (OSError, UnicodeError, ValueError) as error:
@@ -249,6 +316,9 @@ def wrapper_name(family: str, name: str) -> str:
 
 
 def _wrappers() -> dict[str, dict[str, str]]:
+    scope = _ACTIVE_TABLES.get()
+    if scope is not None and Path(DEFAULT_CONTRACT) == scope[0] and scope[2]:
+        return scope[4]
     families,audit=_load()
     if audit["status"] != NATIVE_EVIDENCE_VALIDATED:
         return {}
