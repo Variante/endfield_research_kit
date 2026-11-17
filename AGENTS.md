@@ -1,5 +1,19 @@
 Agent notes for this repo. User-facing usage belongs in `README.md`.
 
+Put all Reconstruction Lab scratch work under
+`D:\fluffy-dump\endfield_reconstruction_lab\scratch` (repo-relative
+`endfield_reconstruction_lab/scratch/`). This includes temporary probes,
+captures made solely for the Lab, replay buffers, test projects, and renders.
+Use `endfield_reconstruction_lab/reports/` for retained reports and reviews.
+Keep retained character inputs in `endfield_reconstruction_lab/scratch/character_recovery/`
+and write new Reconstruction Lab captures directly to
+`endfield_reconstruction_lab/scratch/endfield_capture/`. The old
+`scratch/reverse_engineering/endfield_capture` junction preserves paths
+recorded by earlier captures and replays. Do not recreate repository-root
+`tmp/character_recovery` or `scratch/character_recovery`.
+After validation, prune superseded renders, failed captures, and rebuildable
+intermediates. Keep the current WebUI inputs and the evidence needed to replay them.
+
 ## Git Authorship
 
 - Every commit created, amended, cherry-picked, or rebased by an agent must use
